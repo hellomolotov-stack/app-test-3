@@ -4,7 +4,7 @@ tg.ready();
 
 // ---------- КОНФИГУРАЦИЯ ----------
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
-const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec'; // тот же URL, но теперь он умеет обновлять members
+const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -19,7 +19,6 @@ let userCard = {
 const mainContent = document.getElementById('mainContent');
 const subtitleEl = document.getElementById('subtitle');
 
-// ---------- Логирование событий в Google Sheets ----------
 function logEvent(action) {
     if (!userId) return;
     if (!GUEST_API_URL.startsWith('https://')) return;
@@ -38,16 +37,11 @@ function logEvent(action) {
 
 // ---------- Обновление user_name в members ----------
 function updateUserNameIfNeeded(userData) {
-    // Если user_name уже есть (не пустая строка) – ничего не делаем
     if (userData.user_name && userData.user_name.trim() !== '') return;
 
-    // Формируем имя для записи: first_name + last_name (если есть)
     let fullName = user.first_name;
     if (user.last_name) fullName += ' ' + user.last_name;
-    // Можно также добавить username в скобках, если нужно:
-    // if (user.username) fullName += ` (@${user.username})`;
 
-    // Отправляем запрос на обновление
     const params = new URLSearchParams({
         update_members: '1',
         user_id: userId,
@@ -58,7 +52,7 @@ function updateUserNameIfNeeded(userData) {
     img.src = `${GUEST_API_URL}?${params}`;
 }
 
-// ---------- Загрузка данных из CSV (members) ----------
+// ---------- Загрузка данных из CSV ----------
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -88,9 +82,7 @@ async function loadUserData() {
                     cardImageUrl: userData.card_image_url || ''
                 };
 
-                // Проверяем и обновляем user_name при необходимости
                 updateUserNameIfNeeded(userData);
-
                 found = true;
                 break;
             }
@@ -133,7 +125,7 @@ function renderHome() {
             <div class="extra-links">
                 <a href="https://t.me/yaltahiking" target="_blank" class="btn-support" id="channelBtn">📰 открыть канал клуба</a>
                 <a href="https://t.me/yaltahikingchat" target="_blank" class="btn-support" id="chatBtn">💬 открыть чат</a>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="giftBtn">🫂 подарить карту другу</a>
+                <a href="#" class="btn-support" id="giftBtn">🫂 подарить карту другу</a>
             </div>
         `;
 
@@ -141,7 +133,11 @@ function renderHome() {
         document.getElementById('supportBtn')?.addEventListener('click', () => logEvent('support_click'));
         document.getElementById('channelBtn')?.addEventListener('click', () => logEvent('channel_click'));
         document.getElementById('chatBtn')?.addEventListener('click', () => logEvent('chat_click'));
-        document.getElementById('giftBtn')?.addEventListener('click', () => logEvent('gift_click'));
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            logEvent('gift_click');
+            renderGiftPage();
+        });
     } else {
         mainContent.innerHTML = `
             <div class="btn-group">
@@ -152,6 +148,34 @@ function renderHome() {
 
         document.getElementById('buyCardBtn')?.addEventListener('click', buyCard);
     }
+}
+
+// ---------- Страница подарка ----------
+function renderGiftPage() {
+    subtitleEl.textContent = `🎁 подарить карту`;
+
+    mainContent.innerHTML = `
+        <div class="card-container" style="padding: 20px;">
+            <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">
+                Чтобы подарить карту интеллигента другу, пришли нам в поддержку:
+            </p>
+            <ol style="color: #ffffff; margin-left: 20px; margin-bottom: 20px; font-size: 15px;">
+                <li style="margin-bottom: 8px;">имя</li>
+                <li style="margin-bottom: 8px;">фамилию</li>
+                <li style="margin-bottom: 8px;">@username</li>
+                <li style="margin-bottom: 8px;">чек о покупке</li>
+                <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
+            </ol>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">написать в поддержку</a>
+                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">на главную</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('backToHomeBtn')?.addEventListener('click', () => {
+        renderHome();
+    });
 }
 
 function buyCard() {
