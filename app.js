@@ -1,199 +1,185 @@
-:root {
-    --bg-color: #ffffff;
-    --text-color: #222222;
-    --button-color: #40a7e3;
-    --button-text: #ffffff;
-    --secondary-bg: #f5f5f5;
+// ---------- Telegram WebApp ----------
+const tg = window.Telegram.WebApp;
+tg.ready();
+
+// ---------- Тактильный отклик при открытии ----------
+if (tg.HapticFeedback) {
+    tg.HapticFeedback.impactOccurred('medium'); // лёгкая вибрация
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+// ---------- Параллакс эффект на фоне ----------
+function initParallax() {
+    const bg = document.body::before; // псевдоэлемент нельзя напрямую получить, но можно менять стили body
+    // Будем менять трансформацию самого body::before через CSS переменную или через класс
+    // Проще: добавим элемент <div class="parallax-bg">, но у нас фон через ::before.
+    // Можно динамически менять transform для body::before через inline стили на body? Нельзя.
+    // Создадим отдельный элемент для фона, если хотим управлять им.
+    // Но чтобы не менять структуру, можно задать переменную и обновлять её.
+    // Однако проще использовать JavaScript для изменения стилей псевдоэлемента? Нет.
+    // Поэтому сделаем так: добавим отдельный div для фона, а старый уберём.
+    // Но это изменение HTML. Чтобы не трогать HTML, можно использовать другой подход:
+    // Будем менять позицию фона через свойство background-position.
+    // Это будет работать плавно.
 }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--text-color);
-    line-height: 1.5;
-    position: relative;
-    min-height: 100vh;
+// Альтернатива: будем менять background-position при движении
+let lastX = 0, lastY = 0;
+let ticking = false;
+
+function handleOrientation(event) {
+    // gamma: наклон влево-вправо, beta: вперёд-назад
+    const gamma = event.gamma || 0; // диапазон -90..90
+    const beta = event.beta || 0;   // -180..180
+
+    // Ограничим влияние, чтобы смещение было небольшим
+    const shiftX = gamma * 0.3;  // макс около 27px при 90 градусах
+    const shiftY = beta * 0.15;
+
+    // Применяем смещение к фону body::before через изменение background-position
+    document.body.style.backgroundPosition = `${50 + shiftX}% ${50 + shiftY}%`;
 }
 
-/* Фоновое изображение – подготовлено для параллакса */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('https://i.postimg.cc/pL4LG0KD/photo-2026-02-19-15-22-42-2.jpg');
-    background-size: cover;
-    background-position: center;
-    will-change: transform; /* оптимизация для анимации */
-    z-index: -1;
+if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', (event) => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                handleOrientation(event);
+                ticking = false;
+            });
+            ticking = true;
+        }
+    });
 }
 
-.app {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 16px;
-    position: relative;
-    z-index: 1;
+// ---------- КОНФИГУРАЦИЯ ----------
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
+const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec';
+
+const user = tg.initDataUnsafe?.user;
+const userId = user?.id;
+const firstName = user?.first_name || 'друг';
+
+let userCard = {
+    status: 'loading',
+    hikesCompleted: 0,
+    cardImageUrl: ''
+};
+
+const mainContent = document.getElementById('mainContent');
+const subtitleEl = document.getElementById('subtitle');
+
+// ---------- Логирование событий ----------
+function logEvent(action) {
+    if (!userId) return;
+    if (!GUEST_API_URL.startsWith('https://')) return;
+
+    const params = new URLSearchParams({
+        user_id: userId,
+        username: user?.username || '',
+        first_name: user?.first_name || '',
+        last_name: user?.last_name || '',
+        action: action
+    });
+
+    const img = new Image();
+    img.src = `${GUEST_API_URL}?${params}`;
 }
 
-.header {
-    text-align: center;
-    margin-bottom: 24px;
+// ---------- Загрузка данных из CSV ----------
+async function loadUserData() {
+    if (!userId) {
+        userCard.status = 'inactive';
+        renderHome();
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CSV_URL}&t=${Date.now()}`);
+        const csvText = await response.text();
+        const rows = csvText.trim().split('\n').map(row => row.split(',').map(cell => cell.trim()));
+
+        if (rows.length < 2) throw new Error('Нет данных');
+
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        let found = false;
+        for (const row of dataRows) {
+            if (String(row[0]).trim() === String(userId)) {
+                const userData = {};
+                headers.forEach((key, idx) => { userData[key] = row[idx]?.trim(); });
+
+                userCard = {
+                    status: userData.card_status === 'active' ? 'active' : 'inactive',
+                    hikesCompleted: parseInt(userData.hikes_count) || 0,
+                    cardImageUrl: userData.card_image_url || ''
+                };
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) userCard.status = 'inactive';
+    } catch (error) {
+        console.error('Ошибка загрузки CSV:', error);
+        userCard.status = 'inactive';
+    }
+
+    logEvent('visit');
+    renderHome();
 }
 
-.subtitle {
-    font-size: 20px;
-    font-weight: 700;
-    color: #ffffff;
-    margin-top: 4px;
+// ---------- Рендер главного экрана ----------
+function renderHome() {
+    if (userCard.status === 'active') {
+        subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
+    } else {
+        subtitleEl.textContent = `👋🏻 добро пожаловать в клуб хайкинг интеллигенции, ${firstName}`;
+    }
+
+    if (userCard.status === 'loading') {
+        mainContent.innerHTML = '<div class="loader"></div>';
+        return;
+    }
+
+    if (userCard.status === 'active' && userCard.cardImageUrl) {
+        mainContent.innerHTML = `
+            <div class="card-container">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image">
+                <div class="hike-counter">
+                    <span>⛰️ пройдено хайков</span>
+                    <span class="counter-number">${userCard.hikesCompleted}</span>
+                </div>
+                <a href="https://telegra.ph/karta-intelligenta-11-21-3" target="_blank" class="btn btn-outline">мои привилегии</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="supportBtn">написать в поддержку</a>
+            </div>
+        `;
+
+        // Логирование клика по поддержке
+        document.getElementById('supportBtn')?.addEventListener('click', () => {
+            logEvent('support_click');
+        });
+    } else {
+        mainContent.innerHTML = `
+            <div class="btn-group">
+                <button id="buyCardBtn" class="btn">💳 купить карту</button>
+                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-outline">📖 подробнее о карте</a>
+            </div>
+        `;
+
+        document.getElementById('buyCardBtn')?.addEventListener('click', buyCard);
+    }
 }
 
-.content {
-    flex: 1;
+// ---------- Покупка карты ----------
+function buyCard() {
+    if (!userId) return;
+    logEvent('buy_card_click');
+    const robokassaUrl = 'https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ';
+    tg.openLink(robokassaUrl);
 }
 
-.loader {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px 0;
-}
-
-.loader::after {
-    content: "";
-    width: 40px;
-    height: 40px;
-    border: 5px solid rgba(255,255,255,0.3);
-    border-top-color: var(--button-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Карточка с картой */
-.card-container {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 15px 0;
-    margin-bottom: 20px;
-}
-
-/* Карта – больше не кликабельна */
-.card-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    margin-bottom: 8px;
-    border: none;
-    outline: none;
-    /* cursor: pointer; удалён */
-}
-
-.hike-counter {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 20px;
-    font-size: 16px;
-}
-
-.hike-counter span {
-    font-weight: bold;
-    color: #ffffff;
-}
-
-.counter-number {
-    font-size: 28px;
-    font-weight: 900;
-    font-style: italic;
-    color: var(--button-color);
-}
-
-/* Кнопки */
-.btn {
-    display: block;
-    width: calc(100% - 40px);
-    margin: 0 20px 12px 20px;
-    padding: 14px;
-    background-color: var(--button-color);
-    color: var(--button-text);
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    text-align: center;
-    text-decoration: none;
-    box-sizing: border-box;
-}
-
-.btn:hover {
-    opacity: 0.9;
-}
-
-.btn-outline {
-    background-color: transparent;
-    color: var(--button-color);
-    border: 2px solid var(--button-color);
-    width: calc(100% - 40px);
-    margin: 0 20px 12px 20px;
-    box-sizing: border-box;
-    border-radius: 12px;
-}
-
-/* Кнопка "мои привилегии" – жёлтая, без обводки */
-.card-container .btn-outline {
-    background-color: #D9FD19;
-    color: #000000;
-    border: none;
-    font-weight: 600;
-    border-radius: 12px;
-}
-
-.card-container .btn-outline:hover {
-    background-color: #c5e016;
-}
-
-/* Кнопка "написать в поддержку" – белая обводка */
-.btn-support {
-    display: block;
-    width: calc(100% - 40px);
-    margin: 0 20px 12px 20px;
-    padding: 14px;
-    background-color: transparent;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s, background-color 0.2s;
-    text-align: center;
-    text-decoration: none;
-    box-sizing: border-box;
-}
-
-.btn-support:hover {
-    opacity: 0.9;
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.btn-group {
-    padding: 20px 0;
-}
+// ---------- Инициализация ----------
+window.addEventListener('load', async () => {
+    await loadUserData();
+});
