@@ -148,9 +148,9 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий (каждый партнёр в отдельном блоке) ----------
+// ---------- Рендер страницы привилегий (с новым заголовком и размером названия) ----------
 function renderPrivilegesPage() {
-    subtitleEl.textContent = '✨ мои привилегии';
+    subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
 
     let partnersHtml = '';
     partners.forEach(p => {
@@ -160,7 +160,7 @@ function renderPrivilegesPage() {
         
         partnersHtml += `
             <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
-                <strong style="display: block; font-size: 18px; margin-bottom: 8px; color: #ffffff; font-weight: 700;">${p.name}</strong>
+                <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 14px;">${p.name}</strong>
                 <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
                 <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
             </div>
