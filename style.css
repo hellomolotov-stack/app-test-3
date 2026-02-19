@@ -1,0 +1,185 @@
+:root {
+    --bg-color: #ffffff;
+    --text-color: #222222;
+    --button-color: #40a7e3;
+    --button-text: #ffffff;
+    --secondary-bg: #f5f5f5;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--text-color);
+    line-height: 1.5;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* Фоновое изображение – обычное, без затемнения, размытие 7px */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://i.postimg.cc/tJH6vgtM/myvmymy.png');
+    background-size: cover;
+    background-position: center;
+    filter: blur(7px); /* размытие наполовину */
+    z-index: -1;
+}
+
+.app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+/* Заголовок "хайкинг интеллигенция" – маленький белый жирный */
+.header h1 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+/* Подзаголовок – крупный, яркий, с новым шрифтом */
+.subtitle {
+    font-size: 24px;
+    font-weight: 900;
+    color: #D9FD19;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+    font-family: 'Apple Garamond CYR', 'Times New Roman', Garamond, serif; /* добавлен шрифт */
+}
+
+.content {
+    flex: 1;
+}
+
+.loader {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 0;
+}
+
+.loader::after {
+    content: "";
+    width: 40px;
+    height: 40px;
+    border: 5px solid rgba(255,255,255,0.3);
+    border-top-color: var(--button-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Карточка с картой – полупрозрачный синий с размытием */
+.card-container {
+    background-color: rgba(73, 138, 176, 0.45); /* #498AB0 с прозрачностью 45% */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 16px;
+    padding: 15px 0;
+    margin-bottom: 20px;
+}
+
+.card-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    margin-bottom: 16px;
+    border: none;
+    outline: none;
+    cursor: pointer;
+}
+
+.hike-counter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    font-size: 16px;
+}
+
+.hike-counter span {
+    font-weight: bold;
+    color: #ffffff;
+}
+
+.counter-number {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--button-color);
+}
+
+/* Кнопки (общие стили) */
+.btn {
+    display: block;
+    width: calc(100% - 40px);
+    margin: 0 20px 12px 20px;
+    padding: 14px;
+    background-color: var(--button-color);
+    color: var(--button-text);
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+.btn-outline {
+    background-color: transparent;
+    color: var(--button-color);
+    border: 2px solid var(--button-color);
+    width: calc(100% - 40px);
+    margin: 0 20px 12px 20px;
+    box-sizing: border-box;
+}
+
+/* Специальный стиль для кнопки "мои привилегии" (только внутри карточки) */
+.card-container .btn-outline {
+    background-color: #D9FD19;
+    color: #000000;
+    border: none;
+    font-weight: 600;
+}
+
+.card-container .btn-outline:hover {
+    background-color: #c5e016;
+}
+
+.btn-group {
+    padding: 20px 0;
+}
