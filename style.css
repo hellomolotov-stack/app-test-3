@@ -20,7 +20,7 @@ body {
     min-height: 100vh;
 }
 
-/* Фоновое изображение – новое */
+/* Фоновое изображение */
 body::before {
     content: '';
     position: fixed;
@@ -115,13 +115,15 @@ body::before {
     color: #ffffff;
 }
 
+/* Жирная наклонная цифра */
 .counter-number {
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 900; /* максимально жирный */
+    font-style: italic; /* наклонный */
     color: var(--button-color);
 }
 
-/* Кнопки */
+/* Кнопки – скругление 12px (как было) */
 .btn {
     display: block;
     width: calc(100% - 40px);
@@ -130,7 +132,7 @@ body::before {
     background-color: var(--button-color);
     color: var(--button-text);
     border: none;
-    border-radius: 24px;
+    border-radius: 12px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
@@ -151,21 +153,23 @@ body::before {
     width: calc(100% - 40px);
     margin: 0 20px 12px 20px;
     box-sizing: border-box;
-    border-radius: 24px;
+    border-radius: 12px;
 }
 
+/* Специальный стиль для кнопки "мои привилегии" (жёлтая) */
 .card-container .btn-outline {
     background-color: #D9FD19;
     color: #000000;
     border: none;
     font-weight: 600;
-    border-radius: 24px;
+    border-radius: 12px;
 }
 
 .card-container .btn-outline:hover {
     background-color: #c5e016;
 }
 
+/* Кнопка "написать в поддержку" – белая обводка */
 .btn-support {
     display: block;
     width: calc(100% - 40px);
@@ -174,7 +178,7 @@ body::before {
     background-color: transparent;
     color: #ffffff;
     border: 2px solid #ffffff;
-    border-radius: 24px;
+    border-radius: 12px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
