@@ -81,6 +81,7 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
+/* Основной блок с картой */
 .card-container {
     background-color: rgba(73, 138, 176, 0.1);
     backdrop-filter: blur(12px);
@@ -88,6 +89,17 @@ body::before {
     border-radius: 28px;
     padding: 15px 0;
     margin-bottom: 20px;
+}
+
+/* Дополнительный блок для ссылок (такой же фон, без верхнего отступа) */
+.extra-links {
+    background-color: rgba(73, 138, 176, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    margin-top: -10px; /* чтобы визуально прилегал к основному блоку, если нужно */
 }
 
 .card-image {
@@ -119,6 +131,7 @@ body::before {
     color: var(--button-color);
 }
 
+/* Общие стили кнопок */
 .btn {
     display: block;
     width: calc(100% - 40px);
@@ -151,6 +164,7 @@ body::before {
     border-radius: 12px;
 }
 
+/* Специальный стиль для жёлтой кнопки "мои привилегии" */
 .card-container .btn-outline {
     background-color: #D9FD19;
     color: #000000;
@@ -163,6 +177,7 @@ body::before {
     background-color: #c5e016;
 }
 
+/* Кнопки с белой обводкой (поддержка и ссылки) */
 .btn-support {
     display: block;
     width: calc(100% - 40px);
