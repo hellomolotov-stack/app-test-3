@@ -86,25 +86,16 @@ body::before {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 28px;
-    padding: 20px;
+    padding: 20px 0; /* вертикальные отступы, горизонтальные 0 */
     margin-bottom: 20px;
 }
 
-.extra-links {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 15px 0;
-    margin-bottom: 20px;
-    margin-top: -10px;
-}
-
+/* Карта теперь с отступами по бокам, как у кнопок */
 .card-image {
-    width: 100%;
+    width: calc(100% - 40px); /* ширина с учётом margin */
     height: auto;
     display: block;
-    margin-bottom: 8px;
+    margin: 0 20px 8px 20px; /* отступы слева/справа как у кнопок */
     border: none;
     outline: none;
 }
@@ -127,6 +118,16 @@ body::before {
     font-weight: 900;
     font-style: italic;
     color: var(--button-color);
+}
+
+.extra-links {
+    background-color: rgba(73, 138, 176, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px;
+    padding: 15px 0;
+    margin-bottom: 20px;
+    margin-top: -10px;
 }
 
 .btn {
@@ -167,6 +168,8 @@ body::before {
     border: none;
     font-weight: 600;
     border-radius: 12px;
+    width: calc(100% - 40px);
+    margin: 0 20px 12px 20px;
 }
 
 .card-container .btn-outline:hover {
@@ -200,7 +203,6 @@ body::before {
     padding: 20px 0;
 }
 
-/* Стили для блоков партнёров на странице привилегий */
 .partner-item {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
