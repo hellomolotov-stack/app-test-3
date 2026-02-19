@@ -2,65 +2,17 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
-// ---------- Тактильный отклик при открытии ----------
-if (tg.HapticFeedback) {
-    tg.HapticFeedback.impactOccurred('medium'); // лёгкая вибрация
-}
-
-// ---------- Параллакс эффект на фоне ----------
-function initParallax() {
-    const bg = document.body::before; // псевдоэлемент нельзя напрямую получить, но можно менять стили body
-    // Будем менять трансформацию самого body::before через CSS переменную или через класс
-    // Проще: добавим элемент <div class="parallax-bg">, но у нас фон через ::before.
-    // Можно динамически менять transform для body::before через inline стили на body? Нельзя.
-    // Создадим отдельный элемент для фона, если хотим управлять им.
-    // Но чтобы не менять структуру, можно задать переменную и обновлять её.
-    // Однако проще использовать JavaScript для изменения стилей псевдоэлемента? Нет.
-    // Поэтому сделаем так: добавим отдельный div для фона, а старый уберём.
-    // Но это изменение HTML. Чтобы не трогать HTML, можно использовать другой подход:
-    // Будем менять позицию фона через свойство background-position.
-    // Это будет работать плавно.
-}
-
-// Альтернатива: будем менять background-position при движении
-let lastX = 0, lastY = 0;
-let ticking = false;
-
-function handleOrientation(event) {
-    // gamma: наклон влево-вправо, beta: вперёд-назад
-    const gamma = event.gamma || 0; // диапазон -90..90
-    const beta = event.beta || 0;   // -180..180
-
-    // Ограничим влияние, чтобы смещение было небольшим
-    const shiftX = gamma * 0.3;  // макс около 27px при 90 градусах
-    const shiftY = beta * 0.15;
-
-    // Применяем смещение к фону body::before через изменение background-position
-    document.body.style.backgroundPosition = `${50 + shiftX}% ${50 + shiftY}%`;
-}
-
-if (window.DeviceOrientationEvent) {
-    window.addEventListener('deviceorientation', (event) => {
-        if (!ticking) {
-            window.requestAnimationFrame(() => {
-                handleOrientation(event);
-                ticking = false;
-            });
-            ticking = true;
-        }
-    });
-}
-
 // ---------- КОНФИГУРАЦИЯ ----------
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec';
 
+// ---------- Данные пользователя ----------
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
 let userCard = {
-    status: 'loading',
+    status: 'loading', // 'loading', 'active', 'inactive', 'error'
     hikesCompleted: 0,
     cardImageUrl: ''
 };
@@ -68,7 +20,7 @@ let userCard = {
 const mainContent = document.getElementById('mainContent');
 const subtitleEl = document.getElementById('subtitle');
 
-// ---------- Логирование событий ----------
+// ---------- Логирование событий в Google Sheets ----------
 function logEvent(action) {
     if (!userId) return;
     if (!GUEST_API_URL.startsWith('https://')) return;
@@ -109,6 +61,7 @@ async function loadUserData() {
                 const userData = {};
                 headers.forEach((key, idx) => { userData[key] = row[idx]?.trim(); });
 
+                // Извлекаем только нужные поля
                 userCard = {
                     status: userData.card_status === 'active' ? 'active' : 'inactive',
                     hikesCompleted: parseInt(userData.hikes_count) || 0,
