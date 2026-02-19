@@ -31,7 +31,7 @@ body::before {
     background-image: url('https://i.postimg.cc/tJH6vgtM/myvmymy.png');
     background-size: cover;
     background-position: center;
-    filter: blur(7px); /* размытие наполовину */
+    filter: blur(7px);
     z-index: -1;
 }
 
@@ -61,7 +61,7 @@ body::before {
     letter-spacing: normal;
 }
 
-/* Подзаголовок – крупный, яркий, с новым шрифтом */
+/* Подзаголовок – крупный, яркий, системный шрифт */
 .subtitle {
     font-size: 24px;
     font-weight: 900;
@@ -69,7 +69,7 @@ body::before {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-top: 4px;
-    font-family: 'Apple Garamond CYR', 'Times New Roman', Garamond, serif; /* добавлен шрифт */
+    /* Garamond убран – вернулся системный шрифт */
 }
 
 .content {
@@ -97,11 +97,11 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
-/* Карточка с картой – полупрозрачный синий с размытием */
+/* Карточка с картой – полупрозрачный синий с сильным размытием */
 .card-container {
-    background-color: rgba(73, 138, 176, 0.45); /* #498AB0 с прозрачностью 45% */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background-color: rgba(73, 138, 176, 0.25); /* прозрачность увеличена до 25% */
+    backdrop-filter: blur(12px); /* размытие усилено до 12px */
+    -webkit-backdrop-filter: blur(12px);
     border-radius: 16px;
     padding: 15px 0;
     margin-bottom: 20px;
