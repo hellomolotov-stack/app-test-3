@@ -94,9 +94,9 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
-/* Карточка с картой – прозрачность 80% */
+/* Карточка с картой – прозрачность 10% */
 .card-container {
-    background-color: rgba(73, 138, 176, 0.8); /* 80% непрозрачности */
+    background-color: rgba(73, 138, 176, 0.1); /* 10% непрозрачности */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 16px;
@@ -108,7 +108,7 @@ body::before {
     width: 100%;
     height: auto;
     display: block;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     border: none;
     outline: none;
     cursor: pointer;
