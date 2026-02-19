@@ -1,6 +1,6 @@
 // ---------- Telegram WebApp ----------
 const tg = window.Telegram.WebApp;
-tg.expand();
+// tg.expand(); – удалено, приложение не будет растягиваться на весь экран
 tg.ready();
 
 // ---------- КОНФИГУРАЦИЯ ----------
