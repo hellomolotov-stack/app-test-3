@@ -90,14 +90,14 @@ body::before {
     margin-bottom: 20px;
 }
 
-/* Карта с правильными отступами */
+/* ПРИНУДИТЕЛЬНЫЕ СТИЛИ ДЛЯ КАРТЫ */
 .card-image {
-    width: calc(100% - 40px);
-    height: auto;
-    display: block;
-    margin: 0 20px 8px 20px;
-    border: none;
-    outline: none;
+    width: calc(100% - 40px) !important;
+    max-width: calc(100% - 40px) !important;
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+    display: block !important;
+    box-sizing: border-box !important;
 }
 
 .hike-counter {
