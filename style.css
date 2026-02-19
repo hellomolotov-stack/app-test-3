@@ -85,8 +85,8 @@ body::before {
     background-color: rgba(73, 138, 176, 0.1);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 10px 0; /* уменьшено с 15px до 10px */
+    border-radius: 20px;
+    padding: 15px 0; /* уменьшено с 15px до 10px */
     margin-bottom: 20px;
 }
 
@@ -104,7 +104,7 @@ body::before {
     width: 100%;
     height: auto;
     display: block;
-    margin-bottom: 3px; /* уменьшено с 8px до 3px */
+    margin-bottom: 8px; /* уменьшено с 8px до 3px */
     border: none;
     outline: none;
 }
