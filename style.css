@@ -90,12 +90,12 @@ body::before {
     margin-bottom: 20px;
 }
 
-/* Карта с отступами 10px слева и справа */
+/* Карта с отступами 20px слева и справа (как у кнопок) */
 .card-image {
-    width: calc(100% - 20px); /* 10px слева + 10px справа */
+    width: calc(100% - 40px); /* 20px слева + 20px справа */
     height: auto;
     display: block;
-    margin: 0 10px 8px 10px; /* отступы 10px по бокам */
+    margin: 0 20px 8px 20px; /* отступы 20px по бокам */
     border: none;
     outline: none;
 }
