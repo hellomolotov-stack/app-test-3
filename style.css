@@ -20,7 +20,6 @@ body {
     min-height: 100vh;
 }
 
-/* Фоновое изображение */
 body::before {
     content: '';
     position: fixed;
@@ -82,7 +81,6 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
-/* Карточка с картой */
 .card-container {
     background-color: rgba(73, 138, 176, 0.1);
     backdrop-filter: blur(12px);
@@ -99,7 +97,6 @@ body::before {
     margin-bottom: 8px;
     border: none;
     outline: none;
-    cursor: pointer;
 }
 
 .hike-counter {
@@ -115,15 +112,13 @@ body::before {
     color: #ffffff;
 }
 
-/* Жирная наклонная цифра */
 .counter-number {
     font-size: 28px;
-    font-weight: 900; /* максимально жирный */
-    font-style: italic; /* наклонный */
+    font-weight: 900;
+    font-style: italic;
     color: var(--button-color);
 }
 
-/* Кнопки – скругление 12px (как было) */
 .btn {
     display: block;
     width: calc(100% - 40px);
@@ -156,7 +151,6 @@ body::before {
     border-radius: 12px;
 }
 
-/* Специальный стиль для кнопки "мои привилегии" (жёлтая) */
 .card-container .btn-outline {
     background-color: #D9FD19;
     color: #000000;
@@ -169,7 +163,6 @@ body::before {
     background-color: #c5e016;
 }
 
-/* Кнопка "написать в поддержку" – белая обводка */
 .btn-support {
     display: block;
     width: calc(100% - 40px);
