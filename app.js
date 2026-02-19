@@ -98,7 +98,7 @@ async function loadUserData() {
     renderHome();
 }
 
-// ---------- Данные партнёров для страницы привилегий ----------
+// ---------- Данные партнёров ----------
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -148,7 +148,7 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий ----------
+// ---------- Рендер страницы привилегий (каждый партнёр в отдельном блоке) ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = '✨ мои привилегии';
 
@@ -159,10 +159,10 @@ function renderPrivilegesPage() {
             : p.location;
         
         partnersHtml += `
-            <div class="partner-item">
-                <strong style="font-weight: 700;">${p.name}</strong>
-                <p class="privilege">${p.privilege}</p>
-                <p class="location">📍 ${locationHtml}</p>
+            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
+                <strong style="display: block; font-size: 18px; margin-bottom: 8px; color: #ffffff; font-weight: 700;">${p.name}</strong>
+                <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
+                <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
             </div>
         `;
     });
@@ -261,6 +261,7 @@ function renderGiftPage() {
     document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
 }
 
+// ---------- Покупка карты ----------
 function buyCard() {
     if (!userId) return;
     logEvent('buy_card_click');
