@@ -52,7 +52,6 @@ function updateUserNameIfNeeded(userData) {
     img.src = `${GUEST_API_URL}?${params}`;
 }
 
-// ---------- Загрузка данных из CSV ----------
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -98,88 +97,6 @@ async function loadUserData() {
     renderHome();
 }
 
-// ---------- Данные партнёров для страницы привилегий ----------
-const partners = [
-    {
-        name: 'экипировочный центр Геккон',
-        privilege: '-10% по карте интеллигента',
-        location: 'Ялта, ул. Московская 8А'
-    },
-    {
-        name: 'технологичная хайкинг-одежда Nothomme',
-        privilege: '-7% по промокоду на сайте',
-        location: 'телеграм канал: t.me/nothomme_russia',
-        link: 'https://t.me/nothomme_russia'
-    },
-    {
-        name: 'кофейня Возможно всё',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Свердлова, 13/2'
-    },
-    {
-        name: 'магазин косметики На Утро: На Вечер',
-        privilege: '+1000 бонусов по карте интеллигента',
-        location: 'г. Ялта, ул. Морская 3А'
-    },
-    {
-        name: 'конный клуб Красный конь',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Алупка, Севастопольское шоссе'
-    },
-    {
-        name: 'маникюрный салон Marvel studio',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Руданского 4'
-    },
-    {
-        name: 'тематическое кафе Vinyl',
-        privilege: '-10% по карте интеллигента',
-        location: 'г. Ялта, пер. Черноморский 1А'
-    },
-    {
-        name: 'барбершоп Скала',
-        privilege: '-5% на второе посещение и далее',
-        location: 'г. Ялта, ул. Свердлова 3'
-    },
-    {
-        name: 'кофейня Deep Black',
-        privilege: '-5% по карте интеллигента',
-        location: 'п. г. т. Гаспра, Алупкинское ш., 5А'
-    }
-];
-
-// ---------- Рендер страницы привилегий ----------
-function renderPrivilegesPage() {
-    subtitleEl.textContent = '✨ мои привилегии';
-
-    let partnersHtml = '';
-    partners.forEach(p => {
-        let locationHtml = p.link 
-            ? `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`
-            : p.location;
-        
-        partnersHtml += `
-            <div class="partner-item">
-                <strong>${p.name}</strong>
-                <p class="privilege">${p.privilege}</p>
-                <p class="location">📍 ${locationHtml}</p>
-            </div>
-        `;
-    });
-
-    mainContent.innerHTML = `
-        <div class="card-container" style="padding: 20px;">
-            ${partnersHtml}
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">на главную</button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
-}
-
-// ---------- Рендер главного экрана ----------
 function renderHome() {
     if (userCard.status === 'active') {
         subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
@@ -195,13 +112,12 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container">
-                <!-- КАРТА С ПРИНУДИТЕЛЬНЫМИ INLINE-СТИЛЯМИ -->
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: calc(100% - 40px); margin: 0 20px 8px 20px; display: block;">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
                 </div>
-                <a href="#" class="btn btn-outline" id="privilegeBtn">мои привилегии</a>
+                <a href="https://telegra.ph/karta-intelligenta-11-21-3" target="_blank" class="btn btn-outline" id="privilegeBtn">мои привилегии</a>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="supportBtn">написать в поддержку</a>
             </div>
             <div class="extra-links">
@@ -211,11 +127,7 @@ function renderHome() {
             </div>
         `;
 
-        document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            logEvent('privilege_click');
-            renderPrivilegesPage();
-        });
+        document.getElementById('privilegeBtn')?.addEventListener('click', () => logEvent('privilege_click'));
         document.getElementById('supportBtn')?.addEventListener('click', () => logEvent('support_click'));
         document.getElementById('channelBtn')?.addEventListener('click', () => logEvent('channel_click'));
         document.getElementById('chatBtn')?.addEventListener('click', () => logEvent('chat_click'));
@@ -236,7 +148,7 @@ function renderHome() {
     }
 }
 
-// ---------- Страница подарка ----------
+// ---------- Страница подарка (рабочая) ----------
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
 
@@ -262,7 +174,6 @@ function renderGiftPage() {
     document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
 }
 
-// ---------- Покупка карты ----------
 function buyCard() {
     if (!userId) return;
     logEvent('buy_card_click');
