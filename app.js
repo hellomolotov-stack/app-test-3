@@ -1,201 +1,141 @@
-:root {
-    --bg-color: #ffffff;
-    --text-color: #222222;
-    --button-color: #40a7e3;
-    --button-text: #ffffff;
-    --secondary-bg: #f5f5f5;
+// ---------- Telegram WebApp ----------
+const tg = window.Telegram.WebApp;
+tg.ready();
+
+// ---------- КОНФИГУРАЦИЯ ----------
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
+const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec';
+
+const user = tg.initDataUnsafe?.user;
+const userId = user?.id;
+const firstName = user?.first_name || 'друг';
+
+let userCard = {
+    status: 'loading',
+    hikesCompleted: 0,
+    cardImageUrl: ''
+};
+
+const mainContent = document.getElementById('mainContent');
+const subtitleEl = document.getElementById('subtitle');
+
+function logEvent(action) {
+    if (!userId) return;
+    if (!GUEST_API_URL.startsWith('https://')) return;
+
+    const params = new URLSearchParams({
+        user_id: userId,
+        username: user?.username || '',
+        first_name: user?.first_name || '',
+        last_name: user?.last_name || '',
+        action: action
+    });
+
+    const img = new Image();
+    img.src = `${GUEST_API_URL}?${params}`;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+async function loadUserData() {
+    if (!userId) {
+        userCard.status = 'inactive';
+        renderHome();
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CSV_URL}&t=${Date.now()}`);
+        const csvText = await response.text();
+        const rows = csvText.trim().split('\n').map(row => row.split(',').map(cell => cell.trim()));
+
+        if (rows.length < 2) throw new Error('Нет данных');
+
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        let found = false;
+        for (const row of dataRows) {
+            if (String(row[0]).trim() === String(userId)) {
+                const userData = {};
+                headers.forEach((key, idx) => { userData[key] = row[idx]?.trim(); });
+
+                userCard = {
+                    status: userData.card_status === 'active' ? 'active' : 'inactive',
+                    hikesCompleted: parseInt(userData.hikes_count) || 0,
+                    cardImageUrl: userData.card_image_url || ''
+                };
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) userCard.status = 'inactive';
+    } catch (error) {
+        console.error('Ошибка загрузки CSV:', error);
+        userCard.status = 'inactive';
+    }
+
+    logEvent('visit');
+    renderHome();
 }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--text-color);
-    line-height: 1.5;
-    position: relative;
-    min-height: 100vh;
+function renderHome() {
+    if (userCard.status === 'active') {
+        subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
+    } else {
+        subtitleEl.textContent = `👋🏻 добро пожаловать в клуб хайкинг интеллигенции, ${firstName}`;
+    }
+
+    if (userCard.status === 'loading') {
+        mainContent.innerHTML = '<div class="loader"></div>';
+        return;
+    }
+
+    if (userCard.status === 'active' && userCard.cardImageUrl) {
+        // Основной блок с картой
+        mainContent.innerHTML = `
+            <div class="card-container">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image">
+                <div class="hike-counter">
+                    <span>⛰️ пройдено хайков</span>
+                    <span class="counter-number">${userCard.hikesCompleted}</span>
+                </div>
+                <a href="https://telegra.ph/karta-intelligenta-11-21-3" target="_blank" class="btn btn-outline" id="privilegeBtn">мои привилегии</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="supportBtn">написать в поддержку</a>
+            </div>
+            <!-- Дополнительный блок с тремя кнопками -->
+            <div class="extra-links">
+                <a href="https://t.me/yaltahiking" target="_blank" class="btn-support" id="channelBtn">📰 открыть канал клуба</a>
+                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn-support" id="chatBtn">💬 открыть чат</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="giftBtn">🫂 подарить карту другу</a>
+            </div>
+        `;
+
+        // Логирование кликов по кнопкам
+        document.getElementById('privilegeBtn')?.addEventListener('click', () => logEvent('privilege_click'));
+        document.getElementById('supportBtn')?.addEventListener('click', () => logEvent('support_click'));
+        document.getElementById('channelBtn')?.addEventListener('click', () => logEvent('channel_click'));
+        document.getElementById('chatBtn')?.addEventListener('click', () => logEvent('chat_click'));
+        document.getElementById('giftBtn')?.addEventListener('click', () => logEvent('gift_click'));
+    } else {
+        // Пользователь без карты
+        mainContent.innerHTML = `
+            <div class="btn-group">
+                <button id="buyCardBtn" class="btn">💳 купить карту</button>
+                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-outline">📖 подробнее о карте</a>
+            </div>
+        `;
+
+        document.getElementById('buyCardBtn')?.addEventListener('click', buyCard);
+    }
 }
 
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('https://i.postimg.cc/pL4LG0KD/photo-2026-02-19-15-22-42-2.jpg');
-    background-size: cover;
-    background-position: center;
-    z-index: -1;
+function buyCard() {
+    if (!userId) return;
+    logEvent('buy_card_click');
+    const robokassaUrl = 'https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ';
+    tg.openLink(robokassaUrl);
 }
 
-.app {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 16px;
-    position: relative;
-    z-index: 1;
-}
-
-.header {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-.subtitle {
-    font-size: 20px;
-    font-weight: 700;
-    color: #ffffff;
-    margin-top: 4px;
-}
-
-.content {
-    flex: 1;
-}
-
-.loader {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px 0;
-}
-
-.loader::after {
-    content: "";
-    width: 40px;
-    height: 40px;
-    border: 5px solid rgba(255,255,255,0.3);
-    border-top-color: var(--button-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.card-container {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 10px 0; /* уменьшено с 15px до 10px */
-    margin-bottom: 20px;
-}
-
-.extra-links {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 15px 0;
-    margin-bottom: 20px;
-    margin-top: -10px;
-}
-
-.card-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    margin-bottom: 3px; /* уменьшено с 8px до 3px */
-    border: none;
-    outline: none;
-}
-
-.hike-counter {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 20px;
-    font-size: 16px;
-}
-
-.hike-counter span {
-    font-weight: bold;
-    color: #ffffff;
-}
-
-.counter-number {
-    font-size: 28px;
-    font-weight: 900;
-    font-style: italic;
-    color: var(--button-color);
-}
-
-.btn {
-    display: block;
-    width: calc(100% - 40px);
-    margin: 0 20px 12px 20px;
-    padding: 14px;
-    background-color: var(--button-color);
-    color: var(--button-text);
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    text-align: center;
-    text-decoration: none;
-    box-sizing: border-box;
-}
-
-.btn:hover {
-    opacity: 0.9;
-}
-
-.btn-outline {
-    background-color: transparent;
-    color: var(--button-color);
-    border: 2px solid var(--button-color);
-    width: calc(100% - 40px);
-    margin: 0 20px 12px 20px;
-    box-sizing: border-box;
-    border-radius: 12px;
-}
-
-.card-container .btn-outline {
-    background-color: #D9FD19;
-    color: #000000;
-    border: none;
-    font-weight: 600;
-    border-radius: 12px;
-}
-
-.card-container .btn-outline:hover {
-    background-color: #c5e016;
-}
-
-.btn-support {
-    display: block;
-    width: calc(100% - 40px);
-    margin: 0 20px 12px 20px;
-    padding: 14px;
-    background-color: transparent;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s, background-color 0.2s;
-    text-align: center;
-    text-decoration: none;
-    box-sizing: border-box;
-}
-
-.btn-support:hover {
-    opacity: 0.9;
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.btn-group {
-    padding: 20px 0;
-}
+window.addEventListener('load', async () => {
+    await loadUserData();
+});
