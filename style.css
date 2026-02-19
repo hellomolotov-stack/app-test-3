@@ -90,14 +90,13 @@ body::before {
     margin-bottom: 20px;
 }
 
-/* ПРИНУДИТЕЛЬНЫЕ СТИЛИ ДЛЯ КАРТЫ */
 .card-image {
-    width: calc(100% - 40px) !important;
-    max-width: calc(100% - 40px) !important;
-    margin-left: 20px !important;
-    margin-right: 20px !important;
-    display: block !important;
-    box-sizing: border-box !important;
+    width: calc(100% - 40px);
+    height: auto;
+    display: block;
+    margin: 0 20px 8px 20px;
+    border: none;
+    outline: none;
 }
 
 .hike-counter {
@@ -201,44 +200,4 @@ body::before {
 
 .btn-group {
     padding: 20px 0;
-}
-
-.partner-item {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
-    color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-}
-
-.partner-item strong {
-    display: block;
-    font-size: 18px;
-    margin-bottom: 8px;
-    color: #ffffff;
-    font-weight: 700;
-}
-
-.partner-item .privilege {
-    margin: 4px 0;
-    font-size: 14px;
-    opacity: 0.9;
-}
-
-.partner-item .location {
-    margin: 4px 0;
-    font-size: 14px;
-    opacity: 0.8;
-}
-
-.partner-item a {
-    color: #D9FD19;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.partner-item a:hover {
-    text-decoration: underline;
 }
