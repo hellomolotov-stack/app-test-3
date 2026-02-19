@@ -20,7 +20,7 @@ body {
     min-height: 100vh;
 }
 
-/* Фоновое изображение – обычное, без затемнения, размытие 7px */
+/* Фоновое изображение – размытое, без затемнения */
 body::before {
     content: '';
     position: fixed;
@@ -51,7 +51,6 @@ body::before {
     margin-bottom: 24px;
 }
 
-/* Заголовок "хайкинг интеллигенция" – маленький белый жирный */
 .header h1 {
     font-size: 16px;
     font-weight: 700;
@@ -61,7 +60,6 @@ body::before {
     letter-spacing: normal;
 }
 
-/* Подзаголовок – крупный, яркий, системный шрифт */
 .subtitle {
     font-size: 24px;
     font-weight: 900;
@@ -69,7 +67,6 @@ body::before {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-top: 4px;
-    /* Garamond убран – вернулся системный шрифт */
 }
 
 .content {
@@ -97,10 +94,10 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
-/* Карточка с картой – полупрозрачный синий с сильным размытием */
+/* Карточка с картой – прозрачность 80% */
 .card-container {
-    background-color: rgba(73, 138, 176, 0.25); /* прозрачность увеличена до 25% */
-    backdrop-filter: blur(12px); /* размытие усилено до 12px */
+    background-color: rgba(73, 138, 176, 0.8); /* 80% непрозрачности */
+    backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 16px;
     padding: 15px 0;
@@ -136,7 +133,7 @@ body::before {
     color: var(--button-color);
 }
 
-/* Кнопки (общие стили) */
+/* Общие стили кнопок */
 .btn {
     display: block;
     width: calc(100% - 40px);
@@ -168,7 +165,7 @@ body::before {
     box-sizing: border-box;
 }
 
-/* Специальный стиль для кнопки "мои привилегии" (только внутри карточки) */
+/* Специальный стиль для кнопки "мои привилегии" (жёлтая) */
 .card-container .btn-outline {
     background-color: #D9FD19;
     color: #000000;
@@ -178,6 +175,30 @@ body::before {
 
 .card-container .btn-outline:hover {
     background-color: #c5e016;
+}
+
+/* Новая кнопка "написать в поддержку" – белая обводка, прозрачный фон */
+.btn-support {
+    display: block;
+    width: calc(100% - 40px);
+    margin: 0 20px 12px 20px;
+    padding: 14px;
+    background-color: transparent;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s, background-color 0.2s;
+    text-align: center;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+.btn-support:hover {
+    opacity: 0.9;
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-group {
