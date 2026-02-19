@@ -3,7 +3,7 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 tg.ready();
 
-// ---------- КОНФИГУРАЦИЯ (ссылки уже вставлены) ----------
+// ---------- КОНФИГУРАЦИЯ ----------
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec';
 
@@ -18,7 +18,7 @@ let userCard = {
     cardImageUrl: ''
 };
 
-const mainContent = document.getElementById('mainContent');
+const centeredContent = document.getElementById('centeredContent');
 const subtitleEl = document.getElementById('subtitle');
 
 // ---------- Логирование событий ----------
@@ -91,13 +91,12 @@ function renderHome() {
     }
 
     if (userCard.status === 'loading') {
-        mainContent.innerHTML = '<div class="loader"></div>';
+        centeredContent.innerHTML = '<div class="loader"></div>';
         return;
     }
 
     if (userCard.status === 'active' && userCard.cardImageUrl) {
-        // ЕСТЬ КАРТА – показываем карту, счётчик, две кнопки
-        mainContent.innerHTML = `
+        centeredContent.innerHTML = `
             <div class="card-container">
                 <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage">
                 <div class="hike-counter">
@@ -117,8 +116,7 @@ function renderHome() {
             }
         });
     } else {
-        // НЕТ КАРТЫ – показываем две кнопки
-        mainContent.innerHTML = `
+        centeredContent.innerHTML = `
             <div class="btn-group">
                 <button id="buyCardBtn" class="btn">💳 купить карту</button>
                 <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-outline">📖 подробнее о карте</a>
