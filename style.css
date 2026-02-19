@@ -20,7 +20,7 @@ body {
     min-height: 100vh;
 }
 
-/* Фоновое изображение – новое, без размытия */
+/* Фоновое изображение */
 body::before {
     content: '';
     position: fixed;
@@ -50,22 +50,13 @@ body::before {
     margin-bottom: 24px;
 }
 
-.header h1 {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: #ffffff;
-    text-transform: none;
-    letter-spacing: normal;
-}
-
+/* Стили для подзаголовка (единый для всех случаев) */
 .subtitle {
-    font-size: 24px;
-    font-weight: 900;
-    color: #D9FD19;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
     margin-top: 4px;
+    /* убраны uppercase, яркий цвет */
 }
 
 .content {
@@ -93,7 +84,7 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
-/* Карточка с картой – прозрачность 10%, естественное положение */
+/* Карточка с картой – прозрачность 10% */
 .card-container {
     background-color: rgba(73, 138, 176, 0.1);
     backdrop-filter: blur(12px);
@@ -101,14 +92,13 @@ body::before {
     border-radius: 16px;
     padding: 15px 0;
     margin-bottom: 20px;
-    /* margin-top: auto; – удалён, блок больше не прижат к низу */
 }
 
 .card-image {
     width: 100%;
     height: auto;
     display: block;
-    margin-bottom: 16px;
+    margin-bottom: 8px; /* было 16px – уменьшено вдвое */
     border: none;
     outline: none;
     cursor: pointer;
@@ -203,5 +193,4 @@ body::before {
 
 .btn-group {
     padding: 20px 0;
-    /* margin-top: auto; – удалён */
 }
