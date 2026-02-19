@@ -1,12 +1,13 @@
 // ---------- Telegram WebApp ----------
 const tg = window.Telegram.WebApp;
-// tg.expand(); – удалено
+// tg.expand(); – не растягиваем на весь экран
 tg.ready();
 
 // ---------- КОНФИГУРАЦИЯ ----------
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec';
 
+// ---------- Данные пользователя ----------
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
@@ -20,6 +21,7 @@ let userCard = {
 const mainContent = document.getElementById('mainContent');
 const subtitleEl = document.getElementById('subtitle');
 
+// ---------- Логирование событий ----------
 function logEvent(action) {
     if (!userId) return;
     if (!GUEST_API_URL.startsWith('https://')) return;
@@ -36,6 +38,7 @@ function logEvent(action) {
     img.src = `${GUEST_API_URL}?${params}`;
 }
 
+// ---------- Загрузка данных из CSV (только нужные поля) ----------
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -59,6 +62,7 @@ async function loadUserData() {
                 const userData = {};
                 headers.forEach((key, idx) => { userData[key] = row[idx]?.trim(); });
 
+                // Извлекаем только нужные поля
                 userCard = {
                     status: userData.card_status === 'active' ? 'active' : 'inactive',
                     hikesCompleted: parseInt(userData.hikes_count) || 0,
@@ -79,6 +83,7 @@ async function loadUserData() {
     renderHome();
 }
 
+// ---------- Рендер главного экрана ----------
 function renderHome() {
     if (userCard.status === 'active') {
         subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
@@ -100,20 +105,24 @@ function renderHome() {
                     <span class="counter-number">${userCard.hikesCompleted}</span>
                 </div>
                 <a href="https://telegra.ph/karta-intelligenta-11-21-3" target="_blank" class="btn btn-outline">мои привилегии</a>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support">написать в поддержку</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="supportBtn">написать в поддержку</a>
             </div>
         `;
 
         // Клик по карте – скачивание
         document.getElementById('cardImage')?.addEventListener('click', (e) => {
             e.preventDefault();
-            // Пытаемся скачать файл через создание временной ссылки с атрибутом download
             const link = document.createElement('a');
             link.href = userCard.cardImageUrl;
-            link.download = 'karta-intelligenta.png'; // имя файла
+            link.download = 'karta-intelligenta.png';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+        });
+
+        // Логирование клика по поддержке
+        document.getElementById('supportBtn')?.addEventListener('click', () => {
+            logEvent('support_click');
         });
     } else {
         mainContent.innerHTML = `
@@ -127,6 +136,7 @@ function renderHome() {
     }
 }
 
+// ---------- Покупка карты ----------
 function buyCard() {
     if (!userId) return;
     logEvent('buy_card_click');
@@ -134,6 +144,7 @@ function buyCard() {
     tg.openLink(robokassaUrl);
 }
 
+// ---------- Инициализация ----------
 window.addEventListener('load', async () => {
     await loadUserData();
 });
