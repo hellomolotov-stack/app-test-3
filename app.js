@@ -195,7 +195,8 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image">
+                <!-- КАРТА С ПРИНУДИТЕЛЬНЫМИ INLINE-СТИЛЯМИ -->
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: calc(100% - 40px); margin: 0 20px 8px 20px; display: block;">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -235,7 +236,7 @@ function renderHome() {
     }
 }
 
-// ---------- Страница подарка (остаётся без изменений) ----------
+// ---------- Страница подарка ----------
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
 
