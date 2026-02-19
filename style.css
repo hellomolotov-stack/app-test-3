@@ -86,16 +86,16 @@ body::before {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 28px;
-    padding: 20px 0; /* вертикальные отступы, горизонтальные 0 */
+    padding: 20px 0;
     margin-bottom: 20px;
 }
 
-/* Карта теперь с отступами по бокам, как у кнопок */
+/* Карта теперь точно такой же ширины, как кнопки (с отступами 20px по бокам) */
 .card-image {
-    width: calc(100% - 40px); /* ширина с учётом margin */
+    width: calc(100% - 40px);
     height: auto;
     display: block;
-    margin: 0 20px 8px 20px; /* отступы слева/справа как у кнопок */
+    margin: 0 20px 8px 20px;
     border: none;
     outline: none;
 }
