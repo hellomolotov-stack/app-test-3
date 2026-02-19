@@ -11,7 +11,7 @@ const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
 let userCard = {
-    status: 'loading',
+    status: 'loading', // 'loading', 'active', 'inactive', 'error'
     hikesCompleted: 0,
     cardImageUrl: ''
 };
@@ -19,6 +19,7 @@ let userCard = {
 const mainContent = document.getElementById('mainContent');
 const subtitleEl = document.getElementById('subtitle');
 
+// ---------- Логирование событий в Google Sheets ----------
 function logEvent(action) {
     if (!userId) return;
     if (!GUEST_API_URL.startsWith('https://')) return;
@@ -35,6 +36,7 @@ function logEvent(action) {
     img.src = `${GUEST_API_URL}?${params}`;
 }
 
+// ---------- Загрузка данных из CSV (members) ----------
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -54,12 +56,14 @@ async function loadUserData() {
 
         let found = false;
         for (const row of dataRows) {
+            // user_id всегда в первой колонке
             if (String(row[0]).trim() === String(userId)) {
+                // Создаём объект с данными по заголовкам (на случай разного порядка столбцов)
                 const userData = {};
                 headers.forEach((key, idx) => { userData[key] = row[idx]?.trim(); });
 
                 userCard = {
-                    status: userData.card_status === 'active' ? 'active' : 'inactive',
+                    status: 'active', // если нашли пользователя – карта есть
                     hikesCompleted: parseInt(userData.hikes_count) || 0,
                     cardImageUrl: userData.card_image_url || ''
                 };
@@ -78,6 +82,7 @@ async function loadUserData() {
     renderHome();
 }
 
+// ---------- Рендер главного экрана ----------
 function renderHome() {
     if (userCard.status === 'active') {
         subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
@@ -129,6 +134,7 @@ function renderHome() {
     }
 }
 
+// ---------- Покупка карты ----------
 function buyCard() {
     if (!userId) return;
     logEvent('buy_card_click');
@@ -136,6 +142,7 @@ function buyCard() {
     tg.openLink(robokassaUrl);
 }
 
+// ---------- Инициализация ----------
 window.addEventListener('load', async () => {
     await loadUserData();
 });
