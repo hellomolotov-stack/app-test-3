@@ -104,12 +104,16 @@ function renderHome() {
             </div>
         `;
 
-        document.getElementById('cardImage')?.addEventListener('click', () => {
-            if (tg) {
-                tg.openLink(userCard.cardImageUrl);
-            } else {
-                window.open(userCard.cardImageUrl, '_blank');
-            }
+        // Клик по карте – скачивание
+        document.getElementById('cardImage')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Пытаемся скачать файл через создание временной ссылки с атрибутом download
+            const link = document.createElement('a');
+            link.href = userCard.cardImageUrl;
+            link.download = 'karta-intelligenta.png'; // имя файла
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         });
     } else {
         mainContent.innerHTML = `
