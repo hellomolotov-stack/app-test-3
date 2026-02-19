@@ -4,14 +4,14 @@ tg.ready();
 
 // ---------- КОНФИГУРАЦИЯ ----------
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
-const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec';
+const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec'; // тот же URL, но теперь он умеет обновлять members
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
 let userCard = {
-    status: 'loading', // 'loading', 'active', 'inactive', 'error'
+    status: 'loading',
     hikesCompleted: 0,
     cardImageUrl: ''
 };
@@ -30,6 +30,28 @@ function logEvent(action) {
         first_name: user?.first_name || '',
         last_name: user?.last_name || '',
         action: action
+    });
+
+    const img = new Image();
+    img.src = `${GUEST_API_URL}?${params}`;
+}
+
+// ---------- Обновление user_name в members ----------
+function updateUserNameIfNeeded(userData) {
+    // Если user_name уже есть (не пустая строка) – ничего не делаем
+    if (userData.user_name && userData.user_name.trim() !== '') return;
+
+    // Формируем имя для записи: first_name + last_name (если есть)
+    let fullName = user.first_name;
+    if (user.last_name) fullName += ' ' + user.last_name;
+    // Можно также добавить username в скобках, если нужно:
+    // if (user.username) fullName += ` (@${user.username})`;
+
+    // Отправляем запрос на обновление
+    const params = new URLSearchParams({
+        update_members: '1',
+        user_id: userId,
+        user_name: fullName
     });
 
     const img = new Image();
@@ -56,17 +78,19 @@ async function loadUserData() {
 
         let found = false;
         for (const row of dataRows) {
-            // user_id всегда в первой колонке
             if (String(row[0]).trim() === String(userId)) {
-                // Создаём объект с данными по заголовкам (на случай разного порядка столбцов)
                 const userData = {};
                 headers.forEach((key, idx) => { userData[key] = row[idx]?.trim(); });
 
                 userCard = {
-                    status: 'active', // если нашли пользователя – карта есть
+                    status: 'active',
                     hikesCompleted: parseInt(userData.hikes_count) || 0,
                     cardImageUrl: userData.card_image_url || ''
                 };
+
+                // Проверяем и обновляем user_name при необходимости
+                updateUserNameIfNeeded(userData);
+
                 found = true;
                 break;
             }
@@ -96,7 +120,6 @@ function renderHome() {
     }
 
     if (userCard.status === 'active' && userCard.cardImageUrl) {
-        // Основной блок с картой
         mainContent.innerHTML = `
             <div class="card-container">
                 <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image">
@@ -107,7 +130,6 @@ function renderHome() {
                 <a href="https://telegra.ph/karta-intelligenta-11-21-3" target="_blank" class="btn btn-outline" id="privilegeBtn">мои привилегии</a>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="supportBtn">написать в поддержку</a>
             </div>
-            <!-- Дополнительный блок с тремя кнопками -->
             <div class="extra-links">
                 <a href="https://t.me/yaltahiking" target="_blank" class="btn-support" id="channelBtn">📰 открыть канал клуба</a>
                 <a href="https://t.me/yaltahikingchat" target="_blank" class="btn-support" id="chatBtn">💬 открыть чат</a>
@@ -115,14 +137,12 @@ function renderHome() {
             </div>
         `;
 
-        // Логирование кликов по кнопкам
         document.getElementById('privilegeBtn')?.addEventListener('click', () => logEvent('privilege_click'));
         document.getElementById('supportBtn')?.addEventListener('click', () => logEvent('support_click'));
         document.getElementById('channelBtn')?.addEventListener('click', () => logEvent('channel_click'));
         document.getElementById('chatBtn')?.addEventListener('click', () => logEvent('chat_click'));
         document.getElementById('giftBtn')?.addEventListener('click', () => logEvent('gift_click'));
     } else {
-        // Пользователь без карты
         mainContent.innerHTML = `
             <div class="btn-group">
                 <button id="buyCardBtn" class="btn">💳 купить карту</button>
@@ -134,7 +154,6 @@ function renderHome() {
     }
 }
 
-// ---------- Покупка карты ----------
 function buyCard() {
     if (!userId) return;
     logEvent('buy_card_click');
@@ -142,7 +161,6 @@ function buyCard() {
     tg.openLink(robokassaUrl);
 }
 
-// ---------- Инициализация ----------
 window.addEventListener('load', async () => {
     await loadUserData();
 });
