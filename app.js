@@ -148,7 +148,7 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий (с новым заголовком и размером названия) ----------
+// ---------- Рендер страницы привилегий ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
 
@@ -171,7 +171,7 @@ function renderPrivilegesPage() {
         <div class="card-container" style="padding: 20px;">
             ${partnersHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">на главную</button>
+                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">&lt; на главную</button>
             </div>
         </div>
     `;
@@ -252,8 +252,8 @@ function renderGiftPage() {
                 <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
             </ol>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">написать в поддержку</a>
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">на главную</button>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" style="background-color: #D9FD19; color: #000000; border: none; width: calc(100% - 40px); margin: 0 auto;">написать в поддержку</a>
+                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">&lt; на главную</button>
             </div>
         </div>
     `;
