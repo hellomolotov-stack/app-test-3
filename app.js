@@ -3,7 +3,7 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 tg.ready();
 
-// ---------- КОНФИГУРАЦИЯ (ссылк� уже вставлены) ----------
+// ---------- КОНФИГУРАЦИЯ (ссылки уже вставлены) ----------
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycbxhKL7aUQ5GQrNFlVBJvPc6osAhmK-t2WscsP9rEBkPj_d9TUmr7NzPnAa_Ten1JgiLCQ/exec';
 
@@ -13,7 +13,7 @@ const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
 let userCard = {
-    status: 'loading', // 'loading', 'active', 'inactive', 'error'
+    status: 'loading',
     hikesCompleted: 0,
     cardImageUrl: ''
 };
@@ -21,7 +21,7 @@ let userCard = {
 const mainContent = document.getElementById('mainContent');
 const subtitleEl = document.getElementById('subtitle');
 
-// ---------- Логирование событий в Google Sheets ----------
+// ---------- Логирование событий ----------
 function logEvent(action) {
     if (!userId) return;
     if (!GUEST_API_URL.startsWith('https://')) return;
@@ -96,6 +96,7 @@ function renderHome() {
     }
 
     if (userCard.status === 'active' && userCard.cardImageUrl) {
+        // ЕСТЬ КАРТА – показываем карту, счётчик, две кнопки
         mainContent.innerHTML = `
             <div class="card-container">
                 <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage">
@@ -104,6 +105,7 @@ function renderHome() {
                     <span class="counter-number">${userCard.hikesCompleted}</span>
                 </div>
                 <a href="https://telegra.ph/karta-intelligenta-11-21-3" target="_blank" class="btn btn-outline">мои привилегии</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support">написать в поддержку</a>
             </div>
         `;
 
@@ -115,6 +117,7 @@ function renderHome() {
             }
         });
     } else {
+        // НЕТ КАРТЫ – показываем две кнопки
         mainContent.innerHTML = `
             <div class="btn-group">
                 <button id="buyCardBtn" class="btn">💳 купить карту</button>
