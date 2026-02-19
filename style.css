@@ -26,8 +26,8 @@ body::before {
     position: fixed;
     top: 0;
     left: 0;
-    width: 200%;
-    height: 200%;
+    width: 120%;
+    height: 120%;
     background-image: url('https://i.postimg.cc/tJH6vgtM/myvmymy.png');
     background-size: cover;
     background-position: center;
