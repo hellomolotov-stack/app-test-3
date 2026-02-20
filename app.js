@@ -148,7 +148,7 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий (с правильными отступами) ----------
+// ---------- Рендер страницы привилегий ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
 
@@ -195,7 +195,8 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: calc(100% - 32px); margin: 0 16px 8px 16px; display: block;">
+                <!-- КАРТА С !important ДЛЯ ГАРАНТИРОВАННОЙ ШИРИНЫ -->
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: calc(100% - 32px) !important; margin: 0 16px 8px 16px !important; display: block !important;">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -235,7 +236,7 @@ function renderHome() {
     }
 }
 
-// ---------- Страница подарка (с правильными отступами) ----------
+// ---------- Страница подарка ----------
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
 
