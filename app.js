@@ -245,7 +245,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ---------- Главная для гостей (с метриками внутри общего контейнера) ----------
+// ---------- Главная для гостей (с метриками) ----------
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
@@ -258,7 +258,7 @@ function renderGuestHome() {
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
-        <!-- Блок метрик внутри общего контейнера -->
+        <!-- Блок метрик с новым порядком -->
         <div class="card-container">
             <h2 class="metrics-title">🧭 клуб интеллигенции в цифрах</h2>
             <div class="metrics-grid">
@@ -267,12 +267,12 @@ function renderGuestHome() {
                     <div class="metric-value">${metrics.hikes}</div>
                 </div>
                 <div class="metric-item">
-                    <div class="metric-label">километров</div>
-                    <div class="metric-value">${metrics.kilometers}</div>
-                </div>
-                <div class="metric-item">
                     <div class="metric-label">локаций</div>
                     <div class="metric-value">${metrics.locations}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">километров</div>
+                    <div class="metric-value">${metrics.kilometers}</div>
                 </div>
                 <div class="metric-item">
                     <div class="metric-label">знакомств</div>
