@@ -68,35 +68,92 @@ async function loadData() {
     renderHome();
 }
 
+// ---------- ПОЛНЫЙ МАССИВ ПАРТНЁРОВ ----------
 const partners = [
-    { name: 'Геккон', priv: '-10%', addr: 'Московская ул., 8А, Ялта', link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w' },
-    { name: 'Nothomme', priv: '-7% по промокоду', addr: 'телеграм канал: t.me/nothomme_russia', link: 'https://t.me/nothomme_russia' },
-    { name: 'Возможно всё', priv: '-5%', addr: 'ул. Свердлова, 13/2, Ялта', link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w' },
-    { name: 'На Утро: На Вечер', priv: '+1000 бонусов', addr: 'Морская ул., 3А, Ялта', link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w' },
-    { name: 'Красный конь', priv: '-5%', addr: 'Республика Крым, г.о. Ялта, Алупкинский тер. орган', link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w' },
-    { name: 'Marvel studio', priv: '-5%', addr: 'ул. Руданского, 4, Ялта', link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w' },
-    { name: 'Vinyl', priv: '-10%', addr: 'Черноморский пер., 1А, Ялта', link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w' },
-    { name: 'Скала', priv: '-5% на второе посещение', addr: 'ул. Свердлова, 3, Ялта', link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w' },
-    { name: 'Deep Black', priv: '-5%', addr: 'Алупкинское ш., 5А, п. г. т. Гаспра', link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w' }
+    {
+        name: 'экипировочный центр Геккон',
+        privilege: '-10% по карте интеллигента',
+        location: 'Ялта, ул. Московская 8А',
+        link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'технологичная хайкинг-одежда Nothomme',
+        privilege: '-7% по промокоду на сайте',
+        location: 'телеграм канал: t.me/nothomme_russia',
+        link: 'https://t.me/nothomme_russia'
+    },
+    {
+        name: 'кофейня Возможно всё',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Ялта, ул. Свердлова, 13/2',
+        link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'магазин косметики На Утро: На Вечер',
+        privilege: '+1000 бонусов по карте интеллигента',
+        location: 'г. Ялта, ул. Морская 3А',
+        link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'конный клуб Красный конь',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Алупка, Севастопольское шоссе',
+        link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'маникюрный салон Marvel studio',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Ялта, ул. Руданского 4',
+        link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'тематическое кафе Vinyl',
+        privilege: '-10% по карте интеллигента',
+        location: 'г. Ялта, пер. Черноморский 1А',
+        link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'барбершоп Скала',
+        privilege: '-5% на второе посещение и далее',
+        location: 'г. Ялта, ул. Свердлова 3',
+        link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'кофейня Deep Black',
+        privilege: '-5% по карте интеллигента',
+        location: 'п. г. т. Гаспра, Алупкинское ш., 5А',
+        link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
+    }
 ];
 
+// ---------- Рендер страницы привилегий ----------
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
+
+    // Привилегии в клубе
     let club = [
         { t: 'бесплатное участие', d: 'один раз оформляешь карту – теперь ты член клуба. окупишь на шестом хайке. дальше бесплатно.' },
         { t: 'гостевой хайк', d: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно покупать билет.' },
         { t: 'приоритетный запрос на мастермайнд', d: 'владельцы карт могут забронировать запрос и на ближайшем хайке получить опыт и контакты.', btn: 'забронировать запрос' },
         { t: 'new: обход блокировок', d: 'получи настройки, которые вернут заблокированные ресурсы.', btn: 'получить настройки' }
     ];
+
     let clubHtml = '';
     club.forEach(c => {
         clubHtml += `<div class="partner-item"><strong>${c.t}</strong><p>${c.d}</p>${c.btn ? `<a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
     });
+
+    // Привилегии в городе (партнёры)
     let cityHtml = '';
     partners.forEach(p => {
-        cityHtml += `<div class="partner-item"><strong>${p.name}</strong><p>${p.priv}</p><p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.addr}</a></p></div>`;
+        cityHtml += `<div class="partner-item">
+            <strong>${p.name}</strong>
+            <p>привилегии: ${p.privilege}</p>
+            <p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>
+        </div>`;
     });
+
     mainDiv.innerHTML = `
         <div class="card-container">
             <h2 class="section-title">✨ в клубе</h2>${clubHtml}
@@ -106,6 +163,7 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
+// ---------- Страница подарка ----------
 function renderGift() {
     subtitle.textContent = `🎁 подарить карту`;
     showBack(renderHome);
@@ -126,6 +184,7 @@ function renderGift() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
+// ---------- Рендер главного экрана ----------
 function renderHome() {
     hideBack();
     if (userCard.status === 'active') subtitle.textContent = `💳 твоя карта, ${firstName}`;
