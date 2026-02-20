@@ -27,20 +27,27 @@ let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
 
-function log(action) {
+// ---------- Логирование (с учётом статуса) ----------
+function log(action, isGuest = false) {
     if (!userId) return;
+    // Если гость, добавляем суффикс _guest
+    const finalAction = isGuest ? `${action}_guest` : action;
     const params = new URLSearchParams({
         user_id: userId,
         username: user?.username || '',
         first_name: user?.first_name || '',
         last_name: user?.last_name || '',
-        action: action
+        action: finalAction
     });
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
 async function loadData() {
-    if (!userId) { userCard.status = 'inactive'; renderHome(); return; }
+    if (!userId) {
+        userCard.status = 'inactive';
+        renderHome();
+        return;
+    }
     try {
         const resp = await fetch(`${CSV_URL}&t=${Date.now()}`);
         const text = await resp.text();
@@ -64,11 +71,10 @@ async function loadData() {
         console.error(e);
         userCard.status = 'inactive';
     }
-    log('visit');
+    log('visit', userCard.status !== 'active'); // передаём флаг гостя
     renderHome();
 }
 
-// ---------- МАССИВ ПАРТНЁРОВ ----------
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -126,12 +132,11 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий ----------
+// ---------- Рендер страницы привилегий (без изменений) ----------
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
 
-    // Привилегии в клубе
     let club = [
         { t: 'бесплатное участие', d: 'один раз оформляешь карту – теперь ты член клуба. окупишь на шестом хайке. дальше бесплатно.' },
         { t: 'гостевой хайк', d: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно покупать билет.' },
@@ -144,7 +149,6 @@ function renderPriv() {
         clubHtml += `<div class="partner-item"><strong>${c.t}</strong><p>${c.d}</p>${c.btn ? `<a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
     });
 
-    // Привилегии в городе (партнёры)
     let cityHtml = '';
     partners.forEach(p => {
         cityHtml += `<div class="partner-item">
@@ -152,7 +156,6 @@ function renderPriv() {
             <p>${p.privilege}</p>
             <p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
         
-        // Добавляем кнопку "в магазин" только для Nothomme
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             cityHtml += `<a href="${p.link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">в магазин</a>`;
         }
@@ -169,7 +172,7 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Страница подарка ----------
+// ---------- Рендер страницы подарка (без изменений) ----------
 function renderGift() {
     subtitle.textContent = `🎁 подарить карту`;
     showBack(renderHome);
@@ -190,18 +193,47 @@ function renderGift() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Рендер главного экрана ----------
+// ---------- Новая функция: главный экран для гостей ----------
+function renderGuestHome() {
+    subtitle.textContent = `👋🏻 добро пожаловать в клуб хайкинг интеллигенции, ${firstName}`;
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <img src="https://i.postimg.cc/8zhc2MDZ/avaadva.png" alt="карта заглушка" class="card-image" style="pointer-events: none;">
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">0</span></div>
+            <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
+            <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+        </div>
+        <div class="extra-links">
+            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
+            <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
+            <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
+        </div>
+    `;
+
+    // Логирование для гостей (isGuest = true)
+    document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
+    document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
+    document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(); });
+    document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
+    document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
+}
+
+// ---------- Рендер главного экрана (обновлён) ----------
 function renderHome() {
     hideBack();
-    if (userCard.status === 'active') subtitle.textContent = `💳 твоя карта, ${firstName}`;
-    else subtitle.textContent = `👋🏻 добро пожаловать в клуб хайкинг интеллигенции, ${firstName}`;
 
-    if (userCard.status === 'loading') { mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>'; return; }
+    if (userCard.status === 'loading') {
+        mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
+        return;
+    }
 
     if (userCard.status === 'active' && userCard.cardUrl) {
+        // Владелец карты
+        subtitle.textContent = `💳 твоя карта, ${firstName}`;
         mainDiv.innerHTML = `
             <div class="card-container">
-                <img src="${userCard.cardUrl}" alt="карта" class="card-image">
+                <img src="${userCard.cardUrl}" alt="карта" class="card-image" style="pointer-events: none;">
                 <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
                 <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -218,18 +250,15 @@ function renderHome() {
         document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
         document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
     } else {
-        mainDiv.innerHTML = `
-            <div style="padding:20px 0;">
-                <button id="buyBtn" class="btn btn-blue">💳 купить карту</button>
-                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-outline-blue">📖 подробнее о карте</a>
-            </div>`;
-        document.getElementById('buyBtn')?.addEventListener('click', buyCard);
+        // Гость – вызываем специальную функцию
+        renderGuestHome();
     }
 }
 
+// ---------- Покупка карты (оставляем для совместимости, но гости используют прямую ссылку) ----------
 function buyCard() {
     if (!userId) return;
-    log('buy_card_click');
+    log('buy_card_click', true); // гость
     tg.openLink('https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ');
 }
 
