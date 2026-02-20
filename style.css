@@ -1,4 +1,3 @@
-/* Базовые сбросы */
 * {
     margin: 0;
     padding: 0;
@@ -9,7 +8,6 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #222;
     line-height: 1.5;
-    min-height: 100vh;
     background: url('https://i.postimg.cc/pL4LG0KD/photo-2026-02-19-15-22-42-2.jpg') no-repeat center center fixed;
     background-size: cover;
 }
@@ -21,7 +19,7 @@ body {
     max-width: 600px;
     margin: 0 auto;
     padding: 16px;
-    background-color: rgba(0,0,0,0.3); /* добавим полупрозрачный фон для контраста, чтобы видеть контент */
+    background-color: rgba(0,0,0,0.2);
 }
 
 .header {
@@ -33,6 +31,7 @@ body {
     font-size: 24px;
     font-weight: 700;
     color: white;
+    margin-top: 4px;
 }
 
 .content {
@@ -72,6 +71,7 @@ body {
     height: auto;
     display: block;
     margin: 0 16px 8px 16px;
+    /* cursor: pointer удалён */
 }
 
 .hike-counter {
@@ -133,11 +133,14 @@ body {
 }
 
 .btn-support {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 0 16px 12px 16px;
+    padding: 14px;
     background-color: transparent;
     color: white;
     border: 2px solid white;
     border-radius: 12px;
-    padding: 14px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
@@ -175,4 +178,26 @@ body {
 .partner-item a {
     color: #D9FD19;
     text-decoration: none;
+}
+
+/* Адаптация для горизонтальной ориентации */
+@media (orientation: landscape) {
+    .app {
+        max-width: 100%;
+        padding: 8px 16px;
+    }
+    .card-container, .extra-links {
+        margin-bottom: 10px;
+    }
+    .btn, .btn-support, .btn-outline {
+        padding: 10px;
+        font-size: 14px;
+    }
+    .hike-counter {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    .counter-number {
+        font-size: 24px;
+    }
 }
