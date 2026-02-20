@@ -6,7 +6,7 @@ tg.ready();
 const backButton = tg.BackButton;
 
 function showBackButton(callback) {
-    backButton.offClick(); // удаляем предыдущие обработчики
+    backButton.offClick();
     backButton.onClick(callback);
     backButton.show();
 }
@@ -166,28 +166,20 @@ const partners = [
     }
 ];
 
-// ---------- Полноэкранный режим карты (без поворота) ----------
-function renderFullscreenCard() {
+// ---------- Страница карты (отдельная, без поворота) ----------
+function renderCardPage() {
     subtitleEl.textContent = ''; // убираем заголовок
-    hideBackButton(); // сначала скроем, потом покажем с нужным обработчиком
-
+    showBackButton(renderHome);
     mainContent.innerHTML = `
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; display: flex; justify-content: center; align-items: center; z-index: 1000;">
-            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer;" id="fullscreenCard">
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 100%;">
+            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="max-width: 100%; max-height: 100%; object-fit: contain;">
         </div>
     `;
-
-    // Показываем системную кнопку назад
-    showBackButton(renderHome);
-
-    // Обработчик клика по карте для возврата
-    document.getElementById('fullscreenCard')?.addEventListener('click', renderHome);
 }
 
 // ---------- Рендер страницы привилегий ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
-
     showBackButton(renderHome);
 
     const clubPrivileges = [
@@ -278,7 +270,7 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container" id="cardContainer">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: calc(100% - 32px); margin: 0 16px 8px 16px; display: block; cursor: pointer;">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -293,8 +285,8 @@ function renderHome() {
             </div>
         `;
 
-        // Клик по карте для открытия полноэкранного режима
-        document.getElementById('cardImage')?.addEventListener('click', renderFullscreenCard);
+        // Клик по карте для открытия отдельной страницы с картой
+        document.getElementById('cardImage')?.addEventListener('click', renderCardPage);
 
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
