@@ -307,16 +307,37 @@ body::before {
     color: #ffffff;
 }
 
-/* Стили для метрик (первая версия прямоугольников с увеличенным текстом) */
+/* Стили для метрик (прямоугольники) */
 .metrics-section {
     margin-bottom: 20px;
+}
+
+.metrics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0 16px 16px 16px;
 }
 
 .metrics-title {
     color: #ffffff;
     font-size: 18px;
     font-weight: 700;
-    margin: 0 16px 16px 16px;
+    margin: 0;
+}
+
+.metrics-link {
+    font-size: 14px;
+    color: #ffffff;
+    opacity: 0.8;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.metrics-link:hover {
+    opacity: 1;
+    text-decoration: underline;
 }
 
 .metrics-grid {
@@ -353,7 +374,7 @@ body::before {
     align-self: flex-end;
     font-size: 28px;
     font-weight: 900;
-    font-style: italic; /* наклонный шрифт */
+    font-style: italic;
     color: var(--yellow);
     text-align: right;
     width: 100%;
