@@ -99,8 +99,8 @@ function renderPriv() {
     });
     mainDiv.innerHTML = `
         <div class="card-container">
-            <h2 style="margin:0 16px 16px; font-size:18px;">✨ в клубе</h2>${clubHtml}
-            <h2 style="margin:24px 16px 16px; font-size:18px;">🏙️ в городе</h2>${cityHtml}
+            <h2 class="section-title">✨ в клубе</h2>${clubHtml}
+            <h2 class="section-title second">🏙️ в городе</h2>${cityHtml}
             <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:20px 16px 0;">&lt; на главную</button>
         </div>`;
     document.getElementById('goHome')?.addEventListener('click', renderHome);
@@ -111,7 +111,7 @@ function renderGift() {
     showBack(renderHome);
     mainDiv.innerHTML = `
         <div class="card-container">
-            <div style="padding:0 16px;">
+            <div class="gift-text" style="padding:0 16px;">
                 <p style="margin-bottom:16px;">Чтобы подарить карту другу, пришли в поддержку:</p>
                 <ol style="margin-left:20px; margin-bottom:20px;">
                     <li>имя</li><li>фамилию</li><li>@username</li><li>чек о покупке</li>
