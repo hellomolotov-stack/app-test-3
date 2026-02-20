@@ -97,7 +97,6 @@ body::before {
     margin: 0 16px 8px 16px;
     border: none;
     outline: none;
-    /* Отключаем кликабельность карты */
     pointer-events: none;
 }
 
@@ -150,21 +149,19 @@ body::before {
     opacity: 0.9;
 }
 
-/* Синяя кнопка (купить карту) */
 .btn-blue {
     background-color: #40a7e3;
     color: #ffffff;
     border: none;
 }
 
-/* Синяя обводка (подробнее о карте) */
 .btn-outline-blue {
     background-color: transparent;
     color: #40a7e3;
     border: 2px solid #40a7e3;
 }
 
-/* Жёлтая кнопка (мои привилегии, кнопки на странице привилегий) */
+/* Жёлтая кнопка с чёрным текстом */
 .btn-yellow {
     background-color: #D9FD19;
     color: #000000;
@@ -172,7 +169,11 @@ body::before {
     font-weight: 600;
 }
 
-/* Белая обводка (написать в поддержку, открыть канал и т.д.) */
+/* Усиливаем приоритет для кнопок внутри partner-item */
+.partner-item .btn-yellow {
+    color: #000000 !important; /* гарантируем чёрный текст */
+}
+
 .btn-white-outline {
     background-color: transparent;
     color: #ffffff;
@@ -203,6 +204,7 @@ body::before {
     font-size: 14px;
     opacity: 0.9;
     line-height: 1.5;
+    color: #ffffff; /* явно белый */
 }
 
 .partner-item a {
@@ -212,6 +214,29 @@ body::before {
 
 .partner-item a:hover {
     text-decoration: underline;
+}
+
+/* Заголовки разделов на странице привилегий */
+.section-title {
+    color: #ffffff !important;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 16px 16px 16px;
+}
+
+.section-title.second {
+    margin: 24px 16px 16px 16px;
+}
+
+/* Контейнер для текста на странице подарка */
+.gift-text {
+    color: #ffffff;
+}
+
+.gift-text p,
+.gift-text ol,
+.gift-text li {
+    color: #ffffff;
 }
 
 /* Адаптация для горизонтальной ориентации */
