@@ -130,7 +130,6 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий (с изменением для Nothomme) ----------
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
@@ -153,7 +152,6 @@ function renderPriv() {
             <strong>${p.name}</strong>
             <p>${p.privilege}</p>`;
         
-        // Для Nothomme не выводим адрес, только кнопку
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             cityHtml += `<a href="${p.link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">в магазин</a>`;
         } else {
@@ -172,7 +170,6 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Рендер страницы подарка ----------
 function renderGift() {
     subtitle.textContent = `🎁 подарить карту`;
     showBack(renderHome);
@@ -193,13 +190,12 @@ function renderGift() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Рендер главного экрана для гостей ----------
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
 
     mainDiv.innerHTML = `
         <div class="card-container">
-            <img src="https://i.postimg.cc/8zhc2MDZ/avaadva.png" alt="карта заглушка" class="card-image" style="pointer-events: none;">
+            <img src="https://i.postimg.cc/28fp58td/vdavdv.png" alt="карта заглушка" class="card-image" style="pointer-events: none;">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -218,7 +214,6 @@ function renderGuestHome() {
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 }
 
-// ---------- Рендер главного экрана (основная логика) ----------
 function renderHome() {
     hideBack();
 
@@ -228,7 +223,6 @@ function renderHome() {
     }
 
     if (userCard.status === 'active' && userCard.cardUrl) {
-        // Владелец карты
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
         mainDiv.innerHTML = `
             <div class="card-container">
@@ -249,7 +243,6 @@ function renderHome() {
         document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
         document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
     } else {
-        // Гость
         renderGuestHome();
     }
 }
