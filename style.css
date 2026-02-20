@@ -307,7 +307,7 @@ body::before {
     color: #ffffff;
 }
 
-/* Стили для метрик (прямоугольники) */
+/* Стили для метрик (прямоугольники с максимально увеличенным текстом) */
 .metrics-section {
     margin-bottom: 20px;
 }
@@ -336,26 +336,27 @@ body::before {
     align-items: flex-start;
     border: 1px solid rgba(255,255,255,0.2);
     backdrop-filter: blur(4px);
-    height: 100px; /* увеличена высота для размещения увеличенной цифры */
+    height: 110px; /* увеличена для размещения крупного текста */
     box-sizing: border-box;
 }
 
 .metric-label {
-    font-size: 14px; /* увеличена */
+    font-size: 18px; /* увеличен */
     opacity: 0.8;
     color: #ffffff;
     font-weight: 500;
     white-space: nowrap;
-    margin-top: 4px; /* приподнято */
+    margin-top: 2px;
 }
 
 .metric-value {
     align-self: flex-end;
-    font-size: 36px; /* увеличена в 1.5 раза (было 24px) */
+    font-size: 60px; /* максимально крупно */
     font-weight: 900;
     color: var(--yellow);
     text-align: right;
     width: 100%;
+    line-height: 1; /* чтобы не было лишних отступов */
 }
 
 /* Адаптация для горизонтальной ориентации */
@@ -379,9 +380,12 @@ body::before {
         font-size: 24px;
     }
     .metric-item {
-        height: 90px; /* чуть меньше в ландшафте */
+        height: 100px; /* немного меньше в ландшафте */
     }
     .metric-value {
-        font-size: 30px;
+        font-size: 50px;
+    }
+    .metric-label {
+        font-size: 16px;
     }
 }
