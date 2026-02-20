@@ -258,9 +258,9 @@ function renderGuestHome() {
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
-        <!-- Блок метрик с новым порядком -->
+        <!-- Блок метрик с новым заголовком -->
         <div class="card-container">
-            <h2 class="metrics-title">🧭 клуб интеллигенции в цифрах</h2>
+            <h2 class="metrics-title">🇵🇼 интеллигенция в цифрах</h2>
             <div class="metrics-grid">
                 <div class="metric-item">
                     <div class="metric-label">хайков</div>
