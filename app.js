@@ -17,12 +17,15 @@ function hideBack() {
 // Конфигурация
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
+// ⚠️ ВСТАВЬТЕ ССЫЛКУ НА CSV ЛИСТА METRICS (должен быть опубликован как CSV)
+const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1795572871&single=true&output=csv';
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
+let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' }; // значения по умолчанию
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
@@ -40,10 +43,10 @@ function log(action, isGuest = false) {
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-async function loadData() {
+// Загрузка данных из CSV (members)
+async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
-        renderHome();
         return;
     }
     try {
@@ -66,9 +69,39 @@ async function loadData() {
         }
         if (userCard.status !== 'active') userCard.status = 'inactive';
     } catch (e) {
-        console.error(e);
+        console.error('Ошибка загрузки members:', e);
         userCard.status = 'inactive';
     }
+}
+
+// Загрузка метрик из отдельного листа
+async function loadMetrics() {
+    if (!METRICS_CSV_URL) return;
+    try {
+        const resp = await fetch(`${METRICS_CSV_URL}&t=${Date.now()}`);
+        const text = await resp.text();
+        const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
+        if (rows.length < 2) throw new Error('Нет данных метрик');
+        // Ожидаем, что первая строка заголовки: hikes, kilometers, locations, meetings
+        const headers = rows[0];
+        const dataRow = rows[1]; // вторая строка с данными
+        const data = {};
+        headers.forEach((k, i) => data[k] = dataRow[i]);
+        metrics = {
+            hikes: data.hikes || '19',
+            kilometers: data.kilometers || '150+',
+            locations: data.locations || '13',
+            meetings: data.meetings || '130+'
+        };
+    } catch (e) {
+        console.error('Ошибка загрузки метрик:', e);
+        // оставляем значения по умолчанию
+    }
+}
+
+// Загрузка всех данных при старте
+async function loadData() {
+    await Promise.all([loadUserData(), loadMetrics()]);
     log('visit', userCard.status !== 'active');
     renderHome();
 }
@@ -170,7 +203,7 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Страница подарка (исправленная) ----------
+// ---------- Страница подарка ----------
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
@@ -217,7 +250,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ---------- Главная для гостей ----------
+// ---------- Главная для гостей (с метриками) ----------
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
@@ -229,6 +262,29 @@ function renderGuestHome() {
             <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
+        
+        <div class="metrics-section">
+            <h2 class="metrics-title">тест заголовка</h2>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">хайков</div>
+                    <div class="metric-value">${metrics.hikes}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">километров</div>
+                    <div class="metric-value">${metrics.kilometers}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">локаций</div>
+                    <div class="metric-value">${metrics.locations}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">знакомств</div>
+                    <div class="metric-value">${metrics.meetings}</div>
+                </div>
+            </div>
+        </div>
+        
         <div class="extra-links">
             <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
             <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
