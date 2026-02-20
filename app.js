@@ -96,16 +96,62 @@ async function loadUserData() {
     renderHome();
 }
 
+// ---------- МАССИВ ПАРТНЁРОВ (С НОВЫМИ АДРЕСАМИ И ССЫЛКАМИ) ----------
 const partners = [
-    { name: 'экипировочный центр Геккон', privilege: '-10% по карте интеллигента', location: 'Ялта, ул. Московская 8А' },
-    { name: 'технологичная хайкинг-одежда Nothomme', privilege: '-7% по промокоду на сайте', location: 'телеграм канал: t.me/nothomme_russia', link: 'https://t.me/nothomme_russia' },
-    { name: 'кофейня Возможно всё', privilege: '-5% по карте интеллигента', location: 'г. Ялта, ул. Свердлова, 13/2' },
-    { name: 'магазин косметики На Утро: На Вечер', privilege: '+1000 бонусов по карте интеллигента', location: 'г. Ялта, ул. Морская 3А' },
-    { name: 'конный клуб Красный конь', privilege: '-5% по карте интеллигента', location: 'г. Алупка, Севастопольское шоссе' },
-    { name: 'маникюрный салон Marvel studio', privilege: '-5% по карте интеллигента', location: 'г. Ялта, ул. Руданского 4' },
-    { name: 'тематическое кафе Vinyl', privilege: '-10% по карте интеллигента', location: 'г. Ялта, пер. Черноморский 1А' },
-    { name: 'барбершоп Скала', privilege: '-5% на второе посещение и далее', location: 'г. Ялта, ул. Свердлова 3' },
-    { name: 'кофейня Deep Black', privilege: '-5% по карте интеллигента', location: 'п. г. т. Гаспра, Алупкинское ш., 5А' }
+    {
+        name: 'экипировочный центр Геккон',
+        privilege: '-10% по карте интеллигента',
+        location: 'Московская ул., 8А, Ялта',
+        link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'технологичная хайкинг-одежда Nothomme',
+        privilege: '-7% по промокоду на сайте',
+        location: 'телеграм канал: t.me/nothomme_russia',
+        link: 'https://t.me/nothomme_russia'
+    },
+    {
+        name: 'кофейня Возможно всё',
+        privilege: '-5% по карте интеллигента',
+        location: 'ул. Свердлова, 13/2, Ялта',
+        link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'магазин косметики На Утро: На Вечер',
+        privilege: '+1000 бонусов по карте интеллигента',
+        location: 'Морская ул., 3А, Ялта',
+        link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'конный клуб Красный конь',
+        privilege: '-5% по карте интеллигента',
+        location: 'Республика Крым, городской округ Ялта, Алупкинский территориальный орган',
+        link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'маникюрный салон Marvel studio',
+        privilege: '-5% по карте интеллигента',
+        location: 'ул. Руданского, 4, Ялта',
+        link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'тематическое кафе Vinyl',
+        privilege: '-10% по карте интеллигента',
+        location: 'Черноморский пер., 1А, Ялта',
+        link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'барбершоп Скала',
+        privilege: '-5% на второе посещение и далее',
+        location: 'ул. Свердлова, 3, Ялта',
+        link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'кофейня Deep Black',
+        privilege: '-5% по карте интеллигента',
+        location: 'Алупкинское ш., 5А, п. г. т. Гаспра',
+        link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
+    }
 ];
 
 // ---------- Рендер страницы привилегий ----------
@@ -150,13 +196,11 @@ function renderPrivilegesPage() {
     // Блок 2: Привилегии в городе (партнёры)
     let partnersHtml = '';
     partners.forEach(p => {
-        // Для физических адресов создаём ссылку на Яндекс Карты
+        // Если есть прямая ссылка (link), используем её, иначе формируем ссылку на Яндекс Карты по адресу
         let locationHtml;
         if (p.link) {
-            // Если есть ссылка (Telegram), используем её
             locationHtml = `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`;
         } else {
-            // Иначе делаем ссылку на Яндекс Карты
             const yandexMapsUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(p.location)}`;
             locationHtml = `<a href="${yandexMapsUrl}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`;
         }
