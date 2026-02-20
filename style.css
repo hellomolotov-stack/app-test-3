@@ -97,6 +97,7 @@ body::before {
     margin: 0 16px 8px 16px;
     border: none;
     outline: none;
+    cursor: pointer;
 }
 
 .hike-counter {
