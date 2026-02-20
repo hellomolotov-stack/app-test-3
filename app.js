@@ -109,7 +109,6 @@ async function loadUserData() {
     renderHome();
 }
 
-// ---------- МАССИВ ПАРТНЁРОВ (С НОВЫМИ АДРЕСАМИ И ССЫЛКАМИ) ----------
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -167,14 +166,30 @@ const partners = [
     }
 ];
 
+// ---------- Полноэкранный режим карты ----------
+function renderFullscreenCard() {
+    subtitleEl.textContent = ''; // убираем заголовок
+    hideBackButton(); // сначала скроем, потом покажем с нужным обработчиком
+
+    mainContent.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; display: flex; justify-content: center; align-items: center; z-index: 1000;">
+            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer;" id="fullscreenCard">
+        </div>
+    `;
+
+    // Показываем системную кнопку назад
+    showBackButton(renderHome);
+
+    // Обработчик клика по карте для возврата
+    document.getElementById('fullscreenCard')?.addEventListener('click', renderHome);
+}
+
 // ---------- Рендер страницы привилегий ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
 
-    // Показываем системную кнопку "Назад"
     showBackButton(renderHome);
 
-    // Блок 1: Привилегии в клубе
     const clubPrivileges = [
         {
             title: 'бесплатное участие',
@@ -209,10 +224,8 @@ function renderPrivilegesPage() {
         `;
     });
 
-    // Блок 2: Привилегии в городе (партнёры)
     let partnersHtml = '';
     partners.forEach(p => {
-        // Если есть прямая ссылка (link), используем её, иначе формируем ссылку на Яндекс Карты по адресу
         let locationHtml;
         if (p.link) {
             locationHtml = `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`;
@@ -249,7 +262,6 @@ function renderPrivilegesPage() {
 
 // ---------- Рендер главного экрана ----------
 function renderHome() {
-    // Скрываем системную кнопку "Назад"
     hideBackButton();
 
     if (userCard.status === 'active') {
@@ -266,7 +278,7 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container" id="cardContainer">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: calc(100% - 32px); margin: 0 16px 8px 16px; display: block;">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: calc(100% - 32px); margin: 0 16px 8px 16px; display: block; cursor: pointer;">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -280,6 +292,9 @@ function renderHome() {
                 <a href="#" class="btn-support" id="giftBtn">🫂 подарить карту другу</a>
             </div>
         `;
+
+        // Клик по карте для открытия полноэкранного режима
+        document.getElementById('cardImage')?.addEventListener('click', renderFullscreenCard);
 
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -309,7 +324,6 @@ function renderHome() {
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
 
-    // Показываем системную кнопку "Назад"
     showBackButton(renderHome);
 
     mainContent.innerHTML = `
