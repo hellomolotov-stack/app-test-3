@@ -171,7 +171,7 @@ function renderPrivilegesPage() {
         <div class="card-container" style="padding: 20px;">
             ${partnersHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">&lt; на главную</button>
+                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
             </div>
         </div>
     `;
@@ -195,7 +195,7 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: calc(100% - 40px); margin: 0 20px 8px 20px; display: block;">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: calc(100% - 32px); margin: 0 16px 8px 16px; display: block;">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -252,8 +252,8 @@ function renderGiftPage() {
                 <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
             </ol>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" style="background-color: #D9FD19; color: #000000; border: none; width: calc(100% - 40px); margin: 0 auto;">написать в поддержку</a>
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 40px); margin: 0 auto;">&lt; на главную</button>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" style="background-color: #D9FD19; color: #000000; border: none; width: calc(100% - 32px); margin: 0 16px;">написать в поддержку</a>
+                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
             </div>
         </div>
     `;
