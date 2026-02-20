@@ -108,21 +108,74 @@ const partners = [
     { name: 'кофейня Deep Black', privilege: '-5% по карте интеллигента', location: 'п. г. т. Гаспра, Алупкинское ш., 5А' }
 ];
 
+// ---------- Рендер страницы привилегий (обновлённый) ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
+
+    // Блок 1: Привилегии в клубе
+    const clubPrivileges = [
+        {
+            title: 'бесплатное участие',
+            desc: 'один раз оформляешь карту – теперь ты не просто участник, а член клуба. математика простая: ты окупишь карту уже на шестой хайк. или раньше, с учётом скидок у партнёров. дальше все хайки для тебя бесплатны – ты в постоянном плюсе'
+        },
+        {
+            title: 'гостевой хайк',
+            desc: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно будет покупать на него билет'
+        },
+        {
+            title: 'приоритетный запрос на мастермайнд',
+            desc: 'владельцы карт могут забронировать запрос на мастермайнд и на ближайшем хайке получить свежий взгляд, опыт и полезные контакты от десятка человек для своего проекта, идеи или задачи'
+        },
+        {
+            title: 'new: обход блокировок',
+            desc: 'теперь ты можешь получить настройки, которые вновь вернут заблокированные ресурсы.'
+        }
+    ];
+
+    let clubHtml = '';
+    clubPrivileges.forEach(p => {
+        clubHtml += `
+            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
+                <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 14px;">${p.title}</strong>
+                <p style="margin: 4px 0; font-size: 14px; opacity: 0.9; line-height: 1.5;">${p.desc}</p>
+            </div>
+        `;
+    });
+
+    // Блок 2: Привилегии в городе (партнёры)
     let partnersHtml = '';
     partners.forEach(p => {
-        let locationHtml = p.link ? `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>` : p.location;
-        partnersHtml += `<div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
-            <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 14px;">${p.name}</strong>
-            <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
-            <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
-        </div>`;
+        let locationHtml = p.link 
+            ? `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`
+            : p.location;
+        
+        partnersHtml += `
+            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
+                <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 14px;">${p.name}</strong>
+                <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
+                <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
+            </div>
+        `;
     });
-    mainContent.innerHTML = `<div class="card-container">${partnersHtml}<div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;"><button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button></div></div>`;
+
+    mainContent.innerHTML = `
+        <div class="card-container">
+            <h2 style="color: #ffffff; font-size: 18px; font-weight: 700; margin: 0 16px 16px 16px;">✨ твои привилегии в клубе</h2>
+            ${clubHtml}
+            
+            <h2 style="color: #ffffff; font-size: 18px; font-weight: 700; margin: 24px 16px 16px 16px;">🏙️ твои привилегии в городе</h2>
+            ${partnersHtml}
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
+            </div>
+        </div>
+    `;
+
     document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
 }
 
+// ---------- Рендер главного экрана ----------
 function renderHome() {
     if (userCard.status === 'active') {
         subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
@@ -138,10 +191,8 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container" id="cardContainer">
-                <!-- Обёртка с flex и overflow: hidden -->
-                <div class="card-image-wrapper" style="margin: 0 16px 8px 16px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
-                    <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: 100%; height: auto; display: block; object-fit: cover;">
-                </div>
+                <!-- Карта с временными inline-стилями (позже отладим) -->
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: calc(100% - 32px); margin: 0 16px 8px 16px; display: block;">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -180,15 +231,22 @@ function renderHome() {
     }
 }
 
+// ---------- Страница подарка ----------
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
+
     mainContent.innerHTML = `
         <div class="card-container">
             <div style="padding: 0 16px;">
-                <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">Чтобы подарить карту интеллигента другу, пришли нам в поддержку:</p>
+                <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">
+                    Чтобы подарить карту интеллигента другу, пришли нам в поддержку:
+                </p>
                 <ol style="color: #ffffff; margin-left: 20px; margin-bottom: 20px; font-size: 15px; padding-left: 0;">
-                    <li style="margin-bottom: 8px;">имя</li><li style="margin-bottom: 8px;">фамилию</li><li style="margin-bottom: 8px;">@username</li>
-                    <li style="margin-bottom: 8px;">чек о покупке</li><li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
+                    <li style="margin-bottom: 8px;">имя</li>
+                    <li style="margin-bottom: 8px;">фамилию</li>
+                    <li style="margin-bottom: 8px;">@username</li>
+                    <li style="margin-bottom: 8px;">чек о покупке</li>
+                    <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
                 </ol>
             </div>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
@@ -197,9 +255,11 @@ function renderGiftPage() {
             </div>
         </div>
     `;
+
     document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
 }
 
+// ---------- Покупка карты ----------
 function buyCard() {
     if (!userId) return;
     logEvent('buy_card_click');
