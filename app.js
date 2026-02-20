@@ -1,267 +1,261 @@
-:root {
-    --bg-color: #ffffff;
-    --text-color: #222222;
-    --button-color: #40a7e3;
-    --button-text: #ffffff;
-    --secondary-bg: #f5f5f5;
+// Telegram WebApp
+const tg = window.Telegram.WebApp;
+tg.ready();
+
+const backButton = tg.BackButton;
+
+function showBack(callback) {
+    backButton.offClick();
+    backButton.onClick(callback);
+    backButton.show();
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+function hideBack() {
+    backButton.hide();
 }
 
-body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--text-color);
-    line-height: 1.5;
-    position: relative;
-    min-height: 100vh;
+// Конфигурация
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
+const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
+
+const user = tg.initDataUnsafe?.user;
+const userId = user?.id;
+const firstName = user?.first_name || 'друг'; // только имя
+
+let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
+
+const mainDiv = document.getElementById('mainContent');
+const subtitle = document.getElementById('subtitle');
+
+function log(action, isGuest = false) {
+    if (!userId) return;
+    const finalAction = isGuest ? `${action}_guest` : action;
+    const params = new URLSearchParams({
+        user_id: userId,
+        username: user?.username || '',
+        first_name: user?.first_name || '',
+        last_name: user?.last_name || '',
+        action: finalAction
+    });
+    new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('https://i.postimg.cc/pL4LG0KD/photo-2026-02-19-15-22-42-2.jpg');
-    background-size: cover;
-    background-position: center;
-    z-index: -1;
-}
-
-.app {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 16px;
-    position: relative;
-    z-index: 1;
-}
-
-.header {
-    text-align: center;
-    margin-bottom: 24px;
-}
-
-.subtitle {
-    font-size: 24px;
-    font-weight: 700;
-    color: #ffffff;
-    margin-top: 4px;
-}
-
-/* Уменьшенный интервал для гостевого заголовка */
-.subtitle-guest {
-    line-height: 1.2;
-}
-
-.content {
-    flex: 1;
-}
-
-.loader {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 40px 0;
-}
-
-.loader::after {
-    content: "";
-    width: 40px;
-    height: 40px;
-    border: 5px solid rgba(255,255,255,0.3);
-    border-top-color: var(--button-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.card-container {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 20px 0;
-    margin-bottom: 20px;
-}
-
-.card-image {
-    width: calc(100% - 32px);
-    height: auto;
-    display: block;
-    margin: 0 16px 8px 16px;
-    border: none;
-    outline: none;
-    pointer-events: none;
-}
-
-.hike-counter {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    font-size: 16px;
-}
-
-.hike-counter span {
-    font-weight: bold;
-    color: #ffffff;
-}
-
-.counter-number {
-    font-size: 28px;
-    font-weight: 900;
-    font-style: italic;
-    color: var(--button-color);
-}
-
-.extra-links {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 15px 0;
-    margin-bottom: 20px;
-    margin-top: -10px;
-}
-
-.btn {
-    display: block;
-    width: calc(100% - 32px);
-    margin: 0 16px 12px 16px;
-    padding: 14px;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: opacity 0.2s;
-    text-align: center;
-    text-decoration: none;
-    box-sizing: border-box;
-}
-
-.btn:hover {
-    opacity: 0.9;
-}
-
-.btn-blue {
-    background-color: #40a7e3;
-    color: #ffffff;
-    border: none;
-}
-
-.btn-outline-blue {
-    background-color: transparent;
-    color: #40a7e3;
-    border: 2px solid #40a7e3;
-}
-
-.btn-yellow {
-    background-color: #D9FD19;
-    color: #000000;
-    border: none;
-    font-weight: 600;
-}
-
-.btn-white-outline {
-    background-color: transparent;
-    color: #ffffff;
-    border: 2px solid #ffffff;
-}
-
-.partner-item .btn-yellow {
-    width: 100%;
-    margin-left: 0;
-    margin-right: 0;
-    margin-top: 12px;
-    margin-bottom: 0;
-    box-sizing: border-box;
-    color: #000000 !important;
-}
-
-.partner-item {
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 16px;
-    margin: 0 16px 12px 16px;
-    color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-}
-
-.partner-item strong {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 700;
-    font-size: 18px;
-    color: #ffffff;
-}
-
-.partner-item p {
-    margin: 4px 0;
-    font-size: 14px;
-    opacity: 0.9;
-    line-height: 1.5;
-    color: #ffffff;
-}
-
-.partner-item a {
-    color: #D9FD19;
-    text-decoration: none;
-}
-
-.partner-item a:hover {
-    text-decoration: underline;
-}
-
-.section-title {
-    color: #ffffff !important;
-    font-size: 18px;
-    font-weight: 700;
-    margin: 0 16px 16px 16px;
-}
-
-.section-title.second {
-    margin: 24px 16px 16px 16px;
-}
-
-.gift-text {
-    color: #ffffff;
-}
-
-.gift-text p,
-.gift-text ol,
-.gift-text li {
-    color: #ffffff;
-}
-
-@media (orientation: landscape) {
-    .app {
-        max-width: 100%;
-        padding: 8px 16px;
+async function loadData() {
+    if (!userId) {
+        userCard.status = 'inactive';
+        renderHome();
+        return;
     }
-    .card-container, .extra-links {
-        margin-bottom: 10px;
+    try {
+        const resp = await fetch(`${CSV_URL}&t=${Date.now()}`);
+        const text = await resp.text();
+        const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
+        if (rows.length < 2) throw new Error('Нет данных');
+        const headers = rows[0];
+        for (let row of rows.slice(1)) {
+            if (row[0] === String(userId)) {
+                let data = {};
+                headers.forEach((k, i) => data[k] = row[i]);
+                userCard = {
+                    status: 'active',
+                    hikes: parseInt(data.hikes_count) || 0,
+                    cardUrl: data.card_image_url || ''
+                };
+                break;
+            }
+        }
+        if (userCard.status !== 'active') userCard.status = 'inactive';
+    } catch (e) {
+        console.error(e);
+        userCard.status = 'inactive';
     }
-    .btn {
-        padding: 10px;
-        font-size: 14px;
+    log('visit', userCard.status !== 'active');
+    renderHome();
+}
+
+const partners = [
+    {
+        name: 'экипировочный центр Геккон',
+        privilege: '-10% по карте интеллигента',
+        location: 'Ялта, ул. Московская 8А',
+        link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'технологичная хайкинг-одежда Nothomme',
+        privilege: '-7% по промокоду на сайте',
+        location: 'телеграм канал: t.me/nothomme_russia',
+        link: 'https://t.me/nothomme_russia'
+    },
+    {
+        name: 'кофейня Возможно всё',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Ялта, ул. Свердлова, 13/2',
+        link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'магазин косметики На Утро: На Вечер',
+        privilege: '+1000 бонусов по карте интеллигента',
+        location: 'г. Ялта, ул. Морская 3А',
+        link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'конный клуб Красный конь',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Алупка, Севастопольское шоссе',
+        link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'маникюрный салон Marvel studio',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Ялта, ул. Руданского 4',
+        link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'тематическое кафе Vinyl',
+        privilege: '-10% по карте интеллигента',
+        location: 'г. Ялта, пер. Черноморский 1А',
+        link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'барбершоп Скала',
+        privilege: '-5% на второе посещение и далее',
+        location: 'г. Ялта, ул. Свердлова 3',
+        link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'кофейня Deep Black',
+        privilege: '-5% по карте интеллигента',
+        location: 'п. г. т. Гаспра, Алупкинское ш., 5А',
+        link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
     }
-    .hike-counter {
-        padding: 8px 16px;
-        font-size: 14px;
+];
+
+function renderPriv() {
+    subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
+    showBack(renderHome);
+
+    let club = [
+        { t: 'бесплатное участие', d: 'один раз оформляешь карту – теперь ты член клуба. окупишь на шестом хайке. дальше бесплатно.' },
+        { t: 'гостевой хайк', d: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно покупать билет.' },
+        { t: 'запрос на мастермайнд', d: 'владельцы карт могут забронировать запрос и на ближайшем хайке получить опыт и контакты.', btn: 'забронировать запрос' },
+        { t: 'new: обход блокировок', d: 'получи настройки, которые вернут заблокированные ресурсы.', btn: 'получить настройки' }
+    ];
+
+    let clubHtml = '';
+    club.forEach(c => {
+        clubHtml += `<div class="partner-item"><strong>${c.t}</strong><p>${c.d}</p>${c.btn ? `<a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
+    });
+
+    let cityHtml = '';
+    partners.forEach(p => {
+        cityHtml += `<div class="partner-item">
+            <strong>${p.name}</strong>
+            <p>${p.privilege}</p>`;
+        
+        if (p.name === 'технологичная хайкинг-одежда Nothomme') {
+            cityHtml += `<a href="${p.link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">в магазин</a>`;
+        } else {
+            cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
+        }
+        
+        cityHtml += `</div>`;
+    });
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <h2 class="section-title">в клубе</h2>${clubHtml}
+            <h2 class="section-title second">в городе</h2>${cityHtml}
+            <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:20px 16px 0;">&lt; на главную</button>
+        </div>`;
+    document.getElementById('goHome')?.addEventListener('click', renderHome);
+}
+
+function renderGift() {
+    subtitle.textContent = `🎁 подарить карту`;
+    showBack(renderHome);
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <div class="gift-text" style="padding:0 16px;">
+                <p style="margin-bottom:16px;">Чтобы подарить карту другу, пришли в поддержку:</p>
+                <ol style="margin-left:20px; margin-bottom:20px;">
+                    <li>имя</li><li>фамилию</li><li>@username</li><li>чек о покупке</li>
+                    <li>и напиши, хочешь отправить сам или чтобы мы написали, что это подарок</li>
+                </ol>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;">написать в поддержку</a>
+                <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
+        </div>`;
+    document.getElementById('goHome')?.addEventListener('click', renderHome);
+}
+
+function renderGuestHome() {
+    subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
+    // Добавляем класс для уменьшения межстрочного интервала
+    subtitle.classList.add('subtitle-guest');
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" style="pointer-events: none;">
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
+            <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
+            <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+        </div>
+        <div class="extra-links">
+            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
+            <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
+            <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
+        </div>
+    `;
+
+    document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
+    document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
+    document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(); });
+    document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
+    document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
+}
+
+function renderHome() {
+    hideBack();
+
+    // Убираем класс для гостя, если он был добавлен ранее
+    subtitle.classList.remove('subtitle-guest');
+
+    if (userCard.status === 'loading') {
+        mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
+        return;
     }
-    .counter-number {
-        font-size: 24px;
+
+    if (userCard.status === 'active' && userCard.cardUrl) {
+        subtitle.textContent = `💳 твоя карта, ${firstName}`;
+        mainDiv.innerHTML = `
+            <div class="card-container">
+                <img src="${userCard.cardUrl}" alt="карта" class="card-image" style="pointer-events: none;">
+                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
+                <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+            </div>
+            <div class="extra-links">
+                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
+                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
+                <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
+            </div>
+        `;
+        document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('privilege_click'); renderPriv(); });
+        document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click'));
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click'); renderGift(); });
+        document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
+        document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
+    } else {
+        renderGuestHome();
     }
 }
+
+function buyCard() {
+    if (!userId) return;
+    log('buy_card_click', true);
+    tg.openLink('https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ');
+}
+
+window.addEventListener('load', loadData);
