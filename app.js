@@ -258,7 +258,7 @@ function renderGuestHome() {
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
-        <!-- Блок метрик с новым заголовком -->
+        <!-- Блок метрик -->
         <div class="card-container">
             <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
             <div class="metrics-grid">
@@ -296,6 +296,7 @@ function renderGuestHome() {
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 }
 
+// ---------- Главная для владельцев карты (тоже с метриками) ----------
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
@@ -317,6 +318,30 @@ function renderHome() {
                 <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
+            
+            <!-- Блок метрик для владельцев карты -->
+            <div class="card-container">
+                <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">хайков</div>
+                        <div class="metric-value">${metrics.hikes}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">локаций</div>
+                        <div class="metric-value">${metrics.locations}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">километров</div>
+                        <div class="metric-value">${metrics.kilometers}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">знакомств</div>
+                        <div class="metric-value">${metrics.meetings}</div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="extra-links">
                 <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
                 <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
