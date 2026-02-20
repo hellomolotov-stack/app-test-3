@@ -91,12 +91,13 @@ body::before {
 }
 
 .card-image {
-    width: 100%; /* временно, JS переопределит */
+    width: 100%; /* будет переопределено JS, но оставим */
     height: auto;
     display: block;
     margin: 0 16px 8px 16px;
     border: none;
     outline: none;
+    object-fit: cover; /* ключевое свойство */
 }
 
 .hike-counter {
