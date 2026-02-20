@@ -1,21 +1,20 @@
-// ---------- Telegram WebApp ----------
+// Telegram WebApp
 const tg = window.Telegram.WebApp;
 tg.ready();
 
-// ---------- Кнопка "Назад" ----------
 const backButton = tg.BackButton;
 
-function showBackButton(callback) {
+function showBack(callback) {
     backButton.offClick();
     backButton.onClick(callback);
     backButton.show();
 }
 
-function hideBackButton() {
+function hideBack() {
     backButton.hide();
 }
 
-// ---------- КОНФИГУРАЦИЯ ----------
+// Конфигурация (ваши ссылки уже вставлены)
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 
@@ -23,19 +22,13 @@ const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
-let userCard = {
-    status: 'loading',
-    hikesCompleted: 0,
-    cardImageUrl: ''
-};
+let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 
-const mainContent = document.getElementById('mainContent');
-const subtitleEl = document.getElementById('subtitle');
+const mainDiv = document.getElementById('mainContent');
+const subtitle = document.getElementById('subtitle');
 
-function logEvent(action) {
+function log(action) {
     if (!userId) return;
-    if (!GUEST_API_URL.startsWith('https://')) return;
-
     const params = new URLSearchParams({
         user_id: userId,
         username: user?.username || '',
@@ -43,300 +36,136 @@ function logEvent(action) {
         last_name: user?.last_name || '',
         action: action
     });
-
-    const img = new Image();
-    img.src = `${GUEST_API_URL}?${params}`;
+    new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-function updateUserNameIfNeeded(userData) {
-    if (userData.user_name && userData.user_name.trim() !== '') return;
-
-    let fullName = user.first_name;
-    if (user.last_name) fullName += ' ' + user.last_name;
-
-    const params = new URLSearchParams({
-        update_members: '1',
-        user_id: userId,
-        user_name: fullName
-    });
-
-    const img = new Image();
-    img.src = `${GUEST_API_URL}?${params}`;
-}
-
-async function loadUserData() {
-    if (!userId) {
-        userCard.status = 'inactive';
-        renderHome();
-        return;
-    }
-
+async function loadData() {
+    if (!userId) { userCard.status = 'inactive'; renderHome(); return; }
     try {
-        const response = await fetch(`${CSV_URL}&t=${Date.now()}`);
-        const csvText = await response.text();
-        const rows = csvText.trim().split('\n').map(row => row.split(',').map(cell => cell.trim()));
-
+        const resp = await fetch(`${CSV_URL}&t=${Date.now()}`);
+        const text = await resp.text();
+        const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
         if (rows.length < 2) throw new Error('Нет данных');
-
         const headers = rows[0];
-        const dataRows = rows.slice(1);
-
-        let found = false;
-        for (const row of dataRows) {
-            if (String(row[0]).trim() === String(userId)) {
-                const userData = {};
-                headers.forEach((key, idx) => { userData[key] = row[idx]?.trim(); });
-
+        for (let row of rows.slice(1)) {
+            if (row[0] === String(userId)) {
+                let data = {};
+                headers.forEach((k, i) => data[k] = row[i]);
                 userCard = {
                     status: 'active',
-                    hikesCompleted: parseInt(userData.hikes_count) || 0,
-                    cardImageUrl: userData.card_image_url || ''
+                    hikes: parseInt(data.hikes_count) || 0,
+                    cardUrl: data.card_image_url || ''
                 };
-
-                updateUserNameIfNeeded(userData);
-                found = true;
                 break;
             }
         }
-
-        if (!found) userCard.status = 'inactive';
-    } catch (error) {
-        console.error('Ошибка загрузки CSV:', error);
+        if (userCard.status !== 'active') userCard.status = 'inactive';
+    } catch (e) {
+        console.error(e);
         userCard.status = 'inactive';
     }
-
-    logEvent('visit');
+    log('visit');
     renderHome();
 }
 
 const partners = [
-    {
-        name: 'экипировочный центр Геккон',
-        privilege: '-10% по карте интеллигента',
-        location: 'Московская ул., 8А, Ялта',
-        link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'технологичная хайкинг-одежда Nothomme',
-        privilege: '-7% по промокоду на сайте',
-        location: 'телеграм канал: t.me/nothomme_russia',
-        link: 'https://t.me/nothomme_russia'
-    },
-    {
-        name: 'кофейня Возможно всё',
-        privilege: '-5% по карте интеллигента',
-        location: 'ул. Свердлова, 13/2, Ялта',
-        link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'магазин косметики На Утро: На Вечер',
-        privilege: '+1000 бонусов по карте интеллигента',
-        location: 'Морская ул., 3А, Ялта',
-        link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'конный клуб Красный конь',
-        privilege: '-5% по карте интеллигента',
-        location: 'Республика Крым, городской округ Ялта, Алупкинский территориальный орган',
-        link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'маникюрный салон Marvel studio',
-        privilege: '-5% по карте интеллигента',
-        location: 'ул. Руданского, 4, Ялта',
-        link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'тематическое кафе Vinyl',
-        privilege: '-10% по карте интеллигента',
-        location: 'Черноморский пер., 1А, Ялта',
-        link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'барбершоп Скала',
-        privilege: '-5% на второе посещение и далее',
-        location: 'ул. Свердлова, 3, Ялта',
-        link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'кофейня Deep Black',
-        privilege: '-5% по карте интеллигента',
-        location: 'Алупкинское ш., 5А, п. г. т. Гаспра',
-        link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
-    }
+    { name: 'Геккон', priv: '-10%', addr: 'Московская ул., 8А, Ялта', link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w' },
+    { name: 'Nothomme', priv: '-7% по промокоду', addr: 'телеграм канал: t.me/nothomme_russia', link: 'https://t.me/nothomme_russia' },
+    { name: 'Возможно всё', priv: '-5%', addr: 'ул. Свердлова, 13/2, Ялта', link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w' },
+    { name: 'На Утро: На Вечер', priv: '+1000 бонусов', addr: 'Морская ул., 3А, Ялта', link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w' },
+    { name: 'Красный конь', priv: '-5%', addr: 'Республика Крым, г.о. Ялта, Алупкинский тер. орган', link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w' },
+    { name: 'Marvel studio', priv: '-5%', addr: 'ул. Руданского, 4, Ялта', link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w' },
+    { name: 'Vinyl', priv: '-10%', addr: 'Черноморский пер., 1А, Ялта', link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w' },
+    { name: 'Скала', priv: '-5% на второе посещение', addr: 'ул. Свердлова, 3, Ялта', link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w' },
+    { name: 'Deep Black', priv: '-5%', addr: 'Алупкинское ш., 5А, п. г. т. Гаспра', link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w' }
 ];
 
-// ---------- Рендер страницы привилегий ----------
-function renderPrivilegesPage() {
-    subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
-    showBackButton(renderHome);
-
-    const clubPrivileges = [
-        {
-            title: 'бесплатное участие',
-            desc: 'один раз оформляешь карту – теперь ты не просто участник, а член клуба. математика простая: ты окупишь карту уже на шестой хайк. или раньше, с учётом скидок у партнёров. дальше все хайки для тебя бесплатны – ты в постоянном плюсе'
-        },
-        {
-            title: 'гостевой хайк',
-            desc: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно будет покупать на него билет'
-        },
-        {
-            title: 'приоритетный запрос на мастермайнд',
-            desc: 'владельцы карт могут забронировать запрос на мастермайнд и на ближайшем хайке получить свежий взгляд, опыт и полезные контакты от десятка человек для своего проекта, идеи или задачи',
-            button: 'забронировать запрос'
-        },
-        {
-            title: 'new: обход блокировок',
-            desc: 'теперь ты можешь получить настройки, которые вновь вернут заблокированные ресурсы.',
-            button: 'получить настройки'
-        }
+function renderPriv() {
+    subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
+    showBack(renderHome);
+    let club = [
+        { t: 'бесплатное участие', d: 'один раз оформляешь карту – теперь ты член клуба. окупишь на шестом хайке. дальше бесплатно.' },
+        { t: 'гостевой хайк', d: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно покупать билет.' },
+        { t: 'приоритетный запрос на мастермайнд', d: 'владельцы карт могут забронировать запрос и на ближайшем хайке получить опыт и контакты.', btn: 'забронировать запрос' },
+        { t: 'new: обход блокировок', d: 'получи настройки, которые вернут заблокированные ресурсы.', btn: 'получить настройки' }
     ];
-
     let clubHtml = '';
-    clubPrivileges.forEach(p => {
-        clubHtml += `
-            <div class="partner-item">
-                <strong>${p.title}</strong>
-                <p>${p.desc}</p>
-                ${p.button ? `
-                    <a href="https://t.me/hellointelligent" target="_blank" style="display: block; background-color: #D9FD19; color: #000000; border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 600; text-align: center; text-decoration: none; margin-top: 12px; width: 100%; box-sizing: border-box;">${p.button}</a>
-                ` : ''}
-            </div>
-        `;
+    club.forEach(c => {
+        clubHtml += `<div class="partner-item"><strong>${c.t}</strong><p>${c.d}</p>${c.btn ? `<a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
     });
-
-    let partnersHtml = '';
+    let cityHtml = '';
     partners.forEach(p => {
-        let locationHtml;
-        if (p.link) {
-            locationHtml = `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`;
-        } else {
-            const yandexMapsUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(p.location)}`;
-            locationHtml = `<a href="${yandexMapsUrl}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`;
-        }
-        
-        partnersHtml += `
-            <div class="partner-item">
-                <strong>${p.name}</strong>
-                <p>${p.privilege}</p>
-                <p>📍 ${locationHtml}</p>
-            </div>
-        `;
+        cityHtml += `<div class="partner-item"><strong>${p.name}</strong><p>${p.priv}</p><p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.addr}</a></p></div>`;
     });
-
-    mainContent.innerHTML = `
+    mainDiv.innerHTML = `
         <div class="card-container">
-            <h2 style="color: #ffffff; font-size: 18px; font-weight: 700; margin: 0 16px 16px 16px;">✨ в клубе</h2>
-            ${clubHtml}
-            
-            <h2 style="color: #ffffff; font-size: 18px; font-weight: 700; margin: 24px 16px 16px 16px;">🏙️ в городе</h2>
-            ${partnersHtml}
-            
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
+            <h2 style="margin:0 16px 16px; font-size:18px;">✨ в клубе</h2>${clubHtml}
+            <h2 style="margin:24px 16px 16px; font-size:18px;">🏙️ в городе</h2>${cityHtml}
+            <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:20px 16px 0;">&lt; на главную</button>
+        </div>`;
+    document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Рендер главного экрана ----------
-function renderHome() {
-    hideBackButton();
-
-    if (userCard.status === 'active') {
-        subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
-    } else {
-        subtitleEl.textContent = `👋🏻 добро пожаловать в клуб хайкинг интеллигенции, ${firstName}`;
-    }
-
-    if (userCard.status === 'loading') {
-        mainContent.innerHTML = '<div class="loader"></div>';
-        return;
-    }
-
-    if (userCard.status === 'active' && userCard.cardImageUrl) {
-        mainContent.innerHTML = `
-            <div class="card-container" id="cardContainer">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage">
-                <div class="hike-counter">
-                    <span>⛰️ пройдено хайков</span>
-                    <span class="counter-number">${userCard.hikesCompleted}</span>
-                </div>
-                <a href="#" class="btn btn-outline" id="privilegeBtn">мои привилегии</a>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" id="supportBtn">написать в поддержку</a>
-            </div>
-            <div class="extra-links">
-                <a href="https://t.me/yaltahiking" target="_blank" class="btn-support" id="channelBtn">📰 открыть канал клуба</a>
-                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn-support" id="chatBtn">💬 открыть чат</a>
-                <a href="#" class="btn-support" id="giftBtn">🫂 подарить карту другу</a>
-            </div>
-        `;
-
-        // Обработчики кнопок (карта не обрабатывается)
-        document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            logEvent('privilege_click');
-            renderPrivilegesPage();
-        });
-        document.getElementById('supportBtn')?.addEventListener('click', () => logEvent('support_click'));
-        document.getElementById('channelBtn')?.addEventListener('click', () => logEvent('channel_click'));
-        document.getElementById('chatBtn')?.addEventListener('click', () => logEvent('chat_click'));
-        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            logEvent('gift_click');
-            renderGiftPage();
-        });
-    } else {
-        mainContent.innerHTML = `
-            <div class="btn-group">
-                <button id="buyCardBtn" class="btn">💳 купить карту</button>
-                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-outline">📖 подробнее о карте</a>
-            </div>
-        `;
-        document.getElementById('buyCardBtn')?.addEventListener('click', buyCard);
-    }
-}
-
-// ---------- Страница подарка ----------
-function renderGiftPage() {
-    subtitleEl.textContent = `🎁 подарить карту`;
-
-    showBackButton(renderHome);
-
-    mainContent.innerHTML = `
+function renderGift() {
+    subtitle.textContent = `🎁 подарить карту`;
+    showBack(renderHome);
+    mainDiv.innerHTML = `
         <div class="card-container">
-            <div style="padding: 0 16px;">
-                <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">
-                    Чтобы подарить карту интеллигента другу, пришли нам в поддержку:
-                </p>
-                <ol style="color: #ffffff; margin-left: 20px; margin-bottom: 20px; font-size: 15px; padding-left: 0;">
-                    <li style="margin-bottom: 8px;">имя</li>
-                    <li style="margin-bottom: 8px;">фамилию</li>
-                    <li style="margin-bottom: 8px;">@username</li>
-                    <li style="margin-bottom: 8px;">чек о покупке</li>
-                    <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
+            <div style="padding:0 16px;">
+                <p style="margin-bottom:16px;">Чтобы подарить карту другу, пришли в поддержку:</p>
+                <ol style="margin-left:20px; margin-bottom:20px;">
+                    <li>имя</li><li>фамилию</li><li>@username</li><li>чек о покупке</li>
+                    <li>и напиши, хочешь отправить сам или чтобы мы написали, что это подарок</li>
                 </ol>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" style="background-color: #D9FD19; color: #000000; border: none; width: calc(100% - 32px); margin: 0 16px;">написать в поддержку</a>
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;">написать в поддержку</a>
+                <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
-        </div>
-    `;
-
-    document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
+        </div>`;
+    document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Покупка карты ----------
+function renderHome() {
+    hideBack();
+    if (userCard.status === 'active') subtitle.textContent = `💳 твоя карта, ${firstName}`;
+    else subtitle.textContent = `👋🏻 добро пожаловать в клуб хайкинг интеллигенции, ${firstName}`;
+
+    if (userCard.status === 'loading') { mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>'; return; }
+
+    if (userCard.status === 'active' && userCard.cardUrl) {
+        mainDiv.innerHTML = `
+            <div class="card-container">
+                <img src="${userCard.cardUrl}" alt="карта" class="card-image">
+                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
+                <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+            </div>
+            <div class="extra-links">
+                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
+                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
+                <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
+            </div>
+        `;
+        document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('privilege_click'); renderPriv(); });
+        document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click'));
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click'); renderGift(); });
+        document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
+        document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
+    } else {
+        mainDiv.innerHTML = `
+            <div style="padding:20px 0;">
+                <button id="buyBtn" class="btn btn-blue">💳 купить карту</button>
+                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-outline-blue">📖 подробнее о карте</a>
+            </div>`;
+        document.getElementById('buyBtn')?.addEventListener('click', buyCard);
+    }
+}
+
 function buyCard() {
     if (!userId) return;
-    logEvent('buy_card_click');
-    const robokassaUrl = 'https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ';
-    tg.openLink(robokassaUrl);
+    log('buy_card_click');
+    tg.openLink('https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ');
 }
 
-window.addEventListener('load', async () => {
-    await loadUserData();
-});
+window.addEventListener('load', loadData);
