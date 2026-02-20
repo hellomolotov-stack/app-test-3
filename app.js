@@ -17,7 +17,6 @@ function hideBack() {
 // Конфигурация
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
-// ⚠️ ВСТАВЬТЕ ССЫЛКУ НА CSV ЛИСТА METRICS
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 
 const user = tg.initDataUnsafe?.user;
@@ -94,7 +93,6 @@ async function loadMetrics() {
         };
     } catch (e) {
         console.error('Ошибка загрузки метрик:', e);
-        // оставляем старые значения
     }
 }
 
@@ -104,6 +102,7 @@ async function loadData() {
     renderHome();
 }
 
+// ----- Массив партнёров (обновлён текст для Nothomme) -----
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -113,7 +112,7 @@ const partners = [
     },
     {
         name: 'технологичная хайкинг-одежда Nothomme',
-        privilege: '-7% по промокоду на сайте',
+        privilege: '-7% по промокоду INTELLIGENT на сайте',
         location: 'телеграм канал: t.me/nothomme_russia',
         link: 'https://t.me/nothomme_russia'
     },
@@ -161,17 +160,16 @@ const partners = [
     }
 ];
 
+// ----- Страница привилегий для владельцев карты (с кнопками) -----
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
 
-    // Обновлённый список привилегий в клубе
     let club = [
-        { t: 'бесплатные хайки', d: 'уже на шестой хайк (или даже раньше, с учётом скидок у партнёров) твоя карта окупится и позволит ходить на хайки бесплатно. сколько? пока существует клуб или пока не прилетит метеорит' },
-        { t: 'плюс один', d: 'на каждый хайк ты можешь брать с собой одного нового друга, который ещё с нами не был. всё, что ему нужно – поставить голос в регистрации и оформить пропуск в заповедник. билет покупать не нужно' },
-        { t: 'эксклюзивные маршруты', d: 'ты можешь ходить с нами по закрытым для большинства туристов локациям с нашим сертифицированным гидом' },
-        { t: 'обход блокировок', d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом и другими сервисами, как будто не было никаких блокировок', btn: 'получить настройки' },
-        { t: 'запрос на мастермайнд', d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами', btn: 'забронировать запрос' }
+        { t: 'бесплатное участие', d: 'один раз оформляешь карту – теперь ты член клуба. окупишь на шестом хайке. дальше бесплатно.' },
+        { t: 'гостевой хайк', d: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно покупать билет.' },
+        { t: 'запрос на мастермайнд', d: 'владельцы карт могут забронировать запрос и на ближайшем хайке получить опыт и контакты.', btn: 'забронировать запрос' },
+        { t: 'new: обход блокировок', d: 'получи настройки, которые вернут заблокированные ресурсы.', btn: 'получить настройки' }
     ];
 
     let clubHtml = '';
@@ -203,6 +201,50 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
+// ----- Страница привилегий для гостей (без кнопок, внизу жёлтая кнопка) -----
+function renderGuestPriv() {
+    subtitle.textContent = `🤘🏻привилегии, ${firstName}`;
+    showBack(renderHome);
+
+    let club = [
+        { t: 'бесплатное участие', d: 'один раз оформляешь карту – теперь ты член клуба. окупишь на шестом хайке. дальше бесплатно.' },
+        { t: 'гостевой хайк', d: 'ты можешь взять с собой друга на его первый маршрут с клубом. ему не нужно покупать билет.' },
+        { t: 'запрос на мастермайнд', d: 'владельцы карт могут забронировать запрос и на ближайшем хайке получить опыт и контакты.' }, // без кнопки
+        { t: 'new: обход блокировок', d: 'получи настройки, которые вернут заблокированные ресурсы.' } // без кнопки
+    ];
+
+    let clubHtml = '';
+    club.forEach(c => {
+        clubHtml += `<div class="partner-item"><strong>${c.t}</strong><p>${c.d}</p></div>`;
+    });
+
+    let cityHtml = '';
+    partners.forEach(p => {
+        cityHtml += `<div class="partner-item">
+            <strong>${p.name}</strong>
+            <p>${p.privilege}</p>`;
+        
+        // Для гостей не добавляем кнопку "в магазин" для Nothomme
+        cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
+        
+        cityHtml += `</div>`;
+    });
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <h2 class="section-title">в клубе</h2>${clubHtml}
+            <h2 class="section-title second">в городе</h2>${cityHtml}
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
+                <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
+        </div>`;
+
+    document.getElementById('goHome')?.addEventListener('click', renderHome);
+    document.getElementById('guestBuyBtn')?.addEventListener('click', () => log('buy_card_click', true));
+}
+
+// ----- Страница подарка (без изменений) -----
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
@@ -227,6 +269,7 @@ function renderGift(isGuest = false) {
     document.getElementById('giftSupportBtn')?.addEventListener('click', () => log('support_click', isGuest));
 }
 
+// ----- Попап для гостей -----
 function showGuestPopup() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -248,7 +291,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ---------- Главная для гостей ----------
+// ----- Главная для гостей (с новой кнопкой) -----
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
@@ -258,6 +301,7 @@ function renderGuestHome() {
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
+            <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
@@ -296,13 +340,14 @@ function renderGuestHome() {
 
     document.getElementById('guestCardImage')?.addEventListener('click', showGuestPopup);
     document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
+    document.getElementById('guestPrivBtn')?.addEventListener('click', () => { log('guest_priv_click', true); renderGuestPriv(); });
     document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
     document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(true); });
     document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 }
 
-// ---------- Главная для владельцев карты ----------
+// ----- Главная для владельцев карты (без изменений) -----
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
