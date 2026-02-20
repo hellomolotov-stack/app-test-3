@@ -20,7 +20,7 @@ const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sF
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
-const firstName = user?.first_name || 'друг'; // только имя
+const firstName = user?.first_name || 'друг';
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 
@@ -190,14 +190,48 @@ function renderGift() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
+// Функция показа попапа для гостей
+function showGuestPopup() {
+    // Создаём оверлей
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'guestPopup';
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <button class="modal-close" id="closePopup">&times;</button>
+            <div class="modal-text">осталось 8 карт по цене прошлого сезона</div>
+            <div class="modal-price">
+                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="popupBuyBtn">
+                    купить за 5 000 руб. <span class="old-price">7 500 руб.</span>
+                </a>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Закрытие по клику на крестик
+    document.getElementById('closePopup')?.addEventListener('click', () => {
+        overlay.remove();
+    });
+
+    // Закрытие по клику на оверлей (но не на контент)
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
+
+    // Логируем открытие попапа (опционально)
+    log('guest_popup_opened', true);
+}
+
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
-    // Добавляем класс для уменьшения межстрочного интервала
     subtitle.classList.add('subtitle-guest');
 
     mainDiv.innerHTML = `
-        <div class="card-container">
-            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" style="pointer-events: none;">
+        <div class="card-container" id="guestCardContainer">
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -209,6 +243,9 @@ function renderGuestHome() {
         </div>
     `;
 
+    // Клик по блоку карты для открытия попапа
+    document.getElementById('guestCardContainer')?.addEventListener('click', showGuestPopup);
+
     document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
     document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
     document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(); });
@@ -218,9 +255,11 @@ function renderGuestHome() {
 
 function renderHome() {
     hideBack();
-
-    // Убираем класс для гостя, если он был добавлен ранее
     subtitle.classList.remove('subtitle-guest');
+
+    // Удаляем попап, если он был открыт
+    const existingPopup = document.getElementById('guestPopup');
+    if (existingPopup) existingPopup.remove();
 
     if (userCard.status === 'loading') {
         mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
