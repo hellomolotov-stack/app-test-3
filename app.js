@@ -170,29 +170,34 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-function renderGift() {
-    subtitle.textContent = `🎁 подарить карту`;
+// ---------- Новая страница подарка (обновлённая) ----------
+function renderGift(isGuest = false) {
+    subtitle.textContent = `🎁 как подарить карту`;
     showBack(renderHome);
+
     mainDiv.innerHTML = `
         <div class="card-container">
             <div class="gift-text" style="padding:0 16px;">
-                <p style="margin-bottom:16px;">Чтобы подарить карту другу, пришли в поддержку:</p>
-                <ol style="margin-left:20px; margin-bottom:20px;">
-                    <li>имя</li><li>фамилию</li><li>@username</li><li>чек о покупке</li>
-                    <li>и напиши, хочешь отправить сам или чтобы мы написали, что это подарок</li>
-                </ol>
+                <p style="margin-bottom:16px;">хочешь подарить карту интеллигента другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.</p>
+                <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».</p>
+                <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;">написать в поддержку</a>
+                <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" id="giftBuyBtn">купить в подарок</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="giftSupportBtn">написать в поддержку</a>
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
-        </div>`;
+        </div>
+    `;
+
     document.getElementById('goHome')?.addEventListener('click', renderHome);
+    // Логирование
+    document.getElementById('giftBuyBtn')?.addEventListener('click', () => log('gift_purchase_click', isGuest));
+    document.getElementById('giftSupportBtn')?.addEventListener('click', () => log('support_click', isGuest));
 }
 
-// Функция показа попапа для гостей
+// ---------- Попап для гостей ----------
 function showGuestPopup() {
-    // Создаём оверлей
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'guestPopup';
@@ -208,22 +213,12 @@ function showGuestPopup() {
     `;
     document.body.appendChild(overlay);
 
-    // Закрытие по клику на крестик
-    document.getElementById('closePopup')?.addEventListener('click', () => {
-        overlay.remove();
-    });
-
-    // Закрытие по клику на оверлей (но не на контент)
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.remove();
-        }
-    });
-
-    // Логируем открытие попапа (опционально)
+    document.getElementById('closePopup')?.addEventListener('click', () => overlay.remove());
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
     log('guest_popup_opened', true);
 }
 
+// ---------- Главная для гостей ----------
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
@@ -242,21 +237,19 @@ function renderGuestHome() {
         </div>
     `;
 
-    // Клик по блоку карты для открытия попапа
     document.getElementById('guestCardContainer')?.addEventListener('click', showGuestPopup);
-
     document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
     document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
-    document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(); });
+    document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(true); });
     document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 }
 
+// ---------- Главная для владельцев карты ----------
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
 
-    // Удаляем попап, если он был открыт
     const existingPopup = document.getElementById('guestPopup');
     if (existingPopup) existingPopup.remove();
 
@@ -282,7 +275,7 @@ function renderHome() {
         `;
         document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('privilege_click'); renderPriv(); });
         document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click'));
-        document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click'); renderGift(); });
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click'); renderGift(false); });
         document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
         document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
     } else {
