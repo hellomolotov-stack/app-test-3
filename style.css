@@ -56,7 +56,6 @@ body::before {
     margin-top: 4px;
 }
 
-/* Уменьшенный интервал для гостевого заголовка */
 .subtitle-guest {
     line-height: 1.2;
 }
@@ -102,7 +101,6 @@ body::before {
     margin: 0 16px 8px 16px;
     border: none;
     outline: none;
-    pointer-events: none;
 }
 
 .hike-counter {
@@ -245,6 +243,77 @@ body::before {
     color: #ffffff;
 }
 
+/* Стили для модального окна */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: rgba(73, 138, 176, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px;
+    padding: 24px;
+    max-width: 90%;
+    width: 400px;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #ffffff;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    opacity: 1;
+}
+
+.modal-text {
+    font-size: 18px;
+    margin-bottom: 24px;
+    text-align: center;
+    font-weight: 500;
+}
+
+.modal-price {
+    text-align: center;
+}
+
+.modal-price .old-price {
+    text-decoration: line-through;
+    color: rgba(255,255,255,0.6);
+    margin-left: 8px;
+    font-size: 18px;
+}
+
+.modal-price .new-price {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .app {
         max-width: 100%;
