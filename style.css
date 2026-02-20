@@ -95,15 +95,17 @@ body::before {
     margin-bottom: 20px;
 }
 
-/* Специальный класс для футера с размытым блоком */
+/* Специальный класс для футера с размытым блоком (ширина по содержимому) */
 .footer-card {
     background-color: rgba(73, 138, 176, 0.1);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 28px;
-    padding: 12px 0; /* уменьшенный padding для компактности */
+    padding: 12px 24px; /* горизонтальные отступы для красоты */
+    width: fit-content; /* ширина по содержимому */
+    margin: 20px auto 0; /* центрирование и отступ сверху */
     text-align: center;
-    margin-top: 20px; /* отступ от предыдущего блока */
+    box-sizing: border-box;
 }
 
 .footer-card p {
