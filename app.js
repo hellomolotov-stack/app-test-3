@@ -166,14 +166,14 @@ const partners = [
     }
 ];
 
-// ---------- Полноэкранный режим карты (поворот на 90 градусов) ----------
+// ---------- Полноэкранный режим карты (без поворота) ----------
 function renderFullscreenCard() {
     subtitleEl.textContent = ''; // убираем заголовок
     hideBackButton(); // сначала скроем, потом покажем с нужным обработчиком
 
     mainContent.innerHTML = `
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; display: flex; justify-content: center; align-items: center; z-index: 1000;">
-            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="transform: rotate(90deg); width: 100vh; height: 100vw; object-fit: cover; cursor: pointer;" id="fullscreenCard">
+            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer;" id="fullscreenCard">
         </div>
     `;
 
@@ -214,9 +214,9 @@ function renderPrivilegesPage() {
     let clubHtml = '';
     clubPrivileges.forEach(p => {
         clubHtml += `
-            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
-                <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 18px;">${p.title}</strong>
-                <p style="margin: 4px 0; font-size: 14px; opacity: 0.9; line-height: 1.5;">${p.desc}</p>
+            <div class="partner-item">
+                <strong>${p.title}</strong>
+                <p>${p.desc}</p>
                 ${p.button ? `
                     <a href="https://t.me/hellointelligent" target="_blank" style="display: block; background-color: #D9FD19; color: #000000; border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 600; text-align: center; text-decoration: none; margin-top: 12px; width: 100%; box-sizing: border-box;">${p.button}</a>
                 ` : ''}
@@ -235,10 +235,10 @@ function renderPrivilegesPage() {
         }
         
         partnersHtml += `
-            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
-                <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 18px;">${p.name}</strong>
-                <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
-                <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
+            <div class="partner-item">
+                <strong>${p.name}</strong>
+                <p>${p.privilege}</p>
+                <p>📍 ${locationHtml}</p>
             </div>
         `;
     });
