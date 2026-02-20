@@ -138,8 +138,9 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container" id="cardContainer">
-                <div class="card-image-wrapper" style="margin: 0 16px 8px 16px; overflow: hidden;">
-                    <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: 100%; height: auto; display: block; transform: scale(1.15); transform-origin: center; object-fit: cover;">
+                <!-- Обёртка с flex и overflow: hidden -->
+                <div class="card-image-wrapper" style="margin: 0 16px 8px 16px; overflow: hidden; display: flex; justify-content: center; align-items: center;">
+                    <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: 100%; height: auto; display: block; object-fit: cover;">
                 </div>
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
