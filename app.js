@@ -148,7 +148,7 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий ----------
+// ---------- Рендер страницы привилегий (с правильными отступами) ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
 
@@ -159,7 +159,7 @@ function renderPrivilegesPage() {
             : p.location;
         
         partnersHtml += `
-            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 12px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
+            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
                 <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 14px;">${p.name}</strong>
                 <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
                 <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
@@ -168,7 +168,7 @@ function renderPrivilegesPage() {
     });
 
     mainContent.innerHTML = `
-        <div class="card-container" style="padding: 20px;">
+        <div class="card-container">
             ${partnersHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                 <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
@@ -235,22 +235,24 @@ function renderHome() {
     }
 }
 
-// ---------- Страница подарка ----------
+// ---------- Страница подарка (с правильными отступами) ----------
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
 
     mainContent.innerHTML = `
-        <div class="card-container" style="padding: 20px;">
-            <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">
-                Чтобы подарить карту интеллигента другу, пришли нам в поддержку:
-            </p>
-            <ol style="color: #ffffff; margin-left: 20px; margin-bottom: 20px; font-size: 15px;">
-                <li style="margin-bottom: 8px;">имя</li>
-                <li style="margin-bottom: 8px;">фамилию</li>
-                <li style="margin-bottom: 8px;">@username</li>
-                <li style="margin-bottom: 8px;">чек о покупке</li>
-                <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
-            </ol>
+        <div class="card-container">
+            <div style="padding: 0 16px;">
+                <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">
+                    Чтобы подарить карту интеллигента другу, пришли нам в поддержку:
+                </p>
+                <ol style="color: #ffffff; margin-left: 20px; margin-bottom: 20px; font-size: 15px; padding-left: 0;">
+                    <li style="margin-bottom: 8px;">имя</li>
+                    <li style="margin-bottom: 8px;">фамилию</li>
+                    <li style="margin-bottom: 8px;">@username</li>
+                    <li style="margin-bottom: 8px;">чек о покупке</li>
+                    <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
+                </ol>
+            </div>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn-support" style="background-color: #D9FD19; color: #000000; border: none; width: calc(100% - 32px); margin: 0 16px;">написать в поддержку</a>
                 <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
