@@ -1,4 +1,4 @@
-// Telegram WebApp
+// Telegram WebAppg
 const tg = window.Telegram.WebApp;
 tg.ready();
 
