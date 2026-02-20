@@ -95,6 +95,33 @@ body::before {
     margin-bottom: 20px;
 }
 
+/* Специальный класс для футера с размытым блоком */
+.footer-card {
+    background-color: rgba(73, 138, 176, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px;
+    padding: 12px 0; /* уменьшенный padding для компактности */
+    text-align: center;
+    margin-top: 20px; /* отступ от предыдущего блока */
+}
+
+.footer-card p {
+    font-size: 14px;
+    color: #ffffff;
+    margin: 0;
+}
+
+.footer-card a {
+    color: #ffffff;
+    text-decoration: underline;
+    font-weight: 400;
+}
+
+.footer-card a:hover {
+    opacity: 0.8;
+}
+
 .card-image {
     width: calc(100% - 32px);
     height: auto;
@@ -307,7 +334,7 @@ body::before {
     color: #ffffff;
 }
 
-/* Стили для метрик (прямоугольники) */
+/* Стили для метрик */
 .metrics-section {
     margin-bottom: 20px;
 }
@@ -379,25 +406,6 @@ body::before {
     text-align: right;
     width: 100%;
     line-height: 1;
-}
-
-/* Стили для подвала */
-.app-footer {
-    text-align: center;
-    margin-top: 20px;
-    padding-bottom: 10px;
-    font-size: 14px;
-    color: #ffffff;
-}
-
-.app-footer a {
-    color: #ffffff;
-    text-decoration: underline;
-    font-weight: 400;
-}
-
-.app-footer a:hover {
-    opacity: 0.8;
 }
 
 /* Адаптация для горизонтальной ориентации */
