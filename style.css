@@ -97,7 +97,7 @@ body::before {
     margin: 0 16px 8px 16px;
     border: none;
     outline: none;
-    /* cursor: pointer; убран, так как карта больше не кликабельна */
+    /* cursor: pointer;  удалён */
 }
 
 .hike-counter {
