@@ -274,7 +274,7 @@ function renderHome() {
             </div>
         `;
 
-        // Обработчики кнопок
+        // Обработчики кнопок (карта не обрабатывается)
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             logEvent('privilege_click');
