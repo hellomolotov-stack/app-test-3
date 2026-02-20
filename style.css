@@ -353,6 +353,7 @@ body::before {
     align-self: flex-end;
     font-size: 28px;
     font-weight: 900;
+    font-style: italic; /* наклонный шрифт */
     color: var(--yellow);
     text-align: right;
     width: 100%;
