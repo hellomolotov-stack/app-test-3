@@ -137,8 +137,8 @@ function renderHome() {
 
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
-            <div class="card-container" id="cardContainer" style="border: 2px solid red;">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="border: 2px solid blue; width: 100%; margin: 0 16px 8px 16px; display: block; box-sizing: border-box;">
+            <div class="card-container" id="cardContainer">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: 100%; margin: 0 16px 8px 16px; display: block;">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -153,36 +153,26 @@ function renderHome() {
             </div>
         `;
 
-        // Функция для принудительной установки ширины
+        // Принудительная установка ширины изображения равной ширине контейнера минус отступы
         const setCardWidth = () => {
             const container = document.getElementById('cardContainer');
             const img = document.getElementById('cardImage');
             if (container && img) {
                 const containerWidth = container.offsetWidth;
-                console.log('Container width:', containerWidth);
-                // Устанавливаем ширину изображения равной ширине контейнера минус отступы (32px)
                 img.style.width = (containerWidth - 32) + 'px';
                 img.style.marginLeft = '16px';
                 img.style.marginRight = '16px';
-                console.log('Image width set to:', img.style.width);
             }
         };
 
-        // Пробуем сразу, потом после загрузки изображения, потом ещё раз с задержкой
         setCardWidth();
-
-        // Если изображение ещё не загружено, подождём его загрузки
+        // Повторяем после загрузки изображения и с задержкой
         const imgElement = document.getElementById('cardImage');
         if (imgElement) {
-            imgElement.onload = () => {
-                console.log('Image loaded, adjusting width...');
-                setCardWidth();
-            };
+            imgElement.onload = setCardWidth;
         }
-
-        // Запасной вариант через 500 мс
+        setTimeout(setCardWidth, 100);
         setTimeout(setCardWidth, 500);
-        setTimeout(setCardWidth, 1000);
 
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
