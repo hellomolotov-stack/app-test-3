@@ -258,9 +258,12 @@ function renderGuestHome() {
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
-        <!-- Блок метрик -->
+        <!-- Блок метрик с заголовком и ссылкой -->
         <div class="card-container">
-            <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
+            <div class="metrics-header">
+                <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
+                <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link">смотреть отчёты &gt;</a>
+            </div>
             <div class="metrics-grid">
                 <div class="metric-item">
                     <div class="metric-label">хайков</div>
@@ -282,7 +285,7 @@ function renderGuestHome() {
         </div>
         
         <div class="extra-links">
-            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
+            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал</a>
             <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
             <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
         </div>
@@ -319,9 +322,12 @@ function renderHome() {
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
             
-            <!-- Блок метрик для владельцев карты -->
+            <!-- Блок метрик с заголовком и ссылкой -->
             <div class="card-container">
-                <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
+                <div class="metrics-header">
+                    <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
+                    <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link">смотреть отчёты &gt;</a>
+                </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
                         <div class="metric-label">хайков</div>
@@ -343,7 +349,7 @@ function renderHome() {
             </div>
             
             <div class="extra-links">
-                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал клуба</a>
+                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал</a>
                 <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
                 <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
