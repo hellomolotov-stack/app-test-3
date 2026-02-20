@@ -33,25 +33,6 @@ body::before {
     z-index: -1;
 }
 
-/* Принудительная фиксация портретной ориентации */
-@media (orientation: landscape) {
-    body {
-        transform: rotate(-90deg);
-        transform-origin: left top;
-        width: 100vh;
-        height: 100vw;
-        position: absolute;
-        top: 100%;
-        left: 0;
-    }
-    
-    .app {
-        max-width: 100vh;
-        margin: 0 auto;
-        padding: 16px;
-    }
-}
-
 .app {
     display: flex;
     flex-direction: column;
@@ -61,6 +42,33 @@ body::before {
     padding: 16px;
     position: relative;
     z-index: 1;
+}
+
+/* Адаптация для горизонтальной ориентации */
+@media (orientation: landscape) {
+    .app {
+        max-width: 500px; /* чуть уже, чтобы поместилось */
+        padding: 8px;
+    }
+    
+    .card-image {
+        width: calc(100% - 32px);
+        margin: 0 16px 8px 16px;
+    }
+    
+    .hike-counter {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    
+    .counter-number {
+        font-size: 24px;
+    }
+    
+    .btn, .btn-outline, .btn-support {
+        padding: 10px;
+        font-size: 14px;
+    }
 }
 
 .header {
