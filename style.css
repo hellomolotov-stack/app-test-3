@@ -290,27 +290,20 @@ body::before {
     opacity: 1;
 }
 
+.modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+    color: #ffffff;
+}
+
 .modal-text {
-    font-size: 18px;
+    font-size: 16px;
     margin-bottom: 24px;
     text-align: center;
-    font-weight: 500;
-}
-
-.modal-price {
-    text-align: center;
-}
-
-.modal-price .old-price {
-    text-decoration: line-through;
-    color: rgba(255,255,255,0.6);
-    margin-left: 8px;
-    font-size: 18px;
-}
-
-.modal-price .new-price {
-    font-size: 20px;
-    font-weight: 700;
+    line-height: 1.6;
+    color: #ffffff;
 }
 
 /* Адаптация для горизонтальной ориентации */
