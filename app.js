@@ -199,11 +199,10 @@ function showGuestPopup() {
     overlay.innerHTML = `
         <div class="modal-content">
             <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-text">осталось 8 карт по цене прошлого сезона</div>
-            <div class="modal-price">
-                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="popupBuyBtn">
-                    купить за 5 000 руб. <span class="old-price">7 500 руб.</span>
-                </a>
+            <div class="modal-title">карта интеллигента</div>
+            <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
             </div>
         </div>
     `;
