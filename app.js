@@ -27,10 +27,8 @@ let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
 
-// ---------- Логирование (с учётом статуса) ----------
 function log(action, isGuest = false) {
     if (!userId) return;
-    // Если гость, добавляем суффикс _guest
     const finalAction = isGuest ? `${action}_guest` : action;
     const params = new URLSearchParams({
         user_id: userId,
@@ -71,7 +69,7 @@ async function loadData() {
         console.error(e);
         userCard.status = 'inactive';
     }
-    log('visit', userCard.status !== 'active'); // передаём флаг гостя
+    log('visit', userCard.status !== 'active');
     renderHome();
 }
 
@@ -132,7 +130,7 @@ const partners = [
     }
 ];
 
-// ---------- Рендер страницы привилегий (без изменений) ----------
+// ---------- Рендер страницы привилегий (с изменением для Nothomme) ----------
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
@@ -153,11 +151,13 @@ function renderPriv() {
     partners.forEach(p => {
         cityHtml += `<div class="partner-item">
             <strong>${p.name}</strong>
-            <p>${p.privilege}</p>
-            <p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
+            <p>${p.privilege}</p>`;
         
+        // Для Nothomme не выводим адрес, только кнопку
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             cityHtml += `<a href="${p.link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">в магазин</a>`;
+        } else {
+            cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
         }
         
         cityHtml += `</div>`;
@@ -172,7 +172,7 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Рендер страницы подарка (без изменений) ----------
+// ---------- Рендер страницы подарка ----------
 function renderGift() {
     subtitle.textContent = `🎁 подарить карту`;
     showBack(renderHome);
@@ -193,14 +193,14 @@ function renderGift() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Новая функция: главный экран для гостей ----------
+// ---------- Рендер главного экрана для гостей ----------
 function renderGuestHome() {
-    subtitle.textContent = `👋🏻 добро пожаловать в клуб хайкинг интеллигенции, ${firstName}`;
+    subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
 
     mainDiv.innerHTML = `
         <div class="card-container">
             <img src="https://i.postimg.cc/8zhc2MDZ/avaadva.png" alt="карта заглушка" class="card-image" style="pointer-events: none;">
-            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">0</span></div>
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
@@ -211,7 +211,6 @@ function renderGuestHome() {
         </div>
     `;
 
-    // Логирование для гостей (isGuest = true)
     document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
     document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
     document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(); });
@@ -219,7 +218,7 @@ function renderGuestHome() {
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 }
 
-// ---------- Рендер главного экрана (обновлён) ----------
+// ---------- Рендер главного экрана (основная логика) ----------
 function renderHome() {
     hideBack();
 
@@ -250,15 +249,14 @@ function renderHome() {
         document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
         document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
     } else {
-        // Гость – вызываем специальную функцию
+        // Гость
         renderGuestHome();
     }
 }
 
-// ---------- Покупка карты (оставляем для совместимости, но гости используют прямую ссылку) ----------
 function buyCard() {
     if (!userId) return;
-    log('buy_card_click', true); // гость
+    log('buy_card_click', true);
     tg.openLink('https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ');
 }
 
