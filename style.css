@@ -336,25 +336,26 @@ body::before {
     align-items: flex-start;
     border: 1px solid rgba(255,255,255,0.2);
     backdrop-filter: blur(4px);
-    height: 80px; /* прямоугольник */
+    height: 100px; /* увеличена высота для размещения увеличенной цифры */
     box-sizing: border-box;
 }
 
 .metric-label {
-    font-size: 12px;
+    font-size: 14px; /* увеличена */
     opacity: 0.8;
     color: #ffffff;
     font-weight: 500;
     white-space: nowrap;
+    margin-top: 4px; /* приподнято */
 }
 
 .metric-value {
-    align-self: flex-end; /* прижимаем цифру к правому краю */
-    font-size: 24px;
+    align-self: flex-end;
+    font-size: 36px; /* увеличена в 1.5 раза (было 24px) */
     font-weight: 900;
     color: var(--yellow);
     text-align: right;
-    width: 100%; /* чтобы занимал всю ширину и текст был справа */
+    width: 100%;
 }
 
 /* Адаптация для горизонтальной ориентации */
@@ -378,6 +379,9 @@ body::before {
         font-size: 24px;
     }
     .metric-item {
-        height: 70px; /* чуть меньше в ландшафте */
+        height: 90px; /* чуть меньше в ландшафте */
+    }
+    .metric-value {
+        font-size: 30px;
     }
 }
