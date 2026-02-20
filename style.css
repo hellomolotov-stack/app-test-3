@@ -381,6 +381,25 @@ body::before {
     line-height: 1;
 }
 
+/* Стили для подвала */
+.app-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-bottom: 10px;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.app-footer a {
+    color: #ffffff;
+    text-decoration: underline;
+    font-weight: 400;
+}
+
+.app-footer a:hover {
+    opacity: 0.8;
+}
+
 /* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .app {
