@@ -17,15 +17,15 @@ function hideBack() {
 // Конфигурация
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
-// ⚠️ ВСТАВЬТЕ ССЫЛКУ НА CSV ЛИСТА METRICS (должен быть опубликован как CSV)
-const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1795572871&single=true&output=csv';
+// ⚠️ ВСТАВЬТЕ ССЫЛКУ НА CSV ЛИСТА METRICS
+const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
-let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' }; // значения по умолчанию
+let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
@@ -82,9 +82,8 @@ async function loadMetrics() {
         const text = await resp.text();
         const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
         if (rows.length < 2) throw new Error('Нет данных метрик');
-        // Ожидаем, что первая строка заголовки: hikes, kilometers, locations, meetings
         const headers = rows[0];
-        const dataRow = rows[1]; // вторая строка с данными
+        const dataRow = rows[1];
         const data = {};
         headers.forEach((k, i) => data[k] = dataRow[i]);
         metrics = {
@@ -95,11 +94,9 @@ async function loadMetrics() {
         };
     } catch (e) {
         console.error('Ошибка загрузки метрик:', e);
-        // оставляем значения по умолчанию
     }
 }
 
-// Загрузка всех данных при старте
 async function loadData() {
     await Promise.all([loadUserData(), loadMetrics()]);
     log('visit', userCard.status !== 'active');
@@ -203,7 +200,6 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Страница подарка ----------
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
@@ -228,7 +224,6 @@ function renderGift(isGuest = false) {
     document.getElementById('giftSupportBtn')?.addEventListener('click', () => log('support_click', isGuest));
 }
 
-// ---------- Попап для гостей ----------
 function showGuestPopup() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -250,7 +245,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ---------- Главная для гостей (с метриками) ----------
+// ---------- Главная для гостей (с метриками внутри общего контейнера) ----------
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
@@ -263,8 +258,9 @@ function renderGuestHome() {
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
-        <div class="metrics-section">
-            <h2 class="metrics-title">тест заголовка</h2>
+        <!-- Блок метрик внутри общего контейнера -->
+        <div class="card-container">
+            <h2 class="metrics-title">🧭 клуб интеллигенции в цифрах</h2>
             <div class="metrics-grid">
                 <div class="metric-item">
                     <div class="metric-label">хайков</div>
@@ -300,7 +296,6 @@ function renderGuestHome() {
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 }
 
-// ---------- Главная для владельцев карты ----------
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
