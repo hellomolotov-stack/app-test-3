@@ -17,7 +17,7 @@ function hideBack() {
 // Конфигурация
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
-// ⚠️ ВСТАВЬТЕ ССЫЛКУ НА CSV ЛИСТА METRICS
+// ⚠️ ВСТАВЬТЕ ССЫЛКУ НА CSV ЛИСТА METRICS (после публикации)
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 
 const user = tg.initDataUnsafe?.user;
@@ -74,11 +74,11 @@ async function loadUserData() {
     }
 }
 
-// Загрузка метрик из отдельного листа
+// Загрузка метрик из отдельного листа (с запретом кэширования)
 async function loadMetrics() {
     if (!METRICS_CSV_URL) return;
     try {
-        const resp = await fetch(`${METRICS_CSV_URL}&t=${Date.now()}`);
+        const resp = await fetch(`${METRICS_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
         const text = await resp.text();
         const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
         if (rows.length < 2) throw new Error('Нет данных метрик');
@@ -94,6 +94,7 @@ async function loadMetrics() {
         };
     } catch (e) {
         console.error('Ошибка загрузки метрик:', e);
+        // оставляем старые значения
     }
 }
 
@@ -245,7 +246,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ---------- Главная для гостей (с метриками) ----------
+// ---------- Главная для гостей ----------
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
@@ -258,7 +259,7 @@ function renderGuestHome() {
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
-        <!-- Блок метрик с заголовком и ссылкой -->
+        <!-- Блок метрик -->
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
@@ -291,9 +292,7 @@ function renderGuestHome() {
         </div>
     `;
 
-    // Клик по картинке, а не по всему контейнеру
     document.getElementById('guestCardImage')?.addEventListener('click', showGuestPopup);
-
     document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
     document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
     document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(true); });
@@ -301,7 +300,7 @@ function renderGuestHome() {
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 }
 
-// ---------- Главная для владельцев карты (тоже с метриками) ----------
+// ---------- Главная для владельцев карты ----------
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
@@ -324,7 +323,7 @@ function renderHome() {
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
             
-            <!-- Блок метрик с заголовком и ссылкой -->
+            <!-- Блок метрик -->
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
