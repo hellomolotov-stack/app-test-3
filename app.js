@@ -251,8 +251,8 @@ function renderGuestHome() {
     subtitle.classList.add('subtitle-guest');
 
     mainDiv.innerHTML = `
-        <div class="card-container" id="guestCardContainer">
-            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image">
+        <div class="card-container">
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -291,7 +291,9 @@ function renderGuestHome() {
         </div>
     `;
 
-    document.getElementById('guestCardContainer')?.addEventListener('click', showGuestPopup);
+    // Клик по картинке, а не по всему контейнеру
+    document.getElementById('guestCardImage')?.addEventListener('click', showGuestPopup);
+
     document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
     document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
     document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(true); });
