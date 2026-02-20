@@ -50,7 +50,7 @@ body::before {
 }
 
 .subtitle {
-    font-size: 24px;
+    font-size: 24px; /* увеличено с 20px до 24px */
     font-weight: 700;
     color: #ffffff;
     margin-top: 4px;
@@ -97,7 +97,6 @@ body::before {
     margin: 0 16px 8px 16px;
     border: none;
     outline: none;
-    cursor: pointer;
 }
 
 .hike-counter {
@@ -201,39 +200,4 @@ body::before {
 
 .btn-group {
     padding: 20px 0;
-}
-
-.partner-item {
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 16px;
-    margin: 0 16px 12px 16px;
-    color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-}
-
-.partner-item strong {
-    display: block;
-    margin-bottom: 8px;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 18px;
-}
-
-.partner-item p {
-    margin: 4px 0;
-    font-size: 14px;
-    opacity: 0.9;
-    line-height: 1.5;
-}
-
-.partner-item a {
-    color: #D9FD19;
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.partner-item a:hover {
-    text-decoration: underline;
 }
