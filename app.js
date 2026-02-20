@@ -2,6 +2,19 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
+// ---------- Кнопка "Назад" ----------
+const backButton = tg.BackButton;
+
+function showBackButton(callback) {
+    backButton.offClick(); // удаляем предыдущие обработчики
+    backButton.onClick(callback);
+    backButton.show();
+}
+
+function hideBackButton() {
+    backButton.hide();
+}
+
 // ---------- КОНФИГУРАЦИЯ ----------
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
@@ -158,6 +171,9 @@ const partners = [
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
 
+    // Показываем системную кнопку "Назад"
+    showBackButton(renderHome);
+
     // Блок 1: Привилегии в клубе
     const clubPrivileges = [
         {
@@ -233,6 +249,9 @@ function renderPrivilegesPage() {
 
 // ---------- Рендер главного экрана ----------
 function renderHome() {
+    // Скрываем системную кнопку "Назад"
+    hideBackButton();
+
     if (userCard.status === 'active') {
         subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
     } else {
@@ -289,6 +308,9 @@ function renderHome() {
 // ---------- Страница подарка ----------
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
+
+    // Показываем системную кнопку "Назад"
+    showBackButton(renderHome);
 
     mainContent.innerHTML = `
         <div class="card-container">
