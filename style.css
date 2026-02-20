@@ -47,13 +47,26 @@ body::before {
 /* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .app {
-        max-width: 500px; /* чуть уже, чтобы поместилось */
-        padding: 8px;
+        max-width: 100%;
+        padding: 8px 16px;
+    }
+    
+    .header {
+        margin-bottom: 8px;
+    }
+    
+    .subtitle {
+        font-size: 20px;
+    }
+    
+    .card-container {
+        padding: 10px 0;
+        margin-bottom: 10px;
     }
     
     .card-image {
         width: calc(100% - 32px);
-        margin: 0 16px 8px 16px;
+        margin: 0 16px 4px 16px;
     }
     
     .hike-counter {
@@ -68,9 +81,29 @@ body::before {
     .btn, .btn-outline, .btn-support {
         padding: 10px;
         font-size: 14px;
+        margin-bottom: 8px;
+    }
+    
+    .extra-links {
+        padding: 10px 0;
+        margin-top: -5px;
+    }
+    
+    .partner-item {
+        padding: 12px;
+        margin-bottom: 8px;
+    }
+    
+    .partner-item strong {
+        font-size: 16px;
+    }
+    
+    .partner-item p {
+        font-size: 13px;
     }
 }
 
+/* Остальные стили без изменений */
 .header {
     text-align: center;
     margin-bottom: 24px;
@@ -227,4 +260,39 @@ body::before {
 
 .btn-group {
     padding: 20px 0;
+}
+
+.partner-item {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.2);
+    backdrop-filter: blur(4px);
+}
+
+.partner-item strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.partner-item p {
+    margin: 4px 0;
+    font-size: 14px;
+    opacity: 0.9;
+    line-height: 1.5;
+}
+
+.partner-item a {
+    color: #D9FD19;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.partner-item a:hover {
+    text-decoration: underline;
 }
