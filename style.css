@@ -1,11 +1,4 @@
-:root {
-    --bg-color: #ffffff;
-    --text-color: #222222;
-    --button-color: #40a7e3;
-    --button-text: #ffffff;
-    --secondary-bg: #f5f5f5;
-}
-
+/* Базовые сбросы */
 * {
     margin: 0;
     padding: 0;
@@ -14,23 +7,11 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    color: var(--text-color);
+    color: #222;
     line-height: 1.5;
-    position: relative;
     min-height: 100vh;
-}
-
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: url('https://i.postimg.cc/pL4LG0KD/photo-2026-02-19-15-22-42-2.jpg');
+    background: url('https://i.postimg.cc/pL4LG0KD/photo-2026-02-19-15-22-42-2.jpg') no-repeat center center fixed;
     background-size: cover;
-    background-position: center;
-    z-index: -1;
 }
 
 .app {
@@ -40,8 +21,7 @@ body::before {
     max-width: 600px;
     margin: 0 auto;
     padding: 16px;
-    position: relative;
-    z-index: 1;
+    background-color: rgba(0,0,0,0.3); /* добавим полупрозрачный фон для контраста, чтобы видеть контент */
 }
 
 .header {
@@ -52,8 +32,7 @@ body::before {
 .subtitle {
     font-size: 24px;
     font-weight: 700;
-    color: #ffffff;
-    margin-top: 4px;
+    color: white;
 }
 
 .content {
@@ -72,7 +51,7 @@ body::before {
     width: 40px;
     height: 40px;
     border: 5px solid rgba(255,255,255,0.3);
-    border-top-color: var(--button-color);
+    border-top-color: #40a7e3;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -83,8 +62,6 @@ body::before {
 
 .card-container {
     background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     border-radius: 28px;
     padding: 20px 0;
     margin-bottom: 20px;
@@ -95,9 +72,6 @@ body::before {
     height: auto;
     display: block;
     margin: 0 16px 8px 16px;
-    border: none;
-    outline: none;
-    /* cursor: pointer;  удалён */
 }
 
 .hike-counter {
@@ -106,24 +80,22 @@ body::before {
     align-items: center;
     padding: 12px 16px;
     font-size: 16px;
+    color: white;
 }
 
 .hike-counter span {
     font-weight: bold;
-    color: #ffffff;
 }
 
 .counter-number {
     font-size: 28px;
     font-weight: 900;
     font-style: italic;
-    color: var(--button-color);
+    color: #40a7e3;
 }
 
 .extra-links {
     background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
     border-radius: 28px;
     padding: 15px 0;
     margin-bottom: 20px;
@@ -135,68 +107,43 @@ body::before {
     width: calc(100% - 32px);
     margin: 0 16px 12px 16px;
     padding: 14px;
-    background-color: var(--button-color);
-    color: var(--button-text);
+    background-color: #40a7e3;
+    color: white;
     border: none;
     border-radius: 12px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    transition: opacity 0.2s;
     text-align: center;
     text-decoration: none;
     box-sizing: border-box;
-}
-
-.btn:hover {
-    opacity: 0.9;
 }
 
 .btn-outline {
     background-color: transparent;
-    color: var(--button-color);
-    border: 2px solid var(--button-color);
-    width: calc(100% - 32px);
-    margin: 0 16px 12px 16px;
-    box-sizing: border-box;
-    border-radius: 12px;
+    color: #40a7e3;
+    border: 2px solid #40a7e3;
 }
 
 .card-container .btn-outline {
     background-color: #D9FD19;
-    color: #000000;
+    color: #000;
     border: none;
     font-weight: 600;
-    border-radius: 12px;
-    width: calc(100% - 32px);
-    margin: 0 16px 12px 16px;
-}
-
-.card-container .btn-outline:hover {
-    background-color: #c5e016;
 }
 
 .btn-support {
-    display: block;
-    width: calc(100% - 32px);
-    margin: 0 16px 12px 16px;
-    padding: 14px;
     background-color: transparent;
-    color: #ffffff;
-    border: 2px solid #ffffff;
+    color: white;
+    border: 2px solid white;
     border-radius: 12px;
+    padding: 14px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    transition: opacity 0.2s, background-color 0.2s;
     text-align: center;
     text-decoration: none;
     box-sizing: border-box;
-}
-
-.btn-support:hover {
-    opacity: 0.9;
-    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .btn-group {
@@ -208,15 +155,13 @@ body::before {
     border-radius: 12px;
     padding: 16px;
     margin: 0 16px 12px 16px;
-    color: #ffffff;
+    color: white;
     border: 1px solid rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
 }
 
 .partner-item strong {
     display: block;
     margin-bottom: 8px;
-    color: #ffffff;
     font-weight: 700;
     font-size: 18px;
 }
@@ -225,15 +170,9 @@ body::before {
     margin: 4px 0;
     font-size: 14px;
     opacity: 0.9;
-    line-height: 1.5;
 }
 
 .partner-item a {
     color: #D9FD19;
     text-decoration: none;
-    font-weight: 500;
-}
-
-.partner-item a:hover {
-    text-decoration: underline;
 }
