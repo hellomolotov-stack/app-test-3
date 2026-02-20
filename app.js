@@ -35,7 +35,6 @@ function logEvent(action) {
     img.src = `${GUEST_API_URL}?${params}`;
 }
 
-// ---------- Обновление user_name в members ----------
 function updateUserNameIfNeeded(userData) {
     if (userData.user_name && userData.user_name.trim() !== '') return;
 
@@ -52,7 +51,6 @@ function updateUserNameIfNeeded(userData) {
     img.src = `${GUEST_API_URL}?${params}`;
 }
 
-// ---------- Загрузка данных из CSV ----------
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -98,88 +96,33 @@ async function loadUserData() {
     renderHome();
 }
 
-// ---------- Данные партнёров ----------
 const partners = [
-    {
-        name: 'экипировочный центр Геккон',
-        privilege: '-10% по карте интеллигента',
-        location: 'Ялта, ул. Московская 8А'
-    },
-    {
-        name: 'технологичная хайкинг-одежда Nothomme',
-        privilege: '-7% по промокоду на сайте',
-        location: 'телеграм канал: t.me/nothomme_russia',
-        link: 'https://t.me/nothomme_russia'
-    },
-    {
-        name: 'кофейня Возможно всё',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Свердлова, 13/2'
-    },
-    {
-        name: 'магазин косметики На Утро: На Вечер',
-        privilege: '+1000 бонусов по карте интеллигента',
-        location: 'г. Ялта, ул. Морская 3А'
-    },
-    {
-        name: 'конный клуб Красный конь',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Алупка, Севастопольское шоссе'
-    },
-    {
-        name: 'маникюрный салон Marvel studio',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Руданского 4'
-    },
-    {
-        name: 'тематическое кафе Vinyl',
-        privilege: '-10% по карте интеллигента',
-        location: 'г. Ялта, пер. Черноморский 1А'
-    },
-    {
-        name: 'барбершоп Скала',
-        privilege: '-5% на второе посещение и далее',
-        location: 'г. Ялта, ул. Свердлова 3'
-    },
-    {
-        name: 'кофейня Deep Black',
-        privilege: '-5% по карте интеллигента',
-        location: 'п. г. т. Гаспра, Алупкинское ш., 5А'
-    }
+    { name: 'экипировочный центр Геккон', privilege: '-10% по карте интеллигента', location: 'Ялта, ул. Московская 8А' },
+    { name: 'технологичная хайкинг-одежда Nothomme', privilege: '-7% по промокоду на сайте', location: 'телеграм канал: t.me/nothomme_russia', link: 'https://t.me/nothomme_russia' },
+    { name: 'кофейня Возможно всё', privilege: '-5% по карте интеллигента', location: 'г. Ялта, ул. Свердлова, 13/2' },
+    { name: 'магазин косметики На Утро: На Вечер', privilege: '+1000 бонусов по карте интеллигента', location: 'г. Ялта, ул. Морская 3А' },
+    { name: 'конный клуб Красный конь', privilege: '-5% по карте интеллигента', location: 'г. Алупка, Севастопольское шоссе' },
+    { name: 'маникюрный салон Marvel studio', privilege: '-5% по карте интеллигента', location: 'г. Ялта, ул. Руданского 4' },
+    { name: 'тематическое кафе Vinyl', privilege: '-10% по карте интеллигента', location: 'г. Ялта, пер. Черноморский 1А' },
+    { name: 'барбершоп Скала', privilege: '-5% на второе посещение и далее', location: 'г. Ялта, ул. Свердлова 3' },
+    { name: 'кофейня Deep Black', privilege: '-5% по карте интеллигента', location: 'п. г. т. Гаспра, Алупкинское ш., 5А' }
 ];
 
-// ---------- Рендер страницы привилегий ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
-
     let partnersHtml = '';
     partners.forEach(p => {
-        let locationHtml = p.link 
-            ? `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>`
-            : p.location;
-        
-        partnersHtml += `
-            <div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
-                <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 14px;">${p.name}</strong>
-                <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
-                <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
-            </div>
-        `;
+        let locationHtml = p.link ? `<a href="${p.link}" target="_blank" style="color: #D9FD19; text-decoration: none;">${p.location}</a>` : p.location;
+        partnersHtml += `<div style="background-color: rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin: 0 16px 12px 16px; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);">
+            <strong style="display: block; margin-bottom: 8px; color: #ffffff; font-weight: 700; font-size: 14px;">${p.name}</strong>
+            <p style="margin: 4px 0; font-size: 14px; opacity: 0.9;">${p.privilege}</p>
+            <p style="margin: 4px 0; font-size: 14px; opacity: 0.8;">📍 ${locationHtml}</p>
+        </div>`;
     });
-
-    mainContent.innerHTML = `
-        <div class="card-container">
-            ${partnersHtml}
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button>
-            </div>
-        </div>
-    `;
-
+    mainContent.innerHTML = `<div class="card-container">${partnersHtml}<div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;"><button id="backToHomeBtn" class="btn-support" style="width: calc(100% - 32px); margin: 0 16px;">&lt; на главную</button></div></div>`;
     document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
 }
 
-// ---------- Рендер главного экрана (с JS-фиксом ширины карты) ----------
 function renderHome() {
     if (userCard.status === 'active') {
         subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
@@ -195,7 +138,7 @@ function renderHome() {
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
             <div class="card-container" id="cardContainer">
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: 100%; margin: 0 16px 8px 16px; display: block;">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -210,15 +153,17 @@ function renderHome() {
             </div>
         `;
 
-        // Жёсткая установка ширины карты после рендера
+        // Вычисляем ширину контейнера и принудительно применяем к карте
         setTimeout(() => {
             const container = document.getElementById('cardContainer');
             const img = document.getElementById('cardImage');
             if (container && img) {
-                const containerWidth = container.offsetWidth;
-                img.style.width = (containerWidth - 32) + 'px';
+                const containerWidth = container.offsetWidth; // ширина родителя
+                img.style.width = (containerWidth - 32) + 'px'; // вычитаем отступы
+                img.style.marginLeft = '16px';
+                img.style.marginRight = '16px';
             }
-        }, 50); // небольшая задержка для гарантии
+        }, 50);
 
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -240,27 +185,19 @@ function renderHome() {
                 <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-outline">📖 подробнее о карте</a>
             </div>
         `;
-
         document.getElementById('buyCardBtn')?.addEventListener('click', buyCard);
     }
 }
 
-// ---------- Страница подарка ----------
 function renderGiftPage() {
     subtitleEl.textContent = `🎁 подарить карту`;
-
     mainContent.innerHTML = `
         <div class="card-container">
             <div style="padding: 0 16px;">
-                <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">
-                    Чтобы подарить карту интеллигента другу, пришли нам в поддержку:
-                </p>
+                <p style="color: #ffffff; margin-bottom: 16px; font-size: 16px; line-height: 1.6;">Чтобы подарить карту интеллигента другу, пришли нам в поддержку:</p>
                 <ol style="color: #ffffff; margin-left: 20px; margin-bottom: 20px; font-size: 15px; padding-left: 0;">
-                    <li style="margin-bottom: 8px;">имя</li>
-                    <li style="margin-bottom: 8px;">фамилию</li>
-                    <li style="margin-bottom: 8px;">@username</li>
-                    <li style="margin-bottom: 8px;">чек о покупке</li>
-                    <li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
+                    <li style="margin-bottom: 8px;">имя</li><li style="margin-bottom: 8px;">фамилию</li><li style="margin-bottom: 8px;">@username</li>
+                    <li style="margin-bottom: 8px;">чек о покупке</li><li style="margin-bottom: 8px;">и напиши, хочешь отправить ему карту сам или чтобы мы написали ему сами, что это подарок от тебя</li>
                 </ol>
             </div>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
@@ -269,11 +206,9 @@ function renderGiftPage() {
             </div>
         </div>
     `;
-
     document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
 }
 
-// ---------- Покупка карты ----------
 function buyCard() {
     if (!userId) return;
     logEvent('buy_card_click');
