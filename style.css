@@ -33,6 +33,25 @@ body::before {
     z-index: -1;
 }
 
+/* Принудительная фиксация портретной ориентации */
+@media (orientation: landscape) {
+    body {
+        transform: rotate(-90deg);
+        transform-origin: left top;
+        width: 100vh;
+        height: 100vw;
+        position: absolute;
+        top: 100%;
+        left: 0;
+    }
+    
+    .app {
+        max-width: 100vh;
+        margin: 0 auto;
+        padding: 16px;
+    }
+}
+
 .app {
     display: flex;
     flex-direction: column;
