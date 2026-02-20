@@ -260,7 +260,7 @@ function renderGuestHome() {
         
         <!-- Блок метрик с новым заголовком -->
         <div class="card-container">
-            <h2 class="metrics-title">🗺️ клуб в цифрах</h2>
+            <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
             <div class="metrics-grid">
                 <div class="metric-item">
                     <div class="metric-label">хайков</div>
