@@ -50,7 +50,7 @@ body::before {
 }
 
 .subtitle {
-    font-size: 20px;
+    font-size: 24px; /* увеличено с 20px до 24px */
     font-weight: 700;
     color: #ffffff;
     margin-top: 4px;
@@ -91,13 +91,12 @@ body::before {
 }
 
 .card-image {
-    width: 100%; /* будет переопределено JS, но оставим */
+    width: calc(100% - 32px);
     height: auto;
     display: block;
     margin: 0 16px 8px 16px;
     border: none;
     outline: none;
-    object-fit: cover; /* ключевое свойство */
 }
 
 .hike-counter {
