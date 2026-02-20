@@ -1,4 +1,4 @@
-// Telegram WebAppg
+// Telegram WebApp
 const tg = window.Telegram.WebApp;
 tg.ready();
 
@@ -160,7 +160,7 @@ const partners = [
     }
 ];
 
-// ----- Страница привилегий для владельцев карты (с кнопками, обновлённый текст) -----
+// ----- Страница привилегий для владельцев карты (с кнопками) -----
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
@@ -202,7 +202,7 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ----- Страница привилегий для гостей (без кнопок, с обновлённым текстом) -----
+// ----- Страница привилегий для гостей (без кнопок) -----
 function renderGuestPriv() {
     subtitle.textContent = `🤘🏻привилегии, ${firstName}`;
     showBack(renderHome);
@@ -251,17 +251,17 @@ function renderGuestPriv() {
     document.getElementById('guestBuyBtn')?.addEventListener('click', () => log('buy_card_click', true));
 }
 
-// ----- Страница подарка (без изменений) -----
+// ----- Страница подарка (обновлённая с блоком .partner-item) -----
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
 
     mainDiv.innerHTML = `
         <div class="card-container">
-            <div class="gift-text" style="padding:0 16px;">
+            <div class="partner-item" style="margin: 0 16px 20px 16px;">
                 <p style="margin-bottom:16px;">хочешь подарить карту интеллигента другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.</p>
                 <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».</p>
-                <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
+                <p style="margin-bottom:0;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
                 <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
@@ -298,7 +298,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (с кнопкой «узнать о привилегиях») -----
+// ----- Главная для гостей -----
 function renderGuestHome() {
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
