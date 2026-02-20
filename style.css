@@ -50,7 +50,7 @@ body::before {
 }
 
 .subtitle {
-    font-size: 24px; /* увеличено с 20px до 24px */
+    font-size: 24px;
     font-weight: 700;
     color: #ffffff;
     margin-top: 4px;
@@ -200,4 +200,31 @@ body::before {
 
 .btn-group {
     padding: 20px 0;
+}
+
+/* Сообщение о необходимости повернуть устройство */
+.orientation-warning {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.9);
+    color: white;
+    font-size: 24px;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(10px);
+}
+
+@media (orientation: landscape) {
+    .orientation-warning {
+        display: flex;
+    }
+    .app {
+        display: none;
+    }
 }
