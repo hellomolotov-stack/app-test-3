@@ -166,14 +166,14 @@ const partners = [
     }
 ];
 
-// ---------- Полноэкранный режим карты ----------
+// ---------- Полноэкранный режим карты (поворот на 90 градусов) ----------
 function renderFullscreenCard() {
     subtitleEl.textContent = ''; // убираем заголовок
     hideBackButton(); // сначала скроем, потом покажем с нужным обработчиком
 
     mainContent.innerHTML = `
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: black; display: flex; justify-content: center; align-items: center; z-index: 1000;">
-            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="max-width: 100%; max-height: 100%; object-fit: contain; cursor: pointer;" id="fullscreenCard">
+            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="transform: rotate(90deg); width: 100vh; height: 100vw; object-fit: cover; cursor: pointer;" id="fullscreenCard">
         </div>
     `;
 
