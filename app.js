@@ -170,9 +170,9 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ---------- Новая страница подарка (обновлённая) ----------
+// ---------- Страница подарка (исправленная) ----------
 function renderGift(isGuest = false) {
-    subtitle.textContent = `🎁 как подарить карту`;
+    subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
 
     mainDiv.innerHTML = `
@@ -183,15 +183,14 @@ function renderGift(isGuest = false) {
                 <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" id="giftBuyBtn">купить в подарок</a>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="giftSupportBtn">написать в поддержку</a>
+                <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
+                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
     `;
 
     document.getElementById('goHome')?.addEventListener('click', renderHome);
-    // Логирование
     document.getElementById('giftBuyBtn')?.addEventListener('click', () => log('gift_purchase_click', isGuest));
     document.getElementById('giftSupportBtn')?.addEventListener('click', () => log('support_click', isGuest));
 }
