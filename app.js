@@ -1,166 +1,4 @@
-// Telegram WebApp
-const tg = window.Telegram.WebApp;
-tg.ready();
-
-const backButton = tg.BackButton;
-
-function showBack(callback) {
-    backButton.offClick();
-    backButton.onClick(callback);
-    backButton.show();
-}
-
-function hideBack() {
-    backButton.hide();
-}
-
-// Конфигурация
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
-const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
-const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
-
-const user = tg.initDataUnsafe?.user;
-const userId = user?.id;
-const firstName = user?.first_name || 'друг';
-
-let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
-let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
-
-const mainDiv = document.getElementById('mainContent');
-const subtitle = document.getElementById('subtitle');
-
-function log(action, isGuest = false) {
-    if (!userId) return;
-    const finalAction = isGuest ? `${action}_guest` : action;
-    const params = new URLSearchParams({
-        user_id: userId,
-        username: user?.username || '',
-        first_name: user?.first_name || '',
-        last_name: user?.last_name || '',
-        action: finalAction
-    });
-    new Image().src = `${GUEST_API_URL}?${params}`;
-}
-
-// Загрузка данных из CSV (members)
-async function loadUserData() {
-    if (!userId) {
-        userCard.status = 'inactive';
-        return;
-    }
-    try {
-        const resp = await fetch(`${CSV_URL}&t=${Date.now()}`);
-        const text = await resp.text();
-        const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
-        if (rows.length < 2) throw new Error('Нет данных');
-        const headers = rows[0];
-        for (let row of rows.slice(1)) {
-            if (row[0] === String(userId)) {
-                let data = {};
-                headers.forEach((k, i) => data[k] = row[i]);
-                userCard = {
-                    status: 'active',
-                    hikes: parseInt(data.hikes_count) || 0,
-                    cardUrl: data.card_image_url || ''
-                };
-                break;
-            }
-        }
-        if (userCard.status !== 'active') userCard.status = 'inactive';
-    } catch (e) {
-        console.error('Ошибка загрузки members:', e);
-        userCard.status = 'inactive';
-    }
-}
-
-// Загрузка метрик из отдельного листа (с запретом кэширования)
-async function loadMetrics() {
-    if (!METRICS_CSV_URL) return;
-    try {
-        const resp = await fetch(`${METRICS_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
-        const text = await resp.text();
-        const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
-        if (rows.length < 2) throw new Error('Нет данных метрик');
-        const headers = rows[0];
-        const dataRow = rows[1];
-        const data = {};
-        headers.forEach((k, i) => data[k] = dataRow[i]);
-        metrics = {
-            hikes: data.hikes || '19',
-            kilometers: data.kilometers || '150+',
-            locations: data.locations || '13',
-            meetings: data.meetings || '130+'
-        };
-    } catch (e) {
-        console.error('Ошибка загрузки метрик:', e);
-    }
-}
-
-async function loadData() {
-    await Promise.all([loadUserData(), loadMetrics()]);
-    log('visit', userCard.status !== 'active');
-    renderHome();
-}
-
-// ----- Массив партнёров (обновлён текст для Nothomme) -----
-const partners = [
-    {
-        name: 'экипировочный центр Геккон',
-        privilege: '-10% по карте интеллигента',
-        location: 'Ялта, ул. Московская 8А',
-        link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'технологичная хайкинг-одежда Nothomme',
-        privilege: '-7% по промокоду INTELLIGENT на сайте',
-        location: 'телеграм канал: t.me/nothomme_russia',
-        link: 'https://t.me/nothomme_russia'
-    },
-    {
-        name: 'кофейня Возможно всё',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Свердлова, 13/2',
-        link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'магазин косметики На Утро: На Вечер',
-        privilege: '+1000 бонусов по карте интеллигента',
-        location: 'г. Ялта, ул. Морская 3А',
-        link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'конный клуб Красный конь',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Алупка, Севастопольское шоссе',
-        link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'маникюрный салон Marvel studio',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Руданского 4',
-        link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'тематическое кафе Vinyl',
-        privilege: '-10% по карте интеллигента',
-        location: 'г. Ялта, пер. Черноморский 1А',
-        link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'барбершоп Скала',
-        privilege: '-5% на второе посещение и далее',
-        location: 'г. Ялта, ул. Свердлова 3',
-        link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'кофейня Deep Black',
-        privilege: '-5% по карте интеллигента',
-        location: 'п. г. т. Гаспра, Алупкинское ш., 5А',
-        link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
-    }
-];
-
-// ----- Страница привилегий для владельцев карты (с кнопками) -----
+// ----- Страница привилегий для владельцев карты (с кнопками, заголовки курсивом) -----
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
@@ -177,6 +15,7 @@ function renderPriv() {
         clubHtml += `<div class="partner-item"><strong>${c.t}</strong><p>${c.d}</p>${c.btn ? `<a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
     });
 
+    // Массив партнёров для владельцев карты (без изменений)
     let cityHtml = '';
     partners.forEach(p => {
         cityHtml += `<div class="partner-item">
@@ -194,14 +33,14 @@ function renderPriv() {
 
     mainDiv.innerHTML = `
         <div class="card-container">
-            <h2 class="section-title">в клубе</h2>${clubHtml}
-            <h2 class="section-title second">в городе</h2>${cityHtml}
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
             <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:20px 16px 0;">&lt; на главную</button>
         </div>`;
     document.getElementById('goHome')?.addEventListener('click', renderHome);
 }
 
-// ----- Страница привилегий для гостей (без кнопок, внизу жёлтая кнопка) -----
+// ----- Страница привилегий для гостей (без кнопок, с изменённым текстом Nothomme, заголовки курсивом) -----
 function renderGuestPriv() {
     subtitle.textContent = `🤘🏻привилегии, ${firstName}`;
     showBack(renderHome);
@@ -218,22 +57,28 @@ function renderGuestPriv() {
         clubHtml += `<div class="partner-item"><strong>${c.t}</strong><p>${c.d}</p></div>`;
     });
 
+    // Создаём копию массива partners для гостей и изменяем текст Nothomme
+    const partnersGuest = partners.map(p => {
+        if (p.name === 'технологичная хайкинг-одежда Nothomme') {
+            return { ...p, privilege: '-7% по промокоду на сайте' };
+        }
+        return p;
+    });
+
     let cityHtml = '';
-    partners.forEach(p => {
+    partnersGuest.forEach(p => {
         cityHtml += `<div class="partner-item">
             <strong>${p.name}</strong>
             <p>${p.privilege}</p>`;
-        
-        // Для гостей не добавляем кнопку "в магазин" для Nothomme
+        // Для гостей не добавляем кнопку "в магазин"
         cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
-        
         cityHtml += `</div>`;
     });
 
     mainDiv.innerHTML = `
         <div class="card-container">
-            <h2 class="section-title">в клубе</h2>${clubHtml}
-            <h2 class="section-title second">в городе</h2>${cityHtml}
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                 <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
@@ -243,179 +88,3 @@ function renderGuestPriv() {
     document.getElementById('goHome')?.addEventListener('click', renderHome);
     document.getElementById('guestBuyBtn')?.addEventListener('click', () => log('buy_card_click', true));
 }
-
-// ----- Страница подарка (без изменений) -----
-function renderGift(isGuest = false) {
-    subtitle.textContent = `💫 как подарить карту`;
-    showBack(renderHome);
-
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <div class="gift-text" style="padding:0 16px;">
-                <p style="margin-bottom:16px;">хочешь подарить карту интеллигента другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.</p>
-                <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».</p>
-                <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
-                <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('goHome')?.addEventListener('click', renderHome);
-    document.getElementById('giftBuyBtn')?.addEventListener('click', () => log('gift_purchase_click', isGuest));
-    document.getElementById('giftSupportBtn')?.addEventListener('click', () => log('support_click', isGuest));
-}
-
-// ----- Попап для гостей -----
-function showGuestPopup() {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'guestPopup';
-    overlay.innerHTML = `
-        <div class="modal-content">
-            <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title">карта интеллигента</div>
-            <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    document.getElementById('closePopup')?.addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-    log('guest_popup_opened', true);
-}
-
-// ----- Главная для гостей (с новой кнопкой) -----
-function renderGuestHome() {
-    subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
-    subtitle.classList.add('subtitle-guest');
-
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
-            <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
-            <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
-        </div>
-        
-        <!-- Блок метрик -->
-        <div class="card-container">
-            <div class="metrics-header">
-                <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link">смотреть отчёты &gt;</a>
-            </div>
-            <div class="metrics-grid">
-                <div class="metric-item">
-                    <div class="metric-label">хайков</div>
-                    <div class="metric-value">${metrics.hikes}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">локаций</div>
-                    <div class="metric-value">${metrics.locations}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">километров</div>
-                    <div class="metric-value">${metrics.kilometers}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">знакомств</div>
-                    <div class="metric-value">${metrics.meetings}</div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="extra-links">
-            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал</a>
-            <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
-            <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
-        </div>
-    `;
-
-    document.getElementById('guestCardImage')?.addEventListener('click', showGuestPopup);
-    document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
-    document.getElementById('guestPrivBtn')?.addEventListener('click', () => { log('guest_priv_click', true); renderGuestPriv(); });
-    document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
-    document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(true); });
-    document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
-    document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
-}
-
-// ----- Главная для владельцев карты (без изменений) -----
-function renderHome() {
-    hideBack();
-    subtitle.classList.remove('subtitle-guest');
-
-    const existingPopup = document.getElementById('guestPopup');
-    if (existingPopup) existingPopup.remove();
-
-    if (userCard.status === 'loading') {
-        mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
-        return;
-    }
-
-    if (userCard.status === 'active' && userCard.cardUrl) {
-        subtitle.textContent = `💳 твоя карта, ${firstName}`;
-        mainDiv.innerHTML = `
-            <div class="card-container">
-                <img src="${userCard.cardUrl}" alt="карта" class="card-image" style="pointer-events: none;">
-                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
-                <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
-            </div>
-            
-            <!-- Блок метрик -->
-            <div class="card-container">
-                <div class="metrics-header">
-                    <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link">смотреть отчёты &gt;</a>
-                </div>
-                <div class="metrics-grid">
-                    <div class="metric-item">
-                        <div class="metric-label">хайков</div>
-                        <div class="metric-value">${metrics.hikes}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">локаций</div>
-                        <div class="metric-value">${metrics.locations}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">километров</div>
-                        <div class="metric-value">${metrics.kilometers}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">знакомств</div>
-                        <div class="metric-value">${metrics.meetings}</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="extra-links">
-                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал</a>
-                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
-                <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
-            </div>
-        `;
-        document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('privilege_click'); renderPriv(); });
-        document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click'));
-        document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click'); renderGift(false); });
-        document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
-        document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
-    } else {
-        renderGuestHome();
-    }
-}
-
-function buyCard() {
-    if (!userId) return;
-    log('buy_card_click', true);
-    tg.openLink('https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ');
-}
-
-window.addEventListener('load', loadData);
