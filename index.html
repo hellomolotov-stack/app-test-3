@@ -2,18 +2,13 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <!-- Важно для корректного масштабирования и запрета зумирования -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>хайкинг интеллигенция</title>
     
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
-    <meta name="theme-color" content="#4489B1">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
+    <!-- Подключаем Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Наши стили -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -23,6 +18,7 @@
         </header>
         <main id="mainContent" class="content"></main>
     </div>
+    <!-- Наш скрипт -->
     <script src="app.js"></script>
 </body>
 </html>
