@@ -174,7 +174,7 @@ body::before {
     border: 2px solid #ffffff;
 }
 
-/* Специальное правило для кнопок внутри partner-item (на странице привилегий) */
+/* Усиленный селектор для кнопок внутри partner-item */
 .partner-item .btn-yellow {
     width: 100%;
     margin-left: 0;
@@ -182,6 +182,7 @@ body::before {
     margin-top: 12px;
     margin-bottom: 0;
     box-sizing: border-box;
+    color: #000000 !important; /* гарантируем чёрный текст */
 }
 
 .partner-item {
@@ -219,6 +220,7 @@ body::before {
     text-decoration: underline;
 }
 
+/* Убираем эмодзи из заголовков (они будут заданы в HTML, но стили не добавляем) */
 .section-title {
     color: #ffffff !important;
     font-size: 18px;
