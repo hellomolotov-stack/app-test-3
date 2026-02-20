@@ -166,18 +166,6 @@ const partners = [
     }
 ];
 
-// ---------- Страница карты (без поворота, с явной отменой трансформаций) ----------
-function renderCardPage() {
-    subtitleEl.textContent = ''; // убираем заголовок
-    showBackButton(renderHome);
-
-    mainContent.innerHTML = `
-        <div style="display: flex; justify-content: center; align-items: center; min-height: 100%;">
-            <img src="${userCard.cardImageUrl}" alt="карта интеллигента" style="max-width: 100%; max-height: 100%; object-fit: contain; transform: none;">
-        </div>
-    `;
-}
-
 // ---------- Рендер страницы привилегий ----------
 function renderPrivilegesPage() {
     subtitleEl.textContent = `🤘🏻твои привилегии, ${firstName}`;
@@ -286,9 +274,7 @@ function renderHome() {
             </div>
         `;
 
-        // Клик по карте для открытия отдельной страницы с картой
-        document.getElementById('cardImage')?.addEventListener('click', renderCardPage);
-
+        // Обработчики кнопок
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             logEvent('privilege_click');
