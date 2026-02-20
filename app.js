@@ -179,7 +179,7 @@ function renderPrivilegesPage() {
     document.getElementById('backToHomeBtn')?.addEventListener('click', renderHome);
 }
 
-// ---------- Рендер главного экрана ----------
+// ---------- Рендер главного экрана (с JS-фиксом ширины карты) ----------
 function renderHome() {
     if (userCard.status === 'active') {
         subtitleEl.textContent = `💳 твоя карта, ${firstName}`;
@@ -194,9 +194,8 @@ function renderHome() {
 
     if (userCard.status === 'active' && userCard.cardImageUrl) {
         mainContent.innerHTML = `
-            <div class="card-container">
-                <!-- КАРТА С !important ДЛЯ ГАРАНТИРОВАННОЙ ШИРИНЫ -->
-                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" style="width: calc(100% - 32px) !important; margin: 0 16px 8px 16px !important; display: block !important;">
+            <div class="card-container" id="cardContainer">
+                <img src="${userCard.cardImageUrl}" alt="карта интеллигента" class="card-image" id="cardImage" style="width: 100%; margin: 0 16px 8px 16px; display: block;">
                 <div class="hike-counter">
                     <span>⛰️ пройдено хайков</span>
                     <span class="counter-number">${userCard.hikesCompleted}</span>
@@ -210,6 +209,16 @@ function renderHome() {
                 <a href="#" class="btn-support" id="giftBtn">🫂 подарить карту другу</a>
             </div>
         `;
+
+        // Жёсткая установка ширины карты после рендера
+        setTimeout(() => {
+            const container = document.getElementById('cardContainer');
+            const img = document.getElementById('cardImage');
+            if (container && img) {
+                const containerWidth = container.offsetWidth;
+                img.style.width = (containerWidth - 32) + 'px';
+            }
+        }, 50); // небольшая задержка для гарантии
 
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
