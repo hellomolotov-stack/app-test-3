@@ -32,14 +32,6 @@ let userCard = {
 const mainContent = document.getElementById('mainContent');
 const subtitleEl = document.getElementById('subtitle');
 
-// ---------- ДИАГНОСТИКА ПРИ ПОВОРОТЕ ----------
-window.addEventListener('orientationchange', function() {
-    console.log('orientation changed to', window.orientation);
-    console.log('window inner dimensions:', window.innerWidth, 'x', window.innerHeight);
-    console.log('mainContent visibility:', mainContent.style.display, mainContent.offsetParent !== null);
-});
-
-// ---------- Логирование событий ----------
 function logEvent(action) {
     if (!userId) return;
     if (!GUEST_API_URL.startsWith('https://')) return;
@@ -56,7 +48,6 @@ function logEvent(action) {
     img.src = `${GUEST_API_URL}?${params}`;
 }
 
-// ---------- Обновление user_name в members ----------
 function updateUserNameIfNeeded(userData) {
     if (userData.user_name && userData.user_name.trim() !== '') return;
 
@@ -283,7 +274,7 @@ function renderHome() {
             </div>
         `;
 
-        // Обработчики кнопок
+        // Обработчики кнопок (карта не обрабатывается)
         document.getElementById('privilegeBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             logEvent('privilege_click');
