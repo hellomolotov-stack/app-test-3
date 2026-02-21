@@ -339,6 +339,7 @@ function renderGuestPriv() {
         clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
     });
 
+    // Создаём копию массива partners для гостей и изменяем текст Nothomme
     const partnersGuest = partners.map(p => {
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             return { ...p, privilege: '-7% по промокоду на сайте' };
@@ -425,7 +426,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (с аккордеоном) -----
+// ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -455,7 +456,7 @@ function renderGuestHome() {
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" target="_blank" class="btn-white-outline metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
+                <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
             </div>
             <div class="metrics-grid">
                 <div class="metric-item">
@@ -539,7 +540,7 @@ function renderHome() {
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" target="_blank" class="btn-white-outline metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
+                    <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
