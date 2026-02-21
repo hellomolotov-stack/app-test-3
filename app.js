@@ -425,7 +425,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (с новой кнопкой и аккордеоном) -----
+// ----- Главная для гостей (с аккордеоном) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -442,10 +442,10 @@ function renderGuestHome() {
                     навигация по клубу <span class="arrow">👀</span>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_about', true)">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_philosophy', true)">философия</a>
-                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_hiking', true)">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_reviews', true)">отзывы</a>
+                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_about', true)">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_philosophy', true)">философия</a>
+                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_hiking', true)">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_reviews', true)">отзывы</a>
                 </div>
             </div>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -455,7 +455,7 @@ function renderGuestHome() {
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
+                <a href="https://t.me/yaltahiking/148" target="_blank" class="btn-white-outline metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
             </div>
             <div class="metrics-grid">
                 <div class="metric-item">
@@ -497,7 +497,6 @@ function renderGuestHome() {
         log('gift_click', true);
         renderGift(true);
     });
-    // Кнопки extra-links уже обработаны через onclick
 
     setupAccordion('navAccordionGuest', true);
 }
@@ -527,10 +526,10 @@ function renderHome() {
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_about', false)">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_philosophy', false)">философия</a>
-                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_hiking', false)">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_reviews', false)">отзывы</a>
+                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_about', false)">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_philosophy', false)">философия</a>
+                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_hiking', false)">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_reviews', false)">отзывы</a>
                     </div>
                 </div>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -540,7 +539,7 @@ function renderHome() {
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
+                    <a href="https://t.me/yaltahiking/148" target="_blank" class="btn-white-outline metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
@@ -591,7 +590,6 @@ function renderHome() {
             log('gift_click');
             renderGift(false);
         });
-        // Кнопки extra-links уже обработаны через onclick
 
         setupAccordion('navAccordionOwner', false);
     } else {
