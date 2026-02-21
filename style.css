@@ -176,8 +176,29 @@ body::before {
     background-color: transparent;
     color: #ffffff;
     border: 2px solid #ffffff;
-    backdrop-filter: blur(6px); /* усиленное размытие внутри кнопки */
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+/* Кнопки с белым фоном (для аккордеона) */
+.btn-white {
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 12px;
+    text-align: center;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    transition: opacity 0.2s;
+}
+
+.btn-white:hover {
+    opacity: 0.9;
 }
 
 .partner-item .btn-yellow {
@@ -456,6 +477,9 @@ body::before {
     border-radius: 12px;
     font-size: 16px;
     padding: 12px;
+    background-color: #ffffff;
+    color: #000000;
+    border: none;
 }
 
 /* Адаптация для горизонтальной ориентации */
