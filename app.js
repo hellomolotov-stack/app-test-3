@@ -2,11 +2,18 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
+// Функция тактильного отклика (лёгкая вибрация)
+function haptic() {
+    tg.HapticFeedback?.impactOccurred('light');
+}
+// Делаем функцию глобально доступной для onclick-атрибутов
+window.haptic = haptic;
+
 const backButton = tg.BackButton;
 
 function showBack(callback) {
     backButton.offClick();
-    backButton.onClick(callback);
+    backButton.onClick(() => { haptic(); callback(); });
     backButton.show();
 }
 
@@ -160,7 +167,7 @@ const partners = [
     }
 ];
 
-// ----- Функция для обработки аккордеона с логированием -----
+// ----- Функция для обработки аккордеона с логированием и тактильным откликом -----
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -171,6 +178,7 @@ function setupAccordion(containerId, isGuest) {
 
     if (accordionBtn && dropdown) {
         accordionBtn.addEventListener('click', (e) => {
+            haptic(); // тактильный отклик
             e.preventDefault();
             log('nav_toggle', isGuest);
             dropdown.classList.toggle('show');
@@ -181,14 +189,13 @@ function setupAccordion(containerId, isGuest) {
 
 // ----- Вспомогательная функция для конфетти -----
 function showConfetti() {
-    // Простая анимация конфетти на canvas
     const canvas = document.createElement('canvas');
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
     canvas.style.width = '100%';
     canvas.style.height = '100%';
-    canvas.style.pointerEvents = 'none'; // чтобы клики проходили сквозь canvas
+    canvas.style.pointerEvents = 'none';
     canvas.style.zIndex = '9999';
     document.body.appendChild(canvas);
 
@@ -214,7 +221,7 @@ function showConfetti() {
 
     let frame = 0;
     function animate() {
-        if (frame > 120) { // ~2 секунды при 60fps
+        if (frame > 120) {
             document.body.removeChild(canvas);
             return;
         }
@@ -222,7 +229,7 @@ function showConfetti() {
         particles.forEach(p => {
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.1; // гравитация
+            p.vy += 0.1;
             ctx.fillStyle = p.color;
             ctx.fillRect(p.x, p.y, p.size, p.size);
         });
@@ -292,7 +299,7 @@ function renderPriv() {
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
             <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:20px 16px 0;">&lt; на главную</button>
         </div>`;
-    document.getElementById('goHome')?.addEventListener('click', renderHome);
+    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
 }
 
 // ----- Страница привилегий для гостей (полные тексты, без кнопок, с выделенным "новое:") -----
@@ -332,7 +339,6 @@ function renderGuestPriv() {
         clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
     });
 
-    // Создаём копию массива partners для гостей и изменяем текст Nothomme
     const partnersGuest = partners.map(p => {
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             return { ...p, privilege: '-7% по промокоду на сайте' };
@@ -359,11 +365,11 @@ function renderGuestPriv() {
             </div>
         </div>`;
 
-    document.getElementById('goHome')?.addEventListener('click', renderHome);
-    document.getElementById('guestBuyBtn')?.addEventListener('click', () => log('buy_card_click', true));
+    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+    document.getElementById('guestBuyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
 }
 
-// ----- Страница подарка (без изменений) -----
+// ----- Страница подарка (с тактильным откликом) -----
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
@@ -383,13 +389,14 @@ function renderGift(isGuest = false) {
         </div>
     `;
 
-    document.getElementById('goHome')?.addEventListener('click', renderHome);
-    document.getElementById('giftBuyBtn')?.addEventListener('click', () => log('gift_purchase_click', isGuest));
-    document.getElementById('giftSupportBtn')?.addEventListener('click', () => log('support_click', isGuest));
+    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+    document.getElementById('giftBuyBtn')?.addEventListener('click', () => { haptic(); log('gift_purchase_click', isGuest); });
+    document.getElementById('giftSupportBtn')?.addEventListener('click', () => { haptic(); log('support_click', isGuest); });
 }
 
 // ----- Попап для гостей -----
 function showGuestPopup() {
+    haptic(); // тактильный отклик при открытии попапа
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'guestPopup';
@@ -405,8 +412,16 @@ function showGuestPopup() {
     `;
     document.body.appendChild(overlay);
 
-    document.getElementById('closePopup')?.addEventListener('click', () => overlay.remove());
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    document.getElementById('closePopup')?.addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
     log('guest_popup_opened', true);
 }
 
@@ -427,10 +442,10 @@ function renderGuestHome() {
                     навигация по клубу <span class="arrow">👀</span>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="log('nav_about', true)">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="log('nav_philosophy', true)">философия</a>
-                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="log('nav_hiking', true)">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="log('nav_reviews', true)">отзывы</a>
+                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_about', true)">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_philosophy', true)">философия</a>
+                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_hiking', true)">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_reviews', true)">отзывы</a>
                 </div>
             </div>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -440,7 +455,7 @@ function renderGuestHome() {
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link">смотреть отчёты &gt;</a>
+                <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
             </div>
             <div class="metrics-grid">
                 <div class="metric-item">
@@ -463,19 +478,26 @@ function renderGuestHome() {
         </div>
         
         <div class="extra-links">
-            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал</a>
-            <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
+            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('channel_click', true)">📰 открыть канал</a>
+            <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('chat_click', true)">💬 открыть чат</a>
             <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
         </div>
     `;
 
-    document.getElementById('guestCardImage')?.addEventListener('click', showGuestPopup);
-    document.getElementById('buyBtn')?.addEventListener('click', () => log('buy_card_click', true));
-    document.getElementById('guestPrivBtn')?.addEventListener('click', () => { log('guest_priv_click', true); renderGuestPriv(); });
-    document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click', true));
-    document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click', true); renderGift(true); });
-    document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
-    document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
+    document.getElementById('guestCardImage')?.addEventListener('click', () => {
+        haptic();
+        showGuestPopup();
+    });
+    document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
+    document.getElementById('guestPrivBtn')?.addEventListener('click', () => { haptic(); log('guest_priv_click', true); renderGuestPriv(); });
+    document.getElementById('supportBtn')?.addEventListener('click', () => { haptic(); log('support_click', true); });
+    document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        log('gift_click', true);
+        renderGift(true);
+    });
+    // Кнопки extra-links уже обработаны через onclick
 
     setupAccordion('navAccordionGuest', true);
 }
@@ -505,10 +527,10 @@ function renderHome() {
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="log('nav_about', false)">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="log('nav_philosophy', false)">философия</a>
-                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="log('nav_hiking', false)">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="log('nav_reviews', false)">отзывы</a>
+                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_about', false)">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_philosophy', false)">философия</a>
+                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_hiking', false)">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="haptic(); log('nav_reviews', false)">отзывы</a>
                     </div>
                 </div>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -518,7 +540,7 @@ function renderHome() {
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link">смотреть отчёты &gt;</a>
+                    <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
@@ -541,29 +563,35 @@ function renderHome() {
             </div>
             
             <div class="extra-links">
-                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline">📰 открыть канал</a>
-                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline">💬 открыть чат</a>
+                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('channel_click', false)">📰 открыть канал</a>
+                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('chat_click', false)">💬 открыть чат</a>
                 <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
         `;
 
-        // Обработчик клика по карте для владельца
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
-            // Тактильный отклик
+            haptic();
             if (tg.HapticFeedback) {
                 tg.HapticFeedback.impactOccurred('medium');
             }
-            // Конфетти
             showConfetti();
-            // Логируем событие (опционально)
             log('card_click_celebration');
         });
 
-        document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('privilege_click'); renderPriv(); });
-        document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click'));
-        document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click'); renderGift(false); });
-        document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
-        document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
+        document.getElementById('privBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            log('privilege_click');
+            renderPriv();
+        });
+        document.getElementById('supportBtn')?.addEventListener('click', () => { haptic(); log('support_click'); });
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            log('gift_click');
+            renderGift(false);
+        });
+        // Кнопки extra-links уже обработаны через onclick
 
         setupAccordion('navAccordionOwner', false);
     } else {
@@ -572,6 +600,7 @@ function renderHome() {
 }
 
 function buyCard() {
+    haptic();
     if (!userId) return;
     log('buy_card_click', true);
     tg.openLink('https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ');
