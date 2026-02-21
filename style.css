@@ -176,8 +176,8 @@ body::before {
     background-color: transparent;
     color: #ffffff;
     border: 2px solid #ffffff;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(4px); /* такое же размытие, как в прямоугольниках метрик */
+    -webkit-backdrop-filter: blur(4px);
 }
 
 /* Кнопки с белым фоном (для аккордеона) */
