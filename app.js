@@ -160,8 +160,8 @@ const partners = [
     }
 ];
 
-// ----- Функция для обработки аккордеона -----
-function setupAccordion(containerId) {
+// ----- Функция для обработки аккордеона с логированием -----
+function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -172,6 +172,8 @@ function setupAccordion(containerId) {
     if (accordionBtn && dropdown) {
         accordionBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            // Логируем нажатие на кнопку навигации
+            log('nav_toggle', isGuest);
             dropdown.classList.toggle('show');
             arrow.classList.toggle('arrow-down');
         });
@@ -358,6 +360,7 @@ function showGuestPopup() {
 
 // ----- Главная для гостей (с новой кнопкой и аккордеоном) -----
 function renderGuestHome() {
+    const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
 
@@ -372,10 +375,10 @@ function renderGuestHome() {
                     навигация по клубу <span class="arrow">👀</span>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white">философия</a>
-                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white">отзывы</a>
+                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="log('nav_about', true)">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="log('nav_philosophy', true)">философия</a>
+                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="log('nav_hiking', true)">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="log('nav_reviews', true)">отзывы</a>
                 </div>
             </div>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -422,7 +425,7 @@ function renderGuestHome() {
     document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 
-    setupAccordion('navAccordionGuest');
+    setupAccordion('navAccordionGuest', true);
 }
 
 // ----- Главная для владельцев карты (с аккордеоном) -----
@@ -450,10 +453,10 @@ function renderHome() {
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white">философия</a>
-                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white">отзывы</a>
+                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white" onclick="log('nav_about', false)">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white" onclick="log('nav_philosophy', false)">философия</a>
+                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white" onclick="log('nav_hiking', false)">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white" onclick="log('nav_reviews', false)">отзывы</a>
                     </div>
                 </div>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -497,7 +500,7 @@ function renderHome() {
         document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click'));
         document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click'));
 
-        setupAccordion('navAccordionOwner');
+        setupAccordion('navAccordionOwner', false);
     } else {
         renderGuestHome();
     }
