@@ -210,7 +210,6 @@ function renderPriv() {
 
     let clubHtml = '';
     club.forEach(c => {
-        // Если название начинается с "новое:", выделяем это слово жёлтым
         let titleHtml = c.t;
         if (c.t.startsWith('новое:')) {
             titleHtml = `<span style="color: var(--yellow);">новое:</span> ${c.t.substring(6)}`;
@@ -370,13 +369,13 @@ function renderGuestHome() {
             <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
-                    навигация по клубу <span class="arrow">&gt;</span>
+                    навигация по клубу <span class="arrow">👀</span>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline">философия</a>
-                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline">что такое хайкинг</a>
-                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline">отзывы</a>
+                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white">философия</a>
+                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white">отзывы</a>
                 </div>
             </div>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -448,13 +447,13 @@ function renderHome() {
                 <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
                 <div id="navAccordionOwner">
                     <button class="accordion-btn">
-                        навигация по клубу <span class="arrow">&gt;</span>
+                        навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline">философия</a>
-                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline">что такое хайкинг</a>
-                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline">отзывы</a>
+                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white">философия</a>
+                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white">отзывы</a>
                     </div>
                 </div>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
