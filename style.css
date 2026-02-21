@@ -172,12 +172,14 @@ body::before {
     font-weight: 600;
 }
 
+/* Кнопки с белой обводкой теперь как прямоугольники метрик */
 .btn-white-outline {
-    background-color: transparent;
+    background-color: rgba(255,255,255,0.1); /* как в metric-item */
     color: #ffffff;
-    border: 2px solid #ffffff;
-    backdrop-filter: blur(4px); /* такое же размытие, как в прямоугольниках метрик */
+    border: 1px solid rgba(255,255,255,0.2); /* как в metric-item */
+    backdrop-filter: blur(4px); /* как в metric-item */
     -webkit-backdrop-filter: blur(4px);
+    /* остальные свойства наследуются от .btn */
 }
 
 /* Кнопки с белым фоном (для аккордеона) */
