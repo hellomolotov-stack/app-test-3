@@ -172,12 +172,64 @@ function setupAccordion(containerId, isGuest) {
     if (accordionBtn && dropdown) {
         accordionBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // Логируем нажатие на кнопку навигации
             log('nav_toggle', isGuest);
             dropdown.classList.toggle('show');
             arrow.classList.toggle('arrow-down');
         });
     }
+}
+
+// ----- Вспомогательная функция для конфетти -----
+function showConfetti() {
+    // Простая анимация конфетти на canvas
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none'; // чтобы клики проходили сквозь canvas
+    canvas.style.zIndex = '9999';
+    document.body.appendChild(canvas);
+
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    const particles = [];
+    const colors = ['#D9FD19', '#40a7e3', '#ffffff', '#ff69b4', '#ffa500'];
+
+    for (let i = 0; i < 80; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: Math.random() * 6 - 3,
+            vy: Math.random() * -5 - 2,
+            size: Math.random() * 6 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        });
+    }
+
+    let frame = 0;
+    function animate() {
+        if (frame > 120) { // ~2 секунды при 60fps
+            document.body.removeChild(canvas);
+            return;
+        }
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.1; // гравитация
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        });
+        frame++;
+        requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
 }
 
 // ----- Страница привилегий для владельцев карты (с полными текстами и кнопками) -----
@@ -428,7 +480,7 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Главная для владельцев карты (с аккордеоном) -----
+// ----- Главная для владельцев карты (с аккордеоном и эффектом на карту) -----
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
@@ -445,7 +497,7 @@ function renderHome() {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
         mainDiv.innerHTML = `
             <div class="card-container">
-                <img src="${userCard.cardUrl}" alt="карта" class="card-image" style="pointer-events: none;">
+                <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
                 <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
                 <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
                 <div id="navAccordionOwner">
@@ -494,6 +546,19 @@ function renderHome() {
                 <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
         `;
+
+        // Обработчик клика по карте для владельца
+        document.getElementById('ownerCardImage')?.addEventListener('click', () => {
+            // Тактильный отклик
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+            // Конфетти
+            showConfetti();
+            // Логируем событие (опционально)
+            log('card_click_celebration');
+        });
+
         document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('privilege_click'); renderPriv(); });
         document.getElementById('supportBtn')?.addEventListener('click', () => log('support_click'));
         document.getElementById('giftBtn')?.addEventListener('click', (e) => { e.preventDefault(); log('gift_click'); renderGift(false); });
