@@ -102,7 +102,7 @@ async function loadData() {
     renderHome();
 }
 
-// ----- Массив партнёров (обновлён текст для Nothomme) -----
+// ----- Массив партнёров -----
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -328,14 +328,13 @@ function renderGuestHome() {
             <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
-                    навигация по клубу <span class="arrow">→</span>
+                    навигация по клубу <span class="arrow">▶</span>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline">о клубе</a>
-                    <a href="#" target="_blank" class="btn btn-white-outline">что такое хайкинг</a>
-                    <a href="#" target="_blank" class="btn btn-white-outline">философия</a>
+                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline">философия</a>
+                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline">что такое хайкинг</a>
                     <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline">отзывы</a>
-                    <a href="https://t.me/yaltahiking/148" target="_blank" class="btn btn-white-outline">отчёты</a>
                 </div>
             </div>
             <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
@@ -382,7 +381,6 @@ function renderGuestHome() {
     document.querySelectorAll('.extra-links a')[0]?.addEventListener('click', () => log('channel_click', true));
     document.querySelectorAll('.extra-links a')[1]?.addEventListener('click', () => log('chat_click', true));
 
-    // Инициализация аккордеона
     setupAccordion('navAccordionGuest');
 }
 
@@ -408,14 +406,13 @@ function renderHome() {
                 <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
                 <div id="navAccordionOwner">
                     <button class="accordion-btn">
-                        навигация по клубу <span class="arrow">→</span>
+                        навигация по клубу <span class="arrow">▶</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline">о клубе</a>
-                        <a href="#" target="_blank" class="btn btn-white-outline">что такое хайкинг</a>
-                        <a href="#" target="_blank" class="btn btn-white-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline">что такое хайкинг</a>
                         <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline">отзывы</a>
-                        <a href="https://t.me/yaltahiking/148" target="_blank" class="btn btn-white-outline">отчёты</a>
                     </div>
                 </div>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
