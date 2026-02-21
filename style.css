@@ -176,14 +176,8 @@ body::before {
     background-color: transparent;
     color: #ffffff;
     border: 2px solid #ffffff;
-}
-
-/* Новый класс для белых кнопок с чёрным текстом */
-.btn-white {
-    background-color: #ffffff;
-    color: #000000;
-    border: none;
-    font-weight: 500;
+    backdrop-filter: blur(6px); /* усиленное размытие внутри кнопки */
+    -webkit-backdrop-filter: blur(6px);
 }
 
 .partner-item .btn-yellow {
@@ -442,7 +436,7 @@ body::before {
 }
 
 .accordion-btn .arrow-down {
-    transform: rotate(-90deg); /* поворот против часовой стрелки */
+    transform: rotate(-90deg);
 }
 
 .dropdown-menu {
