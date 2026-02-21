@@ -95,35 +95,6 @@ body::before {
     margin-bottom: 20px;
 }
 
-/* Специальный класс для футера с размытым блоком (ширина по содержимому) */
-.footer-card {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 12px 24px; /* горизонтальные отступы для красоты */
-    width: fit-content; /* ширина по содержимому */
-    margin: 20px auto 0; /* центрирование и отступ сверху */
-    text-align: center;
-    box-sizing: border-box;
-}
-
-.footer-card p {
-    font-size: 14px;
-    color: #ffffff;
-    margin: 0;
-}
-
-.footer-card a {
-    color: #ffffff;
-    text-decoration: underline;
-    font-weight: 400;
-}
-
-.footer-card a:hover {
-    opacity: 0.8;
-}
-
 .card-image {
     width: calc(100% - 32px);
     height: auto;
@@ -257,6 +228,7 @@ body::before {
     font-size: 18px;
     font-weight: 700;
     margin: 0 16px 16px 16px;
+    font-style: italic; /* курсив для заголовков разделов */
 }
 
 .section-title.second {
@@ -410,6 +382,72 @@ body::before {
     line-height: 1;
 }
 
+/* Стили для подвала */
+.app-footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-bottom: 10px;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.app-footer a {
+    color: #ffffff;
+    text-decoration: underline;
+    font-weight: 400;
+}
+
+.app-footer a:hover {
+    opacity: 0.8;
+}
+
+/* Стили для кнопки-аккордеона */
+.accordion-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: calc(100% - 32px);
+    margin: 0 16px 12px 16px;
+    padding: 14px;
+    background-color: transparent;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    box-sizing: border-box;
+}
+
+.accordion-btn:hover {
+    opacity: 0.9;
+}
+
+.arrow {
+    transition: transform 0.3s ease;
+}
+
+.arrow-down {
+    transform: rotate(90deg);
+}
+
+.dropdown-menu {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0 16px 12px 16px;
+}
+
+.dropdown-menu.show {
+    display: flex;
+}
+
+.dropdown-menu .btn-white-outline {
+    margin: 0;
+    width: 100%;
+}
+
 /* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .app {
@@ -438,5 +476,9 @@ body::before {
     }
     .metric-value {
         font-size: 24px;
+    }
+    .accordion-btn {
+        padding: 10px;
+        font-size: 14px;
     }
 }
