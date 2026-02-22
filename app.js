@@ -11,21 +11,18 @@ function haptic() {
 }
 window.haptic = haptic;
 
-// Универсальная функция открытия ссылок с учётом платформы
+// Универсальная функция открытия ссылок
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
 
-    if (platform === 'android') {
-        // Android: сворачиваем приложение в пузырёк
+    if (url.startsWith('https://t.me/')) {
+        // Для всех платформ: открываем и сворачиваем/закрываем приложение
         window.open(url, '_blank');
         tg.close();
-    } else if (platform === 'ios') {
-        // iOS: открываем во встроенном браузере, чтобы можно было вернуться назад
-        tg.openLink(url, { try_instant_view: false });
     } else {
-        // Другие платформы – стандартный способ
-        tg.openTelegramLink(url);
+        // Внешние ссылки (Робокасса) открываем во встроенном браузере, не закрывая приложение
+        tg.openLink(url);
     }
 }
 window.openLink = openLink;
