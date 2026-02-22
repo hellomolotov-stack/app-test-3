@@ -302,7 +302,7 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
 }
 
-// ----- Страница привилегий для гостей (с обновлённой ссылкой на Робокассу) -----
+// ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
     subtitle.textContent = `🤘🏻привилегии, ${firstName}`;
     showBack(renderHome);
@@ -355,7 +355,6 @@ function renderGuestPriv() {
         cityHtml += `</div>`;
     });
 
-    // ⚠️ Заменена ссылка на Робокассу
     mainDiv.innerHTML = `
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
@@ -370,12 +369,11 @@ function renderGuestPriv() {
     document.getElementById('guestBuyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
 }
 
-// ----- Страница подарка (с обновлённой ссылкой на Робокассу) -----
+// ----- Страница подарка -----
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
 
-    // ⚠️ Заменена ссылка на Робокассу для кнопки "купить в подарок"
     mainDiv.innerHTML = `
         <div class="card-container">
             <div class="gift-text" style="padding:0 16px;">
@@ -484,11 +482,6 @@ function renderGuestHome() {
             <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('chat_click', true)">💬 открыть чат</a>
             <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
         </div>
-        
-        <!-- Кликабельное изображение (баннер) -->
-        <a href="https://t.me/yaltahiking/211" target="_blank" class="guest-banner" onclick="haptic(); log('guest_banner_click', true)">
-            <img src="https://i.postimg.cc/4xTnVgjs/so.png" alt="узнать о клубе" style="width: 100%; border-radius: 12px; margin-top: 16px; display: block;">
-        </a>
     `;
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
@@ -604,12 +597,10 @@ function renderHome() {
     }
 }
 
-// ----- Функция покупки карты (запасная, обновлена ссылка) -----
 function buyCard() {
     haptic();
     if (!userId) return;
     log('buy_card_click', true);
-    // ⚠️ Заменена ссылка на Робокассу
     tg.openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g');
 }
 
