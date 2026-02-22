@@ -21,8 +21,8 @@ function openLink(url, action, isGuest) {
         window.open(url, '_blank');
         tg.close();
     } else if (platform === 'ios') {
-        // iOS: открываем ссылку, не закрывая WebApp, чтобы можно было вернуться назад
-        tg.openTelegramLink(url);
+        // iOS: открываем ссылку внутри WebView, чтобы можно было вернуться назад
+        window.location.href = url;
         // НЕ вызываем tg.close()
     } else {
         // Другие платформы (macos, tdesktop, weba) – стандартный способ
