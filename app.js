@@ -360,6 +360,7 @@ function renderGuestPriv() {
         clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
     });
 
+    // Создаём копию массива partners для гостей и изменяем текст Nothomme (без кнопки)
     const partnersGuest = partners.map(p => {
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             return { ...p, privilege: '-7% по промокоду на сайте' };
@@ -387,7 +388,7 @@ function renderGuestPriv() {
         </div>`;
 
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
-    // Обработчик для кнопки покупки уже встроен в onclick
+    document.getElementById('guestBuyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
 }
 
 // ----- Страница подарка -----
@@ -411,7 +412,8 @@ function renderGift(isGuest = false) {
     `;
 
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
-    // Обработчики для кнопок уже встроены в onclick
+    document.getElementById('giftBuyBtn')?.addEventListener('click', () => { haptic(); log('gift_purchase_click', isGuest); });
+    document.getElementById('giftSupportBtn')?.addEventListener('click', () => { haptic(); log('support_click', isGuest); });
 }
 
 // ----- Попап для гостей -----
@@ -508,6 +510,9 @@ function renderGuestHome() {
         haptic();
         showGuestPopup();
     });
+    document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
+    document.getElementById('guestPrivBtn')?.addEventListener('click', () => { haptic(); log('guest_priv_click', true); renderGuestPriv(); });
+    document.getElementById('supportBtn')?.addEventListener('click', () => { haptic(); log('support_click', true); });
     document.getElementById('giftBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
