@@ -125,10 +125,6 @@ async function loadData() {
     await Promise.all([loadUserData(), loadMetrics()]);
     log('visit', userCard.status !== 'active');
     renderHome();
-    
-    // Скрываем начальный спиннер
-    const loader = document.getElementById('initial-loader');
-    if (loader) loader.style.display = 'none';
 }
 
 // ----- Массив партнёров -----
@@ -587,66 +583,35 @@ function renderHome() {
         `;
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
-            hapticEventListener('click', () => {
             haptic();
-            if (tg.H();
             if (tg.HapticFeedback) {
-                tgapticFeedback) {
-.HapticFeedback.impactOccurred('medium                tg.HapticFeedback.impactOccurred('medium');
-            }
-            showConf');
+                tg.HapticFeedback.impactOccurred('medium');
             }
             showConfetti();
-            logetti();
-            log('card_click_celeb('card_click_celebration');
+            log('card_click_celebration');
         });
 
-       ration');
-        });
-
-        document.getElementById('privBtn') document.getElementById('privBtn')?.addEventListener('click', (e) =>?.addEventListener('click', (e) => {
-            {
+        document.getElementById('privBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
-            haptic e.preventDefault();
             haptic();
-            log('();
-           privilege_click');
-            renderPr log('privilege_click');
+            log('privilege_click');
             renderPriv();
         });
-        document.getElementById('iv();
-        });
-        document.getElementById('giftBtn')?.addEventListener('giftBtn')?.addEventListener('click', (eclick', (e) => {
-           ) => {
-            e.preventDefault e.preventDefault();
-            haptic();
-            log('();
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
             haptic();
             log('gift_click');
-            renderGgift_click');
-           ift(false renderGift(false);
+            renderGift(false);
         });
 
-       );
-        });
-
-        setupAccordion('navAccordionOwner setupAccordion('navAccordionOwner', false);
-   ', false);
-    } else } else {
-        {
+        setupAccordion('navAccordionOwner', false);
+    } else {
         renderGuestHome();
- renderGuestHome();
-    }
-}
-
-function buyCard() {
     }
 }
 
 function buyCard() {
     haptic();
-    haptic();
-    if (!userId) return;
     if (!userId) return;
     log('buy_card_click', true);
     openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g', null, true);
