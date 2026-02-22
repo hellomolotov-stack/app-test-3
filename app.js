@@ -9,6 +9,18 @@ function haptic() {
 // Делаем функцию глобально доступной для onclick-атрибутов
 window.haptic = haptic;
 
+// Универсальная функция открытия ссылок
+function openLink(url, action, isGuest) {
+    haptic();
+    if (action) log(action, isGuest);
+    if (url.startsWith('https://t.me/')) {
+        tg.openTelegramLink(url);
+    } else {
+        tg.openLink(url);
+    }
+}
+window.openLink = openLink; // делаем глобальной
+
 const backButton = tg.BackButton;
 
 function showBack(callback) {
@@ -275,7 +287,7 @@ function renderPriv() {
         if (c.t.startsWith('новое:')) {
             titleHtml = `<span style="color: var(--yellow);">новое:</span> ${c.t.substring(6)}`;
         }
-        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p>${c.btn ? `<a href="https://t.me/hellointelligent" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
+        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p>${c.btn ? `<a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
     });
 
     let cityHtml = '';
@@ -360,13 +372,13 @@ function renderGuestPriv() {
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>`;
 
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
-    document.getElementById('guestBuyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
+    // Обработчик для кнопки покупки уже встроен в onclick
 }
 
 // ----- Страница подарка -----
@@ -382,16 +394,15 @@ function renderGift(isGuest = false) {
                 <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" target="_blank" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', ${isGuest}); return false;" class="btn btn-white-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
     `;
 
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
-    document.getElementById('giftBuyBtn')?.addEventListener('click', () => { haptic(); log('gift_purchase_click', isGuest); });
-    document.getElementById('giftSupportBtn')?.addEventListener('click', () => { haptic(); log('support_click', isGuest); });
+    // Обработчики для кнопок уже встроены в onclick
 }
 
 // ----- Попап для гостей -----
@@ -406,7 +417,7 @@ function showGuestPopup() {
             <div class="modal-title">карта интеллигента</div>
             <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
             <div style="text-align: center; margin-top: 20px;">
-                <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
+                <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
             </div>
         </div>
     `;
@@ -435,27 +446,27 @@ function renderGuestHome() {
         <div class="card-container">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <a href="https://t.me/yaltahiking/197" target="_blank" class="btn btn-yellow" id="buyBtn">купить карту</a>
+            <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">купить карту</a>
             <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
                     навигация по клубу <span class="arrow">👀</span>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_about', true)">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_philosophy', true)">философия</a>
-                    <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_hiking', true)">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_reviews', true)">отзывы</a>
+                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-white-outline">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-white-outline">философия</a>
+                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-white-outline">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-white-outline">отзывы</a>
                 </div>
             </div>
-            <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', true); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
         
         <!-- Блок метрик -->
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
+                <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
             </div>
             <div class="metrics-grid">
                 <div class="metric-item">
@@ -478,8 +489,8 @@ function renderGuestHome() {
         </div>
         
         <div class="extra-links">
-            <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('channel_click', true)">📰 открыть канал</a>
-            <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('chat_click', true)">💬 открыть чат</a>
+            <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', true); return false;" class="btn btn-white-outline">📰 открыть канал</a>
+            <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', true); return false;" class="btn btn-white-outline">💬 открыть чат</a>
             <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
         </div>
     `;
@@ -488,9 +499,6 @@ function renderGuestHome() {
         haptic();
         showGuestPopup();
     });
-    document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
-    document.getElementById('guestPrivBtn')?.addEventListener('click', () => { haptic(); log('guest_priv_click', true); renderGuestPriv(); });
-    document.getElementById('supportBtn')?.addEventListener('click', () => { haptic(); log('support_click', true); });
     document.getElementById('giftBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
@@ -526,20 +534,20 @@ function renderHome() {
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_about', false)">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_philosophy', false)">философия</a>
-                        <a href="https://t.me/yaltahiking/246" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_hiking', false)">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('nav_reviews', false)">отзывы</a>
+                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-white-outline">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-white-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-white-outline">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-white-outline">отзывы</a>
                     </div>
                 </div>
-                <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
             
             <!-- Блок метрик -->
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
+                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
@@ -562,8 +570,8 @@ function renderHome() {
             </div>
             
             <div class="extra-links">
-                <a href="https://t.me/yaltahiking" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('channel_click', false)">📰 открыть канал</a>
-                <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('chat_click', false)">💬 открыть чат</a>
+                <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', false); return false;" class="btn btn-white-outline">📰 открыть канал</a>
+                <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', false); return false;" class="btn btn-white-outline">💬 открыть чат</a>
                 <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
         `;
@@ -583,7 +591,6 @@ function renderHome() {
             log('privilege_click');
             renderPriv();
         });
-        document.getElementById('supportBtn')?.addEventListener('click', () => { haptic(); log('support_click'); });
         document.getElementById('giftBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
@@ -601,7 +608,7 @@ function buyCard() {
     haptic();
     if (!userId) return;
     log('buy_card_click', true);
-    tg.openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g');
+    openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g', null, true);
 }
 
 window.addEventListener('load', loadData);
