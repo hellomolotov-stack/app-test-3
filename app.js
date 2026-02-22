@@ -257,87 +257,6 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ===== НОВЫЕ ФУНКЦИИ ДЛЯ ПОСТОВ =====
-
-// ----- Получение поста из RSS канала -----
-async function fetchPostFromRSS(postLink) {
-    const rssUrl = 'https://wtf.roflcopter.fr/rss-bridge/?action=display&bridge=TelegramBridge&username=%40yaltahiking&format=Atom';
-    try {
-        const response = await fetch(`${rssUrl}&t=${Date.now()}`); // антикэш
-        const text = await response.text();
-        const parser = new DOMParser();
-        const xml = parser.parseFromString(text, 'text/xml');
-        const entries = xml.querySelectorAll('entry');
-
-        for (let entry of entries) {
-            const link = entry.querySelector('link')?.getAttribute('href');
-            if (link === postLink) {
-                const title = entry.querySelector('title')?.textContent || 'Пост';
-                const content = entry.querySelector('content')?.textContent || 'Нет содержимого';
-                const published = entry.querySelector('published')?.textContent;
-                const date = published ? new Date(published).toLocaleDateString('ru-RU') : '';
-                return { title, content, date, success: true };
-            }
-        }
-        return { success: false, error: 'Пост не найден в RSS' };
-    } catch (e) {
-        console.error('Ошибка RSS:', e);
-        return { success: false, error: 'Не удалось загрузить RSS' };
-    }
-}
-
-// ----- Универсальная страница поста -----
-async function renderPostPage(link, pageTitle, logAction) {
-    subtitle.textContent = pageTitle;
-    showBack(renderHome);
-    haptic();
-    log(logAction, false); // логируем открытие страницы
-
-    // Показываем загрузку
-    mainDiv.innerHTML = '<div class="loader" style="margin-top:40px;"></div>';
-
-    const result = await fetchPostFromRSS(link);
-    if (result.success) {
-        mainDiv.innerHTML = `
-            <div class="card-container">
-                <div class="partner-item" style="padding:20px;">
-                    <strong>${result.title}</strong>
-                    <p style="font-size:14px; opacity:0.6;">${result.date}</p>
-                    <div class="post-content" style="margin-top:16px;">
-                        ${result.content}
-                    </div>
-                    <button class="btn btn-yellow" style="margin-top:20px;" onclick="openLink('${link}', 'open_original', false)">📰 читать оригинал в Telegram</button>
-                </div>
-            </div>
-        `;
-    } else {
-        // RSS недоступен – показываем кнопку
-        mainDiv.innerHTML = `
-            <div class="card-container">
-                <div class="partner-item" style="padding:20px;">
-                    <p>${result.error || 'Пост временно недоступен'}</p>
-                    <button class="btn btn-yellow" onclick="openLink('${link}', 'open_original', false)">📰 открыть пост в Telegram</button>
-                </div>
-            </div>
-        `;
-    }
-}
-
-// ----- Конкретные страницы для трёх постов -----
-function renderPostAbout() {
-    renderPostPage('https://t.me/yaltahiking/149', '📖 о клубе', 'post_about_page');
-}
-
-function renderPostPhilosophy() {
-    renderPostPage('https://t.me/yaltahiking/170', '🧘 философия', 'post_philosophy_page');
-}
-
-function renderPostHiking() {
-    renderPostPage('https://t.me/yaltahiking/246', '🥾 о хайкинге', 'post_hiking_page');
-}
-
-// ===== КОНЕЦ НОВЫХ ФУНКЦИЙ =====
-
 // ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
@@ -465,6 +384,7 @@ function renderGuestPriv() {
         </div>`;
 
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+    // Обработчик для кнопки покупки уже встроен в onclick
 }
 
 // ----- Страница подарка -----
@@ -488,6 +408,7 @@ function renderGift(isGuest = false) {
     `;
 
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+    // Обработчики для кнопок уже встроены в onclick
 }
 
 // ----- Попап для гостей -----
@@ -538,10 +459,9 @@ function renderGuestHome() {
                     навигация по клубу <span class="arrow">👀</span>
                 </button>
                 <div class="dropdown-menu">
-                    <!-- КНОПКИ АККОРДЕОНА: теперь ведут на страницы постов -->
-                    <a href="#" onclick="event.preventDefault(); haptic(); renderPostAbout();" class="btn btn-white-outline">о клубе</a>
-                    <a href="#" onclick="event.preventDefault(); haptic(); renderPostPhilosophy();" class="btn btn-white-outline">философия</a>
-                    <a href="#" onclick="event.preventDefault(); haptic(); renderPostHiking();" class="btn btn-white-outline">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-white-outline">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-white-outline">философия</a>
+                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-white-outline">о хайкинге</a>
                     <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-white-outline">отзывы</a>
                 </div>
             </div>
@@ -620,10 +540,9 @@ function renderHome() {
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <!-- КНОПКИ АККОРДЕОНА: теперь ведут на страницы постов -->
-                        <a href="#" onclick="event.preventDefault(); haptic(); renderPostAbout();" class="btn btn-white-outline">о клубе</a>
-                        <a href="#" onclick="event.preventDefault(); haptic(); renderPostPhilosophy();" class="btn btn-white-outline">философия</a>
-                        <a href="#" onclick="event.preventDefault(); haptic(); renderPostHiking();" class="btn btn-white-outline">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-white-outline">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-white-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-white-outline">о хайкинге</a>
                         <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-white-outline">отзывы</a>
                     </div>
                 </div>
