@@ -130,7 +130,7 @@ const partners = [
         link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
     },
     {
-        name: 'магазин косметики На Утро: На Вечер',
+        name: 'косметика и парфюмерия на утро : на вечер',
         privilege: '+1000 бонусов по карте интеллигента',
         location: 'г. Ялта, ул. Морская 3А',
         link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
@@ -167,7 +167,7 @@ const partners = [
     }
 ];
 
-// ----- Функция для обработки аккордеона с логированием и тактильным откликом -----
+// ----- Функция для обработки аккордеона -----
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -178,7 +178,7 @@ function setupAccordion(containerId, isGuest) {
 
     if (accordionBtn && dropdown) {
         accordionBtn.addEventListener('click', (e) => {
-            haptic(); // тактильный отклик
+            haptic();
             e.preventDefault();
             log('nav_toggle', isGuest);
             dropdown.classList.toggle('show');
@@ -239,7 +239,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Страница привилегий для владельцев карты (с полными текстами и кнопками) -----
+// ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
@@ -258,14 +258,14 @@ function renderPriv() {
             d: 'ты можешь ходить по закрытым для большинства туристов локациям с нашим сертифицированным гидом' 
         },
         { 
-            t: 'новое: обход блокировок', 
-            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок',
-            btn: 'получить настройки'
-        },
-        { 
             t: 'запрос на мастермайнд', 
             d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами',
             btn: 'забронировать запрос'
+        },
+        { 
+            t: 'новое: обход блокировок', 
+            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок',
+            btn: 'получить настройки'
         }
     ];
 
@@ -302,7 +302,7 @@ function renderPriv() {
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
 }
 
-// ----- Страница привилегий для гостей (полные тексты, без кнопок, с выделенным "новое:") -----
+// ----- Страница привилегий для гостей (с обновлённой ссылкой на Робокассу) -----
 function renderGuestPriv() {
     subtitle.textContent = `🤘🏻привилегии, ${firstName}`;
     showBack(renderHome);
@@ -321,12 +321,12 @@ function renderGuestPriv() {
             d: 'ты можешь ходить по закрытым для большинства туристов локациям с нашим сертифицированным гидом' 
         },
         { 
-            t: 'новое: обход блокировок', 
-            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок' 
-        },
-        { 
             t: 'запрос на мастермайнд', 
             d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами' 
+        },
+        { 
+            t: 'новое: обход блокировок', 
+            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок' 
         }
     ];
 
@@ -339,7 +339,6 @@ function renderGuestPriv() {
         clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
     });
 
-    // Создаём копию массива partners для гостей и изменяем текст Nothomme
     const partnersGuest = partners.map(p => {
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             return { ...p, privilege: '-7% по промокоду на сайте' };
@@ -356,12 +355,13 @@ function renderGuestPriv() {
         cityHtml += `</div>`;
     });
 
+    // ⚠️ Заменена ссылка на Робокассу
     mainDiv.innerHTML = `
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" target="_blank" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>`;
@@ -370,11 +370,12 @@ function renderGuestPriv() {
     document.getElementById('guestBuyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
 }
 
-// ----- Страница подарка (с тактильным откликом) -----
+// ----- Страница подарка (с обновлённой ссылкой на Робокассу) -----
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
 
+    // ⚠️ Заменена ссылка на Робокассу для кнопки "купить в подарок"
     mainDiv.innerHTML = `
         <div class="card-container">
             <div class="gift-text" style="padding:0 16px;">
@@ -383,7 +384,7 @@ function renderGift(isGuest = false) {
                 <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
             </div>
             <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ" target="_blank" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" target="_blank" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
                 <a href="https://t.me/hellointelligent" target="_blank" class="btn btn-white-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
@@ -397,7 +398,7 @@ function renderGift(isGuest = false) {
 
 // ----- Попап для гостей -----
 function showGuestPopup() {
-    haptic(); // тактильный отклик при открытии попапа
+    haptic();
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'guestPopup';
@@ -455,7 +456,7 @@ function renderGuestHome() {
         <!-- Блок метрик -->
         <div class="card-container">
             <div class="metrics-header">
-                <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
+                <h2 class="metrics-title">🌍 клуб в цифрах</h2>
                 <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
             </div>
             <div class="metrics-grid">
@@ -483,6 +484,11 @@ function renderGuestHome() {
             <a href="https://t.me/yaltahikingchat" target="_blank" class="btn btn-white-outline" onclick="haptic(); log('chat_click', true)">💬 открыть чат</a>
             <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
         </div>
+        
+        <!-- Кликабельное изображение (баннер) -->
+        <a href="https://t.me/yaltahiking/211" target="_blank" class="guest-banner" onclick="haptic(); log('guest_banner_click', true)">
+            <img src="https://i.postimg.cc/4xTnVgjs/so.png" alt="узнать о клубе" style="width: 100%; border-radius: 12px; margin-top: 16px; display: block;">
+        </a>
     `;
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
@@ -502,7 +508,7 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Главная для владельцев карты (с аккордеоном и эффектом на карту) -----
+// ----- Главная для владельцев карты -----
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
@@ -539,7 +545,7 @@ function renderHome() {
             <!-- Блок метрик -->
             <div class="card-container">
                 <div class="metrics-header">
-                    <h2 class="metrics-title">🤙🏻 клуб в цифрах</h2>
+                    <h2 class="metrics-title">🌍 клуб в цифрах</h2>
                     <a href="https://t.me/yaltahiking/148" target="_blank" class="metrics-link" onclick="haptic();">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
@@ -598,11 +604,13 @@ function renderHome() {
     }
 }
 
+// ----- Функция покупки карты (запасная, обновлена ссылка) -----
 function buyCard() {
     haptic();
     if (!userId) return;
     log('buy_card_click', true);
-    tg.openLink('https://auth.robokassa.ru/merchant/Invoice/VolsQzE1I0G-iHkIWVJ0eQ');
+    // ⚠️ Заменена ссылка на Робокассу
+    tg.openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g');
 }
 
 window.addEventListener('load', loadData);
