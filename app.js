@@ -125,6 +125,9 @@ async function loadData() {
     await Promise.all([loadUserData(), loadMetrics()]);
     log('visit', userCard.status !== 'active');
     renderHome();
+    // Скрываем начальный спиннер
+    const loader = document.getElementById('initial-loader');
+    if (loader) loader.style.display = 'none';
 }
 
 // ----- Массив партнёров -----
