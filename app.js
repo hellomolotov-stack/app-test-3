@@ -9,13 +9,17 @@ function haptic() {
 // Делаем функцию глобально доступной для onclick-атрибутов
 window.haptic = haptic;
 
-// Универсальная функция открытия ссылок
+// Универсальная функция открытия ссылок (Способ 1: window.open для Telegram)
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
     if (url.startsWith('https://t.me/')) {
-        tg.openTelegramLink(url);
+        // window.open гарантированно сворачивает приложение на iOS и Android
+        window.open(url, '_blank');
+        // Принудительно закрываем WebApp для надёжности
+        tg.close();
     } else {
+        // Внешние ссылки (Робокасса) открываем во встроенном браузере
         tg.openLink(url);
     }
 }
