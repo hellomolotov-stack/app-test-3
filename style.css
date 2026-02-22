@@ -181,7 +181,7 @@ body::before {
     -webkit-backdrop-filter: blur(4px);
 }
 
-/* Кнопка-аккордеон (теперь тоже в стиле метрик) */
+/* Кнопка-аккордеон */
 .accordion-btn {
     display: flex;
     align-items: center;
@@ -231,7 +231,6 @@ body::before {
     display: grid;
 }
 
-/* Кнопки внутри аккордеона теперь используют тот же стиль, что и btn-white-outline */
 .dropdown-menu .btn-white-outline {
     margin: 0;
     width: 100%;
@@ -466,6 +465,33 @@ body::before {
 
 .app-footer a:hover {
     opacity: 0.8;
+}
+
+/* Начальный загрузчик */
+.initial-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(73, 138, 176, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2000;
+    transition: opacity 0.3s;
+}
+
+.initial-loader::after {
+    content: "";
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255,255,255,0.3);
+    border-top-color: var(--button-color, #40a7e3);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
 
 /* Адаптация для горизонтальной ориентации */
