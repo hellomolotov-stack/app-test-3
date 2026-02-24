@@ -325,7 +325,7 @@ function renderPriv() {
 
 // ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
-    subtitle.textContent = `🤘🏻привилегии, ${firstName}`;
+    subtitle.textContent = `💳 привилегии с картой интеллигента`;
     showBack(renderHome);
 
     let club = [
@@ -360,7 +360,6 @@ function renderGuestPriv() {
         clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
     });
 
-    // Создаём копию массива partners для гостей и изменяем текст Nothomme (без кнопки)
     const partnersGuest = partners.map(p => {
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             return { ...p, privilege: '-7% по промокоду на сайте' };
@@ -457,7 +456,8 @@ function renderGuestHome() {
         <div class="card-container">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">купить карту</a>
+            <!-- 🔹 Изменённая кнопка: "узнать о карте" вместо "купить карту" -->
+            <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
             <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
