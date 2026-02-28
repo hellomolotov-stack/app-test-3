@@ -446,6 +446,27 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
+// ----- НОВАЯ СТРАНИЦА: раздел для новичков -----
+function renderNewcomerPage() {
+    subtitle.textContent = `🧭 для новичков`;
+    showBack(renderHome);
+    haptic();
+    log('newcomer_page_opened', false); // логируем открытие
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <div class="partner-item" style="padding:20px;">
+                <p style="font-size:16px; margin-bottom:16px;">раздел в разработке. скоро здесь появится полезная информация для новичков.</p>
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', false); return false;" class="btn btn-yellow" style="margin-bottom:0;">задать вопрос</a>
+                    <button id="goHome" class="btn btn-white-outline" style="width:100%; margin:0;">&lt; на главную</button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+}
+
 // ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
@@ -456,7 +477,6 @@ function renderGuestHome() {
         <div class="card-container">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <!-- 🔹 Изменённая кнопка: "узнать о карте" вместо "купить карту" -->
             <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
             <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
             <div id="navAccordionGuest">
@@ -523,7 +543,7 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Главная для владельцев карты -----
+// ----- Главная для владельцев карты (с новой кнопкой для новичков) -----
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
@@ -555,6 +575,12 @@ function renderHome() {
                     </div>
                 </div>
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+                
+                <!-- Новая кнопка для новичков (только для владельцев карты) -->
+                <div class="btn-newcomer" id="newcomerBtn">
+                    <span class="newcomer-text">для новичков</span>
+                    <img src="https://i.postimg.cc/0jTpW94n/png-transparent-marketing-for-dummies-the-endocrine-system-book-game-book-game-logo-casino.png" alt="новичкам" class="newcomer-image">
+                </div>
             </div>
             
             <!-- Блок метрик -->
@@ -610,6 +636,13 @@ function renderHome() {
             haptic();
             log('gift_click');
             renderGift(false);
+        });
+        
+        // Обработчик новой кнопки
+        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
+            haptic();
+            log('newcomer_btn_click', false);
+            renderNewcomerPage();
         });
 
         setupAccordion('navAccordionOwner', false);
