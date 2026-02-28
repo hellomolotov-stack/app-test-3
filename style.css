@@ -281,13 +281,13 @@ body::before {
 .btn-newcomer .newcomer-text {
     flex: 1;
     text-align: left;
-    font-size: 16px;        /* изменено с 18px на 16px */
+    font-size: 16px;
     font-weight: 600;
     z-index: 2;
 }
 
 .btn-newcomer .newcomer-image {
-    height: 115px;           /* изменено с 120px на 115px */
+    height: 115px;
     width: auto;
     position: relative;
     top: -20px;
@@ -330,6 +330,7 @@ body::before {
     opacity: 0.9;
     line-height: 1.5;
     color: #ffffff;
+    white-space: pre-line;  /* Добавлено для корректного отображения переносов строк */
 }
 
 .partner-item a {
@@ -346,7 +347,7 @@ body::before {
     font-size: 18px;
     font-weight: 700;
     margin: 0 16px 16px 16px;
-    font-style: normal;      /* убрали курсив */
+    font-style: normal;
 }
 
 .section-title.second {
