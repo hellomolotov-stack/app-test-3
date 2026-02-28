@@ -257,7 +257,7 @@ body::before {
     justify-content: space-between;
     width: calc(100% - 32px);
     margin: 0 16px 12px 16px;
-    padding: 18px 16px; /* чуть выше обычной кнопки */
+    padding: 18px 16px;
     background-color: rgba(255,255,255,0.1);
     color: #ffffff;
     border: 1px solid rgba(255,255,255,0.2);
@@ -271,7 +271,7 @@ body::before {
     -webkit-backdrop-filter: blur(4px);
     position: relative;
     overflow: visible;
-    height: 80px; /* полторы обычной кнопки (примерно) */
+    height: 80px;
 }
 
 .btn-newcomer:hover {
@@ -281,13 +281,13 @@ body::before {
 .btn-newcomer .newcomer-text {
     flex: 1;
     text-align: left;
-    font-size: 16px;        /* было 18px */
+    font-size: 16px;        /* изменено с 18px на 16px */
     font-weight: 600;
     z-index: 2;
 }
 
 .btn-newcomer .newcomer-image {
-    height: 115px;           /* было 120px */
+    height: 115px;           /* изменено с 120px на 115px */
     width: auto;
     position: relative;
     top: -20px;
@@ -346,7 +346,7 @@ body::before {
     font-size: 18px;
     font-weight: 700;
     margin: 0 16px 16px 16px;
-    font-style: italic;
+    font-style: normal;      /* убрали курсив */
 }
 
 .section-title.second {
