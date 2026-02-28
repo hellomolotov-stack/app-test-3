@@ -526,14 +526,14 @@ function renderNewcomerPage(isGuest = false) {
         <div class="card-container newcomer-page">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 10px;">
-                <!-- статическая кнопка на случай отключения JS или для старых браузеров, но она будет перекрыта плавающей, оставим на всякий случай -->
+                <!-- Статическая кнопка (для надёжности) -->
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomeStatic" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
         <div class="floating-btn-container" id="floatingBtnContainer">
             <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', ${isGuest}); return false;" class="btn btn-yellow">задать вопрос</a>
-            <a href="#" id="floatingGoHome" class="btn btn-white-outline">на главную</a>
+            <a href="#" id="floatingGoHome" class="btn btn-white-outline">&lt; на главную</a>
         </div>
     `;
 
@@ -558,11 +558,18 @@ function renderNewcomerPage(isGuest = false) {
         const scrollY = window.scrollY;
         const windowHeight = window.innerHeight;
         const documentHeight = document.documentElement.scrollHeight;
-        // если до конца документа осталось меньше 150px, скрываем плавающую кнопку
-        if (documentHeight - (scrollY + windowHeight) < 150) {
-            floatingContainer.classList.add('hidden');
-        } else {
+
+        // Появляется, если прокручено больше 25% высоты документа
+        const showThreshold = documentHeight * 0.25;
+        // Исчезает, если до конца страницы осталось меньше 25% высоты документа
+        const hideThreshold = documentHeight * 0.25;
+
+        const remaining = documentHeight - (scrollY + windowHeight);
+
+        if (scrollY > showThreshold && remaining > hideThreshold) {
             floatingContainer.classList.remove('hidden');
+        } else {
+            floatingContainer.classList.add('hidden');
         }
     }
 
@@ -579,7 +586,7 @@ function renderNewcomerPage(isGuest = false) {
     window._floatingScrollHandler = scrollHandler;
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (убраны лишние кнопки) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -590,7 +597,7 @@ function renderGuestHome() {
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
-            <button class="btn btn-white-outline" id="guestPrivBtn">узнать о привилегиях</button>
+            <!-- кнопки "узнать о привилегиях" и "написать в поддержку" удалены -->
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
                     навигация по клубу <span class="arrow">👀</span>
@@ -602,7 +609,6 @@ function renderGuestHome() {
                     <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-white-outline">отзывы</a>
                 </div>
             </div>
-            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', true); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
         </div>
 
         <!-- Блок для новичков (для гостей) -->
@@ -652,8 +658,6 @@ function renderGuestHome() {
         showGuestPopup();
     });
     document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
-    document.getElementById('guestPrivBtn')?.addEventListener('click', () => { haptic(); log('guest_priv_click', true); renderGuestPriv(); });
-    document.getElementById('supportBtn')?.addEventListener('click', () => { haptic(); log('support_click', true); });
     document.getElementById('giftBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
@@ -671,7 +675,7 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Главная для владельцев карты (с блоком для новичков) -----
+// ----- Главная для владельцев карты -----
 function renderHome() {
     // Удаляем обработчик плавающей кнопки, если он был
     if (window._floatingScrollHandler) {
@@ -711,7 +715,7 @@ function renderHome() {
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
 
-            <!-- Блок для новичков (обновлённый текст и картинка) -->
+            <!-- Блок для новичков -->
             <div class="card-container">
                 <h2 class="section-title">🫖 для новичков</h2>
                 <div class="btn-newcomer" id="newcomerBtn">
