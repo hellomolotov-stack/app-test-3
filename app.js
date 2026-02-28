@@ -523,9 +523,9 @@ function renderNewcomerPage(isGuest = false) {
     });
 
     mainDiv.innerHTML = `
-        <div class="card-container newcomer-page">
+        <div class="card-container newcomer-page" style="margin-bottom: 0;">
             ${faqHtml}
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 10px;">
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
                 <!-- Статическая кнопка (для надёжности) -->
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomeStatic" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
@@ -559,10 +559,10 @@ function renderNewcomerPage(isGuest = false) {
         const windowHeight = window.innerHeight;
         const documentHeight = document.documentElement.scrollHeight;
 
-        // Появляется, если прокручено больше 25% высоты документа
-        const showThreshold = documentHeight * 0.25;
-        // Исчезает, если до конца страницы осталось меньше 25% высоты документа
-        const hideThreshold = documentHeight * 0.25;
+        // Появляется, если прокручено больше 10% высоты документа
+        const showThreshold = documentHeight * 0.1;
+        // Исчезает, если до конца страницы осталось меньше 10% высоты документа
+        const hideThreshold = documentHeight * 0.1;
 
         const remaining = documentHeight - (scrollY + windowHeight);
 
