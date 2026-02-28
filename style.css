@@ -591,30 +591,26 @@ body::before {
     }
 }
 
-/* ===== ПЛАВАЮЩИЕ КНОПКИ ===== */
+/* ===== ПЛАВАЮЩИЕ КНОПКИ (обновлённые) ===== */
 .floating-btn-container {
     position: fixed;
     bottom: 30px;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 0 16px; /* такие же отступы, как у карточек */
+    right: 16px;                 /* прижимаем к правому краю */
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    align-items: center;
-    justify-content: center;
+    align-items: flex-end;       /* выравниваем по правому краю */
+    gap: 8px;                    /* уменьшенное расстояние между кнопками */
     pointer-events: none;
     z-index: 100;
     transition: opacity 0.3s ease;
-    left: 50%;
-    transform: translateX(-50%);
 }
 
 .floating-btn-container .btn {
     pointer-events: auto;
-    width: 100%;
-    margin: 0; /* отступы уже заданы padding контейнера */
+    width: auto;                 /* ширина по содержимому */
+    margin: 0;                   /* убираем стандартные отступы */
+    white-space: nowrap;         /* текст в одну строку */
+    padding: 14px 20px;          /* увеличим боковые отступы для удобства нажатия */
 }
 
 .floating-btn-container.hidden {
