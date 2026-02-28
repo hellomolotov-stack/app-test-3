@@ -287,11 +287,11 @@ body::before {
 }
 
 .btn-newcomer .newcomer-image {
-    height: 100px;           /* уменьшено со 115px до 100px */
+    height: 100px;
     width: auto;
     position: relative;
-    top: -10px;              /* прижато к низу (было -20px) */
-    right: -5px;             /* сдвинуто чуть влево (было -10px) */
+    top: -10px;
+    right: -5px;
     z-index: 3;
     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
 }
@@ -585,7 +585,7 @@ body::before {
         padding: 14px 16px;
     }
     .btn-newcomer .newcomer-image {
-        height: 90px;        /* адаптация для ландшафта */
+        height: 90px;
         top: -8px;
         right: -3px;
     }
@@ -594,25 +594,25 @@ body::before {
 /* ===== ПЛАВАЮЩИЕ КНОПКИ ===== */
 .floating-btn-container {
     position: fixed;
-    bottom: 30px;            /* увеличен отступ */
+    bottom: 30px;
     left: 16px;
     right: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;               /* отступ между кнопками */
+    gap: 12px;
     align-items: center;
     justify-content: center;
     pointer-events: none;
     z-index: 100;
     transition: opacity 0.3s ease;
-    max-width: 600px;        /* как у .app */
+    max-width: 600px;
     margin: 0 auto;
 }
 
 .floating-btn-container .btn {
     pointer-events: auto;
     width: 100%;
-    margin: 0;               /* убираем лишние отступы, так как они в контейнере */
+    margin: 0;
 }
 
 .floating-btn-container.hidden {
@@ -620,7 +620,7 @@ body::before {
     pointer-events: none;
 }
 
-/* Класс для страницы новичков, чтобы контент не перекрывался плавающими кнопками */
+/* Убираем лишний отступ снизу на странице новичков */
 .newcomer-page {
-    padding-bottom: 130px;    /* место под две кнопки + отступы */
+    /* padding-bottom удалён */
 }
