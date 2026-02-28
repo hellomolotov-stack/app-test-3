@@ -287,11 +287,11 @@ body::before {
 }
 
 .btn-newcomer .newcomer-image {
-    height: 115px;
+    height: 100px;           /* уменьшено со 115px до 100px */
     width: auto;
     position: relative;
-    top: -20px;
-    right: -10px;
+    top: -10px;              /* прижато к низу (было -20px) */
+    right: -5px;             /* сдвинуто чуть влево (было -10px) */
     z-index: 3;
     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
 }
@@ -547,36 +547,6 @@ body::before {
     animation: spin 1s linear infinite;
 }
 
-/* Контейнер для плавающей кнопки */
-.floating-btn-container {
-    position: fixed;
-    bottom: 20px;
-    left: 16px;
-    right: 16px;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 100;
-    transition: opacity 0.3s;
-}
-
-.floating-btn-container .btn {
-    pointer-events: auto;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.floating-btn-container.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Класс для страницы новичков, чтобы контент не перекрывался плавающей кнопкой */
-.newcomer-page {
-    padding-bottom: 80px;
-}
-
 /* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .app {
@@ -615,7 +585,42 @@ body::before {
         padding: 14px 16px;
     }
     .btn-newcomer .newcomer-image {
-        height: 100px;
-        top: -15px;
+        height: 90px;        /* адаптация для ландшафта */
+        top: -8px;
+        right: -3px;
     }
+}
+
+/* ===== ПЛАВАЮЩИЕ КНОПКИ ===== */
+.floating-btn-container {
+    position: fixed;
+    bottom: 30px;            /* увеличен отступ */
+    left: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;               /* отступ между кнопками */
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 100;
+    transition: opacity 0.3s ease;
+    max-width: 600px;        /* как у .app */
+    margin: 0 auto;
+}
+
+.floating-btn-container .btn {
+    pointer-events: auto;
+    width: 100%;
+    margin: 0;               /* убираем лишние отступы, так как они в контейнере */
+}
+
+.floating-btn-container.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Класс для страницы новичков, чтобы контент не перекрывался плавающими кнопками */
+.newcomer-page {
+    padding-bottom: 130px;    /* место под две кнопки + отступы */
 }
