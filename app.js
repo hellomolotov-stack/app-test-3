@@ -579,7 +579,7 @@ function renderHome() {
                 <!-- Новая кнопка для новичков (только для владельцев карты) -->
                 <div class="btn-newcomer" id="newcomerBtn">
                     <span class="newcomer-text">для новичков</span>
-                    <img src="https://i.postimg.cc/0jTpW94n/png-transparent-marketing-for-dummies-the-endocrine-system-book-game-book-game-logo-casino.png" alt="новичкам" class="newcomer-image">
+                    <img src="https://i.postimg.cc/0NzpnrkX/mvymvyj.png" alt="новичкам" class="newcomer-image">
                 </div>
             </div>
             
