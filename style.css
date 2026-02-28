@@ -281,17 +281,17 @@ body::before {
 .btn-newcomer .newcomer-text {
     flex: 1;
     text-align: left;
-    font-size: 18px;
+    font-size: 16px;        /* было 18px */
     font-weight: 600;
     z-index: 2;
 }
 
 .btn-newcomer .newcomer-image {
-    height: 120px; /* больше, чем кнопка, чтобы выступать */
+    height: 115px;           /* было 120px */
     width: auto;
     position: relative;
-    top: -20px; /* поднимаем выше кнопки */
-    right: -10px; /* немного выходим вправо */
+    top: -20px;
+    right: -10px;
     z-index: 3;
     filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
 }
