@@ -543,7 +543,7 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Главная для владельцев карты (с новым блоком для новичков) -----
+// ----- Главная для владельцев карты (с обновлённым блоком для новичков) -----
 function renderHome() {
     hideBack();
     subtitle.classList.remove('subtitle-guest');
@@ -577,12 +577,12 @@ function renderHome() {
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
 
-            <!-- 🔹 НОВЫЙ БЛОК: для новичков (отдельный контейнер) -->
+            <!-- 🔹 ОБНОВЛЁННЫЙ БЛОК: для новичков (изменения: заголовок, текст кнопки, картинка, шрифт) -->
             <div class="card-container">
-                <h2 class="section-title" style="font-style: italic;">для новичков</h2>
+                <h2 class="section-title">🫖 для новичков</h2>
                 <div class="btn-newcomer" id="newcomerBtn">
-                    <span class="newcomer-text">всё, что нужно знать</span>
-                    <img src="https://i.postimg.cc/jjyjRrZR/fsmvyms.png" alt="новичкам" class="newcomer-image">
+                    <span class="newcomer-text">с чего начать?</span>
+                    <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
                 </div>
             </div>
             
