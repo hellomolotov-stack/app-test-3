@@ -448,7 +448,13 @@ function showGuestPopup() {
 
 // ----- Страница для новичков (FAQ) -----
 function renderNewcomerPage() {
-    subtitle.textContent = `🧭 всё, что нужно знать`;
+    // Удаляем предыдущий обработчик скролла, если был
+    if (window._floatingScrollHandler) {
+        window.removeEventListener('scroll', window._floatingScrollHandler);
+        window._floatingScrollHandler = null;
+    }
+
+    subtitle.textContent = `всё, что нужно знать`; // убрал эмодзи
     showBack(renderHome);
     haptic();
     log('newcomer_page_opened', false);
@@ -517,14 +523,44 @@ function renderNewcomerPage() {
     });
 
     mainDiv.innerHTML = `
-        <div class="card-container">
+        <div class="card-container newcomer-page">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', false); return false;" class="btn btn-yellow" style="margin:0 16px;">📞 задать вопрос</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', false); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a> <!-- убрал эмодзи -->
                 <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
+        <div class="floating-btn-container" id="floatingBtnContainer">
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', false); return false;" class="btn btn-yellow">задать вопрос</a>
+        </div>
     `;
+
+    const floatingContainer = document.getElementById('floatingBtnContainer');
+
+    function checkFloatingButton() {
+        if (!floatingContainer) return;
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        // если до конца документа осталось меньше 150px, скрываем плавающую кнопку
+        if (documentHeight - (scrollY + windowHeight) < 150) {
+            floatingContainer.classList.add('hidden');
+        } else {
+            floatingContainer.classList.remove('hidden');
+        }
+    }
+
+    // запускаем сразу
+    checkFloatingButton();
+
+    const scrollHandler = () => {
+        requestAnimationFrame(checkFloatingButton);
+    };
+    window.addEventListener('scroll', scrollHandler);
+    window.addEventListener('resize', scrollHandler);
+
+    // сохраняем обработчик для удаления при выходе
+    window._floatingScrollHandler = scrollHandler;
 
     document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
 }
@@ -607,6 +643,12 @@ function renderGuestHome() {
 
 // ----- Главная для владельцев карты (с блоком для новичков) -----
 function renderHome() {
+    // Удаляем обработчик плавающей кнопки, если он был
+    if (window._floatingScrollHandler) {
+        window.removeEventListener('scroll', window._floatingScrollHandler);
+        window._floatingScrollHandler = null;
+    }
+
     hideBack();
     subtitle.classList.remove('subtitle-guest');
 
