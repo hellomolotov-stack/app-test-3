@@ -595,8 +595,10 @@ body::before {
 .floating-btn-container {
     position: fixed;
     bottom: 30px;
-    left: 16px;
-    right: 16px;
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 0 16px; /* такие же отступы, как у карточек */
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -605,14 +607,14 @@ body::before {
     pointer-events: none;
     z-index: 100;
     transition: opacity 0.3s ease;
-    max-width: 600px;
-    margin: 0 auto;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .floating-btn-container .btn {
     pointer-events: auto;
     width: 100%;
-    margin: 0;
+    margin: 0; /* отступы уже заданы padding контейнера */
 }
 
 .floating-btn-container.hidden {
