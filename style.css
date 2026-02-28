@@ -250,6 +250,52 @@ body::before {
     -webkit-backdrop-filter: blur(4px);
 }
 
+/* Специальная кнопка для раздела новичков */
+.btn-newcomer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: calc(100% - 32px);
+    margin: 0 16px 12px 16px;
+    padding: 18px 16px; /* чуть выше обычной кнопки */
+    background-color: rgba(255,255,255,0.1);
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    box-sizing: border-box;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    position: relative;
+    overflow: visible;
+    height: 80px; /* полторы обычной кнопки (примерно) */
+}
+
+.btn-newcomer:hover {
+    opacity: 0.9;
+}
+
+.btn-newcomer .newcomer-text {
+    flex: 1;
+    text-align: left;
+    font-size: 18px;
+    font-weight: 600;
+    z-index: 2;
+}
+
+.btn-newcomer .newcomer-image {
+    height: 120px; /* больше, чем кнопка, чтобы выступать */
+    width: auto;
+    position: relative;
+    top: -20px; /* поднимаем выше кнопки */
+    right: -10px; /* немного выходим вправо */
+    z-index: 3;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+}
+
 .partner-item .btn-yellow {
     width: 100%;
     margin-left: 0;
@@ -532,5 +578,13 @@ body::before {
     .accordion-btn {
         padding: 10px;
         font-size: 14px;
+    }
+    .btn-newcomer {
+        height: 70px;
+        padding: 14px 16px;
+    }
+    .btn-newcomer .newcomer-image {
+        height: 100px;
+        top: -15px;
     }
 }
