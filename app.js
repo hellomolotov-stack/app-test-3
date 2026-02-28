@@ -582,7 +582,7 @@ function renderHome() {
                 <h2 class="section-title">🫖 для новичков</h2>
                 <div class="btn-newcomer" id="newcomerBtn">
                     <span class="newcomer-text">с чего начать?</span>
-                    <img https://i.postimg.cc/XY0tBGWS/fvmfs.png alt="новичкам" class="newcomer-image">
+                    <img src="https://i.postimg.cc/XY0tBGWS/fvmfs.png" alt="новичкам" class="newcomer-image">
                 </div>
             </div>
             
