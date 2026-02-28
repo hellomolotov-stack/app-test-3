@@ -447,17 +447,17 @@ function showGuestPopup() {
 }
 
 // ----- Страница для новичков (FAQ) -----
-function renderNewcomerPage() {
+function renderNewcomerPage(isGuest = false) {
     // Удаляем предыдущий обработчик скролла, если был
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
         window._floatingScrollHandler = null;
     }
 
-    subtitle.textContent = `всё, что нужно знать`; // убрал эмодзи
-    showBack(renderHome);
+    subtitle.textContent = `всё, что нужно знать`;
+    showBack(() => renderHome());
     haptic();
-    log('newcomer_page_opened', false);
+    log('newcomer_page_opened', isGuest);
 
     const faq = [
         {
@@ -525,17 +525,33 @@ function renderNewcomerPage() {
     mainDiv.innerHTML = `
         <div class="card-container newcomer-page">
             ${faqHtml}
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', false); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a> <!-- убрал эмодзи -->
-                <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 10px;">
+                <!-- статическая кнопка на случай отключения JS или для старых браузеров, но она будет перекрыта плавающей, оставим на всякий случай -->
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="goHomeStatic" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
         <div class="floating-btn-container" id="floatingBtnContainer">
-            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', false); return false;" class="btn btn-yellow">задать вопрос</a>
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', ${isGuest}); return false;" class="btn btn-yellow">задать вопрос</a>
+            <a href="#" id="floatingGoHome" class="btn btn-white-outline">на главную</a>
         </div>
     `;
 
     const floatingContainer = document.getElementById('floatingBtnContainer');
+    const floatingGoHome = document.getElementById('floatingGoHome');
+    if (floatingGoHome) {
+        floatingGoHome.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            renderHome();
+        });
+    }
+
+    // Обработчик для статической кнопки "на главную"
+    document.getElementById('goHomeStatic')?.addEventListener('click', () => {
+        haptic();
+        renderHome();
+    });
 
     function checkFloatingButton() {
         if (!floatingContainer) return;
@@ -561,8 +577,6 @@ function renderNewcomerPage() {
 
     // сохраняем обработчик для удаления при выходе
     window._floatingScrollHandler = scrollHandler;
-
-    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
 }
 
 // ----- Главная для гостей -----
@@ -589,6 +603,15 @@ function renderGuestHome() {
                 </div>
             </div>
             <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', true); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
+        </div>
+
+        <!-- Блок для новичков (для гостей) -->
+        <div class="card-container">
+            <h2 class="section-title">🫖 для новичков</h2>
+            <div class="btn-newcomer" id="newcomerBtnGuest">
+                <span class="newcomer-text">как всё устроено</span>
+                <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
+            </div>
         </div>
         
         <!-- Блок метрик -->
@@ -637,6 +660,13 @@ function renderGuestHome() {
         log('gift_click', true);
         renderGift(true);
     });
+    
+    // Обработчик кнопки новичков для гостей
+    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
+        haptic();
+        log('newcomer_btn_click', true);
+        renderNewcomerPage(true); // isGuest = true
+    });
 
     setupAccordion('navAccordionGuest', true);
 }
@@ -681,11 +711,11 @@ function renderHome() {
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
 
-            <!-- Блок для новичков -->
+            <!-- Блок для новичков (обновлённый текст и картинка) -->
             <div class="card-container">
                 <h2 class="section-title">🫖 для новичков</h2>
                 <div class="btn-newcomer" id="newcomerBtn">
-                    <span class="newcomer-text">с чего начать?</span>
+                    <span class="newcomer-text">как всё устроено</span>
                     <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
                 </div>
             </div>
@@ -749,7 +779,7 @@ function renderHome() {
         document.getElementById('newcomerBtn')?.addEventListener('click', () => {
             haptic();
             log('newcomer_btn_click', false);
-            renderNewcomerPage();
+            renderNewcomerPage(false); // isGuest = false
         });
 
         setupAccordion('navAccordionOwner', false);
