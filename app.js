@@ -2,6 +2,9 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
+// Определяем платформу
+const platform = tg.platform; // 'ios', 'android', 'macos', 'tdesktop', 'weba'
+
 // Функция тактильного отклика
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
@@ -14,9 +17,11 @@ function openLink(url, action, isGuest) {
     if (action) log(action, isGuest);
 
     if (url.startsWith('https://t.me/')) {
+        // Для всех платформ: открываем и сворачиваем/закрываем приложение
         window.open(url, '_blank');
         tg.close();
     } else {
+        // Внешние ссылки (Робокасса) открываем во встроенном браузере, не закрывая приложение
         tg.openLink(url);
     }
 }
@@ -38,7 +43,6 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
-const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -46,7 +50,6 @@ const firstName = user?.first_name || 'друг';
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
-let hikesData = {}; // Ключ: дата в формате YYYY-MM-DD
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
@@ -64,7 +67,7 @@ function log(action, isGuest = false) {
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-// Загрузка данных пользователя
+// Загрузка данных из CSV (members)
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -95,8 +98,9 @@ async function loadUserData() {
     }
 }
 
-// Загрузка метрик
+// Загрузка метрик из отдельного листа (с запретом кэширования)
 async function loadMetrics() {
+    if (!METRICS_CSV_URL) return;
     try {
         const resp = await fetch(`${METRICS_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
         const text = await resp.text();
@@ -117,37 +121,11 @@ async function loadMetrics() {
     }
 }
 
-// Загрузка расписания хайков (с защитой от ошибок)
-async function loadHikes() {
-    try {
-        const resp = await fetch(`${HIKES_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
-        const text = await resp.text();
-        const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
-        if (rows.length < 2) return;
-        const headers = rows[0];
-        hikesData = {};
-        for (let row of rows.slice(1)) {
-            if (row.length < 4) continue;
-            let data = {};
-            headers.forEach((k, i) => data[k] = row[i]);
-            const date = data.date;
-            hikesData[date] = {
-                title: data.title || 'Хайк',
-                description: data.description || 'Описание появится позже',
-                image: data.image_url || '',
-                date: date
-            };
-        }
-    } catch (e) {
-        console.error('Ошибка загрузки расписания хайков (некритично):', e);
-    }
-}
-
-// Общая загрузка данных
 async function loadData() {
-    await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
+    await Promise.all([loadUserData(), loadMetrics()]);
     log('visit', userCard.status !== 'active');
     renderHome();
+    // Скрываем начальный спиннер
     const loader = document.getElementById('initial-loader');
     if (loader) loader.style.display = 'none';
 }
@@ -210,7 +188,7 @@ const partners = [
     }
 ];
 
-// ----- Аккордеон -----
+// ----- Функция для обработки аккордеона -----
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -230,7 +208,7 @@ function setupAccordion(containerId, isGuest) {
     }
 }
 
-// ----- Конфетти -----
+// ----- Вспомогательная функция для конфетти -----
 function showConfetti() {
     const canvas = document.createElement('canvas');
     canvas.style.position = 'fixed';
@@ -280,123 +258,6 @@ function showConfetti() {
         requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
-}
-
-// ----- Bottom Sheet для отображения информации о хайке -----
-function showBottomSheet(hike) {
-    // Удаляем существующий bottom sheet, если есть
-    const existingOverlay = document.querySelector('.bottom-sheet-overlay');
-    if (existingOverlay) existingOverlay.remove();
-
-    // Преобразуем дату в формат "d месяц"
-    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-                        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-    let formattedDate = '';
-    if (hike.date) {
-        const parts = hike.date.split('-');
-        if (parts.length === 3) {
-            const day = parseInt(parts[2], 10);
-            const month = parseInt(parts[1], 10) - 1;
-            formattedDate = `${day} ${monthNames[month]}`;
-        } else {
-            formattedDate = hike.date;
-        }
-    }
-
-    const overlay = document.createElement('div');
-    overlay.className = 'bottom-sheet-overlay';
-    overlay.innerHTML = `
-        <div class="bottom-sheet" id="hikeBottomSheet">
-            <div class="bottom-sheet-handle"></div>
-            <div class="bottom-sheet-content">
-                ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
-                <div class="bottom-sheet-title">${hike.title}</div>
-                <div class="bottom-sheet-date">${formattedDate}</div>
-                <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
-                <a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'hike_join_click', false); return false;" class="btn btn-yellow bottom-sheet-btn">я иду</a>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    // Запрещаем скролл фона
-    document.body.style.overflow = 'hidden';
-
-    // Небольшая задержка для анимации
-    setTimeout(() => {
-        overlay.classList.add('visible');
-        document.getElementById('hikeBottomSheet').classList.add('visible');
-    }, 10);
-
-    // Закрытие по клику на overlay
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            closeBottomSheet();
-        }
-    });
-
-    // Drag-to-close функциональность
-    const sheet = document.getElementById('hikeBottomSheet');
-    let startY = 0;
-    let currentY = 0;
-    let isDragging = false;
-    const handle = sheet.querySelector('.bottom-sheet-handle');
-
-    const onTouchStart = (e) => {
-        startY = e.touches[0].clientY;
-        currentY = startY;
-        isDragging = true;
-        sheet.classList.add('dragging');
-        // Запрещаем любые действия по умолчанию
-        e.preventDefault();
-    };
-
-    const onTouchMove = (e) => {
-        if (!isDragging) return;
-        currentY = e.touches[0].clientY;
-        const delta = currentY - startY;
-        if (delta > 0) {
-            sheet.style.transform = `translateY(${delta}px)`;
-        }
-        // Важно! Предотвращаем скролл фона
-        e.preventDefault();
-    };
-
-    const onTouchEnd = (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        sheet.classList.remove('dragging');
-        const delta = currentY - startY;
-        if (delta > 80) {
-            closeBottomSheet();
-        } else {
-            sheet.style.transform = '';
-        }
-        e.preventDefault();
-    };
-
-    handle.addEventListener('touchstart', onTouchStart, { passive: false });
-    handle.addEventListener('touchmove', onTouchMove, { passive: false });
-    handle.addEventListener('touchend', onTouchEnd, { passive: false });
-    handle.addEventListener('touchcancel', onTouchEnd, { passive: false });
-
-    log('bottom_sheet_opened', false);
-}
-
-function closeBottomSheet() {
-    const overlay = document.querySelector('.bottom-sheet-overlay');
-    if (overlay) {
-        overlay.classList.remove('visible');
-        const sheet = document.getElementById('hikeBottomSheet');
-        if (sheet) {
-            sheet.classList.remove('visible');
-        }
-        // Возвращаем скролл фона
-        document.body.style.overflow = '';
-        setTimeout(() => {
-            overlay.remove();
-        }, 300);
-    }
 }
 
 // ----- Страница привилегий для владельцев карты -----
@@ -585,79 +446,9 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Рендер календаря (внутри переданного контейнера) -----
-function renderCalendar(container) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const currentDate = now.getDate();
-
-    const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
-
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    let startOffset = firstDay === 0 ? 6 : firstDay - 1;
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-    const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
-
-    let calendarHtml = `
-        <div class="calendar-item">
-            <h2 class="section-title" style="margin-top:0; margin-bottom:16px;">🔧 раздел в разработке</h2>
-            <div class="calendar-header">
-                <h3>${monthNames[currentMonth]} ${currentYear}</h3>
-                <div class="calendar-nav">
-                    <span id="prevMonth">←</span>
-                    <span id="nextMonth">→</span>
-                </div>
-            </div>
-            <div class="weekdays">
-                ${weekdays.map(d => `<span>${d}</span>`).join('')}
-            </div>
-            <div class="calendar-grid" id="calendarGrid">
-    `;
-
-    for (let i = 0; i < startOffset; i++) {
-        calendarHtml += `<div class="calendar-day empty"></div>`;
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const isToday = (day === currentDate);
-        const hasHike = hikesData[dateStr] ? true : false;
-        let classes = 'calendar-day';
-        if (isToday) classes += ' today';
-        if (hasHike) classes += ' hike-day';
-        if (hasHike) {
-            calendarHtml += `<div class="${classes}" data-date="${dateStr}">${day}</div>`;
-        } else {
-            calendarHtml += `<div class="${classes}">${day}</div>`;
-        }
-    }
-
-    calendarHtml += `</div></div>`;
-
-    container.innerHTML = calendarHtml;
-
-    document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
-        el.addEventListener('click', () => {
-            const date = el.dataset.date;
-            const hike = hikesData[date];
-            if (hike) showBottomSheet(hike);
-        });
-    });
-
-    document.getElementById('prevMonth')?.addEventListener('click', () => {
-        haptic();
-        alert('Переключение между месяцами будет добавлено позже');
-    });
-    document.getElementById('nextMonth')?.addEventListener('click', () => {
-        haptic();
-        alert('Переключение между месяцами будет добавлено позже');
-    });
-}
-
 // ----- Страница для новичков (FAQ) -----
 function renderNewcomerPage(isGuest = false) {
+    // Удаляем предыдущий обработчик скролла, если был
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
         window._floatingScrollHandler = null;
@@ -722,8 +513,11 @@ function renderNewcomerPage(isGuest = false) {
     let faqHtml = '';
     faq.forEach(item => {
         let answer = item.a;
+        // Заменяем @yaltahiking на ссылку
         answer = answer.replace('@yaltahiking', '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
+        // Заменяем zapovedcrimea.ru на ссылку
         answer = answer.replace('zapovedcrimea.ru', '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
+        // Заменяем переносы строк на <br>
         answer = answer.replace(/\n/g, '<br>');
         faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
     });
@@ -732,6 +526,7 @@ function renderNewcomerPage(isGuest = false) {
         <div class="card-container newcomer-page" style="margin-bottom: 0;">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
+                <!-- Статическая кнопка (для надёжности) -->
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomeStatic" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
@@ -743,11 +538,16 @@ function renderNewcomerPage(isGuest = false) {
     `;
 
     const floatingContainer = document.getElementById('floatingBtnContainer');
-    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        renderHome();
-    });
+    const floatingGoHome = document.getElementById('floatingGoHome');
+    if (floatingGoHome) {
+        floatingGoHome.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            renderHome();
+        });
+    }
+
+    // Обработчик для статической кнопки "на главную"
     document.getElementById('goHomeStatic')?.addEventListener('click', () => {
         haptic();
         renderHome();
@@ -758,8 +558,12 @@ function renderNewcomerPage(isGuest = false) {
         const scrollY = window.scrollY;
         const windowHeight = window.innerHeight;
         const documentHeight = document.documentElement.scrollHeight;
+
+        // Появляется, если прокручено больше 10% высоты документа
         const showThreshold = documentHeight * 0.1;
+        // Исчезает, если до конца страницы осталось меньше 10% высоты документа
         const hideThreshold = documentHeight * 0.1;
+
         const remaining = documentHeight - (scrollY + windowHeight);
 
         if (scrollY > showThreshold && remaining > hideThreshold) {
@@ -769,14 +573,20 @@ function renderNewcomerPage(isGuest = false) {
         }
     }
 
+    // запускаем сразу
     checkFloatingButton();
-    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
+
+    const scrollHandler = () => {
+        requestAnimationFrame(checkFloatingButton);
+    };
     window.addEventListener('scroll', scrollHandler);
     window.addEventListener('resize', scrollHandler);
+
+    // сохраняем обработчик для удаления при выходе
     window._floatingScrollHandler = scrollHandler;
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (убраны лишние кнопки) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -787,6 +597,7 @@ function renderGuestHome() {
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
+            <!-- кнопки "узнать о привилегиях" и "написать в поддержку" удалены -->
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
                     навигация по клубу <span class="arrow">👀</span>
@@ -853,17 +664,20 @@ function renderGuestHome() {
         log('gift_click', true);
         renderGift(true);
     });
+    
+    // Обработчик кнопки новичков для гостей
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic();
         log('newcomer_btn_click', true);
-        renderNewcomerPage(true);
+        renderNewcomerPage(true); // isGuest = true
     });
 
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Главная для владельцев карты (с календарём) -----
+// ----- Главная для владельцев карты -----
 function renderHome() {
+    // Удаляем обработчик плавающей кнопки, если он был
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
         window._floatingScrollHandler = null;
@@ -941,9 +755,6 @@ function renderHome() {
                 <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', false); return false;" class="btn btn-white-outline">💬 открыть чат</a>
                 <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
-
-            <!-- Блок календаря (внешний контейнер) -->
-            <div class="card-container" id="calendarContainer"></div>
         `;
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
@@ -967,19 +778,15 @@ function renderHome() {
             log('gift_click');
             renderGift(false);
         });
+        
+        // Обработчик новой кнопки
         document.getElementById('newcomerBtn')?.addEventListener('click', () => {
             haptic();
             log('newcomer_btn_click', false);
-            renderNewcomerPage(false);
+            renderNewcomerPage(false); // isGuest = false
         });
 
         setupAccordion('navAccordionOwner', false);
-
-        const calendarContainer = document.getElementById('calendarContainer');
-        if (calendarContainer) {
-            renderCalendar(calendarContainer);
-        }
-
     } else {
         renderGuestHome();
     }
@@ -993,275 +800,3 @@ function buyCard() {
 }
 
 window.addEventListener('load', loadData);
-
-// ... (весь предыдущий код до функции showBottomSheet остаётся без изменений, 
-// добавляем глобальную переменную для списка хайков и обновляем функцию)
-
-let hikesList = []; // массив всех хайков, отсортированный по дате
-
-// В функции loadHikes после заполнения hikesData создаём hikesList
-async function loadHikes() {
-    try {
-        const resp = await fetch(`${HIKES_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
-        const text = await resp.text();
-        const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.trim()));
-        if (rows.length < 2) return;
-        const headers = rows[0];
-        hikesData = {};
-        for (let row of rows.slice(1)) {
-            if (row.length < 4) continue;
-            let data = {};
-            headers.forEach((k, i) => data[k] = row[i]);
-            const date = data.date;
-            hikesData[date] = {
-                title: data.title || 'Хайк',
-                description: data.description || 'Описание появится позже',
-                image: data.image_url || '',
-                date: date
-            };
-        }
-        // Создаём отсортированный список хайков
-        hikesList = Object.values(hikesData).sort((a, b) => a.date.localeCompare(b.date));
-    } catch (e) {
-        console.error('Ошибка загрузки расписания хайков (некритично):', e);
-    }
-}
-
-// ----- Bottom Sheet с поддержкой листания -----
-function showBottomSheet(index) {
-    // index - индекс выбранного хайка в hikesList
-    if (!hikesList.length) return;
-
-    // Удаляем существующий bottom sheet, если есть
-    const existingOverlay = document.querySelector('.bottom-sheet-overlay');
-    if (existingOverlay) existingOverlay.remove();
-
-    // Запрещаем скролл фона
-    document.body.style.overflow = 'hidden';
-
-    const overlay = document.createElement('div');
-    overlay.className = 'bottom-sheet-overlay';
-    overlay.innerHTML = `
-        <div class="bottom-sheet" id="hikeBottomSheet">
-            <div class="bottom-sheet-handle"></div>
-            <div class="bottom-sheet-content-wrapper">
-                <div class="bottom-sheet-arrow left" id="prevHike">←</div>
-                <div class="bottom-sheet-arrow right" id="nextHike">→</div>
-                <div class="bottom-sheet-content" id="bottomSheetContent">
-                    <!-- контент будет обновляться через JS -->
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    const sheet = document.getElementById('hikeBottomSheet');
-    const contentDiv = document.getElementById('bottomSheetContent');
-    const prevBtn = document.getElementById('prevHike');
-    const nextBtn = document.getElementById('nextHike');
-
-    let currentIndex = index;
-
-    // Функция обновления контента
-    function updateContent() {
-        const hike = hikesList[currentIndex];
-        if (!hike) return;
-
-        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-                            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-        let formattedDate = '';
-        if (hike.date) {
-            const parts = hike.date.split('-');
-            if (parts.length === 3) {
-                const day = parseInt(parts[2], 10);
-                const month = parseInt(parts[1], 10) - 1;
-                formattedDate = `${day} ${monthNames[month]}`;
-            } else {
-                formattedDate = hike.date;
-            }
-        }
-
-        contentDiv.innerHTML = `
-            ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
-            <div class="bottom-sheet-title">${hike.title}</div>
-            <div class="bottom-sheet-date">${formattedDate}</div>
-            <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
-            <!-- Кнопка "я иду" пока оставим, позже заменим на "забронировать" -->
-            <a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'hike_join_click', false); return false;" class="btn btn-yellow bottom-sheet-btn">я иду</a>
-        `;
-
-        // Показываем/скрываем стрелки в зависимости от позиции
-        prevBtn.classList.toggle('hidden', currentIndex === 0);
-        nextBtn.classList.toggle('hidden', currentIndex === hikesList.length - 1);
-    }
-
-    // Обработчики стрелок
-    prevBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (currentIndex > 0) {
-            currentIndex--;
-            updateContent();
-            haptic();
-            log('hike_swipe_prev', false);
-        }
-    });
-
-    nextBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (currentIndex < hikesList.length - 1) {
-            currentIndex++;
-            updateContent();
-            haptic();
-            log('hike_swipe_next', false);
-        }
-    });
-
-    updateContent();
-
-    // Небольшая задержка для анимации
-    setTimeout(() => {
-        overlay.classList.add('visible');
-        sheet.classList.add('visible');
-    }, 10);
-
-    // Закрытие по клику на overlay
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            closeBottomSheet();
-        }
-    });
-
-    // Drag-to-close функциональность
-    let startY = 0;
-    let currentY = 0;
-    let isDragging = false;
-    const handle = sheet.querySelector('.bottom-sheet-handle');
-
-    const onTouchStart = (e) => {
-        startY = e.touches[0].clientY;
-        currentY = startY;
-        isDragging = true;
-        sheet.classList.add('dragging');
-        e.preventDefault();
-    };
-
-    const onTouchMove = (e) => {
-        if (!isDragging) return;
-        currentY = e.touches[0].clientY;
-        const delta = currentY - startY;
-        if (delta > 0) {
-            sheet.style.transform = `translateY(${delta}px)`;
-        }
-        e.preventDefault();
-    };
-
-    const onTouchEnd = (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        sheet.classList.remove('dragging');
-        const delta = currentY - startY;
-        if (delta > 80) {
-            closeBottomSheet();
-        } else {
-            sheet.style.transform = '';
-        }
-        e.preventDefault();
-    };
-
-    handle.addEventListener('touchstart', onTouchStart, { passive: false });
-    handle.addEventListener('touchmove', onTouchMove, { passive: false });
-    handle.addEventListener('touchend', onTouchEnd, { passive: false });
-    handle.addEventListener('touchcancel', onTouchEnd, { passive: false });
-
-    log('bottom_sheet_opened', false);
-}
-
-function closeBottomSheet() {
-    const overlay = document.querySelector('.bottom-sheet-overlay');
-    if (overlay) {
-        overlay.classList.remove('visible');
-        const sheet = document.getElementById('hikeBottomSheet');
-        if (sheet) {
-            sheet.classList.remove('visible');
-        }
-        document.body.style.overflow = '';
-        setTimeout(() => {
-            overlay.remove();
-        }, 300);
-    }
-}
-
-// В renderCalendar нужно изменить вызов showBottomSheet, передавая индекс
-function renderCalendar(container) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth();
-    const currentDate = now.getDate();
-
-    const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
-
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    let startOffset = firstDay === 0 ? 6 : firstDay - 1;
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-    const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
-
-    let calendarHtml = `
-        <div class="calendar-item">
-            <h2 class="section-title" style="margin-top:0; margin-bottom:16px;">🔧 раздел в разработке</h2>
-            <div class="calendar-header">
-                <h3>${monthNames[currentMonth]} ${currentYear}</h3>
-                <div class="calendar-nav">
-                    <span id="prevMonth">←</span>
-                    <span id="nextMonth">→</span>
-                </div>
-            </div>
-            <div class="weekdays">
-                ${weekdays.map(d => `<span>${d}</span>`).join('')}
-            </div>
-            <div class="calendar-grid" id="calendarGrid">
-    `;
-
-    for (let i = 0; i < startOffset; i++) {
-        calendarHtml += `<div class="calendar-day empty"></div>`;
-    }
-
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const isToday = (day === currentDate);
-        const hasHike = hikesData[dateStr] ? true : false;
-        let classes = 'calendar-day';
-        if (isToday) classes += ' today';
-        if (hasHike) classes += ' hike-day';
-        if (hasHike) {
-            calendarHtml += `<div class="${classes}" data-date="${dateStr}">${day}</div>`;
-        } else {
-            calendarHtml += `<div class="${classes}">${day}</div>`;
-        }
-    }
-
-    calendarHtml += `</div></div>`;
-
-    container.innerHTML = calendarHtml;
-
-    // При клике на день с хайком находим индекс в hikesList
-    document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
-        el.addEventListener('click', () => {
-            const date = el.dataset.date;
-            // Ищем индекс в hikesList
-            const index = hikesList.findIndex(h => h.date === date);
-            if (index !== -1) {
-                showBottomSheet(index);
-            }
-        });
-    });
-
-    document.getElementById('prevMonth')?.addEventListener('click', () => {
-        haptic();
-        alert('Переключение между месяцами будет добавлено позже');
-    });
-    document.getElementById('nextMonth')?.addEventListener('click', () => {
-        haptic();
-        alert('Переключение между месяцами будет добавлено позже');
-    });
-}
