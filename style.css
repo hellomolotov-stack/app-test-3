@@ -611,7 +611,7 @@ body::before {
     pointer-events: none;
 }
 
-/* ===== КАЛЕНДАРЬ ===== */
+/* ===== КАЛЕНДАРЬ (обновлённые стили) ===== */
 .calendar-header {
     display: flex;
     justify-content: space-between;
@@ -674,33 +674,40 @@ body::before {
     justify-content: center;
     font-size: 16px;
     font-weight: 500;
-    color: #ffffff;
-    background: rgba(255,255,255,0.1);
     border-radius: 50%;
     width: 100%;
     cursor: pointer;
     transition: all 0.2s;
-    border: 2px solid transparent;
+    border: none;
 }
 
+/* Обычный день */
+.calendar-day {
+    background: rgba(255,255,255,0.1);
+    color: #ffffff;
+}
+
+/* Текущий день: белый фон, чёрная цифра */
 .calendar-day.today {
-    border-color: #ffffff;
-    background: transparent;
+    background: #ffffff;
+    color: #000000;
 }
 
+/* День с хайком: жёлтый фон, чёрная цифра */
 .calendar-day.hike-day {
-    border-color: var(--yellow);
-    background: transparent;
+    background: var(--yellow);
+    color: #000000;
 }
 
+/* Пустые ячейки */
 .calendar-day.empty {
     background: transparent;
-    border: none;
     cursor: default;
 }
 
+/* Ховер для кликабельных дней */
 .calendar-day:not(.empty):hover {
-    background: rgba(255,255,255,0.2);
+    filter: brightness(0.9);
 }
 
 /* Модальное окно с деталями хайка */
