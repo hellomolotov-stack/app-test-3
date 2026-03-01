@@ -5,7 +5,6 @@
     --button-text: #ffffff;
     --secondary-bg: #f5f5f5;
     --yellow: #D9FD19;
-    --green: #4CD964; /* зелёный для сегодняшнего хайка */
 }
 
 * {
@@ -309,6 +308,7 @@ body::before {
     color: #ffffff;
     border: 1px solid rgba(255,255,255,0.2);
     backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .partner-item strong {
@@ -582,10 +582,15 @@ body::before {
     transition: transform 0.3s ease;
     max-height: 80vh;
     overflow-y: auto;
+    will-change: transform;
 }
 
 .bottom-sheet.visible {
     transform: translateY(0);
+}
+
+.bottom-sheet.dragging {
+    transition: none;
 }
 
 .bottom-sheet-handle {
@@ -595,6 +600,7 @@ body::before {
     border-radius: 10px;
     margin: 12px auto;
     cursor: grab;
+    touch-action: none; /* запрещаем браузерный скролл при касании хэндла */
 }
 
 .bottom-sheet-content {
@@ -638,7 +644,7 @@ body::before {
     margin: 0;
 }
 
-/* ===== КАЛЕНДАРЬ ===== */
+/* ===== КАЛЕНДАРЬ (внутри блока) ===== */
 .calendar-header {
     display: flex;
     justify-content: space-between;
@@ -730,8 +736,8 @@ body::before {
 
 /* Сегодняшний день с хайком */
 .calendar-day.today.hike-day {
-    background: var(--green);
-    color: #ffffff;
+    background: var(--yellow);
+    color: #000000;
     border: 2px solid #ffffff;
 }
 
