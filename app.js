@@ -140,7 +140,6 @@ async function loadHikes() {
         }
     } catch (e) {
         console.error('Ошибка загрузки расписания хайков (некритично):', e);
-        // Не проваливаем загрузку приложения
     }
 }
 
@@ -281,6 +280,100 @@ function showConfetti() {
         requestAnimationFrame(animate);
     }
     requestAnimationFrame(animate);
+}
+
+// ----- Bottom Sheet для отображения информации о хайке -----
+function showBottomSheet(hike) {
+    // Удаляем существующий bottom sheet, если есть
+    const existingOverlay = document.querySelector('.bottom-sheet-overlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    // Преобразуем дату в формат "d месяц"
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    let formattedDate = '';
+    if (hike.date) {
+        const parts = hike.date.split('-');
+        if (parts.length === 3) {
+            const day = parseInt(parts[2], 10);
+            const month = parseInt(parts[1], 10) - 1;
+            formattedDate = `${day} ${monthNames[month]}`;
+        } else {
+            formattedDate = hike.date;
+        }
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'bottom-sheet-overlay';
+    overlay.innerHTML = `
+        <div class="bottom-sheet" id="hikeBottomSheet">
+            <div class="bottom-sheet-handle"></div>
+            <div class="bottom-sheet-content">
+                ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
+                <div class="bottom-sheet-title">${hike.title}</div>
+                <div class="bottom-sheet-date">${formattedDate}</div>
+                <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
+                <a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'hike_join_click', false); return false;" class="btn btn-yellow bottom-sheet-btn">я иду</a>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Небольшая задержка для анимации
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        document.getElementById('hikeBottomSheet').classList.add('visible');
+    }, 10);
+
+    // Закрытие по клику на overlay
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeBottomSheet();
+        }
+    });
+
+    // Обработка свайпа вниз
+    const sheet = document.getElementById('hikeBottomSheet');
+    let startY = 0;
+    let currentY = 0;
+    const handle = sheet.querySelector('.bottom-sheet-handle');
+
+    handle.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+    });
+
+    handle.addEventListener('touchmove', (e) => {
+        currentY = e.touches[0].clientY;
+        const delta = currentY - startY;
+        if (delta > 0) {
+            sheet.style.transform = `translateY(${delta}px)`;
+        }
+    });
+
+    handle.addEventListener('touchend', () => {
+        const delta = currentY - startY;
+        if (delta > 50) {
+            closeBottomSheet();
+        } else {
+            sheet.style.transform = '';
+        }
+    });
+
+    log('bottom_sheet_opened', false);
+}
+
+function closeBottomSheet() {
+    const overlay = document.querySelector('.bottom-sheet-overlay');
+    if (overlay) {
+        overlay.classList.remove('visible');
+        const sheet = document.getElementById('hikeBottomSheet');
+        if (sheet) {
+            sheet.classList.remove('visible');
+        }
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+    }
 }
 
 // ----- Страница привилегий для владельцев карты -----
@@ -469,54 +562,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Модальное окно с деталями хайка (с русской датой) -----
-function showHikeModal(hike) {
-    haptic();
-
-    // Преобразуем дату YYYY-MM-DD в "d месяц"
-    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-                        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-    let formattedDate = '';
-    if (hike.date) {
-        const parts = hike.date.split('-');
-        if (parts.length === 3) {
-            const day = parseInt(parts[2], 10);
-            const month = parseInt(parts[1], 10) - 1; // 0-11
-            formattedDate = `${day} ${monthNames[month]}`;
-        } else {
-            formattedDate = hike.date;
-        }
-    }
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'hikeModal';
-    overlay.innerHTML = `
-        <div class="modal-content">
-            <button class="modal-close" id="closeHikeModal">&times;</button>
-            ${hike.image ? `<img src="${hike.image}" class="hike-modal-image" onerror="this.style.display='none'">` : ''}
-            <div class="hike-modal-title">${hike.title}</div>
-            <div class="hike-modal-date">${formattedDate}</div>
-            <div class="hike-modal-description">${hike.description.replace(/\n/g, '<br>')}</div>
-            <a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'hike_join_click', false); return false;" class="btn btn-yellow hike-modal-btn">я иду</a>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    document.getElementById('closeHikeModal')?.addEventListener('click', () => {
-        haptic();
-        overlay.remove();
-    });
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-    log('hike_modal_opened', false);
-}
-
-// ----- Рендер календаря (с заголовком) -----
+// ----- Рендер календаря (с вложенным блоком) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -532,18 +578,19 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <h2 class="section-title">🔧 раздел в разработке</h2>
-        <div class="calendar-header">
-            <h3>${monthNames[currentMonth]} ${currentYear}</h3>
-            <div class="calendar-nav">
-                <span id="prevMonth">←</span>
-                <span id="nextMonth">→</span>
+        <div class="card-container">
+            <h2 class="section-title">🔧 раздел в разработке</h2>
+            <div class="calendar-header">
+                <h3>${monthNames[currentMonth]} ${currentYear}</h3>
+                <div class="calendar-nav">
+                    <span id="prevMonth">←</span>
+                    <span id="nextMonth">→</span>
+                </div>
             </div>
-        </div>
-        <div class="weekdays">
-            ${weekdays.map(d => `<span>${d}</span>`).join('')}
-        </div>
-        <div class="calendar-grid" id="calendarGrid">
+            <div class="weekdays">
+                ${weekdays.map(d => `<span>${d}</span>`).join('')}
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
     `;
 
     for (let i = 0; i < startOffset; i++) {
@@ -564,7 +611,7 @@ function renderCalendar(container) {
         }
     }
 
-    calendarHtml += `</div>`;
+    calendarHtml += `</div></div>`; // закрываем calendar-grid и card-container
 
     container.innerHTML = calendarHtml;
 
@@ -572,7 +619,7 @@ function renderCalendar(container) {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
             const hike = hikesData[date];
-            if (hike) showHikeModal(hike);
+            if (hike) showBottomSheet(hike);
         });
     });
 
@@ -873,7 +920,7 @@ function renderHome() {
             </div>
 
             <!-- Блок календаря -->
-            <div class="card-container" id="calendarContainer"></div>
+            <div id="calendarContainer"></div>
         `;
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
