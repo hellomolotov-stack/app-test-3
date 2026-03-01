@@ -319,6 +319,9 @@ function showBottomSheet(hike) {
     `;
     document.body.appendChild(overlay);
 
+    // Запрещаем скролл фона
+    document.body.style.overflow = 'hidden';
+
     // Небольшая задержка для анимации
     setTimeout(() => {
         overlay.classList.add('visible');
@@ -344,8 +347,8 @@ function showBottomSheet(hike) {
         currentY = startY;
         isDragging = true;
         sheet.classList.add('dragging');
-        // Запрещаем скролл фона
-        document.body.style.overflow = 'hidden';
+        // Запрещаем любые действия по умолчанию
+        e.preventDefault();
     };
 
     const onTouchMove = (e) => {
@@ -353,30 +356,29 @@ function showBottomSheet(hike) {
         currentY = e.touches[0].clientY;
         const delta = currentY - startY;
         if (delta > 0) {
-            // Двигаем sheet вниз, но не больше высоты sheet
             sheet.style.transform = `translateY(${delta}px)`;
-            e.preventDefault(); // Предотвращаем скролл фона
         }
+        // Важно! Предотвращаем скролл фона
+        e.preventDefault();
     };
 
-    const onTouchEnd = () => {
+    const onTouchEnd = (e) => {
         if (!isDragging) return;
         isDragging = false;
         sheet.classList.remove('dragging');
-        document.body.style.overflow = ''; // Возвращаем скролл
         const delta = currentY - startY;
-        if (delta > 80) { // порог закрытия
+        if (delta > 80) {
             closeBottomSheet();
         } else {
-            // Возвращаем на место
             sheet.style.transform = '';
         }
+        e.preventDefault();
     };
 
     handle.addEventListener('touchstart', onTouchStart, { passive: false });
     handle.addEventListener('touchmove', onTouchMove, { passive: false });
-    handle.addEventListener('touchend', onTouchEnd);
-    handle.addEventListener('touchcancel', onTouchEnd);
+    handle.addEventListener('touchend', onTouchEnd, { passive: false });
+    handle.addEventListener('touchcancel', onTouchEnd, { passive: false });
 
     log('bottom_sheet_opened', false);
 }
@@ -389,7 +391,8 @@ function closeBottomSheet() {
         if (sheet) {
             sheet.classList.remove('visible');
         }
-        document.body.style.overflow = ''; // Возвращаем скролл
+        // Возвращаем скролл фона
+        document.body.style.overflow = '';
         setTimeout(() => {
             overlay.remove();
         }, 300);
@@ -598,18 +601,19 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <h2 class="section-title">🔧 раздел в разработке</h2>
-        <div class="calendar-header">
-            <h3>${monthNames[currentMonth]} ${currentYear}</h3>
-            <div class="calendar-nav">
-                <span id="prevMonth">←</span>
-                <span id="nextMonth">→</span>
+        <div class="calendar-item">
+            <h2 class="section-title" style="margin-top:0; margin-bottom:16px;">🔧 раздел в разработке</h2>
+            <div class="calendar-header">
+                <h3>${monthNames[currentMonth]} ${currentYear}</h3>
+                <div class="calendar-nav">
+                    <span id="prevMonth">←</span>
+                    <span id="nextMonth">→</span>
+                </div>
             </div>
-        </div>
-        <div class="weekdays">
-            ${weekdays.map(d => `<span>${d}</span>`).join('')}
-        </div>
-        <div class="calendar-grid" id="calendarGrid">
+            <div class="weekdays">
+                ${weekdays.map(d => `<span>${d}</span>`).join('')}
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
     `;
 
     for (let i = 0; i < startOffset; i++) {
@@ -630,7 +634,7 @@ function renderCalendar(container) {
         }
     }
 
-    calendarHtml += `</div>`;
+    calendarHtml += `</div></div>`;
 
     container.innerHTML = calendarHtml;
 
