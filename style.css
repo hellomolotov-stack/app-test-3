@@ -5,6 +5,7 @@
     --button-text: #ffffff;
     --secondary-bg: #f5f5f5;
     --yellow: #D9FD19;
+    --green: #4CD964; /* зелёный для сегодняшнего хайка */
 }
 
 * {
@@ -19,6 +20,7 @@ body {
     line-height: 1.5;
     position: relative;
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 body::before {
@@ -357,73 +359,6 @@ body::before {
     color: #ffffff;
 }
 
-/* Стили для модального окна */
-.modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(5px);
-}
-
-.modal-content {
-    background-color: rgba(73, 138, 176, 0.2);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px;
-    padding: 24px;
-    max-width: 90%;
-    width: 400px;
-    position: relative;
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #ffffff;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-    padding: 0;
-    line-height: 1;
-    z-index: 1;
-}
-
-.modal-close:hover {
-    opacity: 1;
-}
-
-.modal-title {
-    font-size: 24px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 16px;
-    color: #ffffff;
-    padding-right: 30px;
-}
-
-.modal-text {
-    font-size: 16px;
-    margin-bottom: 24px;
-    text-align: center;
-    line-height: 1.6;
-    color: #ffffff;
-}
-
 /* Стили для метрик */
 .metrics-header {
     display: flex;
@@ -611,7 +546,99 @@ body::before {
     pointer-events: none;
 }
 
-/* ===== КАЛЕНДАРЬ (обновлённые стили) ===== */
+/* ===== BOTTOM SHEET ===== */
+.bottom-sheet-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.bottom-sheet-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.bottom-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(73, 138, 176, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px 28px 0 0;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-bottom: none;
+    z-index: 1001;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.bottom-sheet.visible {
+    transform: translateY(0);
+}
+
+.bottom-sheet-handle {
+    width: 40px;
+    height: 5px;
+    background-color: rgba(255,255,255,0.5);
+    border-radius: 10px;
+    margin: 12px auto;
+    cursor: grab;
+}
+
+.bottom-sheet-content {
+    padding: 0 16px 20px 16px;
+    color: #ffffff;
+}
+
+.bottom-sheet-image {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.bottom-sheet-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-align: left;
+}
+
+.bottom-sheet-date {
+    font-size: 14px;
+    color: var(--yellow);
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.bottom-sheet-description {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    color: rgba(255,255,255,0.9);
+    text-align: left;
+}
+
+.bottom-sheet-btn {
+    width: 100%;
+    margin: 0;
+}
+
+/* ===== КАЛЕНДАРЬ ===== */
 .calendar-header {
     display: flex;
     justify-content: space-between;
@@ -678,7 +705,7 @@ body::before {
     width: 100%;
     cursor: pointer;
     transition: all 0.2s;
-    border: none;
+    border: 2px solid transparent;
 }
 
 /* Обычный день */
@@ -687,62 +714,35 @@ body::before {
     color: #ffffff;
 }
 
-/* Текущий день: белый фон, чёрная цифра */
+/* Текущий день (без хайка) */
 .calendar-day.today {
     background: #ffffff;
     color: #000000;
+    border: 2px solid transparent;
 }
 
-/* День с хайком: жёлтый фон, чёрная цифра */
+/* День с хайком (не сегодня) */
 .calendar-day.hike-day {
     background: var(--yellow);
     color: #000000;
+    border: 2px solid transparent;
+}
+
+/* Сегодняшний день с хайком */
+.calendar-day.today.hike-day {
+    background: var(--green);
+    color: #ffffff;
+    border: 2px solid #ffffff;
 }
 
 /* Пустые ячейки */
 .calendar-day.empty {
     background: transparent;
     cursor: default;
+    border: none;
 }
 
 /* Ховер для кликабельных дней */
 .calendar-day:not(.empty):hover {
     filter: brightness(0.9);
-}
-
-/* Модальное окно с деталями хайка */
-.hike-modal-image {
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 12px;
-    margin-bottom: 16px;
-}
-
-.hike-modal-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: #ffffff;
-    text-align: left;
-}
-
-.hike-modal-date {
-    font-size: 14px;
-    color: var(--yellow);
-    margin-bottom: 12px;
-    text-align: left;
-}
-
-.hike-modal-description {
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 20px;
-    color: rgba(255,255,255,0.9);
-    text-align: left;
-}
-
-.hike-modal-btn {
-    width: 100%;
-    margin: 0;
 }
