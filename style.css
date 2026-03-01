@@ -19,7 +19,6 @@ body {
     line-height: 1.5;
     position: relative;
     min-height: 100vh;
-    overflow-x: hidden;
 }
 
 body::before {
@@ -174,6 +173,13 @@ body::before {
 }
 
 .btn-white-outline {
+    background-color: transparent;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+}
+
+/* Кнопки с белой обводкой (стиль как у прямоугольников метрик) */
+.btn-white-outline {
     background-color: rgba(255,255,255,0.1);
     color: #ffffff;
     border: 1px solid rgba(255,255,255,0.2);
@@ -181,7 +187,7 @@ body::before {
     -webkit-backdrop-filter: blur(4px);
 }
 
-/* Кнопка-аккордеон */
+/* Кнопка-аккордеон (теперь тоже в стиле метрик) */
 .accordion-btn {
     display: flex;
     align-items: center;
@@ -308,7 +314,6 @@ body::before {
     color: #ffffff;
     border: 1px solid rgba(255,255,255,0.2);
     backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
 }
 
 .partner-item strong {
@@ -359,7 +364,74 @@ body::before {
     color: #ffffff;
 }
 
+/* Стили для модального окна */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: rgba(73, 138, 176, 0.2);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px;
+    padding: 24px;
+    max-width: 90%;
+    width: 400px;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #ffffff;
+}
+
+.modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s;
+    padding: 0;
+    line-height: 1;
+}
+
+.modal-close:hover {
+    opacity: 1;
+}
+
+.modal-title {
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 16px;
+    color: #ffffff;
+}
+
+.modal-text {
+    font-size: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+    line-height: 1.6;
+    color: #ffffff;
+}
+
 /* Стили для метрик */
+.metrics-section {
+    margin-bottom: 20px;
+}
+
 .metrics-header {
     display: flex;
     justify-content: space-between;
@@ -519,15 +591,15 @@ body::before {
     }
 }
 
-/* ===== ПЛАВАЮЩИЕ КНОПКИ ===== */
+/* ===== ПЛАВАЮЩИЕ КНОПКИ (обновлённые) ===== */
 .floating-btn-container {
     position: fixed;
     bottom: 30px;
-    right: 16px;
+    right: 16px;                 /* прижимаем к правому краю */
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
+    align-items: flex-end;       /* выравниваем по правому краю */
+    gap: 8px;                    /* уменьшенное расстояние между кнопками */
     pointer-events: none;
     z-index: 100;
     transition: opacity 0.3s ease;
@@ -535,10 +607,10 @@ body::before {
 
 .floating-btn-container .btn {
     pointer-events: auto;
-    width: auto;
-    margin: 0;
-    white-space: nowrap;
-    padding: 14px 20px;
+    width: auto;                 /* ширина по содержимому */
+    margin: 0;                   /* убираем стандартные отступы */
+    white-space: nowrap;         /* текст в одну строку */
+    padding: 14px 20px;          /* увеличим боковые отступы для удобства нажатия */
 }
 
 .floating-btn-container.hidden {
@@ -546,345 +618,7 @@ body::before {
     pointer-events: none;
 }
 
-/* ===== BOTTOM SHEET ===== */
-.bottom-sheet-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-    z-index: 1000;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.bottom-sheet-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-}
-
-.bottom-sheet {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: rgba(73, 138, 176, 0.2);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px 28px 0 0;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-bottom: none;
-    z-index: 1001;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    max-height: 80vh;
-    overflow-y: auto;
-    will-change: transform;
-}
-
-.bottom-sheet.visible {
-    transform: translateY(0);
-}
-
-.bottom-sheet.dragging {
-    transition: none;
-}
-
-.bottom-sheet-handle {
-    width: 40px;
-    height: 5px;
-    background-color: rgba(255,255,255,0.5);
-    border-radius: 10px;
-    margin: 12px auto;
-    cursor: grab;
-    touch-action: none; /* запрещаем браузерный скролл при касании хэндла */
-}
-
-.bottom-sheet-content {
-    padding: 0 16px 20px 16px;
-    color: #ffffff;
-}
-
-.bottom-sheet-image {
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 12px;
-    margin-bottom: 16px;
-}
-
-.bottom-sheet-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: #ffffff;
-    text-align: left;
-}
-
-.bottom-sheet-date {
-    font-size: 14px;
-    color: var(--yellow);
-    margin-bottom: 12px;
-    text-align: left;
-}
-
-.bottom-sheet-description {
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 20px;
-    color: rgba(255,255,255,0.9);
-    text-align: left;
-}
-
-.bottom-sheet-btn {
-    width: 100%;
-    margin: 0;
-}
-
-/* ===== КАЛЕНДАРЬ (внутренняя карточка) ===== */
-.calendar-item {
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 16px;
-    margin: 0 16px 12px 16px;
-    border: 1px solid rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
-.calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    color: #ffffff;
-}
-
-.calendar-header h3 {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-.calendar-nav {
-    display: flex;
-    gap: 20px;
-}
-
-.calendar-nav span {
-    font-size: 20px;
-    cursor: pointer;
-    user-select: none;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-}
-
-.calendar-nav span:hover {
-    opacity: 1;
-    background: rgba(255,255,255,0.2);
-}
-
-.weekdays {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    text-align: center;
-    margin-bottom: 10px;
-    color: rgba(255,255,255,0.7);
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.calendar-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-}
-
-.calendar-day {
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 500;
-    border-radius: 50%;
-    width: 100%;
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 2px solid transparent;
-}
-
-/* Обычный день */
-.calendar-day {
-    background: rgba(255,255,255,0.1);
-    color: #ffffff;
-}
-
-/* Текущий день (без хайка) */
-.calendar-day.today {
-    background: #ffffff;
-    color: #000000;
-    border: 2px solid transparent;
-}
-
-/* День с хайком (не сегодня) */
-.calendar-day.hike-day {
-    background: var(--yellow);
-    color: #000000;
-    border: 2px solid transparent;
-}
-
-/* Сегодняшний день с хайком */
-.calendar-day.today.hike-day {
-    background: var(--yellow);
-    color: #000000;
-    border: 2px solid #ffffff;
-}
-
-/* Пустые ячейки */
-.calendar-day.empty {
-    background: transparent;
-    cursor: default;
-    border: none;
-}
-
-/* Ховер для кликабельных дней */
-.calendar-day:not(.empty):hover {
-    filter: brightness(0.9);
-}
-
-/* ... (все предыдущие стили остаются без изменений, добавляем в конец) */
-
-/* ===== BOTTOM SHEET С ЛИСТАНИЕМ ===== */
-.bottom-sheet {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: rgba(73, 138, 176, 0.2);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px 28px 0 0;
-    border: 1px solid rgba(255,255,255,0.2);
-    border-bottom: none;
-    z-index: 1001;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    max-height: 80vh;
-    overflow-y: visible; /* меняем на visible, чтобы стрелки не обрезались */
-    will-change: transform;
-}
-
-.bottom-sheet.visible {
-    transform: translateY(0);
-}
-
-.bottom-sheet.dragging {
-    transition: none;
-}
-
-.bottom-sheet-handle {
-    width: 40px;
-    height: 5px;
-    background-color: rgba(255,255,255,0.5);
-    border-radius: 10px;
-    margin: 12px auto;
-    cursor: grab;
-    touch-action: none;
-}
-
-/* Контейнер для контента с отступами под стрелки */
-.bottom-sheet-content-wrapper {
-    position: relative;
-    padding: 0 40px; /* отступы для стрелок */
-}
-
-.bottom-sheet-content {
-    padding: 0 0 20px 0;
-    color: #ffffff;
-}
-
-/* Стрелки навигации */
-.bottom-sheet-arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 10;
-    transition: background-color 0.2s;
-    color: white;
-    font-size: 24px;
-    user-select: none;
-}
-
-.bottom-sheet-arrow:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-.bottom-sheet-arrow.left {
-    left: 0;
-}
-
-.bottom-sheet-arrow.right {
-    right: 0;
-}
-
-.bottom-sheet-arrow.hidden {
-    display: none;
-}
-
-/* Изображение и текст внутри bottom sheet */
-.bottom-sheet-image {
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 12px;
-    margin-bottom: 16px;
-}
-
-.bottom-sheet-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 8px;
-    color: #ffffff;
-    text-align: left;
-}
-
-.bottom-sheet-date {
-    font-size: 14px;
-    color: var(--yellow);
-    margin-bottom: 12px;
-    text-align: left;
-}
-
-.bottom-sheet-description {
-    font-size: 14px;
-    line-height: 1.5;
-    margin-bottom: 20px;
-    color: rgba(255,255,255,0.9);
-    text-align: left;
-}
-
-.bottom-sheet-btn {
-    width: 100%;
-    margin: 0;
+/* Убираем лишний отступ снизу на странице новичков */
+.newcomer-page {
+    /* padding-bottom удалён */
 }
