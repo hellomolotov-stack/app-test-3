@@ -469,9 +469,25 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Модальное окно с деталями хайка -----
+// ----- Модальное окно с деталями хайка (с русской датой) -----
 function showHikeModal(hike) {
     haptic();
+
+    // Преобразуем дату YYYY-MM-DD в "d месяц"
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    let formattedDate = '';
+    if (hike.date) {
+        const parts = hike.date.split('-');
+        if (parts.length === 3) {
+            const day = parseInt(parts[2], 10);
+            const month = parseInt(parts[1], 10) - 1; // 0-11
+            formattedDate = `${day} ${monthNames[month]}`;
+        } else {
+            formattedDate = hike.date;
+        }
+    }
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'hikeModal';
@@ -480,7 +496,7 @@ function showHikeModal(hike) {
             <button class="modal-close" id="closeHikeModal">&times;</button>
             ${hike.image ? `<img src="${hike.image}" class="hike-modal-image" onerror="this.style.display='none'">` : ''}
             <div class="hike-modal-title">${hike.title}</div>
-            <div class="hike-modal-date">${hike.date.split('-').reverse().join('.')}</div>
+            <div class="hike-modal-date">${formattedDate}</div>
             <div class="hike-modal-description">${hike.description.replace(/\n/g, '<br>')}</div>
             <a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'hike_join_click', false); return false;" class="btn btn-yellow hike-modal-btn">я иду</a>
         </div>
@@ -500,7 +516,7 @@ function showHikeModal(hike) {
     log('hike_modal_opened', false);
 }
 
-// ----- Рендер календаря -----
+// ----- Рендер календаря (с заголовком) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -515,7 +531,8 @@ function renderCalendar(container) {
 
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
-    let html = `
+    let calendarHtml = `
+        <h2 class="section-title">🔧 раздел в разработке</h2>
         <div class="calendar-header">
             <h3>${monthNames[currentMonth]} ${currentYear}</h3>
             <div class="calendar-nav">
@@ -530,7 +547,7 @@ function renderCalendar(container) {
     `;
 
     for (let i = 0; i < startOffset; i++) {
-        html += `<div class="calendar-day empty"></div>`;
+        calendarHtml += `<div class="calendar-day empty"></div>`;
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -541,15 +558,15 @@ function renderCalendar(container) {
         if (isToday) classes += ' today';
         if (hasHike) classes += ' hike-day';
         if (hasHike) {
-            html += `<div class="${classes}" data-date="${dateStr}">${day}</div>`;
+            calendarHtml += `<div class="${classes}" data-date="${dateStr}">${day}</div>`;
         } else {
-            html += `<div class="${classes}">${day}</div>`;
+            calendarHtml += `<div class="${classes}">${day}</div>`;
         }
     }
 
-    html += `</div>`;
+    calendarHtml += `</div>`;
 
-    container.innerHTML = html;
+    container.innerHTML = calendarHtml;
 
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
@@ -855,10 +872,8 @@ function renderHome() {
                 <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
 
-            <!-- Блок календаря (встроен в основной контейнер) -->
-            <div class="card-container" id="calendarContainer">
-                <!-- Календарь отрисуется через JS -->
-            </div>
+            <!-- Блок календаря -->
+            <div class="card-container" id="calendarContainer"></div>
         `;
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
