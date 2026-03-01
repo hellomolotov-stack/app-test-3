@@ -332,32 +332,51 @@ function showBottomSheet(hike) {
         }
     });
 
-    // Обработка свайпа вниз
+    // Drag-to-close функциональность
     const sheet = document.getElementById('hikeBottomSheet');
     let startY = 0;
     let currentY = 0;
+    let isDragging = false;
     const handle = sheet.querySelector('.bottom-sheet-handle');
 
-    handle.addEventListener('touchstart', (e) => {
+    const onTouchStart = (e) => {
         startY = e.touches[0].clientY;
-    });
+        currentY = startY;
+        isDragging = true;
+        sheet.classList.add('dragging');
+        // Запрещаем скролл фона
+        document.body.style.overflow = 'hidden';
+    };
 
-    handle.addEventListener('touchmove', (e) => {
+    const onTouchMove = (e) => {
+        if (!isDragging) return;
         currentY = e.touches[0].clientY;
         const delta = currentY - startY;
         if (delta > 0) {
+            // Двигаем sheet вниз, но не больше высоты sheet
             sheet.style.transform = `translateY(${delta}px)`;
+            e.preventDefault(); // Предотвращаем скролл фона
         }
-    });
+    };
 
-    handle.addEventListener('touchend', () => {
+    const onTouchEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.classList.remove('dragging');
+        document.body.style.overflow = ''; // Возвращаем скролл
         const delta = currentY - startY;
-        if (delta > 50) {
+        if (delta > 80) { // порог закрытия
             closeBottomSheet();
         } else {
+            // Возвращаем на место
             sheet.style.transform = '';
         }
-    });
+    };
+
+    handle.addEventListener('touchstart', onTouchStart, { passive: false });
+    handle.addEventListener('touchmove', onTouchMove, { passive: false });
+    handle.addEventListener('touchend', onTouchEnd);
+    handle.addEventListener('touchcancel', onTouchEnd);
 
     log('bottom_sheet_opened', false);
 }
@@ -370,6 +389,7 @@ function closeBottomSheet() {
         if (sheet) {
             sheet.classList.remove('visible');
         }
+        document.body.style.overflow = ''; // Возвращаем скролл
         setTimeout(() => {
             overlay.remove();
         }, 300);
@@ -562,7 +582,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Рендер календаря (с вложенным блоком) -----
+// ----- Рендер календаря (внутри переданного контейнера) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -578,19 +598,18 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <div class="card-container">
-            <h2 class="section-title">🔧 раздел в разработке</h2>
-            <div class="calendar-header">
-                <h3>${monthNames[currentMonth]} ${currentYear}</h3>
-                <div class="calendar-nav">
-                    <span id="prevMonth">←</span>
-                    <span id="nextMonth">→</span>
-                </div>
+        <h2 class="section-title">🔧 раздел в разработке</h2>
+        <div class="calendar-header">
+            <h3>${monthNames[currentMonth]} ${currentYear}</h3>
+            <div class="calendar-nav">
+                <span id="prevMonth">←</span>
+                <span id="nextMonth">→</span>
             </div>
-            <div class="weekdays">
-                ${weekdays.map(d => `<span>${d}</span>`).join('')}
-            </div>
-            <div class="calendar-grid" id="calendarGrid">
+        </div>
+        <div class="weekdays">
+            ${weekdays.map(d => `<span>${d}</span>`).join('')}
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
     `;
 
     for (let i = 0; i < startOffset; i++) {
@@ -611,7 +630,7 @@ function renderCalendar(container) {
         }
     }
 
-    calendarHtml += `</div></div>`; // закрываем calendar-grid и card-container
+    calendarHtml += `</div>`;
 
     container.innerHTML = calendarHtml;
 
@@ -919,8 +938,8 @@ function renderHome() {
                 <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
 
-            <!-- Блок календаря -->
-            <div id="calendarContainer"></div>
+            <!-- Блок календаря (внешний контейнер) -->
+            <div class="card-container" id="calendarContainer"></div>
         `;
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
