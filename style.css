@@ -627,10 +627,9 @@ body::before {
     top: 0;
     z-index: 10;
     padding: 8px 0 12px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.1);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    background: transparent; /* прозрачный фон */
+    background: transparent;
 }
 
 /* Заголовок с датой и стрелками */
