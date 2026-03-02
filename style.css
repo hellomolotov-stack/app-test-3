@@ -5,6 +5,7 @@
     --button-text: #ffffff;
     --secondary-bg: #f5f5f5;
     --yellow: #D9FD19;
+    --pale-yellow: #F0E68C;
     --green: #2ecc71;
     --red: #ff3b30;
 }
@@ -694,7 +695,7 @@ body::before {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 8px; /* уменьшено с 16px до 8px */
+    margin-bottom: 8px;
 }
 
 .bottom-sheet-tag {
@@ -715,7 +716,7 @@ body::before {
     aspect-ratio: 1 / 1;
     object-fit: cover;
     border-radius: 12px;
-    margin: 8px 0 16px 0; /* уменьшен верхний отступ с 16px до 8px */
+    margin: 8px 0 16px 0;
 }
 
 .bottom-sheet-description {
@@ -771,7 +772,7 @@ body::before {
 }
 
 .floating-sheet-buttons .btn-red-outline {
-    background-color: rgba(255, 59, 48, 0.2); /* полупрозрачный красный */
+    background-color: rgba(255, 59, 48, 0.2);
     color: #ff3b30;
     border: 2px solid #ff3b30;
     backdrop-filter: blur(4px);
@@ -883,6 +884,7 @@ body::before {
     background: #ffffff;
     color: #000000;
     border: 2px solid transparent;
+    font-weight: bold;
 }
 
 .calendar-day.hike-day {
@@ -891,10 +893,17 @@ body::before {
     border: 2px solid transparent;
 }
 
+.calendar-day.hike-day.past {
+    background: var(--pale-yellow);
+    color: #000000;
+    border: 2px solid transparent;
+}
+
 .calendar-day.today.hike-day {
     background: var(--yellow);
     color: #000000;
     border: 2px solid #ffffff;
+    font-weight: bold;
 }
 
 .calendar-day.empty {
