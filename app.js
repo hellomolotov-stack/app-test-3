@@ -42,6 +42,8 @@ const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVk
 // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ПОСЛЕ ПУБЛИКАЦИИ СКРИПТА
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
+const CACHE_TTL = 3600000; // 1 час
+
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
@@ -93,6 +95,22 @@ function parseCSVLine(line) {
     return result;
 }
 
+// Загрузка с кэшированием
+async function fetchWithCache(key, url, ttl = CACHE_TTL) {
+    const cached = localStorage.getItem(key);
+    if (cached) {
+        const { timestamp, data } = JSON.parse(cached);
+        if (Date.now() - timestamp < ttl) {
+            return data;
+        }
+    }
+    const resp = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-cache' });
+    const text = await resp.text();
+    const data = { text };
+    localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data }));
+    return data;
+}
+
 // Загрузка данных пользователя
 async function loadUserData() {
     if (!userId) {
@@ -100,8 +118,7 @@ async function loadUserData() {
         return;
     }
     try {
-        const resp = await fetch(`${CSV_URL}&t=${Date.now()}`);
-        const text = await resp.text();
+        const { text } = await fetchWithCache(`members_${userId}`, CSV_URL);
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных');
         const headers = parseCSVLine(lines[0]);
@@ -130,8 +147,7 @@ async function loadUserData() {
 // Загрузка метрик
 async function loadMetrics() {
     try {
-        const resp = await fetch(`${METRICS_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
-        const text = await resp.text();
+        const { text } = await fetchWithCache('metrics', METRICS_CSV_URL);
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных метрик');
         const headers = parseCSVLine(lines[0]);
@@ -154,8 +170,7 @@ async function loadMetrics() {
 // Загрузка расписания хайков
 async function loadHikes() {
     try {
-        const resp = await fetch(`${HIKES_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
-        const text = await resp.text();
+        const { text } = await fetchWithCache('hikes', HIKES_CSV_URL);
         const lines = text.trim().split('\n');
         if (lines.length < 2) return;
 
@@ -246,23 +261,26 @@ async function updateRegistration(hikeDate, hikeTitle, status) {
             status: status,
             has_card: hasCard
         });
-        const resp = await fetch(REGISTRATION_API_URL, {
+        // Отправляем запрос, но не ждём ответа для ускорения интерфейса
+        fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params
-        });
-        const result = await resp.json();
-        if (result.status === 'ok') {
-            console.log('Статус обновлён');
-        } else {
-            console.error('Ошибка обновления статуса:', result);
-        }
+        })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status !== 'ok') {
+                    console.error('Ошибка обновления статуса:', result);
+                }
+            })
+            .catch(e => console.error('Ошибка отправки запроса:', e));
     } catch (e) {
-        console.error('Ошибка отправки запроса:', e);
+        console.error('Ошибка в updateRegistration:', e);
     }
 }
 
 // Общая загрузка данных
 async function loadData() {
+    // Запускаем все загрузки параллельно
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
     if (userId) {
         await loadUserRegistrations();
@@ -403,7 +421,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet с умным свайпом вниз -----
+// ----- Bottom Sheet с умным свайпом вниз (без кнопки закрытия) -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -555,9 +573,11 @@ function showBottomSheet(index) {
                 cancelBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     haptic();
-                    await updateRegistration(hike.date, hike.title, 'cancelled');
+                    // Мгновенно обновляем локальный статус и интерфейс
                     hikeBookingStatus[sheetCurrentIndex] = false;
                     updateFloatingSheetButtons();
+                    // Отправляем запрос на сервер в фоне
+                    await updateRegistration(hike.date, hike.title, 'cancelled');
                     log('sheet_cancel_click', false);
                 });
                 container.appendChild(cancelBtn);
@@ -587,9 +607,11 @@ function showBottomSheet(index) {
             e.preventDefault();
             haptic();
             const hike = hikesList[sheetCurrentIndex];
-            await updateRegistration(hike.date, hike.title, 'booked');
+            // Мгновенное обновление интерфейса
             hikeBookingStatus[sheetCurrentIndex] = true;
             updateFloatingSheetButtons();
+            // Фоновая отправка
+            await updateRegistration(hike.date, hike.title, 'booked');
             log('sheet_go_click', false);
         });
 
@@ -651,7 +673,7 @@ function showBottomSheet(index) {
         }
     });
 
-    // Умный свайп вниз
+    // ----- Умный свайп вниз -----
     const onTouchStart = (e) => {
         const target = e.target;
         const isInteractive = target.closest('.bottom-sheet-nav-arrow') || 
