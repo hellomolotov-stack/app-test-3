@@ -341,7 +341,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet -----
+// ----- Bottom Sheet с установкой высоты через JS -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -371,6 +371,11 @@ function showBottomSheet(index) {
 
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
+
+    // Устанавливаем высоту слайдера в зависимости от высоты окна (95% от window.innerHeight)
+    const windowHeight = window.innerHeight;
+    sheet.style.maxHeight = `${windowHeight * 0.95}px`;
+    sheet.style.height = `${windowHeight * 0.95}px`; // фиксированная высота для iOS
 
     sheetCurrentIndex = index;
     let startY = 0;
@@ -409,7 +414,7 @@ function showBottomSheet(index) {
         }
 
         contentWrapper.innerHTML = `
-            <div class="bottom-sheet-sticky">
+            <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
                     <div class="bottom-sheet-header-left">
                         <div class="bottom-sheet-header-date">${formattedDate}</div>
