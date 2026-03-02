@@ -601,7 +601,7 @@ body::before {
     transition: none;
 }
 
-/* iOS-полоска для сворачивания (оставим для красоты, но без функционала) */
+/* iOS-полоска для сворачивания (просто декоративная) */
 .bottom-sheet-handle {
     width: 40px;
     height: 5px;
@@ -621,14 +621,10 @@ body::before {
     min-height: 0;
 }
 
-/* Верхний блок с заголовком и кнопкой закрытия */
+/* Верхний блок (без фона и окантовки) */
 .bottom-sheet-header-block {
-    background-color: rgba(255,255,255,0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 12px;
-    padding: 12px 16px;
+    /* Фон и обводка убраны */
+    padding: 12px 0;
     margin-bottom: 16px;
     position: relative;
 }
@@ -637,7 +633,7 @@ body::before {
 .bottom-sheet-close {
     position: absolute;
     top: 12px;
-    right: 12px;
+    right: 0;
     width: 36px;
     height: 36px;
     border-radius: 50%;
@@ -660,7 +656,7 @@ body::before {
     background-color: rgba(255,255,255,0.3);
 }
 
-/* Заголовок с датой и стрелками (теперь слева от кнопки) */
+/* Заголовок с датой и стрелками (слева от кнопки) */
 .bottom-sheet-header {
     display: flex;
     justify-content: space-between;
