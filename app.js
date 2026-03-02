@@ -336,9 +336,10 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet -----
+// ----- Bottom Sheet с улучшенной прокруткой -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
+let sheetScrollListener = null;
 
 function showBottomSheet(index) {
     if (!hikesList.length) return;
@@ -364,7 +365,7 @@ function showBottomSheet(index) {
     document.body.appendChild(overlay);
 
     const sheet = document.getElementById('hikeBottomSheet');
-    const contentDiv = document.getElementById('bottomSheetContent');
+    const contentWrapper = document.getElementById('bottomSheetContent');
 
     sheetCurrentIndex = index;
     let startY = 0;
@@ -402,20 +403,24 @@ function showBottomSheet(index) {
             tagsHtml += '</div>';
         }
 
-        contentDiv.innerHTML = `
-            <div class="bottom-sheet-header">
-                <div class="bottom-sheet-header-left">
-                    <div class="bottom-sheet-header-date">${formattedDate}</div>
-                    <div class="bottom-sheet-header-title">${hike.title}</div>
+        contentWrapper.innerHTML = `
+            <div class="bottom-sheet-sticky">
+                <div class="bottom-sheet-header">
+                    <div class="bottom-sheet-header-left">
+                        <div class="bottom-sheet-header-date">${formattedDate}</div>
+                        <div class="bottom-sheet-header-title">${hike.title}</div>
+                    </div>
+                    <div class="bottom-sheet-nav">
+                        <div class="bottom-sheet-nav-arrow ${!hasPrev ? 'hidden' : ''}" id="prevHike">←</div>
+                        <div class="bottom-sheet-nav-arrow ${!hasNext ? 'hidden' : ''}" id="nextHike">→</div>
+                    </div>
                 </div>
-                <div class="bottom-sheet-nav">
-                    <div class="bottom-sheet-nav-arrow ${!hasPrev ? 'hidden' : ''}" id="prevHike">←</div>
-                    <div class="bottom-sheet-nav-arrow ${!hasNext ? 'hidden' : ''}" id="nextHike">→</div>
-                </div>
+                ${tagsHtml}
             </div>
-            ${tagsHtml}
-            ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
-            <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
+            <div class="bottom-sheet-scrollable">
+                ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
+                <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
+            </div>
         `;
 
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
@@ -424,6 +429,8 @@ function showBottomSheet(index) {
                 sheetCurrentIndex--;
                 updateContent();
                 updateFloatingSheetButtons();
+                // Сбросим прокрутку в начало
+                contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_prev', false);
             }
@@ -435,6 +442,7 @@ function showBottomSheet(index) {
                 sheetCurrentIndex++;
                 updateContent();
                 updateFloatingSheetButtons();
+                contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_next', false);
             }
@@ -521,6 +529,30 @@ function showBottomSheet(index) {
         updateFloatingSheetButtons();
     }
 
+    // Функция проверки прокрутки для скрытия кнопок
+    function checkScroll() {
+        const container = document.querySelector('.floating-sheet-buttons');
+        if (!container) return;
+        const scrollTop = contentWrapper.scrollTop;
+        const scrollHeight = contentWrapper.scrollHeight;
+        const clientHeight = contentWrapper.clientHeight;
+        const maxScroll = scrollHeight - clientHeight;
+        if (maxScroll <= 0) return; // нет прокрутки
+        const scrollPercentage = (scrollTop / maxScroll) * 100;
+        if (scrollPercentage > 95) {
+            container.classList.add('hidden');
+        } else {
+            container.classList.remove('hidden');
+        }
+    }
+
+    // Добавляем слушатель прокрутки
+    if (sheetScrollListener) {
+        contentWrapper.removeEventListener('scroll', sheetScrollListener);
+    }
+    sheetScrollListener = checkScroll;
+    contentWrapper.addEventListener('scroll', sheetScrollListener);
+
     if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
     sheetButtonsTimeout = setTimeout(() => {
         createFloatingButtons();
@@ -529,6 +561,10 @@ function showBottomSheet(index) {
     const originalClose = closeBottomSheet;
     window.closeBottomSheet = function() {
         if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
+        if (sheetScrollListener) {
+            contentWrapper.removeEventListener('scroll', sheetScrollListener);
+            sheetScrollListener = null;
+        }
         removeFloatingSheetButtons();
         originalClose();
     };
