@@ -341,10 +341,12 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet без свайпа вниз, с кнопкой закрытия -----
+// ----- Bottom Sheet с умным свайпом вниз -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
+let dragStartY = 0;
+let isDragging = false;
 
 function showBottomSheet(index) {
     if (!hikesList.length) return;
@@ -378,7 +380,6 @@ function showBottomSheet(index) {
     sheet.style.height = `${windowHeight * 0.9}px`;
 
     sheetCurrentIndex = index;
-    let isInteractive = false; // больше не используется для свайпа, но оставим
 
     function updateContent() {
         const hike = hikesList[sheetCurrentIndex];
@@ -568,6 +569,17 @@ function showBottomSheet(index) {
         createFloatingButtons();
     }, 1000);
 
+    const originalClose = closeBottomSheet;
+    window.closeBottomSheet = function() {
+        if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
+        if (sheetScrollListener) {
+            contentWrapper.removeEventListener('scroll', sheetScrollListener);
+            sheetScrollListener = null;
+        }
+        removeFloatingSheetButtons();
+        originalClose();
+    };
+
     setTimeout(() => {
         overlay.classList.add('visible');
         sheet.classList.add('visible');
@@ -579,7 +591,61 @@ function showBottomSheet(index) {
         }
     });
 
-    // Убраны все обработчики touch-событий для свайпа
+    // ----- Умный свайп вниз -----
+    const onTouchStart = (e) => {
+        // Если начали свайп с интерактивного элемента (кнопка, стрелка, крестик) — не начинаем драг
+        const target = e.target;
+        const isInteractive = target.closest('.bottom-sheet-nav-arrow') || 
+                            target.closest('#closeSheetBtn') || 
+                            target.closest('a') || 
+                            target.closest('.btn') ||
+                            target.closest('.bottom-sheet-handle');
+        if (isInteractive) {
+            isDragging = false;
+            return;
+        }
+        dragStartY = e.touches[0].clientY;
+        isDragging = true;
+        sheet.classList.add('dragging');
+    };
+
+    const onTouchMove = (e) => {
+        if (!isDragging) return;
+        // Проверяем, не прокручен ли контент вверх
+        if (contentWrapper.scrollTop > 0) {
+            // Если прокручен, не мешаем скроллу
+            isDragging = false;
+            sheet.classList.remove('dragging');
+            return;
+        }
+        const deltaY = e.touches[0].clientY - dragStartY;
+        if (deltaY > 0) {
+            // Тянем вниз — двигаем sheet
+            e.preventDefault(); // запрещаем стандартную прокрутку страницы
+            sheet.style.transform = `translateY(${deltaY}px)`;
+        } else {
+            // Тянем вверх — разрешаем прокрутку контента
+            isDragging = false;
+            sheet.classList.remove('dragging');
+        }
+    };
+
+    const onTouchEnd = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.classList.remove('dragging');
+        const deltaY = e.changedTouches[0].clientY - dragStartY;
+        if (deltaY > 80) {
+            closeBottomSheet();
+        } else {
+            sheet.style.transform = '';
+        }
+    };
+
+    sheet.addEventListener('touchstart', onTouchStart, { passive: false });
+    sheet.addEventListener('touchmove', onTouchMove, { passive: false });
+    sheet.addEventListener('touchend', onTouchEnd, { passive: false });
+    sheet.addEventListener('touchcancel', onTouchEnd, { passive: false });
 
     log('bottom_sheet_opened', false);
 }
@@ -597,7 +663,8 @@ function closeBottomSheet() {
         if (sheetButtons) sheetButtons.remove();
         if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
         if (sheetScrollListener) {
-            contentWrapper.removeEventListener('scroll', sheetScrollListener);
+            const contentWrapper = document.getElementById('bottomSheetContent');
+            if (contentWrapper) contentWrapper.removeEventListener('scroll', sheetScrollListener);
             sheetScrollListener = null;
         }
         setTimeout(() => {
