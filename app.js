@@ -40,7 +40,7 @@ const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sF
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ПОСЛЕ ПУБЛИКАЦИИ СКРИПТА
-const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxXvGPNmlMsUJq8hUwU_MJtIXWn2odMbyLn6bHs_JwjwTkjCUaoAhuG1GAg_WLPUYGl2w/exec';
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
 const CACHE_TTL = 3600000; // 1 час
 
