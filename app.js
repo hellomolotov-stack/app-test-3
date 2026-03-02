@@ -39,6 +39,8 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
+// Замените на ваш реальный URL после публикации скрипта
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxxxxx/exec';
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -48,7 +50,7 @@ let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
 let hikesData = {};
 let hikesList = [];
-let hikeBookingStatus = {};
+let hikeBookingStatus = {}; // ключ: индекс в hikesList, значение: boolean (true - забронировано)
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
@@ -189,6 +191,7 @@ async function loadHikes() {
             };
         }
         hikesList = Object.values(hikesData).sort((a, b) => a.date.localeCompare(b.date));
+        // Инициализируем статус бронирования (пока false, потом загрузим)
         for (let i = 0; i < hikesList.length; i++) {
             hikeBookingStatus[i] = false;
         }
@@ -197,9 +200,67 @@ async function loadHikes() {
     }
 }
 
+// Загрузка статуса бронирования для текущего пользователя
+async function loadUserRegistrations() {
+    if (!userId || !REGISTRATION_API_URL) return;
+    try {
+        const url = `${REGISTRATION_API_URL}?action=get&user_id=${userId}&_=${Date.now()}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (data && Array.isArray(data.registrations)) {
+            // Ожидаем массив объектов с полями: hikeDate, status
+            // Сбрасываем статусы
+            for (let i = 0; i < hikesList.length; i++) {
+                hikeBookingStatus[i] = false;
+            }
+            // Устанавливаем статусы из данных
+            data.registrations.forEach(reg => {
+                // Найти индекс хайка по дате
+                const index = hikesList.findIndex(h => h.date === reg.hikeDate);
+                if (index !== -1 && reg.status === 'booked') {
+                    hikeBookingStatus[index] = true;
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки регистраций:', e);
+    }
+}
+
+// Отправка статуса на сервер
+async function updateRegistration(hikeDate, status) {
+    if (!userId || !REGISTRATION_API_URL) return;
+    try {
+        const params = new URLSearchParams({
+            action: 'update',
+            user_id: userId,
+            first_name: user?.first_name || '',
+            last_name: user?.last_name || '',
+            username: user?.username || '',
+            hike_date: hikeDate,
+            status: status
+        });
+        const resp = await fetch(REGISTRATION_API_URL, {
+            method: 'POST',
+            body: params
+        });
+        const result = await resp.json();
+        if (result.status === 'ok') {
+            console.log('Статус обновлён');
+        } else {
+            console.error('Ошибка обновления статуса:', result);
+        }
+    } catch (e) {
+        console.error('Ошибка отправки запроса:', e);
+    }
+}
+
 // Общая загрузка данных
 async function loadData() {
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
+    if (userId) {
+        await loadUserRegistrations();
+    }
     log('visit', userCard.status !== 'active');
     renderHome();
     const loader = document.getElementById('initial-loader');
@@ -426,7 +487,6 @@ function showBottomSheet(index) {
             </div>
         `;
 
-        // Обработчики стрелок
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
@@ -485,9 +545,12 @@ function showBottomSheet(index) {
                 cancelBtn.className = 'btn btn-red-outline';
                 cancelBtn.id = 'sheetCancelBtn';
                 cancelBtn.textContent = 'не пойду';
-                cancelBtn.addEventListener('click', (e) => {
+                cancelBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     haptic();
+                    const hike = hikesList[sheetCurrentIndex];
+                    // Отправляем на сервер статус cancelled
+                    await updateRegistration(hike.date, 'cancelled');
                     hikeBookingStatus[sheetCurrentIndex] = false;
                     updateFloatingSheetButtons();
                     log('sheet_cancel_click', false);
@@ -515,9 +578,12 @@ function showBottomSheet(index) {
         `;
         document.body.appendChild(container);
 
-        document.getElementById('sheetGoBtn').addEventListener('click', (e) => {
+        document.getElementById('sheetGoBtn').addEventListener('click', async (e) => {
             e.preventDefault();
             haptic();
+            const hike = hikesList[sheetCurrentIndex];
+            // Отправляем на сервер статус booked
+            await updateRegistration(hike.date, 'booked');
             hikeBookingStatus[sheetCurrentIndex] = true;
             updateFloatingSheetButtons();
             log('sheet_go_click', false);
@@ -657,7 +723,7 @@ function closeBottomSheet() {
     }
 }
 
-// ----- Рендер календаря (без стрелок, с плашкой) -----
+// ----- Рендер календаря (с учётом прошедших дней) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -693,9 +759,15 @@ function renderCalendar(container) {
         const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const isToday = (day === currentDate);
         const hasHike = hikesData[dateStr] ? true : false;
+        const isPast = new Date(dateStr) < new Date(currentYear, currentMonth, currentDate);
+        
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
-        if (hasHike) classes += ' hike-day';
+        if (hasHike) {
+            classes += ' hike-day';
+            if (isPast) classes += ' past';
+        }
+        
         if (hasHike) {
             calendarHtml += `<div class="${classes}" data-date="${dateStr}">${day}</div>`;
         } else {
@@ -716,8 +788,6 @@ function renderCalendar(container) {
             }
         });
     });
-
-    // Обработчики стрелок удалены, так как их больше нет
 }
 
 // ----- Страница для новичков (FAQ) -----
