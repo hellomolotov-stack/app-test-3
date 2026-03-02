@@ -615,12 +615,12 @@ body::before {
 
 /* Область контента с прокруткой */
 .bottom-sheet-content-wrapper {
-    flex: 1 1 0; /* заставляет занимать всё доступное место */
+    flex: 1 1 auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 0 16px 20px 16px;
     color: #ffffff;
-    min-height: 0; /* важно */
+    min-height: 0; /* важно для iOS */
 }
 
 /* Фиксированный верхний блок (sticky) — как карточка */
