@@ -588,8 +588,6 @@ body::before {
     position: relative;
     display: flex;
     flex-direction: column;
-    /* Убираем возможные задержки фона */
-    background-color: rgba(73, 138, 176, 0.1); /* задаём явно */
 }
 
 .bottom-sheet.visible {
