@@ -276,10 +276,12 @@ async function updateRegistration(hikeDate, hikeTitle, status) {
     }
 }
 
-// Общая загрузка данных
+// Общая загрузка данных (исправленный порядок)
 async function loadData() {
-    // Запускаем все загрузки параллельно
-    await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
+    // Загружаем пользователя и метрики параллельно
+    await Promise.allSettled([loadUserData(), loadMetrics()]);
+    // Затем загружаем хайки (обязательно дожидаемся)
+    await loadHikes();
     // После того как hikesList готов, загружаем регистрации
     if (userId && hikesList.length > 0) {
         await loadUserRegistrations();
@@ -420,7 +422,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet с умным свайпом вниз -----
+// ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -452,7 +454,6 @@ function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Устанавливаем высоту слайдера
     const windowHeight = window.innerHeight;
     sheet.style.maxHeight = `${windowHeight * 0.9}px`;
     sheet.style.height = `${windowHeight * 0.9}px`;
@@ -570,7 +571,7 @@ function showBottomSheet(index) {
 
         // Актуальный хайк
         if (isBooked) {
-            // Записан: зелёная "ты записан" и красная "отменить запись"
+            // Записан: сначала "ты записан" (зелёная), затем "отменить" (красная)
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-green';
@@ -579,11 +580,7 @@ function showBottomSheet(index) {
             goBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 haptic();
-                const newStatus = false; // отмена
-                hikeBookingStatus[sheetCurrentIndex] = newStatus;
-                await updateRegistration(hike.date, hike.title, 'cancelled');
-                updateFloatingSheetButtons();
-                log('sheet_cancel_click', false);
+                // При клике на "ты записан" ничего не делаем (просто индикатор)
             });
             container.appendChild(goBtn);
 
@@ -591,7 +588,7 @@ function showBottomSheet(index) {
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-red-outline';
             cancelBtn.id = 'sheetCancelBtn';
-            cancelBtn.textContent = 'отменить запись';
+            cancelBtn.textContent = 'отменить';
             cancelBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 haptic();
@@ -602,7 +599,19 @@ function showBottomSheet(index) {
             });
             container.appendChild(cancelBtn);
         } else {
-            // Не записан: жёлтая "иду" и белая "задать вопрос"
+            // Не записан: сначала "задать вопрос", затем "иду"
+            const questionBtn = document.createElement('a');
+            questionBtn.href = '#';
+            questionBtn.className = 'btn btn-white-outline';
+            questionBtn.id = 'sheetQuestionBtn';
+            questionBtn.textContent = 'задать вопрос';
+            questionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+            });
+            container.appendChild(questionBtn);
+
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow';
@@ -617,18 +626,6 @@ function showBottomSheet(index) {
                 log('sheet_go_click', false);
             });
             container.appendChild(goBtn);
-
-            const questionBtn = document.createElement('a');
-            questionBtn.href = '#';
-            questionBtn.className = 'btn btn-white-outline';
-            questionBtn.id = 'sheetQuestionBtn';
-            questionBtn.textContent = 'задать вопрос';
-            questionBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
-            });
-            container.appendChild(questionBtn);
         }
     }
 
@@ -668,20 +665,9 @@ function showBottomSheet(index) {
     // Создаём кнопки сразу, без таймера
     createFloatingButtons();
 
-    const originalClose = closeBottomSheet;
-    window.closeBottomSheet = function() {
-        if (sheetScrollListener) {
-            contentWrapper.removeEventListener('scroll', sheetScrollListener);
-            sheetScrollListener = null;
-        }
-        removeFloatingSheetButtons();
-        originalClose();
-    };
-
-    setTimeout(() => {
-        overlay.classList.add('visible');
-        sheet.classList.add('visible');
-    }, 10);
+    // Убираем таймер, добавляем классы сразу
+    overlay.classList.add('visible');
+    sheet.classList.add('visible');
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
