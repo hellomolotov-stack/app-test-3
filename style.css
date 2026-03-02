@@ -146,15 +146,26 @@ body::before {
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
-    transition: opacity 0.2s, background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    transition: opacity 0.2s;
     text-align: center;
     text-decoration: none;
     box-sizing: border-box;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .btn:hover {
     opacity: 0.9;
+}
+
+.btn-blue {
+    background-color: #40a7e3;
+    color: #ffffff;
+    border: none;
+}
+
+.btn-outline-blue {
+    background-color: transparent;
+    color: #40a7e3;
+    border: 2px solid #40a7e3;
 }
 
 .btn-yellow {
@@ -162,34 +173,14 @@ body::before {
     color: #000000;
     border: none;
     font-weight: 600;
-    box-shadow: 0 0 15px rgba(217, 253, 25, 0.5);
-}
-
-.btn-green {
-    background-color: var(--green);
-    color: #ffffff;
-    border: 2px solid #27ae60;
-    font-weight: 600;
-    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
 }
 
 .btn-white-outline {
     background-color: rgba(255,255,255,0.1);
     color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255,255,255,0.2);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    box-shadow: 0 0 15px rgba(255,255,255,0.2);
-}
-
-.btn-red-outline {
-    background-color: rgba(255,255,255,0.1);
-    color: #ff3b30;
-    border: 2px solid #ff3b30;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    font-weight: 600;
-    box-shadow: 0 0 15px rgba(255,59,48,0.3);
 }
 
 /* Кнопка-аккордеон */
@@ -728,19 +719,6 @@ body::before {
     text-align: left;
 }
 
-/* Кнопки в слайдере (дублируются плавающими) - оставлены для обратной совместимости */
-.bottom-sheet-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-}
-
-.bottom-sheet-btn {
-    width: 100%;
-    margin: 0;
-}
-
 /* ===== ПЛАВАЮЩИЕ КНОПКИ ДЛЯ СЛАЙДЕРА ===== */
 .floating-sheet-buttons {
     position: fixed;
@@ -766,6 +744,33 @@ body::before {
 .floating-sheet-buttons.hidden {
     opacity: 0;
     pointer-events: none;
+}
+
+/* Специальные стили для кнопок в слайдере (добавляем свечение и обводки) */
+.floating-sheet-buttons .btn-yellow {
+    box-shadow: 0 0 15px rgba(217, 253, 25, 0.5);
+}
+
+.floating-sheet-buttons .btn-green {
+    background-color: var(--green);
+    color: #ffffff;
+    border: 2px solid #27ae60;
+    font-weight: 600;
+    box-shadow: 0 0 15px rgba(46, 204, 113, 0.5);
+}
+
+.floating-sheet-buttons .btn-white-outline {
+    box-shadow: 0 0 15px rgba(255,255,255,0.2);
+}
+
+.floating-sheet-buttons .btn-red-outline {
+    background-color: rgba(255,255,255,0.1);
+    color: #ff3b30;
+    border: 2px solid #ff3b30;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-weight: 600;
+    box-shadow: 0 0 15px rgba(255,59,48,0.3);
 }
 
 /* ===== КАЛЕНДАРЬ ===== */
