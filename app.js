@@ -157,21 +157,21 @@ async function loadHikes() {
         const text = await resp.text();
         const lines = text.trim().split('\n');
         if (lines.length < 2) return;
-        
+
         const headers = parseCSVLine(lines[0]);
-        
+
         hikesData = {};
         for (let i = 1; i < lines.length; i++) {
             const row = parseCSVLine(lines[i]);
             if (row.length < 4) continue;
-            
+
             let data = {};
             headers.forEach((key, idx) => {
                 data[key] = row[idx] || '';
             });
-            
+
             const date = data.date;
-            
+
             // Обработка тегов
             let tags = [];
             if (data.tags) {
@@ -183,7 +183,7 @@ async function loadHikes() {
                 // Разбиваем по запятой и обрезаем пробелы
                 tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
             }
-            
+
             hikesData[date] = {
                 title: data.title || 'Хайк',
                 description: data.description || 'Описание появится позже',
@@ -338,12 +338,16 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet -----
+// ----- Bottom Sheet с прокруткой и плавающими кнопками -----
 function showBottomSheet(index) {
     if (!hikesList.length) return;
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
+
+    // Удаляем существующие плавающие кнопки слайдера, если есть
+    const existingSheetButtons = document.querySelector('.floating-sheet-buttons');
+    if (existingSheetButtons) existingSheetButtons.remove();
 
     document.body.style.overflow = 'hidden';
 
@@ -368,6 +372,7 @@ function showBottomSheet(index) {
     let isDragging = false;
     let isInteractive = false;
 
+    // Функция обновления контента (без кнопок, только описание)
     function updateContent() {
         const hike = hikesList[currentIndex];
         if (!hike) return;
@@ -413,10 +418,6 @@ function showBottomSheet(index) {
             ${tagsHtml}
             ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
             <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
-            <div class="bottom-sheet-buttons">
-                <a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'hike_book_click', false); return false;" class="btn btn-yellow bottom-sheet-btn">забронировать место</a>
-                <a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'hike_question_click', false); return false;" class="btn btn-white-outline bottom-sheet-btn">задать вопрос</a>
-            </div>
         `;
 
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
@@ -424,6 +425,9 @@ function showBottomSheet(index) {
             if (currentIndex > 0) {
                 currentIndex--;
                 updateContent();
+                // При смене хайка сбрасываем состояние кнопок и удаляем старые плавающие кнопки
+                removeFloatingSheetButtons();
+                scheduleFloatingButtons();
                 haptic();
                 log('hike_swipe_prev', false);
             }
@@ -434,6 +438,8 @@ function showBottomSheet(index) {
             if (currentIndex < hikesList.length - 1) {
                 currentIndex++;
                 updateContent();
+                removeFloatingSheetButtons();
+                scheduleFloatingButtons();
                 haptic();
                 log('hike_swipe_next', false);
             }
@@ -441,6 +447,87 @@ function showBottomSheet(index) {
     }
 
     updateContent();
+
+    // Функция для удаления плавающих кнопок
+    function removeFloatingSheetButtons() {
+        const btnContainer = document.querySelector('.floating-sheet-buttons');
+        if (btnContainer) btnContainer.remove();
+    }
+
+    // Функция для создания плавающих кнопок (начальное состояние)
+    function createFloatingButtons() {
+        removeFloatingSheetButtons(); // удаляем старые, если есть
+
+        const container = document.createElement('div');
+        container.className = 'floating-sheet-buttons';
+        container.id = 'floatingSheetButtons';
+        container.innerHTML = `
+            <a href="#" class="btn btn-yellow" id="sheetGoBtn">иду</a>
+            <a href="#" class="btn btn-white-outline" id="sheetQuestionBtn">у меня вопрос</a>
+        `;
+        document.body.appendChild(container);
+
+        // Обработчик для кнопки "иду"
+        document.getElementById('sheetGoBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            // Меняем состояние на "идёшь" и добавляем красную кнопку
+            const goBtn = e.currentTarget;
+            goBtn.classList.remove('btn-yellow');
+            goBtn.classList.add('btn-green');
+            goBtn.textContent = 'идёшь';
+
+            // Удаляем старую белую кнопку, если она есть
+            const questionBtn = document.getElementById('sheetQuestionBtn');
+            if (questionBtn) questionBtn.remove();
+
+            // Добавляем красную кнопку "не пойду", если её ещё нет
+            if (!document.getElementById('sheetCancelBtn')) {
+                const cancelBtn = document.createElement('a');
+                cancelBtn.href = '#';
+                cancelBtn.className = 'btn btn-red-outline';
+                cancelBtn.id = 'sheetCancelBtn';
+                cancelBtn.textContent = 'не пойду';
+                cancelBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    haptic();
+                    // Возвращаем исходное состояние
+                    goBtn.classList.remove('btn-green');
+                    goBtn.classList.add('btn-yellow');
+                    goBtn.textContent = 'иду';
+                    cancelBtn.remove();
+                    // Возвращаем белую кнопку
+                    const newQuestionBtn = document.createElement('a');
+                    newQuestionBtn.href = '#';
+                    newQuestionBtn.className = 'btn btn-white-outline';
+                    newQuestionBtn.id = 'sheetQuestionBtn';
+                    newQuestionBtn.textContent = 'у меня вопрос';
+                    newQuestionBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        haptic();
+                        openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+                    });
+                    container.appendChild(newQuestionBtn);
+                });
+                container.appendChild(cancelBtn);
+            }
+            log('sheet_go_click', false);
+        });
+
+        document.getElementById('sheetQuestionBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+        });
+    }
+
+    // Планируем появление кнопок через 1 секунду
+    let buttonsTimeout = setTimeout(() => {
+        createFloatingButtons();
+    }, 1000);
+
+    // Сохраняем таймер в свойстве sheet для возможности отмены
+    sheet._buttonsTimeout = buttonsTimeout;
 
     setTimeout(() => {
         overlay.classList.add('visible');
@@ -503,6 +590,7 @@ function showBottomSheet(index) {
     log('bottom_sheet_opened', false);
 }
 
+// Закрытие bottom sheet
 function closeBottomSheet() {
     const overlay = document.querySelector('.bottom-sheet-overlay');
     if (overlay) {
@@ -510,8 +598,15 @@ function closeBottomSheet() {
         const sheet = document.getElementById('hikeBottomSheet');
         if (sheet) {
             sheet.classList.remove('visible');
+            // Очищаем таймер, если он есть
+            if (sheet._buttonsTimeout) {
+                clearTimeout(sheet._buttonsTimeout);
+            }
         }
         document.body.style.overflow = '';
+        // Удаляем плавающие кнопки
+        const sheetButtons = document.querySelector('.floating-sheet-buttons');
+        if (sheetButtons) sheetButtons.remove();
         setTimeout(() => {
             overlay.remove();
         }, 300);
