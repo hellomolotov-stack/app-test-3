@@ -727,7 +727,7 @@ body::before {
     text-align: left;
 }
 
-/* ===== ПЛАВАЮЩИЕ КНОПКИ ДЛЯ СЛАЙДЕРА (НОВЫЙ ДИЗАЙН) ===== */
+/* ===== ПЛАВАЮЩИЕ КНОПКИ ДЛЯ СЛАЙДЕРА ===== */
 .floating-sheet-buttons {
     position: fixed;
     bottom: 30px;
@@ -771,11 +771,11 @@ body::before {
 }
 
 .floating-sheet-buttons .btn-red-outline {
-    background-color: transparent;
-    color: #ff3b30;
-    border: 2px solid #ff3b30;
+    background-color: rgba(255, 59, 48, 0.2);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    color: #ff3b30;
+    border: 2px solid #ff3b30;
 }
 
 .floating-sheet-buttons .btn-white-outline {
@@ -796,57 +796,6 @@ body::before {
 .floating-sheet-buttons.hidden {
     opacity: 0;
     pointer-events: none;
-}
-
-/* Статичные кнопки внизу слайдера */
-.static-sheet-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-top: 20px;
-    padding: 0 0 20px 0;
-    width: 100%;
-}
-
-.static-sheet-buttons .btn {
-    width: 100%;
-    margin: 0;
-    border-radius: 12px;
-    padding: 14px;
-    font-size: 16px;
-}
-
-.static-sheet-buttons .btn-yellow {
-    background-color: var(--yellow);
-    color: #000000;
-}
-
-.static-sheet-buttons .btn-green {
-    background-color: var(--green);
-    color: #ffffff;
-}
-
-.static-sheet-buttons .btn-red-outline {
-    background-color: transparent;
-    color: #ff3b30;
-    border: 2px solid #ff3b30;
-}
-
-.static-sheet-buttons .btn-white-outline {
-    background-color: rgba(255,255,255,0.1);
-    color: #ffffff;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-/* Контейнер для двух кнопок в ряд */
-.static-sheet-buttons-row {
-    display: flex;
-    gap: 12px;
-    width: 100%;
-}
-
-.static-sheet-buttons-row .btn {
-    flex: 1;
 }
 
 /* ===== КАЛЕНДАРЬ ===== */
