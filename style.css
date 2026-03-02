@@ -635,7 +635,7 @@ body::before {
     font-size: 20px;
     font-weight: 700;
     color: var(--yellow);
-    margin-bottom: 2px;          /* уменьшено */
+    margin-bottom: 2px;
     line-height: 1.3;
 }
 
