@@ -623,11 +623,10 @@ body::before {
     flex-direction: column;
 }
 
-/* Фиксированный верхний блок */
+/* Фиксированный верхний блок (sticky) */
 .bottom-sheet-sticky {
     position: sticky;
     top: 0;
-    background-color: rgba(73, 138, 176, 0.1);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     z-index: 10;
@@ -636,12 +635,7 @@ body::before {
     padding-left: 16px;
     padding-right: 16px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-/* Прокручиваемая часть */
-.bottom-sheet-scrollable {
-    flex: 1;
-    overflow-y: visible;
+    background: transparent; /* убираем фоновый цвет, оставляем только blur */
 }
 
 /* Заголовок с датой и стрелками */
@@ -731,7 +725,7 @@ body::before {
     aspect-ratio: 1 / 1;
     object-fit: cover;
     border-radius: 12px;
-    margin-bottom: 16px;
+    margin: 16px 0 16px 0;
 }
 
 .bottom-sheet-description {
