@@ -403,6 +403,7 @@ function showBottomSheet(index) {
             tagsHtml += '</div>';
         }
 
+        // Формируем HTML: сначала sticky-блок, затем прокручиваемый контент
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-sticky">
                 <div class="bottom-sheet-header">
@@ -417,7 +418,7 @@ function showBottomSheet(index) {
                 </div>
                 ${tagsHtml}
             </div>
-            <div class="bottom-sheet-scrollable">
+            <div>
                 ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
                 <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
             </div>
@@ -429,8 +430,7 @@ function showBottomSheet(index) {
                 sheetCurrentIndex--;
                 updateContent();
                 updateFloatingSheetButtons();
-                // Сбросим прокрутку в начало
-                contentWrapper.scrollTop = 0;
+                contentWrapper.scrollTop = 0; // сброс прокрутки при смене хайка
                 haptic();
                 log('hike_swipe_prev', false);
             }
