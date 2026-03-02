@@ -546,7 +546,7 @@ body::before {
     pointer-events: none;
 }
 
-/* ===== BOTTOM SHEET (исправленная версия) ===== */
+/* ===== BOTTOM SHEET (финальная версия с отступами) ===== */
 .bottom-sheet-overlay {
     position: fixed;
     top: 0;
@@ -561,6 +561,7 @@ body::before {
     display: flex;
     align-items: flex-end;
     justify-content: center;
+    padding: 0 16px; /* отступы от краёв экрана */
 }
 
 .bottom-sheet-overlay.visible {
@@ -606,7 +607,7 @@ body::before {
     -webkit-overflow-scrolling: touch;
 }
 
-/* Контейнер для стрелок (поверх контента, но с отступами от краёв) */
+/* Контейнер для стрелок (поверх контента, с отступами от краёв) */
 .bottom-sheet-arrows {
     position: absolute;
     top: 50%;
