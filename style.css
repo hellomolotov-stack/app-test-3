@@ -601,7 +601,7 @@ body::before {
     transition: none;
 }
 
-/* iOS-полоска для сворачивания (просто декоративная) */
+/* iOS-полоска для сворачивания (декоративная) */
 .bottom-sheet-handle {
     width: 40px;
     height: 5px;
@@ -623,46 +623,17 @@ body::before {
 
 /* Верхний блок (без фона и окантовки) */
 .bottom-sheet-header-block {
-    /* Фон и обводка убраны */
     padding: 12px 0;
     margin-bottom: 16px;
     position: relative;
 }
 
-/* Кнопка закрытия */
-.bottom-sheet-close {
-    position: absolute;
-    top: 12px;
-    right: 0;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background-color: rgba(255,255,255,0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    color: white;
-    font-size: 20px;
-    user-select: none;
-    z-index: 20;
-}
-
-.bottom-sheet-close:hover {
-    background-color: rgba(255,255,255,0.3);
-}
-
-/* Заголовок с датой и стрелками (слева от кнопки) */
+/* Заголовок с датой и стрелками */
 .bottom-sheet-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 12px;
-    padding-right: 40px; /* место для кнопки закрытия */
 }
 
 .bottom-sheet-header-left {
@@ -723,6 +694,7 @@ body::before {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    margin-bottom: 8px; /* уменьшено с 16px до 8px */
 }
 
 .bottom-sheet-tag {
@@ -743,7 +715,7 @@ body::before {
     aspect-ratio: 1 / 1;
     object-fit: cover;
     border-radius: 12px;
-    margin: 16px 0 16px 0;
+    margin: 8px 0 16px 0; /* уменьшен верхний отступ с 16px до 8px */
 }
 
 .bottom-sheet-description {
@@ -799,7 +771,7 @@ body::before {
 }
 
 .floating-sheet-buttons .btn-red-outline {
-    background-color: rgba(255,255,255,0.1);
+    background-color: rgba(255, 59, 48, 0.2); /* полупрозрачный красный */
     color: #ff3b30;
     border: 2px solid #ff3b30;
     backdrop-filter: blur(4px);
@@ -855,6 +827,24 @@ body::before {
 .calendar-nav span:hover {
     opacity: 1;
     background: rgba(255,255,255,0.2);
+}
+
+/* Скрываем стрелки навигации */
+#prevMonth, #nextMonth {
+    display: none;
+}
+
+/* Жёлтая плашка "запланируй хайк" */
+.calendar-badge {
+    background-color: var(--yellow);
+    color: #000000;
+    border: none;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-left: auto;
 }
 
 .weekdays {
