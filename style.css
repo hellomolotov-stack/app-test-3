@@ -838,3 +838,46 @@ body::before {
 .calendar-day:not(.empty):hover {
     filter: brightness(0.9);
 }
+
+/* ... все предыдущие стили остаются, добавляем в конец */
+
+/* ===== КНОПКИ ДЛЯ СЛАЙДЕРА ===== */
+.btn-green {
+    background-color: #4CD964;
+    color: #ffffff;
+    border: none;
+    font-weight: 600;
+}
+
+.btn-red-outline {
+    background-color: transparent;
+    color: #ff3b30;
+    border: 2px solid #ff3b30;
+    font-weight: 600;
+}
+
+.floating-sheet-buttons {
+    position: fixed;
+    bottom: 30px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 1100; /* выше, чем overlay */
+    transition: opacity 0.3s ease;
+}
+
+.floating-sheet-buttons .btn {
+    pointer-events: auto;
+    width: auto;
+    margin: 0;
+    white-space: nowrap;
+    padding: 14px 20px;
+}
+
+.floating-sheet-buttons.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
