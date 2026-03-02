@@ -583,8 +583,8 @@ body::before {
     z-index: 1001;
     transform: translateY(100%);
     transition: transform 0.3s ease;
-    max-height: 90vh;
-    overflow-y: hidden;
+    max-height: 95vh;
+    overflow: visible;
     will-change: transform;
     margin: 0 auto;
     position: relative;
@@ -614,7 +614,7 @@ body::before {
 
 /* Область контента с прокруткой */
 .bottom-sheet-content-wrapper {
-    flex: 1;
+    flex: 1 1 auto;
     overflow-y: auto;
     padding: 0 16px 20px 16px;
     color: #ffffff;
