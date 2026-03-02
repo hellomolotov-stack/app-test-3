@@ -149,7 +149,7 @@ async function loadMetrics() {
     }
 }
 
-// Загрузка расписания хайков
+// Загрузка расписания хайков (без тестового длинного описания)
 async function loadHikes() {
     try {
         const resp = await fetch(`${HIKES_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
@@ -180,14 +180,9 @@ async function loadHikes() {
                 tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
             }
 
-            // Очень длинное описание для гарантии прокрутки
-            let description = data.description || 'Описание появится позже.';
-            description += '<br><br>' + 'Это очень длинное описание, добавленное для проверки прокрутки. '.repeat(30) + '<br><br>';
-            description += 'Ещё один длинный абзац. '.repeat(20) + ' Конец тестового описания.';
-
             hikesData[date] = {
                 title: data.title || 'Хайк',
-                description: description,
+                description: data.description || 'Описание появится позже.',
                 image: data.image_url || '',
                 date: date,
                 tags: tags
@@ -341,7 +336,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet с умным свайпом вниз -----
+// ----- Bottom Sheet с умным свайпом вниз (без кнопки закрытия) -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -413,7 +408,6 @@ function showBottomSheet(index) {
 
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
-                <div class="bottom-sheet-close" id="closeSheetBtn">✕</div>
                 <div class="bottom-sheet-header">
                     <div class="bottom-sheet-header-left">
                         <div class="bottom-sheet-header-date">${formattedDate}</div>
@@ -432,11 +426,7 @@ function showBottomSheet(index) {
             </div>
         `;
 
-        document.getElementById('closeSheetBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            closeBottomSheet();
-        });
-
+        // Обработчики стрелок
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
@@ -593,10 +583,8 @@ function showBottomSheet(index) {
 
     // ----- Умный свайп вниз -----
     const onTouchStart = (e) => {
-        // Если начали свайп с интерактивного элемента (кнопка, стрелка, крестик) — не начинаем драг
         const target = e.target;
         const isInteractive = target.closest('.bottom-sheet-nav-arrow') || 
-                            target.closest('#closeSheetBtn') || 
                             target.closest('a') || 
                             target.closest('.btn') ||
                             target.closest('.bottom-sheet-handle');
@@ -611,20 +599,16 @@ function showBottomSheet(index) {
 
     const onTouchMove = (e) => {
         if (!isDragging) return;
-        // Проверяем, не прокручен ли контент вверх
         if (contentWrapper.scrollTop > 0) {
-            // Если прокручен, не мешаем скроллу
             isDragging = false;
             sheet.classList.remove('dragging');
             return;
         }
         const deltaY = e.touches[0].clientY - dragStartY;
         if (deltaY > 0) {
-            // Тянем вниз — двигаем sheet
-            e.preventDefault(); // запрещаем стандартную прокрутку страницы
+            e.preventDefault();
             sheet.style.transform = `translateY(${deltaY}px)`;
         } else {
-            // Тянем вверх — разрешаем прокрутку контента
             isDragging = false;
             sheet.classList.remove('dragging');
         }
@@ -673,7 +657,7 @@ function closeBottomSheet() {
     }
 }
 
-// ----- Рендер календаря -----
+// ----- Рендер календаря (без стрелок, с плашкой) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -693,10 +677,7 @@ function renderCalendar(container) {
         <div class="calendar-item">
             <div class="calendar-header">
                 <h3>${monthNames[currentMonth]} ${currentYear}</h3>
-                <div class="calendar-nav">
-                    <span id="prevMonth">←</span>
-                    <span id="nextMonth">→</span>
-                </div>
+                <span class="calendar-badge">запланируй хайк</span>
             </div>
             <div class="weekdays">
                 ${weekdays.map(d => `<span>${d}</span>`).join('')}
@@ -736,14 +717,7 @@ function renderCalendar(container) {
         });
     });
 
-    document.getElementById('prevMonth')?.addEventListener('click', () => {
-        haptic();
-        alert('Переключение между месяцами будет добавлено позже');
-    });
-    document.getElementById('nextMonth')?.addEventListener('click', () => {
-        haptic();
-        alert('Переключение между месяцами будет добавлено позже');
-    });
+    // Обработчики стрелок удалены, так как их больше нет
 }
 
 // ----- Страница для новичков (FAQ) -----
