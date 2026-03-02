@@ -39,7 +39,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
-// ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ПОСЛЕ ПУБЛИКАЦИИ СКРИПТА
+// НОВАЯ ССЫЛКА НА СКРИПТ РЕГИСТРАЦИЙ
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
 const CACHE_TTL = 3600000; // 1 час
@@ -421,7 +421,6 @@ function showConfetti() {
 }
 
 // ----- Bottom Sheet с умным свайпом вниз -----
-let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -555,7 +554,7 @@ function showBottomSheet(index) {
         today.setHours(0, 0, 0, 0);
         const isPast = hikeDate < today;
 
-        // Очищаем контейнер и создаём заново, чтобы избежать проблем с переключением
+        // Очищаем контейнер и создаём заново
         container.innerHTML = '';
 
         if (isPast) {
@@ -666,14 +665,11 @@ function showBottomSheet(index) {
     sheetScrollListener = checkScroll;
     contentWrapper.addEventListener('scroll', sheetScrollListener);
 
-    if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
-    sheetButtonsTimeout = setTimeout(() => {
-        createFloatingButtons();
-    }, 1000);
+    // Создаём кнопки сразу, без таймера
+    createFloatingButtons();
 
     const originalClose = closeBottomSheet;
     window.closeBottomSheet = function() {
-        if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
         if (sheetScrollListener) {
             contentWrapper.removeEventListener('scroll', sheetScrollListener);
             sheetScrollListener = null;
@@ -757,7 +753,6 @@ function closeBottomSheet() {
         document.body.style.overflow = '';
         const sheetButtons = document.querySelector('.floating-sheet-buttons');
         if (sheetButtons) sheetButtons.remove();
-        if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
         if (sheetScrollListener) {
             const contentWrapper = document.getElementById('bottomSheetContent');
             if (contentWrapper) contentWrapper.removeEventListener('scroll', sheetScrollListener);
