@@ -584,14 +584,13 @@ body::before {
     transform: translateY(100%);
     transition: transform 0.3s ease;
     max-height: 90vh;
-    height: 90vh; /* фиксированная высота для iOS */
     overflow: hidden;
     will-change: transform;
     margin: 0 auto;
     position: relative;
     display: flex;
     flex-direction: column;
-    min-height: 0; /* важно для flex-детей */
+    min-height: 0; /* важно для iOS */
 }
 
 .bottom-sheet.visible {
@@ -616,7 +615,7 @@ body::before {
 
 /* Область контента с прокруткой */
 .bottom-sheet-content-wrapper {
-    flex: 1 1 auto;
+    flex: 1 1 0; /* заставляет занимать всё доступное место */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     padding: 0 16px 20px 16px;
