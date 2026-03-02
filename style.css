@@ -629,7 +629,7 @@ body::before {
     padding: 8px 0 12px 0;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    background: transparent; /* прозрачный фон */
+    background: transparent;
 }
 
 /* Заголовок с датой и стрелками */
