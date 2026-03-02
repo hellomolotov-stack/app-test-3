@@ -341,7 +341,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet с установкой высоты через JS -----
+// ----- Bottom Sheet без свайпа вниз, с кнопкой закрытия -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -372,16 +372,13 @@ function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Устанавливаем высоту слайдера в зависимости от высоты окна (95% от window.innerHeight)
+    // Устанавливаем высоту слайдера
     const windowHeight = window.innerHeight;
-    sheet.style.maxHeight = `${windowHeight * 0.95}px`;
-    sheet.style.height = `${windowHeight * 0.95}px`; // фиксированная высота для iOS
+    sheet.style.maxHeight = `${windowHeight * 0.9}px`;
+    sheet.style.height = `${windowHeight * 0.9}px`;
 
     sheetCurrentIndex = index;
-    let startY = 0;
-    let currentY = 0;
-    let isDragging = false;
-    let isInteractive = false;
+    let isInteractive = false; // больше не используется для свайпа, но оставим
 
     function updateContent() {
         const hike = hikesList[sheetCurrentIndex];
@@ -415,6 +412,7 @@ function showBottomSheet(index) {
 
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
+                <div class="bottom-sheet-close" id="closeSheetBtn">✕</div>
                 <div class="bottom-sheet-header">
                     <div class="bottom-sheet-header-left">
                         <div class="bottom-sheet-header-date">${formattedDate}</div>
@@ -432,6 +430,11 @@ function showBottomSheet(index) {
                 <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
             </div>
         `;
+
+        document.getElementById('closeSheetBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeBottomSheet();
+        });
 
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -565,17 +568,6 @@ function showBottomSheet(index) {
         createFloatingButtons();
     }, 1000);
 
-    const originalClose = closeBottomSheet;
-    window.closeBottomSheet = function() {
-        if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
-        if (sheetScrollListener) {
-            contentWrapper.removeEventListener('scroll', sheetScrollListener);
-            sheetScrollListener = null;
-        }
-        removeFloatingSheetButtons();
-        originalClose();
-    };
-
     setTimeout(() => {
         overlay.classList.add('visible');
         sheet.classList.add('visible');
@@ -583,56 +575,11 @@ function showBottomSheet(index) {
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-            window.closeBottomSheet();
+            closeBottomSheet();
         }
     });
 
-    const onTouchStart = (e) => {
-        const target = e.target;
-        const isInteractiveElement = target.closest('.bottom-sheet-nav-arrow') || target.closest('a') || target.closest('.btn') || target.closest('.bottom-sheet-handle');
-        if (isInteractiveElement) {
-            isInteractive = true;
-            return;
-        }
-        isInteractive = false;
-        startY = e.touches[0].clientY;
-        currentY = startY;
-        isDragging = true;
-        sheet.classList.add('dragging');
-        e.preventDefault();
-    };
-
-    const onTouchMove = (e) => {
-        if (isInteractive || !isDragging) return;
-        currentY = e.touches[0].clientY;
-        const delta = currentY - startY;
-        if (delta > 0) {
-            sheet.style.transform = `translateY(${delta}px)`;
-        }
-        e.preventDefault();
-    };
-
-    const onTouchEnd = (e) => {
-        if (isInteractive) {
-            isInteractive = false;
-            return;
-        }
-        if (!isDragging) return;
-        isDragging = false;
-        sheet.classList.remove('dragging');
-        const delta = currentY - startY;
-        if (delta > 80) {
-            window.closeBottomSheet();
-        } else {
-            sheet.style.transform = '';
-        }
-        e.preventDefault();
-    };
-
-    sheet.addEventListener('touchstart', onTouchStart, { passive: false });
-    sheet.addEventListener('touchmove', onTouchMove, { passive: false });
-    sheet.addEventListener('touchend', onTouchEnd, { passive: false });
-    sheet.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    // Убраны все обработчики touch-событий для свайпа
 
     log('bottom_sheet_opened', false);
 }
@@ -648,6 +595,11 @@ function closeBottomSheet() {
         document.body.style.overflow = '';
         const sheetButtons = document.querySelector('.floating-sheet-buttons');
         if (sheetButtons) sheetButtons.remove();
+        if (sheetButtonsTimeout) clearTimeout(sheetButtonsTimeout);
+        if (sheetScrollListener) {
+            contentWrapper.removeEventListener('scroll', sheetScrollListener);
+            sheetScrollListener = null;
+        }
         setTimeout(() => {
             overlay.remove();
         }, 300);
