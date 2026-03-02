@@ -151,7 +151,7 @@ async function loadMetrics() {
     }
 }
 
-// Загрузка расписания хайков (без тестового длинного описания)
+// Загрузка расписания хайков
 async function loadHikes() {
     try {
         const resp = await fetch(`${HIKES_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
@@ -227,18 +227,26 @@ async function loadUserRegistrations() {
     }
 }
 
-// Отправка статуса на сервер
-async function updateRegistration(hikeDate, status) {
+// Отправка статуса на сервер (обновлённая версия с передачей всех данных)
+async function updateRegistration(hikeDate, hikeTitle, status) {
     if (!userId || !REGISTRATION_API_URL) return;
     try {
+        // Определяем наличие карты
+        const hasCard = userCard.status === 'active' ? 'да' : 'нет';
+        // Формируем ссылку на профиль Telegram
+        const profileLink = user?.username ? `https://t.me/${user.username}` : '';
+
         const params = new URLSearchParams({
             action: 'update',
             user_id: userId,
             first_name: user?.first_name || '',
             last_name: user?.last_name || '',
             username: user?.username || '',
+            profile_link: profileLink,
             hike_date: hikeDate,
-            status: status
+            hike_title: hikeTitle,
+            status: status,
+            has_card: hasCard
         });
         const resp = await fetch(REGISTRATION_API_URL, {
             method: 'POST',
@@ -524,6 +532,7 @@ function showBottomSheet(index) {
         if (!container) return;
 
         const isBooked = hikeBookingStatus[sheetCurrentIndex];
+        const hike = hikesList[sheetCurrentIndex];
 
         let goBtn = document.getElementById('sheetGoBtn');
         let questionBtn = document.getElementById('sheetQuestionBtn');
@@ -548,9 +557,8 @@ function showBottomSheet(index) {
                 cancelBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     haptic();
-                    const hike = hikesList[sheetCurrentIndex];
                     // Отправляем на сервер статус cancelled
-                    await updateRegistration(hike.date, 'cancelled');
+                    await updateRegistration(hike.date, hike.title, 'cancelled');
                     hikeBookingStatus[sheetCurrentIndex] = false;
                     updateFloatingSheetButtons();
                     log('sheet_cancel_click', false);
@@ -583,7 +591,7 @@ function showBottomSheet(index) {
             haptic();
             const hike = hikesList[sheetCurrentIndex];
             // Отправляем на сервер статус booked
-            await updateRegistration(hike.date, 'booked');
+            await updateRegistration(hike.date, hike.title, 'booked');
             hikeBookingStatus[sheetCurrentIndex] = true;
             updateFloatingSheetButtons();
             log('sheet_go_click', false);
