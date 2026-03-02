@@ -631,9 +631,9 @@ body::before {
     padding-left: 16px;
     padding-right: 16px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
-    background-color: rgba(73, 138, 176, 0.1);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    background: transparent; /* прозрачный фон */
 }
 
 /* Заголовок с датой и стрелками */
