@@ -40,7 +40,7 @@ const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sF
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ПОСЛЕ ПУБЛИКАЦИИ СКРИПТА
-const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxXvGPNmlMsUJq8hUwU_MJtIXWn2odMbyLn6bHs_JwjwTkjCUaoAhuG1GAg_WLPUYGl2w/exec';
 
 const CACHE_TTL = 3600000; // 1 час
 
@@ -564,17 +564,15 @@ function showBottomSheet(index) {
             if (isBooked) {
                 html = `
                     <div class="static-sheet-buttons-row">
-                        <a href="#" class="btn btn-white-outline" id="staticQuestionBtn">задать вопрос</a>
-                        <a href="#" class="btn btn-green" id="staticGoBtn">идёшь</a>
-                        <a href="#" class="btn btn-red-outline" id="staticCancelBtn">передумал</a>
+                        <a href="#" class="btn btn-green" id="staticGoBtn">ты записан</a>
+                        <a href="#" class="btn btn-red-outline" id="staticCancelBtn">отменить запись</a>
                     </div>
                 `;
             } else {
                 html = `
                     <div class="static-sheet-buttons-row">
-                        <a href="#" class="btn btn-white-outline" id="staticQuestionBtn">задать вопрос</a>
                         <a href="#" class="btn btn-yellow" id="staticGoBtn">иду</a>
-                        <a href="#" class="btn btn-red-outline" id="staticCancelBtn" style="display:none;">передумал</a>
+                        <a href="#" class="btn btn-white-outline" id="staticQuestionBtn">задать вопрос</a>
                     </div>
                 `;
             }
@@ -599,11 +597,12 @@ function showBottomSheet(index) {
                 e.preventDefault();
                 haptic();
                 const hike = hikesList[sheetCurrentIndex];
-                const newStatus = !isBooked;
+                const newStatus = !isBooked; // true, если нажали на "иду", false если на "ты записан" (но для "ты записан" мы используем отдельную кнопку)
+                // Определяем действие
+                const targetStatus = newStatus ? 'booked' : 'cancelled';
                 hikeBookingStatus[sheetCurrentIndex] = newStatus;
-                await updateRegistration(hike.date, hike.title, newStatus ? 'booked' : 'cancelled');
-                log(newStatus ? 'static_go_click' : 'static_cancel_click', false);
-                // Обновляем и плавающие, и статичные кнопки
+                await updateRegistration(hike.date, hike.title, targetStatus);
+                log(targetStatus === 'booked' ? 'static_go_click' : 'static_cancel_click', false);
                 updateFloatingSheetButtons();
                 renderStaticButtons();
             });
@@ -640,55 +639,82 @@ function showBottomSheet(index) {
         let goBtn = document.getElementById('sheetGoBtn');
         let cancelBtn = document.getElementById('sheetCancelBtn');
 
-        if (!questionBtn || !goBtn) {
-            // Если кнопки ещё не созданы, создадим их позже через createFloatingButtons
+        if (!goBtn) {
+            // Если кнопки ещё не созданы, создадим позже
             return;
         }
 
         if (isPast) {
-            // Для прошедших хайков не показываем плавающие кнопки
-            container.classList.add('hidden');
+            // Для прошедших хайков показываем только одну кнопку "хайк завершен"
+            container.innerHTML = `
+                <a href="#" class="btn btn-white-outline" style="pointer-events: none; width: auto;">хайк завершен</a>
+            `;
             return;
-        } else {
-            container.classList.remove('hidden');
         }
 
+        // Восстанавливаем структуру, если была перезаписана
         if (isBooked) {
-            goBtn.classList.remove('btn-yellow');
-            goBtn.classList.add('btn-green');
-            goBtn.textContent = 'идёшь';
-
             if (!cancelBtn) {
-                cancelBtn = document.createElement('a');
-                cancelBtn.href = '#';
-                cancelBtn.className = 'btn btn-red-outline';
-                cancelBtn.id = 'sheetCancelBtn';
-                cancelBtn.textContent = 'передумал';
-                cancelBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    haptic();
-                    hikeBookingStatus[sheetCurrentIndex] = false;
-                    await updateRegistration(hike.date, hike.title, 'cancelled');
-                    updateFloatingSheetButtons();
-                    renderStaticButtons();
-                    log('sheet_cancel_click', false);
-                });
-                container.appendChild(cancelBtn);
+                container.innerHTML = `
+                    <a href="#" class="btn btn-green" id="sheetGoBtn">ты записан</a>
+                    <a href="#" class="btn btn-red-outline" id="sheetCancelBtn">отменить запись</a>
+                `;
             } else {
+                // уже есть
+                goBtn.classList.remove('btn-yellow');
+                goBtn.classList.add('btn-green');
+                goBtn.textContent = 'ты записан';
                 cancelBtn.style.display = 'inline-block';
+                if (questionBtn) questionBtn.style.display = 'none';
             }
-
-            // Показываем questionBtn и goBtn
-            questionBtn.style.display = 'inline-block';
-            goBtn.style.display = 'inline-block';
         } else {
+            if (cancelBtn) cancelBtn.style.display = 'none';
             goBtn.classList.remove('btn-green');
             goBtn.classList.add('btn-yellow');
             goBtn.textContent = 'иду';
+            if (!questionBtn) {
+                // добавим вопрос
+                questionBtn = document.createElement('a');
+                questionBtn.href = '#';
+                questionBtn.className = 'btn btn-white-outline';
+                questionBtn.id = 'sheetQuestionBtn';
+                questionBtn.textContent = 'задать вопрос';
+                questionBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    haptic();
+                    openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+                });
+                container.appendChild(questionBtn);
+            } else {
+                questionBtn.style.display = 'inline-block';
+            }
+        }
 
-            if (cancelBtn) cancelBtn.style.display = 'none';
-            questionBtn.style.display = 'inline-block';
-            goBtn.style.display = 'inline-block';
+        // Обновляем обработчики
+        document.getElementById('sheetGoBtn')?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            haptic();
+            const hike = hikesList[sheetCurrentIndex];
+            const newStatus = !isBooked;
+            const targetStatus = newStatus ? 'booked' : 'cancelled';
+            hikeBookingStatus[sheetCurrentIndex] = newStatus;
+            await updateRegistration(hike.date, hike.title, targetStatus);
+            updateFloatingSheetButtons();
+            renderStaticButtons();
+            log(targetStatus === 'booked' ? 'sheet_go_click' : 'sheet_cancel_click', false);
+        });
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                haptic();
+                const hike = hikesList[sheetCurrentIndex];
+                hikeBookingStatus[sheetCurrentIndex] = false;
+                await updateRegistration(hike.date, hike.title, 'cancelled');
+                updateFloatingSheetButtons();
+                renderStaticButtons();
+                log('sheet_cancel_click', false);
+            });
         }
     }
 
@@ -698,17 +724,12 @@ function showBottomSheet(index) {
         const container = document.createElement('div');
         container.className = 'floating-sheet-buttons';
         container.id = 'floatingSheetButtons';
+        // Начальное состояние: две кнопки — иду (жёлтая) слева, задать вопрос справа
         container.innerHTML = `
-            <a href="#" class="btn btn-white-outline" id="sheetQuestionBtn">задать вопрос</a>
             <a href="#" class="btn btn-yellow" id="sheetGoBtn">иду</a>
+            <a href="#" class="btn btn-white-outline" id="sheetQuestionBtn">задать вопрос</a>
         `;
         document.body.appendChild(container);
-
-        document.getElementById('sheetQuestionBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
-        });
 
         document.getElementById('sheetGoBtn').addEventListener('click', async (e) => {
             e.preventDefault();
@@ -720,6 +741,12 @@ function showBottomSheet(index) {
             updateFloatingSheetButtons();
             renderStaticButtons();
             log(newStatus ? 'sheet_go_click' : 'sheet_cancel_click', false);
+        });
+
+        document.getElementById('sheetQuestionBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
         });
 
         updateFloatingSheetButtons();
@@ -741,7 +768,7 @@ function showBottomSheet(index) {
             container.classList.remove('hidden');
             // скрываем статичные кнопки (они уже в html, можно скрыть через css)
             const staticContainer = document.getElementById('staticSheetButtons');
-            if (staticContainer) staticContainer.style.display = 'none';
+            if (staticContainer) staticContainer.innerHTML = ''; // очищаем, чтобы не мешали
         }
     }
 
