@@ -40,7 +40,7 @@ const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sF
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ПОСЛЕ ПУБЛИКАЦИИ СКРИПТА
-const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxXvGPNmlMsUJq8hUwU_MJtIXWn2odMbyLn6bHs_JwjwTkjCUaoAhuG1GAg_WLPUYGl2w/exec';
 
 const CACHE_TTL = 3600000; // 1 час
 
@@ -217,7 +217,7 @@ async function loadHikes() {
 
 // Загрузка статуса бронирования для текущего пользователя
 async function loadUserRegistrations() {
-    if (!userId || !REGISTRATION_API_URL) return;
+    if (!userId || !REGISTRATION_API_URL || hikesList.length === 0) return;
     try {
         const url = `${REGISTRATION_API_URL}?action=get&user_id=${userId}&_=${Date.now()}`;
         const resp = await fetch(url);
@@ -282,7 +282,8 @@ async function updateRegistration(hikeDate, hikeTitle, status) {
 async function loadData() {
     // Запускаем все загрузки параллельно
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
-    if (userId) {
+    // После того как hikesList готов, загружаем регистрации
+    if (userId && hikesList.length > 0) {
         await loadUserRegistrations();
     }
     log('visit', userCard.status !== 'active');
@@ -421,7 +422,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet с умным свайпом вниз (без кнопки закрытия) -----
+// ----- Bottom Sheet с умным свайпом вниз -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -547,8 +548,14 @@ function showBottomSheet(index) {
         const container = document.querySelector('.floating-sheet-buttons');
         if (!container) return;
 
-        const isBooked = hikeBookingStatus[sheetCurrentIndex];
         const hike = hikesList[sheetCurrentIndex];
+        if (!hike) return;
+
+        const isBooked = hikeBookingStatus[sheetCurrentIndex];
+        const hikeDate = new Date(hike.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isPast = hikeDate < today;
 
         let goBtn = document.getElementById('sheetGoBtn');
         let questionBtn = document.getElementById('sheetQuestionBtn');
@@ -559,35 +566,66 @@ function showBottomSheet(index) {
             return;
         }
 
-        if (isBooked) {
-            goBtn.classList.remove('btn-yellow');
-            goBtn.classList.add('btn-green');
-            goBtn.textContent = 'идёшь';
+        if (isPast) {
+            // Хайк уже прошёл — показываем только белую кнопку "хайк завершен"
+            goBtn.style.display = 'none';
+            questionBtn.style.display = 'none';
+            if (cancelBtn) cancelBtn.style.display = 'none';
 
-            if (!cancelBtn) {
-                cancelBtn = document.createElement('a');
-                cancelBtn.href = '#';
-                cancelBtn.className = 'btn btn-red-outline';
-                cancelBtn.id = 'sheetCancelBtn';
-                cancelBtn.textContent = 'не пойду';
-                cancelBtn.addEventListener('click', async (e) => {
-                    e.preventDefault();
-                    haptic();
-                    // Мгновенно обновляем локальный статус и интерфейс
-                    hikeBookingStatus[sheetCurrentIndex] = false;
-                    updateFloatingSheetButtons();
-                    // Отправляем запрос на сервер в фоне
-                    await updateRegistration(hike.date, hike.title, 'cancelled');
-                    log('sheet_cancel_click', false);
-                });
-                container.appendChild(cancelBtn);
+            // Создаём или показываем кнопку завершения
+            let completedBtn = document.getElementById('sheetCompletedBtn');
+            if (!completedBtn) {
+                completedBtn = document.createElement('a');
+                completedBtn.href = '#';
+                completedBtn.className = 'btn btn-white-outline';
+                completedBtn.id = 'sheetCompletedBtn';
+                completedBtn.textContent = 'хайк завершен';
+                completedBtn.style.pointerEvents = 'none'; // неактивна
+                container.appendChild(completedBtn);
+            } else {
+                completedBtn.style.display = 'block';
             }
         } else {
-            goBtn.classList.remove('btn-green');
-            goBtn.classList.add('btn-yellow');
-            goBtn.textContent = 'иду';
+            // Хайк в будущем или сегодня (сегодня считаем активным)
+            // Скрываем кнопку завершения, если была
+            const completedBtn = document.getElementById('sheetCompletedBtn');
+            if (completedBtn) completedBtn.style.display = 'none';
 
-            if (cancelBtn) cancelBtn.remove();
+            goBtn.style.display = 'block';
+            questionBtn.style.display = 'block';
+
+            if (isBooked) {
+                goBtn.classList.remove('btn-yellow');
+                goBtn.classList.add('btn-green');
+                goBtn.textContent = 'идёшь';
+
+                if (!cancelBtn) {
+                    cancelBtn = document.createElement('a');
+                    cancelBtn.href = '#';
+                    cancelBtn.className = 'btn btn-red-outline';
+                    cancelBtn.id = 'sheetCancelBtn';
+                    cancelBtn.textContent = 'не пойду';
+                    cancelBtn.addEventListener('click', async (e) => {
+                        e.preventDefault();
+                        haptic();
+                        // Мгновенно обновляем локальный статус и интерфейс
+                        hikeBookingStatus[sheetCurrentIndex] = false;
+                        updateFloatingSheetButtons();
+                        // Отправляем запрос на сервер в фоне
+                        await updateRegistration(hike.date, hike.title, 'cancelled');
+                        log('sheet_cancel_click', false);
+                    });
+                    container.appendChild(cancelBtn);
+                } else {
+                    cancelBtn.style.display = 'block';
+                }
+            } else {
+                goBtn.classList.remove('btn-green');
+                goBtn.classList.add('btn-yellow');
+                goBtn.textContent = 'иду';
+
+                if (cancelBtn) cancelBtn.style.display = 'none';
+            }
         }
     }
 
@@ -673,7 +711,7 @@ function showBottomSheet(index) {
         }
     });
 
-    // ----- Умный свайп вниз -----
+    // Умный свайп вниз
     const onTouchStart = (e) => {
         const target = e.target;
         const isInteractive = target.closest('.bottom-sheet-nav-arrow') || 
