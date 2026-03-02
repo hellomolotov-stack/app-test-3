@@ -798,7 +798,7 @@ body::before {
     pointer-events: none;
 }
 
-/* Статичные кнопки внизу слайдера (показываются при скролле до конца) */
+/* Статичные кнопки внизу слайдера */
 .static-sheet-buttons {
     display: flex;
     flex-direction: column;
@@ -838,7 +838,7 @@ body::before {
     border: 1px solid rgba(255,255,255,0.2);
 }
 
-/* Контейнер для трёх кнопок в статичном режиме */
+/* Контейнер для двух кнопок в ряд */
 .static-sheet-buttons-row {
     display: flex;
     gap: 12px;
