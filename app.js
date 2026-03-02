@@ -118,7 +118,7 @@ async function loadMetrics() {
     }
 }
 
-// Загрузка расписания хайков (с полем tags)
+// Загрузка расписания хайков (с исправленной обработкой тегов)
 async function loadHikes() {
     try {
         const resp = await fetch(`${HIKES_CSV_URL}&t=${Date.now()}`, { cache: 'no-cache' });
@@ -132,11 +132,19 @@ async function loadHikes() {
             let data = {};
             headers.forEach((k, i) => data[k] = row[i]);
             const date = data.date;
-            // Обрабатываем теги: предполагаем, что есть столбец "tags" с тегами через запятую
+
+            // Обработка тегов: убираем внешние кавычки и разбиваем по запятой
             let tags = [];
             if (data.tags) {
-                tags = data.tags.split(',').map(t => t.trim()).filter(t => t);
+                let tagsStr = data.tags;
+                // Удаляем обрамляющие кавычки, если они есть
+                if (tagsStr.startsWith('"') && tagsStr.endsWith('"')) {
+                    tagsStr = tagsStr.slice(1, -1);
+                }
+                // Разбиваем по запятой и обрезаем пробелы
+                tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
             }
+
             hikesData[date] = {
                 title: data.title || 'Хайк',
                 description: data.description || 'Описание появится позже',
@@ -291,7 +299,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet с тегами и новым заголовком -----
+// ----- Bottom Sheet с исправленными тегами и заголовком -----
 function showBottomSheet(index) {
     if (!hikesList.length) return;
 
@@ -355,8 +363,8 @@ function showBottomSheet(index) {
         contentDiv.innerHTML = `
             <div class="bottom-sheet-header">
                 <div class="bottom-sheet-header-left">
-                    <span class="bottom-sheet-header-date">${formattedDate}</span>
-                    <span class="bottom-sheet-header-title">${hike.title}</span>
+                    <div class="bottom-sheet-header-date">${formattedDate}</div>
+                    <div class="bottom-sheet-header-title">${hike.title}</div>
                 </div>
                 <div class="bottom-sheet-nav">
                     <div class="bottom-sheet-nav-arrow ${!hasPrev ? 'hidden' : ''}" id="prevHike">←</div>
@@ -524,7 +532,6 @@ function renderCalendar(container) {
 
     container.innerHTML = calendarHtml;
 
-    // При клике на день с хайком
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
