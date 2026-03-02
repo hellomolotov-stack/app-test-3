@@ -623,7 +623,7 @@ body::before {
 .bottom-sheet-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start; /* выравнивание по верхнему краю */
+    align-items: flex-start;
     margin-bottom: 12px;
 }
 
@@ -635,7 +635,7 @@ body::before {
     font-size: 20px;
     font-weight: 700;
     color: var(--yellow);
-    margin-bottom: 4px;
+    margin-bottom: 2px;          /* уменьшено */
     line-height: 1.3;
 }
 
@@ -703,7 +703,8 @@ body::before {
 
 .bottom-sheet-image {
     width: 100%;
-    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
     border-radius: 12px;
     margin-bottom: 16px;
 }
