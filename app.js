@@ -40,7 +40,7 @@ const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sF
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 // ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ПОСЛЕ ПУБЛИКАЦИИ СКРИПТА
-const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxXvGPNmlMsUJq8hUwU_MJtIXWn2odMbyLn6bHs_JwjwTkjCUaoAhuG1GAg_WLPUYGl2w/exec';
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
 const CACHE_TTL = 3600000; // 1 час
 
@@ -507,7 +507,6 @@ function showBottomSheet(index) {
             <div>
                 ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
                 <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
-                <div class="static-sheet-buttons" id="staticSheetButtons"></div>
             </div>
         `;
 
@@ -543,85 +542,6 @@ function showBottomSheet(index) {
         if (btnContainer) btnContainer.remove();
     }
 
-    function renderStaticButtons() {
-        const staticContainer = document.getElementById('staticSheetButtons');
-        if (!staticContainer) return;
-
-        const hike = hikesList[sheetCurrentIndex];
-        if (!hike) return;
-
-        const isBooked = hikeBookingStatus[sheetCurrentIndex];
-        const hikeDate = new Date(hike.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const isPast = hikeDate < today;
-
-        let html = '';
-
-        if (isPast) {
-            html = `<a href="#" class="btn btn-white-outline" style="pointer-events: none;">хайк завершен</a>`;
-        } else {
-            if (isBooked) {
-                html = `
-                    <div class="static-sheet-buttons-row">
-                        <a href="#" class="btn btn-green" id="staticGoBtn">ты записан</a>
-                        <a href="#" class="btn btn-red-outline" id="staticCancelBtn">отменить запись</a>
-                    </div>
-                `;
-            } else {
-                html = `
-                    <div class="static-sheet-buttons-row">
-                        <a href="#" class="btn btn-yellow" id="staticGoBtn">иду</a>
-                        <a href="#" class="btn btn-white-outline" id="staticQuestionBtn">задать вопрос</a>
-                    </div>
-                `;
-            }
-        }
-
-        staticContainer.innerHTML = html;
-
-        const staticQuestion = document.getElementById('staticQuestionBtn');
-        const staticGo = document.getElementById('staticGoBtn');
-        const staticCancel = document.getElementById('staticCancelBtn');
-
-        if (staticQuestion) {
-            staticQuestion.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                openLink('https://t.me/hellointelligent', 'static_question_click', false);
-            });
-        }
-
-        if (staticGo) {
-            staticGo.addEventListener('click', async (e) => {
-                e.preventDefault();
-                haptic();
-                const hike = hikesList[sheetCurrentIndex];
-                const newStatus = !isBooked; // true, если нажали на "иду", false если на "ты записан" (но для "ты записан" мы используем отдельную кнопку)
-                // Определяем действие
-                const targetStatus = newStatus ? 'booked' : 'cancelled';
-                hikeBookingStatus[sheetCurrentIndex] = newStatus;
-                await updateRegistration(hike.date, hike.title, targetStatus);
-                log(targetStatus === 'booked' ? 'static_go_click' : 'static_cancel_click', false);
-                updateFloatingSheetButtons();
-                renderStaticButtons();
-            });
-        }
-
-        if (staticCancel) {
-            staticCancel.addEventListener('click', async (e) => {
-                e.preventDefault();
-                haptic();
-                const hike = hikesList[sheetCurrentIndex];
-                hikeBookingStatus[sheetCurrentIndex] = false;
-                await updateRegistration(hike.date, hike.title, 'cancelled');
-                log('static_cancel_click', false);
-                updateFloatingSheetButtons();
-                renderStaticButtons();
-            });
-        }
-    }
-
     function updateFloatingSheetButtons() {
         const container = document.querySelector('.floating-sheet-buttons');
         if (!container) return;
@@ -635,86 +555,81 @@ function showBottomSheet(index) {
         today.setHours(0, 0, 0, 0);
         const isPast = hikeDate < today;
 
-        let questionBtn = document.getElementById('sheetQuestionBtn');
-        let goBtn = document.getElementById('sheetGoBtn');
-        let cancelBtn = document.getElementById('sheetCancelBtn');
-
-        if (!goBtn) {
-            // Если кнопки ещё не созданы, создадим позже
-            return;
-        }
+        // Очищаем контейнер и создаём заново, чтобы избежать проблем с переключением
+        container.innerHTML = '';
 
         if (isPast) {
-            // Для прошедших хайков показываем только одну кнопку "хайк завершен"
-            container.innerHTML = `
-                <a href="#" class="btn btn-white-outline" style="pointer-events: none; width: auto;">хайк завершен</a>
-            `;
+            // Прошедший хайк: одна некликабельная кнопка
+            const completedBtn = document.createElement('a');
+            completedBtn.href = '#';
+            completedBtn.className = 'btn btn-white-outline';
+            completedBtn.textContent = 'хайк завершен';
+            completedBtn.style.pointerEvents = 'none';
+            container.appendChild(completedBtn);
             return;
         }
 
-        // Восстанавливаем структуру, если была перезаписана
+        // Актуальный хайк
         if (isBooked) {
-            if (!cancelBtn) {
-                container.innerHTML = `
-                    <a href="#" class="btn btn-green" id="sheetGoBtn">ты записан</a>
-                    <a href="#" class="btn btn-red-outline" id="sheetCancelBtn">отменить запись</a>
-                `;
-            } else {
-                // уже есть
-                goBtn.classList.remove('btn-yellow');
-                goBtn.classList.add('btn-green');
-                goBtn.textContent = 'ты записан';
-                cancelBtn.style.display = 'inline-block';
-                if (questionBtn) questionBtn.style.display = 'none';
-            }
-        } else {
-            if (cancelBtn) cancelBtn.style.display = 'none';
-            goBtn.classList.remove('btn-green');
-            goBtn.classList.add('btn-yellow');
-            goBtn.textContent = 'иду';
-            if (!questionBtn) {
-                // добавим вопрос
-                questionBtn = document.createElement('a');
-                questionBtn.href = '#';
-                questionBtn.className = 'btn btn-white-outline';
-                questionBtn.id = 'sheetQuestionBtn';
-                questionBtn.textContent = 'задать вопрос';
-                questionBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    haptic();
-                    openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
-                });
-                container.appendChild(questionBtn);
-            } else {
-                questionBtn.style.display = 'inline-block';
-            }
-        }
+            // Записан: зелёная "ты записан" и красная "отменить запись"
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-green';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'ты записан';
+            goBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                haptic();
+                const newStatus = false; // отмена
+                hikeBookingStatus[sheetCurrentIndex] = newStatus;
+                await updateRegistration(hike.date, hike.title, 'cancelled');
+                updateFloatingSheetButtons();
+                log('sheet_cancel_click', false);
+            });
+            container.appendChild(goBtn);
 
-        // Обновляем обработчики
-        document.getElementById('sheetGoBtn')?.addEventListener('click', async (e) => {
-            e.preventDefault();
-            haptic();
-            const hike = hikesList[sheetCurrentIndex];
-            const newStatus = !isBooked;
-            const targetStatus = newStatus ? 'booked' : 'cancelled';
-            hikeBookingStatus[sheetCurrentIndex] = newStatus;
-            await updateRegistration(hike.date, hike.title, targetStatus);
-            updateFloatingSheetButtons();
-            renderStaticButtons();
-            log(targetStatus === 'booked' ? 'sheet_go_click' : 'sheet_cancel_click', false);
-        });
-
-        if (cancelBtn) {
+            const cancelBtn = document.createElement('a');
+            cancelBtn.href = '#';
+            cancelBtn.className = 'btn btn-red-outline';
+            cancelBtn.id = 'sheetCancelBtn';
+            cancelBtn.textContent = 'отменить запись';
             cancelBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 haptic();
-                const hike = hikesList[sheetCurrentIndex];
                 hikeBookingStatus[sheetCurrentIndex] = false;
                 await updateRegistration(hike.date, hike.title, 'cancelled');
                 updateFloatingSheetButtons();
-                renderStaticButtons();
                 log('sheet_cancel_click', false);
             });
+            container.appendChild(cancelBtn);
+        } else {
+            // Не записан: жёлтая "иду" и белая "задать вопрос"
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-yellow';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'иду';
+            goBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                haptic();
+                hikeBookingStatus[sheetCurrentIndex] = true;
+                await updateRegistration(hike.date, hike.title, 'booked');
+                updateFloatingSheetButtons();
+                log('sheet_go_click', false);
+            });
+            container.appendChild(goBtn);
+
+            const questionBtn = document.createElement('a');
+            questionBtn.href = '#';
+            questionBtn.className = 'btn btn-white-outline';
+            questionBtn.id = 'sheetQuestionBtn';
+            questionBtn.textContent = 'задать вопрос';
+            questionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+            });
+            container.appendChild(questionBtn);
         }
     }
 
@@ -724,30 +639,7 @@ function showBottomSheet(index) {
         const container = document.createElement('div');
         container.className = 'floating-sheet-buttons';
         container.id = 'floatingSheetButtons';
-        // Начальное состояние: две кнопки — иду (жёлтая) слева, задать вопрос справа
-        container.innerHTML = `
-            <a href="#" class="btn btn-yellow" id="sheetGoBtn">иду</a>
-            <a href="#" class="btn btn-white-outline" id="sheetQuestionBtn">задать вопрос</a>
-        `;
         document.body.appendChild(container);
-
-        document.getElementById('sheetGoBtn').addEventListener('click', async (e) => {
-            e.preventDefault();
-            haptic();
-            const hike = hikesList[sheetCurrentIndex];
-            const newStatus = !hikeBookingStatus[sheetCurrentIndex];
-            hikeBookingStatus[sheetCurrentIndex] = newStatus;
-            await updateRegistration(hike.date, hike.title, newStatus ? 'booked' : 'cancelled');
-            updateFloatingSheetButtons();
-            renderStaticButtons();
-            log(newStatus ? 'sheet_go_click' : 'sheet_cancel_click', false);
-        });
-
-        document.getElementById('sheetQuestionBtn').addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
-        });
 
         updateFloatingSheetButtons();
     }
@@ -763,12 +655,8 @@ function showBottomSheet(index) {
         const scrollPercentage = (scrollTop / maxScroll) * 100;
         if (scrollPercentage > 95) {
             container.classList.add('hidden');
-            renderStaticButtons(); // показываем статичные кнопки
         } else {
             container.classList.remove('hidden');
-            // скрываем статичные кнопки (они уже в html, можно скрыть через css)
-            const staticContainer = document.getElementById('staticSheetButtons');
-            if (staticContainer) staticContainer.innerHTML = ''; // очищаем, чтобы не мешали
         }
     }
 
