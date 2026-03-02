@@ -471,45 +471,34 @@ function showBottomSheet(index) {
         document.getElementById('sheetGoBtn').addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
-            // Меняем состояние на "идёшь" и добавляем красную кнопку
+            // Меняем состояние на "идёшь" и добавляем красную кнопку (если её ещё нет)
             const goBtn = e.currentTarget;
-            goBtn.classList.remove('btn-yellow');
-            goBtn.classList.add('btn-green');
-            goBtn.textContent = 'идёшь';
+            if (!goBtn.classList.contains('btn-green')) {
+                goBtn.classList.remove('btn-yellow');
+                goBtn.classList.add('btn-green');
+                goBtn.textContent = 'идёшь';
 
-            // Удаляем старую белую кнопку, если она есть
-            const questionBtn = document.getElementById('sheetQuestionBtn');
-            if (questionBtn) questionBtn.remove();
-
-            // Добавляем красную кнопку "не пойду", если её ещё нет
-            if (!document.getElementById('sheetCancelBtn')) {
-                const cancelBtn = document.createElement('a');
-                cancelBtn.href = '#';
-                cancelBtn.className = 'btn btn-red-outline';
-                cancelBtn.id = 'sheetCancelBtn';
-                cancelBtn.textContent = 'не пойду';
-                cancelBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    haptic();
-                    // Возвращаем исходное состояние
-                    goBtn.classList.remove('btn-green');
-                    goBtn.classList.add('btn-yellow');
-                    goBtn.textContent = 'иду';
-                    cancelBtn.remove();
-                    // Возвращаем белую кнопку
-                    const newQuestionBtn = document.createElement('a');
-                    newQuestionBtn.href = '#';
-                    newQuestionBtn.className = 'btn btn-white-outline';
-                    newQuestionBtn.id = 'sheetQuestionBtn';
-                    newQuestionBtn.textContent = 'у меня вопрос';
-                    newQuestionBtn.addEventListener('click', (e) => {
+                // Добавляем красную кнопку "не пойду" с прозрачным фоном и белым текстом, если её ещё нет
+                if (!document.getElementById('sheetCancelBtn')) {
+                    const cancelBtn = document.createElement('a');
+                    cancelBtn.href = '#';
+                    cancelBtn.className = 'btn btn-white-outline'; // тот же стиль, что и у белой кнопки
+                    cancelBtn.id = 'sheetCancelBtn';
+                    cancelBtn.textContent = 'не пойду';
+                    cancelBtn.style.color = '#ff3b30'; // красный текст
+                    cancelBtn.style.borderColor = '#ff3b30'; // красная обводка
+                    cancelBtn.addEventListener('click', (e) => {
                         e.preventDefault();
                         haptic();
-                        openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+                        // Возвращаем исходное состояние
+                        goBtn.classList.remove('btn-green');
+                        goBtn.classList.add('btn-yellow');
+                        goBtn.textContent = 'иду';
+                        cancelBtn.remove();
+                        // Белая кнопка уже есть, ничего не делаем
                     });
-                    container.appendChild(newQuestionBtn);
-                });
-                container.appendChild(cancelBtn);
+                    container.appendChild(cancelBtn);
+                }
             }
             log('sheet_go_click', false);
         });
@@ -526,8 +515,13 @@ function showBottomSheet(index) {
         createFloatingButtons();
     }, 1000);
 
-    // Сохраняем таймер в свойстве sheet для возможности отмены
-    sheet._buttonsTimeout = buttonsTimeout;
+    // При закрытии слайдера очищаем таймер и удаляем кнопки
+    const originalClose = closeBottomSheet;
+    window.closeBottomSheet = function() {
+        clearTimeout(buttonsTimeout);
+        removeFloatingSheetButtons();
+        originalClose();
+    };
 
     setTimeout(() => {
         overlay.classList.add('visible');
@@ -536,10 +530,11 @@ function showBottomSheet(index) {
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-            closeBottomSheet();
+            window.closeBottomSheet();
         }
     });
 
+    // Обработчики свайпа для закрытия (без изменений)
     const onTouchStart = (e) => {
         const target = e.target;
         const isInteractiveElement = target.closest('.bottom-sheet-nav-arrow') || target.closest('a') || target.closest('.btn') || target.closest('.bottom-sheet-handle');
@@ -575,7 +570,7 @@ function showBottomSheet(index) {
         sheet.classList.remove('dragging');
         const delta = currentY - startY;
         if (delta > 80) {
-            closeBottomSheet();
+            window.closeBottomSheet();
         } else {
             sheet.style.transform = '';
         }
@@ -590,7 +585,6 @@ function showBottomSheet(index) {
     log('bottom_sheet_opened', false);
 }
 
-// Закрытие bottom sheet
 function closeBottomSheet() {
     const overlay = document.querySelector('.bottom-sheet-overlay');
     if (overlay) {
@@ -598,10 +592,6 @@ function closeBottomSheet() {
         const sheet = document.getElementById('hikeBottomSheet');
         if (sheet) {
             sheet.classList.remove('visible');
-            // Очищаем таймер, если он есть
-            if (sheet._buttonsTimeout) {
-                clearTimeout(sheet._buttonsTimeout);
-            }
         }
         document.body.style.overflow = '';
         // Удаляем плавающие кнопки
