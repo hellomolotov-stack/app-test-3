@@ -39,8 +39,8 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
-// Замените на ваш реальный URL после публикации скрипта
-const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxXvGPNmlMsUJq8hUwU_MJtIXWn2odMbyLn6bHs_JwjwTkjCUaoAhuG1GAg_WLPUYGl2w/exec';
+// ЗАМЕНИТЕ НА РЕАЛЬНЫЙ URL ПОСЛЕ ПУБЛИКАЦИИ СКРИПТА
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -208,14 +208,12 @@ async function loadUserRegistrations() {
         const resp = await fetch(url);
         const data = await resp.json();
         if (data && Array.isArray(data.registrations)) {
-            // Ожидаем массив объектов с полями: hikeDate, status
             // Сбрасываем статусы
             for (let i = 0; i < hikesList.length; i++) {
                 hikeBookingStatus[i] = false;
             }
-            // Устанавливаем статусы из данных
+            // Устанавливаем статусы из данных (используем hikeDate, которое приходит из скрипта)
             data.registrations.forEach(reg => {
-                // Найти индекс хайка по дате
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
                 if (index !== -1 && reg.status === 'booked') {
                     hikeBookingStatus[index] = true;
@@ -405,7 +403,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet с умным свайпом вниз (без кнопки закрытия) -----
+// ----- Bottom Sheet с умным свайпом вниз -----
 let sheetButtonsTimeout = null;
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -557,7 +555,6 @@ function showBottomSheet(index) {
                 cancelBtn.addEventListener('click', async (e) => {
                     e.preventDefault();
                     haptic();
-                    // Отправляем на сервер статус cancelled
                     await updateRegistration(hike.date, hike.title, 'cancelled');
                     hikeBookingStatus[sheetCurrentIndex] = false;
                     updateFloatingSheetButtons();
@@ -590,7 +587,6 @@ function showBottomSheet(index) {
             e.preventDefault();
             haptic();
             const hike = hikesList[sheetCurrentIndex];
-            // Отправляем на сервер статус booked
             await updateRegistration(hike.date, hike.title, 'booked');
             hikeBookingStatus[sheetCurrentIndex] = true;
             updateFloatingSheetButtons();
@@ -655,7 +651,7 @@ function showBottomSheet(index) {
         }
     });
 
-    // ----- Умный свайп вниз -----
+    // Умный свайп вниз
     const onTouchStart = (e) => {
         const target = e.target;
         const isInteractive = target.closest('.bottom-sheet-nav-arrow') || 
@@ -731,7 +727,7 @@ function closeBottomSheet() {
     }
 }
 
-// ----- Рендер календаря (с учётом прошедших дней) -----
+// ----- Рендер календаря -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
