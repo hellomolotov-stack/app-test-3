@@ -1279,6 +1279,21 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
+// ----- Вспомогательная функция для обновления UI метрик -----
+function updateMetricsUI() {
+    const metricItems = document.querySelectorAll('.metric-item');
+    if (metricItems.length >= 4) {
+        // Предполагается, что порядок: хайки, локации, километры, знакомства
+        const valueElements = document.querySelectorAll('.metric-value');
+        if (valueElements.length >= 4) {
+            valueElements[0].textContent = metrics.hikes;
+            valueElements[1].textContent = metrics.locations;
+            valueElements[2].textContent = metrics.kilometers;
+            valueElements[3].textContent = metrics.meetings;
+        }
+    }
+}
+
 // ----- Главная для владельцев карты -----
 function renderHome() {
     if (window._floatingScrollHandler) {
@@ -1296,6 +1311,11 @@ function renderHome() {
         mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
         return;
     }
+
+    // Фоновая загрузка свежих метрик и обновление UI после завершения
+    loadMetrics().then(() => {
+        updateMetricsUI();
+    });
 
     if (userCard.status === 'active' && userCard.cardUrl) {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
@@ -1397,6 +1417,10 @@ function renderHome() {
 
     } else {
         renderGuestHome();
+        // Для гостей тоже обновим метрики в фоне
+        loadMetrics().then(() => {
+            updateMetricsUI();
+        });
     }
 }
 
