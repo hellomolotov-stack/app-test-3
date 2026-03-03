@@ -146,6 +146,7 @@ async function loadUserData() {
 async function loadMetrics() {
     try {
         const text = await fetchWithoutCache(METRICS_CSV_URL);
+        console.log('Metrics raw text:', text.substring(0, 200)); // отладка
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных метрик');
         const headers = parseCSVLine(lines[0]);
@@ -427,7 +428,6 @@ function showBottomSheet(index) {
     // Загружаем статусы в фоне, не блокируя интерфейс
     if (userId) {
         loadUserRegistrations().then(() => {
-            // Если кнопки уже созданы, обновим их
             if (document.querySelector('.floating-sheet-buttons')) {
                 updateFloatingSheetButtons();
             }
@@ -656,9 +656,11 @@ function showBottomSheet(index) {
 
     createFloatingButtons();
 
-    // Открываем слайдер сразу без задержки
-    overlay.classList.add('visible');
-    sheet.classList.add('visible');
+    // Небольшая задержка для плавного появления
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        sheet.classList.add('visible');
+    }, 20);
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -805,6 +807,18 @@ function renderCalendar(container) {
             }
         });
     });
+}
+
+// ----- Обновление UI метрик -----
+function updateMetricsUI() {
+    const metricValues = document.querySelectorAll('.metrics-grid .metric-value');
+    if (metricValues.length >= 4) {
+        metricValues[0].textContent = metrics.hikes;
+        metricValues[1].textContent = metrics.locations;
+        metricValues[2].textContent = metrics.kilometers;
+        metricValues[3].textContent = metrics.meetings;
+        console.log('UI метрик обновлён');
+    }
 }
 
 // ----- Страница для новичков (FAQ) -----
@@ -1279,21 +1293,6 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Вспомогательная функция для обновления UI метрик -----
-function updateMetricsUI() {
-    const metricItems = document.querySelectorAll('.metric-item');
-    if (metricItems.length >= 4) {
-        // Предполагается, что порядок: хайки, локации, километры, знакомства
-        const valueElements = document.querySelectorAll('.metric-value');
-        if (valueElements.length >= 4) {
-            valueElements[0].textContent = metrics.hikes;
-            valueElements[1].textContent = metrics.locations;
-            valueElements[2].textContent = metrics.kilometers;
-            valueElements[3].textContent = metrics.meetings;
-        }
-    }
-}
-
 // ----- Главная для владельцев карты -----
 function renderHome() {
     if (window._floatingScrollHandler) {
@@ -1312,7 +1311,7 @@ function renderHome() {
         return;
     }
 
-    // Фоновая загрузка свежих метрик и обновление UI после завершения
+    // Фоновая загрузка свежих метрик и обновление UI
     loadMetrics().then(() => {
         updateMetricsUI();
     });
