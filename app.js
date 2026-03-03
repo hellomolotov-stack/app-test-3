@@ -441,13 +441,17 @@ let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
 
-async function showBottomSheet(index) {
+function showBottomSheet(index) {
     if (!hikesList.length) return;
 
-    // Загружаем свежие статусы перед открытием слайдера
+    // Запускаем фоновую загрузку статусов, не блокируя открытие
     if (userId) {
-        await loadUserRegistrations();
-        // после загрузки статусов, если кнопки уже будут созданы, они обновятся позже
+        loadUserRegistrations().then(() => {
+            // После загрузки обновляем кнопки, если они уже созданы
+            if (document.querySelector('.floating-sheet-buttons')) {
+                updateFloatingSheetButtons();
+            }
+        });
     }
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
