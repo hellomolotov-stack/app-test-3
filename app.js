@@ -240,8 +240,8 @@ async function loadUserRegistrations() {
     }
 }
 
-// Отправка статуса на сервер (с ожиданием ответа)
-async function updateRegistration(hikeDate, hikeTitle, status) {
+// Отправка статуса на сервер (без ожидания, чтобы не тормозить интерфейс)
+function updateRegistration(hikeDate, hikeTitle, status) {
     if (!userId || !REGISTRATION_API_URL) return;
     try {
         const hasCard = userCard.status === 'active' ? 'да' : 'нет';
@@ -259,17 +259,20 @@ async function updateRegistration(hikeDate, hikeTitle, status) {
             status: status,
             has_card: hasCard
         });
-        // Ждём ответа, чтобы убедиться, что статус сохранён
-        const resp = await fetch(REGISTRATION_API_URL, {
+        // Используем fetch без await, чтобы не блокировать интерфейс
+        fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params
-        });
-        const result = await resp.json();
-        if (result.status === 'ok') {
-            console.log('Статус обновлён:', status);
-        } else {
-            console.error('Ошибка обновления статуса:', result);
-        }
+        })
+            .then(res => res.json())
+            .then(result => {
+                if (result.status !== 'ok') {
+                    console.error('Ошибка обновления статуса:', result);
+                } else {
+                    console.log('Статус обновлён:', status);
+                }
+            })
+            .catch(e => console.error('Ошибка отправки запроса:', e));
     } catch (e) {
         console.error('Ошибка в updateRegistration:', e);
     }
@@ -581,15 +584,17 @@ function showBottomSheet(index) {
 
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
-            cancelBtn.className = 'btn btn-white-outline'; // теперь белая обводка
+            cancelBtn.className = 'btn btn-white-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
-            cancelBtn.addEventListener('click', async (e) => {
+            cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
+                // Мгновенно обновляем интерфейс
                 hikeBookingStatus[sheetCurrentIndex] = false;
-                await updateRegistration(hike.date, hike.title, 'cancelled');
                 updateFloatingSheetButtons();
+                // Фоновая отправка
+                updateRegistration(hike.date, hike.title, 'cancelled');
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
@@ -612,12 +617,14 @@ function showBottomSheet(index) {
             goBtn.className = 'btn btn-yellow';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
-            goBtn.addEventListener('click', async (e) => {
+            goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
+                // Мгновенное обновление интерфейса
                 hikeBookingStatus[sheetCurrentIndex] = true;
-                await updateRegistration(hike.date, hike.title, 'booked');
                 updateFloatingSheetButtons();
+                // Фоновая отправка
+                updateRegistration(hike.date, hike.title, 'booked');
                 log('sheet_go_click', false);
             });
             container.appendChild(goBtn);
