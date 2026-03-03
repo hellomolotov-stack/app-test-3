@@ -49,7 +49,7 @@ let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
 let hikesData = {};
 let hikesList = [];
-let hikeBookingStatus = {};
+let hikeBookingStatus = {}; // ключ: индекс в hikesList, значение: boolean (true - забронировано)
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
@@ -221,9 +221,11 @@ async function loadUserRegistrations() {
         const resp = await fetch(url);
         const data = await resp.json();
         if (data && Array.isArray(data.registrations)) {
+            // Сбрасываем статусы
             for (let i = 0; i < hikesList.length; i++) {
                 hikeBookingStatus[i] = false;
             }
+            // Устанавливаем статусы из данных
             data.registrations.forEach(reg => {
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
                 if (index !== -1 && reg.status === 'booked') {
@@ -231,13 +233,15 @@ async function loadUserRegistrations() {
                 }
             });
             console.log('Загружены регистрации:', hikeBookingStatus);
+        } else {
+            console.warn('Неверный ответ от API регистраций:', data);
         }
     } catch (e) {
         console.error('Ошибка загрузки регистраций:', e);
     }
 }
 
-function updateRegistration(hikeDate, hikeTitle, status) {
+async function updateRegistration(hikeDate, hikeTitle, status) {
     if (!userId || !REGISTRATION_API_URL) return;
     try {
         const hasCard = userCard.status === 'active' ? 'да' : 'нет';
@@ -255,21 +259,21 @@ function updateRegistration(hikeDate, hikeTitle, status) {
             status: status,
             has_card: hasCard
         });
-        fetch(REGISTRATION_API_URL, {
+        const resp = await fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params
-        })
-            .then(res => res.json())
-            .then(result => {
-                if (result.status !== 'ok') {
-                    console.error('Ошибка обновления статуса:', result);
-                } else {
-                    console.log('Статус обновлён:', status);
-                }
-            })
-            .catch(e => console.error('Ошибка отправки запроса:', e));
+        });
+        const result = await resp.json();
+        if (result.status === 'ok') {
+            console.log('Статус обновлён:', status);
+            return true;
+        } else {
+            console.error('Ошибка обновления статуса:', result);
+            return false;
+        }
     } catch (e) {
         console.error('Ошибка в updateRegistration:', e);
+        return false;
     }
 }
 
@@ -583,13 +587,19 @@ function showBottomSheet(index) {
             cancelBtn.className = 'btn btn-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
-            cancelBtn.addEventListener('click', (e) => {
+            cancelBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 haptic();
-                hikeBookingStatus[sheetCurrentIndex] = false;
-                updateFloatingSheetButtons();
-                updateRegistration(hike.date, hike.title, 'cancelled');
-                log('sheet_cancel_click', false);
+                // Сначала пробуем обновить на сервере
+                const success = await updateRegistration(hike.date, hike.title, 'cancelled');
+                if (success) {
+                    hikeBookingStatus[sheetCurrentIndex] = false;
+                    updateFloatingSheetButtons();
+                    log('sheet_cancel_click', false);
+                } else {
+                    // Если ошибка, можно показать уведомление
+                    alert('Не удалось отменить запись. Попробуйте позже.');
+                }
             });
             container.appendChild(cancelBtn);
         } else {
@@ -610,13 +620,17 @@ function showBottomSheet(index) {
             goBtn.className = 'btn btn-yellow';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
-            goBtn.addEventListener('click', (e) => {
+            goBtn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 haptic();
-                hikeBookingStatus[sheetCurrentIndex] = true;
-                updateFloatingSheetButtons();
-                updateRegistration(hike.date, hike.title, 'booked');
-                log('sheet_go_click', false);
+                const success = await updateRegistration(hike.date, hike.title, 'booked');
+                if (success) {
+                    hikeBookingStatus[sheetCurrentIndex] = true;
+                    updateFloatingSheetButtons();
+                    log('sheet_go_click', false);
+                } else {
+                    alert('Не удалось записаться. Попробуйте позже.');
+                }
             });
             container.appendChild(goBtn);
         }
@@ -810,7 +824,7 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Обновление UI метрик с использованием data-атрибутов (более надёжно) -----
+// ----- Обновление UI метрик с использованием data-атрибутов -----
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
