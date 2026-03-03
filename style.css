@@ -471,8 +471,8 @@ body::before {
     background-color: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 40px;
-    padding: 8px 16px;
+    border-radius: 50px; /* более овально */
+    padding: 6px 12px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     border: 1px solid rgba(255,255,255,0.1);
     z-index: 100;
@@ -488,37 +488,45 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 6px 12px;
-    border-radius: 30px;
+    padding: 8px 20px; /* увеличены отступы для овальности */
+    border-radius: 40px; /* сильное скругление */
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.2s;
     color: rgba(255,255,255,0.7);
 }
 
 .nav-item.active {
     color: var(--yellow);
-    background-color: rgba(255,255,255,0.1);
+    background-color: rgba(255,255,255,0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
-.nav-icon {
-    font-size: 24px;
-    line-height: 1;
+.nav-icon svg {
+    width: 24px;
+    height: 24px;
+    display: block;
     margin-bottom: 2px;
 }
 
 .nav-label {
     font-size: 12px;
     font-weight: 500;
+    line-height: 1.2;
 }
 
 /* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .bottom-nav {
         bottom: 10px;
-        padding: 6px 12px;
+        padding: 4px 10px;
     }
-    .nav-icon {
-        font-size: 20px;
+    .nav-item {
+        padding: 6px 16px;
+    }
+    .nav-icon svg {
+        width: 20px;
+        height: 20px;
     }
     .nav-label {
         font-size: 10px;
