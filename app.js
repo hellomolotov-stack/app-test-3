@@ -279,16 +279,7 @@ function updateRegistration(hikeDate, hikeTitle, status) {
             .then(res => res.json())
             .then(result => {
                 console.log('Ответ на обновление:', result);
-                if (result.status === 'ok') {
-                    // После успешного обновления подождём секунду и перезагрузим статусы, чтобы убедиться в актуальности
-                    setTimeout(() => {
-                        loadUserRegistrations().then(() => {
-                            if (document.querySelector('.floating-sheet-buttons')) {
-                                updateFloatingSheetButtons();
-                            }
-                        });
-                    }, 1000);
-                } else {
+                if (result.status !== 'ok') {
                     console.error('Ошибка обновления статуса:', result);
                 }
             })
@@ -451,14 +442,14 @@ let isDragging = false;
 function showBottomSheet(index) {
     if (!hikesList.length) return;
 
-    // Загружаем статусы в фоне, но без блокировки
-    if (userId) {
-        loadUserRegistrations().then(() => {
-            if (document.querySelector('.floating-sheet-buttons')) {
-                updateFloatingSheetButtons();
-            }
-        });
-    }
+    // УБИРАЕМ ЗАГРУЗКУ СТАТУСОВ ОТСЮДА – ОНА БЫЛА ПРИЧИНОЙ СБРОСА
+    // if (userId) {
+    //     loadUserRegistrations().then(() => {
+    //         if (document.querySelector('.floating-sheet-buttons')) {
+    //             updateFloatingSheetButtons();
+    //         }
+    //     });
+    // }
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
