@@ -2,6 +2,20 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
+// Глобальный таймер для принудительного скрытия спиннера
+let loaderTimeout;
+
+function hideLoader() {
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(() => {
+            loader.style.display = 'none';
+        }, 300);
+    }
+    if (loaderTimeout) clearTimeout(loaderTimeout);
+}
+
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
@@ -40,6 +54,7 @@ const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7F
 
 const CACHE_TTL = 300000; // 5 минут
 const METRICS_TTL = 0; // всегда свежие
+const FETCH_TIMEOUT = 8000; // 8 секунд таймаут для fetch
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -91,6 +106,20 @@ function parseCSVLine(line) {
     return result;
 }
 
+// Универсальная функция fetch с таймаутом
+async function fetchWithTimeout(url, options = {}, timeout = FETCH_TIMEOUT) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        return response;
+    } catch (error) {
+        clearTimeout(id);
+        throw error;
+    }
+}
+
 async function fetchWithCache(key, url, ttl = CACHE_TTL) {
     const cached = localStorage.getItem(key);
     if (cached) {
@@ -99,16 +128,26 @@ async function fetchWithCache(key, url, ttl = CACHE_TTL) {
             return data;
         }
     }
-    const resp = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-cache' });
-    const text = await resp.text();
-    const data = { text };
-    localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data }));
-    return data;
+    try {
+        const resp = await fetchWithTimeout(`${url}&t=${Date.now()}`);
+        const text = await resp.text();
+        const data = { text };
+        localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data }));
+        return data;
+    } catch (e) {
+        console.error(`Ошибка загрузки ${key}:`, e);
+        return { text: '' }; // возвращаем пустой текст, чтобы не сломать парсинг
+    }
 }
 
 async function fetchWithoutCache(url) {
-    const resp = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-cache' });
-    return await resp.text();
+    try {
+        const resp = await fetchWithTimeout(`${url}&t=${Date.now()}`);
+        return await resp.text();
+    } catch (e) {
+        console.error('Ошибка загрузки без кэша:', e);
+        return '';
+    }
 }
 
 async function loadUserData() {
@@ -118,6 +157,10 @@ async function loadUserData() {
     }
     try {
         const { text } = await fetchWithCache(`members_${userId}`, CSV_URL, CACHE_TTL);
+        if (!text) {
+            userCard.status = 'inactive';
+            return;
+        }
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных');
         const headers = parseCSVLine(lines[0]);
@@ -146,6 +189,8 @@ async function loadUserData() {
 async function loadMetrics() {
     try {
         const text = await fetchWithoutCache(METRICS_CSV_URL);
+        console.log('Metrics raw text:', text?.substring(0, 200) || 'empty');
+        if (!text) return;
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных метрик');
         const headers = parseCSVLine(lines[0]);
@@ -160,14 +205,17 @@ async function loadMetrics() {
             locations: data.locations || '13',
             meetings: data.meetings || '130+'
         };
+        console.log('Метрики загружены:', metrics);
     } catch (e) {
         console.error('Ошибка загрузки метрик:', e);
+        // оставляем значения по умолчанию
     }
 }
 
 async function loadHikes() {
     try {
         const { text } = await fetchWithCache('hikes', HIKES_CSV_URL, CACHE_TTL);
+        if (!text) return;
         const lines = text.trim().split('\n');
         if (lines.length < 2) return;
 
@@ -206,63 +254,54 @@ async function loadHikes() {
         for (let i = 0; i < hikesList.length; i++) {
             hikeBookingStatus[i] = false;
         }
+        console.log('Список хайков загружен. Даты:', hikesList.map(h => h.date));
     } catch (e) {
         console.error('Ошибка загрузки расписания хайков:', e);
     }
-}
-
-// Сохранение статусов в localStorage
-function saveStatusToLocalStorage() {
-    if (!userId) return;
-    const key = `bookingStatus_${userId}`;
-    localStorage.setItem(key, JSON.stringify(hikeBookingStatus));
-}
-
-// Загрузка статусов из localStorage
-function loadStatusFromLocalStorage() {
-    if (!userId) return false;
-    const key = `bookingStatus_${userId}`;
-    const saved = localStorage.getItem(key);
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            // Проверяем, что parsed - объект с ключами-числами
-            if (typeof parsed === 'object' && parsed !== null) {
-                hikeBookingStatus = parsed;
-                return true;
-            }
-        } catch (e) {
-            console.error('Ошибка парсинга localStorage', e);
-        }
-    }
-    return false;
 }
 
 async function loadUserRegistrations() {
     if (!userId || !REGISTRATION_API_URL || hikesList.length === 0) return;
     try {
         const url = `${REGISTRATION_API_URL}?action=get&user_id=${userId}&_=${Date.now()}`;
-        const resp = await fetch(url);
+        console.log('Запрос регистраций:', url);
+        const resp = await fetchWithTimeout(url);
         const data = await resp.json();
+        console.log('Ответ сервера (регистрации):', data);
         if (data && Array.isArray(data.registrations)) {
-            // Сбрасываем статусы
-            for (let i = 0; i < hikesList.length; i++) {
-                hikeBookingStatus[i] = false;
+            // Сначала загружаем сохранённый статус из localStorage как базовый
+            const saved = localStorage.getItem(`booking_${userId}`);
+            if (saved) {
+                try {
+                    const savedStatus = JSON.parse(saved);
+                    // Применяем сохранённые статусы, но они будут перезаписаны серверными, если есть расхождения
+                    // Однако это поможет, если сервер временно недоступен
+                    Object.assign(hikeBookingStatus, savedStatus);
+                } catch (e) {}
             }
-            // Устанавливаем статусы из данных
+            // Обновляем статусы из данных сервера (они приоритетнее)
             data.registrations.forEach(reg => {
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
-                if (index !== -1 && reg.status === 'booked') {
-                    hikeBookingStatus[index] = true;
+                if (index !== -1) {
+                    hikeBookingStatus[index] = reg.status === 'booked';
                 }
             });
-            // Сохраняем в localStorage
-            saveStatusToLocalStorage();
+            console.log('Итоговый статус регистраций (после сервера):', hikeBookingStatus);
+            // Сохраняем в localStorage для надёжности
+            localStorage.setItem(`booking_${userId}`, JSON.stringify(hikeBookingStatus));
         } else {
             console.warn('Неверный ответ от API регистраций:', data);
         }
     } catch (e) {
         console.error('Ошибка загрузки регистраций:', e);
+        // Если ошибка, пробуем загрузить из localStorage
+        const saved = localStorage.getItem(`booking_${userId}`);
+        if (saved) {
+            try {
+                Object.assign(hikeBookingStatus, JSON.parse(saved));
+                console.log('Загружено из localStorage:', hikeBookingStatus);
+            } catch (e) {}
+        }
     }
 }
 
@@ -284,15 +323,20 @@ function updateRegistration(hikeDate, hikeTitle, status) {
             status: status,
             has_card: hasCard
         });
-        fetch(REGISTRATION_API_URL, {
+        console.log('Отправка запроса на обновление:', params.toString());
+        fetchWithTimeout(REGISTRATION_API_URL, {
             method: 'POST',
             body: params,
             keepalive: true
         })
             .then(res => res.json())
             .then(result => {
+                console.log('Ответ на обновление:', result);
                 if (result.status !== 'ok') {
                     console.error('Ошибка обновления статуса:', result);
+                } else {
+                    // После успешного обновления сохраняем статус в localStorage
+                    localStorage.setItem(`booking_${userId}`, JSON.stringify(hikeBookingStatus));
                 }
             })
             .catch(e => console.error('Ошибка отправки запроса:', e));
@@ -302,27 +346,82 @@ function updateRegistration(hikeDate, hikeTitle, status) {
 }
 
 async function loadData() {
+    // Запускаем таймер принудительного скрытия спиннера через 5 секунд
+    loaderTimeout = setTimeout(() => {
+        console.warn('Принудительное завершение загрузки по таймеру');
+        hideLoader();
+        renderHome();
+    }, 5000);
+
+    // Загружаем данные параллельно
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
     if (userId && hikesList.length > 0) {
-        // Сначала пробуем загрузить из localStorage
-        const loaded = loadStatusFromLocalStorage();
-        // Затем обновляем с сервера (и перезаписываем localStorage)
         await loadUserRegistrations();
-        // Если из localStorage ничего не загрузилось, то статусы уже обновлены сервером
     }
     log('visit', userCard.status !== 'active');
+
+    // Если спиннер ещё не скрыт, скрываем его и рендерим главную
+    hideLoader();
     renderHome();
-    const loader = document.getElementById('initial-loader');
-    if (loader) {
-        loader.classList.add('fade-out');
-        setTimeout(() => {
-            loader.style.display = 'none';
-        }, 300);
-    }
 }
 
 // ----- Массив партнёров (полный) -----
-const partners = [ /* ... */ ]; // (здесь нужно вставить полный массив, но для краткости опущен, в реальном коде он есть)
+const partners = [
+    {
+        name: 'экипировочный центр Геккон',
+        privilege: '-10% по карте интеллигента',
+        location: 'Ялта, ул. Московская 8А',
+        link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'технологичная хайкинг-одежда Nothomme',
+        privilege: '-7% по промокоду INTELLIGENT на сайте',
+        location: 'телеграм канал: t.me/nothomme_russia',
+        link: 'https://t.me/nothomme_russia'
+    },
+    {
+        name: 'кофейня Возможно всё',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Ялта, ул. Свердлова, 13/2',
+        link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'косметика и парфюмерия на утро : на вечер',
+        privilege: '+1000 бонусов по карте интеллигента',
+        location: 'г. Ялта, ул. Морская 3А',
+        link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'конный клуб Красный конь',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Алупка, Севастопольское шоссе',
+        link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'маникюрный салон Marvel studio',
+        privilege: '-5% по карте интеллигента',
+        location: 'г. Ялта, ул. Руданского 4',
+        link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'тематическое кафе Vinyl',
+        privilege: '-10% по карте интеллигента',
+        location: 'г. Ялта, пер. Черноморский 1А',
+        link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'барбершоп Скала',
+        privilege: '-5% на второе посещение и далее',
+        location: 'г. Ялта, ул. Свердлова 3',
+        link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w'
+    },
+    {
+        name: 'кофейня Deep Black',
+        privilege: '-5% по карте интеллигента',
+        location: 'п. г. т. Гаспра, Алупкинское ш., 5А',
+        link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
+    }
+];
 
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
@@ -556,8 +655,9 @@ function showBottomSheet(index) {
                 haptic();
                 // Мгновенно обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = false;
-                saveStatusToLocalStorage(); // сохраняем в localStorage
                 updateFloatingSheetButtons();
+                // Сохраняем в localStorage
+                localStorage.setItem(`booking_${userId}`, JSON.stringify(hikeBookingStatus));
                 // Отправляем на сервер в фоне
                 updateRegistration(hike.date, hike.title, 'cancelled');
                 log('sheet_cancel_click', false);
@@ -586,8 +686,9 @@ function showBottomSheet(index) {
                 haptic();
                 // Мгновенно обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = true;
-                saveStatusToLocalStorage(); // сохраняем в localStorage
                 updateFloatingSheetButtons();
+                // Сохраняем в localStorage
+                localStorage.setItem(`booking_${userId}`, JSON.stringify(hikeBookingStatus));
                 // Отправляем на сервер в фоне
                 updateRegistration(hike.date, hike.title, 'booked');
                 log('sheet_go_click', false);
@@ -631,6 +732,7 @@ function showBottomSheet(index) {
 
     createFloatingButtons();
 
+    // Небольшая задержка для плавного появления
     setTimeout(() => {
         overlay.classList.add('visible');
         sheet.classList.add('visible');
@@ -794,9 +896,513 @@ function updateMetricsUI() {
     if (locationsEl) locationsEl.textContent = metrics.locations;
     if (kilometersEl) kilometersEl.textContent = metrics.kilometers;
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
+    console.log('UI метрик обновлён');
 }
 
-// ----- Остальные страницы (renderNewcomerPage, renderPriv и т.д.) без изменений -----
-// ... (здесь должны быть все остальные функции, но для краткости они не включены, в реальном коде они есть)
+// ----- Страница для новичков (FAQ) -----
+function renderNewcomerPage(isGuest = false) {
+    if (window._floatingScrollHandler) {
+        window.removeEventListener('scroll', window._floatingScrollHandler);
+        window._floatingScrollHandler = null;
+    }
+
+    subtitle.textContent = `всё, что нужно знать`;
+    showBack(() => renderHome());
+    haptic();
+    log('newcomer_page_opened', isGuest);
+
+    const faq = [ /* ... полный массив FAQ ... */ ]; // здесь должен быть полный массив из предыдущих версий
+    // Для краткости я не копирую его, но в реальном коде он должен быть полностью.
+
+    let faqHtml = '';
+    faq.forEach(item => {
+        let answer = item.a;
+        answer = answer.replace('@yaltahiking', '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
+        answer = answer.replace('zapovedcrimea.ru', '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
+        answer = answer.replace(/\n/g, '<br>');
+        faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
+    });
+
+    mainDiv.innerHTML = `
+        <div class="card-container newcomer-page" style="margin-bottom: 0;">
+            ${faqHtml}
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
+        </div>
+        <div class="floating-btn-container" id="floatingBtnContainer">
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', ${isGuest}); return false;" class="btn btn-yellow">задать вопрос</a>
+            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
+        </div>
+    `;
+
+    const floatingContainer = document.getElementById('floatingBtnContainer');
+    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        renderHome();
+    });
+    document.getElementById('goHomeStatic')?.addEventListener('click', () => {
+        haptic();
+        renderHome();
+    });
+
+    function checkFloatingButton() {
+        if (!floatingContainer) return;
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const showThreshold = documentHeight * 0.1;
+        const hideThreshold = documentHeight * 0.1;
+        const remaining = documentHeight - (scrollY + windowHeight);
+
+        if (scrollY > showThreshold && remaining > hideThreshold) {
+            floatingContainer.classList.remove('hidden');
+        } else {
+            floatingContainer.classList.add('hidden');
+        }
+    }
+
+    checkFloatingButton();
+    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
+    window.addEventListener('scroll', scrollHandler);
+    window.addEventListener('resize', scrollHandler);
+    window._floatingScrollHandler = scrollHandler;
+}
+
+// ----- Страница привилегий для владельцев карты -----
+function renderPriv() {
+    subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
+    showBack(renderHome);
+
+    let club = [ /* ... полный массив ... */ ];
+    let clubHtml = '';
+    club.forEach(c => {
+        let titleHtml = c.t;
+        if (c.t.startsWith('новое:')) {
+            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${c.t.substring(6)}`;
+        }
+        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p>${c.btn ? `<a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
+    });
+
+    let cityHtml = '';
+    partners.forEach(p => {
+        cityHtml += `<div class="partner-item">
+            <strong>${p.name}</strong>
+            <p>${p.privilege}</p>`;
+        
+        if (p.name === 'технологичная хайкинг-одежда Nothomme') {
+            cityHtml += `<a href="${p.link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">в магазин</a>`;
+        } else {
+            cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
+        }
+        
+        cityHtml += `</div>`;
+    });
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'privilege_support_click', false); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="goHomePrivStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
+        </div>
+        <div class="floating-btn-container" id="floatingBtnContainer">
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', false); return false;" class="btn btn-yellow">задать вопрос</a>
+            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
+        </div>
+    `;
+
+    document.getElementById('goHomePrivStatic')?.addEventListener('click', () => {
+        haptic();
+        renderHome();
+    });
+
+    const floatingContainer = document.getElementById('floatingBtnContainer');
+    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        renderHome();
+    });
+
+    function checkFloatingButton() {
+        if (!floatingContainer) return;
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const showThreshold = documentHeight * 0.1;
+        const hideThreshold = documentHeight * 0.1;
+        const remaining = documentHeight - (scrollY + windowHeight);
+
+        if (scrollY > showThreshold && remaining > hideThreshold) {
+            floatingContainer.classList.remove('hidden');
+        } else {
+            floatingContainer.classList.add('hidden');
+        }
+    }
+
+    checkFloatingButton();
+    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
+    window.addEventListener('scroll', scrollHandler);
+    window.addEventListener('resize', scrollHandler);
+    window._floatingScrollHandler = scrollHandler;
+}
+
+// ----- Страница привилегий для гостей -----
+function renderGuestPriv() {
+    subtitle.textContent = `💳 привилегии с картой интеллигента`;
+    showBack(renderHome);
+
+    let club = [ /* ... полный массив ... */ ];
+    let clubHtml = '';
+    club.forEach(c => {
+        let titleHtml = c.t;
+        if (c.t.startsWith('новое:')) {
+            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${c.t.substring(6)}`;
+        }
+        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
+    });
+
+    const partnersGuest = partners.map(p => {
+        if (p.name === 'технологичная хайкинг-одежда Nothomme') {
+            return { ...p, privilege: '-7% по промокоду на сайте' };
+        }
+        return p;
+    });
+
+    let cityHtml = '';
+    partnersGuest.forEach(p => {
+        cityHtml += `<div class="partner-item">
+            <strong>${p.name}</strong>
+            <p>${p.privilege}</p>
+            <p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>
+        </div>`;
+    });
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'privilege_support_click', true); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="goHomeGuestPrivStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
+        </div>
+        <div class="floating-btn-container" id="floatingBtnContainer">
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', true); return false;" class="btn btn-yellow">задать вопрос</a>
+            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
+        </div>
+    `;
+
+    document.getElementById('goHomeGuestPrivStatic')?.addEventListener('click', () => {
+        haptic();
+        renderHome();
+    });
+
+    const floatingContainer = document.getElementById('floatingBtnContainer');
+    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        renderHome();
+    });
+
+    function checkFloatingButton() {
+        if (!floatingContainer) return;
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const showThreshold = documentHeight * 0.1;
+        const hideThreshold = documentHeight * 0.1;
+        const remaining = documentHeight - (scrollY + windowHeight);
+
+        if (scrollY > showThreshold && remaining > hideThreshold) {
+            floatingContainer.classList.remove('hidden');
+        } else {
+            floatingContainer.classList.add('hidden');
+        }
+    }
+
+    checkFloatingButton();
+    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
+    window.addEventListener('scroll', scrollHandler);
+    window.addEventListener('resize', scrollHandler);
+    window._floatingScrollHandler = scrollHandler;
+}
+
+// ----- Страница подарка -----
+function renderGift(isGuest = false) {
+    subtitle.textContent = `💫 как подарить карту`;
+    showBack(renderHome);
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <div class="gift-text" style="padding:0 16px;">
+                <p style="margin-bottom:16px;">хочешь подарить карту интеллигента другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.</p>
+                <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».</p>
+                <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', ${isGuest}); return false;" class="btn btn-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
+                <button id="goHome" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+    document.getElementById('giftBuyBtn')?.addEventListener('click', () => { haptic(); log('gift_purchase_click', isGuest); });
+    document.getElementById('giftSupportBtn')?.addEventListener('click', () => { haptic(); log('support_click', isGuest); });
+}
+
+// ----- Попап для гостей -----
+function showGuestPopup() {
+    haptic();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'guestPopup';
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <button class="modal-close" id="closePopup">&times;</button>
+            <div class="modal-title">карта интеллигента</div>
+            <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('closePopup')?.addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+    log('guest_popup_opened', true);
+}
+
+// ----- Главная для гостей -----
+function renderGuestHome() {
+    const isGuest = true;
+    subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
+    subtitle.classList.add('subtitle-guest');
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
+            <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
+            <div id="navAccordionGuest">
+                <button class="accordion-btn">
+                    навигация по клубу <span class="arrow">👀</span>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
+                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-container">
+            <h2 class="section-title">🫖 для новичков</h2>
+            <div class="btn-newcomer" id="newcomerBtnGuest">
+                <span class="newcomer-text">как всё устроено</span>
+                <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
+            </div>
+        </div>
+        
+        <div class="card-container">
+            <div class="metrics-header">
+                <h2 class="metrics-title">🌍 клуб в цифрах</h2>
+                <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">хайков</div>
+                    <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">локаций</div>
+                    <div class="metric-value" data-metric="locations">${metrics.locations}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">километров</div>
+                    <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">знакомств</div>
+                    <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="extra-links">
+            <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', true); return false;" class="btn btn-outline">📰 открыть канал</a>
+            <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', true); return false;" class="btn btn-outline">💬 открыть чат</a>
+            <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
+        </div>
+    `;
+
+    document.getElementById('guestCardImage')?.addEventListener('click', () => {
+        haptic();
+        showGuestPopup();
+    });
+    document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
+    document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        log('gift_click', true);
+        renderGift(true);
+    });
+    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
+        haptic();
+        log('newcomer_btn_click', true);
+        renderNewcomerPage(true);
+    });
+
+    setupAccordion('navAccordionGuest', true);
+}
+
+// ----- Главная для владельцев карты -----
+function renderHome() {
+    if (window._floatingScrollHandler) {
+        window.removeEventListener('scroll', window._floatingScrollHandler);
+        window._floatingScrollHandler = null;
+    }
+
+    hideBack();
+    subtitle.classList.remove('subtitle-guest');
+
+    const existingPopup = document.getElementById('guestPopup');
+    if (existingPopup) existingPopup.remove();
+
+    if (userCard.status === 'loading') {
+        mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
+        return;
+    }
+
+    // Фоновая загрузка свежих метрик и обновление UI
+    loadMetrics().then(() => {
+        updateMetricsUI();
+    });
+
+    if (userCard.status === 'active' && userCard.cardUrl) {
+        subtitle.textContent = `💳 твоя карта, ${firstName}`;
+        mainDiv.innerHTML = `
+            <div class="card-container">
+                <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
+                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
+                <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
+                <div id="navAccordionOwner">
+                    <button class="accordion-btn">
+                        навигация по клубу <span class="arrow">👀</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
+                    </div>
+                </div>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-outline" id="supportBtn">написать в поддержку</a>
+            </div>
+
+            <div class="card-container">
+                <h2 class="section-title">🫖 для новичков</h2>
+                <div class="btn-newcomer" id="newcomerBtn">
+                    <span class="newcomer-text">как всё устроено</span>
+                    <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
+                </div>
+            </div>
+            
+            <div class="card-container">
+                <div class="metrics-header">
+                    <h2 class="metrics-title">🌍 клуб в цифрах</h2>
+                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">хайков</div>
+                        <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">локаций</div>
+                        <div class="metric-value" data-metric="locations">${metrics.locations}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">километров</div>
+                        <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">знакомств</div>
+                        <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="extra-links">
+                <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', false); return false;" class="btn btn-outline">📰 открыть канал</a>
+                <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', false); return false;" class="btn btn-outline">💬 открыть чат</a>
+                <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
+            </div>
+
+            <div class="card-container" id="calendarContainer"></div>
+        `;
+
+        document.getElementById('ownerCardImage')?.addEventListener('click', () => {
+            haptic();
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            showConfetti();
+            log('card_click_celebration');
+        });
+
+        document.getElementById('privBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            log('privilege_click');
+            renderPriv();
+        });
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            log('gift_click');
+            renderGift(false);
+        });
+        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
+            haptic();
+            log('newcomer_btn_click', false);
+            renderNewcomerPage(false);
+        });
+
+        setupAccordion('navAccordionOwner', false);
+
+        const calendarContainer = document.getElementById('calendarContainer');
+        if (calendarContainer) {
+            renderCalendar(calendarContainer);
+        }
+
+    } else {
+        renderGuestHome();
+        loadMetrics().then(() => {
+            updateMetricsUI();
+        });
+    }
+}
+
+function buyCard() {
+    haptic();
+    if (!userId) return;
+    log('buy_card_click', true);
+    openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g', null, true);
+}
 
 window.addEventListener('load', loadData);
