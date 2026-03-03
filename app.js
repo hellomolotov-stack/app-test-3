@@ -146,7 +146,7 @@ async function loadUserData() {
 async function loadMetrics() {
     try {
         const text = await fetchWithoutCache(METRICS_CSV_URL);
-        console.log('Metrics raw text:', text.substring(0, 200)); // отладка
+        console.log('Metrics raw text:', text.substring(0, 200));
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных метрик');
         const headers = parseCSVLine(lines[0]);
@@ -208,6 +208,7 @@ async function loadHikes() {
         for (let i = 0; i < hikesList.length; i++) {
             hikeBookingStatus[i] = false;
         }
+        console.log('Список хайков загружен:', hikesList);
     } catch (e) {
         console.error('Ошибка загрузки расписания хайков:', e);
     }
@@ -809,16 +810,18 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Обновление UI метрик -----
+// ----- Обновление UI метрик с использованием data-атрибутов (более надёжно) -----
 function updateMetricsUI() {
-    const metricValues = document.querySelectorAll('.metrics-grid .metric-value');
-    if (metricValues.length >= 4) {
-        metricValues[0].textContent = metrics.hikes;
-        metricValues[1].textContent = metrics.locations;
-        metricValues[2].textContent = metrics.kilometers;
-        metricValues[3].textContent = metrics.meetings;
-        console.log('UI метрик обновлён');
-    }
+    const hikesEl = document.querySelector('[data-metric="hikes"]');
+    const locationsEl = document.querySelector('[data-metric="locations"]');
+    const kilometersEl = document.querySelector('[data-metric="kilometers"]');
+    const meetingsEl = document.querySelector('[data-metric="meetings"]');
+
+    if (hikesEl) hikesEl.textContent = metrics.hikes;
+    if (locationsEl) locationsEl.textContent = metrics.locations;
+    if (kilometersEl) kilometersEl.textContent = metrics.kilometers;
+    if (meetingsEl) meetingsEl.textContent = metrics.meetings;
+    console.log('UI метрик обновлён');
 }
 
 // ----- Страница для новичков (FAQ) -----
@@ -1240,7 +1243,7 @@ function renderGuestHome() {
             </div>
         </div>
         
-        <!-- Блок метрик -->
+        <!-- Блок метрик с data-атрибутами -->
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🌍 клуб в цифрах</h2>
@@ -1249,19 +1252,19 @@ function renderGuestHome() {
             <div class="metrics-grid">
                 <div class="metric-item">
                     <div class="metric-label">хайков</div>
-                    <div class="metric-value">${metrics.hikes}</div>
+                    <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
                 </div>
                 <div class="metric-item">
                     <div class="metric-label">локаций</div>
-                    <div class="metric-value">${metrics.locations}</div>
+                    <div class="metric-value" data-metric="locations">${metrics.locations}</div>
                 </div>
                 <div class="metric-item">
                     <div class="metric-label">километров</div>
-                    <div class="metric-value">${metrics.kilometers}</div>
+                    <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
                 </div>
                 <div class="metric-item">
                     <div class="metric-label">знакомств</div>
-                    <div class="metric-value">${metrics.meetings}</div>
+                    <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
                 </div>
             </div>
         </div>
@@ -1346,7 +1349,7 @@ function renderHome() {
                 </div>
             </div>
             
-            <!-- Блок метрик -->
+            <!-- Блок метрик с data-атрибутами -->
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🌍 клуб в цифрах</h2>
@@ -1355,19 +1358,19 @@ function renderHome() {
                 <div class="metrics-grid">
                     <div class="metric-item">
                         <div class="metric-label">хайков</div>
-                        <div class="metric-value">${metrics.hikes}</div>
+                        <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
                     </div>
                     <div class="metric-item">
                         <div class="metric-label">локаций</div>
-                        <div class="metric-value">${metrics.locations}</div>
+                        <div class="metric-value" data-metric="locations">${metrics.locations}</div>
                     </div>
                     <div class="metric-item">
                         <div class="metric-label">километров</div>
-                        <div class="metric-value">${metrics.kilometers}</div>
+                        <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
                     </div>
                     <div class="metric-item">
                         <div class="metric-label">знакомств</div>
-                        <div class="metric-value">${metrics.meetings}</div>
+                        <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
                     </div>
                 </div>
             </div>
