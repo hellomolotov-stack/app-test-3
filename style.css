@@ -832,47 +832,6 @@ body::before {
     font-weight: 600;
 }
 
-.calendar-nav {
-    display: flex;
-    gap: 20px;
-}
-
-.calendar-nav span {
-    font-size: 20px;
-    cursor: pointer;
-    user-select: none;
-    opacity: 0.8;
-    transition: opacity 0.2s;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-}
-
-.calendar-nav span:hover {
-    opacity: 1;
-    background: rgba(255,255,255,0.2);
-}
-
-#prevMonth, #nextMonth {
-    display: none;
-}
-
-.calendar-badge {
-    background-color: var(--yellow);
-    color: #000000;
-    border: none;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-    margin-left: auto;
-}
-
 .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -939,6 +898,10 @@ body::before {
 
 .calendar-day:not(.empty):hover {
     filter: brightness(0.9);
+}
+
+.calendar-hidden {
+    display: none;
 }
 
 /* ===== МОДАЛЬНЫЙ ПОПАП ДЛЯ ГОСТЕЙ ===== */
