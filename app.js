@@ -208,7 +208,7 @@ async function loadHikes() {
         for (let i = 0; i < hikesList.length; i++) {
             hikeBookingStatus[i] = false;
         }
-        console.log('Список хайков загружен:', hikesList);
+        console.log('Список хайков загружен. Даты:', hikesList.map(h => h.date));
     } catch (e) {
         console.error('Ошибка загрузки расписания хайков:', e);
     }
@@ -229,9 +229,17 @@ async function loadUserRegistrations() {
             }
             // Устанавливаем статусы из данных
             data.registrations.forEach(reg => {
+                console.log('Обработка регистрации:', reg);
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
-                if (index !== -1 && reg.status === 'booked') {
-                    hikeBookingStatus[index] = true;
+                if (index !== -1) {
+                    if (reg.status === 'booked') {
+                        hikeBookingStatus[index] = true;
+                        console.log(`Хайк ${reg.hikeDate} найден, статус booked -> true`);
+                    } else {
+                        console.log(`Хайк ${reg.hikeDate} найден, статус ${reg.status} -> false`);
+                    }
+                } else {
+                    console.warn(`Хайк с датой ${reg.hikeDate} не найден в списке`);
                 }
             });
             console.log('Итоговый статус регистраций:', hikeBookingStatus);
@@ -265,14 +273,13 @@ function updateRegistration(hikeDate, hikeTitle, status) {
         console.log('Отправка запроса на обновление:', params.toString());
         fetch(REGISTRATION_API_URL, {
             method: 'POST',
-            body: params
+            body: params,
+            keepalive: true // гарантирует отправку даже при закрытии страницы
         })
             .then(res => res.json())
             .then(result => {
                 console.log('Ответ на обновление:', result);
-                if (result.status === 'ok') {
-                    // Опционально: после успеха можно перезагрузить статусы, но для скорости не делаем
-                } else {
+                if (result.status !== 'ok') {
                     console.error('Ошибка обновления статуса:', result);
                 }
             })
@@ -283,7 +290,9 @@ function updateRegistration(hikeDate, hikeTitle, status) {
 }
 
 async function loadData() {
+    // Загружаем пользователя, метрики и хайки параллельно
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
+    // После того как хайки загружены, загружаем регистрации
     if (userId && hikesList.length > 0) {
         await loadUserRegistrations();
     }
