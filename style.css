@@ -467,14 +467,14 @@ body::before {
     justify-content: space-around;
     align-items: center;
     width: auto;
-    min-width: 240px;
+    min-width: 280px;
     background-color: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 50px;
-    padding: 6px 12px;
+    padding: 6px 8px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2); /* светлая окантовка */
     z-index: 100;
     transition: opacity 0.3s;
 }
@@ -488,11 +488,12 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 20px;
+    padding: 8px 16px; /* равные отступы */
     border-radius: 40px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
     color: rgba(255,255,255,0.7);
+    border: 1px solid transparent; /* для ровной высоты */
 }
 
 .nav-item.active {
@@ -500,6 +501,7 @@ body::before {
     background-color: rgba(255,255,255,0.15);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    border-color: rgba(255,255,255,0.3); /* усиленная окантовка при активном */
 }
 
 .nav-icon svg {
@@ -507,6 +509,8 @@ body::before {
     height: 24px;
     display: block;
     margin-bottom: 2px;
+    stroke: currentColor;
+    fill: currentColor;
 }
 
 .nav-label {
@@ -515,59 +519,55 @@ body::before {
     line-height: 1.2;
 }
 
-/* ===== ВСПЛЫВАЮЩЕЕ МЕНЮ ===== */
-.popup-menu {
+/* Попап-меню */
+.nav-popup {
     position: fixed;
-    bottom: 100px;
+    bottom: 90px;
     right: 20px;
-    background-color: rgba(73, 138, 176, 0.2);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: 30px;
-    padding: 8px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    border: 1px solid rgba(255,255,255,0.15);
-    display: flex;
+    background-color: rgba(73, 138, 176, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 16px;
+    padding: 8px 0;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.2);
+    z-index: 101;
+    display: none;
     flex-direction: column;
-    gap: 4px;
-    min-width: 180px;
-    z-index: 200;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.2s, visibility 0.2s;
-    transform: translateY(10px);
+    min-width: 160px;
 }
 
-.popup-menu.visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
+.nav-popup.show {
+    display: flex;
 }
 
 .popup-item {
-    display: block;
-    padding: 12px 16px;
-    border-radius: 24px;
+    padding: 12px 20px;
     color: #ffffff;
     text-decoration: none;
     font-size: 16px;
     font-weight: 500;
     transition: background-color 0.2s;
-    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.popup-item:last-child {
+    border-bottom: none;
 }
 
 .popup-item:hover {
-    background-color: rgba(255,255,255,0.15);
+    background-color: rgba(255,255,255,0.1);
 }
 
 /* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .bottom-nav {
         bottom: 10px;
-        padding: 4px 10px;
+        padding: 4px 6px;
+        min-width: 240px;
     }
     .nav-item {
-        padding: 6px 16px;
+        padding: 6px 12px;
     }
     .nav-icon svg {
         width: 20px;
@@ -576,13 +576,13 @@ body::before {
     .nav-label {
         font-size: 10px;
     }
-    .popup-menu {
+    .nav-popup {
         bottom: 80px;
         right: 10px;
     }
 }
 
-/* Остальные стили (без изменений) */
+/* Остальные стили (без изменений, приведены для полноты) */
 .floating-btn-container {
     position: fixed;
     bottom: 30px;
