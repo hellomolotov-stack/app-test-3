@@ -421,12 +421,17 @@ let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
 
-async function showBottomSheet(index) {
+function showBottomSheet(index) {
     if (!hikesList.length) return;
 
-    // Обновляем статусы перед открытием
+    // Загружаем статусы в фоне, не блокируя интерфейс
     if (userId) {
-        await loadUserRegistrations(); // ждём, чтобы статусы были свежими
+        loadUserRegistrations().then(() => {
+            // Если кнопки уже созданы, обновим их
+            if (document.querySelector('.floating-sheet-buttons')) {
+                updateFloatingSheetButtons();
+            }
+        });
     }
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
@@ -651,11 +656,9 @@ async function showBottomSheet(index) {
 
     createFloatingButtons();
 
-    // Небольшая задержка для корректного применения transition
-    setTimeout(() => {
-        overlay.classList.add('visible');
-        sheet.classList.add('visible');
-    }, 10);
+    // Открываем слайдер сразу без задержки
+    overlay.classList.add('visible');
+    sheet.classList.add('visible');
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -738,7 +741,7 @@ function closeBottomSheet() {
     }
 }
 
-// ----- Календарь (исходный вид) -----
+// ----- Календарь -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
