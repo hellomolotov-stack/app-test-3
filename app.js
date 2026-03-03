@@ -347,7 +347,7 @@ async function loadData() {
     }
 }
 
-// ----- Массив партнёров -----
+// ----- Массив партнёров (полный) -----
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -908,6 +908,9 @@ function setupBottomNav() {
         const calendarContainer = document.getElementById('calendarContainer');
         if (calendarContainer) {
             calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+            // если календаря нет (страница новичков/привилегий), скроллим наверх
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
         log('nav_hikes_click');
         if (popup.classList.contains('show')) {
@@ -993,10 +996,10 @@ function renderNewcomerPage(isGuest = false) {
     // Показываем меню только владельцам карты
     showBottomNav(!isGuest);
 
-    // Исходный контент (длинный FAQ, как было в первом варианте)
+    // Восстановленный исходный массив FAQ (из первого файла)
     const faq = [
-        { q: 'что такое хайкинг?', a: 'хайкинг — это пешие прогулки по живописным местам южного берега Крыма. мы ходим 3–5 часов, без палаток и ночёвок, по оборудованным тропам. главное в наших хайках — люди и атмосфера.' },
-        { q: 'кто может участвовать?', a: 'любой, кто готов соблюдать правила клуба. нужна только удобная обувь и желание знакомиться.' },
+        { q: 'что такое хайкинг?', a: 'хайкинг — это пешие прогулки по живописным местам. мы ходим 3–5 часов, без палаток и ночёвок, по оборудованным тропам. главное в наших хайках — люди и атмосфера.' },
+        { q: 'кто может участвовать?', a: 'любой человек, готовый соблюдать правила клуба. нужна только удобная обувь и желание знакомиться.' },
         { q: 'сколько стоит участие?', a: 'билет на хайк — 1500₽. для владельцев карты интеллигента — бесплатно.' },
         { q: 'где проходят хайки?', a: 'в Ялте и вдоль всего южного берега Крыма. точное место сбора указывается в анонсе.' },
         { q: 'нужна ли специальная подготовка?', a: 'нет, маршруты рассчитаны на людей с любым уровнем физподготовки.' },
@@ -1038,12 +1041,13 @@ function renderNewcomerPage(isGuest = false) {
 
 // ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
-    subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
-    showBack(renderHome);
-    showBottomNav(true);
-    isPrivPage = true;
+    isPrivPage = true;               // отключаем автообновление активности
     isMenuActive = false;
     resetNavActive();
+
+    subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
+    showBack(renderHome);
+    showBottomNav(true);              // показываем меню
 
     let club = [
         { 
@@ -1106,12 +1110,13 @@ function renderPriv() {
 
 // ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
-    subtitle.textContent = `💳 привилегии с картой интеллигента`;
-    showBack(renderHome);
-    showBottomNav(true);
     isPrivPage = true;
     isMenuActive = false;
     resetNavActive();
+
+    subtitle.textContent = `💳 привилегии с картой интеллигента`;
+    showBack(renderHome);
+    showBottomNav(true);
 
     let club = [
         { 
