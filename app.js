@@ -444,14 +444,7 @@ let isDragging = false;
 function showBottomSheet(index) {
     if (!hikesList.length) return;
 
-    // Загружаем статусы в фоне, не блокируя интерфейс
-    if (userId) {
-        loadUserRegistrations().then(() => {
-            if (document.querySelector('.floating-sheet-buttons')) {
-                updateFloatingSheetButtons();
-            }
-        });
-    }
+    // Убрали фоновую загрузку статусов при открытии, чтобы не было race condition
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
