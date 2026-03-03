@@ -38,9 +38,8 @@ const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOi
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
-// Убираем кэш для метрик (устанавливаем TTL=0)
-const CACHE_TTL = 300000; // для остальных данных
-const METRICS_TTL = 0; // всегда загружать свежие
+const CACHE_TTL = 300000; // 5 минут
+const METRICS_TTL = 0; // всегда свежие
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -273,8 +272,7 @@ function updateRegistration(hikeDate, hikeTitle, status) {
 }
 
 async function loadData() {
-    await Promise.allSettled([loadUserData(), loadMetrics()]);
-    await loadHikes();
+    await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
     if (userId && hikesList.length > 0) {
         await loadUserRegistrations();
     }
@@ -423,16 +421,12 @@ let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
 
-function showBottomSheet(index) {
+async function showBottomSheet(index) {
     if (!hikesList.length) return;
 
     // Обновляем статусы перед открытием
     if (userId) {
-        loadUserRegistrations().then(() => {
-            if (document.querySelector('.floating-sheet-buttons')) {
-                updateFloatingSheetButtons();
-            }
-        });
+        await loadUserRegistrations(); // ждём, чтобы статусы были свежими
     }
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
@@ -657,8 +651,11 @@ function showBottomSheet(index) {
 
     createFloatingButtons();
 
-    overlay.classList.add('visible');
-    sheet.classList.add('visible');
+    // Небольшая задержка для корректного применения transition
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        sheet.classList.add('visible');
+    }, 10);
 
     overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
@@ -741,7 +738,7 @@ function closeBottomSheet() {
     }
 }
 
-// ----- Календарь (сворачиваемый) -----
+// ----- Календарь (исходный вид) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -757,15 +754,15 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <div class="calendar-header" id="calendarToggle">
-            <h3>⚠️ раздел в разработке</h3>
-        </div>
-        <div class="calendar-content" id="calendarContent">
-            <div class="calendar-item">
-                <div class="weekdays">
-                    ${weekdays.map(d => `<span>${d}</span>`).join('')}
-                </div>
-                <div class="calendar-grid" id="calendarGrid">
+        <h2 class="section-title">⚠️ раздел в разработке</h2>
+        <div class="calendar-item">
+            <div class="calendar-header">
+                <h3>${monthNames[currentMonth]} ${currentYear}</h3>
+            </div>
+            <div class="weekdays">
+                ${weekdays.map(d => `<span>${d}</span>`).join('')}
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
     `;
 
     for (let i = 0; i < startOffset; i++) {
@@ -792,19 +789,9 @@ function renderCalendar(container) {
         }
     }
 
-    calendarHtml += `</div></div></div>`;
+    calendarHtml += `</div></div>`;
 
     container.innerHTML = calendarHtml;
-
-    // Toggle календаря по клику на заголовок
-    const toggle = document.getElementById('calendarToggle');
-    const content = document.getElementById('calendarContent');
-    if (toggle && content) {
-        toggle.addEventListener('click', () => {
-            haptic();
-            content.classList.toggle('calendar-hidden');
-        });
-    }
 
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
@@ -995,7 +982,7 @@ function renderPriv() {
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-            <!-- Статические кнопки внизу (как в разделе для новичка) -->
+            <!-- Статические кнопки внизу -->
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'privilege_support_click', false); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomePrivStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
