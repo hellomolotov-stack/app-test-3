@@ -243,8 +243,9 @@ async function loadUserRegistrations() {
     }
 }
 
-async function updateRegistration(hikeDate, hikeTitle, status) {
-    if (!userId || !REGISTRATION_API_URL) return false;
+// Функция отправки статуса на сервер (без ожидания, для скорости)
+function updateRegistration(hikeDate, hikeTitle, status) {
+    if (!userId || !REGISTRATION_API_URL) return;
     try {
         const hasCard = userCard.status === 'active' ? 'да' : 'нет';
         const profileLink = user?.username ? `https://t.me/${user.username}` : '';
@@ -262,21 +263,22 @@ async function updateRegistration(hikeDate, hikeTitle, status) {
             has_card: hasCard
         });
         console.log('Отправка запроса на обновление:', params.toString());
-        const resp = await fetch(REGISTRATION_API_URL, {
+        fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params
-        });
-        const result = await resp.json();
-        console.log('Ответ на обновление:', result);
-        if (result.status === 'ok') {
-            return true;
-        } else {
-            console.error('Ошибка обновления статуса:', result);
-            return false;
-        }
+        })
+            .then(res => res.json())
+            .then(result => {
+                console.log('Ответ на обновление:', result);
+                if (result.status === 'ok') {
+                    // Опционально: после успеха можно перезагрузить статусы, но для скорости не делаем
+                } else {
+                    console.error('Ошибка обновления статуса:', result);
+                }
+            })
+            .catch(e => console.error('Ошибка отправки запроса:', e));
     } catch (e) {
         console.error('Ошибка в updateRegistration:', e);
-        return false;
     }
 }
 
@@ -590,17 +592,15 @@ function showBottomSheet(index) {
             cancelBtn.className = 'btn btn-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
-            cancelBtn.addEventListener('click', async (e) => {
+            cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                const success = await updateRegistration(hike.date, hike.title, 'cancelled');
-                if (success) {
-                    hikeBookingStatus[sheetCurrentIndex] = false;
-                    updateFloatingSheetButtons();
-                    log('sheet_cancel_click', false);
-                } else {
-                    alert('Не удалось отменить запись. Попробуйте позже.');
-                }
+                // Мгновенно обновляем локальный статус
+                hikeBookingStatus[sheetCurrentIndex] = false;
+                updateFloatingSheetButtons();
+                // Отправляем на сервер в фоне
+                updateRegistration(hike.date, hike.title, 'cancelled');
+                log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
         } else {
@@ -621,17 +621,15 @@ function showBottomSheet(index) {
             goBtn.className = 'btn btn-yellow';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
-            goBtn.addEventListener('click', async (e) => {
+            goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                const success = await updateRegistration(hike.date, hike.title, 'booked');
-                if (success) {
-                    hikeBookingStatus[sheetCurrentIndex] = true;
-                    updateFloatingSheetButtons();
-                    log('sheet_go_click', false);
-                } else {
-                    alert('Не удалось записаться. Попробуйте позже.');
-                }
+                // Мгновенно обновляем локальный статус
+                hikeBookingStatus[sheetCurrentIndex] = true;
+                updateFloatingSheetButtons();
+                // Отправляем на сервер в фоне
+                updateRegistration(hike.date, hike.title, 'booked');
+                log('sheet_go_click', false);
             });
             container.appendChild(goBtn);
         }
