@@ -1010,577 +1010,292 @@ function renderGuestPriv() {
             d: 'ты можешь ходить по закрытым для большинства туристов локациям с нашим сертифицированным гидом' 
         },
         { 
-            t: 'за 'запроспрос на мастер на мастермаймайнд', 
-           нд', 
-            d: d: 'ты можешь 'ты можешь заранее заранее перед х перед хайкомайком заброни забронировать запровать запрос на мастермайнд, чтобырос на мастермайнд, чтобы на хай на хайке гарантике гарантировано участровано участники подники поделилисьелились с т с тобойобой своим взглядом, опытом своим взглядом, опытом, цен, ценными конными контактами' 
+            t: 'запрос на мастермайнд', 
+            d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами' 
         },
-тактами' 
-        },
-        {        { 
-            
-            t: 'нов t:ое: обход 'новое: блоки обход блокировокровок', 
-', 
-            d: 'с картой инте            d: 'с картой интеллигллигента теента тебе доступно приложение избе доступно приложение из трёх бук трёх букв,в, которое помогает сделать интер которое помогает сделать интернет свободным инет свободным и пользоваться телеграмом пользоваться телеграмом, как, как будто будто не было никаких не было никаких блоки блокировок' 
-        }
-ровок' 
+        { 
+            t: 'новое: обход блокировок', 
+            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок' 
         }
     ];
 
-    ];
-
-    let    let clubHtml clubHtml = '';
-    club = '';
-.forEach(c => {
+    let clubHtml = '';
     club.forEach(c => {
-        let        let titleHtml = c.t;
- titleHtml = c.t;
-        if (        ifc.t.st (c.t.startsWith('artsWith('новое:')) {
-            titleHtmlновое:')) {
-            titleHtml = = `<span style `<span style="color: var="color(--yellow);">: var(--yellow);">новоеновое:</span> ${c.t.substring(:</span> ${c.t.substring(6)}6)}`;
+        let titleHtml = c.t;
+        if (c.t.startsWith('новое:')) {
+            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${c.t.substring(6)}`;
         }
-       `;
-        }
-        clubHtml clubHtml += += `<div class `<div class="partner="partner-item"><strong>${titleHtml}</-item"><strong>${titleHtml}</strong><p>strong><p>${c.d}</p></${c.d}</p></div>div>`;
-   `;
+        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
     });
 
-    const partnersGuest = });
-
-    const partnersGuest = partners.map(p => partners.map {
-       (p => {
-        if ( if (p.name === 'p.name === 'технологитехнологичная хайкичная хнг-айкинг-одежда Nothomme') {
-одежда Nothomme') {
-            return            return { { ...p, privilege: ...p, privilege: '-7% по промок '-7% по промокоду наоду на сайте' сайте' };
-        };
+    const partnersGuest = partners.map(p => {
+        if (p.name === 'технологичная хайкинг-одежда Nothomme') {
+            return { ...p, privilege: '-7% по промокоду на сайте' };
         }
-        }
-        return p return p;
-   ;
+        return p;
     });
 
-    });
-
-    let cityHtml = let cityHtml = '';
-    '';
-    partnersGuest partnersGuest.forEach(p.forEach(p => {
- => {
-        city        cityHtml +=Html += `<div class=" `<div class="partner-item">
-           partner-item">
-            <strong <strong>${>${p.namep.name}</strong}</strong>
-           >
-            <p <p>${p.privilege}</p>`;
->${p.privilege}</p        city>`;
-        cityHtml +=Html += `<p `<p>📍>📍 <a href="${p.link <a href="${p.link}" target="_blank}" target" style="_blank" style="color="color:#D9FD:#D9FD19;">19;">${p${p.location}</.location}</a></a></p>p>`;
-       `;
-        cityHtml cityHtml += ` += `</div</div>`;
->`;
-    });
-
+    let cityHtml = '';
+    partnersGuest.forEach(p => {
+        cityHtml += `<div class="partner-item">
+            <strong>${p.name}</strong>
+            <p>${p.privilege}</p>`;
+        cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
+        cityHtml += `</div>`;
     });
 
     mainDiv.innerHTML = `
-           mainDiv.innerHTML = `
- <div class        <div class="card="card-container">
--container">
-                       <h2 <h2 class="section-title class="section-title" style" style="font="font-style:-style: italic;">в к italic;">в клубелубе</h</h2>2>${club${clubHtml}
-Html}
-                       <h2 <h2 class="section-title second" style=" class="section-title second" style="font-style: italic;">вfont-style: italic;">в городе</h городе</h2>2>${city${cityHtml}
-Html}
-                       <div style <div style="display: flex="display: flex; flex-direction:; flex column;-direction: column; gap: 12 gap: 12px; margin-top: 20px;">
-               px; margin-top: 20px;">
-                <a <a href="https:// href="https://auth.auth.robokassa.ru/merchant/robokassa.ru/merchant/Invoice/wXoInvoice/wXo6F6FJOAJOA40u40u5uz5uzL7L7K4_X9K4_X9g" onclick="g" onclick="event.preventDefault(); openLink(this.href, 'buy_card_clickevent.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;"', true); return class=" false;"btn btn-yellow class="btn btn-yellow" style" style="width:calc(100% - 32="width:calc(100% - 32px);px); margin: margin:0 0 16px16px;" id="guestBuyBtn">ку;" id="guestBuyBtn">купить карпить карту</ту</a>
-                <button ida>
-                <button id="goHome"="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16:0 16px;">px;">&lt&lt; на; на главную главную</button</button>
+        <div class="card-container">
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
+                <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
-            </div>
-        </div>
         </div>`;
 
->`;
-
-    document    document.getElementById('goHome')?..getElementById('goHome')?.addEventListeneraddEventListener('click('click', () => {', () => { haptic haptic(); render(); renderHome();Home(); });
-    document.getElementById('guestBuyBtn')?. });
-    document.getElementById('guestBuyBtn')?.addEventListeneraddEventListener('click('click', ()', () => => { haptic { haptic(); log(); log('buy('buy_card__card_click', true);click', true); });
+    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+    document.getElementById('guestBuyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
 }
 
- });
-}
-
-// ----- Страница// ----- Страница подар подарка -----ка -----
-function renderG
+// ----- Страница подарка -----
 function renderGift(isGuest = false) {
-   ift(isGuest = false) {
-    subtitle.textContent = subtitle.textContent = ` `💫 как💫 как подарить карту подарить карту`;
-   `;
-    showBack(render showBack(renderHome);
+    subtitle.textContent = `💫 как подарить карту`;
+    showBack(renderHome);
 
-Home);
-
-    main    mainDiv.innerHTML = `
-       Div.innerHTML = `
-        <div class="card <div class="-container">
-            <div class="gcard-container">
-            <div class="gift-textift-text" style" style="padding="padding:0 16:0 16px;">
-               px;">
-                <p style <p style="margin="margin-bottom:16px;">хо-bottom:16px;">хочешьчешь подарить подарить карту карту интелли интеллигента другу? тогдагента другу? тогда пришли пришли нам в нам в поддерж поддержку имяку имя друга, друга, его фа его фамилимилию, @usernameю, @username в теле в телеграм и тграм и твой чвой чек обек об оплате оплате карты карты (при (приходитходит на на почту после покупки). мы выпустим карту на имя друга.</p>
-                <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». почту после покупки). мы выпустим карту на имя друга.</p>
-                <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хо если хочешьчешь, чтобы её прис, чтобы её прислали мы,лали мы, но сказа но сказали,ли, что от что от тебя тебя, напиши «, напиподаши «рите вы».</подарите выp>
-».</p>
-                               < <p style="marginp style="margin-bottom:20px-bottom:20px;">ка;">как толькок только друг получит кар друг получит карту уту у него станет него станет актив активным наше приложение и он сможным наше приложение и он сможет имет им пользоваться.</p>
-            </div пользоваться.</p>
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <div class="gift-text" style="padding:0 16px;">
+                <p style="margin-bottom:16px;">хочешь подарить карту интеллигента другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.</p>
+                <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».</p>
+                <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
             </div>
-            <div style=">
-            <div style="display:flex;display:flex; flex-direction flex-direction:column:column; gap:12; gap:12px;px; margin-top:20px;">
-                <a href="https://auth.rob margin-top:20px;">
-                <a href="https://auth.robokassa.ru/okassa.ru/merchant/Invoice/wXmerchant/Invoice/wXo6o6FJFJOA40u5uzLOA40u5uzL7K4_X7K9g4_X9g" onclick" onclick="event.preventDefault();="event openLink.preventDefault(); openLink(this.href,(this.h 'gref, 'gift_pift_purchase_click',urchase_ ${isclick', ${isGuest}); return falseGuest}); return false;" class;" class="btn btn-yellow" style="margin-bottom:0="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить;" id="giftBuyBtn">купить в подарок в подарок</a>
-                <a href="https://t.me/hell</a>
-                <a href="https://t.me/hellointelligentointelligent" onclick" onclick="event="event.preventDefault(); openLink(this.href, 'support.preventDefault(); openLink(this.href, 'support_click_click', ${isGuest}); return false;" class="btn btn', ${isGuest}); return false;" class="btn btn-white-out-white-outline"line" style=" style="margin-bottommargin-bottom:0:0;" id="giftSupportBtn">нап;" id="giftSupportBtn">написать висать в поддержку поддержку</a>
-</a>
-                <button id="go                <button id="goHome"Home" class="btn btn-white-outline" style="width:calc(100% -  class="btn btn-white-outline" style="width:calc(100% - 32px32px); margin); margin:0 16:0 16px;">px;">&lt; на&lt главную; на главную</button</button>
-            </div>
-       >
+            <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', ${isGuest}); return false;" class="btn btn-white-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
+                <button id="goHome" class="btn btn-white-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
     `;
 
-    document </div>
-    `;
-
-    document.getElementById('.getElementById('goHome')?.addEventListenergoHome')?.addEventListener('click('click', ()', () => { => { haptic(); render haptic(); renderHome(); });
-   Home(); });
-    document.getElementById document.getElementById('giftBuyBtn')?.add('giftBuyBtn')?.addEventListener('click', () => {EventListener('click', () => { haptic(); haptic(); log(' log('giftgift_purchase_purchase__click', isclickGuest);', isGuest); });
-    document.getElementById });
-    document.getElementById('g('giftSupportiftSupportBtn')?.addEventListener('click', () =>Btn')?.addEventListener('click', () => { ha { haptic();ptic(); log(' log('support_support_click',click', isGuest isGuest); });
+    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+    document.getElementById('giftBuyBtn')?.addEventListener('click', () => { haptic(); log('gift_purchase_click', isGuest); });
+    document.getElementById('giftSupportBtn')?.addEventListener('click', () => { haptic(); log('support_click', isGuest); });
 }
 
-// ----- Поп); });
-}
-
-// ----- Попапап для г для гостейостей -----
- -----
+// ----- Попап для гостей -----
 function showGuestPopup() {
-    hafunction showGuestPopup() {
     haptic();
-ptic();
-    const    const overlay = document.createElement overlay = document.createElement('div('div');
-   ');
-    overlay.class overlay.className = 'modal-overlay';
-   Name = 'modal-overlay';
-    overlay.id overlay.id = 'guestPopup';
-    overlay.innerHTML = 'guestPopup';
-    overlay.innerHTML = = `
-        `
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'guestPopup';
+    overlay.innerHTML = `
         <div class="modal-content">
-            <div class="modal-content">
-            <button class <button class="modal-close" id="modal-close" id="close="closePopup">&times;</button>
-Popup">&times;</button>
-                       <div <div class="modal-title"> class="modal-title">карта интелликарта интеллигента</div>
-            <divгента</div>
-            <div class=" class="modal-text">каmodal-text">как её получить? тебек её получить? тебе нужно быть нужно быть готовым к большим переменам. готовым к большим переменам. почему? почему? если ты если ты станешь часть станешь частью клуба интеллию клуба интеллигенциигенции, т, твои выходные уже невои выходные уже не будут прежними. впе будут прежними. впечатлениячатления, знакомства,, знакомства, юмор юмор, све, свежий воздухжий воздух, продуктивный отдых и привилегии, продуктивный отдых и привилегии в гор в городе.оде. это лишь это лишь малая малая часть того часть того, что, что тебя тебя ждёт в к ждёт в клубе.</лубе.</div>
-            <div style="textdiv>
-            <div style="text-align: center;-align: center; margin-top: 20px margin-top: 20px;">
-               ;">
-                <a <a href="https://t.me href="https://t.me/yaltahiking/yaltahiking/197/197" onclick="event.preventDefault();" onclick="event.preventDefault(); openLink(this.h openLinkref,(this.href, 'pop 'popup_learn_click', true); return false;" classup_learn_click', true); return false;" class="btn="btn btn-yellow" btn-yellow" id=" id="popuppopupLearnBtn">уLearnBtn">узнатьзнать о карте подроб о карте подробнее</нее</a>
-            </div>
-        </a>
+            <button class="modal-close" id="closePopup">&times;</button>
+            <div class="modal-title">карта интеллигента</div>
+            <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
             </div>
         </div>
-div>
-    `    `;
-    document.body.appendChild(overlay;
-    document.body.appendChild();
+    `;
+    document.body.appendChild(overlay);
 
-   overlay);
-
-    document.getElementById document.getElementById('close('closePopup')Popup')?.addEventListener('click',?.addEventListener('click', () => () => {
-        {
-        haptic haptic();
-       ();
-        overlay.remove overlay.remove();
-   ();
+    document.getElementById('closePopup')?.addEventListener('click', () => {
+        haptic();
+        overlay.remove();
     });
-    overlay.addEventListener });
-    overlay.addEventListener('click('click', (', (e)e) => {
- => {
-        if        if (e.target === overlay) (e.target === overlay) {
-            {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
             haptic();
             overlay.remove();
-        haptic();
-            overlay.remove();
         }
-    }
     });
- });
-       log('guest_popup_opened', log('guest_popup_op true);
-ened', true);
+    log('guest_popup_opened', true);
 }
 
-//}
-
-// ----- Глав ----- Главная для гостная для гостей -----ей -----
-function
-function renderGuest renderGuestHome()Home() {
-    {
-    const is const isGuest =Guest = true;
- true;
-    subtitle    subtitle.textContent.textContent = ` = `💳 здесь будет💳 здесь будет тво твоя каря карта,та, ${firstName ${firstName}`;
-    subtitle}`;
-    subtitle.classList.add.classList.add('subtitle-guest');
+// ----- Главная для гостей -----
+function renderGuestHome() {
+    const isGuest = true;
+    subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
+    subtitle.classList.add('subtitle-guest');
 
     mainDiv.innerHTML = `
         <div class="card-container">
-            <img src="https://i.postimg.cc/J0GyF5Nw('subtitle-guest');
-
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsv/fwvsvfw.pngfw.png" alt="кар" alt="карта загта заглушкалушка" class="card-image" id="" class="card-image" id="guestCardImage">
-guestCardImage">
-                       <div class="hike-counter <div class="hike-counter"><span>"><span⛰>⛰️ пр️ пройдено хойдено хайков</spanайков</span><span><span class=" class="counter-numbercounter-number">?</span></">?</span></div>
-div>
-                       <a href <a href="https="https://t://t.me/y.me/yaltahiking/197"altahiking/ onclick="event.preventDefault197" onclick="event.preventDefault(); open(); openLink(this.href, 'buy_cardLink(this.href, 'buy_card_click_click', true); return', true false;"); return class="btn btn false;" class="btn btn-yellow-yellow" id="buy" id="buyBtn">Btn">узнаузнать оть о карте карте</a</a>
-           >
-            <div <div id=" id="navAccordionnavAccordionGuest">
-Guest">
-                <button class                <button class="accordion-btn="accordion-btn">
-                   ">
-                    навига навигация поция по клу клубубу <span class <span class="arrow="arrow">">👀</span>
-                </👀</span>
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
+            <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
+            <div id="navAccordionGuest">
+                <button class="accordion-btn">
+                    навигация по клубу <span class="arrow">👀</span>
                 </button>
-button>
-                               <div class="dropdown <div class="dropdown-menu">
--menu">
-                                       <a href <a href="https="https://t.me/yaltah://t.me/yaltahiking/iking/149"149" onclick=" onclick="event.preventDefault(); openevent.preventDefault(); openLink(thisLink(this.href.href, ', 'nav_about', true);nav_about', return false true); return false;" class;" class="btn btn-white-outline="btn btn-white">о-outline">о клу клубе</бе</a>
-a>
-                                       <a href <a href="https="https://t://t.me/yaltahiking/170" onclick=".me/yaltahiking/170" onclickevent.preventDefault(); open="event.preventDefault(); openLinkLink(this.href(this.href, ', 'nav_nav_philosophphilosophy',y', true); return false true); return false;" class;" class="btn="btn btn-white btn-white-outline-outline">фи">философилософия</я</a>
-a>
-                                       <a <a href href="https="https://t.me/yaltahiking/246"://t.me/yaltahiking/246" onclick=" onclick="event.preventDefaultevent.preventDefault(); open(); openLink(thisLink(this.href.href, ', 'nav_hiking',nav_hiking', true); true); return false return false;" class;" class="btn="btn btn-white btn-white-outline-outline">о">о хай хайкинге</кинге</aa>
->
-                    <                    <a href="https://t.me/ya href="https://t.me/yaltahaltahiking/a/2iking/a/2"" onclick="event.preventDefault(); openLink(this.href, ' onclick="event.preventDefault(); openLink(this.href, 'nav_renav_reviews',views', true); true); return false return false;" class;" class="btn="btn btn-white btn-white-outline">от-outline">отзывызывы</a</a>
-               >
+                <div class="dropdown-menu">
+                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-white-outline">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-white-outline">философия</a>
+                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-white-outline">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-white-outline">отзывы</a>
                 </div>
-            </div </div>
             </div>
         </div>
-        </div>
 
-       >
-
-        <!-- Блок для <!-- Блок для новичков нови (длячков (для гост гостей)ей) -->
-        -->
-        <div class=" <div class="card-containercard-container">
-            <h">
-            <h2 class2 class="section="section-title">-title">🫖 для нови🫖 для новичковчков</h</h2>
-2>
-                       <div class <div class="btn="btn-newcomer" id="-newcomer" id="newcomnewcomerBtnerBtnGuest">
-Guest">
-                <span class="newcomer                <span class="newcomer-text">-text">каккак всё у всё устроеностроено</span</span>
-               >
-                <img <img src=" src="https://i.posthttps://i.postimg.ccimg.cc/k533cR9Z/k533cR9Z/fv/fv.png" alt=".png" alt="новичкам" class="newcomновичкам" class="newcomer-imageer-image">
-           ">
-            </div </div>
-       >
-        </div </div>
-        
-        <!-->
-        
-        <!-- Блок Блок метрик метрик -->
-        <div -->
-        <div class=" class="card-containercard-container">
-           ">
-            <div <div class=" class="metrics-header">
-               metrics-header">
-                <h <h2 class2 class="metrics-title">="metrics-title">🌍🌍 к клуб в цифрах</h2луб в цифрах</h2>
-               >
-                <a <a href=" href="https://https://t.met.me/yalt/yaltahikingahiking/148/148" onclick" onclick="event="event.preventDefault();.preventDefault(); openLink openLink(this.h(this.href,ref, 're 'reports_click',ports_click', true); true); return false return false;" class;" class="metrics-link">смотреть отчё="metrics-link">смотреть отчёты &gt;</ты &gt;</a>
+        <!-- Блок для новичков (для гостей) -->
+        <div class="card-container">
+            <h2 class="section-title">🫖 для новичков</h2>
+            <div class="btn-newcomer" id="newcomerBtnGuest">
+                <span class="newcomer-text">как всё устроено</span>
+                <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
             </div>
-            <div classa>
+        </div>
+        
+        <!-- Блок метрик -->
+        <div class="card-container">
+            <div class="metrics-header">
+                <h2 class="metrics-title">🌍 клуб в цифрах</h2>
+                <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
             </div>
             <div class="metrics-grid">
-="metrics-grid">
-                               <div class="metric-item">
- <div class="metric-item">
-                                       <div class <div class="metric="metric-label">-label">хайхайков</divков</div>
-                    <div class="metric-value">${metrics>
-                    <div class="metric-value">${metrics.hikes.hikes}</div>
-               }</div>
-                </div </div>
-               >
-                <div <div class=" class="metric-item">
-                    <div class="metric-item">
-                    <div class="metric-labelmetric-label">лока">локаций</div>
-ций</div>
-                                       <div class="metric <div class="metric-value">-value">${metrics.locations}</div>
-               ${metrics.locations}</div>
-                </div>
-                <div </div>
-                <div class=" class="metric-item">
-                    <div class="metric-label">киmetric-item">
-                    <div class="metric-label">километлометров</divров</div>
->
-                    <div class="metric-value">${metrics                    <div class="metric-value">${metrics.kilometers}</.kilometers}</div>
-div>
+                <div class="metric-item">
+                    <div class="metric-label">хайков</div>
+                    <div class="metric-value">${metrics.hikes}</div>
                 </div>
                 <div class="metric-item">
-                    <div class                </div>
+                    <div class="metric-label">локаций</div>
+                    <div class="metric-value">${metrics.locations}</div>
+                </div>
                 <div class="metric-item">
-                    <div class="metric="metric-label">-label">знакомств</div>
-                    <div class="metric-value">${metricsзнакомств</div>
-                    <div class="metric-value">${metrics.meetings}</div.meetings}</div>
+                    <div class="metric-label">километров</div>
+                    <div class="metric-value">${metrics.kilometers}</div>
                 </div>
+                <div class="metric-item">
+                    <div class="metric-label">знакомств</div>
+                    <div class="metric-value">${metrics.meetings}</div>
                 </div>
-           >
-            </div </div>
-        </div>
-        
-        <div class="extra-links>
+            </div>
         </div>
         
         <div class="extra-links">
-           ">
-            <a <a href=" href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.hhttps://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'ref, 'channelchannel_click', true); return false;"_click', true); return false;" class=" class="btn btn-white-outline">btn btn-white-outline">📰📰 открыть открыть канал канал</a>
-           </a>
-            <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this(); openLink(this.href.href, ', 'chat_clickchat_click',', true); true); return false return false;" class="btn;" class="btn btn-white btn-white-outline-outline">">💬 открыть ча💬 открыть чат</т</a>
-           a>
-            <a href <a href="#" class="btn="#" class="btn btn-white-outline btn-white-outline" id="g" id="giftBtniftBtn">🫂">🫂 подарить подарить карту другу</a карту другу</a>
-       >
+            <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', true); return false;" class="btn btn-white-outline">📰 открыть канал</a>
+            <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', true); return false;" class="btn btn-white-outline">💬 открыть чат</a>
+            <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
         </div>
     `;
 
-    document.getElementById('guestCardImage') </div>
-    `;
-
-    document.getElementById('guestCardImage')?.addEventListener('?.addEventListener('click', () => {
-        hapticclick', () => {
+    document.getElementById('guestCardImage')?.addEventListener('click', () => {
         haptic();
-       ();
-        showGuest showGuestPopup();
-Popup();
+        showGuestPopup();
     });
-    });
-    document.getElementById('buyBtn')?.    document.getElementById('buyBtn')?.addEventListeneraddEventListener('click('click', ()', () => { haptic => { haptic(); log(); log('buy('buy_card__card_click', true); });
-   click', true); });
-    document.getElementById('g document.getElementById('giftBtniftBtn')?.addEventListener('click', (')?.addEventListener('click', (e) =>e) => {
- {
+    document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
+    document.getElementById('giftBtn')?.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
-        e.preventDefault();
-        haptic();
-        log        log('gift_('gift_click',click', true);
- true);
-        renderGift(true);
+        log('gift_click', true);
         renderGift(true);
     });
+    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
+        haptic();
+        log('newcomer_btn_click', true);
+        renderNewcomerPage(true);
     });
-    document    document.getElementById('.getElementById('newcomerBtnnewcomerBtnGuest')Guest')?.addEventListener('?.addEventListener('click',click', () => () => {
-        {
-        haptic();
-        haptic();
-        log(' log('newcomer_btn_newcomer_btn_click',click', true);
- true);
-        render        renderNewcomerPage(true);
-NewcomerPage(true);
-       });
 
- });
-
-    setup    setupAccordion('navAccordion('navAccAccordionordionGuest', true);
-Guest', true);
+    setupAccordion('navAccordionGuest', true);
 }
 
-}
-
-//// ----- Главная для владельцев кар ----- Главная для владельцев карты -----ты -----
+// ----- Главная для владельцев карты -----
 function renderHome() {
-    if (window
-function renderHome() {
-    if (window._fl._floatingScrolloatingScrollHandler) {
-       Handler) {
-        window.remove window.removeEventListener('EventListener('scroll', window._scroll', window._floatingfloatingScrollHandler);
-        window._ScrollHandler);
-        window._floatingfloatingScrollHandler = nullScrollHandler = null;
-   ;
+    if (window._floatingScrollHandler) {
+        window.removeEventListener('scroll', window._floatingScrollHandler);
+        window._floatingScrollHandler = null;
     }
 
-    }
-
-    hideBack hideBack();
-    subtitle.classList.remove('subtitle();
+    hideBack();
     subtitle.classList.remove('subtitle-guest');
 
-   -guest');
+    const existingPopup = document.getElementById('guestPopup');
+    if (existingPopup) existingPopup.remove();
 
-    const existingPopup = const existingPopup = document.getElementById document.getElementById('guest('guestPopup');
-Popup');
-    if    if (existing (existingPopup)Popup) existingPopup existingPopup.remove();
-
-    if.remove();
-
-    if (user (userCard.statusCard.status === ' === 'loading') {
-       loading') mainDiv {
-       .innerHTML = mainDiv.innerHTML = '<div '<div class="loader" class="loader" style=" style="display:flex;display:flex; justify-content:center justify-content:center; padding:40px 0;">; padding:40px 0;">ЗагрузЗагрузкака...</div>';
-        return...</div>';
+    if (userCard.status === 'loading') {
+        mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
         return;
-   ;
     }
 
-    }
-
-    if (userCard if (userCard.status === 'active.status === 'active' &&' && userCard.cardUrl userCard.cardUrl) {
-) {
-        subtitle        subtitle.textContent = `.textContent = `💳💳 твоя карта, ${firstName}`;
-        main твоя карта, ${firstName}`;
+    if (userCard.status === 'active' && userCard.cardUrl) {
+        subtitle.textContent = `💳 твоя карта, ${firstName}`;
         mainDiv.innerHTML = `
-Div.innerHTML            = `
- <div class            <div class="card="card-container">
--container">
-                               <img src="${user <img src="${userCard.cardCard.cardUrl}" alt="Url}" alt="карта" classкарта="card" class-image"="card-image" id="ownerCard id="Image">
-ownerCardImage">
-                               <div class <div class="h="hike-counter"><span>⛰ike-counter"><span>⛰️ пр️ пройдойдено хено хайковайков</span</span><span class="><span class="counter-numbercounter-number">${userCard">${userCard.hikes.hikes}</span></div}</span>
-               ></div>
-                <a <a href="#" href="#" class="btn btn class="btn btn-yellow-yellow" id="priv" id="privBtn">Btn">моимои привилегии</a>
-                привилегии</a <div>
-                <div id=" id="navAccnavAccordionordionOwner">
-                    <button classOwner">
-                    <button class="accord="accordion-btn">
+            <div class="card-container">
+                <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
+                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
+                <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
+                <div id="navAccordionOwner">
+                    <button class="accordion-btn">
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
                         <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-white-outline">о клубе</a>
-                        <a href="https://ion-btn">
-                        навигация по клубу <span class="arrow">👀</span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-white-outline">о клубе</a>
-                        <a href="httpst.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-white-outline">философи://tя</a>
-                        <a href.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-white-outline">философия</a>
-                       ="https <a href="https://t.me/y://taltah.me/yaltahiking/246"iking/246" onclick="event.preventDefault onclick="event.preventDefault(); openLink(this.href(); openLink(this.href, ', 'nav_hnav_hiking',iking', false); false); return false return false;" class;" class="btn="btn btn-white-out btn-white-outlineline">о">о хай хайкинге</a>
-                        <a href="кинге</a>
-                        <ahttps:// href="t.mehttps://t.me/yalt/yaltahiking/a/2" onclick="ahiking/a/2" onclick="event.preventDefaultevent.preventDefault(); openLink(this(); openLink(this.href.href, ', 'nav_reviews',nav_reviews', false); false); return false return false;" class;" class="btn="btn btn-white btn-white-outline-outline">от">отзывызывы</a>
+                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-white-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-white-outline">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-white-outline">отзывы</a>
                     </div>
                 </div>
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click</a>
-                    </div>
-                </div>
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false', false); return); return false;" false;" class=" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
-            </divbtn btn-white-outline" id="supportBtn">написать в поддержку</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-white-outline" id="supportBtn">написать в поддержку</a>
             </div>
 
-           >
-
-            <!-- Блок для <!-- Блок для нови новичков -->
-           чков -->
-            <div <div class="card-container">
-                class="card-container">
-                <h2 class <h2 class="section-title">="section-title">🫖 для🫖 для новичков новичков</h2>
-                <div class="btn</h2>
-                <div class="btn-newcomer" id="-newcomer" id="newcomnewcomerBtnerBtn">
-                   ">
-                    <span <span class="newcomer-text class="newcomer-text">ка">как всёк всё устроено</ устроено</span>
-span>
-                                       <img src <img src="https="https://i://i.postimg.postimg.cc/k.cc/k533cR9533cR9Z/fv.png" alt="новичкамZ/fv.png" alt="новичкам" class="new" class="newcomcomerer-image">
-                </-image">
+            <!-- Блок для новичков -->
+            <div class="card-container">
+                <h2 class="section-title">🫖 для новичков</h2>
+                <div class="btn-newcomer" id="newcomerBtn">
+                    <span class="newcomer-text">как всё устроено</span>
+                    <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
                 </div>
-div>
-            </            </div>
-div>
+            </div>
             
-                       
-            <!-- Б <!-- Блок метлок метрик -->
-рик -->
-                       <div class <div class="card="card-container">
-               -container">
- <div class                <div class="metrics="metrics-header">
-                    <h2-header">
-                    <h2 class="metrics-title class="">🌍 кmetrics-title">🌍 клуб в цифрах</h2>
-луб в цифрах</h2>
-                                       <a href="https://t <a href="https://t.me/y.me/yaltahiking/altahiking/148"148" onclick="event.preventDefault onclick="event.preventDefault(); openLink(this(); openLink(this.href, 'reports.href, 'reports_click_click', false', false); return); return false false;" class="metrics-link">смотреть отчёты;" class="metrics-link">смотреть от &gt;</a>
+            <!-- Блок метрик -->
+            <div class="card-container">
+                <div class="metrics-header">
+                    <h2 class="metrics-title">🌍 клуб в цифрах</h2>
+                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
                 </div>
-               чёты &gt;</a>
-                </div>
-                <div <div class=" class="metrics-gridmetrics-grid">
-                   ">
-                    <div <div class=" class="metric-itemmetric-item">
-                        <div">
-                        <div class=" class="metric-labelmetric-label">ха">хайковйков</div</div>
-                        <div>
-                        <div class=" class="metric-valuemetric-value">${">${metrics.hikes}</div>
+                <div class="metrics-grid">
+                    <div class="metric-item">
+                        <div class="metric-label">хайков</div>
+                        <div class="metric-value">${metrics.hikes}</div>
                     </div>
                     <div class="metric-item">
                         <div class="metric-label">локаций</div>
-                        <div class="metric-value">${metrics.locmetrics.hikes}</div>
+                        <div class="metric-value">${metrics.locations}</div>
                     </div>
                     <div class="metric-item">
-                        <div class="metric-label">локаций</div>
-                        <div class="metric-value">${metrics.locations}</ations}</div>
-div>
-                    </                    </div>
-div>
-                                       <div class="metric-item">
-                        <div class="metric-item">
-                        <div class="metric <div class="metric-label">километров</div>
-                        <div class="metric-value-label">километров</div>
-                        <div class="metric-value">${metrics.k">${metrics.kilometersilometers}</div>
-                    </div}</div>
+                        <div class="metric-label">километров</div>
+                        <div class="metric-value">${metrics.kilometers}</div>
                     </div>
-                   >
-                    <div <div class=" class="metric-item">
-                        <div class="metric-label">знакомств</divmetric-item">
+                    <div class="metric-item">
                         <div class="metric-label">знакомств</div>
-                        <div>
-                        class=" <div class="metric-value">${metric-value">${metrics.meetings}</div>
+                        <div class="metric-value">${metrics.meetings}</div>
                     </div>
                 </div>
-metrics.meetings}</div>
-                    </div>
-                </div>
-            </            </div>
-div>
+            </div>
             
-                       
             <div class="extra-links">
- <div class="extra-links">
-                <a href                <a href="https="https://t://t.me/y.me/yaltahaltahiking" onclick="event.preventDefaultiking" onclick="event.preventDefault(); open(); openLink(thisLink(this.href.href, ', 'channel_channel_click',click', false); return false;" class="btn btn-white-outline false); return false;" class="btn btn-white">-outline">📰 откры📰 открыть канал</ть канал</aa>
->
-                <a href="https://t.me/y                <a href="https://t.me/yaltahaltahikingchat" onclick="event.preventDefault();ikingchat" onclick="event.preventDefault(); openLink openLink(this.href, 'chat_click', false(this.href, 'chat_click', false); return); return false;" false;" class="btn btn-white-outline">💬 class="btn btn-white-outline">💬 открыть открыть чат</a чат>
-               </a>
-                <a <a href="#" href="#" class="btn btn-white-outline" id="giftBtn">🫂 пода class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</рить карту другу</a>
+                <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', false); return false;" class="btn btn-white-outline">📰 открыть канал</a>
+                <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', false); return false;" class="btn btn-white-outline">💬 открыть чат</a>
+                <a href="#" class="btn btn-white-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
 
-            <!--a>
-            </div>
-
- Блок            <!-- Блок календаря календаря -->
-            <div -->
-            <div class=" class="card-containercard-container" id" id="calendarContainer"></div>
-="calendarContainer"></div>
+            <!-- Блок календаря -->
+            <div class="card-container" id="calendarContainer"></div>
         `;
 
-               `;
-
-        document.getElementById document.getElementById('owner('ownerCardImage')?.CardImage')addEventListener('click', () => {
-            ha?.addEventListener('click', () => {
+        document.getElementById('ownerCardImage')?.addEventListener('click', () => {
             haptic();
-            if (tgptic();
-            if (tg.Haptic.HapticFeedback)Feedback) tg.HapticFeedback.impactOcc tg.HapticFeedback.impactOccurredurred('medium');
-            showConfetti();
-            log('card_click_celeb('medium');
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             showConfetti();
             log('card_click_celebration');
         });
 
-ration');
-        });
-
-        document        document.getElementById('privBtn')?.addEventListener('click', (.getElementById('privBtn')?.addEventListener('click', (e)e) => {
-            e => {
-.preventDefault();
+        document.getElementById('privBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
-            haptic();
-            log            log('('privilege_click');
-privilege_click');
-            renderPriv            renderPriv();
+            log('privilege_click');
+            renderPriv();
         });
         document.getElementById('giftBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1588,36 +1303,17 @@ privilege_click');
             log('gift_click');
             renderGift(false);
         });
-();
-        });
-        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
+        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
             haptic();
-            log('gift_click');
-            renderGift(false);
-        });
-        document        document.getElementById('newcom.getElementById('erBtnnewcomerBtn')?.addEventListener')?.addEventListener('click('click', () => {
-            haptic();
-', () => {
-            haptic();
-            log            log('newcomer_btn_click('newcomer_btn_click', false', false);
-            renderNewcomer);
-            renderNewPage(false);
-       comerPage(false);
+            log('newcomer_btn_click', false);
+            renderNewcomerPage(false);
         });
 
-        });
+        setupAccordion('navAccordionOwner', false);
 
-        setup setupAccordion('navAccordAccordion('navionOwnerAccordionOwner', false);
-
-       ', false const calendar);
-
-        const calendarContainer =Container = document.getElementById('calendar document.getElementByIdContainer');
-('calendarContainer');
-        if        if ( (calendarContainer) {
-            renderCalendarcalendarContainer) {
-            renderCalendar(calendar(calendarContainer);
-Container);
+        const calendarContainer = document.getElementById('calendarContainer');
+        if (calendarContainer) {
+            renderCalendar(calendarContainer);
         }
 
     } else {
@@ -1625,25 +1321,11 @@ Container);
     }
 }
 
-        }
-
-    } else {
-        renderGuestHome();
-    }
+function buyCard() {
+    haptic();
+    if (!userId) return;
+    log('buy_card_click', true);
+    openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g', null, true);
 }
 
-function buyfunction buyCard()Card() {
-    {
-    haptic haptic();
-   ();
-    if (! if (!userId) return;
-    log('buyuserId) return;
-    log_card_('buy_card_click', true);
-click',    open true);
-Link('    openLink('https://https://auth.auth.robokassa.rurobokassa.ru/mer/merchant/chant/Invoice/wXo6FJOA40uInvoice/wXo6FJOA40u5uzL75uzLK4_X97K4_X9g', null,g', null, true);
- true);
-}
-
-window.addEventListener('load',}
-
-window.addEventListener('load', loadData loadData);
+window.addEventListener('load', loadData);
