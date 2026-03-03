@@ -224,32 +224,53 @@ async function loadUserRegistrations() {
         const data = await resp.json();
         console.log('Ответ сервера (регистрации):', data);
         if (data && Array.isArray(data.registrations)) {
-            // Сбрасываем статусы
-            for (let i = 0; i < hikesList.length; i++) {
-                hikeBookingStatus[i] = false;
-            }
-            // Устанавливаем статусы из данных
-            data.registrations.forEach(reg => {
-                console.log('Обработка регистрации:', reg);
-                const index = hikesList.findIndex(h => h.date === reg.hikeDate);
-                if (index !== -1) {
-                    if (reg.status === 'booked') {
-                        hikeBookingStatus[index] = true;
-                        console.log(`Хайк ${reg.hikeDate} найден, статус booked -> true`);
-                    } else {
-                        console.log(`Хайк ${reg.hikeDate} найден, статус ${reg.status} -> false`);
+            // Сначала загружаем из localStorage, если есть
+            const savedStatus = localStorage.getItem('hikeBookingStatus');
+            if (savedStatus) {
+                try {
+                    const parsed = JSON.parse(savedStatus);
+                    // Сопоставляем с текущими индексами
+                    for (let i = 0; i < hikesList.length; i++) {
+                        const hike = hikesList[i];
+                        if (parsed[hike.date] !== undefined) {
+                            hikeBookingStatus[i] = parsed[hike.date];
+                        } else {
+                            hikeBookingStatus[i] = false;
+                        }
                     }
-                } else {
-                    console.warn(`Хайк с датой ${reg.hikeDate} не найден в списке`);
+                } catch (e) {}
+            } else {
+                // Сбрасываем статусы
+                for (let i = 0; i < hikesList.length; i++) {
+                    hikeBookingStatus[i] = false;
+                }
+            }
+            // Обновляем из данных сервера (приоритет сервера)
+            data.registrations.forEach(reg => {
+                const index = hikesList.findIndex(h => h.date === reg.hikeDate);
+                if (index !== -1 && reg.status === 'booked') {
+                    hikeBookingStatus[index] = true;
                 }
             });
             console.log('Итоговый статус регистраций:', hikeBookingStatus);
+            // Сохраняем в localStorage для надёжности
+            saveStatusToLocalStorage();
         } else {
             console.warn('Неверный ответ от API регистраций:', data);
         }
     } catch (e) {
         console.error('Ошибка загрузки регистраций:', e);
     }
+}
+
+// Функция сохранения статуса в localStorage
+function saveStatusToLocalStorage() {
+    if (!hikesList.length) return;
+    const statusObj = {};
+    hikesList.forEach((hike, index) => {
+        statusObj[hike.date] = hikeBookingStatus[index] || false;
+    });
+    localStorage.setItem('hikeBookingStatus', JSON.stringify(statusObj));
 }
 
 function updateRegistration(hikeDate, hikeTitle, status) {
@@ -595,6 +616,7 @@ function showBottomSheet(index) {
                 haptic();
                 // Мгновенно обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = false;
+                saveStatusToLocalStorage();
                 updateFloatingSheetButtons();
                 // Отправляем на сервер в фоне
                 updateRegistration(hike.date, hike.title, 'cancelled');
@@ -624,6 +646,7 @@ function showBottomSheet(index) {
                 haptic();
                 // Мгновенно обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = true;
+                saveStatusToLocalStorage();
                 updateFloatingSheetButtons();
                 // Отправляем на сервер в фоне
                 updateRegistration(hike.date, hike.title, 'booked');
@@ -842,14 +865,12 @@ function setupBottomNav() {
 
     if (!navHome || !navHikes) return;
 
-    // Клик на "главная" – прокрутка вверх
     navHome.addEventListener('click', () => {
         haptic();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         log('nav_home_click');
     });
 
-    // Клик на "хайкинг" – прокрутка к календарю
     navHikes.addEventListener('click', () => {
         haptic();
         const calendarContainer = document.getElementById('calendarContainer');
@@ -859,7 +880,6 @@ function setupBottomNav() {
         log('nav_hikes_click');
     });
 
-    // Отслеживание скролла для подсветки активного пункта
     function updateActiveNav() {
         if (!navHome || !navHikes) return;
         const calendarContainer = document.getElementById('calendarContainer');
@@ -880,7 +900,7 @@ function setupBottomNav() {
     }
 
     window.addEventListener('scroll', () => requestAnimationFrame(updateActiveNav));
-    updateActiveNav(); // начальное состояние
+    updateActiveNav();
 }
 
 function showBottomNav(show = true) {
@@ -904,11 +924,58 @@ function renderNewcomerPage(isGuest = false) {
     showBack(() => renderHome());
     haptic();
     log('newcomer_page_opened', isGuest);
-    showBottomNav(false); // скрываем меню на других страницах
+    showBottomNav(false);
 
     const faq = [
-        // ... (FAQ массив полностью, без изменений) ...
-    ]; // для краткости здесь не повторяю, но в реальном коде массив должен быть полным
+        {
+            q: '⛰️ что такое хайкинг?',
+            a: 'хайкинг – это прогулки. но не по улицам бетонного города, а по манящим свежестью просторам природы. не уставившись себе под ноги, а подняв голову созерцая богатство твоей планеты. без преодоления себя. без палаток и ночёвок. 3-5 часов лёгкого и среднего уровня ходьбы по обустроенным тропам и видовым местам. да ещё и в компании таких же интеллигентов, как и ты'
+        },
+        {
+            q: '🥾 чем вы отличаетесь от обычных походов?',
+            a: 'мы здесь не про походы. не про туризм. не про экскурсии. мы про активную позицию в жизни, про здоровый отдых, про новые знакомства и дружбу, про эмоции и впечатления. 80% наших хайков – люди и общение, 20% – природа как идеальный контекст'
+        },
+        {
+            q: '📋 как попасть на хайк?',
+            a: '1. подпишись на канал @yaltahiking.\n2. следи за анонсами актуальных маршрутов (выходят в середине недели).\n3. ставь «голос» в комментариях к анонсу, если точно пойдёшь.\n4. оформи билет (ссылка в анонсе) – 1500₽, если у тебя ещё нет карты интеллигента.\n5. до встречи на точке сбора (координаты и время – в анонсе)'
+        },
+        {
+            q: '💵 сколько стоит участие?',
+            a: 'билет на хайк стоит 1500 ₽. если у тебя есть карта интеллигента – хайки бесплатны, плюс привилегии в городе и приоритетный запрос на мастермайнд. карта стоит 7500₽ и окупается уже на шестой хайк'
+        },
+        {
+            q: '🎒 что брать с собой?',
+            a: 'кроссовки с цепкой подошвой + дышащие носки + влагоотводящая футболка = база комфортного хайка. также захвати: чистую воду, перекус в виде быстрых углеводов; защиту от солнца: панаму или кепку, санскрин; на всякий нанеси защиту от клещей; ну, и небольшой удобный рюкзак или поясную сумку. в прохладное время: термокофта + флис + ветровка, штаны из нейлона, непромокаемая обувь'
+        },
+        {
+            q: '🧠 что такое мастермайнд?',
+            a: 'это формат коллективного мышления, которым уже больше сотни лет пользуются президенты, предприниматели и главные инноваторы планеты. на хайках мы собираемся на вершине, где каждый может поделиться своим запросом во время сессии – получить свежий взгляд, поддержку, идеи и полезные контакты от десятка людей, идущих рядом. у тебя появляются союзники, для которых твой запрос так же ценен, как их собственный'
+        },
+        {
+            q: '💳 что даёт карта интеллигента?',
+            a: '– бесплатные хайки\n– привилегии и скидки у партнёров\n– приоритетный запрос на мастермайнд\n– один гостевой хайк для друга (ему билет не нужен)\n– эксклюзивные маршруты для владельцев карт\n– концентрат мастермайнда: структурированный документ с записью сессии и ключевыми тезисами\n– наш собственный из «трёх букв» сервер, для обхода любых блокировок в интернете'
+        },
+        {
+            q: '🙌🏻 нужна ли специальная подготовка?',
+            a: 'нет. мы ходим по тропам лёгкого и среднего уровня. никакого преодоления себя – только отдых и удовольствие. «без подготовки. без экипировки. просто жди когда анонсируем интересный маршрут, приезжай вовремя на точку и пошли вместе наслаждаться лучшей жизнью».'
+        },
+        {
+            q: '🛡️ как обеспечивается безопасность?',
+            a: 'каждый маршрут мы тщательно продумываем и предварительно ходим на разведку. на маршруте есть опытный гид, базовая аптечка, фонарики, иногда берём для всех дождевики. если погода совсем нелётная – переносим хайк'
+        },
+        {
+            q: '⭐ зачем звёзды в чате?',
+            a: 'одна звезда – один пройденный с нами маршрут. когда набираешь три звезды, у тебя появляется доступ в наш закрытый чат для более близкого общения и неформальных встреч'
+        },
+        {
+            q: '🍷 можно ли с алкоголем?',
+            a: 'на маршруте мы обходимся без алкоголя, но порой заходим всей компанией в Капри на набережной, а там – любые удовольствия'
+        },
+        {
+            q: '🎟️ нужен ли пропуск в заповедник?',
+            a: 'если маршрут проходит по заповеднику и у тебя прописка не в Ялте/Севастополе, нужно оформить туристический пропуск на сайте zapovedcrimea.ru (занимает 2 минуты). если местный – пропуск местного жителя. не забудь паспорт – покажешь лесникам. есть маршруты, где пропуск не нужен, это указываем в анонсе'
+        }
+    ];
 
     let faqHtml = '';
     faq.forEach(item => {
@@ -971,11 +1038,33 @@ function renderNewcomerPage(isGuest = false) {
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
-    showBottomNav(false); // скрываем меню
+    showBottomNav(false);
 
     let club = [
-        // ... (массив привилегий) ...
+        { 
+            t: 'бесплатные хайки', 
+            d: 'уже на шестой хайк твоя карта окупится и позволит ходить на хайки бесплатно. пока существует клуб или пока не прилетит метеорит' 
+        },
+        { 
+            t: 'плюс один', 
+            d: 'на каждый хайк ты можешь брать с собой одного нового друга, который ещё с нами не был. всё, что ему нужно – поставить голос в регистрации и оформить пропуск в заповедник. билет покупать не нужно' 
+        },
+        { 
+            t: 'эксклюзивные маршруты', 
+            d: 'ты можешь ходить по закрытым для большинства туристов локациям с нашим сертифицированным гидом' 
+        },
+        { 
+            t: 'запрос на мастермайнд', 
+            d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами',
+            btn: 'забронировать запрос'
+        },
+        { 
+            t: 'новое: обход блокировок', 
+            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок',
+            btn: 'получить настройки'
+        }
     ];
+
     let clubHtml = '';
     club.forEach(c => {
         let titleHtml = c.t;
@@ -1059,8 +1148,28 @@ function renderGuestPriv() {
     showBottomNav(false);
 
     let club = [
-        // ... (массив для гостей) ...
+        { 
+            t: 'бесплатные хайки', 
+            d: 'уже на шестой хайк твоя карта окупится и позволит ходить на хайки бесплатно. пока существует клуб или пока не прилетит метеорит' 
+        },
+        { 
+            t: 'плюс один', 
+            d: 'на каждый хайк ты можешь брать с собой одного нового друга, который ещё с нами не был. всё, что ему нужно – поставить голос в регистрации и оформить пропуск в заповедник. билет покупать не нужно' 
+        },
+        { 
+            t: 'эксклюзивные маршруты', 
+            d: 'ты можешь ходить по закрытым для большинства туристов локациям с нашим сертифицированным гидом' 
+        },
+        { 
+            t: 'запрос на мастермайнд', 
+            d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами' 
+        },
+        { 
+            t: 'новое: обход блокировок', 
+            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок' 
+        }
     ];
+
     let clubHtml = '';
     club.forEach(c => {
         let titleHtml = c.t;
@@ -1199,7 +1308,7 @@ function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
-    showBottomNav(true); // показываем меню на главной
+    showBottomNav(true);
 
     mainDiv.innerHTML = `
         <div class="card-container">
@@ -1314,7 +1423,7 @@ function renderHome() {
 
     if (userCard.status === 'active' && userCard.cardUrl) {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
-        showBottomNav(true); // показываем меню на главной
+        showBottomNav(true);
 
         mainDiv.innerHTML = `
             <div class="card-container">
@@ -1412,16 +1521,14 @@ function renderHome() {
             renderCalendar(calendarContainer);
         }
 
-        // Настраиваем нижнее меню
         setupBottomNav();
 
     } else {
         renderGuestHome();
-        // Для гостей тоже обновим метрики в фоне
         loadMetrics().then(() => {
             updateMetricsUI();
         });
-        setupBottomNav(); // на случай, если меню уже есть
+        setupBottomNav();
     }
 }
 
