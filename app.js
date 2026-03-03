@@ -441,10 +441,14 @@ let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
 
-function showBottomSheet(index) {
+async function showBottomSheet(index) {
     if (!hikesList.length) return;
 
-    // Убрали фоновую загрузку статусов при открытии, чтобы не было race condition
+    // Загружаем свежие статусы перед открытием слайдера
+    if (userId) {
+        await loadUserRegistrations();
+        // после загрузки статусов, если кнопки уже будут созданы, они обновятся позже
+    }
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
