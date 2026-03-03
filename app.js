@@ -232,8 +232,6 @@ async function loadUserRegistrations() {
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
                 if (index !== -1 && reg.status === 'booked') {
                     hikeBookingStatus[index] = true;
-                } else if (index !== -1) {
-                    console.log(`Хайк ${reg.hikeDate} статус ${reg.status}, не booked`);
                 }
             });
             console.log('Итоговый статус регистраций:', hikeBookingStatus);
@@ -271,8 +269,6 @@ async function updateRegistration(hikeDate, hikeTitle, status) {
         const result = await resp.json();
         console.log('Ответ на обновление:', result);
         if (result.status === 'ok') {
-            // После успешной записи сразу перезагрузим статусы с сервера для синхронизации
-            await loadUserRegistrations();
             return true;
         } else {
             console.error('Ошибка обновления статуса:', result);
@@ -599,7 +595,7 @@ function showBottomSheet(index) {
                 haptic();
                 const success = await updateRegistration(hike.date, hike.title, 'cancelled');
                 if (success) {
-                    // updateRegistration уже вызвала loadUserRegistrations, так что статус обновлён
+                    hikeBookingStatus[sheetCurrentIndex] = false;
                     updateFloatingSheetButtons();
                     log('sheet_cancel_click', false);
                 } else {
@@ -630,6 +626,7 @@ function showBottomSheet(index) {
                 haptic();
                 const success = await updateRegistration(hike.date, hike.title, 'booked');
                 if (success) {
+                    hikeBookingStatus[sheetCurrentIndex] = true;
                     updateFloatingSheetButtons();
                     log('sheet_go_click', false);
                 } else {
