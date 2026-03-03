@@ -274,12 +274,21 @@ function updateRegistration(hikeDate, hikeTitle, status) {
         fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params,
-            keepalive: true // гарантирует отправку даже при закрытии страницы
+            keepalive: true
         })
             .then(res => res.json())
             .then(result => {
                 console.log('Ответ на обновление:', result);
-                if (result.status !== 'ok') {
+                if (result.status === 'ok') {
+                    // После успешного обновления подождём секунду и перезагрузим статусы, чтобы убедиться в актуальности
+                    setTimeout(() => {
+                        loadUserRegistrations().then(() => {
+                            if (document.querySelector('.floating-sheet-buttons')) {
+                                updateFloatingSheetButtons();
+                            }
+                        });
+                    }, 1000);
+                } else {
                     console.error('Ошибка обновления статуса:', result);
                 }
             })
@@ -290,9 +299,7 @@ function updateRegistration(hikeDate, hikeTitle, status) {
 }
 
 async function loadData() {
-    // Загружаем пользователя, метрики и хайки параллельно
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
-    // После того как хайки загружены, загружаем регистрации
     if (userId && hikesList.length > 0) {
         await loadUserRegistrations();
     }
@@ -444,10 +451,9 @@ let isDragging = false;
 function showBottomSheet(index) {
     if (!hikesList.length) return;
 
-    // Запускаем фоновую загрузку статусов, не блокируя открытие
+    // Загружаем статусы в фоне, но без блокировки
     if (userId) {
         loadUserRegistrations().then(() => {
-            // После загрузки обновляем кнопки, если они уже созданы
             if (document.querySelector('.floating-sheet-buttons')) {
                 updateFloatingSheetButtons();
             }
