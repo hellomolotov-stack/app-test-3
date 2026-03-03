@@ -806,6 +806,7 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
+        <h2 class="section-title">⚠️ раздел в разработке</h2>
         <div class="calendar-item">
             <div class="calendar-header">
                 <h3>${monthNames[currentMonth]} ${currentYear}</h3>
@@ -868,7 +869,7 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
 
-// ----- Настройка нижнего меню (исправлено) -----
+// ----- Настройка нижнего меню -----
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -903,7 +904,7 @@ function setupBottomNav() {
 
     navHomeNew.addEventListener('click', () => {
         haptic();
-        renderHome(); // всегда возвращаем на главную
+        renderHome(); // всегда возвращаем на главную (в самый верх)
         log('nav_home_click');
         if (popup.classList.contains('show')) {
             popup.classList.remove('show');
@@ -1000,7 +1001,6 @@ function renderNewcomerPage(isGuest = false) {
     // Показываем меню только владельцам карты
     showBottomNav(!isGuest);
 
-    // НОВЫЙ МАССИВ FAQ
     const faq = [
         {
             q: '⛰️ что такое хайкинг?',
