@@ -2,17 +2,14 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
-// Функция тактильного отклика
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
 window.haptic = haptic;
 
-// Универсальная функция открытия ссылок
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-
     if (url.startsWith('https://t.me/')) {
         window.open(url, '_blank');
         tg.close();
@@ -41,7 +38,7 @@ const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOi
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
-const CACHE_TTL = 300000; // 5 минут (чтобы данные обновлялись)
+const CACHE_TTL = 300000; // 5 минут
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -51,7 +48,7 @@ let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
 let hikesData = {};
 let hikesList = [];
-let hikeBookingStatus = {}; // ключ: индекс в hikesList, значение: boolean (true - забронировано)
+let hikeBookingStatus = {};
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
@@ -69,7 +66,6 @@ function log(action, isGuest = false) {
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-// Улучшенный парсинг строки CSV с учётом кавычек
 function parseCSVLine(line) {
     const result = [];
     let start = 0;
@@ -94,7 +90,6 @@ function parseCSVLine(line) {
     return result;
 }
 
-// Загрузка с кэшированием (TTL уменьшен)
 async function fetchWithCache(key, url, ttl = CACHE_TTL) {
     const cached = localStorage.getItem(key);
     if (cached) {
@@ -110,7 +105,6 @@ async function fetchWithCache(key, url, ttl = CACHE_TTL) {
     return data;
 }
 
-// Загрузка данных пользователя
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -143,7 +137,6 @@ async function loadUserData() {
     }
 }
 
-// Загрузка метрик
 async function loadMetrics() {
     try {
         const { text } = await fetchWithCache('metrics', METRICS_CSV_URL, CACHE_TTL);
@@ -166,7 +159,6 @@ async function loadMetrics() {
     }
 }
 
-// Загрузка расписания хайков
 async function loadHikes() {
     try {
         const { text } = await fetchWithCache('hikes', HIKES_CSV_URL, CACHE_TTL);
@@ -205,16 +197,14 @@ async function loadHikes() {
             };
         }
         hikesList = Object.values(hikesData).sort((a, b) => a.date.localeCompare(b.date));
-        // Инициализируем статус бронирования (пока false, потом загрузим)
         for (let i = 0; i < hikesList.length; i++) {
             hikeBookingStatus[i] = false;
         }
     } catch (e) {
-        console.error('Ошибка загрузки расписания хайков (некритично):', e);
+        console.error('Ошибка загрузки расписания хайков:', e);
     }
 }
 
-// Загрузка статуса бронирования для текущего пользователя (без кэша)
 async function loadUserRegistrations() {
     if (!userId || !REGISTRATION_API_URL || hikesList.length === 0) return;
     try {
@@ -222,11 +212,9 @@ async function loadUserRegistrations() {
         const resp = await fetch(url);
         const data = await resp.json();
         if (data && Array.isArray(data.registrations)) {
-            // Сбрасываем статусы
             for (let i = 0; i < hikesList.length; i++) {
                 hikeBookingStatus[i] = false;
             }
-            // Устанавливаем статусы из данных
             data.registrations.forEach(reg => {
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
                 if (index !== -1 && reg.status === 'booked') {
@@ -240,7 +228,6 @@ async function loadUserRegistrations() {
     }
 }
 
-// Отправка статуса на сервер (без ожидания, чтобы не тормозить интерфейс)
 function updateRegistration(hikeDate, hikeTitle, status) {
     if (!userId || !REGISTRATION_API_URL) return;
     try {
@@ -277,13 +264,9 @@ function updateRegistration(hikeDate, hikeTitle, status) {
     }
 }
 
-// Общая загрузка данных
 async function loadData() {
-    // Загружаем пользователя и метрики параллельно
     await Promise.allSettled([loadUserData(), loadMetrics()]);
-    // Затем загружаем хайки (обязательно дожидаемся)
     await loadHikes();
-    // После того как hikesList готов, загружаем регистрации
     if (userId && hikesList.length > 0) {
         await loadUserRegistrations();
     }
@@ -356,7 +339,6 @@ const partners = [
     }
 ];
 
-// ----- Аккордеон -----
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -376,7 +358,6 @@ function setupAccordion(containerId, isGuest) {
     }
 }
 
-// ----- Конфетти -----
 function showConfetti() {
     const canvas = document.createElement('canvas');
     canvas.style.position = 'fixed';
@@ -437,6 +418,15 @@ let isDragging = false;
 function showBottomSheet(index) {
     if (!hikesList.length) return;
 
+    // Обновляем статусы перед открытием
+    if (userId) {
+        loadUserRegistrations().then(() => {
+            if (document.querySelector('.floating-sheet-buttons')) {
+                updateFloatingSheetButtons();
+            }
+        });
+    }
+
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
 
@@ -451,7 +441,6 @@ function showBottomSheet(index) {
         <div class="bottom-sheet" id="hikeBottomSheet">
             <div class="bottom-sheet-handle"></div>
             <div class="bottom-sheet-content-wrapper" id="bottomSheetContent">
-                <!-- контент будет обновляться через JS -->
             </div>
         </div>
     `;
@@ -561,11 +550,9 @@ function showBottomSheet(index) {
         today.setHours(0, 0, 0, 0);
         const isPast = hikeDate < today;
 
-        // Очищаем контейнер и создаём заново
         container.innerHTML = '';
 
         if (isPast) {
-            // Прошедший хайк: одна некликабельная кнопка
             const completedBtn = document.createElement('a');
             completedBtn.href = '#';
             completedBtn.className = 'btn btn-outline';
@@ -575,15 +562,12 @@ function showBottomSheet(index) {
             return;
         }
 
-        // Актуальный хайк
         if (isBooked) {
-            // Записан: сначала "ты записан" (зелёная), затем "отменить" (белая с обводкой)
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-green';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
-            // При клике на "ты записан" ничего не делаем (просто индикатор)
             container.appendChild(goBtn);
 
             const cancelBtn = document.createElement('a');
@@ -594,16 +578,13 @@ function showBottomSheet(index) {
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                // Мгновенно обновляем интерфейс
                 hikeBookingStatus[sheetCurrentIndex] = false;
                 updateFloatingSheetButtons();
-                // Фоновая отправка
                 updateRegistration(hike.date, hike.title, 'cancelled');
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
         } else {
-            // Не записан: сначала "задать вопрос", затем "иду"
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
@@ -624,10 +605,8 @@ function showBottomSheet(index) {
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                // Мгновенное обновление интерфейса
                 hikeBookingStatus[sheetCurrentIndex] = true;
                 updateFloatingSheetButtons();
-                // Фоновая отправка
                 updateRegistration(hike.date, hike.title, 'booked');
                 log('sheet_go_click', false);
             });
@@ -668,7 +647,6 @@ function showBottomSheet(index) {
     sheetScrollListener = checkScroll;
     contentWrapper.addEventListener('scroll', sheetScrollListener);
 
-    // Создаём кнопки сразу
     createFloatingButtons();
 
     overlay.classList.add('visible');
@@ -755,7 +733,6 @@ function closeBottomSheet() {
     }
 }
 
-// ----- Рендер календаря -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -822,7 +799,7 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Страница для новичков (FAQ) (полная) -----
+// ----- Страница для новичков (FAQ) -----
 function renderNewcomerPage(isGuest = false) {
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
@@ -942,7 +919,7 @@ function renderNewcomerPage(isGuest = false) {
     window._floatingScrollHandler = scrollHandler;
 }
 
-// ----- Страница привилегий для владельцев карты (полная) -----
+// ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
@@ -1000,12 +977,44 @@ function renderPriv() {
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-            <button id="goHome" class="btn btn-outline" style="width:calc(100% - 32px); margin:20px 16px 0;">&lt; на главную</button>
-        </div>`;
-    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
+        </div>
+        <div class="floating-btn-container" id="floatingBtnContainer">
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', false); return false;" class="btn btn-yellow">задать вопрос</a>
+            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
+        </div>
+    `;
+
+    const floatingContainer = document.getElementById('floatingBtnContainer');
+    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        renderHome();
+    });
+
+    function checkFloatingButton() {
+        if (!floatingContainer) return;
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const showThreshold = documentHeight * 0.1;
+        const hideThreshold = documentHeight * 0.1;
+        const remaining = documentHeight - (scrollY + windowHeight);
+
+        if (scrollY > showThreshold && remaining > hideThreshold) {
+            floatingContainer.classList.remove('hidden');
+        } else {
+            floatingContainer.classList.add('hidden');
+        }
+    }
+
+    checkFloatingButton();
+    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
+    window.addEventListener('scroll', scrollHandler);
+    window.addEventListener('resize', scrollHandler);
+    window._floatingScrollHandler = scrollHandler;
 }
 
-// ----- Страница привилегий для гостей (полная) -----
+// ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
     subtitle.textContent = `💳 привилегии с картой интеллигента`;
     showBack(renderHome);
@@ -1053,23 +1062,50 @@ function renderGuestPriv() {
     partnersGuest.forEach(p => {
         cityHtml += `<div class="partner-item">
             <strong>${p.name}</strong>
-            <p>${p.privilege}</p>`;
-        cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
-        cityHtml += `</div>`;
+            <p>${p.privilege}</p>
+            <p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>
+        </div>`;
     });
 
     mainDiv.innerHTML = `
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" style="width:calc(100% - 32px); margin:0 16px;" id="guestBuyBtn">купить карту</a>
-                <button id="goHome" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
-            </div>
-        </div>`;
+        </div>
+        <div class="floating-btn-container" id="floatingBtnContainer">
+            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', true); return false;" class="btn btn-yellow">задать вопрос</a>
+            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
+        </div>
+    `;
 
-    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
-    document.getElementById('guestBuyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
+    const floatingContainer = document.getElementById('floatingBtnContainer');
+    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        renderHome();
+    });
+
+    function checkFloatingButton() {
+        if (!floatingContainer) return;
+        const scrollY = window.scrollY;
+        const windowHeight = window.innerHeight;
+        const documentHeight = document.documentElement.scrollHeight;
+        const showThreshold = documentHeight * 0.1;
+        const hideThreshold = documentHeight * 0.1;
+        const remaining = documentHeight - (scrollY + windowHeight);
+
+        if (scrollY > showThreshold && remaining > hideThreshold) {
+            floatingContainer.classList.remove('hidden');
+        } else {
+            floatingContainer.classList.add('hidden');
+        }
+    }
+
+    checkFloatingButton();
+    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
+    window.addEventListener('scroll', scrollHandler);
+    window.addEventListener('resize', scrollHandler);
+    window._floatingScrollHandler = scrollHandler;
 }
 
 // ----- Страница подарка -----
