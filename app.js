@@ -38,7 +38,9 @@ const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOi
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
-const CACHE_TTL = 300000; // 5 минут
+// Убираем кэш для метрик (устанавливаем TTL=0)
+const CACHE_TTL = 300000; // для остальных данных
+const METRICS_TTL = 0; // всегда загружать свежие
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -105,6 +107,11 @@ async function fetchWithCache(key, url, ttl = CACHE_TTL) {
     return data;
 }
 
+async function fetchWithoutCache(url) {
+    const resp = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-cache' });
+    return await resp.text();
+}
+
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -139,7 +146,7 @@ async function loadUserData() {
 
 async function loadMetrics() {
     try {
-        const { text } = await fetchWithCache('metrics', METRICS_CSV_URL, CACHE_TTL);
+        const text = await fetchWithoutCache(METRICS_CSV_URL);
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных метрик');
         const headers = parseCSVLine(lines[0]);
@@ -154,6 +161,7 @@ async function loadMetrics() {
             locations: data.locations || '13',
             meetings: data.meetings || '130+'
         };
+        console.log('Метрики загружены:', metrics);
     } catch (e) {
         console.error('Ошибка загрузки метрик:', e);
     }
@@ -733,6 +741,7 @@ function closeBottomSheet() {
     }
 }
 
+// ----- Календарь (сворачиваемый) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -748,16 +757,15 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <h2 class="section-title">🔧 раздел в разработке</h2>
-        <div class="calendar-item">
-            <div class="calendar-header">
-                <h3>${monthNames[currentMonth]} ${currentYear}</h3>
-                <span class="calendar-badge">запланируй хайк</span>
-            </div>
-            <div class="weekdays">
-                ${weekdays.map(d => `<span>${d}</span>`).join('')}
-            </div>
-            <div class="calendar-grid" id="calendarGrid">
+        <div class="calendar-header" id="calendarToggle">
+            <h3>⚠️ раздел в разработке</h3>
+        </div>
+        <div class="calendar-content" id="calendarContent">
+            <div class="calendar-item">
+                <div class="weekdays">
+                    ${weekdays.map(d => `<span>${d}</span>`).join('')}
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
     `;
 
     for (let i = 0; i < startOffset; i++) {
@@ -784,9 +792,19 @@ function renderCalendar(container) {
         }
     }
 
-    calendarHtml += `</div></div>`;
+    calendarHtml += `</div></div></div>`;
 
     container.innerHTML = calendarHtml;
+
+    // Toggle календаря по клику на заголовок
+    const toggle = document.getElementById('calendarToggle');
+    const content = document.getElementById('calendarContent');
+    if (toggle && content) {
+        toggle.addEventListener('click', () => {
+            haptic();
+            content.classList.toggle('calendar-hidden');
+        });
+    }
 
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
@@ -977,12 +995,23 @@ function renderPriv() {
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+            <!-- Статические кнопки внизу (как в разделе для новичка) -->
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'privilege_support_click', false); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="goHomePrivStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
         </div>
+        <!-- Плавающие кнопки (оставлены для удобства) -->
         <div class="floating-btn-container" id="floatingBtnContainer">
             <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', false); return false;" class="btn btn-yellow">задать вопрос</a>
             <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
         </div>
     `;
+
+    document.getElementById('goHomePrivStatic')?.addEventListener('click', () => {
+        haptic();
+        renderHome();
+    });
 
     const floatingContainer = document.getElementById('floatingBtnContainer');
     document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
@@ -1071,12 +1100,22 @@ function renderGuestPriv() {
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+            <!-- Статические кнопки внизу -->
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'privilege_support_click', true); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="goHomeGuestPrivStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
         </div>
         <div class="floating-btn-container" id="floatingBtnContainer">
             <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', true); return false;" class="btn btn-yellow">задать вопрос</a>
             <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
         </div>
     `;
+
+    document.getElementById('goHomeGuestPrivStatic')?.addEventListener('click', () => {
+        haptic();
+        renderHome();
+    });
 
     const floatingContainer = document.getElementById('floatingBtnContainer');
     document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
