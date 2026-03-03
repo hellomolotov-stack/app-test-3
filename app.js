@@ -56,6 +56,49 @@ const subtitle = document.getElementById('subtitle');
 const bottomNav = document.getElementById('bottomNav');
 const navPopup = document.getElementById('navPopup');
 
+// Флаги состояния интерфейса
+let isPrivPage = false;      // находимся ли на странице привилегий
+let isMenuActive = false;    // открыто ли меню (кнопка «меню» активна)
+
+// ---------- Вспомогательные функции для навигации ----------
+function setActiveNav(activeId) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (activeId) {
+        const activeEl = document.getElementById(activeId);
+        if (activeEl) activeEl.classList.add('active');
+    }
+}
+
+function resetNavActive() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+}
+
+function updateActiveNav() {
+    if (isPrivPage || isMenuActive) return;
+
+    const navHome = document.getElementById('navHome');
+    const navHikes = document.getElementById('navHikes');
+    if (!navHome || !navHikes) return;
+
+    const calendarContainer = document.getElementById('calendarContainer');
+    if (!calendarContainer) {
+        setActiveNav('navHome');
+        return;
+    }
+    const rect = calendarContainer.getBoundingClientRect();
+    const isCalendarVisible = rect.top < window.innerHeight && rect.bottom > 0;
+    if (isCalendarVisible) {
+        setActiveNav('navHikes');
+    } else {
+        setActiveNav('navHome');
+    }
+}
+
+// ---------- Логирование и загрузка данных ----------
 function log(action, isGuest = false) {
     if (!userId) return;
     const finalAction = isGuest ? `${action}_guest` : action;
@@ -148,7 +191,6 @@ async function loadUserData() {
 async function loadMetrics() {
     try {
         const text = await fetchWithoutCache(METRICS_CSV_URL);
-        console.log('Metrics raw text:', text.substring(0, 200));
         const lines = text.trim().split('\n');
         if (lines.length < 2) throw new Error('Нет данных метрик');
         const headers = parseCSVLine(lines[0]);
@@ -163,7 +205,6 @@ async function loadMetrics() {
             locations: data.locations || '13',
             meetings: data.meetings || '130+'
         };
-        console.log('Метрики загружены:', metrics);
     } catch (e) {
         console.error('Ошибка загрузки метрик:', e);
     }
@@ -210,7 +251,6 @@ async function loadHikes() {
         for (let i = 0; i < hikesList.length; i++) {
             hikeBookingStatus[i] = false;
         }
-        console.log('Список хайков загружен. Даты:', hikesList.map(h => h.date));
     } catch (e) {
         console.error('Ошибка загрузки расписания хайков:', e);
     }
@@ -220,17 +260,13 @@ async function loadUserRegistrations() {
     if (!userId || !REGISTRATION_API_URL || hikesList.length === 0) return;
     try {
         const url = `${REGISTRATION_API_URL}?action=get&user_id=${userId}&_=${Date.now()}`;
-        console.log('Запрос регистраций:', url);
         const resp = await fetch(url);
         const data = await resp.json();
-        console.log('Ответ сервера (регистрации):', data);
         if (data && Array.isArray(data.registrations)) {
-            // Сначала загружаем из localStorage, если есть
             const savedStatus = localStorage.getItem('hikeBookingStatus');
             if (savedStatus) {
                 try {
                     const parsed = JSON.parse(savedStatus);
-                    // Сопоставляем с текущими индексами
                     for (let i = 0; i < hikesList.length; i++) {
                         const hike = hikesList[i];
                         if (parsed[hike.date] !== undefined) {
@@ -241,30 +277,23 @@ async function loadUserRegistrations() {
                     }
                 } catch (e) {}
             } else {
-                // Сбрасываем статусы
                 for (let i = 0; i < hikesList.length; i++) {
                     hikeBookingStatus[i] = false;
                 }
             }
-            // Обновляем из данных сервера (приоритет сервера)
             data.registrations.forEach(reg => {
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
                 if (index !== -1 && reg.status === 'booked') {
                     hikeBookingStatus[index] = true;
                 }
             });
-            console.log('Итоговый статус регистраций:', hikeBookingStatus);
-            // Сохраняем в localStorage для надёжности
             saveStatusToLocalStorage();
-        } else {
-            console.warn('Неверный ответ от API регистраций:', data);
         }
     } catch (e) {
         console.error('Ошибка загрузки регистраций:', e);
     }
 }
 
-// Функция сохранения статуса в localStorage
 function saveStatusToLocalStorage() {
     if (!hikesList.length) return;
     const statusObj = {};
@@ -292,20 +321,11 @@ function updateRegistration(hikeDate, hikeTitle, status) {
             status: status,
             has_card: hasCard
         });
-        console.log('Отправка запроса на обновление:', params.toString());
         fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params,
             keepalive: true
-        })
-            .then(res => res.json())
-            .then(result => {
-                console.log('Ответ на обновление:', result);
-                if (result.status !== 'ok') {
-                    console.error('Ошибка обновления статуса:', result);
-                }
-            })
-            .catch(e => console.error('Ошибка отправки запроса:', e));
+        }).catch(e => console.error('Ошибка отправки запроса:', e));
     } catch (e) {
         console.error('Ошибка в updateRegistration:', e);
     }
@@ -327,7 +347,7 @@ async function loadData() {
     }
 }
 
-// ----- Массив партнёров (полный) -----
+// ----- Массив партнёров -----
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -615,11 +635,9 @@ function showBottomSheet(index) {
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                // Мгновенно обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = false;
                 saveStatusToLocalStorage();
                 updateFloatingSheetButtons();
-                // Отправляем на сервер в фоне
                 updateRegistration(hike.date, hike.title, 'cancelled');
                 log('sheet_cancel_click', false);
             });
@@ -645,11 +663,9 @@ function showBottomSheet(index) {
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                // Мгновенно обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = true;
                 saveStatusToLocalStorage();
                 updateFloatingSheetButtons();
-                // Отправляем на сервер в фоне
                 updateRegistration(hike.date, hike.title, 'booked');
                 log('sheet_go_click', false);
             });
@@ -703,7 +719,6 @@ function showBottomSheet(index) {
         }
     });
 
-    // Умный свайп вниз (без изменений)
     const onTouchStart = (e) => {
         const target = e.target;
         const isInteractive = target.closest('.bottom-sheet-nav-arrow') || 
@@ -841,7 +856,7 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Обновление UI метрик с использованием data-атрибутов -----
+// ----- Обновление UI метрик -----
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -852,12 +867,9 @@ function updateMetricsUI() {
     if (locationsEl) locationsEl.textContent = metrics.locations;
     if (kilometersEl) kilometersEl.textContent = metrics.kilometers;
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
-    console.log('UI метрик обновлён');
 }
 
-// ----- Функции для нижнего меню -----
-let popupVisible = false;
-
+// ----- Настройка нижнего меню -----
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -869,7 +881,6 @@ function setupBottomNav() {
 
     if (!navHome || !navHikes || !navMore || !popup) return;
 
-    // Убираем все старые обработчики, чтобы не было дублирования
     const newNavHome = navHome.cloneNode(true);
     const newNavHikes = navHikes.cloneNode(true);
     const newNavMore = navMore.cloneNode(true);
@@ -877,7 +888,6 @@ function setupBottomNav() {
     navHikes.parentNode.replaceChild(newNavHikes, navHikes);
     navMore.parentNode.replaceChild(newNavMore, navMore);
 
-    // Переназначаем переменные
     const navHomeNew = document.getElementById('navHome');
     const navHikesNew = document.getElementById('navHikes');
     const navMoreNew = document.getElementById('navMore');
@@ -886,11 +896,11 @@ function setupBottomNav() {
         haptic();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         log('nav_home_click');
-        // Скрываем попап, если открыт
-        if (popupVisible) {
+        if (popup.classList.contains('show')) {
             popup.classList.remove('show');
-            popupVisible = false;
         }
+        isMenuActive = false;
+        updateActiveNav();
     });
 
     navHikesNew.addEventListener('click', () => {
@@ -900,79 +910,60 @@ function setupBottomNav() {
             calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         log('nav_hikes_click');
-        if (popupVisible) {
+        if (popup.classList.contains('show')) {
             popup.classList.remove('show');
-            popupVisible = false;
         }
+        isMenuActive = false;
+        updateActiveNav();
     });
 
     navMoreNew.addEventListener('click', (e) => {
         e.stopPropagation();
         haptic();
-        popupVisible = !popupVisible;
-        if (popupVisible) {
-            popup.classList.add('show');
-        } else {
+        if (popup.classList.contains('show')) {
             popup.classList.remove('show');
+            isMenuActive = false;
+            updateActiveNav();
+        } else {
+            popup.classList.add('show');
+            setActiveNav('navMore');
+            isMenuActive = true;
         }
         log('nav_more_click');
     });
 
-    // Обработчики для пунктов попап-меню
     popupChat.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
         openLink('https://t.me/yaltahikingchat', 'popup_chat_click');
         popup.classList.remove('show');
-        popupVisible = false;
+        isMenuActive = false;
+        updateActiveNav();
     });
     popupChannel.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
         openLink('https://t.me/yaltahiking', 'popup_channel_click');
         popup.classList.remove('show');
-        popupVisible = false;
+        isMenuActive = false;
+        updateActiveNav();
     });
     popupGift.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
-        renderGift(false); // для владельцев карты
+        renderGift(false);
         popup.classList.remove('show');
-        popupVisible = false;
+        isMenuActive = false;
+        resetNavActive();
     });
 
-    // Закрытие попапа при клике вне его
     document.addEventListener('click', (e) => {
-        if (popupVisible && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
+        if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
             popup.classList.remove('show');
-            popupVisible = false;
+            isMenuActive = false;
+            updateActiveNav();
         }
     });
-
-    function updateActiveNav() {
-        if (!navHomeNew || !navHikesNew) return;
-        // На страницах, не являющихся главной (привилегии, новичок), не подсвечиваем ничего
-        if (window.location.pathname.includes('priv') || window.location.pathname.includes('newcomer')) {
-            navHomeNew.classList.remove('active');
-            navHikesNew.classList.remove('active');
-            return;
-        }
-        const calendarContainer = document.getElementById('calendarContainer');
-        if (!calendarContainer) {
-            navHomeNew.classList.add('active');
-            navHikesNew.classList.remove('active');
-            return;
-        }
-        const rect = calendarContainer.getBoundingClientRect();
-        const isCalendarVisible = rect.top < window.innerHeight && rect.bottom > 0;
-        if (isCalendarVisible) {
-            navHikesNew.classList.add('active');
-            navHomeNew.classList.remove('active');
-        } else {
-            navHomeNew.classList.add('active');
-            navHikesNew.classList.remove('active');
-        }
-    }
 
     window.addEventListener('scroll', () => requestAnimationFrame(updateActiveNav));
     updateActiveNav();
@@ -990,16 +981,14 @@ function showBottomNav(show = true) {
 
 // ----- Страница для новичков (FAQ) -----
 function renderNewcomerPage(isGuest = false) {
-    if (window._floatingScrollHandler) {
-        window.removeEventListener('scroll', window._floatingScrollHandler);
-        window._floatingScrollHandler = null;
-    }
+    isPrivPage = false;
+    isMenuActive = false;
 
     subtitle.textContent = `всё, что нужно знать`;
     showBack(() => renderHome());
     haptic();
     log('newcomer_page_opened', isGuest);
-    showBottomNav(false); // скрываем меню на других страницах
+    showBottomNav(false);
 
     const faq = [
         { q: 'что такое хайкинг?', a: 'хайкинг — это пешие прогулки по живописным местам. мы ходим 3–5 часов, без палаток и ночёвок, по оборудованным тропам. главное в наших хайках — люди и атмосфера.' },
@@ -1030,7 +1019,6 @@ function renderNewcomerPage(isGuest = false) {
                 <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
-        <!-- Плавающие кнопки убраны -->
     `;
 
     document.getElementById('goHomeStatic')?.addEventListener('click', () => {
@@ -1043,7 +1031,10 @@ function renderNewcomerPage(isGuest = false) {
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
-    showBottomNav(false); // скрываем меню
+    showBottomNav(true);
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
 
     let club = [
         { 
@@ -1098,7 +1089,6 @@ function renderPriv() {
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-            <!-- Статические кнопки внизу убраны -->
         </div>
     `;
 }
@@ -1107,7 +1097,10 @@ function renderPriv() {
 function renderGuestPriv() {
     subtitle.textContent = `💳 привилегии с картой интеллигента`;
     showBack(renderHome);
-    showBottomNav(false);
+    showBottomNav(true);
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
 
     let club = [
         { 
@@ -1161,7 +1154,6 @@ function renderGuestPriv() {
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-            <!-- Статические кнопки внизу убраны -->
         </div>
     `;
 }
@@ -1228,7 +1220,7 @@ function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
-    showBottomNav(false); // для гостей меню не показываем
+    showBottomNav(false);
 
     mainDiv.innerHTML = `
         <div class="card-container">
@@ -1248,7 +1240,6 @@ function renderGuestHome() {
             </div>
         </div>
 
-        <!-- Блок для новичков (для гостей) -->
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
@@ -1257,7 +1248,6 @@ function renderGuestHome() {
             </div>
         </div>
         
-        <!-- Блок метрик с data-атрибутами -->
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🌍 клуб в цифрах</h2>
@@ -1312,6 +1302,9 @@ function renderGuestHome() {
 
 // ----- Главная для владельцев карты -----
 function renderHome() {
+    isPrivPage = false;
+    isMenuActive = false;
+
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
         window._floatingScrollHandler = null;
@@ -1329,14 +1322,11 @@ function renderHome() {
         return;
     }
 
-    // Фоновая загрузка свежих метрик и обновление UI
-    loadMetrics().then(() => {
-        updateMetricsUI();
-    });
+    loadMetrics().then(() => updateMetricsUI());
 
     if (userCard.status === 'active' && userCard.cardUrl) {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
-        showBottomNav(true); // показываем меню
+        showBottomNav(true);
 
         mainDiv.innerHTML = `
             <div class="card-container">
@@ -1357,7 +1347,6 @@ function renderHome() {
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-outline" id="supportBtn">написать в поддержку</a>
             </div>
 
-            <!-- Блок для новичков -->
             <div class="card-container">
                 <h2 class="section-title">🫖 для новичков</h2>
                 <div class="btn-newcomer" id="newcomerBtn">
@@ -1366,7 +1355,6 @@ function renderHome() {
                 </div>
             </div>
             
-            <!-- Блок метрик с data-атрибутами -->
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🌍 клуб в цифрах</h2>
@@ -1398,7 +1386,6 @@ function renderHome() {
                 <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
 
-            <!-- Блок календаря -->
             <div class="card-container" id="calendarContainer"></div>
         `;
 
@@ -1434,15 +1421,11 @@ function renderHome() {
             renderCalendar(calendarContainer);
         }
 
-        // Настраиваем нижнее меню
         setupBottomNav();
 
     } else {
         renderGuestHome();
-        loadMetrics().then(() => {
-            updateMetricsUI();
-        });
-        // Меню для гостей не показываем
+        loadMetrics().then(() => updateMetricsUI());
     }
 }
 
