@@ -233,13 +233,14 @@ async function loadUserRegistrations() {
                     hikeBookingStatus[index] = true;
                 }
             });
+            console.log('Загружены регистрации:', hikeBookingStatus);
         }
     } catch (e) {
         console.error('Ошибка загрузки регистраций:', e);
     }
 }
 
-// Отправка статуса на сервер (теперь с await для гарантии сохранения)
+// Отправка статуса на сервер (с ожиданием ответа)
 async function updateRegistration(hikeDate, hikeTitle, status) {
     if (!userId || !REGISTRATION_API_URL) return;
     try {
@@ -264,7 +265,9 @@ async function updateRegistration(hikeDate, hikeTitle, status) {
             body: params
         });
         const result = await resp.json();
-        if (result.status !== 'ok') {
+        if (result.status === 'ok') {
+            console.log('Статус обновлён:', status);
+        } else {
             console.error('Ошибка обновления статуса:', result);
         }
     } catch (e) {
