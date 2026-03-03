@@ -54,6 +54,7 @@ let hikeBookingStatus = {}; // ключ: индекс в hikesList, значен
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
 const bottomNav = document.getElementById('bottomNav');
+const popupMenu = document.getElementById('popupMenu');
 
 function log(action, isGuest = false) {
     if (!userId) return;
@@ -862,13 +863,18 @@ function updateMetricsUI() {
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
+    const navMenu = document.getElementById('navMenu');
+    const popup = document.getElementById('popupMenu');
 
-    if (!navHome || !navHikes) return;
+    if (!navHome || !navHikes || !navMenu || !popup) return;
 
+    // Основные кнопки
     navHome.addEventListener('click', () => {
         haptic();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         log('nav_home_click');
+        // закрываем popup, если открыт
+        popup.classList.remove('visible');
     });
 
     navHikes.addEventListener('click', () => {
@@ -878,8 +884,46 @@ function setupBottomNav() {
             calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         log('nav_hikes_click');
+        popup.classList.remove('visible');
     });
 
+    // Кнопка меню (показ/скрытие popup)
+    navMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        haptic();
+        popup.classList.toggle('visible');
+    });
+
+    // Закрытие popup при клике вне его
+    document.addEventListener('click', (e) => {
+        if (!popup.contains(e.target) && !navMenu.contains(e.target)) {
+            popup.classList.remove('visible');
+        }
+    });
+
+    // Настройка пунктов popup-меню
+    document.getElementById('popupChat')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://t.me/yaltahikingchat', 'popup_chat_click', false);
+        popup.classList.remove('visible');
+    });
+
+    document.getElementById('popupChannel')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://t.me/yaltahiking', 'popup_channel_click', false);
+        popup.classList.remove('visible');
+    });
+
+    document.getElementById('popupGift')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        renderGift(false); // открываем страницу подарка
+        popup.classList.remove('visible');
+    });
+
+    // Отслеживание скролла для подсветки активного пункта
     function updateActiveNav() {
         if (!navHome || !navHikes) return;
         const calendarContainer = document.getElementById('calendarContainer');
@@ -924,7 +968,7 @@ function renderNewcomerPage(isGuest = false) {
     showBack(() => renderHome());
     haptic();
     log('newcomer_page_opened', isGuest);
-    showBottomNav(false);
+    showBottomNav(true); // показываем меню
 
     const faq = [
         {
@@ -994,51 +1038,19 @@ function renderNewcomerPage(isGuest = false) {
                 <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
-        <div class="floating-btn-container" id="floatingBtnContainer">
-            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', ${isGuest}); return false;" class="btn btn-yellow">задать вопрос</a>
-            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
-        </div>
     `;
 
-    const floatingContainer = document.getElementById('floatingBtnContainer');
-    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        renderHome();
-    });
     document.getElementById('goHomeStatic')?.addEventListener('click', () => {
         haptic();
         renderHome();
     });
-
-    function checkFloatingButton() {
-        if (!floatingContainer) return;
-        const scrollY = window.scrollY;
-        const windowHeight = window.innerHeight;
-        const documentHeight = document.documentElement.scrollHeight;
-        const showThreshold = documentHeight * 0.1;
-        const hideThreshold = documentHeight * 0.1;
-        const remaining = documentHeight - (scrollY + windowHeight);
-
-        if (scrollY > showThreshold && remaining > hideThreshold) {
-            floatingContainer.classList.remove('hidden');
-        } else {
-            floatingContainer.classList.add('hidden');
-        }
-    }
-
-    checkFloatingButton();
-    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
-    window.addEventListener('scroll', scrollHandler);
-    window.addEventListener('resize', scrollHandler);
-    window._floatingScrollHandler = scrollHandler;
 }
 
 // ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
-    showBottomNav(false);
+    showBottomNav(true);
 
     let club = [
         { 
@@ -1099,53 +1111,19 @@ function renderPriv() {
                 <button id="goHomePrivStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
-        <!-- Плавающие кнопки (оставлены для удобства) -->
-        <div class="floating-btn-container" id="floatingBtnContainer">
-            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', false); return false;" class="btn btn-yellow">задать вопрос</a>
-            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
-        </div>
     `;
 
     document.getElementById('goHomePrivStatic')?.addEventListener('click', () => {
         haptic();
         renderHome();
     });
-
-    const floatingContainer = document.getElementById('floatingBtnContainer');
-    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        renderHome();
-    });
-
-    function checkFloatingButton() {
-        if (!floatingContainer) return;
-        const scrollY = window.scrollY;
-        const windowHeight = window.innerHeight;
-        const documentHeight = document.documentElement.scrollHeight;
-        const showThreshold = documentHeight * 0.1;
-        const hideThreshold = documentHeight * 0.1;
-        const remaining = documentHeight - (scrollY + windowHeight);
-
-        if (scrollY > showThreshold && remaining > hideThreshold) {
-            floatingContainer.classList.remove('hidden');
-        } else {
-            floatingContainer.classList.add('hidden');
-        }
-    }
-
-    checkFloatingButton();
-    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
-    window.addEventListener('scroll', scrollHandler);
-    window.addEventListener('resize', scrollHandler);
-    window._floatingScrollHandler = scrollHandler;
 }
 
 // ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
     subtitle.textContent = `💳 привилегии с картой интеллигента`;
     showBack(renderHome);
-    showBottomNav(false);
+    showBottomNav(true);
 
     let club = [
         { 
@@ -1205,52 +1183,19 @@ function renderGuestPriv() {
                 <button id="goHomeGuestPrivStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
-        <div class="floating-btn-container" id="floatingBtnContainer">
-            <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'floating_support_click', true); return false;" class="btn btn-yellow">задать вопрос</a>
-            <a href="#" id="floatingGoHome" class="btn btn-outline">&lt; на главную</a>
-        </div>
     `;
 
     document.getElementById('goHomeGuestPrivStatic')?.addEventListener('click', () => {
         haptic();
         renderHome();
     });
-
-    const floatingContainer = document.getElementById('floatingBtnContainer');
-    document.getElementById('floatingGoHome')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        renderHome();
-    });
-
-    function checkFloatingButton() {
-        if (!floatingContainer) return;
-        const scrollY = window.scrollY;
-        const windowHeight = window.innerHeight;
-        const documentHeight = document.documentElement.scrollHeight;
-        const showThreshold = documentHeight * 0.1;
-        const hideThreshold = documentHeight * 0.1;
-        const remaining = documentHeight - (scrollY + windowHeight);
-
-        if (scrollY > showThreshold && remaining > hideThreshold) {
-            floatingContainer.classList.remove('hidden');
-        } else {
-            floatingContainer.classList.add('hidden');
-        }
-    }
-
-    checkFloatingButton();
-    const scrollHandler = () => requestAnimationFrame(checkFloatingButton);
-    window.addEventListener('scroll', scrollHandler);
-    window.addEventListener('resize', scrollHandler);
-    window._floatingScrollHandler = scrollHandler;
 }
 
 // ----- Страница подарка -----
 function renderGift(isGuest = false) {
     subtitle.textContent = `💫 как подарить карту`;
     showBack(renderHome);
-    showBottomNav(false);
+    showBottomNav(true);
 
     mainDiv.innerHTML = `
         <div class="card-container">
@@ -1388,13 +1333,6 @@ function renderGuestHome() {
     });
 
     setupAccordion('navAccordionGuest', true);
-
-    // Добавляем блок календаря
-    const calendarDiv = document.createElement('div');
-    calendarDiv.className = 'card-container';
-    calendarDiv.id = 'calendarContainer';
-    mainDiv.appendChild(calendarDiv);
-    renderCalendar(calendarDiv);
 }
 
 // ----- Главная для владельцев карты -----
