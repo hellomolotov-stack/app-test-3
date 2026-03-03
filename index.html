@@ -15,7 +15,7 @@
         <main id="mainContent" class="content"></main>
     </div>
 
-    <!-- Нижнее плавающее меню -->
+    <!-- Нижнее плавающее меню (показывается только владельцам карты) -->
     <div class="bottom-nav" id="bottomNav">
         <div class="nav-item" id="navHome">
             <span class="nav-icon">
@@ -37,23 +37,23 @@
             </span>
             <span class="nav-label">хайкинг</span>
         </div>
-        <div class="nav-item" id="navMenu">
+        <div class="nav-item" id="navMore">
             <span class="nav-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                    <circle cx="20" cy="12" r="2" fill="currentColor"/>
-                    <circle cx="4" cy="12" r="2" fill="currentColor"/>
+                    <circle cx="12" cy="5" r="2" fill="currentColor"/>
+                    <circle cx="12" cy="19" r="2" fill="currentColor"/>
                 </svg>
             </span>
             <span class="nav-label">меню</span>
         </div>
     </div>
 
-    <!-- Всплывающее меню (изначально скрыто) -->
-    <div class="popup-menu" id="popupMenu">
-        <a href="#" class="popup-item" id="popupChat">💬 чат</a>
-        <a href="#" class="popup-item" id="popupChannel">📰 канал клуба</a>
-        <a href="#" class="popup-item" id="popupGift">🎁 подарить карту</a>
+    <!-- Попап-меню (появляется при нажатии на "меню") -->
+    <div class="nav-popup" id="navPopup">
+        <a href="#" class="popup-item" id="popupChat">чат</a>
+        <a href="#" class="popup-item" id="popupChannel">канал клуба</a>
+        <a href="#" class="popup-item" id="popupGift">подарить карту</a>
     </div>
 
     <div id="initial-loader" class="initial-loader"></div>
