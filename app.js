@@ -806,7 +806,6 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <h2 class="section-title">⚠️ раздел в разработке</h2>
         <div class="calendar-item">
             <div class="calendar-header">
                 <h3>${monthNames[currentMonth]} ${currentYear}</h3>
@@ -869,7 +868,7 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
 
-// ----- Настройка нижнего меню -----
+// ----- Настройка нижнего меню (исправлено) -----
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -892,32 +891,37 @@ function setupBottomNav() {
     const navHikesNew = document.getElementById('navHikes');
     const navMoreNew = document.getElementById('navMore');
 
+    // Вспомогательная функция для прокрутки к календарю после рендера
+    function scrollToCalendar() {
+        setTimeout(() => {
+            const calendarContainer = document.getElementById('calendarContainer');
+            if (calendarContainer) {
+                calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 100);
+    }
+
     navHomeNew.addEventListener('click', () => {
         haptic();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        renderHome(); // всегда возвращаем на главную
         log('nav_home_click');
         if (popup.classList.contains('show')) {
             popup.classList.remove('show');
         }
         isMenuActive = false;
-        updateActiveNav();
+        // активность обновится автоматически после рендера
     });
 
     navHikesNew.addEventListener('click', () => {
         haptic();
-        const calendarContainer = document.getElementById('calendarContainer');
-        if (calendarContainer) {
-            calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else {
-            // если календаря нет (страница новичков/привилегий), скроллим наверх
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        renderHome(); // сначала главная
+        // затем прокрутка к календарю
+        scrollToCalendar();
         log('nav_hikes_click');
         if (popup.classList.contains('show')) {
             popup.classList.remove('show');
         }
         isMenuActive = false;
-        updateActiveNav();
     });
 
     navMoreNew.addEventListener('click', (e) => {
