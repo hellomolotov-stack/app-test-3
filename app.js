@@ -240,9 +240,12 @@ async function loadHikes() {
                 tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
             }
 
+            // Новые поля: access, details
             hikesData[date] = {
                 title: data.title || 'Хайк',
-                description: data.description || 'Описание появится позже.',
+                features: data.features || data.description || 'Описание появится позже.', // используем features, если нет, то старое description
+                access: data.access || '',
+                details: data.details || '',
                 image: data.image_url || '',
                 date: date,
                 tags: tags
@@ -348,7 +351,7 @@ async function loadData() {
     }
 }
 
-// ----- Массив партнёров (полный) -----
+// ----- Массив партнёров -----
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -476,7 +479,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Bottom Sheet -----
+// ----- Bottom Sheet с секциями -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -543,6 +546,36 @@ function showBottomSheet(index) {
             tagsHtml += '</div>';
         }
 
+        // Формируем секции
+        let sectionsHtml = '';
+
+        if (hike.features && hike.features.trim() !== '') {
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title">особенности</div>
+                    <div class="bottom-sheet-section-content">${hike.features.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+        }
+
+        if (hike.access && hike.access.trim() !== '') {
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title">как добраться</div>
+                    <div class="bottom-sheet-section-content">${hike.access.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+        }
+
+        if (hike.details && hike.details.trim() !== '') {
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title">детали</div>
+                    <div class="bottom-sheet-section-content">${hike.details.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+        }
+
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -559,7 +592,7 @@ function showBottomSheet(index) {
             </div>
             <div>
                 ${hike.image ? `<img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">` : ''}
-                <div class="bottom-sheet-description">${hike.description.replace(/\n/g, '<br>')}</div>
+                ${sectionsHtml}
             </div>
         `;
 
@@ -1220,11 +1253,15 @@ function renderGuestPriv() {
     setupBottomNav();
 }
 
-// ----- Страница подарка (обновлена) -----
+// ----- Страница подарка (с меню для владельцев карты, без эмодзи) -----
 function renderGift(isGuest = false) {
-    subtitle.textContent = `🎁 подари новый опыт`;
+    isPrivPage = true; // чтобы не подсвечивалась навигация
+    isMenuActive = false;
+    resetNavActive();
+
+    subtitle.textContent = `подари новый опыт`; // без эмодзи
     showBack(renderHome);
-    showBottomNav(false);
+    showBottomNav(!isGuest); // показываем меню только владельцам карты
 
     mainDiv.innerHTML = `
         <div class="card-container">
@@ -1244,7 +1281,10 @@ function renderGift(isGuest = false) {
         </div>
     `;
 
-    // Обработчик для кнопки (логирование уже есть в openLink)
+    // Если это владелец карты, настраиваем меню
+    if (!isGuest) {
+        setupBottomNav();
+    }
 }
 
 // ----- Попап для гостей -----
@@ -1391,13 +1431,11 @@ function renderHome() {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
         showBottomNav(true);
 
-        // Формируем HTML с кнопками в одну строку (текст изменён на короткий)
         mainDiv.innerHTML = `
             <div class="card-container">
                 <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
                 <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
                 
-                <!-- Кнопки "привилегии" и "поддержка" в одной строке -->
                 <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
                     <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                     <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
