@@ -767,7 +767,6 @@ body::before {
     margin: 2px 0 12px 0;
 }
 
-/* Новые стили для секций */
 .bottom-sheet-section {
     margin-top: 20px;
 }
@@ -788,6 +787,15 @@ body::before {
     line-height: 1.5;
     color: rgba(255,255,255,0.9);
     white-space: pre-line;
+}
+
+.bottom-sheet-section-content a {
+    color: var(--yellow);
+    text-decoration: none;
+}
+
+.bottom-sheet-section-content a:hover {
+    text-decoration: underline;
 }
 
 /* Остальные стили */
