@@ -38,7 +38,7 @@ const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOi
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
-const CACHE_TTL = 60000; // 1 минута для хайков (чтобы быстро обновлялись)
+const CACHE_TTL = 300000; // 5 минут
 const METRICS_TTL = 0; // всегда свежие
 
 const user = tg.initDataUnsafe?.user;
@@ -218,7 +218,7 @@ async function loadHikes() {
 
         const headers = parseCSVLine(lines[0]);
 
-        const newHikesData = {};
+        hikesData = {};
         for (let i = 1; i < lines.length; i++) {
             const row = parseCSVLine(lines[i]);
             if (row.length < 4) continue;
@@ -229,7 +229,6 @@ async function loadHikes() {
             });
 
             const date = data.date;
-            if (!date) continue;
 
             let tags = [];
             if (data.tags) {
@@ -240,7 +239,7 @@ async function loadHikes() {
                 tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
             }
 
-            newHikesData[date] = {
+            hikesData[date] = {
                 title: data.title || 'Хайк',
                 description: data.description || 'Описание появится позже.',
                 image: data.image_url || '',
@@ -248,21 +247,10 @@ async function loadHikes() {
                 tags: tags
             };
         }
-        hikesData = newHikesData;
         hikesList = Object.values(hikesData).sort((a, b) => a.date.localeCompare(b.date));
-        // Обновляем статусы бронирований (сбрасываем для удалённых хайков)
-        const newBookingStatus = {};
-        hikesList.forEach((hike, index) => {
-            // сохраняем старый статус, если он был
-            const oldIndex = hikesList.findIndex(h => h.date === hike.date);
-            if (oldIndex !== -1 && hikeBookingStatus[oldIndex] !== undefined) {
-                newBookingStatus[index] = hikeBookingStatus[oldIndex];
-            } else {
-                newBookingStatus[index] = false;
-            }
-        });
-        hikeBookingStatus = newBookingStatus;
-        saveStatusToLocalStorage();
+        for (let i = 0; i < hikesList.length; i++) {
+            hikeBookingStatus[i] = false;
+        }
     } catch (e) {
         console.error('Ошибка загрузки расписания хайков:', e);
     }
@@ -275,7 +263,6 @@ async function loadUserRegistrations() {
         const resp = await fetch(url);
         const data = await resp.json();
         if (data && Array.isArray(data.registrations)) {
-            // Инициализируем статусы из localStorage, если есть
             const savedStatus = localStorage.getItem('hikeBookingStatus');
             if (savedStatus) {
                 try {
@@ -294,7 +281,6 @@ async function loadUserRegistrations() {
                     hikeBookingStatus[i] = false;
                 }
             }
-            // Обновляем из данных сервера (приоритет сервера)
             data.registrations.forEach(reg => {
                 const index = hikesList.findIndex(h => h.date === reg.hikeDate);
                 if (index !== -1 && reg.status === 'booked') {
@@ -906,7 +892,6 @@ function setupBottomNav() {
     const navHikesNew = document.getElementById('navHikes');
     const navMoreNew = document.getElementById('navMore');
 
-    // Вспомогательная функция для прокрутки к календарю после рендера
     function scrollToCalendar() {
         setTimeout(() => {
             const calendarContainer = document.getElementById('calendarContainer');
@@ -1398,18 +1383,7 @@ function renderHome() {
         return;
     }
 
-    // Загружаем свежие метрики
     loadMetrics().then(() => updateMetricsUI());
-
-    // Загружаем свежие хайки (с учётом кэша) и перерисовываем календарь
-    loadHikes().then(() => {
-        if (userCard.status === 'active' && userCard.cardUrl) {
-            const calendarContainer = document.getElementById('calendarContainer');
-            if (calendarContainer) {
-                renderCalendar(calendarContainer);
-            }
-        }
-    });
 
     if (userCard.status === 'active' && userCard.cardUrl) {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
@@ -1467,7 +1441,10 @@ function renderHome() {
                 </div>
             </div>
             
-            <!-- Блок extra-links полностью удалён -->
+            <!-- Только кнопка подарить карту -->
+            <div class="extra-links">
+                <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
+            </div>
 
             <div class="card-container" id="calendarContainer"></div>
         `;
@@ -1485,6 +1462,12 @@ function renderHome() {
             log('privilege_click');
             renderPriv();
         });
+        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            log('gift_click');
+            renderGift(false);
+        });
         document.getElementById('newcomerBtn')?.addEventListener('click', () => {
             haptic();
             log('newcomer_btn_click', false);
@@ -1493,7 +1476,6 @@ function renderHome() {
 
         setupAccordion('navAccordionOwner', false);
 
-        // Первоначальная отрисовка календаря (с данными, которые были до загрузки)
         const calendarContainer = document.getElementById('calendarContainer');
         if (calendarContainer) {
             renderCalendar(calendarContainer);
