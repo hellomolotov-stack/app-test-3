@@ -472,7 +472,7 @@ body::before {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 50px;
-    padding: 4px 4px; /* равномерные отступы */
+    padding: 4px 4px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     border: 1px solid rgba(255,255,255,0.2);
     z-index: 100;
@@ -488,7 +488,7 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 24px; /* одинаковые отступы для всех состояний */
+    padding: 8px 24px;
     border-radius: 40px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
@@ -513,13 +513,20 @@ body::before {
     fill: none;
 }
 
+.nav-icon img {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin-bottom: 2px;
+}
+
 .nav-label {
     font-size: 12px;
     font-weight: 500;
     line-height: 1.2;
 }
 
-/* Попап-меню с иконками */
+/* Попап-меню */
 .nav-popup {
     position: fixed;
     bottom: 100px;
@@ -534,7 +541,7 @@ body::before {
     z-index: 101;
     display: none;
     flex-direction: column;
-    min-width: 180px;
+    min-width: 160px;
 }
 
 .nav-popup.show {
@@ -542,9 +549,6 @@ body::before {
 }
 
 .popup-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
     padding: 12px 20px;
     color: #ffffff;
     text-decoration: none;
@@ -562,18 +566,6 @@ body::before {
     background-color: rgba(255,255,255,0.1);
 }
 
-.popup-icon svg {
-    width: 20px;
-    height: 20px;
-    stroke: currentColor;
-    fill: none;
-    display: block;
-}
-
-.popup-label {
-    line-height: 1;
-}
-
 /* Адаптация для горизонтальной ориентации */
 @media (orientation: landscape) {
     .bottom-nav {
@@ -584,7 +576,8 @@ body::before {
     .nav-item {
         padding: 6px 20px;
     }
-    .nav-icon svg {
+    .nav-icon svg,
+    .nav-icon img {
         width: 20px;
         height: 20px;
     }
@@ -595,20 +588,10 @@ body::before {
         bottom: 80px;
         right: 10px;
         border-radius: 20px;
-        min-width: 160px;
-    }
-    .popup-item {
-        padding: 10px 16px;
-        gap: 8px;
-        font-size: 14px;
-    }
-    .popup-icon svg {
-        width: 18px;
-        height: 18px;
     }
 }
 
-/* Остальные стили без изменений */
+/* Остальные стили (без изменений) */
 .floating-btn-container {
     position: fixed;
     bottom: 30px;
