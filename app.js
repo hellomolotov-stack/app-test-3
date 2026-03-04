@@ -36,7 +36,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
-const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec'; // для отправки в Google Sheets
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
 const CACHE_TTL = 300000; // 5 минут
 
@@ -49,24 +49,34 @@ let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130
 let hikesData = {};
 let hikesList = [];
 
-// Firebase инициализация
-const firebaseConfig = {
-    apiKey: "AIzaSyCv4v2CJxR1A-QkYWYjzFEF-kKWB1qUSQY",
-    authDomain: "hiking-club-app-b6c7c.firebaseapp.com",
-    databaseURL: "https://hiking-club-app-b6c7c-default-rtdb.firebaseio.com",
-    projectId: "hiking-club-app-b6c7c",
-    storageBucket: "hiking-club-app-b6c7c.firebasestorage.app",
-    messagingSenderId: "507288460496",
-    appId: "1:507288460496:web:5a3381866b95e9096492d5",
-    measurementId: "G-2PBBHYD8JG"
-};
-firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
+// Firebase инициализация (с защитой от ошибок)
+let database = null;
+try {
+    const firebaseConfig = {
+        apiKey: "AIzaSyCv4v2CJxR1A-QkYWYjzFEF-kKWB1qUSQY",
+        authDomain: "hiking-club-app-b6c7c.firebaseapp.com",
+        databaseURL: "https://hiking-club-app-b6c7c-default-rtdb.firebaseio.com",
+        projectId: "hiking-club-app-b6c7c",
+        storageBucket: "hiking-club-app-b6c7c.firebasestorage.app",
+        messagingSenderId: "507288460496",
+        appId: "1:507288460496:web:5a3381866b95e9096492d5",
+        measurementId: "G-2PBBHYD8JG"
+    };
+    firebase.initializeApp(firebaseConfig);
+    database = firebase.database();
+    console.log('Firebase initialized');
+} catch (e) {
+    console.error('Firebase initialization failed:', e);
+    database = null;
+}
 
-// --- Firebase функции ---
-
-// Подписка на счётчик участников
+// --- Firebase функции (с проверкой на наличие database) ---
 function subscribeToParticipantCount(hikeDate, callback) {
+    if (!database) {
+        // если Firebase недоступен, вызываем callback с 0 и не подписываемся
+        callback(0);
+        return () => {};
+    }
     const countRef = database.ref('participants/' + hikeDate);
     const listener = countRef.on('value', (snapshot) => {
         const count = snapshot.val() || 0;
@@ -75,55 +85,57 @@ function subscribeToParticipantCount(hikeDate, callback) {
     return () => countRef.off('value', listener);
 }
 
-// Атомарное увеличение счётчика (без проверки, так как increment сам гарантирует корректность)
 function incrementParticipantCount(hikeDate) {
+    if (!database) return Promise.resolve();
     const countRef = database.ref('participants/' + hikeDate);
     return countRef.set(firebase.database.ServerValue.increment(1));
 }
 
-// Безопасное уменьшение счётчика (не ниже 0)
 function decrementParticipantCount(hikeDate) {
+    if (!database) return Promise.resolve();
     const countRef = database.ref('participants/' + hikeDate);
     return countRef.transaction((current) => {
         if (current === null || current <= 0) {
-            return 0; // не уходим в минус
+            return 0;
         }
         return current - 1;
     });
 }
 
-// Получить статус регистрации пользователя для конкретного хайка
 async function getUserRegistrationStatus(hikeDate) {
-    if (!userId) return false;
+    if (!database || !userId) return false;
     const statusRef = database.ref(`userRegistrations/${userId}/${hikeDate}`);
     const snapshot = await statusRef.once('value');
     return snapshot.val() === true;
 }
 
-// Установить статус регистрации пользователя
 function setUserRegistrationStatus(hikeDate, status) {
-    if (!userId) return Promise.resolve();
+    if (!database || !userId) return Promise.resolve();
     const statusRef = database.ref(`userRegistrations/${userId}/${hikeDate}`);
     return statusRef.set(status);
 }
 
-// Загрузить все статусы пользователя (при старте)
 async function loadUserRegistrationsFromFirebase() {
-    if (!userId || !hikesList.length) return {};
-    const userRef = database.ref(`userRegistrations/${userId}`);
-    const snapshot = await userRef.once('value');
-    const registrations = snapshot.val() || {};
-    const statusMap = {};
-    hikesList.forEach((hike, index) => {
-        statusMap[index] = registrations[hike.date] === true;
-    });
-    return statusMap;
+    if (!database || !userId || !hikesList.length) return {};
+    try {
+        const userRef = database.ref(`userRegistrations/${userId}`);
+        const snapshot = await userRef.once('value');
+        const registrations = snapshot.val() || {};
+        const statusMap = {};
+        hikesList.forEach((hike, index) => {
+            statusMap[index] = registrations[hike.date] === true;
+        });
+        return statusMap;
+    } catch (e) {
+        console.error('Error loading user registrations from Firebase:', e);
+        return {};
+    }
 }
 
 // --- Флаги интерфейса ---
 let isPrivPage = false;
 let isMenuActive = false;
-let hikeBookingStatus = {}; // будет заполнено из Firebase
+let hikeBookingStatus = {};
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
@@ -326,7 +338,6 @@ async function loadHikes() {
     }
 }
 
-// --- Отправка в Google Sheets (старая регистрация) ---
 function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
     if (!userId || !REGISTRATION_API_URL) return;
     try {
@@ -355,21 +366,28 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
     }
 }
 
-// --- Основная загрузка данных ---
 async function loadData() {
+    // Загружаем все данные параллельно, но не ждем Firebase
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
 
-    // Загружаем статусы регистраций из Firebase
+    // Загружаем статусы регистраций из Firebase (если доступен)
     if (userId && hikesList.length > 0) {
-        hikeBookingStatus = await loadUserRegistrationsFromFirebase();
+        try {
+            hikeBookingStatus = await loadUserRegistrationsFromFirebase();
+        } catch (e) {
+            console.error('Error loading Firebase registrations, using defaults', e);
+            hikeBookingStatus = {};
+            hikesList.forEach((_, index) => { hikeBookingStatus[index] = false; });
+        }
     } else {
-        // инициализируем пустыми
         hikeBookingStatus = {};
         hikesList.forEach((_, index) => { hikeBookingStatus[index] = false; });
     }
 
     log('visit', userCard.status !== 'active');
     renderHome();
+
+    // Убираем лоадер
     const loader = document.getElementById('initial-loader');
     if (loader) {
         loader.classList.add('fade-out');
@@ -507,7 +525,6 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Функция для замены ссылок в тексте -----
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
@@ -516,7 +533,7 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// ----- Bottom Sheet с подпиской на Firebase -----
+// ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -555,7 +572,6 @@ function showBottomSheet(index) {
     sheetCurrentIndex = index;
     const isGuest = userCard.status !== 'active';
 
-    // Отписываемся от предыдущей подписки
     if (currentUnsubscribe) {
         currentUnsubscribe();
         currentUnsubscribe = null;
@@ -591,7 +607,6 @@ function showBottomSheet(index) {
             tagsHtml += '</div>';
         }
 
-        // Формируем секции
         let sectionsHtml = '';
 
         if (hike.features && hike.features.trim() !== '') {
@@ -627,7 +642,6 @@ function showBottomSheet(index) {
             `;
         }
 
-        // Изображение с контейнером для счётчика (счётчик будет обновлён подпиской)
         const imageHtml = hike.image ? `
             <div class="image-container">
                 <img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">
@@ -655,7 +669,6 @@ function showBottomSheet(index) {
             </div>
         `;
 
-        // Подписываемся на обновления счётчика
         currentUnsubscribe = subscribeToParticipantCount(hike.date, (count) => {
             const counterEl = document.getElementById('participantCounter');
             if (counterEl) {
@@ -663,7 +676,6 @@ function showBottomSheet(index) {
             }
         });
 
-        // Обработчики переключения
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
@@ -739,16 +751,11 @@ function showBottomSheet(index) {
                 e.preventDefault();
                 haptic();
 
-                // Обновляем статус в Firebase
                 setUserRegistrationStatus(hike.date, false)
                     .then(() => {
-                        // Локально обновляем статус
                         hikeBookingStatus[sheetCurrentIndex] = false;
-                        // Уменьшаем счётчик (Firebase transaction защищает от отрицательных)
                         decrementParticipantCount(hike.date).catch(console.error);
-                        // Отправляем запись в Google Sheets
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
-                        // Обновляем кнопки
                         updateFloatingSheetButtons();
                         log('sheet_cancel_click', false);
                     })
@@ -777,16 +784,11 @@ function showBottomSheet(index) {
                 e.preventDefault();
                 haptic();
 
-                // Обновляем статус в Firebase
                 setUserRegistrationStatus(hike.date, true)
                     .then(() => {
-                        // Локально обновляем статус
                         hikeBookingStatus[sheetCurrentIndex] = true;
-                        // Увеличиваем счётчик
                         incrementParticipantCount(hike.date).catch(console.error);
-                        // Отправляем запись в Google Sheets
                         updateRegistrationInSheet(hike.date, hike.title, 'booked');
-                        // Обновляем кнопки
                         updateFloatingSheetButtons();
                         log('sheet_go_click', false);
                     })
@@ -981,7 +983,6 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Обновление UI метрик -----
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -994,7 +995,6 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
 
-// ----- Настройка нижнего меню -----
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -1110,7 +1110,6 @@ function showBottomNav(show = true) {
     }
 }
 
-// ----- Страница для новичков (FAQ) -----
 function renderNewcomerPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1207,7 +1206,6 @@ function renderNewcomerPage(isGuest = false) {
     }
 }
 
-// ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -1276,7 +1274,6 @@ function renderPriv() {
     setupBottomNav();
 }
 
-// ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -1344,7 +1341,6 @@ function renderGuestPriv() {
     setupBottomNav();
 }
 
-// ----- Страница подарка -----
 function renderGift(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1377,7 +1373,6 @@ function renderGift(isGuest = false) {
     }
 }
 
-// ----- Попап для гостей -----
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -1408,7 +1403,6 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -1493,7 +1487,6 @@ function renderGuestHome() {
     setupAccordion('navAccordionGuest', true);
 }
 
-// ----- Главная для владельцев карты -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
