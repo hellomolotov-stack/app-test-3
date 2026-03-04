@@ -904,7 +904,8 @@ function setupBottomNav() {
 
     navHomeNew.addEventListener('click', () => {
         haptic();
-        renderHome(); // всегда возвращаем на главную (в самый верх)
+        renderHome();
+        window.scrollTo({ top: 0, behavior: 'smooth' }); // прокрутка вверх после загрузки главной
         log('nav_home_click');
         if (popup.classList.contains('show')) {
             popup.classList.remove('show');
@@ -1447,9 +1448,8 @@ function renderHome() {
                 </div>
             </div>
             
+            <!-- Блок extra-links теперь только с кнопкой подарить карту -->
             <div class="extra-links">
-                <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', false); return false;" class="btn btn-outline">📰 открыть канал</a>
-                <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', false); return false;" class="btn btn-outline">💬 открыть чат</a>
                 <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
             </div>
 
