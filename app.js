@@ -229,6 +229,7 @@ async function loadHikes() {
             });
 
             const date = data.date;
+            if (!date) continue;
 
             let tags = [];
             if (data.tags) {
@@ -1389,11 +1390,18 @@ function renderHome() {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
         showBottomNav(true);
 
+        // Формируем HTML с кнопками в одну строку
         mainDiv.innerHTML = `
             <div class="card-container">
                 <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
                 <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
-                <a href="#" class="btn btn-yellow" id="privBtn">мои привилегии</a>
+                
+                <!-- Кнопки "мои привилегии" и "написать в поддержку" в одной строке -->
+                <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
+                    <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0;">мои привилегии</a>
+                    <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0;">написать в поддержку</a>
+                </div>
+                
                 <div id="navAccordionOwner">
                     <button class="accordion-btn">
                         навигация по клубу <span class="arrow">👀</span>
@@ -1405,7 +1413,6 @@ function renderHome() {
                         <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
                     </div>
                 </div>
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', false); return false;" class="btn btn-outline" id="supportBtn">написать в поддержку</a>
             </div>
 
             <div class="card-container">
@@ -1440,11 +1447,6 @@ function renderHome() {
                     </div>
                 </div>
             </div>
-            
-            <!-- Только кнопка подарить карту -->
-            <div class="extra-links">
-                <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
-            </div>
 
             <div class="card-container" id="calendarContainer"></div>
         `;
@@ -1462,12 +1464,13 @@ function renderHome() {
             log('privilege_click');
             renderPriv();
         });
-        document.getElementById('giftBtn')?.addEventListener('click', (e) => {
+        
+        document.getElementById('supportBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
-            log('gift_click');
-            renderGift(false);
+            openLink('https://t.me/hellointelligent', 'support_click', false);
         });
+
         document.getElementById('newcomerBtn')?.addEventListener('click', () => {
             haptic();
             log('newcomer_btn_click', false);
