@@ -1220,30 +1220,31 @@ function renderGuestPriv() {
     setupBottomNav();
 }
 
-// ----- Страница подарка -----
+// ----- Страница подарка (обновлена) -----
 function renderGift(isGuest = false) {
-    subtitle.textContent = `💫 как подарить карту`;
+    subtitle.textContent = `🎁 подари новый опыт`;
     showBack(renderHome);
     showBottomNav(false);
 
     mainDiv.innerHTML = `
         <div class="card-container">
-            <div class="gift-text" style="padding:0 16px;">
-                <p style="margin-bottom:16px;">хочешь подарить карту интеллигента другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.</p>
-                <p style="margin-bottom:16px;">если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».</p>
-                <p style="margin-bottom:20px;">как только друг получит карту у него станет активным наше приложение и он сможет им пользоваться.</p>
+            <div class="partner-item">
+                <strong>как подарить карту интеллигента</strong>
+                <p style="white-space: pre-line;">
+хочешь подарить карту другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.
+
+если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».
+
+как только друг получит карту, у него станет активным наше приложение и он сможет им пользоваться.
+                </p>
             </div>
-            <div style="display:flex; flex-direction:column; gap:12px; margin-top:20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin-bottom:0;" id="giftBuyBtn">купить в подарок</a>
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', ${isGuest}); return false;" class="btn btn-outline" style="margin-bottom:0;" id="giftSupportBtn">написать в поддержку</a>
-                <button id="goHome" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">купить в подарок</a>
             </div>
         </div>
     `;
 
-    document.getElementById('goHome')?.addEventListener('click', () => { haptic(); renderHome(); });
-    document.getElementById('giftBuyBtn')?.addEventListener('click', () => { haptic(); log('gift_purchase_click', isGuest); });
-    document.getElementById('giftSupportBtn')?.addEventListener('click', () => { haptic(); log('support_click', isGuest); });
+    // Обработчик для кнопки (логирование уже есть в openLink)
 }
 
 // ----- Попап для гостей -----
@@ -1390,16 +1391,16 @@ function renderHome() {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
         showBottomNav(true);
 
-        // Формируем HTML с кнопками в одну строку
+        // Формируем HTML с кнопками в одну строку (текст изменён на короткий)
         mainDiv.innerHTML = `
             <div class="card-container">
                 <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
                 <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
                 
-                <!-- Кнопки "мои привилегии" и "написать в поддержку" в одной строке -->
+                <!-- Кнопки "привилегии" и "поддержка" в одной строке -->
                 <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
-                    <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0;">мои привилегии</a>
-                    <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0;">написать в поддержку</a>
+                    <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
+                    <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
                 </div>
                 
                 <div id="navAccordionOwner">
