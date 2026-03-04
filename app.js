@@ -240,10 +240,9 @@ async function loadHikes() {
                 tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
             }
 
-            // Новые поля: access, details
             hikesData[date] = {
                 title: data.title || 'Хайк',
-                features: data.features || data.description || 'Описание появится позже.', // используем features, если нет, то старое description
+                features: data.features || data.description || '',
                 access: data.access || '',
                 details: data.details || '',
                 image: data.image_url || '',
@@ -479,6 +478,17 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
+// ----- Функция для замены ссылок в тексте -----
+function parseLinks(text, isGuest) {
+    if (!text) return '';
+    // Ищем все вхождения [текст](url)
+    return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
+        // Экранируем url для безопасной вставки в onclick
+        const safeUrl = JSON.stringify(url);
+        return `<a href="#" onclick="openLink(${safeUrl}, 'hike_section_link', ${isGuest}); return false;">${linkText}</a>`;
+    });
+}
+
 // ----- Bottom Sheet с секциями -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -516,6 +526,9 @@ function showBottomSheet(index) {
 
     sheetCurrentIndex = index;
 
+    // Определяем, гость ли текущий пользователь
+    const isGuest = userCard.status !== 'active';
+
     function updateContent() {
         const hike = hikesList[sheetCurrentIndex];
         if (!hike) return;
@@ -546,32 +559,38 @@ function showBottomSheet(index) {
             tagsHtml += '</div>';
         }
 
-        // Формируем секции
+        // Формируем секции с обработанными ссылками
         let sectionsHtml = '';
 
         if (hike.features && hike.features.trim() !== '') {
+            let processedText = parseLinks(hike.features, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title">особенности</div>
-                    <div class="bottom-sheet-section-content">${hike.features.replace(/\n/g, '<br>')}</div>
+                    <div class="bottom-sheet-section-content">${processedText}</div>
                 </div>
             `;
         }
 
         if (hike.access && hike.access.trim() !== '') {
+            let processedText = parseLinks(hike.access, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title">как добраться</div>
-                    <div class="bottom-sheet-section-content">${hike.access.replace(/\n/g, '<br>')}</div>
+                    <div class="bottom-sheet-section-content">${processedText}</div>
                 </div>
             `;
         }
 
         if (hike.details && hike.details.trim() !== '') {
+            let processedText = parseLinks(hike.details, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title">детали</div>
-                    <div class="bottom-sheet-section-content">${hike.details.replace(/\n/g, '<br>')}</div>
+                    <div class="bottom-sheet-section-content">${processedText}</div>
                 </div>
             `;
         }
