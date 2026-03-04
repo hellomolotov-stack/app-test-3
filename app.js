@@ -51,7 +51,7 @@ let hikesData = {};
 let hikesList = [];
 let hikeBookingStatus = {}; // ключ: индекс в hikesList, значение: boolean (true - забронировано)
 
-// Локальный кэш количества участников по дате хайка
+// Локальный кэш количества участников по дате хайка (с сохранением в localStorage)
 let participantsCountCache = {};
 
 const mainDiv = document.getElementById('mainContent');
@@ -309,6 +309,24 @@ function saveStatusToLocalStorage() {
     localStorage.setItem('hikeBookingStatus', JSON.stringify(statusObj));
 }
 
+// Функции для работы с кэшем количества участников
+function loadParticipantsCountCache() {
+    const saved = localStorage.getItem('participantsCountCache');
+    if (saved) {
+        try {
+            participantsCountCache = JSON.parse(saved);
+        } catch (e) {
+            participantsCountCache = {};
+        }
+    } else {
+        participantsCountCache = {};
+    }
+}
+
+function saveParticipantsCountCache() {
+    localStorage.setItem('participantsCountCache', JSON.stringify(participantsCountCache));
+}
+
 async function fetchParticipantsCount(hikeDate) {
     if (!REGISTRATION_API_URL) return 0;
     try {
@@ -356,6 +374,9 @@ function updateRegistration(hikeDate, hikeTitle, status) {
 }
 
 async function loadData() {
+    // Загружаем кэш количества участников перед всеми данными
+    loadParticipantsCountCache();
+
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
     if (userId && hikesList.length > 0) {
         await loadUserRegistrations();
@@ -550,12 +571,10 @@ function showBottomSheet(index) {
     async function loadParticipantCount() {
         const hike = hikesList[sheetCurrentIndex];
         if (!hike) return;
-        // Если в кэше нет значения для этой даты, запрашиваем с сервера
-        if (participantsCountCache[hike.date] === undefined) {
-            const count = await fetchParticipantsCount(hike.date);
-            participantsCountCache[hike.date] = count;
-        }
-        // Обновляем счётчик на экране
+        // Запрашиваем с сервера актуальное количество
+        const count = await fetchParticipantsCount(hike.date);
+        participantsCountCache[hike.date] = count;
+        saveParticipantsCountCache(); // сохраняем в localStorage
         updateParticipantCounter();
     }
 
@@ -634,7 +653,7 @@ function showBottomSheet(index) {
             `;
         }
 
-        // Изображение с контейнером для счётчика (начальное значение из кэша)
+        // Изображение с контейнером для счётчика (значение из кэша)
         const count = participantsCountCache[hike.date] || 0;
         const imageHtml = hike.image ? `
             <div class="image-container">
@@ -668,15 +687,10 @@ function showBottomSheet(index) {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
                 sheetCurrentIndex--;
-                // Обновляем контент для нового хайка
                 updateContent();
-                // Обновляем кнопки
                 updateFloatingSheetButtons();
-                // Если для этого хайка ещё нет кэшированного значения, загружаем
-                const newHike = hikesList[sheetCurrentIndex];
-                if (newHike && participantsCountCache[newHike.date] === undefined) {
-                    await loadParticipantCount();
-                }
+                // Загружаем актуальный счётчик для нового хайка (асинхронно)
+                await loadParticipantCount(); // loadParticipantCount обновит кэш и вызовет updateParticipantCounter
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_prev', false);
@@ -689,10 +703,7 @@ function showBottomSheet(index) {
                 sheetCurrentIndex++;
                 updateContent();
                 updateFloatingSheetButtons();
-                const newHike = hikesList[sheetCurrentIndex];
-                if (newHike && participantsCountCache[newHike.date] === undefined) {
-                    await loadParticipantCount();
-                }
+                await loadParticipantCount();
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_next', false);
@@ -700,16 +711,11 @@ function showBottomSheet(index) {
         });
     }
 
-    // Первый рендер: показываем контент, загружаем счётчик если нужно, создаём кнопки
+    // Первый рендер: показываем контент, загружаем счётчик, создаём кнопки
     updateContent();
-    // Загружаем счётчик для текущего хайка, если нет в кэше
-    const currentHike = hikesList[sheetCurrentIndex];
-    if (currentHike && participantsCountCache[currentHike.date] === undefined) {
-        fetchParticipantsCount(currentHike.date).then(count => {
-            participantsCountCache[currentHike.date] = count;
-            updateParticipantCounter();
-        });
-    }
+    loadParticipantCount().then(() => {
+        // после загрузки счётчика обновляем, если нужно
+    });
     createFloatingButtons();
 
     function removeFloatingSheetButtons() {
@@ -761,9 +767,10 @@ function showBottomSheet(index) {
                 // Обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = false;
                 saveStatusToLocalStorage();
-                // Уменьшаем счётчик локально
+                // Уменьшаем счётчик локально и сохраняем в localStorage
                 if (participantsCountCache[hike.date] > 0) {
                     participantsCountCache[hike.date]--;
+                    saveParticipantsCountCache();
                     updateParticipantCounter();
                 }
                 // Обновляем кнопки
@@ -797,8 +804,9 @@ function showBottomSheet(index) {
                 // Обновляем локальный статус
                 hikeBookingStatus[sheetCurrentIndex] = true;
                 saveStatusToLocalStorage();
-                // Увеличиваем счётчик локально
+                // Увеличиваем счётчик локально и сохраняем в localStorage
                 participantsCountCache[hike.date] = (participantsCountCache[hike.date] || 0) + 1;
+                saveParticipantsCountCache();
                 updateParticipantCounter();
                 // Обновляем кнопки
                 updateFloatingSheetButtons();
