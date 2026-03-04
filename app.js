@@ -368,7 +368,7 @@ async function loadData() {
     }
 }
 
-// ----- Массив партнёров (полный) -----
+// ----- Массив партнёров -----
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -659,15 +659,13 @@ function showBottomSheet(index) {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
                 sheetCurrentIndex--;
-                // Сбрасываем счётчик на 0
                 currentParticipantsCount = 0;
-                // Обновляем контент для нового хайка (без ожидания count)
                 updateContent();
-                // Затем загружаем актуальный счётчик и обновляем
+                // Сначала обновляем кнопки (с новым индексом, но счетчик 0)
+                updateFloatingSheetButtons();
+                // Затем загружаем реальный счетчик и обновляем его
                 await loadParticipantCount();
                 updateParticipantCounter();
-                // Обновляем кнопки регистрации
-                updateFloatingSheetButtons();
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_prev', false);
@@ -680,9 +678,9 @@ function showBottomSheet(index) {
                 sheetCurrentIndex++;
                 currentParticipantsCount = 0;
                 updateContent();
+                updateFloatingSheetButtons();
                 await loadParticipantCount();
                 updateParticipantCounter();
-                updateFloatingSheetButtons();
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_next', false);
@@ -692,6 +690,8 @@ function showBottomSheet(index) {
 
     // Первый рендер: сразу показываем контент со счётчиком 0, затем загружаем реальный счётчик
     updateContent();
+    // Создаём кнопки (они используют текущий индекс)
+    createFloatingButtons();
     loadParticipantCount().then(() => {
         updateParticipantCounter();
     });
