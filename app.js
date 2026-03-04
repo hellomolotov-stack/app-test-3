@@ -36,9 +36,9 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
+const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec'; // для отправки в Google Sheets
 
 const CACHE_TTL = 300000; // 5 минут
-const METRICS_TTL = 0; // всегда свежие
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -48,14 +48,8 @@ let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
 let hikesData = {};
 let hikesList = [];
-let hikeBookingStatus = {}; // ключ: индекс в hikesList, значение: boolean (true - забронировано)
 
-const mainDiv = document.getElementById('mainContent');
-const subtitle = document.getElementById('subtitle');
-const bottomNav = document.getElementById('bottomNav');
-const navPopup = document.getElementById('navPopup');
-
-// ---------- Firebase инициализация ----------
+// Firebase инициализация
 const firebaseConfig = {
     apiKey: "AIzaSyCv4v2CJxR1A-QkYWYjzFEF-kKWB1qUSQY",
     authDomain: "hiking-club-app-b6c7c.firebaseapp.com",
@@ -69,7 +63,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-// ---------- Firebase функции для участников ----------
+// --- Firebase функции ---
+
+// Подписка на счётчик участников
 function subscribeToParticipantCount(hikeDate, callback) {
     const countRef = database.ref('participants/' + hikeDate);
     const listener = countRef.on('value', (snapshot) => {
@@ -79,21 +75,62 @@ function subscribeToParticipantCount(hikeDate, callback) {
     return () => countRef.off('value', listener);
 }
 
+// Атомарное увеличение счётчика (без проверки, так как increment сам гарантирует корректность)
 function incrementParticipantCount(hikeDate) {
     const countRef = database.ref('participants/' + hikeDate);
     return countRef.set(firebase.database.ServerValue.increment(1));
 }
 
+// Безопасное уменьшение счётчика (не ниже 0)
 function decrementParticipantCount(hikeDate) {
     const countRef = database.ref('participants/' + hikeDate);
-    return countRef.set(firebase.database.ServerValue.increment(-1));
+    return countRef.transaction((current) => {
+        if (current === null || current <= 0) {
+            return 0; // не уходим в минус
+        }
+        return current - 1;
+    });
 }
 
-// Флаги состояния интерфейса
-let isPrivPage = false;      // находимся ли на странице привилегий или новичков
-let isMenuActive = false;    // открыто ли меню (кнопка «меню» активна)
+// Получить статус регистрации пользователя для конкретного хайка
+async function getUserRegistrationStatus(hikeDate) {
+    if (!userId) return false;
+    const statusRef = database.ref(`userRegistrations/${userId}/${hikeDate}`);
+    const snapshot = await statusRef.once('value');
+    return snapshot.val() === true;
+}
 
-// ---------- Вспомогательные функции для навигации ----------
+// Установить статус регистрации пользователя
+function setUserRegistrationStatus(hikeDate, status) {
+    if (!userId) return Promise.resolve();
+    const statusRef = database.ref(`userRegistrations/${userId}/${hikeDate}`);
+    return statusRef.set(status);
+}
+
+// Загрузить все статусы пользователя (при старте)
+async function loadUserRegistrationsFromFirebase() {
+    if (!userId || !hikesList.length) return {};
+    const userRef = database.ref(`userRegistrations/${userId}`);
+    const snapshot = await userRef.once('value');
+    const registrations = snapshot.val() || {};
+    const statusMap = {};
+    hikesList.forEach((hike, index) => {
+        statusMap[index] = registrations[hike.date] === true;
+    });
+    return statusMap;
+}
+
+// --- Флаги интерфейса ---
+let isPrivPage = false;
+let isMenuActive = false;
+let hikeBookingStatus = {}; // будет заполнено из Firebase
+
+const mainDiv = document.getElementById('mainContent');
+const subtitle = document.getElementById('subtitle');
+const bottomNav = document.getElementById('bottomNav');
+const navPopup = document.getElementById('navPopup');
+
+// --- Навигация ---
 function setActiveNav(activeId) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
@@ -131,7 +168,7 @@ function updateActiveNav() {
     }
 }
 
-// ---------- Логирование и загрузка данных ----------
+// --- Логирование и загрузка данных ---
 function log(action, isGuest = false) {
     if (!userId) return;
     const finalAction = isGuest ? `${action}_guest` : action;
@@ -284,40 +321,53 @@ async function loadHikes() {
             };
         }
         hikesList = Object.values(hikesData).sort((a, b) => a.date.localeCompare(b.date));
-        // Загружаем статусы регистраций из localStorage
-        const savedStatus = localStorage.getItem('hikeBookingStatus');
-        if (savedStatus) {
-            try {
-                const parsed = JSON.parse(savedStatus);
-                hikesList.forEach((hike, index) => {
-                    hikeBookingStatus[index] = parsed[hike.date] || false;
-                });
-            } catch (e) {
-                for (let i = 0; i < hikesList.length; i++) {
-                    hikeBookingStatus[i] = false;
-                }
-            }
-        } else {
-            for (let i = 0; i < hikesList.length; i++) {
-                hikeBookingStatus[i] = false;
-            }
-        }
     } catch (e) {
         console.error('Ошибка загрузки расписания хайков:', e);
     }
 }
 
-function saveStatusToLocalStorage() {
-    if (!hikesList.length) return;
-    const statusObj = {};
-    hikesList.forEach((hike, index) => {
-        statusObj[hike.date] = hikeBookingStatus[index] || false;
-    });
-    localStorage.setItem('hikeBookingStatus', JSON.stringify(statusObj));
+// --- Отправка в Google Sheets (старая регистрация) ---
+function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
+    if (!userId || !REGISTRATION_API_URL) return;
+    try {
+        const hasCard = userCard.status === 'active' ? 'да' : 'нет';
+        const profileLink = user?.username ? `https://t.me/${user.username}` : '';
+
+        const params = new URLSearchParams({
+            action: 'update',
+            user_id: userId,
+            first_name: user?.first_name || '',
+            last_name: user?.last_name || '',
+            username: user?.username || '',
+            profile_link: profileLink,
+            hike_date: hikeDate,
+            hike_title: hikeTitle,
+            status: status,
+            has_card: hasCard
+        });
+        fetch(REGISTRATION_API_URL, {
+            method: 'POST',
+            body: params,
+            keepalive: true
+        }).catch(e => console.error('Ошибка отправки запроса в Google Sheets:', e));
+    } catch (e) {
+        console.error('Ошибка в updateRegistrationInSheet:', e);
+    }
 }
 
+// --- Основная загрузка данных ---
 async function loadData() {
     await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
+
+    // Загружаем статусы регистраций из Firebase
+    if (userId && hikesList.length > 0) {
+        hikeBookingStatus = await loadUserRegistrationsFromFirebase();
+    } else {
+        // инициализируем пустыми
+        hikeBookingStatus = {};
+        hikesList.forEach((_, index) => { hikeBookingStatus[index] = false; });
+    }
+
     log('visit', userCard.status !== 'active');
     renderHome();
     const loader = document.getElementById('initial-loader');
@@ -329,7 +379,7 @@ async function loadData() {
     }
 }
 
-// ----- Массив партнёров (полный) -----
+// ----- Массив партнёров -----
 const partners = [
     {
         name: 'экипировочный центр Геккон',
@@ -466,11 +516,12 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// ----- Bottom Sheet с Firebase подпиской -----
+// ----- Bottom Sheet с подпиской на Firebase -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
+let currentUnsubscribe = null;
 
 function showBottomSheet(index) {
     if (!hikesList.length) return;
@@ -502,15 +553,12 @@ function showBottomSheet(index) {
     sheet.style.height = `${windowHeight * 0.9}px`;
 
     sheetCurrentIndex = index;
-
     const isGuest = userCard.status !== 'active';
-    let unsubscribeFromCount = null;
 
-    function updateParticipantCounter(count) {
-        const counterEl = document.getElementById('participantCounter');
-        if (counterEl) {
-            counterEl.textContent = `уже идут: ${count}`;
-        }
+    // Отписываемся от предыдущей подписки
+    if (currentUnsubscribe) {
+        currentUnsubscribe();
+        currentUnsubscribe = null;
     }
 
     function updateContent() {
@@ -579,7 +627,7 @@ function showBottomSheet(index) {
             `;
         }
 
-        // Изображение с контейнером для счётчика (временно 0)
+        // Изображение с контейнером для счётчика (счётчик будет обновлён подпиской)
         const imageHtml = hike.image ? `
             <div class="image-container">
                 <img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">
@@ -607,9 +655,13 @@ function showBottomSheet(index) {
             </div>
         `;
 
-        // Подписываемся на обновления счётчика для текущего хайка
-        if (unsubscribeFromCount) unsubscribeFromCount();
-        unsubscribeFromCount = subscribeToParticipantCount(hike.date, updateParticipantCounter);
+        // Подписываемся на обновления счётчика
+        currentUnsubscribe = subscribeToParticipantCount(hike.date, (count) => {
+            const counterEl = document.getElementById('participantCounter');
+            if (counterEl) {
+                counterEl.textContent = `уже идут: ${count}`;
+            }
+        });
 
         // Обработчики переключения
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
@@ -652,7 +704,7 @@ function showBottomSheet(index) {
         const hike = hikesList[sheetCurrentIndex];
         if (!hike) return;
 
-        const isBooked = hikeBookingStatus[sheetCurrentIndex];
+        const isBooked = hikeBookingStatus[sheetCurrentIndex] || false;
         const hikeDate = new Date(hike.date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -686,15 +738,21 @@ function showBottomSheet(index) {
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                // Локально обновляем статус
-                hikeBookingStatus[sheetCurrentIndex] = false;
-                saveStatusToLocalStorage();
-                // Уменьшаем счётчик в Firebase
-                decrementParticipantCount(hike.date)
-                    .catch(error => console.error('Ошибка при отмене:', error));
-                // Обновляем кнопки (счётчик обновится автоматически через подписку)
-                updateFloatingSheetButtons();
-                log('sheet_cancel_click', false);
+
+                // Обновляем статус в Firebase
+                setUserRegistrationStatus(hike.date, false)
+                    .then(() => {
+                        // Локально обновляем статус
+                        hikeBookingStatus[sheetCurrentIndex] = false;
+                        // Уменьшаем счётчик (Firebase transaction защищает от отрицательных)
+                        decrementParticipantCount(hike.date).catch(console.error);
+                        // Отправляем запись в Google Sheets
+                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
+                        // Обновляем кнопки
+                        updateFloatingSheetButtons();
+                        log('sheet_cancel_click', false);
+                    })
+                    .catch(console.error);
             });
             container.appendChild(cancelBtn);
         } else {
@@ -718,15 +776,21 @@ function showBottomSheet(index) {
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                // Локально обновляем статус
-                hikeBookingStatus[sheetCurrentIndex] = true;
-                saveStatusToLocalStorage();
-                // Увеличиваем счётчик в Firebase
-                incrementParticipantCount(hike.date)
-                    .catch(error => console.error('Ошибка при записи:', error));
-                // Обновляем кнопки
-                updateFloatingSheetButtons();
-                log('sheet_go_click', false);
+
+                // Обновляем статус в Firebase
+                setUserRegistrationStatus(hike.date, true)
+                    .then(() => {
+                        // Локально обновляем статус
+                        hikeBookingStatus[sheetCurrentIndex] = true;
+                        // Увеличиваем счётчик
+                        incrementParticipantCount(hike.date).catch(console.error);
+                        // Отправляем запись в Google Sheets
+                        updateRegistrationInSheet(hike.date, hike.title, 'booked');
+                        // Обновляем кнопки
+                        updateFloatingSheetButtons();
+                        log('sheet_go_click', false);
+                    })
+                    .catch(console.error);
             });
             container.appendChild(goBtn);
         }
@@ -826,6 +890,10 @@ function showBottomSheet(index) {
 }
 
 function closeBottomSheet() {
+    if (currentUnsubscribe) {
+        currentUnsubscribe();
+        currentUnsubscribe = null;
+    }
     const overlay = document.querySelector('.bottom-sheet-overlay');
     if (overlay) {
         overlay.classList.remove('visible');
