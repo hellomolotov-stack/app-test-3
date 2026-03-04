@@ -526,7 +526,7 @@ body::before {
     line-height: 1.2;
 }
 
-/* Попап-меню */
+/* Попап-меню (все пункты одинаковой высоты) */
 .nav-popup {
     position: fixed;
     bottom: 100px;
@@ -549,13 +549,18 @@ body::before {
 }
 
 .popup-item {
-    padding: 12px 20px;
+    padding: 0 20px;
+    height: 52px; /* фиксированная высота */
     color: #ffffff;
     text-decoration: none;
     font-size: 16px;
     font-weight: 500;
     transition: background-color 0.2s;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    align-items: center;
+    line-height: 1.2;
+    box-sizing: border-box;
 }
 
 .popup-item:last-child {
@@ -588,6 +593,11 @@ body::before {
         bottom: 80px;
         right: 10px;
         border-radius: 20px;
+    }
+    .popup-item {
+        height: 48px;
+        padding: 0 16px;
+        font-size: 14px;
     }
 }
 
