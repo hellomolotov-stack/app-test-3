@@ -45,11 +45,39 @@
         </div>
     </div>
 
-    <!-- Всплывающее меню -->
+    <!-- Всплывающее меню с SVG-иконками -->
     <div class="nav-popup" id="navPopup">
-        <a href="#" class="popup-item" id="popupChat">💬 чат</a>
-        <a href="#" class="popup-item" id="popupChannel">📰 канал клуба</a>
-        <a href="#" class="popup-item" id="popupGift">🎁 подарить карту</a>
+        <a href="#" class="popup-item" id="popupChat">
+            <span class="popup-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 20L8 16H20V6H4V20Z" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                    <circle cx="8" cy="11" r="1" fill="currentColor"/>
+                    <circle cx="12" cy="11" r="1" fill="currentColor"/>
+                    <circle cx="16" cy="11" r="1" fill="currentColor"/>
+                </svg>
+            </span>
+            <span class="popup-label">чат</span>
+        </a>
+        <a href="#" class="popup-item" id="popupChannel">
+            <span class="popup-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="6" width="16" height="12" rx="1" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                    <path d="M8 10H16" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M8 14H14" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+            </span>
+            <span class="popup-label">канал клуба</span>
+        </a>
+        <a href="#" class="popup-item" id="popupGift">
+            <span class="popup-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="4" y="8" width="16" height="12" rx="1" stroke="currentColor" stroke-width="1.8" fill="none"/>
+                    <path d="M12 4V20" stroke="currentColor" stroke-width="1.8"/>
+                    <path d="M8 4L12 8L16 4" stroke="currentColor" stroke-width="1.8"/>
+                </svg>
+            </span>
+            <span class="popup-label">подарить карту</span>
+        </a>
     </div>
 
     <div id="initial-loader" class="initial-loader"></div>
