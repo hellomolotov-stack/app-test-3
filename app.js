@@ -7,11 +7,15 @@ function haptic() {
 }
 window.haptic = haptic;
 
-// Глобальная функция для открытия ссылок, доступная из любого места
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    tg.openLink(url);
+    if (url.startsWith('https://t.me/')) {
+        window.open(url, '_blank');
+        tg.close();
+    } else {
+        tg.openLink(url);
+    }
 }
 window.openLink = openLink;
 
@@ -31,13 +35,13 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
+const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // ссылка на мини-приложение (замените, если нужно)
 
 const CACHE_TTL = 600000; // 10 минут
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
-const userPhotoUrl = user?.photo_url;
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
@@ -81,9 +85,7 @@ async function loadHikesFromFirebase() {
             access: data.access || '',
             details: data.details || '',
             image: data.image || data.image_url || '',
-            tags: data.tags || [],
-            start_time: data.start_time || '',
-            location_link: data.location_link || ''
+            tags: data.tags || []
         })).sort((a, b) => a.date.localeCompare(b.date));
         return { data: hikes, list };
     } catch (e) {
@@ -136,44 +138,33 @@ async function loadGiftFromFirebase() {
     }
 }
 
-// --- Firebase функции для регистраций и участников (без аватарок, только счётчик) ---
+// --- Firebase функции для регистраций ---
 function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
         callback(0);
         return () => {};
     }
-    const participantsRef = database.ref('hikeParticipants/' + hikeDate);
-    const listener = participantsRef.on('value', (snapshot) => {
-        const participants = snapshot.val() || {};
-        const count = Object.keys(participants).length;
+    const countRef = database.ref('participants/' + hikeDate);
+    const listener = countRef.on('value', (snapshot) => {
+        const count = snapshot.val() || 0;
         callback(count);
     });
-    return () => participantsRef.off('value', listener);
-}
-
-async function addParticipant(hikeDate, userData) {
-    if (!database || !userId) return Promise.reject('No database or user');
-    const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
-    return participantRef.set({
-        userId: userId,
-        name: userData.first_name || '',
-        photoUrl: userData.photo_url || null,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
-    });
-}
-
-async function removeParticipant(hikeDate) {
-    if (!database || !userId) return Promise.reject('No database or user');
-    const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
-    return participantRef.remove();
+    return () => countRef.off('value', listener);
 }
 
 function incrementParticipantCount(hikeDate) {
-    return addParticipant(hikeDate, user);
+    if (!database) return Promise.resolve();
+    const countRef = database.ref('participants/' + hikeDate);
+    return countRef.set(firebase.database.ServerValue.increment(1));
 }
 
 function decrementParticipantCount(hikeDate) {
-    return removeParticipant(hikeDate);
+    if (!database) return Promise.resolve();
+    const countRef = database.ref('participants/' + hikeDate);
+    return countRef.transaction((current) => {
+        if (current === null || current <= 0) return 0;
+        return current - 1;
+    });
 }
 
 function setUserRegistrationStatus(hikeDate, status) {
@@ -532,50 +523,79 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// Функция для преобразования markdown ссылок в HTML с data-атрибутами
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
-        return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
+        const safeUrl = JSON.stringify(url);
+        return `<a href="#" onclick="openLink(${safeUrl}, 'hike_section_link', ${isGuest}); return false;">${linkText}</a>`;
     });
 }
 
-// Глобальный обработчик кликов по ссылкам (делегирование)
-document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn');
-    if (!link) return;
+// --- Функции для новых кнопок ---
+function formatDateForDisplay(dateStr) {
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const [year, month, day] = dateStr.split('-');
+    return `${parseInt(day)} ${months[parseInt(month)-1]} ${year}`;
+}
+
+function addToCalendar(hike) {
+    const eventTitle = `хайк - ${hike.title}`;
+    const date = new Date(hike.date);
+    // Создаём событие на весь день в UTC, чтобы не было проблем с часовыми поясами
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const startDate = `${year}${month}${day}`;
+    const endDate = startDate; // событие на один день
+
+    const description = `Подробности: https://t.me/yaltahiking\n\nПрисоединяйся к клубу!`;
     
-    // Для динамических ссылок (из parseLinks)
-    if (link.classList.contains('dynamic-link')) {
-        e.preventDefault();
-        const url = link.dataset.url;
-        const isGuest = link.dataset.guest === 'true';
-        openLink(url, 'dynamic_link_click', isGuest);
-        return;
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//hiking club//EN
+BEGIN:VEVENT
+UID:${Date.now()}@hikingclub
+DTSTART;VALUE=DATE:${startDate}
+DTEND;VALUE=DATE:${endDate}
+SUMMARY:${eventTitle}
+DESCRIPTION:${description}
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `hike-${hike.date}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    haptic();
+    log('add_to_calendar_click', false);
+}
+
+function inviteFriend(hike) {
+    const formattedDate = formatDateForDisplay(hike.date);
+    const shareText = `привет! пошли на хайк со мной ${formattedDate}, зарегистрируйся через приложение ${APP_LINK}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Приглашение на хайк',
+            text: shareText,
+        }).catch(() => {
+            // если пользователь отменил, ничего не делаем
+        });
+    } else {
+        // Копируем в буфер обмена
+        navigator.clipboard.writeText(shareText).then(() => {
+            tg.showPopup ? tg.showPopup({ title: 'Готово', message: 'Ссылка скопирована' }) : alert('Ссылка скопирована');
+        }).catch(() => {
+            tg.showPopup ? tg.showPopup({ title: 'Ошибка', message: 'Не удалось скопировать' }) : alert('Не удалось скопировать');
+        });
     }
-    
-    // Для попап меню
-    if (link.closest('.nav-popup')) {
-        e.preventDefault();
-        const href = link.getAttribute('href');
-        if (href && href !== '#') {
-            openLink(href, 'nav_popup_click', false);
-        }
-        return;
-    }
-    
-    // Для кнопок новичков
-    if (link.classList.contains('btn-newcomer')) {
-        e.preventDefault();
-        haptic();
-        const isGuest = link.id === 'newcomerBtnGuest';
-        renderNewcomerPage(isGuest);
-        return;
-    }
-    
-    // Для аккордеона и стрелок навигации - их обработчики уже есть
-    // Для остальных кнопок (регистрация) - они обрабатываются отдельно
-});
+    haptic();
+    log('invite_friend_click', false);
+}
 
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
@@ -707,26 +727,6 @@ function showBottomSheet(index) {
             }
         }
 
-        // Дополнительная информация (старт и точка сбора)
-        let extraInfoHtml = '';
-        if (hike.start_time || hike.location_link) {
-            extraInfoHtml = '<div style="margin: 8px 0 12px 0; display: flex; flex-direction: column; gap: 4px;">';
-            if (hike.start_time) {
-                extraInfoHtml += `<div><strong>начало:</strong> ${hike.start_time}</div>`;
-            }
-            if (hike.location_link) {
-                let locationHtml = '';
-                if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
-                    locationHtml = parseLinks(hike.location_link, isGuest);
-                } else {
-                    // Если просто ссылка, создаем ссылку с текстом "открыть на карте"
-                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
-                }
-                extraInfoHtml += `<div><strong>точка сбора:</strong> ${locationHtml}</div>`;
-            }
-            extraInfoHtml += '</div>';
-        }
-
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -743,7 +743,6 @@ function showBottomSheet(index) {
             </div>
             <div>
                 ${imageHtml}
-                ${extraInfoHtml}
                 ${sectionsHtml}
             </div>
         `;
@@ -804,10 +803,6 @@ function showBottomSheet(index) {
         const isPast = hikeDate < today;
 
         container.innerHTML = '';
-        container.style.flexDirection = 'row';
-        container.style.justifyContent = 'center';
-        container.style.gap = '12px';
-        container.style.flexWrap = 'wrap';
 
         if (isPast) {
             const completedBtn = document.createElement('a');
@@ -821,14 +816,50 @@ function showBottomSheet(index) {
 
         const isGuest = userCard.status !== 'active';
 
+        // --- Добавляем строку с дополнительными кнопками ---
+        const extraRow = document.createElement('div');
+        extraRow.style.display = 'flex';
+        extraRow.style.gap = '12px';
+        extraRow.style.marginBottom = '12px';
+        extraRow.style.justifyContent = 'center';
+
+        const calendarBtn = document.createElement('a');
+        calendarBtn.href = '#';
+        calendarBtn.className = 'btn btn-outline';
+        calendarBtn.textContent = '📅 добавить в календарь';
+        calendarBtn.style.flex = '1';
+        calendarBtn.style.padding = '12px 8px';
+        calendarBtn.style.fontSize = '14px';
+        calendarBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addToCalendar(hike);
+        });
+
+        const inviteBtn = document.createElement('a');
+        inviteBtn.href = '#';
+        inviteBtn.className = 'btn btn-outline';
+        inviteBtn.textContent = '👥 пригласить друга';
+        inviteBtn.style.flex = '1';
+        inviteBtn.style.padding = '12px 8px';
+        inviteBtn.style.fontSize = '14px';
+        inviteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            inviteFriend(hike);
+        });
+
+        extraRow.appendChild(calendarBtn);
+        extraRow.appendChild(inviteBtn);
+        container.appendChild(extraRow);
+
+        // --- Основные кнопки регистрации ---
         if (isBooked) {
-            // Кнопка "отменить" слева
+            // Сначала кнопка отмены (слева)
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
-            cancelBtn.style.minWidth = '120px';
+            cancelBtn.style.flex = '1';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (cancelBtn.disabled) return;
@@ -844,40 +875,41 @@ function showBottomSheet(index) {
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                     updateFloatingSheetButtons();
                 } else {
-                    Promise.all([
-                        removeParticipant(hike.date),
-                        setUserRegistrationStatus(hike.date, false)
-                    ]).then(() => {
-                        hikeBookingStatus[sheetCurrentIndex] = false;
-                        updateFloatingSheetButtons();
-                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
-                    }).catch((error) => {
-                        console.error('Error during cancellation:', error);
-                        cancelBtn.disabled = false;
-                        cancelBtn.style.opacity = 1;
-                        cancelBtn.style.pointerEvents = 'auto';
-                    });
+                    setUserRegistrationStatus(hike.date, false)
+                        .then(() => {
+                            hikeBookingStatus[sheetCurrentIndex] = false;
+                            return decrementParticipantCount(hike.date).catch(console.error);
+                        })
+                        .then(() => {
+                            updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
+                            updateFloatingSheetButtons();
+                        })
+                        .catch((error) => {
+                            console.error('Error during cancellation:', error);
+                            cancelBtn.disabled = false;
+                            cancelBtn.style.opacity = 1;
+                            cancelBtn.style.pointerEvents = 'auto';
+                        });
                 }
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
 
-            // Кнопка "ты записан" справа
+            // Затем кнопка "ты записан" (справа)
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-green';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
-            goBtn.style.minWidth = '120px';
+            goBtn.style.flex = '1';
             container.appendChild(goBtn);
         } else {
-            // Кнопка "задать вопрос" слева
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
             questionBtn.id = 'sheetQuestionBtn';
             questionBtn.textContent = 'задать вопрос';
-            questionBtn.style.minWidth = '120px';
+            questionBtn.style.flex = '1';
             questionBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
@@ -885,13 +917,12 @@ function showBottomSheet(index) {
             });
             container.appendChild(questionBtn);
 
-            // Кнопка "иду" справа
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
-            goBtn.style.minWidth = '120px';
+            goBtn.style.flex = '1';
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (goBtn.disabled) return;
@@ -907,19 +938,21 @@ function showBottomSheet(index) {
                     updateRegistrationInSheet(hike.date, hike.title, 'booked');
                     updateFloatingSheetButtons();
                 } else {
-                    Promise.all([
-                        addParticipant(hike.date, user),
-                        setUserRegistrationStatus(hike.date, true)
-                    ]).then(() => {
-                        hikeBookingStatus[sheetCurrentIndex] = true;
-                        updateFloatingSheetButtons();
-                        updateRegistrationInSheet(hike.date, hike.title, 'booked');
-                    }).catch((error) => {
-                        console.error('Error during booking:', error);
-                        goBtn.disabled = false;
-                        goBtn.style.opacity = 1;
-                        goBtn.style.pointerEvents = 'auto';
-                    });
+                    setUserRegistrationStatus(hike.date, true)
+                        .then(() => {
+                            hikeBookingStatus[sheetCurrentIndex] = true;
+                            return incrementParticipantCount(hike.date).catch(console.error);
+                        })
+                        .then(() => {
+                            updateRegistrationInSheet(hike.date, hike.title, 'booked');
+                            updateFloatingSheetButtons();
+                        })
+                        .catch((error) => {
+                            console.error('Error during booking:', error);
+                            goBtn.disabled = false;
+                            goBtn.style.opacity = 1;
+                            goBtn.style.pointerEvents = 'auto';
+                        });
                 }
                 log('sheet_go_click', false);
             });
@@ -1258,9 +1291,8 @@ function renderNewcomerPage(isGuest = false) {
     if (faq && faq.length) {
         faq.forEach(item => {
             let answer = item.a;
-            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" data-url="https://t.me/yaltahiking" class="dynamic-link">@yaltahiking</a>');
-            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" data-url="https://zapovedcrimea.ru/choose-pass" class="dynamic-link">zapovedcrimea.ru</a>');
-            answer = answer.replace(/\n/g, '<br>');
+            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
+            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
             faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
         });
     } else {
@@ -1306,7 +1338,7 @@ function renderPriv() {
             }
             clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                clubHtml += `<a href="#" data-url="${item.button_link}" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                clubHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             }
             clubHtml += `</div>`;
         });
@@ -1319,13 +1351,14 @@ function renderPriv() {
         privileges.city.forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" data-url="${item.button_link}" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
                 let linkHtml = '';
                 if (item.button_link.includes('[') && item.button_link.includes('](')) {
                     linkHtml = parseLinks(item.button_link, false);
                 } else {
-                    linkHtml = `<a href="#" data-url="${item.button_link}" class="dynamic-link">📍 ${item.button_link}</a>`;
+                    const safeUrl = JSON.stringify(item.button_link);
+                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
                 }
                 cityHtml += `<p>📍 ${linkHtml}</p>`;
             }
@@ -1373,13 +1406,14 @@ function renderGuestPriv() {
         privileges.city.forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" data-url="${item.button_link}" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
                 let linkHtml = '';
                 if (item.button_link.includes('[') && item.button_link.includes('](')) {
                     linkHtml = parseLinks(item.button_link, false);
                 } else {
-                    linkHtml = `<a href="#" data-url="${item.button_link}" class="dynamic-link">📍 ${item.button_link}</a>`;
+                    const safeUrl = JSON.stringify(item.button_link);
+                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
                 }
                 cityHtml += `<p>📍 ${linkHtml}</p>`;
             }
