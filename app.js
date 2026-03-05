@@ -743,9 +743,14 @@ function showBottomSheet(index) {
             `;
         }
 
+        const hikeDate = new Date(hike.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isPast = hikeDate < today;
+
         let imageHtml = '';
         if (hike.image) {
-            if (!isGuest) {
+            if (!isGuest && !isPast) { // счётчик только для будущих хайков
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">
@@ -779,7 +784,7 @@ function showBottomSheet(index) {
             </div>
         `;
 
-        if (!isGuest) {
+        if (!isGuest && !isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count) => {
                 const counterEl = document.getElementById('participantCounter');
                 if (counterEl) {
@@ -1348,9 +1353,12 @@ function renderPriv() {
     cityPrivs.forEach(item => {
         cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
         if (item.button_text && item.button_link) {
-            cityHtml += `<a href="${item.button_link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            // кнопка (например, для Nothomme)
+            cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
         } else if (item.button_link) {
-            cityHtml += `<p>📍 <a href="${item.button_link}" target="_blank" style="color:#D9FD19;">${item.button_link}</a></p>`;
+            // ссылка с возможным markdown
+            let linkHtml = parseLinks(item.button_link, false);
+            cityHtml += `<p>📍 ${linkHtml}</p>`;
         }
         cityHtml += `</div>`;
     });
@@ -1396,8 +1404,11 @@ function renderGuestPriv() {
     let cityHtml = '';
     cityPrivs.forEach(item => {
         cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-        if (item.button_link) {
-            cityHtml += `<p>📍 <a href="${item.button_link}" target="_blank" style="color:#D9FD19;">${item.button_link}</a></p>`;
+        if (item.button_text && item.button_link) {
+            cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+        } else if (item.button_link) {
+            let linkHtml = parseLinks(item.button_link, false);
+            cityHtml += `<p>📍 ${linkHtml}</p>`;
         }
         cityHtml += `</div>`;
     });
