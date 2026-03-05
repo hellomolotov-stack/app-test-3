@@ -1,3 +1,5 @@
+// app.js – исправленная версия
+
 // Telegram WebApp
 const tg = window.Telegram.WebApp;
 tg.ready();
@@ -1671,7 +1673,8 @@ function renderHome() {
         return;
     }
 
-    loadMetrics().then(() => updateMetricsUI());
+    // Метрики уже загружены в глобальную переменную, просто обновим UI
+    updateMetricsUI();
 
     if (userCard.status === 'active' && userCard.cardUrl) {
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
@@ -1773,7 +1776,7 @@ function renderHome() {
 
     } else {
         renderGuestHome();
-        loadMetrics().then(() => updateMetricsUI());
+        // Метрики уже обновлены выше через updateMetricsUI(), но в renderGuestHome они вставляются статически, так что ок
     }
 }
 
