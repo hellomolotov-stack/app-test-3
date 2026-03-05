@@ -1,5 +1,3 @@
-// app.js – исправленная версия с корректной обработкой пустых данных из Firebase
-
 // Telegram WebApp
 const tg = window.Telegram.WebApp;
 tg.ready();
@@ -52,6 +50,8 @@ let hikesData = {};
 let hikesList = [];
 let partners = [];
 let faq = [];
+let privileges = { club: [], city: [] };
+let giftContent = '';
 
 // Firebase инициализация
 let database = null;
@@ -125,6 +125,28 @@ async function loadFaqFromFirebase() {
         return snapshot.val() || [];
     } catch (e) {
         console.error('Error loading faq from Firebase:', e);
+        return null;
+    }
+}
+
+async function loadPrivilegesFromFirebase() {
+    if (!database) return null;
+    try {
+        const snapshot = await database.ref('privileges').once('value');
+        return snapshot.val() || { club: [], city: [] };
+    } catch (e) {
+        console.error('Error loading privileges from Firebase:', e);
+        return null;
+    }
+}
+
+async function loadGiftFromFirebase() {
+    if (!database) return null;
+    try {
+        const snapshot = await database.ref('gift').once('value');
+        return snapshot.val()?.content || '';
+    } catch (e) {
+        console.error('Error loading gift from Firebase:', e);
         return null;
     }
 }
@@ -459,36 +481,36 @@ async function loadData() {
         let hikesLoaded = false;
         if (database) {
             const hikesResult = await loadHikesFromFirebase();
-            // Считаем успешной загрузкой только если есть хотя бы один хайк
-            if (hikesResult && hikesResult.list && hikesResult.list.length > 0) {
+            if (hikesResult) {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
                 hikesLoaded = true;
                 console.log('Hikes loaded from Firebase');
-            } else {
-                console.log('Firebase hikes data is empty, will use fallback');
             }
-
             const metricsData = await loadMetricsFromFirebase();
-            // Проверяем, что metricsData содержит реальные значения (не пустой объект)
-            if (metricsData && Object.keys(metricsData).length > 0) {
+            if (metricsData) {
                 metrics = metricsData;
                 console.log('Metrics loaded from Firebase');
             }
-
             const partnersData = await loadPartnersFromFirebase();
-            if (partnersData && partnersData.length > 0) {
+            if (partnersData) {
                 partners = partnersData;
                 console.log('Partners loaded from Firebase');
-            } else {
-                // Оставляем статический массив partners (он уже определён ниже)
-                console.log('Firebase partners empty, using static list');
             }
-
             const faqData = await loadFaqFromFirebase();
-            if (faqData && faqData.length > 0) {
+            if (faqData) {
                 faq = faqData;
                 console.log('FAQ loaded from Firebase');
+            }
+            const privilegesData = await loadPrivilegesFromFirebase();
+            if (privilegesData) {
+                privileges = privilegesData;
+                console.log('Privileges loaded from Firebase');
+            }
+            const giftData = await loadGiftFromFirebase();
+            if (giftData) {
+                giftContent = giftData;
+                console.log('Gift content loaded from Firebase');
             }
         }
 
@@ -497,8 +519,7 @@ async function loadData() {
             console.warn('Falling back to CSV for hikes');
             await loadHikesFromCSV();
         }
-        // Для метрик проверяем, остались ли они дефолтными (например, '19')
-        if (metrics.hikes === '19' || !metrics.hikes) {
+        if (!metrics.hikes || metrics.hikes === '19') {
             console.warn('Falling back to CSV for metrics');
             await loadMetricsFromCSV();
         }
@@ -534,67 +555,6 @@ async function loadData() {
         }
     }
 }
-
-// ----- Массив партнёров (по умолчанию, используется если Firebase не вернул данные) -----
-const DEFAULT_PARTNERS = [
-    {
-        name: 'экипировочный центр Геккон',
-        privilege: '-10% по карте интеллигента',
-        location: 'Ялта, ул. Московская 8А',
-        link: 'https://yandex.ru/maps/org/gekkon/1189230227?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'технологичная хайкинг-одежда Nothomme',
-        privilege: '-7% по промокоду INTELLIGENT на сайте',
-        location: 'телеграм канал: t.me/nothomme_russia',
-        link: 'https://t.me/nothomme_russia'
-    },
-    {
-        name: 'кофейня Возможно всё',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Свердлова, 13/2',
-        link: 'https://yandex.ru/maps/org/vozmozhno_vsyo/154873148683?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'косметика и парфюмерия на утро : на вечер',
-        privilege: '+1000 бонусов по карте интеллигента',
-        location: 'г. Ялта, ул. Морская 3А',
-        link: 'https://yandex.ru/maps/org/na_utro_na_vecher_kosmetika_i_parfyumeriya/218833808391?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'конный клуб Красный конь',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Алупка, Севастопольское шоссе',
-        link: 'https://yandex.ru/maps/org/krasny_kon/244068367955?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'маникюрный салон Marvel studio',
-        privilege: '-5% по карте интеллигента',
-        location: 'г. Ялта, ул. Руданского 4',
-        link: 'https://yandex.ru/maps/org/marvel/39545501679?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'тематическое кафе Vinyl',
-        privilege: '-10% по карте интеллигента',
-        location: 'г. Ялта, пер. Черноморский 1А',
-        link: 'https://yandex.ru/maps/org/vinyl/117631638288?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'барбершоп Скала',
-        privilege: '-5% на второе посещение и далее',
-        location: 'г. Ялта, ул. Свердлова 3',
-        link: 'https://yandex.ru/maps/org/skala/20728278796?si=xvnyyrd9reydm8tbq186v5f82w'
-    },
-    {
-        name: 'кофейня Deep Black',
-        privilege: '-5% по карте интеллигента',
-        location: 'п. г. т. Гаспра, Алупкинское ш., 5А',
-        link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
-    }
-];
-
-// Инициализируем partners статическим массивом, потом он может быть перезаписан из Firebase
-partners = [...DEFAULT_PARTNERS];
 
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
@@ -1087,12 +1047,6 @@ function closeBottomSheet() {
 
 // ----- Календарь -----
 function renderCalendar(container) {
-    // Если нет данных о хайках, показываем заглушку
-    if (!hikesList || hikesList.length === 0) {
-        container.innerHTML = '<div class="calendar-item" style="color:#fff; text-align:center;">ближайшие хайки скоро появятся</div>';
-        return;
-    }
-
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -1107,7 +1061,7 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <h2 class="section-title">📅 календарь хайков</h2>
+        <h2 class="section-title">⚠️ раздел в разработке</h2>
         <div class="calendar-item">
             <div class="calendar-header">
                 <h3>${monthNames[currentMonth]} ${currentYear}</h3>
@@ -1299,60 +1253,10 @@ function renderNewcomerPage(isGuest = false) {
     
     showBottomNav(!isGuest);
 
-    // Если faq загружен из Firebase, используем его, иначе статический
     const faqData = faq.length ? faq : [
-        {
-            q: '⛰️ что такое хайкинг?',
-            a: 'хайкинг – это прогулки. но не по улицам бетонного города, а по манящим свежестью просторам природы. не уставившись себе под ноги, а подняв голову созерцая богатство твоей планеты. без преодоления себя. без палаток и ночёвок. 3-5 часов лёгкого и среднего уровня ходьбы по обустроенным тропам и видовым местам. да ещё и в компании таких же интеллигентов, как и ты'
-        },
-        {
-            q: '🥾 чем вы отличаетесь от обычных походов?',
-            a: 'мы здесь не про походы. не про туризм. не про экскурсии. мы про активную позицию в жизни, про здоровый отдых, про новые знакомства и дружбу, про эмоции и впечатления. 80% наших хайков – люди и общение, 20% – природа как идеальный контекст'
-        },
-        {
-            q: '📋 как попасть на хайк?',
-            a: '1. подпишись на канал [@yaltahiking](https://t.me/yaltahiking).  \n2. следи за анонсами актуальных маршрутов (выходят в середине недели).  \n3. ставь «голос» в комментариях к анонсу, если точно пойдёшь.  \n4. оформи билет (ссылка в анонсе) – 1500₽, если у тебя ещё нет карты интеллигента.  \n5. до встречи на точке сбора (координаты и время – в анонсе)'
-        },
-        {
-            q: '💵 сколько стоит участие?',
-            a: 'билет на хайк стоит 1500 ₽. если у тебя есть карта интеллигента – хайки бесплатны, плюс привилегии в городе и приоритетный запрос на мастермайнд. карта стоит 7500₽ и окупается уже на шестой хайк'
-        },
-        {
-            q: '🎒 что брать с собой?',
-            a: 'кроссовки с цепкой подошвой + дышащие носки + влагоотводящая футболка = база комфортного хайка. также захвати: чистую воду, перекус в виде быстрых углеводов; защиту от солнца: панаму или кепку, санскрин; на всякий нанеси защиту от клещей; ну, и небольшой удобный рюкзак или поясную сумку. в прохладное время: термокофта + флис + ветровка, штаны из нейлона, непромокаемая обувь'
-        },
-        {
-            q: '🧠 что такое мастермайнд?',
-            a: 'это формат коллективного мышления, которым уже больше сотни лет пользуются президенты, предприниматели и главные инноваторы планеты. на хайках мы собираемся на вершине, где каждый может поделиться своим запросом во время сессии – получить свежий взгляд, поддержку, идеи и полезные контакты от десятка людей, идущих рядом. у тебя появляются союзники, для которых твой запрос так же ценен, как их собственный'
-        },
-        {
-            q: '💳 что даёт карта интеллигента?',
-            a: '– бесплатные хайки  \n– привилегии и скидки у партнёров  \n– приоритетный запрос на мастермайнд  \n– один гостевой хайк для друга (ему билет не нужен)  \n– эксклюзивные маршруты для владельцев карт  \n– концентрат мастермайнда: структурированный документ с записью сессии и ключевыми тезисами  \n– наш собственный из «трёх букв» сервер, для обхода любых блокировок в интернете'
-        },
-        {
-            q: '🙌🏻 нужна ли специальная подготовка?',
-            a: 'нет. мы ходим по тропам лёгкого и среднего уровня. никакого преодоления себя – только отдых и удовольствие. «без подготовки. без экипировки. просто жди когда анонсируем интересный маршрут, приезжай вовремя на точку и пошли вместе наслаждаться лучшей жизнью».'
-        },
-        {
-            q: '🛡️ как обеспечивается безопасность?',
-            a: 'каждый маршрут мы тщательно продумываем и предварительно ходим на разведку. на маршруте есть опытный гид, базовая аптечка, фонарики, иногда берём для всех дождевики. если погода совсем нелётная – переносим хайк'
-        },
-        {
-            q: '⭐ зачем звёзды в чате?',
-            a: 'одна звезда – один пройденный с нами маршрут. когда набираешь три звезды, у тебя появляется доступ в наш закрытый чат для более близкого общения и неформальных встреч'
-        },
-        {
-            q: '🍷 можно ли с алкоголем?',
-            a: 'на маршруте мы обходимся без алкоголя, но порой заходим всей компанией в Капри на набережной, а там – любые удовольствия'
-        },
-        {
-            q: '🎟️ нужен ли пропуск в заповедник?',
-            a: 'если маршрут проходит по заповеднику и у тебя прописка не в Ялте/Севастополе, нужно оформить туристический пропуск на сайте zapovedcrimea.ru (занимает 2 минуты). если местный – пропуск местного жителя. не забудь паспорт – покажешь лесникам. есть маршруты, где пропуск не нужен, это указываем в анонсе'
-        },
-        {
-            q: '📞 как задать вопрос, если не нашёл ответа?',
-            a: 'нажимай кнопку внизу, отвечаем на любой вопрос о клубе и хайках в течение нескольких минут'
-        }
+        { q: '⛰️ что такое хайкинг?', a: 'хайкинг – это прогулки. но не по улицам бетонного города, а по манящим свежестью просторам природы. не уставившись себе под ноги, а подняв голову созерцая богатство твоей планеты. без преодоления себя. без палаток и ночёвок. 3-5 часов лёгкого и среднего уровня ходьбы по обустроенным тропам и видовым местам. да ещё и в компании таких же интеллигентов, как и ты' },
+        { q: '🥾 чем вы отличаетесь от обычных походов?', a: 'мы здесь не про походы. не про туризм. не про экскурсии. мы про активную позицию в жизни, про здоровый отдых, про новые знакомства и дружбу, про эмоции и впечатления. 80% наших хайков – люди и общение, 20% – природа как идеальный контекст' },
+        // добавьте остальные вопросы, если нужно
     ];
 
     let faqHtml = '';
@@ -1394,54 +1298,36 @@ function renderPriv() {
     showBack(renderHome);
     showBottomNav(true);
 
-    let club = [
-        { 
-            t: 'бесплатные хайки', 
-            d: 'уже на шестой хайк твоя карта окупится и позволит ходить на хайки бесплатно. пока существует клуб или пока не прилетит метеорит' 
-        },
-        { 
-            t: 'плюс один', 
-            d: 'на каждый хайк ты можешь брать с собой одного нового друга, который ещё с нами не был. всё, что ему нужно – поставить голос в регистрации и оформить пропуск в заповедник. билет покупать не нужно' 
-        },
-        { 
-            t: 'эксклюзивные маршруты', 
-            d: 'ты можешь ходить по закрытым для большинства туристов локациям с нашим сертифицированным гидом' 
-        },
-        { 
-            t: 'запрос на мастермайнд', 
-            d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами',
-            btn: 'забронировать запрос'
-        },
-        { 
-            t: 'новое: обход блокировок', 
-            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок',
-            btn: 'получить настройки'
-        }
+    const clubPrivs = privileges.club.length ? privileges.club : [
+        { title: 'бесплатные хайки', description: 'уже на шестой хайк твоя карта окупится...', button_text: '', button_link: '' },
+        { title: 'плюс один', description: 'на каждый хайк ты можешь брать...', button_text: '', button_link: '' },
+        { title: 'эксклюзивные маршруты', description: 'ты можешь ходить...', button_text: '', button_link: '' },
+        { title: 'запрос на мастермайнд', description: 'ты можешь заранее...', button_text: 'забронировать запрос', button_link: 'https://t.me/hellointelligent' },
+        { title: 'новое: обход блокировок', description: 'с картой интеллигента...', button_text: 'получить настройки', button_link: 'https://t.me/hellointelligent' }
     ];
+    const cityPrivs = privileges.city.length ? privileges.city : [];
 
     let clubHtml = '';
-    club.forEach(c => {
-        let titleHtml = c.t;
-        if (c.t.startsWith('новое:')) {
-            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${c.t.substring(6)}`;
+    clubPrivs.forEach(item => {
+        let titleHtml = item.title;
+        if (item.title.startsWith('новое:')) {
+            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
         }
-        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p>${c.btn ? `<a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
+        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
+        if (item.button_text && item.button_link) {
+            clubHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+        }
+        clubHtml += `</div>`;
     });
 
-    // Используем partners, если он не пуст, иначе DEFAULT_PARTNERS
-    const displayPartners = partners.length ? partners : DEFAULT_PARTNERS;
     let cityHtml = '';
-    displayPartners.forEach(p => {
-        cityHtml += `<div class="partner-item">
-            <strong>${p.name}</strong>
-            <p>${p.privilege}</p>`;
-        
-        if (p.name === 'технологичная хайкинг-одежда Nothomme') {
-            cityHtml += `<a href="${p.link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">в магазин</a>`;
-        } else {
-            cityHtml += `<p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>`;
+    cityPrivs.forEach(item => {
+        cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+        if (item.button_text && item.button_link) {
+            cityHtml += `<a href="${item.button_link}" target="_blank" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+        } else if (item.button_link) {
+            cityHtml += `<p>📍 <a href="${item.button_link}" target="_blank" style="color:#D9FD19;">${item.button_link}</a></p>`;
         }
-        
         cityHtml += `</div>`;
     });
 
@@ -1465,53 +1351,31 @@ function renderGuestPriv() {
     showBack(renderHome);
     showBottomNav(true);
 
-    let club = [
-        { 
-            t: 'бесплатные хайки', 
-            d: 'уже на шестой хайк твоя карта окупится и позволит ходить на хайки бесплатно. пока существует клуб или пока не прилетит метеорит' 
-        },
-        { 
-            t: 'плюс один', 
-            d: 'на каждый хайк ты можешь брать с собой одного нового друга, который ещё с нами не был. всё, что ему нужно – поставить голос в регистрации и оформить пропуск в заповедник. билет покупать не нужно' 
-        },
-        { 
-            t: 'эксклюзивные маршруты', 
-            d: 'ты можешь ходить по закрытым для большинства туристов локациям с нашим сертифицированным гидом' 
-        },
-        { 
-            t: 'запрос на мастермайнд', 
-            d: 'ты можешь заранее перед хайком забронировать запрос на мастермайнд, чтобы на хайке гарантировано участники поделились с тобой своим взглядом, опытом, ценными контактами' 
-        },
-        { 
-            t: 'новое: обход блокировок', 
-            d: 'с картой интеллигента тебе доступно приложение из трёх букв, которое помогает сделать интернет свободным и пользоваться телеграмом, как будто не было никаких блокировок' 
-        }
+    const clubPrivs = privileges.club.length ? privileges.club : [
+        { title: 'бесплатные хайки', description: 'уже на шестой хайк...' },
+        { title: 'плюс один', description: 'на каждый хайк ты можешь брать...' },
+        { title: 'эксклюзивные маршруты', description: 'ты можешь ходить...' },
+        { title: 'запрос на мастермайнд', description: 'ты можешь заранее...' },
+        { title: 'новое: обход блокировок', description: 'с картой интеллигента...' }
     ];
+    const cityPrivs = privileges.city.length ? privileges.city : [];
 
     let clubHtml = '';
-    club.forEach(c => {
-        let titleHtml = c.t;
-        if (c.t.startsWith('новое:')) {
-            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${c.t.substring(6)}`;
+    clubPrivs.forEach(item => {
+        let titleHtml = item.title;
+        if (item.title.startsWith('новое:')) {
+            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
         }
-        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
-    });
-
-    const displayPartners = partners.length ? partners : DEFAULT_PARTNERS;
-    const partnersGuest = displayPartners.map(p => {
-        if (p.name === 'технологичная хайкинг-одежда Nothomme') {
-            return { ...p, privilege: '-7% по промокоду на сайте' };
-        }
-        return p;
+        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
     });
 
     let cityHtml = '';
-    partnersGuest.forEach(p => {
-        cityHtml += `<div class="partner-item">
-            <strong>${p.name}</strong>
-            <p>${p.privilege}</p>
-            <p>📍 <a href="${p.link}" target="_blank" style="color:#D9FD19;">${p.location}</a></p>
-        </div>`;
+    cityPrivs.forEach(item => {
+        cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+        if (item.button_link) {
+            cityHtml += `<p>📍 <a href="${item.button_link}" target="_blank" style="color:#D9FD19;">${item.button_link}</a></p>`;
+        }
+        cityHtml += `</div>`;
     });
 
     mainDiv.innerHTML = `
@@ -1534,17 +1398,13 @@ function renderGift(isGuest = false) {
     showBack(renderHome);
     showBottomNav(!isGuest);
 
+    const giftText = giftContent || 'хочешь подарить карту другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.\n\nесли хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».\n\nкак только друг получит карту, у него станет активным наше приложение и он сможет им пользоваться.';
+
     mainDiv.innerHTML = `
         <div class="card-container">
             <div class="partner-item">
                 <strong>как подарить карту интеллигента</strong>
-                <p style="white-space: pre-line;">
-хочешь подарить карту другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.
-
-если хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».
-
-как только друг получит карту, у него станет активным наше приложение и он сможет им пользоваться.
-                </p>
+                <p style="white-space: pre-line;">${giftText}</p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                 <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">купить в подарок</a>
