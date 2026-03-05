@@ -1053,3 +1053,21 @@ body::before {
     margin: 0;
     width: 100%;
 }
+.participant-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white;
+    margin-right: -8px;
+}
+.participant-avatars {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+.participant-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
