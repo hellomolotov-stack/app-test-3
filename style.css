@@ -695,7 +695,7 @@ body::before {
     color: #ffffff;
     min-height: 0;
     scrollbar-width: thin;
-    scrollbar-color: #555 #222; /* тёмная полоса прокрутки */
+    scrollbar-color: #555 #222;
 }
 
 .bottom-sheet-content-wrapper::-webkit-scrollbar {
@@ -764,6 +764,13 @@ body::before {
     color: white;
     font-size: 24px;
     user-select: none;
+}
+
+.bottom-sheet-nav-arrow svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    fill: none;
 }
 
 .bottom-sheet-nav-arrow:hover {
@@ -851,9 +858,8 @@ body::before {
 /* Аватарки с наложением и тёмной обводкой */
 .participant-avatars {
     display: flex;
-    flex-direction: row-reverse; /* чтобы последний был справа, но для наложения удобнее */
-    justify-content: flex-end;
     height: 28px;
+    margin-left: 4px; /* небольшой отступ от текста */
 }
 
 .participant-avatar {
@@ -886,7 +892,6 @@ body::before {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    font-family: "Apple Garamond", "EB Garamond", "Garamond", serif;
     font-size: 16px;
     color: #ffffff;
 }
