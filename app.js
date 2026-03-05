@@ -560,9 +560,16 @@ DESCRIPTION:${description}
 END:VEVENT
 END:VCALENDAR`;
 
-    // Используем data URI для вызова системного окна открытия файла
-    const dataUri = 'data:text/calendar;charset=utf8,' + encodeURIComponent(icsContent);
-    window.location.href = dataUri; // на мобильных устройствах предложит открыть в приложении календаря
+    // Создаём временную ссылку и эмулируем клик для надёжного открытия
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hike-${hike.date}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
 
     haptic();
     log('add_to_calendar_click', false);
@@ -793,7 +800,11 @@ function showBottomSheet(index) {
         today.setHours(0, 0, 0, 0);
         const isPast = hikeDate < today;
 
+        // Очищаем контейнер и задаём вертикальное расположение
         container.innerHTML = '';
+        container.style.flexDirection = 'column';
+        container.style.alignItems = 'stretch';
+        container.style.gap = '12px';
 
         if (isPast) {
             const completedBtn = document.createElement('a');
@@ -813,7 +824,7 @@ function showBottomSheet(index) {
         extraContainer.style.flexDirection = 'column';
         extraContainer.style.alignItems = 'flex-end';
         extraContainer.style.gap = '8px';
-        extraContainer.style.marginBottom = '12px';
+        extraContainer.style.width = '100%';
 
         // Кнопка добавления в календарь
         const calendarBtn = document.createElement('a');
@@ -825,7 +836,6 @@ function showBottomSheet(index) {
         calendarBtn.style.fontSize = '14px';
         calendarBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            // Перекрашиваем в зелёный, если ещё не зелёная
             if (!calendarBtn.classList.contains('btn-green')) {
                 calendarBtn.classList.add('btn-green');
                 calendarBtn.classList.remove('btn-outline');
@@ -859,6 +869,7 @@ function showBottomSheet(index) {
         mainRow.style.display = 'flex';
         mainRow.style.gap = '12px';
         mainRow.style.justifyContent = 'space-between';
+        mainRow.style.width = '100%';
 
         if (isBooked) {
             // Кнопка отмены слева
