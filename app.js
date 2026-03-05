@@ -31,11 +31,9 @@ function hideBack() {
     backButton.hide();
 }
 
-// Конфигурация
+// Конфигурация (только для members, остальное через Firebase)
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
-const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=0&single=true&output=csv';
-const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
 const CACHE_TTL = 600000; // 10 минут
@@ -45,10 +43,9 @@ const userId = user?.id;
 const firstName = user?.first_name || 'друг';
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
-let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
+let metrics = { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
 let hikesData = {};
 let hikesList = [];
-let partners = [];
 let faq = [];
 let privileges = { club: [], city: [] };
 let giftContent = '';
@@ -103,17 +100,6 @@ async function loadMetricsFromFirebase() {
         return snapshot.val() || null;
     } catch (e) {
         console.error('Error loading metrics from Firebase:', e);
-        return null;
-    }
-}
-
-async function loadPartnersFromFirebase() {
-    if (!database) return null;
-    try {
-        const snapshot = await database.ref('partners').once('value');
-        return snapshot.val() || [];
-    } catch (e) {
-        console.error('Error loading partners from Firebase:', e);
         return null;
     }
 }
@@ -203,7 +189,7 @@ async function loadUserRegistrationsFromFirebase() {
     }
 }
 
-// --- Старые функции загрузки из CSV (fallback) ---
+// --- Загрузка данных пользователя из CSV (пока не перенесено в Firebase) ---
 function parseCSVLine(line) {
     const result = [];
     let start = 0;
@@ -243,11 +229,6 @@ async function fetchWithCache(key, url, ttl = CACHE_TTL) {
     return data;
 }
 
-async function fetchWithoutCache(url) {
-    const resp = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-cache' });
-    return await resp.text();
-}
-
 async function loadUserData() {
     if (!userId) {
         userCard.status = 'inactive';
@@ -277,74 +258,6 @@ async function loadUserData() {
     } catch (e) {
         console.error('Ошибка загрузки members:', e);
         userCard.status = 'inactive';
-    }
-}
-
-async function loadMetricsFromCSV() {
-    try {
-        const text = await fetchWithoutCache(METRICS_CSV_URL);
-        const lines = text.trim().split('\n');
-        if (lines.length < 2) throw new Error('Нет данных метрик');
-        const headers = parseCSVLine(lines[0]);
-        const dataRow = parseCSVLine(lines[1]);
-        const data = {};
-        headers.forEach((key, idx) => {
-            data[key] = dataRow[idx] || '';
-        });
-        metrics = {
-            hikes: data.hikes || '19',
-            kilometers: data.kilometers || '150+',
-            locations: data.locations || '13',
-            meetings: data.meetings || '130+'
-        };
-    } catch (e) {
-        console.error('Ошибка загрузки метрик из CSV:', e);
-    }
-}
-
-async function loadHikesFromCSV() {
-    try {
-        const { text } = await fetchWithCache('hikes', HIKES_CSV_URL, CACHE_TTL);
-        const lines = text.trim().split('\n');
-        if (lines.length < 2) return;
-
-        const headers = parseCSVLine(lines[0]);
-
-        hikesData = {};
-        for (let i = 1; i < lines.length; i++) {
-            const row = parseCSVLine(lines[i]);
-            if (row.length < 4) continue;
-
-            let data = {};
-            headers.forEach((key, idx) => {
-                data[key] = row[idx] || '';
-            });
-
-            const date = data.date;
-            if (!date) continue;
-
-            let tags = [];
-            if (data.tags) {
-                let tagsStr = data.tags;
-                if (tagsStr.startsWith('"') && tagsStr.endsWith('"')) {
-                    tagsStr = tagsStr.slice(1, -1);
-                }
-                tags = tagsStr.split(',').map(t => t.trim()).filter(t => t);
-            }
-
-            hikesData[date] = {
-                title: data.title || 'Хайк',
-                features: data.features || data.description || '',
-                access: data.access || '',
-                details: data.details || '',
-                image: data.image_url || '',
-                date: date,
-                tags: tags
-            };
-        }
-        hikesList = Object.values(hikesData).sort((a, b) => a.date.localeCompare(b.date));
-    } catch (e) {
-        console.error('Ошибка загрузки расписания хайков из CSV:', e);
     }
 }
 
@@ -465,7 +378,7 @@ function log(action, isGuest = false) {
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-// --- Основная загрузка с таймаутом и приоритетом Firebase ---
+// --- Основная загрузка с Firebase ---
 async function loadData() {
     const loaderTimeout = setTimeout(() => {
         console.warn('loadData timeout – force hide loader');
@@ -477,25 +390,18 @@ async function loadData() {
     }, 5000);
 
     try {
-        // Загружаем данные из Firebase, если доступно
-        let hikesLoaded = false;
+        // Загружаем данные из Firebase
         if (database) {
             const hikesResult = await loadHikesFromFirebase();
             if (hikesResult) {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
-                hikesLoaded = true;
                 console.log('Hikes loaded from Firebase');
             }
             const metricsData = await loadMetricsFromFirebase();
             if (metricsData) {
                 metrics = metricsData;
                 console.log('Metrics loaded from Firebase');
-            }
-            const partnersData = await loadPartnersFromFirebase();
-            if (partnersData) {
-                partners = partnersData;
-                console.log('Partners loaded from Firebase');
             }
             const faqData = await loadFaqFromFirebase();
             if (faqData) {
@@ -514,17 +420,7 @@ async function loadData() {
             }
         }
 
-        // Fallback на CSV для недостающих данных
-        if (!hikesLoaded) {
-            console.warn('Falling back to CSV for hikes');
-            await loadHikesFromCSV();
-        }
-        if (!metrics.hikes || metrics.hikes === '19') {
-            console.warn('Falling back to CSV for metrics');
-            await loadMetricsFromCSV();
-        }
-
-        // Загрузка данных пользователя
+        // Загрузка данных пользователя (пока из CSV)
         await loadUserData();
 
         // Загрузка статусов регистраций
