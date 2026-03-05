@@ -99,7 +99,9 @@ async function loadHikesFromFirebase() {
             access: data.access || '',
             details: data.details || '',
             image: data.image || data.image_url || '',
-            tags: data.tags || []
+            tags: data.tags || [],
+            start_time: data.start_time || '',
+            location_link: data.location_link || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
         return { data: hikes, list };
     } catch (e) {
@@ -561,7 +563,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// Новая версия parseLinks – добавляем класс dynamic-link
+// Функция для преобразования markdown ссылок в HTML с data-атрибутами
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
@@ -569,7 +571,7 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// Глобальный обработчик кликов
+// Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn');
     if (!link) return;
@@ -734,6 +736,25 @@ function showBottomSheet(index) {
             }
         }
 
+        // Дополнительная информация (начало и точка сбора) с классом hike-extra-info
+        let extraInfoHtml = '';
+        if (hike.start_time || hike.location_link) {
+            extraInfoHtml = '<div class="hike-extra-info">';
+            if (hike.start_time) {
+                extraInfoHtml += `<div><strong>начало:</strong> ${hike.start_time}</div>`;
+            }
+            if (hike.location_link) {
+                let locationHtml = '';
+                if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
+                    locationHtml = parseLinks(hike.location_link, isGuest);
+                } else {
+                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
+                }
+                extraInfoHtml += `<div><strong>точка сбора:</strong> ${locationHtml}</div>`;
+            }
+            extraInfoHtml += '</div>';
+        }
+
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -750,6 +771,7 @@ function showBottomSheet(index) {
             </div>
             <div>
                 ${imageHtml}
+                ${extraInfoHtml}
                 ${sectionsHtml}
             </div>
         `;
@@ -876,7 +898,7 @@ function showBottomSheet(index) {
             });
             container.appendChild(cancelBtn);
 
-            // Кнопка "ты записан" – новый стиль
+            // Кнопка "ты записан" с новым классом
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow-outline';
@@ -1327,7 +1349,6 @@ function renderPriv() {
             if (item.button_text && item.button_link) {
                 cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
-                // Если есть markdown, обрабатываем parseLinks, иначе создаём обычную ссылку
                 let linkHtml = '';
                 if (item.button_link.includes('[') && item.button_link.includes('](')) {
                     linkHtml = parseLinks(item.button_link, false);
