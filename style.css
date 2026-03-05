@@ -67,7 +67,7 @@ body::before {
 
 .content {
     flex: 1;
-    padding-bottom: 80px; /* отступ для нижнего меню */
+    padding-bottom: 80px;
 }
 
 .loader {
@@ -180,6 +180,15 @@ body::before {
 .btn-green {
     background-color: var(--green);
     color: #ffffff;
+}
+
+.btn-yellow-outline {
+    background-color: transparent;
+    color: var(--yellow);
+    box-shadow: inset 0 0 0 2px var(--yellow);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-weight: 400;
 }
 
 .btn-outline {
@@ -798,7 +807,7 @@ body::before {
     margin: 2px 0 12px 0;
 }
 
-/* Счётчик участников */
+/* Счётчик участников – фиксированная высота, выравнивание по центру */
 .participant-counter {
     position: absolute;
     top: 12px;
@@ -813,6 +822,8 @@ body::before {
     color: #ffffff;
     z-index: 10;
     border: 1px solid rgba(255,255,255,0.2);
+    height: 36px;
+    box-sizing: border-box;
 }
 
 .participant-count {
@@ -820,6 +831,7 @@ body::before {
     font-style: italic;
     color: var(--yellow);
     font-size: 16px;
+    line-height: 1;
 }
 
 .participant-text {
@@ -827,12 +839,14 @@ body::before {
     font-style: italic;
     color: var(--yellow);
     font-size: 16px;
+    line-height: 1;
     margin-right: 2px;
 }
 
 .participant-avatars {
     display: flex;
     gap: 2px;
+    height: 28px;
 }
 
 .participant-avatar {
@@ -921,6 +935,16 @@ body::before {
 .floating-sheet-buttons .btn-yellow {
     background-color: var(--yellow);
     color: #000000;
+}
+
+.floating-sheet-buttons .btn-yellow-outline {
+    background-color: transparent;
+    color: var(--yellow);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 0 0 2px var(--yellow);
+    border: none;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    font-weight: 400;
 }
 
 .floating-sheet-buttons .btn-green {
