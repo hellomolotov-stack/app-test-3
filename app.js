@@ -31,10 +31,11 @@ function hideBack() {
     backButton.hide();
 }
 
-// Конфигурация (только для members, остальное через Firebase)
+// Конфигурация
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
+const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // ссылка на мини-приложение (замените, если нужно)
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -530,6 +531,72 @@ function parseLinks(text, isGuest) {
     });
 }
 
+// --- Функции для новых кнопок ---
+function formatDateForDisplay(dateStr) {
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const [year, month, day] = dateStr.split('-');
+    return `${parseInt(day)} ${months[parseInt(month)-1]} ${year}`;
+}
+
+function addToCalendar(hike) {
+    const eventTitle = `хайк - ${hike.title}`;
+    const date = new Date(hike.date);
+    // Создаём событие на весь день в UTC, чтобы не было проблем с часовыми поясами
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const startDate = `${year}${month}${day}`;
+    const endDate = startDate; // событие на один день
+
+    const description = `Подробности: https://t.me/yaltahiking\n\nПрисоединяйся к клубу!`;
+    
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//hiking club//EN
+BEGIN:VEVENT
+UID:${Date.now()}@hikingclub
+DTSTART;VALUE=DATE:${startDate}
+DTEND;VALUE=DATE:${endDate}
+SUMMARY:${eventTitle}
+DESCRIPTION:${description}
+END:VEVENT
+END:VCALENDAR`;
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `hike-${hike.date}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    haptic();
+    log('add_to_calendar_click', false);
+}
+
+function inviteFriend(hike) {
+    const formattedDate = formatDateForDisplay(hike.date);
+    const shareText = `привет! пошли на хайк со мной ${formattedDate}, зарегистрируйся через приложение ${APP_LINK}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Приглашение на хайк',
+            text: shareText,
+        }).catch(() => {
+            // если пользователь отменил, ничего не делаем
+        });
+    } else {
+        // Копируем в буфер обмена
+        navigator.clipboard.writeText(shareText).then(() => {
+            tg.showPopup ? tg.showPopup({ title: 'Готово', message: 'Ссылка скопирована' }) : alert('Ссылка скопирована');
+        }).catch(() => {
+            tg.showPopup ? tg.showPopup({ title: 'Ошибка', message: 'Не удалось скопировать' }) : alert('Не удалось скопировать');
+        });
+    }
+    haptic();
+    log('invite_friend_click', false);
+}
+
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -749,19 +816,50 @@ function showBottomSheet(index) {
 
         const isGuest = userCard.status !== 'active';
 
-        if (isBooked) {
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-green';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'ты записан';
-            container.appendChild(goBtn);
+        // --- Добавляем строку с дополнительными кнопками ---
+        const extraRow = document.createElement('div');
+        extraRow.style.display = 'flex';
+        extraRow.style.gap = '12px';
+        extraRow.style.marginBottom = '12px';
+        extraRow.style.justifyContent = 'center';
 
+        const calendarBtn = document.createElement('a');
+        calendarBtn.href = '#';
+        calendarBtn.className = 'btn btn-outline';
+        calendarBtn.textContent = '📅 добавить в календарь';
+        calendarBtn.style.flex = '1';
+        calendarBtn.style.padding = '12px 8px';
+        calendarBtn.style.fontSize = '14px';
+        calendarBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addToCalendar(hike);
+        });
+
+        const inviteBtn = document.createElement('a');
+        inviteBtn.href = '#';
+        inviteBtn.className = 'btn btn-outline';
+        inviteBtn.textContent = '👥 пригласить друга';
+        inviteBtn.style.flex = '1';
+        inviteBtn.style.padding = '12px 8px';
+        inviteBtn.style.fontSize = '14px';
+        inviteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            inviteFriend(hike);
+        });
+
+        extraRow.appendChild(calendarBtn);
+        extraRow.appendChild(inviteBtn);
+        container.appendChild(extraRow);
+
+        // --- Основные кнопки регистрации ---
+        if (isBooked) {
+            // Сначала кнопка отмены (слева)
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
+            cancelBtn.style.flex = '1';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (cancelBtn.disabled) return;
@@ -796,12 +894,22 @@ function showBottomSheet(index) {
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
+
+            // Затем кнопка "ты записан" (справа)
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-green';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'ты записан';
+            goBtn.style.flex = '1';
+            container.appendChild(goBtn);
         } else {
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
             questionBtn.id = 'sheetQuestionBtn';
             questionBtn.textContent = 'задать вопрос';
+            questionBtn.style.flex = '1';
             questionBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
@@ -814,6 +922,7 @@ function showBottomSheet(index) {
             goBtn.className = 'btn btn-yellow';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
+            goBtn.style.flex = '1';
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (goBtn.disabled) return;
