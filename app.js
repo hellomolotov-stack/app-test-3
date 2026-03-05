@@ -1355,10 +1355,15 @@ function renderPriv() {
         if (item.button_text && item.button_link) {
             // кнопка (например, для Nothomme)
             cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-        } else if (item.button_link) {
-            // ссылка с возможным markdown
-            let linkHtml = parseLinks(item.button_link, false);
-            cityHtml += `<p>📍 ${linkHtml}</p>`;
+     } else if (item.button_link) {
+    let linkHtml = '';
+    if (item.button_link.includes('[') && item.button_link.includes('](')) {
+        linkHtml = parseLinks(item.button_link, false);
+    } else {
+        // Если это просто URL, создаём ссылку вручную
+        linkHtml = `<a href="#" onclick="openLink('${item.button_link}', 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+    }
+    cityHtml += `<p>📍 ${linkHtml}</p>`;
         }
         cityHtml += `</div>`;
     });
