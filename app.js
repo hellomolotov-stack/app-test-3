@@ -41,7 +41,7 @@ const CACHE_TTL = 600000; // 10 минут
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
-const userPhotoUrl = user?.photo_url; // может быть undefined
+const userPhotoUrl = user?.photo_url;
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
@@ -150,7 +150,7 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Получаем последних трёх участников по timestamp (если есть)
+        // Получаем последних трёх участников по timestamp
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp)
@@ -163,7 +163,6 @@ function subscribeToParticipantCount(hikeDate, callback) {
 async function addParticipant(hikeDate, userData) {
     if (!database || !userId) return Promise.reject('No database or user');
     const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
-    // Добавляем timestamp и данные пользователя
     return participantRef.set({
         userId: userId,
         name: userData.first_name || '',
@@ -176,15 +175,6 @@ async function removeParticipant(hikeDate) {
     if (!database || !userId) return Promise.reject('No database or user');
     const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
     return participantRef.remove();
-}
-
-function incrementParticipantCount(hikeDate) {
-    // Устаревшая функция, теперь используем addParticipant
-    return addParticipant(hikeDate, user);
-}
-
-function decrementParticipantCount(hikeDate) {
-    return removeParticipant(hikeDate);
 }
 
 function setUserRegistrationStatus(hikeDate, status) {
@@ -671,8 +661,10 @@ function showBottomSheet(index) {
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                        <div class="participant-counter" id="participantCounter">уже идут: <span id="participantCount">0</span></div>
-                        <div class="participant-avatars" id="participantAvatars"></div>
+                        <div class="participant-header">
+                            <span class="participant-count" id="participantCount">0</span>
+                            <div class="participant-avatars" id="participantAvatars"></div>
+                        </div>
                     </div>
                 `;
             } else {
@@ -729,23 +721,22 @@ function showBottomSheet(index) {
                 if (countEl) countEl.textContent = count;
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (avatarsEl) {
-                    avatarsEl.innerHTML = ''; // очищаем
+                    avatarsEl.innerHTML = '';
                     participants.forEach(p => {
-                        const img = document.createElement('img');
                         if (p.photoUrl) {
+                            const img = document.createElement('img');
                             img.src = p.photoUrl;
+                            img.className = 'participant-avatar';
+                            img.alt = p.name || '';
+                            img.title = p.name || '';
+                            avatarsEl.appendChild(img);
                         } else {
-                            // Заглушка с инициалами
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'participant-avatar placeholder';
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                            img.style.display = 'none'; // скроем img, покажем div
-                            // но проще сделать div
-                            avatarsEl.appendChild(createAvatarPlaceholder(initial));
-                            return;
+                            placeholder.textContent = initial;
+                            avatarsEl.appendChild(placeholder);
                         }
-                        img.className = 'participant-avatar';
-                        img.alt = p.name || '';
-                        img.title = p.name || '';
-                        avatarsEl.appendChild(img);
                     });
                 }
             });
@@ -797,11 +788,11 @@ function showBottomSheet(index) {
         today.setHours(0, 0, 0, 0);
         const isPast = hikeDate < today;
 
-        // Очищаем контейнер и устанавливаем горизонтальное расположение
         container.innerHTML = '';
         container.style.flexDirection = 'row';
         container.style.justifyContent = 'center';
         container.style.gap = '12px';
+        container.style.flexWrap = 'wrap';
 
         if (isPast) {
             const completedBtn = document.createElement('a');
@@ -816,20 +807,13 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-green';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'ты записан';
-            goBtn.style.flex = '1';
-            container.appendChild(goBtn);
-
+            // Кнопка "отменить" слева
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
-            cancelBtn.style.flex = '1';
+            cancelBtn.style.minWidth = '120px';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (cancelBtn.disabled) return;
@@ -845,7 +829,6 @@ function showBottomSheet(index) {
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                     updateFloatingSheetButtons();
                 } else {
-                    // Удаляем участника и обновляем статус
                     Promise.all([
                         removeParticipant(hike.date),
                         setUserRegistrationStatus(hike.date, false)
@@ -863,13 +846,23 @@ function showBottomSheet(index) {
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
+
+            // Кнопка "ты записан" справа
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-green';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'ты записан';
+            goBtn.style.minWidth = '120px';
+            container.appendChild(goBtn);
         } else {
+            // Кнопка "задать вопрос" слева
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
             questionBtn.id = 'sheetQuestionBtn';
             questionBtn.textContent = 'задать вопрос';
-            questionBtn.style.flex = '1';
+            questionBtn.style.minWidth = '120px';
             questionBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
@@ -877,12 +870,13 @@ function showBottomSheet(index) {
             });
             container.appendChild(questionBtn);
 
+            // Кнопка "иду" справа
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
-            goBtn.style.flex = '1';
+            goBtn.style.minWidth = '120px';
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (goBtn.disabled) return;
@@ -898,7 +892,6 @@ function showBottomSheet(index) {
                     updateRegistrationInSheet(hike.date, hike.title, 'booked');
                     updateFloatingSheetButtons();
                 } else {
-                    // Добавляем участника и обновляем статус
                     Promise.all([
                         addParticipant(hike.date, user),
                         setUserRegistrationStatus(hike.date, true)
@@ -917,20 +910,6 @@ function showBottomSheet(index) {
             });
             container.appendChild(goBtn);
         }
-    }
-
-    function createAvatarPlaceholder(initial) {
-        const div = document.createElement('div');
-        div.className = 'participant-avatar placeholder';
-        div.textContent = initial;
-        div.style.backgroundColor = '#40a7e3';
-        div.style.color = 'white';
-        div.style.display = 'flex';
-        div.style.alignItems = 'center';
-        div.style.justifyContent = 'center';
-        div.style.fontWeight = 'bold';
-        div.style.fontSize = '14px';
-        return div;
     }
 
     function createFloatingButtons() {
