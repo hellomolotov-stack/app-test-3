@@ -10,12 +10,8 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    if (url.startsWith('https://t.me/')) {
-        window.open(url, '_blank');
-        tg.close();
-    } else {
-        tg.openLink(url);
-    }
+    // Используем tg.openLink для всех внешних ссылок
+    tg.openLink(url);
 }
 window.openLink = openLink;
 
@@ -150,7 +146,6 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Получаем последних трёх участников по timestamp
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp)
