@@ -67,7 +67,7 @@ body::before {
 
 .content {
     flex: 1;
-    padding-bottom: 80px; /* отступ для нижнего меню */
+    padding-bottom: 80px;
 }
 
 .loader {
