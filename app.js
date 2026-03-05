@@ -35,7 +35,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // ссылка на мини-приложение (замените, если нужно)
+const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // замените на актуальную ссылку
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -541,12 +541,10 @@ function formatDateForDisplay(dateStr) {
 function addToCalendar(hike) {
     const eventTitle = `хайк - ${hike.title}`;
     const date = new Date(hike.date);
-    // Создаём событие на весь день в UTC, чтобы не было проблем с часовыми поясами
     const year = date.getUTCFullYear();
     const month = String(date.getUTCMonth() + 1).padStart(2, '0');
     const day = String(date.getUTCDate()).padStart(2, '0');
     const startDate = `${year}${month}${day}`;
-    const endDate = startDate; // событие на один день
 
     const description = `Подробности: https://t.me/yaltahiking\n\nПрисоединяйся к клубу!`;
     
@@ -556,20 +554,16 @@ PRODID:-//hiking club//EN
 BEGIN:VEVENT
 UID:${Date.now()}@hikingclub
 DTSTART;VALUE=DATE:${startDate}
-DTEND;VALUE=DATE:${endDate}
+DTEND;VALUE=DATE:${startDate}
 SUMMARY:${eventTitle}
 DESCRIPTION:${description}
 END:VEVENT
 END:VCALENDAR`;
 
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `hike-${hike.date}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
+    // Используем data URI для вызова системного окна открытия файла
+    const dataUri = 'data:text/calendar;charset=utf8,' + encodeURIComponent(icsContent);
+    window.location.href = dataUri; // на мобильных устройствах предложит открыть в приложении календаря
+
     haptic();
     log('add_to_calendar_click', false);
 }
@@ -582,11 +576,8 @@ function inviteFriend(hike) {
         navigator.share({
             title: 'Приглашение на хайк',
             text: shareText,
-        }).catch(() => {
-            // если пользователь отменил, ничего не делаем
-        });
+        }).catch(() => {});
     } else {
-        // Копируем в буфер обмена
         navigator.clipboard.writeText(shareText).then(() => {
             tg.showPopup ? tg.showPopup({ title: 'Готово', message: 'Ссылка скопирована' }) : alert('Ссылка скопирована');
         }).catch(() => {
@@ -816,44 +807,61 @@ function showBottomSheet(index) {
 
         const isGuest = userCard.status !== 'active';
 
-        // --- Добавляем строку с дополнительными кнопками ---
-        const extraRow = document.createElement('div');
-        extraRow.style.display = 'flex';
-        extraRow.style.gap = '12px';
-        extraRow.style.marginBottom = '12px';
-        extraRow.style.justifyContent = 'center';
+        // --- Контейнер для дополнительных кнопок (календарь и приглашение) ---
+        const extraContainer = document.createElement('div');
+        extraContainer.style.display = 'flex';
+        extraContainer.style.flexDirection = 'column';
+        extraContainer.style.alignItems = 'flex-end';
+        extraContainer.style.gap = '8px';
+        extraContainer.style.marginBottom = '12px';
 
+        // Кнопка добавления в календарь
         const calendarBtn = document.createElement('a');
         calendarBtn.href = '#';
         calendarBtn.className = 'btn btn-outline';
-        calendarBtn.textContent = '📅 добавить в календарь';
-        calendarBtn.style.flex = '1';
-        calendarBtn.style.padding = '12px 8px';
+        calendarBtn.textContent = 'добавить в календарь';
+        calendarBtn.style.width = 'fit-content';
+        calendarBtn.style.padding = '12px 16px';
         calendarBtn.style.fontSize = '14px';
         calendarBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            // Перекрашиваем в зелёный, если ещё не зелёная
+            if (!calendarBtn.classList.contains('btn-green')) {
+                calendarBtn.classList.add('btn-green');
+                calendarBtn.classList.remove('btn-outline');
+            }
             addToCalendar(hike);
         });
 
+        // Кнопка пригласить друга
         const inviteBtn = document.createElement('a');
         inviteBtn.href = '#';
         inviteBtn.className = 'btn btn-outline';
-        inviteBtn.textContent = '👥 пригласить друга';
-        inviteBtn.style.flex = '1';
-        inviteBtn.style.padding = '12px 8px';
+        inviteBtn.textContent = 'пригласить друга';
+        inviteBtn.style.width = 'fit-content';
+        inviteBtn.style.padding = '12px 16px';
         inviteBtn.style.fontSize = '14px';
         inviteBtn.addEventListener('click', (e) => {
             e.preventDefault();
+            if (!inviteBtn.classList.contains('btn-green')) {
+                inviteBtn.classList.add('btn-green');
+                inviteBtn.classList.remove('btn-outline');
+            }
             inviteFriend(hike);
         });
 
-        extraRow.appendChild(calendarBtn);
-        extraRow.appendChild(inviteBtn);
-        container.appendChild(extraRow);
+        extraContainer.appendChild(calendarBtn);
+        extraContainer.appendChild(inviteBtn);
+        container.appendChild(extraContainer);
 
-        // --- Основные кнопки регистрации ---
+        // --- Основные кнопки регистрации (горизонтально) ---
+        const mainRow = document.createElement('div');
+        mainRow.style.display = 'flex';
+        mainRow.style.gap = '12px';
+        mainRow.style.justifyContent = 'space-between';
+
         if (isBooked) {
-            // Сначала кнопка отмены (слева)
+            // Кнопка отмены слева
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
@@ -893,17 +901,18 @@ function showBottomSheet(index) {
                 }
                 log('sheet_cancel_click', false);
             });
-            container.appendChild(cancelBtn);
+            mainRow.appendChild(cancelBtn);
 
-            // Затем кнопка "ты записан" (справа)
+            // Кнопка "ты записан" справа
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-green';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
             goBtn.style.flex = '1';
-            container.appendChild(goBtn);
+            mainRow.appendChild(goBtn);
         } else {
+            // Кнопка "задать вопрос" слева
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
@@ -915,8 +924,9 @@ function showBottomSheet(index) {
                 haptic();
                 openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
             });
-            container.appendChild(questionBtn);
+            mainRow.appendChild(questionBtn);
 
+            // Кнопка "иду" справа
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow';
@@ -956,8 +966,10 @@ function showBottomSheet(index) {
                 }
                 log('sheet_go_click', false);
             });
-            container.appendChild(goBtn);
+            mainRow.appendChild(goBtn);
         }
+
+        container.appendChild(mainRow);
     }
 
     function createFloatingButtons() {
