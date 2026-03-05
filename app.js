@@ -164,10 +164,11 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
+        // Сортируем от старого к новому, чтобы в DOM новые были справа
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, 3);
+            .sort((a, b) => a.timestamp - b.timestamp) // старые сначала
+            .slice(-3); // берём последние три (самые новые)
         callback(count, sorted);
     });
     return () => participantsRef.off('value', listener);
@@ -418,16 +419,58 @@ function log(action, isGuest = false) {
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
+// --- Анимированная загрузка ---
+let loaderInterval = null;
+
+function showAnimatedLoader() {
+    const loader = document.getElementById('initial-loader');
+    if (!loader) return;
+    loader.innerHTML = `
+        <div class="loader-animation">
+            <div class="loader-emoji" id="loaderEmoji">⛰️</div>
+            <div class="loader-text" id="loaderText">завязываем шнурки</div>
+        </div>
+    `;
+    loader.style.display = 'flex';
+    loader.classList.remove('fade-out');
+
+    const emojis = ['⛰️', '💫', '🥾', '⚡', '🗺️', '✨'];
+    const texts = ['завязываем шнурки', 'изучаем маршрут', 'встречаемся на хайке', 'набираем высоту', 'любуемся видами', 'заряжаемся энергией'];
+    let index = 0;
+    const emojiEl = document.getElementById('loaderEmoji');
+    const textEl = document.getElementById('loaderText');
+    if (!emojiEl || !textEl) return;
+    
+    loaderInterval = setInterval(() => {
+        index = (index + 1) % emojis.length;
+        emojiEl.textContent = emojis[index];
+        textEl.textContent = texts[index];
+    }, 1500);
+}
+
+function hideAnimatedLoader() {
+    if (loaderInterval) {
+        clearInterval(loaderInterval);
+        loaderInterval = null;
+    }
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+        loader.classList.add('fade-out');
+        setTimeout(() => {
+            loader.style.display = 'none';
+            loader.innerHTML = ''; // очищаем
+        }, 300);
+    }
+}
+
 // --- Основная загрузка с Firebase ---
 async function loadData() {
+    showAnimatedLoader();
+
     const loaderTimeout = setTimeout(() => {
         console.warn('loadData timeout – force hide loader');
-        const loader = document.getElementById('initial-loader');
-        if (loader) {
-            loader.classList.add('fade-out');
-            setTimeout(() => loader.style.display = 'none', 300);
-        }
-    }, 5000);
+        hideAnimatedLoader();
+    }, 10000); // увеличенный таймаут
 
     try {
         if (database) {
@@ -485,11 +528,7 @@ async function loadData() {
         renderHome();
     } finally {
         clearTimeout(loaderTimeout);
-        const loader = document.getElementById('initial-loader');
-        if (loader) {
-            loader.classList.add('fade-out');
-            setTimeout(() => loader.style.display = 'none', 300);
-        }
+        hideAnimatedLoader();
     }
 }
 
@@ -755,12 +794,11 @@ function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // Кнопки навигации с новыми SVG
+        // Кнопки навигации без круга, стрелки пошире
         const prevArrow = hasPrev 
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                    <path d="M14 8 L9 12 L14 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                 </svg>
                </div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
@@ -768,8 +806,7 @@ function showBottomSheet(index) {
         const nextArrow = hasNext
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
-                    <path d="M10 8 L15 12 L10 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
                 </svg>
                </div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
