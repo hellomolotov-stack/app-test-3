@@ -1,4 +1,4 @@
-// app.js – исправленная версия
+// app.js – исправленная версия с корректной обработкой пустых данных из Firebase
 
 // Telegram WebApp
 const tg = window.Telegram.WebApp;
@@ -53,7 +53,7 @@ let hikesList = [];
 let partners = [];
 let faq = [];
 
-// Firebase инициализация (исправленный конфиг)
+// Firebase инициализация
 let database = null;
 try {
     const firebaseConfig = {
@@ -74,7 +74,7 @@ try {
     database = null;
 }
 
-// --- Firebase функции для данных (с проверкой) ---
+// --- Firebase функции для данных ---
 async function loadHikesFromFirebase() {
     if (!database) return null;
     try {
@@ -459,24 +459,34 @@ async function loadData() {
         let hikesLoaded = false;
         if (database) {
             const hikesResult = await loadHikesFromFirebase();
-            if (hikesResult) {
+            // Считаем успешной загрузкой только если есть хотя бы один хайк
+            if (hikesResult && hikesResult.list && hikesResult.list.length > 0) {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
                 hikesLoaded = true;
                 console.log('Hikes loaded from Firebase');
+            } else {
+                console.log('Firebase hikes data is empty, will use fallback');
             }
+
             const metricsData = await loadMetricsFromFirebase();
-            if (metricsData) {
+            // Проверяем, что metricsData содержит реальные значения (не пустой объект)
+            if (metricsData && Object.keys(metricsData).length > 0) {
                 metrics = metricsData;
                 console.log('Metrics loaded from Firebase');
             }
+
             const partnersData = await loadPartnersFromFirebase();
-            if (partnersData) {
+            if (partnersData && partnersData.length > 0) {
                 partners = partnersData;
                 console.log('Partners loaded from Firebase');
+            } else {
+                // Оставляем статический массив partners (он уже определён ниже)
+                console.log('Firebase partners empty, using static list');
             }
+
             const faqData = await loadFaqFromFirebase();
-            if (faqData) {
+            if (faqData && faqData.length > 0) {
                 faq = faqData;
                 console.log('FAQ loaded from Firebase');
             }
@@ -487,11 +497,11 @@ async function loadData() {
             console.warn('Falling back to CSV for hikes');
             await loadHikesFromCSV();
         }
-        if (!metrics.hikes || metrics.hikes === '19') {
+        // Для метрик проверяем, остались ли они дефолтными (например, '19')
+        if (metrics.hikes === '19' || !metrics.hikes) {
             console.warn('Falling back to CSV for metrics');
             await loadMetricsFromCSV();
         }
-        // partners и faq останутся пустыми, если не загружены из Firebase
 
         // Загрузка данных пользователя
         await loadUserData();
@@ -525,8 +535,8 @@ async function loadData() {
     }
 }
 
-// ----- Массив партнёров (по умолчанию, перезаписывается из Firebase) -----
-partners = [
+// ----- Массив партнёров (по умолчанию, используется если Firebase не вернул данные) -----
+const DEFAULT_PARTNERS = [
     {
         name: 'экипировочный центр Геккон',
         privilege: '-10% по карте интеллигента',
@@ -582,6 +592,9 @@ partners = [
         link: 'https://yandex.ru/maps/org/deep_black/13540102561?si=xvnyyrd9reydm8tbq186v5f82w'
     }
 ];
+
+// Инициализируем partners статическим массивом, потом он может быть перезаписан из Firebase
+partners = [...DEFAULT_PARTNERS];
 
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
@@ -1074,6 +1087,12 @@ function closeBottomSheet() {
 
 // ----- Календарь -----
 function renderCalendar(container) {
+    // Если нет данных о хайках, показываем заглушку
+    if (!hikesList || hikesList.length === 0) {
+        container.innerHTML = '<div class="calendar-item" style="color:#fff; text-align:center;">ближайшие хайки скоро появятся</div>';
+        return;
+    }
+
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -1088,7 +1107,7 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <h2 class="section-title">⚠️ раздел в разработке</h2>
+        <h2 class="section-title">📅 календарь хайков</h2>
         <div class="calendar-item">
             <div class="calendar-header">
                 <h3>${monthNames[currentMonth]} ${currentYear}</h3>
@@ -1409,8 +1428,10 @@ function renderPriv() {
         clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p>${c.btn ? `<a href="#" onclick="event.preventDefault(); openLink('https://t.me/hellointelligent', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${c.btn}</a>` : ''}</div>`;
     });
 
+    // Используем partners, если он не пуст, иначе DEFAULT_PARTNERS
+    const displayPartners = partners.length ? partners : DEFAULT_PARTNERS;
     let cityHtml = '';
-    (partners.length ? partners : []).forEach(p => {
+    displayPartners.forEach(p => {
         cityHtml += `<div class="partner-item">
             <strong>${p.name}</strong>
             <p>${p.privilege}</p>`;
@@ -1476,7 +1497,8 @@ function renderGuestPriv() {
         clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${c.d}</p></div>`;
     });
 
-    const partnersGuest = partners.map(p => {
+    const displayPartners = partners.length ? partners : DEFAULT_PARTNERS;
+    const partnersGuest = displayPartners.map(p => {
         if (p.name === 'технологичная хайкинг-одежда Nothomme') {
             return { ...p, privilege: '-7% по промокоду на сайте' };
         }
@@ -1673,7 +1695,6 @@ function renderHome() {
         return;
     }
 
-    // Метрики уже загружены в глобальную переменную, просто обновим UI
     updateMetricsUI();
 
     if (userCard.status === 'active' && userCard.cardUrl) {
@@ -1776,7 +1797,6 @@ function renderHome() {
 
     } else {
         renderGuestHome();
-        // Метрики уже обновлены выше через updateMetricsUI(), но в renderGuestHome они вставляются статически, так что ок
     }
 }
 
