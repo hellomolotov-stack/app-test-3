@@ -561,13 +561,44 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
+// Новая версия parseLinks – добавляем класс dynamic-link
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
-        const safeUrl = JSON.stringify(url);
-        return `<a href="#" onclick="openLink(${safeUrl}, 'hike_section_link', ${isGuest}); return false;">${linkText}</a>`;
+        return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
     });
 }
+
+// Глобальный обработчик кликов
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn');
+    if (!link) return;
+    
+    if (link.classList.contains('dynamic-link')) {
+        e.preventDefault();
+        const url = link.dataset.url;
+        const isGuest = link.dataset.guest === 'true';
+        openLink(url, 'dynamic_link_click', isGuest);
+        return;
+    }
+    
+    if (link.closest('.nav-popup')) {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+            openLink(href, 'nav_popup_click', false);
+        }
+        return;
+    }
+    
+    if (link.classList.contains('btn-newcomer')) {
+        e.preventDefault();
+        haptic();
+        const isGuest = link.id === 'newcomerBtnGuest';
+        renderNewcomerPage(isGuest);
+        return;
+    }
+});
 
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
@@ -845,9 +876,10 @@ function showBottomSheet(index) {
             });
             container.appendChild(cancelBtn);
 
+            // Кнопка "ты записан" – новый стиль
             const goBtn = document.createElement('a');
             goBtn.href = '#';
-            goBtn.className = 'btn btn-green';
+            goBtn.className = 'btn btn-yellow-outline';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
             container.appendChild(goBtn);
@@ -1233,8 +1265,8 @@ function renderNewcomerPage(isGuest = false) {
     if (faq && faq.length) {
         faq.forEach(item => {
             let answer = item.a;
-            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
-            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
+            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" data-url="https://t.me/yaltahiking" data-guest="false" class="dynamic-link">@yaltahiking</a>');
+            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" data-url="https://zapovedcrimea.ru/choose-pass" data-guest="false" class="dynamic-link">zapovedcrimea.ru</a>');
             faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
         });
     } else {
@@ -1280,7 +1312,7 @@ function renderPriv() {
             }
             clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                clubHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                clubHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             }
             clubHtml += `</div>`;
         });
@@ -1293,14 +1325,14 @@ function renderPriv() {
         privileges.city.forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
-                // Используем parseLinks для обработки markdown ссылок (если есть)
-                let linkHtml = parseLinks(item.button_link, false);
-                // Если parseLinks ничего не заменил (нет markdown), создаём ссылку вручную с return false
-                if (!linkHtml || linkHtml === item.button_link) {
-                    const safeUrl = JSON.stringify(item.button_link);
-                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+                // Если есть markdown, обрабатываем parseLinks, иначе создаём обычную ссылку
+                let linkHtml = '';
+                if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                    linkHtml = parseLinks(item.button_link, false);
+                } else {
+                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
                 }
                 cityHtml += `<p>📍 ${linkHtml}</p>`;
             }
@@ -1348,12 +1380,13 @@ function renderGuestPriv() {
         privileges.city.forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
-                let linkHtml = parseLinks(item.button_link, false);
-                if (!linkHtml || linkHtml === item.button_link) {
-                    const safeUrl = JSON.stringify(item.button_link);
-                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+                let linkHtml = '';
+                if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                    linkHtml = parseLinks(item.button_link, false);
+                } else {
+                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
                 }
                 cityHtml += `<p>📍 ${linkHtml}</p>`;
             }
