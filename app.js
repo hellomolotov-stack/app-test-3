@@ -755,6 +755,25 @@ function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
+        // Кнопки навигации с новыми SVG
+        const prevArrow = hasPrev 
+            ? `<div class="bottom-sheet-nav-arrow" id="prevHike">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <path d="M14 8 L9 12 L14 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+               </div>`
+            : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
+        
+        const nextArrow = hasNext
+            ? `<div class="bottom-sheet-nav-arrow" id="nextHike">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    <path d="M10 8 L15 12 L10 16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+               </div>`
+            : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
+
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -763,8 +782,8 @@ function showBottomSheet(index) {
                         <div class="bottom-sheet-header-title">${hike.title}</div>
                     </div>
                     <div class="bottom-sheet-nav">
-                        <div class="bottom-sheet-nav-arrow ${!hasPrev ? 'hidden' : ''}" id="prevHike">←</div>
-                        <div class="bottom-sheet-nav-arrow ${!hasNext ? 'hidden' : ''}" id="nextHike">→</div>
+                        ${prevArrow}
+                        ${nextArrow}
                     </div>
                 </div>
                 ${tagsHtml}
