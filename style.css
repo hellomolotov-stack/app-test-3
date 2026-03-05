@@ -177,6 +177,11 @@ body::before {
     font-weight: 600;
 }
 
+.btn-green {
+    background-color: var(--green);
+    color: #ffffff;
+}
+
 .btn-outline {
     background-color: rgba(255,255,255,0.1);
     color: #ffffff;
@@ -324,7 +329,7 @@ body::before {
     line-height: 1.5;
     color: #ffffff;
     white-space: pre-line;
-    word-wrap: break-word;        /* перенос длинных слов */
+    word-wrap: break-word;
     overflow-wrap: break-word;
 }
 
@@ -780,23 +785,58 @@ body::before {
     margin: 2px 0 12px 0;
 }
 
-/* Счётчик участников */
+/* Счётчик участников (новый стиль) */
 .participant-counter {
     position: absolute;
     top: 12px;
     right: 12px;
-    background-color: var(--yellow);
-    color: #000000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    border-radius: 30px;
+    padding: 4px 12px 4px 8px;
+    color: #ffffff;
+    z-index: 10;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.participant-count {
     font-weight: 900;
     font-style: italic;
+    color: var(--yellow);
     font-size: 16px;
-    padding: 6px 14px;
-    border-radius: 30px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    z-index: 10;
-    backdrop-filter: blur(2px);
-    border: 1px solid rgba(0,0,0,0.1);
-    letter-spacing: 0.5px;
+}
+
+.participant-text {
+    color: #ffffff;
+    font-size: 16px;
+    margin-right: 2px;
+}
+
+.participant-avatars {
+    display: flex;
+    gap: 2px;
+}
+
+.participant-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.8);
+}
+
+.participant-avatar.placeholder {
+    background-color: #40a7e3;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
 }
 
 .bottom-sheet-section {
@@ -1052,51 +1092,4 @@ body::before {
 .modal-overlay .btn-yellow {
     margin: 0;
     width: 100%;
-}
-/* Счётчик участников (новый стиль) */
-.participant-counter {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background-color: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(4px);
-    border-radius: 30px;
-    padding: 4px 12px 4px 8px;
-    color: #ffffff;
-    z-index: 10;
-    border: 1px solid rgba(255,255,255,0.2);
-}
-
-.participant-count {
-    font-weight: 900;
-    font-style: italic;
-    color: var(--yellow);
-    font-size: 16px;
-}
-
-.participant-avatars {
-    display: flex;
-    gap: 2px;
-}
-
-.participant-avatar {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 2px solid rgba(255,255,255,0.8);
-}
-
-.participant-avatar.placeholder {
-    background-color: #40a7e3;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-    text-transform: uppercase;
 }
