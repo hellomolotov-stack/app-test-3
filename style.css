@@ -324,11 +324,17 @@ body::before {
     line-height: 1.5;
     color: #ffffff;
     white-space: pre-line;
+    word-wrap: break-word;        /* перенос длинных слов */
+    overflow-wrap: break-word;
 }
 
 .partner-item a {
     color: var(--yellow);
     text-decoration: none;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    display: inline-block;
+    max-width: 100%;
 }
 
 .partner-item a:hover {
