@@ -750,13 +750,7 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-green';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'ты записан';
-            container.appendChild(goBtn);
-
+            // Сначала кнопка отмены (слева)
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
@@ -764,10 +758,9 @@ function showBottomSheet(index) {
             cancelBtn.textContent = 'отменить';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (cancelBtn.disabled) return;
-                cancelBtn.disabled = true;
-                cancelBtn.style.opacity = 0.5;
-                cancelBtn.style.pointerEvents = 'none';
+                // Отключаем возможность повторного клика через флаг (кнопка исчезнет после перерисовки)
+                if (cancelBtn.dataset.processing === 'true') return;
+                cancelBtn.dataset.processing = 'true';
                 
                 haptic();
 
@@ -788,15 +781,23 @@ function showBottomSheet(index) {
                         })
                         .catch((error) => {
                             console.error('Error during cancellation:', error);
-                            cancelBtn.disabled = false;
-                            cancelBtn.style.opacity = 1;
-                            cancelBtn.style.pointerEvents = 'auto';
+                            // В случае ошибки перерисовываем, чтобы вернуть кнопки
+                            updateFloatingSheetButtons();
                         });
                 }
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
+
+            // Затем кнопка "ты записан" (справа)
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-green';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'ты записан';
+            container.appendChild(goBtn);
         } else {
+            // Кнопка "задать вопрос" слева
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
@@ -809,6 +810,7 @@ function showBottomSheet(index) {
             });
             container.appendChild(questionBtn);
 
+            // Кнопка "иду" справа
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow';
@@ -816,10 +818,8 @@ function showBottomSheet(index) {
             goBtn.textContent = 'иду';
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                if (goBtn.disabled) return;
-                goBtn.disabled = true;
-                goBtn.style.opacity = 0.5;
-                goBtn.style.pointerEvents = 'none';
+                if (goBtn.dataset.processing === 'true') return;
+                goBtn.dataset.processing = 'true';
                 
                 haptic();
 
@@ -840,9 +840,7 @@ function showBottomSheet(index) {
                         })
                         .catch((error) => {
                             console.error('Error during booking:', error);
-                            goBtn.disabled = false;
-                            goBtn.style.opacity = 1;
-                            goBtn.style.pointerEvents = 'auto';
+                            updateFloatingSheetButtons();
                         });
                 }
                 log('sheet_go_click', false);
