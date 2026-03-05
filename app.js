@@ -1295,10 +1295,10 @@ function renderPriv() {
             if (item.button_text && item.button_link) {
                 cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
-                let linkHtml = '';
-                if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                    linkHtml = parseLinks(item.button_link, false);
-                } else {
+                // Используем parseLinks для обработки markdown ссылок (если есть)
+                let linkHtml = parseLinks(item.button_link, false);
+                // Если parseLinks ничего не заменил (нет markdown), создаём ссылку вручную с return false
+                if (!linkHtml || linkHtml === item.button_link) {
                     const safeUrl = JSON.stringify(item.button_link);
                     linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
                 }
@@ -1350,10 +1350,8 @@ function renderGuestPriv() {
             if (item.button_text && item.button_link) {
                 cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
-                let linkHtml = '';
-                if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                    linkHtml = parseLinks(item.button_link, false);
-                } else {
+                let linkHtml = parseLinks(item.button_link, false);
+                if (!linkHtml || linkHtml === item.button_link) {
                     const safeUrl = JSON.stringify(item.button_link);
                     linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
                 }
