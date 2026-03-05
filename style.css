@@ -182,7 +182,7 @@ body::before {
     color: #ffffff;
 }
 
-/* Новая кнопка "ты записан" – стиль как у счётчика */
+/* Кнопка "ты записан" – стиль как у счётчика */
 .btn-yellow-outline {
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
@@ -810,7 +810,7 @@ body::before {
     margin: 2px 0 12px 0;
 }
 
-/* Счётчик участников – фиксированная высота, выравнивание по центру */
+/* Счётчик участников – фиксированная высота */
 .participant-counter {
     position: absolute;
     top: 12px;
@@ -844,13 +844,15 @@ body::before {
     font-size: 16px;
     line-height: 1;
     position: relative;
-    top: -1px; /* сдвигаем немного вверх */
+    top: -1px;
     margin-right: 2px;
 }
 
+/* Аватарки с наложением и тёмной обводкой */
 .participant-avatars {
     display: flex;
-    gap: 2px;
+    flex-direction: row-reverse; /* чтобы последний был справа, но для наложения удобнее */
+    justify-content: flex-end;
     height: 28px;
 }
 
@@ -859,7 +861,12 @@ body::before {
     height: 28px;
     border-radius: 50%;
     object-fit: cover;
-    border: none;
+    border: 2px solid rgba(0, 0, 0, 0.6);
+    margin-left: -8px; /* наезд друг на друга */
+}
+
+.participant-avatar:first-child {
+    margin-left: 0;
 }
 
 .participant-avatar.placeholder {
@@ -871,6 +878,31 @@ body::before {
     font-weight: bold;
     font-size: 14px;
     text-transform: uppercase;
+}
+
+/* Дополнительная информация о хайке (начало и точка сбора) */
+.hike-extra-info {
+    margin: 8px 0 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-family: "Apple Garamond", "EB Garamond", "Garamond", serif;
+    font-size: 16px;
+    color: #ffffff;
+}
+
+.hike-extra-info strong {
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.hike-extra-info a {
+    color: var(--yellow);
+    text-decoration: none;
+}
+
+.hike-extra-info a:hover {
+    text-decoration: underline;
 }
 
 .bottom-sheet-section {
