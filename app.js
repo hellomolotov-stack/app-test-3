@@ -41,7 +41,7 @@ const CACHE_TTL = 600000; // 10 минут
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
-const userPhotoUrl = user?.photo_url; // аватар пользователя (может быть undefined)
+const userPhotoUrl = user?.photo_url;
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
@@ -101,7 +101,6 @@ async function loadHikesFromFirebase() {
             image: data.image || data.image_url || '',
             tags: data.tags || []
         })).sort((a, b) => a.date.localeCompare(b.date));
-        console.log('Hikes loaded:', list.length);
         return { data: hikes, list };
     } catch (e) {
         console.error('Error loading hikes from Firebase:', e);
@@ -113,7 +112,6 @@ async function loadMetricsFromFirebase() {
     if (!database) return null;
     try {
         const snapshot = await database.ref('metrics').once('value');
-        console.log('Metrics loaded:', snapshot.val());
         return snapshot.val() || null;
     } catch (e) {
         console.error('Error loading metrics from Firebase:', e);
@@ -164,8 +162,6 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        console.log(`Participants for ${hikeDate}: ${count}`);
-        // Получаем последних трёх участников по timestamp
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp)
@@ -178,14 +174,11 @@ function subscribeToParticipantCount(hikeDate, callback) {
 async function addParticipant(hikeDate) {
     if (!database || !userId) return Promise.reject('No database or user');
     const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
-    // Получаем актуальный аватар из базы или используем текущий
     let photoUrl = userPhotoUrl;
-    // Если нет в текущем объекте, попробуем получить из сохранённого
     if (!photoUrl && database) {
         try {
             const snap = await database.ref(`userAvatars/${userId}`).once('value');
             photoUrl = snap.val()?.photoUrl;
-            console.log('Avatar loaded from DB:', photoUrl);
         } catch (e) {}
     }
     const participantData = {
@@ -194,14 +187,12 @@ async function addParticipant(hikeDate) {
         photoUrl: photoUrl || null,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
-    console.log('Adding participant:', participantData);
     return participantRef.set(participantData);
 }
 
 async function removeParticipant(hikeDate) {
     if (!database || !userId) return Promise.reject('No database or user');
     const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
-    console.log('Removing participant:', userId);
     return participantRef.remove();
 }
 
@@ -298,7 +289,6 @@ async function loadUserData() {
                     hikes: parseInt(data.hikes_count) || 0,
                     cardUrl: data.card_image_url || ''
                 };
-                console.log('User card loaded:', userCard);
                 break;
             }
         }
@@ -438,7 +428,6 @@ async function loadData() {
     }, 5000);
 
     try {
-        // Загружаем данные из Firebase
         if (database) {
             const hikesResult = await loadHikesFromFirebase();
             if (hikesResult) {
@@ -468,19 +457,15 @@ async function loadData() {
             }
         }
 
-        // Загрузка данных пользователя (пока из CSV)
         await loadUserData();
 
-        // Сохраняем аватар пользователя в Firebase
         if (userCard.status === 'active' && database && userPhotoUrl) {
             await saveUserAvatar();
         }
 
-        // Загрузка статусов регистраций
         if (userCard.status === 'active' && database) {
             try {
                 hikeBookingStatus = await loadUserRegistrationsFromFirebase();
-                console.log('User registrations loaded:', hikeBookingStatus);
             } catch (e) {
                 console.error('Firebase load failed, using empty', e);
                 hikeBookingStatus = {};
@@ -705,6 +690,7 @@ function showBottomSheet(index) {
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
                         <div class="participant-counter" id="participantCounter">
+                            <span class="participant-text">идут</span>
                             <span class="participant-count" id="participantCountValue">0</span>
                             <div class="participant-avatars" id="participantAvatars"></div>
                         </div>
@@ -739,7 +725,6 @@ function showBottomSheet(index) {
 
         if (!isGuest && !isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
-                console.log(`Updating counter for ${hike.date}: ${count}`, participants);
                 const countEl = document.getElementById('participantCountValue');
                 if (countEl) countEl.textContent = count;
                 const avatarsEl = document.getElementById('participantAvatars');
