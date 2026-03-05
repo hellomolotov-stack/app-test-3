@@ -127,7 +127,7 @@ async function loadFaqFromFirebase() {
     }
 }
 
-// --- Firebase функции для регистраций (уже были) ---
+// --- Firebase функции для регистраций ---
 function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
         callback(0);
