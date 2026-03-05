@@ -48,6 +48,8 @@ let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '19', kilometers: '150+', locations: '13', meetings: '130+' };
 let hikesData = {};
 let hikesList = [];
+let partners = [];
+let faq = [];
 
 // Firebase инициализация (исправленный конфиг)
 let database = null;
@@ -70,7 +72,62 @@ try {
     database = null;
 }
 
-// --- Firebase функции (с проверкой) ---
+// --- Firebase функции для данных (с проверкой) ---
+async function loadHikesFromFirebase() {
+    if (!database) return null;
+    try {
+        const snapshot = await database.ref('hikes').once('value');
+        const hikes = snapshot.val() || {};
+        const list = Object.entries(hikes).map(([date, data]) => ({
+            date,
+            title: data.title || 'Хайк',
+            features: data.features || '',
+            access: data.access || '',
+            details: data.details || '',
+            image: data.image_url || data.image || '',
+            tags: data.tags || []
+        })).sort((a, b) => a.date.localeCompare(b.date));
+        return { data: hikes, list };
+    } catch (e) {
+        console.error('Error loading hikes from Firebase:', e);
+        return null;
+    }
+}
+
+async function loadMetricsFromFirebase() {
+    if (!database) return null;
+    try {
+        const snapshot = await database.ref('metrics').once('value');
+        return snapshot.val() || null;
+    } catch (e) {
+        console.error('Error loading metrics from Firebase:', e);
+        return null;
+    }
+}
+
+async function loadPartnersFromFirebase() {
+    if (!database) return null;
+    try {
+        const snapshot = await database.ref('partners').once('value');
+        return snapshot.val() || [];
+    } catch (e) {
+        console.error('Error loading partners from Firebase:', e);
+        return null;
+    }
+}
+
+async function loadFaqFromFirebase() {
+    if (!database) return null;
+    try {
+        const snapshot = await database.ref('faq').once('value');
+        return snapshot.val() || [];
+    } catch (e) {
+        console.error('Error loading faq from Firebase:', e);
+        return null;
+    }
+}
+
+// --- Firebase функции для регистраций (уже были) ---
 function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
         callback(0);
@@ -122,68 +179,7 @@ async function loadUserRegistrationsFromFirebase() {
     }
 }
 
-// --- Флаги интерфейса ---
-let isPrivPage = false;
-let isMenuActive = false;
-let hikeBookingStatus = {};
-
-const mainDiv = document.getElementById('mainContent');
-const subtitle = document.getElementById('subtitle');
-const bottomNav = document.getElementById('bottomNav');
-const navPopup = document.getElementById('navPopup');
-
-// --- Навигация ---
-function setActiveNav(activeId) {
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    if (activeId) {
-        const activeEl = document.getElementById(activeId);
-        if (activeEl) activeEl.classList.add('active');
-    }
-}
-
-function resetNavActive() {
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
-}
-
-function updateActiveNav() {
-    if (isPrivPage || isMenuActive) return;
-
-    const navHome = document.getElementById('navHome');
-    const navHikes = document.getElementById('navHikes');
-    if (!navHome || !navHikes) return;
-
-    const calendarContainer = document.getElementById('calendarContainer');
-    if (!calendarContainer) {
-        setActiveNav('navHome');
-        return;
-    }
-    const rect = calendarContainer.getBoundingClientRect();
-    const isCalendarVisible = rect.top < window.innerHeight && rect.bottom > 0;
-    if (isCalendarVisible) {
-        setActiveNav('navHikes');
-    } else {
-        setActiveNav('navHome');
-    }
-}
-
-// --- Логирование и загрузка данных ---
-function log(action, isGuest = false) {
-    if (!userId) return;
-    const finalAction = isGuest ? `${action}_guest` : action;
-    const params = new URLSearchParams({
-        user_id: userId,
-        username: user?.username || '',
-        first_name: user?.first_name || '',
-        last_name: user?.last_name || '',
-        action: finalAction
-    });
-    new Image().src = `${GUEST_API_URL}?${params}`;
-}
-
+// --- Старые функции загрузки из CSV (fallback) ---
 function parseCSVLine(line) {
     const result = [];
     let start = 0;
@@ -260,7 +256,7 @@ async function loadUserData() {
     }
 }
 
-async function loadMetrics() {
+async function loadMetricsFromCSV() {
     try {
         const text = await fetchWithoutCache(METRICS_CSV_URL);
         const lines = text.trim().split('\n');
@@ -278,11 +274,11 @@ async function loadMetrics() {
             meetings: data.meetings || '130+'
         };
     } catch (e) {
-        console.error('Ошибка загрузки метрик:', e);
+        console.error('Ошибка загрузки метрик из CSV:', e);
     }
 }
 
-async function loadHikes() {
+async function loadHikesFromCSV() {
     try {
         const { text } = await fetchWithCache('hikes', HIKES_CSV_URL, CACHE_TTL);
         const lines = text.trim().split('\n');
@@ -324,7 +320,7 @@ async function loadHikes() {
         }
         hikesList = Object.values(hikesData).sort((a, b) => a.date.localeCompare(b.date));
     } catch (e) {
-        console.error('Ошибка загрузки расписания хайков:', e);
+        console.error('Ошибка загрузки расписания хайков из CSV:', e);
     }
 }
 
@@ -383,7 +379,69 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
     }
 }
 
-// --- Основная загрузка с таймаутом ---
+// --- Флаги интерфейса ---
+let isPrivPage = false;
+let isMenuActive = false;
+let hikeBookingStatus = {};
+
+const mainDiv = document.getElementById('mainContent');
+const subtitle = document.getElementById('subtitle');
+const bottomNav = document.getElementById('bottomNav');
+const navPopup = document.getElementById('navPopup');
+
+// --- Навигация ---
+function setActiveNav(activeId) {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    if (activeId) {
+        const activeEl = document.getElementById(activeId);
+        if (activeEl) activeEl.classList.add('active');
+    }
+}
+
+function resetNavActive() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+}
+
+function updateActiveNav() {
+    if (isPrivPage || isMenuActive) return;
+
+    const navHome = document.getElementById('navHome');
+    const navHikes = document.getElementById('navHikes');
+    if (!navHome || !navHikes) return;
+
+    const calendarContainer = document.getElementById('calendarContainer');
+    if (!calendarContainer) {
+        setActiveNav('navHome');
+        return;
+    }
+    const rect = calendarContainer.getBoundingClientRect();
+    const isCalendarVisible = rect.top < window.innerHeight && rect.bottom > 0;
+    if (isCalendarVisible) {
+        setActiveNav('navHikes');
+    } else {
+        setActiveNav('navHome');
+    }
+}
+
+// --- Логирование ---
+function log(action, isGuest = false) {
+    if (!userId) return;
+    const finalAction = isGuest ? `${action}_guest` : action;
+    const params = new URLSearchParams({
+        user_id: userId,
+        username: user?.username || '',
+        first_name: user?.first_name || '',
+        last_name: user?.last_name || '',
+        action: finalAction
+    });
+    new Image().src = `${GUEST_API_URL}?${params}`;
+}
+
+// --- Основная загрузка с таймаутом и приоритетом Firebase ---
 async function loadData() {
     const loaderTimeout = setTimeout(() => {
         console.warn('loadData timeout – force hide loader');
@@ -395,21 +453,59 @@ async function loadData() {
     }, 5000);
 
     try {
-        await Promise.allSettled([loadUserData(), loadMetrics(), loadHikes()]);
-        console.log('User data loaded, userCard:', userCard);
+        // Загружаем данные из Firebase, если доступно
+        let hikesLoaded = false;
+        if (database) {
+            const hikesResult = await loadHikesFromFirebase();
+            if (hikesResult) {
+                hikesData = hikesResult.data;
+                hikesList = hikesResult.list;
+                hikesLoaded = true;
+                console.log('Hikes loaded from Firebase');
+            }
+            const metricsData = await loadMetricsFromFirebase();
+            if (metricsData) {
+                metrics = metricsData;
+                console.log('Metrics loaded from Firebase');
+            }
+            const partnersData = await loadPartnersFromFirebase();
+            if (partnersData) {
+                partners = partnersData;
+                console.log('Partners loaded from Firebase');
+            }
+            const faqData = await loadFaqFromFirebase();
+            if (faqData) {
+                faq = faqData;
+                console.log('FAQ loaded from Firebase');
+            }
+        }
 
-        if (userCard.status === 'active') {
+        // Fallback на CSV для недостающих данных
+        if (!hikesLoaded) {
+            console.warn('Falling back to CSV for hikes');
+            await loadHikesFromCSV();
+        }
+        if (!metrics.hikes || metrics.hikes === '19') {
+            console.warn('Falling back to CSV for metrics');
+            await loadMetricsFromCSV();
+        }
+        // partners и faq останутся пустыми, если не загружены из Firebase
+
+        // Загрузка данных пользователя
+        await loadUserData();
+
+        // Загрузка статусов регистраций
+        if (userCard.status === 'active' && database) {
             try {
                 hikeBookingStatus = await loadUserRegistrationsFromFirebase();
-                console.log('Firebase registrations loaded:', hikeBookingStatus);
             } catch (e) {
                 console.error('Firebase load failed, using empty', e);
                 hikeBookingStatus = {};
                 hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
             }
         } else {
-            hikeBookingStatus = loadUserRegistrationsFromLocal();
-            console.log('Local registrations loaded:', hikeBookingStatus);
+            hikeBookingStatus = {};
+            hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
         }
 
         log('visit', userCard.status !== 'active');
@@ -427,8 +523,8 @@ async function loadData() {
     }
 }
 
-// ----- Массив партнёров -----
-const partners = [
+// ----- Массив партнёров (по умолчанию, перезаписывается из Firebase) -----
+partners = [
     {
         name: 'экипировочный центр Геккон',
         privilege: '-10% по карте интеллигента',
@@ -555,7 +651,6 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// ----- Функция для замены ссылок в тексте -----
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
@@ -564,7 +659,7 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// ----- Bottom Sheet (с поддержкой Firebase для владельцев карт) -----
+// ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -601,7 +696,7 @@ function showBottomSheet(index) {
     sheet.style.height = `${windowHeight * 0.9}px`;
 
     sheetCurrentIndex = index;
-    const isGuest = userCard.status !== 'active'; // true для гостей, false для владельцев карты
+    const isGuest = userCard.status !== 'active';
 
     if (currentUnsubscribe) {
         currentUnsubscribe();
@@ -638,7 +733,6 @@ function showBottomSheet(index) {
             tagsHtml += '</div>';
         }
 
-        // Формируем секции
         let sectionsHtml = '';
 
         if (hike.features && hike.features.trim() !== '') {
@@ -674,11 +768,9 @@ function showBottomSheet(index) {
             `;
         }
 
-        // Изображение с контейнером для счётчика (только для владельцев карт)
         let imageHtml = '';
         if (hike.image) {
             if (!isGuest) {
-                // Владелец карты – показываем счётчик (значение обновится подпиской)
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">
@@ -686,7 +778,6 @@ function showBottomSheet(index) {
                     </div>
                 `;
             } else {
-                // Гость – просто картинка без счётчика
                 imageHtml = `
                     <img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">
                 `;
@@ -713,7 +804,6 @@ function showBottomSheet(index) {
             </div>
         `;
 
-        // Если владелец карты – подписываемся на счётчик
         if (!isGuest) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count) => {
                 const counterEl = document.getElementById('participantCounter');
@@ -801,18 +891,15 @@ function showBottomSheet(index) {
                 haptic();
 
                 if (isGuest) {
-                    // Гость – используем старую систему
                     hikeBookingStatus[sheetCurrentIndex] = false;
                     saveStatusToLocalStorage();
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                     updateFloatingSheetButtons();
                 } else {
-                    // Владелец карты – используем Firebase
                     setUserRegistrationStatus(hike.date, false)
                         .then(() => {
                             hikeBookingStatus[sheetCurrentIndex] = false;
                             decrementParticipantCount(hike.date).catch(console.error);
-                            // Всё равно отправляем в Google Sheets для истории
                             updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                             updateFloatingSheetButtons();
                         })
@@ -844,13 +931,11 @@ function showBottomSheet(index) {
                 haptic();
 
                 if (isGuest) {
-                    // Гость
                     hikeBookingStatus[sheetCurrentIndex] = true;
                     saveStatusToLocalStorage();
                     updateRegistrationInSheet(hike.date, hike.title, 'booked');
                     updateFloatingSheetButtons();
                 } else {
-                    // Владелец карты
                     setUserRegistrationStatus(hike.date, true)
                         .then(() => {
                             hikeBookingStatus[sheetCurrentIndex] = true;
@@ -1193,7 +1278,8 @@ function renderNewcomerPage(isGuest = false) {
     
     showBottomNav(!isGuest);
 
-    const faq = [
+    // Если faq загружен из Firebase, используем его, иначе статический
+    const faqData = faq.length ? faq : [
         {
             q: '⛰️ что такое хайкинг?',
             a: 'хайкинг – это прогулки. но не по улицам бетонного города, а по манящим свежестью просторам природы. не уставившись себе под ноги, а подняв голову созерцая богатство твоей планеты. без преодоления себя. без палаток и ночёвок. 3-5 часов лёгкого и среднего уровня ходьбы по обустроенным тропам и видовым местам. да ещё и в компании таких же интеллигентов, как и ты'
@@ -1249,7 +1335,7 @@ function renderNewcomerPage(isGuest = false) {
     ];
 
     let faqHtml = '';
-    faq.forEach(item => {
+    faqData.forEach(item => {
         let answer = item.a;
         answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
         answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
@@ -1322,7 +1408,7 @@ function renderPriv() {
     });
 
     let cityHtml = '';
-    partners.forEach(p => {
+    (partners.length ? partners : []).forEach(p => {
         cityHtml += `<div class="partner-item">
             <strong>${p.name}</strong>
             <p>${p.privilege}</p>`;
