@@ -86,7 +86,7 @@ async function loadHikesFromFirebase() {
             features: data.features || '',
             access: data.access || '',
             details: data.details || '',
-            image: data.image_url || data.image || '',
+            image: data.image || data.image_url || '',
             tags: data.tags || []
         })).sort((a, b) => a.date.localeCompare(b.date));
         return { data: hikes, list };
@@ -863,6 +863,11 @@ function showBottomSheet(index) {
             cancelBtn.textContent = 'отменить';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                if (cancelBtn.disabled) return;
+                cancelBtn.disabled = true;
+                cancelBtn.style.opacity = 0.5;
+                cancelBtn.style.pointerEvents = 'none';
+                
                 haptic();
 
                 if (isGuest) {
@@ -874,11 +879,18 @@ function showBottomSheet(index) {
                     setUserRegistrationStatus(hike.date, false)
                         .then(() => {
                             hikeBookingStatus[sheetCurrentIndex] = false;
-                            decrementParticipantCount(hike.date).catch(console.error);
+                            return decrementParticipantCount(hike.date).catch(console.error);
+                        })
+                        .then(() => {
                             updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                             updateFloatingSheetButtons();
                         })
-                        .catch(console.error);
+                        .catch((error) => {
+                            console.error('Error during cancellation:', error);
+                            cancelBtn.disabled = false;
+                            cancelBtn.style.opacity = 1;
+                            cancelBtn.style.pointerEvents = 'auto';
+                        });
                 }
                 log('sheet_cancel_click', false);
             });
@@ -903,6 +915,11 @@ function showBottomSheet(index) {
             goBtn.textContent = 'иду';
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                if (goBtn.disabled) return;
+                goBtn.disabled = true;
+                goBtn.style.opacity = 0.5;
+                goBtn.style.pointerEvents = 'none';
+                
                 haptic();
 
                 if (isGuest) {
@@ -914,11 +931,18 @@ function showBottomSheet(index) {
                     setUserRegistrationStatus(hike.date, true)
                         .then(() => {
                             hikeBookingStatus[sheetCurrentIndex] = true;
-                            incrementParticipantCount(hike.date).catch(console.error);
+                            return incrementParticipantCount(hike.date).catch(console.error);
+                        })
+                        .then(() => {
                             updateRegistrationInSheet(hike.date, hike.title, 'booked');
                             updateFloatingSheetButtons();
                         })
-                        .catch(console.error);
+                        .catch((error) => {
+                            console.error('Error during booking:', error);
+                            goBtn.disabled = false;
+                            goBtn.style.opacity = 1;
+                            goBtn.style.pointerEvents = 'auto';
+                        });
                 }
                 log('sheet_go_click', false);
             });
