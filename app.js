@@ -31,7 +31,7 @@ function hideBack() {
     backButton.hide();
 }
 
-// Конфигурация (только для members, остальное через Firebase)
+// Конфигурация
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
@@ -41,6 +41,7 @@ const CACHE_TTL = 600000; // 10 минут
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
+const userPhotoUrl = user?.photo_url; // аватар пользователя
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
@@ -69,6 +70,19 @@ try {
 } catch (e) {
     console.error('Firebase initialization failed:', e);
     database = null;
+}
+
+// --- Функции для работы с аватаром пользователя ---
+async function saveUserAvatar() {
+    if (!database || !userId || !userPhotoUrl) return;
+    try {
+        await database.ref(`userAvatars/${userId}`).set({
+            photoUrl: userPhotoUrl,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+    } catch (e) {
+        console.error('Error saving user avatar:', e);
+    }
 }
 
 // --- Firebase функции для данных ---
@@ -137,33 +151,59 @@ async function loadGiftFromFirebase() {
     }
 }
 
-// --- Firebase функции для регистраций ---
+// --- Firebase функции для регистраций и участников ---
 function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
-        callback(0);
+        callback(0, []);
         return () => {};
     }
-    const countRef = database.ref('participants/' + hikeDate);
-    const listener = countRef.on('value', (snapshot) => {
-        const count = snapshot.val() || 0;
-        callback(count);
+    const participantsRef = database.ref('hikeParticipants/' + hikeDate);
+    const listener = participantsRef.on('value', (snapshot) => {
+        const participants = snapshot.val() || {};
+        const count = Object.keys(participants).length;
+        // Получаем последних трёх участников по timestamp
+        const sorted = Object.values(participants)
+            .filter(p => p && p.timestamp)
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 3);
+        callback(count, sorted);
     });
-    return () => countRef.off('value', listener);
+    return () => participantsRef.off('value', listener);
 }
 
+async function addParticipant(hikeDate) {
+    if (!database || !userId) return Promise.reject('No database or user');
+    const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
+    // Получаем актуальный аватар из базы или используем текущий
+    let photoUrl = userPhotoUrl;
+    // Если нет в текущем объекте, попробуем получить из сохранённого
+    if (!photoUrl && database) {
+        try {
+            const snap = await database.ref(`userAvatars/${userId}`).once('value');
+            photoUrl = snap.val()?.photoUrl;
+        } catch (e) {}
+    }
+    return participantRef.set({
+        userId: userId,
+        name: user?.first_name || '',
+        photoUrl: photoUrl || null,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+async function removeParticipant(hikeDate) {
+    if (!database || !userId) return Promise.reject('No database or user');
+    const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
+    return participantRef.remove();
+}
+
+// Для обратной совместимости с остальным кодом оставляем имена функций, но они будут использовать новые
 function incrementParticipantCount(hikeDate) {
-    if (!database) return Promise.resolve();
-    const countRef = database.ref('participants/' + hikeDate);
-    return countRef.set(firebase.database.ServerValue.increment(1));
+    return addParticipant(hikeDate);
 }
 
 function decrementParticipantCount(hikeDate) {
-    if (!database) return Promise.resolve();
-    const countRef = database.ref('participants/' + hikeDate);
-    return countRef.transaction((current) => {
-        if (current === null || current <= 0) return 0;
-        return current - 1;
-    });
+    return removeParticipant(hikeDate);
 }
 
 function setUserRegistrationStatus(hikeDate, status) {
@@ -423,6 +463,11 @@ async function loadData() {
         // Загрузка данных пользователя (пока из CSV)
         await loadUserData();
 
+        // Сохраняем аватар пользователя в Firebase
+        if (userCard.status === 'active' && database && userPhotoUrl) {
+            await saveUserAvatar();
+        }
+
         // Загрузка статусов регистраций
         if (userCard.status === 'active' && database) {
             try {
@@ -650,7 +695,10 @@ function showBottomSheet(index) {
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                        <div class="participant-counter" id="participantCounter">уже идут: 0</div>
+                        <div class="participant-counter" id="participantCounter">
+                            <span class="participant-count" id="participantCountValue">0</span>
+                            <div class="participant-avatars" id="participantAvatars"></div>
+                        </div>
                     </div>
                 `;
             } else {
@@ -681,10 +729,28 @@ function showBottomSheet(index) {
         `;
 
         if (!isGuest && !isPast) {
-            currentUnsubscribe = subscribeToParticipantCount(hike.date, (count) => {
-                const counterEl = document.getElementById('participantCounter');
-                if (counterEl) {
-                    counterEl.textContent = `уже идут: ${count}`;
+            currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+                const countEl = document.getElementById('participantCountValue');
+                if (countEl) countEl.textContent = count;
+                const avatarsEl = document.getElementById('participantAvatars');
+                if (avatarsEl) {
+                    avatarsEl.innerHTML = '';
+                    participants.forEach(p => {
+                        if (p.photoUrl) {
+                            const img = document.createElement('img');
+                            img.src = p.photoUrl;
+                            img.className = 'participant-avatar';
+                            img.alt = p.name || '';
+                            img.title = p.name || '';
+                            avatarsEl.appendChild(img);
+                        } else {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'participant-avatar placeholder';
+                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                            placeholder.textContent = initial;
+                            avatarsEl.appendChild(placeholder);
+                        }
+                    });
                 }
             });
         }
@@ -750,7 +816,6 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Сначала кнопка отмены (слева)
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
@@ -758,7 +823,6 @@ function showBottomSheet(index) {
             cancelBtn.textContent = 'отменить';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                // Отключаем возможность повторного клика через флаг (кнопка исчезнет после перерисовки)
                 if (cancelBtn.dataset.processing === 'true') return;
                 cancelBtn.dataset.processing = 'true';
                 
@@ -781,7 +845,6 @@ function showBottomSheet(index) {
                         })
                         .catch((error) => {
                             console.error('Error during cancellation:', error);
-                            // В случае ошибки перерисовываем, чтобы вернуть кнопки
                             updateFloatingSheetButtons();
                         });
                 }
@@ -789,7 +852,6 @@ function showBottomSheet(index) {
             });
             container.appendChild(cancelBtn);
 
-            // Затем кнопка "ты записан" (справа)
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-green';
@@ -797,7 +859,6 @@ function showBottomSheet(index) {
             goBtn.textContent = 'ты записан';
             container.appendChild(goBtn);
         } else {
-            // Кнопка "задать вопрос" слева
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
@@ -810,7 +871,6 @@ function showBottomSheet(index) {
             });
             container.appendChild(questionBtn);
 
-            // Кнопка "иду" справа
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow';
