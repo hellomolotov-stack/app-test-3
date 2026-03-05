@@ -41,7 +41,7 @@ const CACHE_TTL = 600000; // 10 минут
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
-const userPhotoUrl = user?.photo_url; // аватар пользователя
+const userPhotoUrl = user?.photo_url; // аватар пользователя (может быть undefined)
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
@@ -80,6 +80,7 @@ async function saveUserAvatar() {
             photoUrl: userPhotoUrl,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
         });
+        console.log('User avatar saved');
     } catch (e) {
         console.error('Error saving user avatar:', e);
     }
@@ -100,6 +101,7 @@ async function loadHikesFromFirebase() {
             image: data.image || data.image_url || '',
             tags: data.tags || []
         })).sort((a, b) => a.date.localeCompare(b.date));
+        console.log('Hikes loaded:', list.length);
         return { data: hikes, list };
     } catch (e) {
         console.error('Error loading hikes from Firebase:', e);
@@ -111,6 +113,7 @@ async function loadMetricsFromFirebase() {
     if (!database) return null;
     try {
         const snapshot = await database.ref('metrics').once('value');
+        console.log('Metrics loaded:', snapshot.val());
         return snapshot.val() || null;
     } catch (e) {
         console.error('Error loading metrics from Firebase:', e);
@@ -161,6 +164,7 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
+        console.log(`Participants for ${hikeDate}: ${count}`);
         // Получаем последних трёх участников по timestamp
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
@@ -181,23 +185,26 @@ async function addParticipant(hikeDate) {
         try {
             const snap = await database.ref(`userAvatars/${userId}`).once('value');
             photoUrl = snap.val()?.photoUrl;
+            console.log('Avatar loaded from DB:', photoUrl);
         } catch (e) {}
     }
-    return participantRef.set({
+    const participantData = {
         userId: userId,
         name: user?.first_name || '',
         photoUrl: photoUrl || null,
         timestamp: firebase.database.ServerValue.TIMESTAMP
-    });
+    };
+    console.log('Adding participant:', participantData);
+    return participantRef.set(participantData);
 }
 
 async function removeParticipant(hikeDate) {
     if (!database || !userId) return Promise.reject('No database or user');
     const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
+    console.log('Removing participant:', userId);
     return participantRef.remove();
 }
 
-// Для обратной совместимости с остальным кодом оставляем имена функций, но они будут использовать новые
 function incrementParticipantCount(hikeDate) {
     return addParticipant(hikeDate);
 }
@@ -291,6 +298,7 @@ async function loadUserData() {
                     hikes: parseInt(data.hikes_count) || 0,
                     cardUrl: data.card_image_url || ''
                 };
+                console.log('User card loaded:', userCard);
                 break;
             }
         }
@@ -472,6 +480,7 @@ async function loadData() {
         if (userCard.status === 'active' && database) {
             try {
                 hikeBookingStatus = await loadUserRegistrationsFromFirebase();
+                console.log('User registrations loaded:', hikeBookingStatus);
             } catch (e) {
                 console.error('Firebase load failed, using empty', e);
                 hikeBookingStatus = {};
@@ -730,6 +739,7 @@ function showBottomSheet(index) {
 
         if (!isGuest && !isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+                console.log(`Updating counter for ${hike.date}: ${count}`, participants);
                 const countEl = document.getElementById('participantCountValue');
                 if (countEl) countEl.textContent = count;
                 const avatarsEl = document.getElementById('participantAvatars');
@@ -834,19 +844,17 @@ function showBottomSheet(index) {
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                     updateFloatingSheetButtons();
                 } else {
-                    setUserRegistrationStatus(hike.date, false)
-                        .then(() => {
-                            hikeBookingStatus[sheetCurrentIndex] = false;
-                            return decrementParticipantCount(hike.date).catch(console.error);
-                        })
-                        .then(() => {
-                            updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
-                            updateFloatingSheetButtons();
-                        })
-                        .catch((error) => {
-                            console.error('Error during cancellation:', error);
-                            updateFloatingSheetButtons();
-                        });
+                    Promise.all([
+                        removeParticipant(hike.date),
+                        setUserRegistrationStatus(hike.date, false)
+                    ]).then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = false;
+                        updateFloatingSheetButtons();
+                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
+                    }).catch((error) => {
+                        console.error('Error during cancellation:', error);
+                        updateFloatingSheetButtons();
+                    });
                 }
                 log('sheet_cancel_click', false);
             });
@@ -892,7 +900,7 @@ function showBottomSheet(index) {
                     setUserRegistrationStatus(hike.date, true)
                         .then(() => {
                             hikeBookingStatus[sheetCurrentIndex] = true;
-                            return incrementParticipantCount(hike.date).catch(console.error);
+                            return incrementParticipantCount(hike.date);
                         })
                         .then(() => {
                             updateRegistrationInSheet(hike.date, hike.title, 'booked');
