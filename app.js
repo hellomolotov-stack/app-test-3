@@ -41,6 +41,7 @@ const CACHE_TTL = 600000; // 10 минут
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
 const firstName = user?.first_name || 'друг';
+const userPhotoUrl = user?.photo_url; // может быть undefined
 
 let userCard = { status: 'loading', hikes: 0, cardUrl: '' };
 let metrics = { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
@@ -139,33 +140,51 @@ async function loadGiftFromFirebase() {
     }
 }
 
-// --- Firebase функции для регистраций ---
+// --- Firebase функции для регистраций и участников ---
 function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
-        callback(0);
+        callback(0, []);
         return () => {};
     }
-    const countRef = database.ref('participants/' + hikeDate);
-    const listener = countRef.on('value', (snapshot) => {
-        const count = snapshot.val() || 0;
-        callback(count);
+    const participantsRef = database.ref('hikeParticipants/' + hikeDate);
+    const listener = participantsRef.on('value', (snapshot) => {
+        const participants = snapshot.val() || {};
+        const count = Object.keys(participants).length;
+        // Получаем последних трёх участников по timestamp (если есть)
+        const sorted = Object.values(participants)
+            .filter(p => p && p.timestamp)
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 3);
+        callback(count, sorted);
     });
-    return () => countRef.off('value', listener);
+    return () => participantsRef.off('value', listener);
+}
+
+async function addParticipant(hikeDate, userData) {
+    if (!database || !userId) return Promise.reject('No database or user');
+    const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
+    // Добавляем timestamp и данные пользователя
+    return participantRef.set({
+        userId: userId,
+        name: userData.first_name || '',
+        photoUrl: userData.photo_url || null,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+async function removeParticipant(hikeDate) {
+    if (!database || !userId) return Promise.reject('No database or user');
+    const participantRef = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
+    return participantRef.remove();
 }
 
 function incrementParticipantCount(hikeDate) {
-    if (!database) return Promise.resolve();
-    const countRef = database.ref('participants/' + hikeDate);
-    return countRef.set(firebase.database.ServerValue.increment(1));
+    // Устаревшая функция, теперь используем addParticipant
+    return addParticipant(hikeDate, user);
 }
 
 function decrementParticipantCount(hikeDate) {
-    if (!database) return Promise.resolve();
-    const countRef = database.ref('participants/' + hikeDate);
-    return countRef.transaction((current) => {
-        if (current === null || current <= 0) return 0;
-        return current - 1;
-    });
+    return removeParticipant(hikeDate);
 }
 
 function setUserRegistrationStatus(hikeDate, status) {
@@ -652,7 +671,8 @@ function showBottomSheet(index) {
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                        <div class="participant-counter" id="participantCounter">уже идут: 0</div>
+                        <div class="participant-counter" id="participantCounter">уже идут: <span id="participantCount">0</span></div>
+                        <div class="participant-avatars" id="participantAvatars"></div>
                     </div>
                 `;
             } else {
@@ -667,7 +687,7 @@ function showBottomSheet(index) {
         if (hike.start_time || hike.location_link) {
             extraInfoHtml = '<div style="margin: 8px 0 12px 0; display: flex; flex-direction: column; gap: 4px;">';
             if (hike.start_time) {
-                extraInfoHtml += `<div><span style="opacity:0.8;">старт:</span> ${hike.start_time}</div>`;
+                extraInfoHtml += `<div><strong>начало:</strong> ${hike.start_time}</div>`;
             }
             if (hike.location_link) {
                 let locationHtml = '';
@@ -677,7 +697,7 @@ function showBottomSheet(index) {
                     const safeUrl = JSON.stringify(hike.location_link);
                     locationHtml = `<a href="#" onclick="openLink(${safeUrl}, 'location_link_click', ${isGuest}); return false;">открыть на карте</a>`;
                 }
-                extraInfoHtml += `<div><span style="opacity:0.8;">точка сбора:</span> ${locationHtml}</div>`;
+                extraInfoHtml += `<div><strong>точка сбора:</strong> ${locationHtml}</div>`;
             }
             extraInfoHtml += '</div>';
         }
@@ -704,10 +724,29 @@ function showBottomSheet(index) {
         `;
 
         if (!isGuest && !isPast) {
-            currentUnsubscribe = subscribeToParticipantCount(hike.date, (count) => {
-                const counterEl = document.getElementById('participantCounter');
-                if (counterEl) {
-                    counterEl.textContent = `уже идут: ${count}`;
+            currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+                const countEl = document.getElementById('participantCount');
+                if (countEl) countEl.textContent = count;
+                const avatarsEl = document.getElementById('participantAvatars');
+                if (avatarsEl) {
+                    avatarsEl.innerHTML = ''; // очищаем
+                    participants.forEach(p => {
+                        const img = document.createElement('img');
+                        if (p.photoUrl) {
+                            img.src = p.photoUrl;
+                        } else {
+                            // Заглушка с инициалами
+                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                            img.style.display = 'none'; // скроем img, покажем div
+                            // но проще сделать div
+                            avatarsEl.appendChild(createAvatarPlaceholder(initial));
+                            return;
+                        }
+                        img.className = 'participant-avatar';
+                        img.alt = p.name || '';
+                        img.title = p.name || '';
+                        avatarsEl.appendChild(img);
+                    });
                 }
             });
         }
@@ -806,21 +845,20 @@ function showBottomSheet(index) {
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                     updateFloatingSheetButtons();
                 } else {
-                    setUserRegistrationStatus(hike.date, false)
-                        .then(() => {
-                            hikeBookingStatus[sheetCurrentIndex] = false;
-                            return decrementParticipantCount(hike.date).catch(console.error);
-                        })
-                        .then(() => {
-                            updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
-                            updateFloatingSheetButtons();
-                        })
-                        .catch((error) => {
-                            console.error('Error during cancellation:', error);
-                            cancelBtn.disabled = false;
-                            cancelBtn.style.opacity = 1;
-                            cancelBtn.style.pointerEvents = 'auto';
-                        });
+                    // Удаляем участника и обновляем статус
+                    Promise.all([
+                        removeParticipant(hike.date),
+                        setUserRegistrationStatus(hike.date, false)
+                    ]).then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = false;
+                        updateFloatingSheetButtons();
+                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
+                    }).catch((error) => {
+                        console.error('Error during cancellation:', error);
+                        cancelBtn.disabled = false;
+                        cancelBtn.style.opacity = 1;
+                        cancelBtn.style.pointerEvents = 'auto';
+                    });
                 }
                 log('sheet_cancel_click', false);
             });
@@ -860,26 +898,39 @@ function showBottomSheet(index) {
                     updateRegistrationInSheet(hike.date, hike.title, 'booked');
                     updateFloatingSheetButtons();
                 } else {
-                    setUserRegistrationStatus(hike.date, true)
-                        .then(() => {
-                            hikeBookingStatus[sheetCurrentIndex] = true;
-                            return incrementParticipantCount(hike.date).catch(console.error);
-                        })
-                        .then(() => {
-                            updateRegistrationInSheet(hike.date, hike.title, 'booked');
-                            updateFloatingSheetButtons();
-                        })
-                        .catch((error) => {
-                            console.error('Error during booking:', error);
-                            goBtn.disabled = false;
-                            goBtn.style.opacity = 1;
-                            goBtn.style.pointerEvents = 'auto';
-                        });
+                    // Добавляем участника и обновляем статус
+                    Promise.all([
+                        addParticipant(hike.date, user),
+                        setUserRegistrationStatus(hike.date, true)
+                    ]).then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = true;
+                        updateFloatingSheetButtons();
+                        updateRegistrationInSheet(hike.date, hike.title, 'booked');
+                    }).catch((error) => {
+                        console.error('Error during booking:', error);
+                        goBtn.disabled = false;
+                        goBtn.style.opacity = 1;
+                        goBtn.style.pointerEvents = 'auto';
+                    });
                 }
                 log('sheet_go_click', false);
             });
             container.appendChild(goBtn);
         }
+    }
+
+    function createAvatarPlaceholder(initial) {
+        const div = document.createElement('div');
+        div.className = 'participant-avatar placeholder';
+        div.textContent = initial;
+        div.style.backgroundColor = '#40a7e3';
+        div.style.color = 'white';
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.justifyContent = 'center';
+        div.style.fontWeight = 'bold';
+        div.style.fontSize = '14px';
+        return div;
     }
 
     function createFloatingButtons() {
