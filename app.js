@@ -35,7 +35,6 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // замените на актуальную ссылку
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -85,7 +84,9 @@ async function loadHikesFromFirebase() {
             access: data.access || '',
             details: data.details || '',
             image: data.image || data.image_url || '',
-            tags: data.tags || []
+            tags: data.tags || [],
+            start_time: data.start_time || '',
+            location_link: data.location_link || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
         return { data: hikes, list };
     } catch (e) {
@@ -531,70 +532,6 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// --- Функции для новых кнопок ---
-function formatDateForDisplay(dateStr) {
-    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-    const [year, month, day] = dateStr.split('-');
-    return `${parseInt(day)} ${months[parseInt(month)-1]} ${year}`;
-}
-
-function addToCalendar(hike) {
-    const eventTitle = `хайк - ${hike.title}`;
-    const date = new Date(hike.date);
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    const startDate = `${year}${month}${day}`;
-
-    const description = `Подробности: https://t.me/yaltahiking\n\nПрисоединяйся к клубу!`;
-    
-    const icsContent = `BEGIN:VCALENDAR
-VERSION:2.0
-PRODID:-//hiking club//EN
-BEGIN:VEVENT
-UID:${Date.now()}@hikingclub
-DTSTART;VALUE=DATE:${startDate}
-DTEND;VALUE=DATE:${startDate}
-SUMMARY:${eventTitle}
-DESCRIPTION:${description}
-END:VEVENT
-END:VCALENDAR`;
-
-    // Создаём временную ссылку и эмулируем клик для надёжного открытия
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `hike-${hike.date}.ics`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    haptic();
-    log('add_to_calendar_click', false);
-}
-
-function inviteFriend(hike) {
-    const formattedDate = formatDateForDisplay(hike.date);
-    const shareText = `привет! пошли на хайк со мной ${formattedDate}, зарегистрируйся через приложение ${APP_LINK}`;
-    
-    if (navigator.share) {
-        navigator.share({
-            title: 'Приглашение на хайк',
-            text: shareText,
-        }).catch(() => {});
-    } else {
-        navigator.clipboard.writeText(shareText).then(() => {
-            tg.showPopup ? tg.showPopup({ title: 'Готово', message: 'Ссылка скопирована' }) : alert('Ссылка скопирована');
-        }).catch(() => {
-            tg.showPopup ? tg.showPopup({ title: 'Ошибка', message: 'Не удалось скопировать' }) : alert('Не удалось скопировать');
-        });
-    }
-    haptic();
-    log('invite_friend_click', false);
-}
-
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -725,6 +662,26 @@ function showBottomSheet(index) {
             }
         }
 
+        // Дополнительная информация (старт и точка сбора)
+        let extraInfoHtml = '';
+        if (hike.start_time || hike.location_link) {
+            extraInfoHtml = '<div style="margin: 8px 0 12px 0; display: flex; flex-direction: column; gap: 4px;">';
+            if (hike.start_time) {
+                extraInfoHtml += `<div><span style="opacity:0.8;">старт:</span> ${hike.start_time}</div>`;
+            }
+            if (hike.location_link) {
+                let locationHtml = '';
+                if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
+                    locationHtml = parseLinks(hike.location_link, isGuest);
+                } else {
+                    const safeUrl = JSON.stringify(hike.location_link);
+                    locationHtml = `<a href="#" onclick="openLink(${safeUrl}, 'location_link_click', ${isGuest}); return false;">открыть на карте</a>`;
+                }
+                extraInfoHtml += `<div><span style="opacity:0.8;">точка сбора:</span> ${locationHtml}</div>`;
+            }
+            extraInfoHtml += '</div>';
+        }
+
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -741,6 +698,7 @@ function showBottomSheet(index) {
             </div>
             <div>
                 ${imageHtml}
+                ${extraInfoHtml}
                 ${sectionsHtml}
             </div>
         `;
@@ -800,10 +758,10 @@ function showBottomSheet(index) {
         today.setHours(0, 0, 0, 0);
         const isPast = hikeDate < today;
 
-        // Очищаем контейнер и задаём вертикальное расположение
+        // Очищаем контейнер и устанавливаем горизонтальное расположение
         container.innerHTML = '';
-        container.style.flexDirection = 'column';
-        container.style.alignItems = 'stretch';
+        container.style.flexDirection = 'row';
+        container.style.justifyContent = 'center';
         container.style.gap = '12px';
 
         if (isPast) {
@@ -818,61 +776,15 @@ function showBottomSheet(index) {
 
         const isGuest = userCard.status !== 'active';
 
-        // --- Контейнер для дополнительных кнопок (календарь и приглашение) ---
-        const extraContainer = document.createElement('div');
-        extraContainer.style.display = 'flex';
-        extraContainer.style.flexDirection = 'column';
-        extraContainer.style.alignItems = 'flex-end';
-        extraContainer.style.gap = '8px';
-        extraContainer.style.width = '100%';
-
-        // Кнопка добавления в календарь
-        const calendarBtn = document.createElement('a');
-        calendarBtn.href = '#';
-        calendarBtn.className = 'btn btn-outline';
-        calendarBtn.textContent = 'добавить в календарь';
-        calendarBtn.style.width = 'fit-content';
-        calendarBtn.style.padding = '12px 16px';
-        calendarBtn.style.fontSize = '14px';
-        calendarBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!calendarBtn.classList.contains('btn-green')) {
-                calendarBtn.classList.add('btn-green');
-                calendarBtn.classList.remove('btn-outline');
-            }
-            addToCalendar(hike);
-        });
-
-        // Кнопка пригласить друга
-        const inviteBtn = document.createElement('a');
-        inviteBtn.href = '#';
-        inviteBtn.className = 'btn btn-outline';
-        inviteBtn.textContent = 'пригласить друга';
-        inviteBtn.style.width = 'fit-content';
-        inviteBtn.style.padding = '12px 16px';
-        inviteBtn.style.fontSize = '14px';
-        inviteBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (!inviteBtn.classList.contains('btn-green')) {
-                inviteBtn.classList.add('btn-green');
-                inviteBtn.classList.remove('btn-outline');
-            }
-            inviteFriend(hike);
-        });
-
-        extraContainer.appendChild(calendarBtn);
-        extraContainer.appendChild(inviteBtn);
-        container.appendChild(extraContainer);
-
-        // --- Основные кнопки регистрации (горизонтально) ---
-        const mainRow = document.createElement('div');
-        mainRow.style.display = 'flex';
-        mainRow.style.gap = '12px';
-        mainRow.style.justifyContent = 'space-between';
-        mainRow.style.width = '100%';
-
         if (isBooked) {
-            // Кнопка отмены слева
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-green';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'ты записан';
+            goBtn.style.flex = '1';
+            container.appendChild(goBtn);
+
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
@@ -912,18 +824,8 @@ function showBottomSheet(index) {
                 }
                 log('sheet_cancel_click', false);
             });
-            mainRow.appendChild(cancelBtn);
-
-            // Кнопка "ты записан" справа
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-green';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'ты записан';
-            goBtn.style.flex = '1';
-            mainRow.appendChild(goBtn);
+            container.appendChild(cancelBtn);
         } else {
-            // Кнопка "задать вопрос" слева
             const questionBtn = document.createElement('a');
             questionBtn.href = '#';
             questionBtn.className = 'btn btn-outline';
@@ -935,9 +837,8 @@ function showBottomSheet(index) {
                 haptic();
                 openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
             });
-            mainRow.appendChild(questionBtn);
+            container.appendChild(questionBtn);
 
-            // Кнопка "иду" справа
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow';
@@ -977,10 +878,8 @@ function showBottomSheet(index) {
                 }
                 log('sheet_go_click', false);
             });
-            mainRow.appendChild(goBtn);
+            container.appendChild(goBtn);
         }
-
-        container.appendChild(mainRow);
     }
 
     function createFloatingButtons() {
