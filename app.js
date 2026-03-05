@@ -38,7 +38,7 @@ const METRICS_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOi
 const HIKES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=1820108576&single=true&output=csv';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
-const CACHE_TTL = 300000; // 5 минут
+const CACHE_TTL = 600000; // 10 минут
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -750,16 +750,16 @@ function showBottomSheet(index) {
 
         let imageHtml = '';
         if (hike.image) {
-            if (!isGuest && !isPast) { // счётчик только для будущих хайков
+            if (!isGuest && !isPast) {
                 imageHtml = `
                     <div class="image-container">
-                        <img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">
+                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
                         <div class="participant-counter" id="participantCounter">уже идут: 0</div>
                     </div>
                 `;
             } else {
                 imageHtml = `
-                    <img src="${hike.image}" class="bottom-sheet-image" onerror="this.style.display='none'">
+                    <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
                 `;
             }
         }
@@ -1282,20 +1282,17 @@ function renderNewcomerPage(isGuest = false) {
     
     showBottomNav(!isGuest);
 
-    const faqData = faq.length ? faq : [
-        { q: '⛰️ что такое хайкинг?', a: 'хайкинг – это прогулки. но не по улицам бетонного города, а по манящим свежестью просторам природы. не уставившись себе под ноги, а подняв голову созерцая богатство твоей планеты. без преодоления себя. без палаток и ночёвок. 3-5 часов лёгкого и среднего уровня ходьбы по обустроенным тропам и видовым местам. да ещё и в компании таких же интеллигентов, как и ты' },
-        { q: '🥾 чем вы отличаетесь от обычных походов?', a: 'мы здесь не про походы. не про туризм. не про экскурсии. мы про активную позицию в жизни, про здоровый отдых, про новые знакомства и дружбу, про эмоции и впечатления. 80% наших хайков – люди и общение, 20% – природа как идеальный контекст' },
-        // добавьте остальные вопросы, если нужно
-    ];
-
     let faqHtml = '';
-    faqData.forEach(item => {
-        let answer = item.a;
-        answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
-        answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
-        answer = answer.replace(/\n/g, '<br>');
-        faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
-    });
+    if (faq && faq.length) {
+        faq.forEach(item => {
+            let answer = item.a;
+            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
+            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
+            faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
+        });
+    } else {
+        faqHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
 
     mainDiv.innerHTML = `
         <div class="card-container newcomer-page" style="margin-bottom: 0;">
@@ -1327,46 +1324,44 @@ function renderPriv() {
     showBack(renderHome);
     showBottomNav(true);
 
-    const clubPrivs = privileges.club.length ? privileges.club : [
-        { title: 'бесплатные хайки', description: 'уже на шестой хайк твоя карта окупится...', button_text: '', button_link: '' },
-        { title: 'плюс один', description: 'на каждый хайк ты можешь брать...', button_text: '', button_link: '' },
-        { title: 'эксклюзивные маршруты', description: 'ты можешь ходить...', button_text: '', button_link: '' },
-        { title: 'запрос на мастермайнд', description: 'ты можешь заранее...', button_text: 'забронировать запрос', button_link: 'https://t.me/hellointelligent' },
-        { title: 'новое: обход блокировок', description: 'с картой интеллигента...', button_text: 'получить настройки', button_link: 'https://t.me/hellointelligent' }
-    ];
-    const cityPrivs = privileges.city.length ? privileges.city : [];
-
     let clubHtml = '';
-    clubPrivs.forEach(item => {
-        let titleHtml = item.title;
-        if (item.title.startsWith('новое:')) {
-            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
-        }
-        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
-        if (item.button_text && item.button_link) {
-            clubHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-        }
-        clubHtml += `</div>`;
-    });
+    if (privileges.club && privileges.club.length) {
+        privileges.club.forEach(item => {
+            let titleHtml = item.title;
+            if (item.title.startsWith('новое:')) {
+                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
+            }
+            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                clubHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            }
+            clubHtml += `</div>`;
+        });
+    } else {
+        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
 
     let cityHtml = '';
-    cityPrivs.forEach(item => {
-        cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-        if (item.button_text && item.button_link) {
-            // кнопка (например, для Nothomme)
-            cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-     } else if (item.button_link) {
-    let linkHtml = '';
-    if (item.button_link.includes('[') && item.button_link.includes('](')) {
-        linkHtml = parseLinks(item.button_link, false);
+    if (privileges.city && privileges.city.length) {
+        privileges.city.forEach(item => {
+            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            } else if (item.button_link) {
+                let linkHtml = '';
+                if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                    linkHtml = parseLinks(item.button_link, false);
+                } else {
+                    const safeUrl = JSON.stringify(item.button_link);
+                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+                }
+                cityHtml += `<p>📍 ${linkHtml}</p>`;
+            }
+            cityHtml += `</div>`;
+        });
     } else {
-        // Если это просто URL, создаём ссылку вручную
-        linkHtml = `<a href="#" onclick="openLink('${item.button_link}', 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
     }
-    cityHtml += `<p>📍 ${linkHtml}</p>`;
-        }
-        cityHtml += `</div>`;
-    });
 
     mainDiv.innerHTML = `
         <div class="card-container">
@@ -1388,35 +1383,40 @@ function renderGuestPriv() {
     showBack(renderHome);
     showBottomNav(true);
 
-    const clubPrivs = privileges.club.length ? privileges.club : [
-        { title: 'бесплатные хайки', description: 'уже на шестой хайк...' },
-        { title: 'плюс один', description: 'на каждый хайк ты можешь брать...' },
-        { title: 'эксклюзивные маршруты', description: 'ты можешь ходить...' },
-        { title: 'запрос на мастермайнд', description: 'ты можешь заранее...' },
-        { title: 'новое: обход блокировок', description: 'с картой интеллигента...' }
-    ];
-    const cityPrivs = privileges.city.length ? privileges.city : [];
-
     let clubHtml = '';
-    clubPrivs.forEach(item => {
-        let titleHtml = item.title;
-        if (item.title.startsWith('новое:')) {
-            titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
-        }
-        clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
-    });
+    if (privileges.club && privileges.club.length) {
+        privileges.club.forEach(item => {
+            let titleHtml = item.title;
+            if (item.title.startsWith('новое:')) {
+                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
+            }
+            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
+        });
+    } else {
+        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
 
     let cityHtml = '';
-    cityPrivs.forEach(item => {
-        cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-        if (item.button_text && item.button_link) {
-            cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-        } else if (item.button_link) {
-            let linkHtml = parseLinks(item.button_link, false);
-            cityHtml += `<p>📍 ${linkHtml}</p>`;
-        }
-        cityHtml += `</div>`;
-    });
+    if (privileges.city && privileges.city.length) {
+        privileges.city.forEach(item => {
+            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            } else if (item.button_link) {
+                let linkHtml = '';
+                if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                    linkHtml = parseLinks(item.button_link, false);
+                } else {
+                    const safeUrl = JSON.stringify(item.button_link);
+                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+                }
+                cityHtml += `<p>📍 ${linkHtml}</p>`;
+            }
+            cityHtml += `</div>`;
+        });
+    } else {
+        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
 
     mainDiv.innerHTML = `
         <div class="card-container">
@@ -1438,7 +1438,7 @@ function renderGift(isGuest = false) {
     showBack(renderHome);
     showBottomNav(!isGuest);
 
-    const giftText = giftContent || 'хочешь подарить карту другу? тогда пришли нам в поддержку имя друга, его фамилию, @username в телеграм и твой чек об оплате карты (приходит на почту после покупки). мы выпустим карту на имя друга.\n\nесли хочешь подарить ему карту сам – напиши «отправлю карту сам». если хочешь, чтобы её прислали мы, но сказали, что от тебя, напиши «подарите вы».\n\nкак только друг получит карту, у него станет активным наше приложение и он сможет им пользоваться.';
+    const giftText = giftContent || 'Информация о подарке временно недоступна.';
 
     mainDiv.innerHTML = `
         <div class="card-container">
