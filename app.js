@@ -7,12 +7,13 @@ function haptic() {
 }
 window.haptic = haptic;
 
+// Глобальная функция для открытия ссылок, доступная из любого места
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    // Используем tg.openLink для всех внешних ссылок
     tg.openLink(url);
 }
+// Сделаем её глобальной для доступа из обработчиков
 window.openLink = openLink;
 
 const backButton = tg.BackButton;
@@ -146,6 +147,7 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
+        // Получаем последних трёх участников по timestamp
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp)
@@ -528,13 +530,55 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
+// Функция для преобразования markdown ссылок в HTML с data-атрибутами и последующей обработкой
 function parseLinks(text, isGuest) {
     if (!text) return '';
+    // Заменяем [text](url) на <a href="#" data-url="url">text</a>
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
-        const safeUrl = JSON.stringify(url);
-        return `<a href="#" onclick="openLink(${safeUrl}, 'hike_section_link', ${isGuest}); return false;">${linkText}</a>`;
+        return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
     });
 }
+
+// Глобальный обработчик кликов по ссылкам (делегирование)
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn');
+    if (!link) return;
+    e.preventDefault();
+    
+    // Для динамических ссылок (из parseLinks)
+    if (link.classList.contains('dynamic-link')) {
+        const url = link.dataset.url;
+        const isGuest = link.dataset.guest === 'true';
+        openLink(url, 'dynamic_link_click', isGuest);
+        return;
+    }
+    
+    // Для попап меню
+    if (link.closest('.nav-popup')) {
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+            openLink(href, 'nav_popup_click', false);
+        }
+        return;
+    }
+    
+    // Для кнопок новичков
+    if (link.classList.contains('btn-newcomer')) {
+        haptic();
+        const isGuest = link.id === 'newcomerBtnGuest';
+        renderNewcomerPage(isGuest);
+        return;
+    }
+    
+    // Для аккордеона (обрабатывается отдельно)
+    // Для стрелок навигации (обрабатываются внутри bottom sheet)
+    // Для кнопок регистрации - они будут обрабатываться через добавленные слушатели,
+    // но чтобы не было двойного срабатывания, здесь ничего не делаем.
+    // Если это обычная кнопка с data-url (например, из привилегий)
+    if (link.dataset.url) {
+        openLink(link.dataset.url, 'btn_click', false);
+    }
+});
 
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
@@ -681,8 +725,8 @@ function showBottomSheet(index) {
                 if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
                     locationHtml = parseLinks(hike.location_link, isGuest);
                 } else {
-                    const safeUrl = JSON.stringify(hike.location_link);
-                    locationHtml = `<a href="#" onclick="openLink(${safeUrl}, 'location_link_click', ${isGuest}); return false;">открыть на карте</a>`;
+                    // Если просто ссылка, создаем ссылку с текстом "открыть на карте"
+                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
                 extraInfoHtml += `<div><strong>точка сбора:</strong> ${locationHtml}</div>`;
             }
@@ -1238,8 +1282,8 @@ function renderNewcomerPage(isGuest = false) {
     if (faq && faq.length) {
         faq.forEach(item => {
             let answer = item.a;
-            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" onclick="openLink(\'https://t.me/yaltahiking\', \'faq_channel_click\', false); return false;">@yaltahiking</a>');
-            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" onclick="openLink(\'https://zapovedcrimea.ru/choose-pass\', \'faq_pass_click\', false); return false;">zapovedcrimea.ru</a>');
+            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" data-url="https://t.me/yaltahiking" data-guest="false" class="dynamic-link">@yaltahiking</a>');
+            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" data-url="https://zapovedcrimea.ru/choose-pass" data-guest="false" class="dynamic-link">zapovedcrimea.ru</a>');
             faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
         });
     } else {
@@ -1250,7 +1294,7 @@ function renderNewcomerPage(isGuest = false) {
         <div class="card-container newcomer-page" style="margin-bottom: 0;">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <a href="#" data-url="https://t.me/hellointelligent" data-guest="${isGuest}" class="btn btn-yellow dynamic-link" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
@@ -1285,7 +1329,7 @@ function renderPriv() {
             }
             clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                clubHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                clubHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="btn btn-yellow dynamic-link" style="margin-top:12px;">${item.button_text}</a>`;
             }
             clubHtml += `</div>`;
         });
@@ -1298,14 +1342,13 @@ function renderPriv() {
         privileges.city.forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="btn btn-yellow dynamic-link" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
                 let linkHtml = '';
                 if (item.button_link.includes('[') && item.button_link.includes('](')) {
                     linkHtml = parseLinks(item.button_link, false);
                 } else {
-                    const safeUrl = JSON.stringify(item.button_link);
-                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
                 }
                 cityHtml += `<p>📍 ${linkHtml}</p>`;
             }
@@ -1353,14 +1396,13 @@ function renderGuestPriv() {
         privileges.city.forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" onclick="event.preventDefault(); openLink('${item.button_link}', 'support_click', false); return false;" class="btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="true" class="btn btn-yellow dynamic-link" style="margin-top:12px;">${item.button_text}</a>`;
             } else if (item.button_link) {
                 let linkHtml = '';
                 if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                    linkHtml = parseLinks(item.button_link, false);
+                    linkHtml = parseLinks(item.button_link, true);
                 } else {
-                    const safeUrl = JSON.stringify(item.button_link);
-                    linkHtml = `<a href="#" onclick="openLink(${safeUrl}, 'support_click', false); return false;">📍 ${item.button_link}</a>`;
+                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="true" class="dynamic-link">📍 ${item.button_link}</a>`;
                 }
                 cityHtml += `<p>📍 ${linkHtml}</p>`;
             }
@@ -1399,7 +1441,7 @@ function renderGift(isGuest = false) {
                 <p style="white-space: pre-line;">${giftText}</p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">купить в подарок</a>
+                <a href="#" data-url="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" data-guest="${isGuest}" class="btn btn-yellow dynamic-link" style="margin:0 16px;">купить в подарок</a>
             </div>
         </div>
     `;
@@ -1421,7 +1463,7 @@ function showGuestPopup() {
             <div class="modal-title">карта интеллигента</div>
             <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
             <div style="text-align: center; margin-top: 20px;">
-                <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
+                <a href="#" data-url="https://t.me/yaltahiking/197" data-guest="true" class="btn btn-yellow dynamic-link" id="popupLearnBtn">узнать о карте подробнее</a>
             </div>
         </div>
     `;
@@ -1451,16 +1493,16 @@ function renderGuestHome() {
         <div class="card-container">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
+            <a href="#" data-url="https://t.me/yaltahiking/197" data-guest="true" class="btn btn-yellow dynamic-link" id="buyBtn">узнать о карте</a>
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
                     навигация по клубу <span class="arrow">👀</span>
                 </button>
                 <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
-                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
+                    <a href="#" data-url="https://t.me/yaltahiking/149" data-guest="true" class="btn btn-outline dynamic-link">о клубе</a>
+                    <a href="#" data-url="https://t.me/yaltahiking/170" data-guest="true" class="btn btn-outline dynamic-link">философия</a>
+                    <a href="#" data-url="https://t.me/yaltahiking/246" data-guest="true" class="btn btn-outline dynamic-link">о хайкинге</a>
+                    <a href="#" data-url="https://t.me/yaltahiking/a/2" data-guest="true" class="btn btn-outline dynamic-link">отзывы</a>
                 </div>
             </div>
         </div>
@@ -1476,7 +1518,7 @@ function renderGuestHome() {
         <div class="card-container">
             <div class="metrics-header">
                 <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+                <a href="#" data-url="https://t.me/yaltahiking/148" data-guest="true" class="metrics-link dynamic-link">смотреть отчёты &gt;</a>
             </div>
             <div class="metrics-grid">
                 <div class="metric-item">
@@ -1499,8 +1541,8 @@ function renderGuestHome() {
         </div>
         
         <div class="extra-links">
-            <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', true); return false;" class="btn btn-outline">📰 открыть канал</a>
-            <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', true); return false;" class="btn btn-outline">💬 открыть чат</a>
+            <a href="#" data-url="https://t.me/yaltahiking" data-guest="true" class="btn btn-outline dynamic-link">📰 открыть канал</a>
+            <a href="#" data-url="https://t.me/yaltahikingchat" data-guest="true" class="btn btn-outline dynamic-link">💬 открыть чат</a>
             <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
         </div>
     `;
@@ -1568,10 +1610,10 @@ function renderHome() {
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
-                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
+                        <a href="#" data-url="https://t.me/yaltahiking/149" data-guest="false" class="btn btn-outline dynamic-link">о клубе</a>
+                        <a href="#" data-url="https://t.me/yaltahiking/170" data-guest="false" class="btn btn-outline dynamic-link">философия</a>
+                        <a href="#" data-url="https://t.me/yaltahiking/246" data-guest="false" class="btn btn-outline dynamic-link">о хайкинге</a>
+                        <a href="#" data-url="https://t.me/yaltahiking/a/2" data-guest="false" class="btn btn-outline dynamic-link">отзывы</a>
                     </div>
                 </div>
             </div>
@@ -1587,7 +1629,7 @@ function renderHome() {
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+                    <a href="#" data-url="https://t.me/yaltahiking/148" data-guest="false" class="metrics-link dynamic-link">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
