@@ -36,6 +36,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw'; // ссылка на покупку билета для гостей
+const CARD_PURCHASE_LINK = 'https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g'; // ссылка на покупку карты
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -690,57 +691,89 @@ document.addEventListener('click', function(e) {
         e.stopPropagation();
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
-            toggleParticipantList(hikeDate);
+            toggleParticipantDropdown(link, hikeDate);
         }
         return;
     }
 });
 
 // Переменные для управления выпадающим списком
-let currentParticipantListHikeDate = null;
+let currentDropdownHikeDate = null;
 
-async function toggleParticipantList(hikeDate) {
-    const expandDiv = document.getElementById('participantExpand');
-    if (!expandDiv) return;
-    
-    if (expandDiv.classList.contains('show') && currentParticipantListHikeDate === hikeDate) {
-        expandDiv.classList.remove('show');
-        currentParticipantListHikeDate = null;
+async function toggleParticipantDropdown(counterElement, hikeDate) {
+    // Если уже открыт для этого же хайка, закрываем
+    const existingDropdown = document.querySelector('.participant-dropdown.show');
+    if (existingDropdown && currentDropdownHikeDate === hikeDate) {
+        existingDropdown.remove();
+        currentDropdownHikeDate = null;
         return;
+    }
+    
+    // Удаляем предыдущий, если был открыт для другого хайка
+    if (existingDropdown) {
+        existingDropdown.remove();
     }
     
     haptic();
     const participants = await loadAllParticipants(hikeDate);
     
-    let html = '';
+    const dropdown = document.createElement('div');
+    dropdown.className = 'participant-dropdown';
+    
     if (participants.length === 0) {
-        html = '<p style="color: rgba(255,255,255,0.7); text-align:center;">Пока никого нет</p>';
+        dropdown.innerHTML = '<div class="participant-dropdown-item" style="justify-content:center;">Пока никого нет</div>';
     } else {
         participants.forEach(p => {
             const name = p.name || 'Участник';
+            const item = document.createElement('div');
+            item.className = 'participant-dropdown-item';
+            
             if (p.photoUrl) {
-                html += `
-                    <div class="participant-expand-item">
-                        <img src="${p.photoUrl}" class="participant-expand-avatar" alt="${name}">
-                        <span class="participant-expand-name">${name}</span>
-                    </div>
-                `;
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar" alt="${name}">`;
             } else {
                 const initial = name.charAt(0).toUpperCase();
-                html += `
-                    <div class="participant-expand-item">
-                        <div class="participant-expand-avatar placeholder">${initial}</div>
-                        <span class="participant-expand-name">${name}</span>
-                    </div>
-                `;
+                item.innerHTML = `<div class="participant-dropdown-avatar placeholder">${initial}</div>`;
             }
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'participant-dropdown-name';
+            nameSpan.textContent = name;
+            item.appendChild(nameSpan);
+            
+            dropdown.appendChild(item);
         });
     }
     
-    expandDiv.innerHTML = html;
-    expandDiv.classList.add('show');
-    currentParticipantListHikeDate = hikeDate;
-    log('participant_list_toggled', userCard.status !== 'active');
+    // Позиционируем под счётчиком
+    const rect = counterElement.getBoundingClientRect();
+    dropdown.style.position = 'absolute';
+    dropdown.style.top = rect.bottom + 'px';
+    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
+    dropdown.style.width = rect.width + 'px';
+    dropdown.style.zIndex = '1001';
+    
+    document.body.appendChild(dropdown);
+    
+    // Небольшая задержка для анимации
+    setTimeout(() => {
+        dropdown.classList.add('show');
+    }, 10);
+    
+    currentDropdownHikeDate = hikeDate;
+    
+    // Закрытие по клику вне
+    const closeHandler = (e) => {
+        if (!dropdown.contains(e.target) && e.target !== counterElement) {
+            dropdown.remove();
+            currentDropdownHikeDate = null;
+            document.removeEventListener('click', closeHandler);
+        }
+    };
+    setTimeout(() => {
+        document.addEventListener('click', closeHandler);
+    }, 0);
+    
+    log('participant_dropdown_opened', userCard.status !== 'active');
 }
 
 // ----- Bottom Sheet -----
@@ -860,7 +893,6 @@ function showBottomSheet(index) {
         let imageHtml = '';
         if (hike.image) {
             if (!isPast) {
-                // Показываем счётчик всем (и гостям, и владельцам) для будущих хайков
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
@@ -877,9 +909,6 @@ function showBottomSheet(index) {
                 `;
             }
         }
-
-        // Добавляем контейнер для выпадающего списка участников
-        const expandHtml = `<div class="participant-expand" id="participantExpand"></div>`;
 
         // Дополнительная информация (начало и точка сбора) – только для будущих хайков, с SVG иконками
         let extraInfoHtml = '';
@@ -953,7 +982,6 @@ function showBottomSheet(index) {
             </div>
             <div>
                 ${imageHtml}
-                ${expandHtml}
                 ${extraInfoHtml}
                 ${sectionsHtml}
             </div>
@@ -1720,7 +1748,7 @@ function renderGuestHome() {
         <div class="card-container">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">узнать о карте</a>
+            <a href="${CARD_PURCHASE_LINK}" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">выпустить карту</a>
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
                     навигация по клубу <span class="arrow">👀</span>
@@ -1933,7 +1961,7 @@ function buyCard() {
     haptic();
     if (!userId) return;
     log('buy_card_click', true);
-    openLink('https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g', null, true);
+    openLink(CARD_PURCHASE_LINK, null, true);
 }
 
 window.addEventListener('load', loadData);
