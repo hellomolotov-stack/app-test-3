@@ -848,6 +848,7 @@ body::before {
     border: 1px solid rgba(255,255,255,0.2);
     height: 36px;
     box-sizing: border-box;
+    cursor: pointer;
 }
 
 .participant-count {
@@ -910,6 +911,59 @@ body::before {
     font-weight: bold;
     font-size: 14px;
     text-transform: uppercase;
+}
+
+/* Модальное окно со списком участников */
+.participant-modal .modal-content {
+    max-width: 350px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.participant-list {
+    overflow-y: auto;
+    margin: 16px 0;
+    padding-right: 8px;
+    flex: 1;
+}
+
+.participant-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.participant-list-item:last-child {
+    border-bottom: none;
+}
+
+.participant-list-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.participant-list-avatar.placeholder {
+    background-color: #40a7e3;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.participant-list-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #ffffff;
+    word-break: break-word;
 }
 
 /* Дополнительная информация о хайке с иконками SVG */
