@@ -869,11 +869,11 @@ body::before {
     margin-right: 2px;
 }
 
-/* Аватарки с наложением и смещением вниз */
+/* Аватарки с наложением (без вертикального смещения) */
 .participant-avatars {
     position: relative;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     height: 36px;
     margin-left: 8px;
 }
@@ -886,23 +886,19 @@ body::before {
     border: 2px solid rgba(0, 0, 0, 0.6);
     margin-left: -12px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: transform 0.2s;
 }
 
 .participant-avatar:first-child {
     margin-left: 0;
     z-index: 3;
-    transform: translateY(0);
 }
 
 .participant-avatar:nth-child(2) {
     z-index: 2;
-    transform: translateY(4px);
 }
 
 .participant-avatar:nth-child(3) {
     z-index: 1;
-    transform: translateY(8px);
 }
 
 .participant-avatar.placeholder {
