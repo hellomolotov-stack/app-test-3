@@ -169,7 +169,7 @@ function subscribeToParticipantCount(hikeDate, callback) {
         // Сортируем по убыванию timestamp (новые первыми)
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
-            .sort((a, b) => b.timestamp - a.timestamp) // новые -> старые
+            .sort((a, b) => b.timestamp - a.timestamp)
             .slice(0, 3); // берём три самых новых
         callback(count, sorted);
     });
@@ -529,11 +529,10 @@ async function loadData() {
 
         log('visit', userCard.status !== 'active');
         
-        // Проверяем, есть ли в ссылке параметр с конкретным хайком
-        const urlParams = new URLSearchParams(window.location.search);
-        const startParam = urlParams.get('startapp');
+        // Проверяем start_param из Telegram
+        const startParam = tg.initDataUnsafe?.start_param;
         if (startParam && startParam.startsWith('hike_')) {
-            const targetDate = startParam.substring(5); // убираем 'hike_'
+            const targetDate = startParam.substring(5);
             const targetIndex = hikesList.findIndex(h => h.date === targetDate);
             if (targetIndex !== -1) {
                 // Откладываем открытие, чтобы DOM успел загрузиться
@@ -881,9 +880,8 @@ function showBottomSheet(index) {
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
                     // participants уже отсортированы по убыванию timestamp (новые первыми)
-                    // Для правильного наложения (новые сверху) нам нужно, чтобы в DOM новые были справа
-                    // Поэтому добавляем их в порядке от старых к новым (реверс)
-                    [...participants].reverse().forEach(p => {
+                    // Вставляем их в том же порядке – новый слева, старые правее и ниже
+                    participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
                             img.src = p.photoUrl;
