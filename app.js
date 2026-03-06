@@ -528,6 +528,21 @@ async function loadData() {
         }
 
         log('visit', userCard.status !== 'active');
+        
+        // Проверяем, есть ли в ссылке параметр с конкретным хайком
+        const urlParams = new URLSearchParams(window.location.search);
+        const startParam = urlParams.get('startapp');
+        if (startParam && startParam.startsWith('hike_')) {
+            const targetDate = startParam.substring(5); // убираем 'hike_'
+            const targetIndex = hikesList.findIndex(h => h.date === targetDate);
+            if (targetIndex !== -1) {
+                // Откладываем открытие, чтобы DOM успел загрузиться
+                setTimeout(() => {
+                    showBottomSheet(targetIndex);
+                }, 500);
+            }
+        }
+        
         renderHome();
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
@@ -866,7 +881,9 @@ function showBottomSheet(index) {
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
                     // participants уже отсортированы по убыванию timestamp (новые первыми)
-                    participants.forEach(p => {
+                    // Для правильного наложения (новые сверху) нам нужно, чтобы в DOM новые были справа
+                    // Поэтому добавляем их в порядке от старых к новым (реверс)
+                    [...participants].reverse().forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
                             img.src = p.photoUrl;
