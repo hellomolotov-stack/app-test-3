@@ -226,6 +226,19 @@ body::before {
     -webkit-backdrop-filter: blur(4px);
 }
 
+/* Кнопка с подсветкой для гостей */
+.btn-glow {
+    animation: glow 2s ease-in-out infinite;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes glow {
+    0% { box-shadow: 0 0 5px var(--yellow); }
+    50% { box-shadow: 0 0 20px var(--yellow); }
+    100% { box-shadow: 0 0 5px var(--yellow); }
+}
+
 .accordion-btn {
     background-color: rgba(255,255,255,0.1);
     color: #ffffff;
@@ -870,7 +883,7 @@ body::before {
     margin-right: 2px;
 }
 
-/* Аватарки с наложением (уменьшенное наложение) */
+/* Аватарки с наложением (увеличенное перекрытие) */
 .participant-avatars {
     position: relative;
     display: flex;
@@ -885,7 +898,7 @@ body::before {
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(0, 0, 0, 0.6);
-    margin-left: -2px; /* было -12px, уменьшил до -2px */
+    margin-left: -4px; /* увеличено с -2px до -4px */
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
@@ -913,23 +926,22 @@ body::before {
     text-transform: uppercase;
 }
 
-/* Модальное окно со списком участников */
-.participant-modal .modal-content {
-    max-width: 350px;
-    max-height: 80vh;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+/* Выпадающий список участников */
+.participant-expand {
+    margin: 12px 0 8px 0;
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+    padding: 12px;
+    display: none;
+    border: 1px solid rgba(255,255,255,0.2);
 }
 
-.participant-list {
-    overflow-y: auto;
-    margin: 16px 0;
-    padding-right: 8px;
-    flex: 1;
+.participant-expand.show {
+    display: block;
 }
 
-.participant-list-item {
+.participant-expand-item {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -937,30 +949,30 @@ body::before {
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
-.participant-list-item:last-child {
+.participant-expand-item:last-child {
     border-bottom: none;
 }
 
-.participant-list-avatar {
-    width: 40px;
-    height: 40px;
+.participant-expand-avatar {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(255,255,255,0.3);
 }
 
-.participant-list-avatar.placeholder {
+.participant-expand-avatar.placeholder {
     background-color: #40a7e3;
     color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 18px;
+    font-size: 16px;
 }
 
-.participant-list-name {
-    font-size: 16px;
+.participant-expand-name {
+    font-size: 15px;
     font-weight: 500;
     color: #ffffff;
     word-break: break-word;
