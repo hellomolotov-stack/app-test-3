@@ -497,7 +497,7 @@ async function loadData() {
             if (hikesResult) {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
-                console.log('Hikes loaded from Firebase');
+                console.log('Hikes loaded from Firebase', hikesList);
             }
             const metricsData = await loadMetricsFromFirebase();
             if (metricsData) {
@@ -546,28 +546,28 @@ async function loadData() {
         
         // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param;
+        console.log('start_param:', startParam);
         if (startParam && startParam.startsWith('hike_')) {
             const targetDate = startParam.substring(5);
-            const targetIndex = hikesList.findIndex(h => h.date === targetDate);
-            if (targetIndex !== -1) {
-                // Даём время на отрисовку главной, затем открываем bottom sheet
-                setTimeout(() => {
+            console.log('Target date:', targetDate);
+            
+            // Попытка открыть слайдер с проверкой каждые 300 мс (до 10 секунд)
+            let attempts = 0;
+            const maxAttempts = 33; // ~10 секунд (300 * 33 ≈ 10 сек)
+            const interval = setInterval(() => {
+                attempts++;
+                const targetIndex = hikesList.findIndex(h => h.date === targetDate);
+                if (targetIndex !== -1) {
+                    console.log('Found hike, opening sheet for index', targetIndex);
+                    clearInterval(interval);
                     showBottomSheet(targetIndex);
-                }, 500);
-            } else {
-                // Если данные ещё не загрузились, пробуем позже
-                let attempts = 0;
-                const interval = setInterval(() => {
-                    attempts++;
-                    const idx = hikesList.findIndex(h => h.date === targetDate);
-                    if (idx !== -1) {
-                        clearInterval(interval);
-                        showBottomSheet(idx);
-                    } else if (attempts > 20) { // ~10 секунд
-                        clearInterval(interval);
-                    }
-                }, 500);
-            }
+                } else if (attempts >= maxAttempts) {
+                    console.log('Hike not found after max attempts');
+                    clearInterval(interval);
+                } else {
+                    console.log(`Attempt ${attempts}: hike not found yet`);
+                }
+            }, 300);
         }
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
