@@ -165,11 +165,11 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Сортируем по возрастанию timestamp (старые сначала)
+        // Сортируем по убыванию timestamp (новые первыми)
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
-            .sort((a, b) => a.timestamp - b.timestamp) // старые -> новые
-            .slice(-3); // берём последние три (самые новые) – они будут в конце массива
+            .sort((a, b) => b.timestamp - a.timestamp) // новые -> старые
+            .slice(0, 3); // берём три самых новых
         callback(count, sorted);
     });
     return () => participantsRef.off('value', listener);
@@ -642,22 +642,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Функция приглашения друга
-function inviteFriend(hike) {
-    if (!hike) return;
-    const dateStr = hike.date;
-    const title = hike.title;
-    // Форматируем дату для текста
-    const [year, month, day] = dateStr.split('-');
-    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-                        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-    const formattedDate = `${parseInt(day)} ${monthNames[parseInt(month)-1]} ${year}`;
-    
-    const shareText = `Привет! Пойдём на хайк «${title}» ${formattedDate}. Подробности и регистрация в приложении: ${APP_LINK}`;
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(APP_LINK)}&text=${encodeURIComponent(shareText)}`;
-    openLink(shareUrl, 'invite_friend', false);
-}
-
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -792,7 +776,7 @@ function showBottomSheet(index) {
             }
         }
 
-        // Дополнительная информация (начало и точка сбора) с классом hike-extra-info
+        // Дополнительная информация (начало и точка сбора)
         let extraInfoHtml = '';
         if (hike.start_time || hike.location_link) {
             extraInfoHtml = '<div class="hike-extra-info">';
@@ -809,16 +793,6 @@ function showBottomSheet(index) {
                 extraInfoHtml += `<div><strong>точка сбора:</strong> ${locationHtml}</div>`;
             }
             extraInfoHtml += '</div>';
-        }
-
-        // Кнопка "Пригласить друга" (только для будущих хайков) – теперь без эмодзи и будет вставлена после секций
-        let inviteBtnHtml = '';
-        if (!isPast) {
-            inviteBtnHtml = `
-                <div style="margin: 12px 0;">
-                    <a href="#" class="btn btn-outline" id="inviteFriendBtn" style="width: 100%; text-align: center;">пригласить друга</a>
-                </div>
-            `;
         }
 
         // Кнопки навигации без круга, стрелки по центру
@@ -856,7 +830,6 @@ function showBottomSheet(index) {
                 ${imageHtml}
                 ${extraInfoHtml}
                 ${sectionsHtml}
-                ${inviteBtnHtml}
             </div>
         `;
 
@@ -867,7 +840,7 @@ function showBottomSheet(index) {
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    // participants уже отсортированы по возрастанию timestamp (старые -> новые)
+                    // participants уже отсортированы по убыванию timestamp (новые первые)
                     participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
@@ -910,11 +883,6 @@ function showBottomSheet(index) {
                 haptic();
                 log('hike_swipe_next', false);
             }
-        });
-
-        document.getElementById('inviteFriendBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            inviteFriend(hike);
         });
     }
 
