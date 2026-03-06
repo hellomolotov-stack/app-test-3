@@ -35,7 +35,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const APP_LINK = 'https://t.me/yaltahiking_bot/app';
+const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw'; // ссылка на покупку билета для гостей
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -536,8 +536,8 @@ async function loadData() {
                 hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
             }
         } else {
-            hikeBookingStatus = {};
-            hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
+            // Гости: загружаем из localStorage
+            hikeBookingStatus = loadUserRegistrationsFromLocal();
         }
 
         log('visit', userCard.status !== 'active');
@@ -551,9 +551,8 @@ async function loadData() {
             const targetDate = startParam.substring(5);
             console.log('Target date:', targetDate);
             
-            // Попытка открыть слайдер с проверкой каждые 300 мс (до 10 секунд)
             let attempts = 0;
-            const maxAttempts = 33; // ~10 секунд (300 * 33 ≈ 10 сек)
+            const maxAttempts = 33; // ~10 секунд
             const interval = setInterval(() => {
                 attempts++;
                 const targetIndex = hikesList.findIndex(h => h.date === targetDate);
@@ -1049,6 +1048,7 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
+            // Для всех (и гостей, и владельцев) показываем "отменить" и "ты записан"
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
@@ -1090,36 +1090,60 @@ function showBottomSheet(index) {
             goBtn.textContent = 'ты записан';
             container.appendChild(goBtn);
         } else {
-            const questionBtn = document.createElement('a');
-            questionBtn.href = '#';
-            questionBtn.className = 'btn btn-outline';
-            questionBtn.id = 'sheetQuestionBtn';
-            questionBtn.textContent = 'задать вопрос';
-            questionBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
-            });
-            container.appendChild(questionBtn);
+            if (isGuest) {
+                // Гости, не забронировано: показываем одну кнопку "купить билет"
+                const buyBtn = document.createElement('a');
+                buyBtn.href = '#';
+                buyBtn.className = 'btn btn-yellow';
+                buyBtn.id = 'sheetBuyBtn';
+                buyBtn.textContent = 'купить билет';
+                buyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (buyBtn.dataset.processing === 'true') return;
+                    buyBtn.dataset.processing = 'true';
+                    
+                    haptic();
 
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-yellow';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'иду';
-            goBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (goBtn.dataset.processing === 'true') return;
-                goBtn.dataset.processing = 'true';
-                
-                haptic();
-
-                if (isGuest) {
+                    // Сначала ставим статус "записан" (как если бы купил)
                     hikeBookingStatus[sheetCurrentIndex] = true;
                     saveStatusToLocalStorage();
                     updateRegistrationInSheet(hike.date, hike.title, 'booked');
+                    
+                    // Затем открываем ссылку на оплату
+                    openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
+                    
+                    // Обновим кнопки, чтобы они стали "ты записан" и "отменить"
                     updateFloatingSheetButtons();
-                } else {
+                    
+                    buyBtn.dataset.processing = 'false'; // сбросим для возможных повторных кликов (но кнопка исчезнет)
+                });
+                container.appendChild(buyBtn);
+            } else {
+                // Владельцы карты, не забронировано: показываем "задать вопрос" и "иду"
+                const questionBtn = document.createElement('a');
+                questionBtn.href = '#';
+                questionBtn.className = 'btn btn-outline';
+                questionBtn.id = 'sheetQuestionBtn';
+                questionBtn.textContent = 'задать вопрос';
+                questionBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    haptic();
+                    openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+                });
+                container.appendChild(questionBtn);
+
+                const goBtn = document.createElement('a');
+                goBtn.href = '#';
+                goBtn.className = 'btn btn-yellow';
+                goBtn.id = 'sheetGoBtn';
+                goBtn.textContent = 'иду';
+                goBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (goBtn.dataset.processing === 'true') return;
+                    goBtn.dataset.processing = 'true';
+                    
+                    haptic();
+
                     setUserRegistrationStatus(hike.date, true)
                         .then(() => {
                             hikeBookingStatus[sheetCurrentIndex] = true;
@@ -1133,10 +1157,10 @@ function showBottomSheet(index) {
                             console.error('Error during booking:', error);
                             updateFloatingSheetButtons();
                         });
-                }
-                log('sheet_go_click', false);
-            });
-            container.appendChild(goBtn);
+                    log('sheet_go_click', false);
+                });
+                container.appendChild(goBtn);
+            }
         }
     }
 
@@ -1728,6 +1752,8 @@ function renderGuestHome() {
                 </div>
             </div>
         </div>
+
+        <div class="card-container" id="calendarContainer"></div>
         
         <div class="extra-links">
             <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', true); return false;" class="btn btn-outline">📰 открыть канал</a>
@@ -1754,6 +1780,11 @@ function renderGuestHome() {
     });
 
     setupAccordion('navAccordionGuest', true);
+
+    const calendarContainer = document.getElementById('calendarContainer');
+    if (calendarContainer) {
+        renderCalendar(calendarContainer);
+    }
 }
 
 // ----- Главная для владельцев карты -----
