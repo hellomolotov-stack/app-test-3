@@ -899,14 +899,26 @@ body::before {
     text-transform: uppercase;
 }
 
-/* Дополнительная информация о хайке (начало и точка сбора) */
+/* Дополнительная информация о хайке с иконками */
 .hike-extra-info {
     margin: 8px 0 12px 0;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
     font-size: 16px;
     color: #ffffff;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
 }
 
 .hike-extra-info strong {
