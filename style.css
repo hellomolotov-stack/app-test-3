@@ -844,14 +844,14 @@ body::before {
     margin: 2px 0 12px 0;
 }
 
-/* Счётчик участников – фиксированная высота, равные отступы */
+/* Счётчик участников – уменьшен gap до 1px */
 .participant-counter {
     position: absolute;
     top: 12px;
     right: 12px;
     display: flex;
     align-items: center;
-    gap: 3px; /* уменьшено с 6px до 3px */
+    gap: 1px; /* было 3px, теперь 1px */
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     border-radius: 30px;
