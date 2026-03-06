@@ -880,7 +880,7 @@ function showBottomSheet(index) {
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
                     // participants уже отсортированы по убыванию timestamp (новые первыми)
-                    // Вставляем их в том же порядке – новый слева, старые правее и ниже
+                    // Вставляем их в том же порядке – новый слева, старые правее
                     participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
