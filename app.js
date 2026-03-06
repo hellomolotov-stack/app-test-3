@@ -35,6 +35,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
+const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // замените на актуальную ссылку
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -164,11 +165,11 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Сортируем от старого к новому, чтобы в DOM новые были справа
+        // Сортируем по убыванию timestamp (новые первые)
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
-            .sort((a, b) => a.timestamp - b.timestamp) // старые сначала
-            .slice(-3); // берём последние три (самые новые)
+            .sort((a, b) => b.timestamp - a.timestamp) // новые сначала
+            .slice(0, 3);
         callback(count, sorted);
     });
     return () => participantsRef.off('value', listener);
@@ -458,7 +459,7 @@ function hideAnimatedLoader() {
         loader.classList.add('fade-out');
         setTimeout(() => {
             loader.style.display = 'none';
-            loader.innerHTML = ''; // очищаем
+            loader.innerHTML = '';
         }, 300);
     }
 }
@@ -470,7 +471,7 @@ async function loadData() {
     const loaderTimeout = setTimeout(() => {
         console.warn('loadData timeout – force hide loader');
         hideAnimatedLoader();
-    }, 10000); // увеличенный таймаут
+    }, 10000);
 
     try {
         if (database) {
@@ -641,6 +642,22 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Функция приглашения друга
+function inviteFriend(hike) {
+    if (!hike) return;
+    const dateStr = hike.date;
+    const title = hike.title;
+    // Форматируем дату для текста
+    const [year, month, day] = dateStr.split('-');
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const formattedDate = `${parseInt(day)} ${monthNames[parseInt(month)-1]} ${year}`;
+    
+    const shareText = `Привет! Пойдём на хайк «${title}» ${formattedDate}. Подробности и регистрация в приложении: ${APP_LINK}`;
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(APP_LINK)}&text=${encodeURIComponent(shareText)}`;
+    openLink(shareUrl, 'invite_friend', false);
+}
+
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -794,7 +811,17 @@ function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // Кнопки навигации без круга, стрелки пошире
+        // Кнопка "Пригласить друга" (только для будущих хайков)
+        let inviteBtnHtml = '';
+        if (!isPast) {
+            inviteBtnHtml = `
+                <div style="margin: 12px 0;">
+                    <a href="#" class="btn btn-outline" id="inviteFriendBtn" style="width: 100%; text-align: center;">👥 пригласить друга</a>
+                </div>
+            `;
+        }
+
+        // Кнопки навигации без круга, стрелки по центру
         const prevArrow = hasPrev 
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -828,6 +855,7 @@ function showBottomSheet(index) {
             <div>
                 ${imageHtml}
                 ${extraInfoHtml}
+                ${inviteBtnHtml}
                 ${sectionsHtml}
             </div>
         `;
@@ -839,6 +867,7 @@ function showBottomSheet(index) {
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
+                    // participants уже отсортированы по убыванию timestamp (новые первые)
                     participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
@@ -881,6 +910,11 @@ function showBottomSheet(index) {
                 haptic();
                 log('hike_swipe_next', false);
             }
+        });
+
+        document.getElementById('inviteFriendBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            inviteFriend(hike);
         });
     }
 
