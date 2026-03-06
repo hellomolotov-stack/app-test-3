@@ -35,6 +35,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
+const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // замените на актуальную ссылку
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -164,7 +165,7 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Сортируем по убыванию timestamp (новые первыми) – они будут слева
+        // Сортируем по убыванию timestamp (новые первыми)
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp) // новые -> старые
@@ -614,6 +615,12 @@ function parseLinks(text, isGuest) {
     });
 }
 
+// Функция для генерации ссылки на конкретный хайк
+function getHikeShareLink(hikeDate) {
+    const baseUrl = window.location.href.split('#')[0].split('?')[0];
+    return `${baseUrl}?start=hike_${hikeDate}`;
+}
+
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn');
@@ -757,7 +764,6 @@ function showBottomSheet(index) {
         const hikeDate = new Date(hike.date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        // Хайк считается прошедшим, если его дата меньше сегодняшней
         const isPast = hikeDate < today;
 
         let imageHtml = '';
@@ -780,12 +786,17 @@ function showBottomSheet(index) {
             }
         }
 
-        // Дополнительная информация (начало и точка сбора) – только для будущих хайков
+        // Дополнительная информация (начало и точка сбора) – только для будущих хайков, с иконками
         let extraInfoHtml = '';
         if (!isPast && (hike.start_time || hike.location_link)) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
-                extraInfoHtml += `<div><strong>начало:</strong> ${hike.start_time}</div>`;
+                extraInfoHtml += `
+                    <div class="info-row">
+                        <span class="info-icon">🕒</span>
+                        <span><strong>начало:</strong> ${hike.start_time}</span>
+                    </div>
+                `;
             }
             if (hike.location_link) {
                 let locationHtml = '';
@@ -794,7 +805,12 @@ function showBottomSheet(index) {
                 } else {
                     locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
-                extraInfoHtml += `<div><strong>точка сбора:</strong> ${locationHtml}</div>`;
+                extraInfoHtml += `
+                    <div class="info-row">
+                        <span class="info-icon">📍</span>
+                        <span><strong>точка сбора:</strong> ${locationHtml}</span>
+                    </div>
+                `;
             }
             extraInfoHtml += '</div>';
         }
@@ -816,6 +832,9 @@ function showBottomSheet(index) {
                </div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
+        // Добавляем ссылку для шаринга в самом низу
+        const shareLink = getHikeShareLink(hike.date);
+
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -834,6 +853,16 @@ function showBottomSheet(index) {
                 ${imageHtml}
                 ${extraInfoHtml}
                 ${sectionsHtml}
+                ${!isPast ? `
+                <div style="margin: 20px 0 10px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.6);">
+                    ссылка на этот хайк:
+                </div>
+                <div style="margin-bottom: 20px; text-align: center;">
+                    <input type="text" readonly value="${shareLink}" 
+                           style="width: 100%; padding: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 8px; color: var(--yellow); font-size: 12px; text-align: center;"
+                           onclick="this.select();">
+                </div>
+                ` : ''}
             </div>
         `;
 
@@ -844,7 +873,7 @@ function showBottomSheet(index) {
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    // participants уже отсортированы по убыванию timestamp (новые слева)
+                    // participants уже отсортированы по убыванию timestamp (новые первыми)
                     participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
