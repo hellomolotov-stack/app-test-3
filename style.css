@@ -228,15 +228,15 @@ body::before {
 
 /* Кнопка с подсветкой для гостей */
 .btn-glow {
-    animation: glow 2s ease-in-out infinite;
+    animation: glow 3s ease-in-out infinite; /* увеличено до 3s */
     position: relative;
     z-index: 1;
 }
 
 @keyframes glow {
-    0% { box-shadow: 0 0 5px var(--yellow); }
-    50% { box-shadow: 0 0 20px var(--yellow); }
-    100% { box-shadow: 0 0 5px var(--yellow); }
+    0% { box-shadow: 0 0 3px var(--yellow); } /* уменьшено свечение */
+    50% { box-shadow: 0 0 10px var(--yellow); } /* уменьшено */
+    100% { box-shadow: 0 0 3px var(--yellow); }
 }
 
 .accordion-btn {
@@ -898,7 +898,7 @@ body::before {
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(0, 0, 0, 0.6);
-    margin-left: -4px; /* увеличено с -2px до -4px */
+    margin-left: -8px; /* увеличено с -4px до -8px */
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
