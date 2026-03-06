@@ -165,11 +165,11 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Сортируем по убыванию timestamp (новые первые)
+        // Сортируем по возрастанию timestamp (старые сначала)
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
-            .sort((a, b) => b.timestamp - a.timestamp) // новые сначала
-            .slice(0, 3);
+            .sort((a, b) => a.timestamp - b.timestamp) // старые -> новые
+            .slice(-3); // берём последние три (самые новые) – они будут в конце массива
         callback(count, sorted);
     });
     return () => participantsRef.off('value', listener);
@@ -811,12 +811,12 @@ function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // Кнопка "Пригласить друга" (только для будущих хайков)
+        // Кнопка "Пригласить друга" (только для будущих хайков) – теперь без эмодзи и будет вставлена после секций
         let inviteBtnHtml = '';
         if (!isPast) {
             inviteBtnHtml = `
                 <div style="margin: 12px 0;">
-                    <a href="#" class="btn btn-outline" id="inviteFriendBtn" style="width: 100%; text-align: center;">👥 пригласить друга</a>
+                    <a href="#" class="btn btn-outline" id="inviteFriendBtn" style="width: 100%; text-align: center;">пригласить друга</a>
                 </div>
             `;
         }
@@ -855,8 +855,8 @@ function showBottomSheet(index) {
             <div>
                 ${imageHtml}
                 ${extraInfoHtml}
-                ${inviteBtnHtml}
                 ${sectionsHtml}
+                ${inviteBtnHtml}
             </div>
         `;
 
@@ -867,7 +867,7 @@ function showBottomSheet(index) {
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    // participants уже отсортированы по убыванию timestamp (новые первые)
+                    // participants уже отсортированы по возрастанию timestamp (старые -> новые)
                     participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
