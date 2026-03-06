@@ -870,7 +870,7 @@ body::before {
     margin-right: 2px;
 }
 
-/* Аватарки с наложением (без вертикального смещения) */
+/* Аватарки с наложением (уменьшенное наложение) */
 .participant-avatars {
     position: relative;
     display: flex;
@@ -885,7 +885,7 @@ body::before {
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(0, 0, 0, 0.6);
-    margin-left: -12px;
+    margin-left: -2px; /* было -12px, уменьшил до -2px */
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
