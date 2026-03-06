@@ -1062,10 +1062,16 @@ function showBottomSheet(index) {
                 haptic();
 
                 if (isGuest) {
-                    hikeBookingStatus[sheetCurrentIndex] = false;
-                    saveStatusToLocalStorage();
-                    updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
-                    updateFloatingSheetButtons();
+                    // Гости тоже удаляют себя из Firebase
+                    removeParticipant(hike.date).then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = false;
+                        saveStatusToLocalStorage();
+                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
+                        updateFloatingSheetButtons();
+                    }).catch((error) => {
+                        console.error('Error during cancellation:', error);
+                        updateFloatingSheetButtons();
+                    });
                 } else {
                     Promise.all([
                         removeParticipant(hike.date),
@@ -1104,16 +1110,22 @@ function showBottomSheet(index) {
                     
                     haptic();
 
-                    // Сначала ставим статус "записан" (как если бы купил)
-                    hikeBookingStatus[sheetCurrentIndex] = true;
-                    saveStatusToLocalStorage();
-                    updateRegistrationInSheet(hike.date, hike.title, 'booked');
-                    
-                    // Затем открываем ссылку на оплату
-                    openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
-                    
-                    // Обновим кнопки, чтобы они стали "ты записан" и "отменить"
-                    updateFloatingSheetButtons();
+                    // Сначала добавляем участника в Firebase, ставим статус
+                    addParticipant(hike.date)
+                        .then(() => setUserRegistrationStatus(hike.date, true))
+                        .then(() => {
+                            hikeBookingStatus[sheetCurrentIndex] = true;
+                            saveStatusToLocalStorage();
+                            updateRegistrationInSheet(hike.date, hike.title, 'booked');
+                            updateFloatingSheetButtons();
+                            
+                            // Затем открываем ссылку на оплату
+                            openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
+                        })
+                        .catch((error) => {
+                            console.error('Error during booking:', error);
+                            updateFloatingSheetButtons();
+                        });
                     
                     buyBtn.dataset.processing = 'false'; // сбросим для возможных повторных кликов (но кнопка исчезнет)
                 });
@@ -1450,7 +1462,9 @@ function setupBottomNav() {
     popupGift.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
-        renderGift(false);
+        // Определяем, гость ли текущий пользователь
+        const isGuest = userCard.status !== 'active';
+        renderGift(isGuest);
         popup.classList.remove('show');
         isMenuActive = false;
         resetNavActive();
@@ -1700,7 +1714,7 @@ function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
-    showBottomNav(false);
+    showBottomNav(true); // Показываем меню гостям
 
     mainDiv.innerHTML = `
         <div class="card-container">
@@ -1780,6 +1794,7 @@ function renderGuestHome() {
     });
 
     setupAccordion('navAccordionGuest', true);
+    setupBottomNav(); // Инициализируем меню для гостей
 
     const calendarContainer = document.getElementById('calendarContainer');
     if (calendarContainer) {
