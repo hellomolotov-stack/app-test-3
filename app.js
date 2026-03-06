@@ -35,7 +35,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // замените на актуальную ссылку
+const APP_LINK = 'https://t.me/yaltahiking_bot/app';
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -166,14 +166,27 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Сортируем по убыванию timestamp (новые первыми)
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, 3); // берём три самых новых
+            .slice(0, 3);
         callback(count, sorted);
     });
     return () => participantsRef.off('value', listener);
+}
+
+async function loadAllParticipants(hikeDate) {
+    if (!database) return [];
+    try {
+        const snapshot = await database.ref('hikeParticipants/' + hikeDate).once('value');
+        const participants = snapshot.val() || {};
+        return Object.values(participants)
+            .filter(p => p && p.timestamp)
+            .sort((a, b) => b.timestamp - a.timestamp);
+    } catch (e) {
+        console.error('Error loading all participants:', e);
+        return [];
+    }
 }
 
 async function addParticipant(hikeDate) {
@@ -529,20 +542,33 @@ async function loadData() {
 
         log('visit', userCard.status !== 'active');
         
+        renderHome();
+        
         // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param;
         if (startParam && startParam.startsWith('hike_')) {
             const targetDate = startParam.substring(5);
             const targetIndex = hikesList.findIndex(h => h.date === targetDate);
             if (targetIndex !== -1) {
-                // Откладываем открытие, чтобы DOM успел загрузиться
+                // Даём время на отрисовку главной, затем открываем bottom sheet
                 setTimeout(() => {
                     showBottomSheet(targetIndex);
                 }, 500);
+            } else {
+                // Если данные ещё не загрузились, пробуем позже
+                let attempts = 0;
+                const interval = setInterval(() => {
+                    attempts++;
+                    const idx = hikesList.findIndex(h => h.date === targetDate);
+                    if (idx !== -1) {
+                        clearInterval(interval);
+                        showBottomSheet(idx);
+                    } else if (attempts > 20) { // ~10 секунд
+                        clearInterval(interval);
+                    }
+                }, 500);
             }
         }
-        
-        renderHome();
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
         renderHome();
@@ -632,7 +658,7 @@ function parseLinks(text, isGuest) {
 
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter');
     if (!link) return;
     
     if (link.classList.contains('dynamic-link')) {
@@ -659,7 +685,70 @@ document.addEventListener('click', function(e) {
         renderNewcomerPage(isGuest);
         return;
     }
+    
+    if (link.classList.contains('participant-counter')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const hikeDate = link.dataset.hikeDate;
+        if (hikeDate) {
+            showParticipantsModal(hikeDate);
+        }
+        return;
+    }
 });
+
+// Модальное окно со списком участников
+async function showParticipantsModal(hikeDate) {
+    haptic();
+    const participants = await loadAllParticipants(hikeDate);
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay participant-modal';
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <div class="modal-title">идут на хайк</div>
+            <div class="participant-list" id="participantList">
+                ${participants.length === 0 ? '<p style="color: rgba(255,255,255,0.7);">Пока никого нет</p>' : ''}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const listContainer = document.getElementById('participantList');
+    if (listContainer && participants.length > 0) {
+        participants.forEach(p => {
+            const item = document.createElement('div');
+            item.className = 'participant-list-item';
+            
+            if (p.photoUrl) {
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-list-avatar" alt="${p.name || ''}">`;
+            } else {
+                const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                item.innerHTML = `<div class="participant-list-avatar placeholder">${initial}</div>`;
+            }
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'participant-list-name';
+            nameSpan.textContent = p.name || 'Участник';
+            item.appendChild(nameSpan);
+            
+            listContainer.appendChild(item);
+        });
+    }
+
+    document.getElementById('closeModal')?.addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+    log('participants_modal_opened', userCard.status !== 'active');
+}
 
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
@@ -781,7 +870,7 @@ function showBottomSheet(index) {
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                        <div class="participant-counter" id="participantCounter">
+                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}">
                             <span class="participant-text">идут</span>
                             <span class="participant-count" id="participantCountValue">0</span>
                             <div class="participant-avatars" id="participantAvatars"></div>
@@ -879,8 +968,6 @@ function showBottomSheet(index) {
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    // participants уже отсортированы по убыванию timestamp (новые первыми)
-                    // Вставляем их в том же порядке – новый слева, старые правее
                     participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
@@ -996,7 +1083,6 @@ function showBottomSheet(index) {
             });
             container.appendChild(cancelBtn);
 
-            // Кнопка "ты записан" с новым классом
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow-outline';
