@@ -35,7 +35,6 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const APP_LINK = 'https://t.me/yaltahiking_bot/app'; // замените на актуальную ссылку
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -165,7 +164,7 @@ function subscribeToParticipantCount(hikeDate, callback) {
     const listener = participantsRef.on('value', (snapshot) => {
         const participants = snapshot.val() || {};
         const count = Object.keys(participants).length;
-        // Сортируем по убыванию timestamp (новые первыми)
+        // Сортируем по убыванию timestamp (новые первыми) – они будут слева
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp) // новые -> старые
@@ -429,23 +428,27 @@ function showAnimatedLoader() {
     loader.innerHTML = `
         <div class="loader-animation">
             <div class="loader-emoji" id="loaderEmoji">⛰️</div>
-            <div class="loader-text" id="loaderText">завязываем шнурки</div>
+            <div class="loader-text" id="loaderText">выбираем вершину</div>
         </div>
     `;
     loader.style.display = 'flex';
     loader.classList.remove('fade-out');
 
-    const emojis = ['⛰️', '💫', '🥾', '⚡', '🗺️', '✨'];
-    const texts = ['завязываем шнурки', 'изучаем маршрут', 'встречаемся на хайке', 'набираем высоту', 'любуемся видами', 'заряжаемся энергией'];
+    const steps = [
+        { emoji: '⛰️', text: 'выбираем вершину' },
+        { emoji: '🥾', text: 'завязываем шнурки' },
+        { emoji: '🗺️', text: 'прокладываем маршрут' },
+        { emoji: '✨', text: 'наполняемся красотой' }
+    ];
     let index = 0;
     const emojiEl = document.getElementById('loaderEmoji');
     const textEl = document.getElementById('loaderText');
     if (!emojiEl || !textEl) return;
     
     loaderInterval = setInterval(() => {
-        index = (index + 1) % emojis.length;
-        emojiEl.textContent = emojis[index];
-        textEl.textContent = texts[index];
+        index = (index + 1) % steps.length;
+        emojiEl.textContent = steps[index].emoji;
+        textEl.textContent = steps[index].text;
     }, 1500);
 }
 
@@ -754,6 +757,7 @@ function showBottomSheet(index) {
         const hikeDate = new Date(hike.date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        // Хайк считается прошедшим, если его дата меньше сегодняшней
         const isPast = hikeDate < today;
 
         let imageHtml = '';
@@ -776,9 +780,9 @@ function showBottomSheet(index) {
             }
         }
 
-        // Дополнительная информация (начало и точка сбора)
+        // Дополнительная информация (начало и точка сбора) – только для будущих хайков
         let extraInfoHtml = '';
-        if (hike.start_time || hike.location_link) {
+        if (!isPast && (hike.start_time || hike.location_link)) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
                 extraInfoHtml += `<div><strong>начало:</strong> ${hike.start_time}</div>`;
@@ -840,7 +844,7 @@ function showBottomSheet(index) {
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    // participants уже отсортированы по убыванию timestamp (новые первые)
+                    // participants уже отсортированы по убыванию timestamp (новые слева)
                     participants.forEach(p => {
                         if (p.photoUrl) {
                             const img = document.createElement('img');
