@@ -36,7 +36,7 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw'; // ссылка на покупку билета для гостей
-const CARD_PURCHASE_LINK = 'https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g'; // ссылка на покупку карты
+const CARD_PURCHASE_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A'; // новая ссылка на покупку карты
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -545,22 +545,24 @@ async function loadData() {
         
         renderHome();
         
-        // Проверяем start_param из Telegram
+        // Проверяем start_param из Telegram (усиленная логика)
         const startParam = tg.initDataUnsafe?.start_param;
-        console.log('start_param:', startParam);
+        console.log('start_param received:', startParam);
         if (startParam && startParam.startsWith('hike_')) {
             const targetDate = startParam.substring(5);
             console.log('Target date:', targetDate);
             
+            // Попытка открыть слайдер с проверками
             let attempts = 0;
-            const maxAttempts = 33; // ~10 секунд
+            const maxAttempts = 50; // ~15 секунд (300мс * 50)
             const interval = setInterval(() => {
                 attempts++;
                 const targetIndex = hikesList.findIndex(h => h.date === targetDate);
                 if (targetIndex !== -1) {
-                    console.log('Found hike, opening sheet for index', targetIndex);
+                    console.log(`Found hike at index ${targetIndex} after ${attempts} attempts, opening sheet`);
                     clearInterval(interval);
-                    showBottomSheet(targetIndex);
+                    // Небольшая задержка, чтобы убедиться, что DOM готов
+                    setTimeout(() => showBottomSheet(targetIndex), 100);
                 } else if (attempts >= maxAttempts) {
                     console.log('Hike not found after max attempts');
                     clearInterval(interval);
@@ -1696,7 +1698,7 @@ function renderGift(isGuest = false) {
                 <p style="white-space: pre-line;">${giftText}</p>
             </div>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="https://auth.robokassa.ru/merchant/Invoice/wXo6FJOA40u5uzL7K4_X9g" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">купить в подарок</a>
+                <a href="${CARD_PURCHASE_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">купить в подарок</a>
             </div>
         </div>
     `;
@@ -1718,7 +1720,7 @@ function showGuestPopup() {
             <div class="modal-title">карта интеллигента</div>
             <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
             <div style="text-align: center; margin-top: 20px;">
-                <a href="https://t.me/yaltahiking/197" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
+                <a href="${CARD_PURCHASE_LINK}" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
             </div>
         </div>
     `;
@@ -1796,12 +1798,6 @@ function renderGuestHome() {
         </div>
 
         <div class="card-container" id="calendarContainer"></div>
-        
-        <div class="extra-links">
-            <a href="https://t.me/yaltahiking" onclick="event.preventDefault(); openLink(this.href, 'channel_click', true); return false;" class="btn btn-outline">📰 открыть канал</a>
-            <a href="https://t.me/yaltahikingchat" onclick="event.preventDefault(); openLink(this.href, 'chat_click', true); return false;" class="btn btn-outline">💬 открыть чат</a>
-            <a href="#" class="btn btn-outline" id="giftBtn">🫂 подарить карту другу</a>
-        </div>
     `;
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
@@ -1809,12 +1805,6 @@ function renderGuestHome() {
         showGuestPopup();
     });
     document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
-    document.getElementById('giftBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        log('gift_click', true);
-        renderGift(true);
-    });
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic();
         log('newcomer_btn_click', true);
