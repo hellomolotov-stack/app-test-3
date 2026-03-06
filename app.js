@@ -690,63 +690,57 @@ document.addEventListener('click', function(e) {
         e.stopPropagation();
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
-            showParticipantsModal(hikeDate);
+            toggleParticipantList(hikeDate);
         }
         return;
     }
 });
 
-// Модальное окно со списком участников
-async function showParticipantsModal(hikeDate) {
+// Переменные для управления выпадающим списком
+let currentParticipantListHikeDate = null;
+
+async function toggleParticipantList(hikeDate) {
+    const expandDiv = document.getElementById('participantExpand');
+    if (!expandDiv) return;
+    
+    if (expandDiv.classList.contains('show') && currentParticipantListHikeDate === hikeDate) {
+        expandDiv.classList.remove('show');
+        currentParticipantListHikeDate = null;
+        return;
+    }
+    
     haptic();
     const participants = await loadAllParticipants(hikeDate);
     
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay participant-modal';
-    overlay.innerHTML = `
-        <div class="modal-content">
-            <button class="modal-close" id="closeModal">&times;</button>
-            <div class="modal-title">идут на хайк</div>
-            <div class="participant-list" id="participantList">
-                ${participants.length === 0 ? '<p style="color: rgba(255,255,255,0.7);">Пока никого нет</p>' : ''}
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    const listContainer = document.getElementById('participantList');
-    if (listContainer && participants.length > 0) {
+    let html = '';
+    if (participants.length === 0) {
+        html = '<p style="color: rgba(255,255,255,0.7); text-align:center;">Пока никого нет</p>';
+    } else {
         participants.forEach(p => {
-            const item = document.createElement('div');
-            item.className = 'participant-list-item';
-            
+            const name = p.name || 'Участник';
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-list-avatar" alt="${p.name || ''}">`;
+                html += `
+                    <div class="participant-expand-item">
+                        <img src="${p.photoUrl}" class="participant-expand-avatar" alt="${name}">
+                        <span class="participant-expand-name">${name}</span>
+                    </div>
+                `;
             } else {
-                const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                item.innerHTML = `<div class="participant-list-avatar placeholder">${initial}</div>`;
+                const initial = name.charAt(0).toUpperCase();
+                html += `
+                    <div class="participant-expand-item">
+                        <div class="participant-expand-avatar placeholder">${initial}</div>
+                        <span class="participant-expand-name">${name}</span>
+                    </div>
+                `;
             }
-            
-            const nameSpan = document.createElement('span');
-            nameSpan.className = 'participant-list-name';
-            nameSpan.textContent = p.name || 'Участник';
-            item.appendChild(nameSpan);
-            
-            listContainer.appendChild(item);
         });
     }
-
-    document.getElementById('closeModal')?.addEventListener('click', () => {
-        haptic();
-        overlay.remove();
-    });
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-    log('participants_modal_opened', userCard.status !== 'active');
+    
+    expandDiv.innerHTML = html;
+    expandDiv.classList.add('show');
+    currentParticipantListHikeDate = hikeDate;
+    log('participant_list_toggled', userCard.status !== 'active');
 }
 
 // ----- Bottom Sheet -----
@@ -865,7 +859,8 @@ function showBottomSheet(index) {
 
         let imageHtml = '';
         if (hike.image) {
-            if (!isGuest && !isPast) {
+            if (!isPast) {
+                // Показываем счётчик всем (и гостям, и владельцам) для будущих хайков
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
@@ -882,6 +877,9 @@ function showBottomSheet(index) {
                 `;
             }
         }
+
+        // Добавляем контейнер для выпадающего списка участников
+        const expandHtml = `<div class="participant-expand" id="participantExpand"></div>`;
 
         // Дополнительная информация (начало и точка сбора) – только для будущих хайков, с SVG иконками
         let extraInfoHtml = '';
@@ -955,12 +953,14 @@ function showBottomSheet(index) {
             </div>
             <div>
                 ${imageHtml}
+                ${expandHtml}
                 ${extraInfoHtml}
                 ${sectionsHtml}
             </div>
         `;
 
-        if (!isGuest && !isPast) {
+        // Подписываемся на обновления счётчика для всех будущих хайков (и гостей, и владельцев)
+        if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
                 const countEl = document.getElementById('participantCountValue');
                 if (countEl) countEl.textContent = count;
@@ -1091,10 +1091,10 @@ function showBottomSheet(index) {
             container.appendChild(goBtn);
         } else {
             if (isGuest) {
-                // Гости, не забронировано: показываем одну кнопку "купить билет"
+                // Гости, не забронировано: показываем одну кнопку "купить билет" с подсветкой
                 const buyBtn = document.createElement('a');
                 buyBtn.href = '#';
-                buyBtn.className = 'btn btn-yellow';
+                buyBtn.className = 'btn btn-yellow btn-glow';
                 buyBtn.id = 'sheetBuyBtn';
                 buyBtn.textContent = 'купить билет';
                 buyBtn.addEventListener('click', (e) => {
