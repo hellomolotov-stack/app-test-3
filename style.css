@@ -867,7 +867,7 @@ body::before {
     margin-right: 2px;
 }
 
-/* Аватарки с наложением – правильный порядок (новые справа) */
+/* Аватарки с наложением – новые справа, старые наезжают на новых */
 .participant-avatars {
     display: flex;
     flex-direction: row;
@@ -881,11 +881,11 @@ body::before {
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid rgba(0, 0, 0, 0.6);
-    margin-left: -8px; /* наезд друг на друга */
+    margin-right: -8px; /* наезд справа налево */
 }
 
-.participant-avatar:first-child {
-    margin-left: 0;
+.participant-avatar:last-child {
+    margin-right: 0; /* последний (самый новый) полностью видим */
 }
 
 .participant-avatar.placeholder {
