@@ -36,7 +36,8 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw'; // ссылка на покупку билета для гостей
-const CARD_PURCHASE_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A'; // новая ссылка на покупку карты
+const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
+const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -552,7 +553,6 @@ async function loadData() {
             const targetDate = startParam.substring(5);
             console.log('Target date:', targetDate);
             
-            // Попытка открыть слайдер с проверками
             let attempts = 0;
             const maxAttempts = 50; // ~15 секунд (300мс * 50)
             const interval = setInterval(() => {
@@ -561,7 +561,6 @@ async function loadData() {
                 if (targetIndex !== -1) {
                     console.log(`Found hike at index ${targetIndex} after ${attempts} attempts, opening sheet`);
                     clearInterval(interval);
-                    // Небольшая задержка, чтобы убедиться, что DOM готов
                     setTimeout(() => showBottomSheet(targetIndex), 100);
                 } else if (attempts >= maxAttempts) {
                     console.log('Hike not found after max attempts');
@@ -703,7 +702,6 @@ document.addEventListener('click', function(e) {
 let currentDropdownHikeDate = null;
 
 async function toggleParticipantDropdown(counterElement, hikeDate) {
-    // Если уже открыт для этого же хайка, закрываем
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown && currentDropdownHikeDate === hikeDate) {
         existingDropdown.remove();
@@ -711,7 +709,6 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
         return;
     }
     
-    // Удаляем предыдущий, если был открыт для другого хайка
     if (existingDropdown) {
         existingDropdown.remove();
     }
@@ -746,7 +743,6 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
         });
     }
     
-    // Позиционируем под счётчиком
     const rect = counterElement.getBoundingClientRect();
     dropdown.style.position = 'absolute';
     dropdown.style.top = rect.bottom + 'px';
@@ -756,14 +752,12 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     
     document.body.appendChild(dropdown);
     
-    // Небольшая задержка для анимации
     setTimeout(() => {
         dropdown.classList.add('show');
     }, 10);
     
     currentDropdownHikeDate = hikeDate;
     
-    // Закрытие по клику вне
     const closeHandler = (e) => {
         if (!dropdown.contains(e.target) && e.target !== counterElement) {
             dropdown.remove();
@@ -912,7 +906,6 @@ function showBottomSheet(index) {
             }
         }
 
-        // Дополнительная информация (начало и точка сбора) – только для будущих хайков, с SVG иконками
         let extraInfoHtml = '';
         if (!isPast && (hike.start_time || hike.location_link)) {
             extraInfoHtml = '<div class="hike-extra-info">';
@@ -951,7 +944,6 @@ function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // Кнопки навигации без круга, стрелки по центру
         const prevArrow = hasPrev 
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -989,7 +981,6 @@ function showBottomSheet(index) {
             </div>
         `;
 
-        // Подписываемся на обновления счётчика для всех будущих хайков (и гостей, и владельцев)
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
                 const countEl = document.getElementById('participantCountValue');
@@ -1078,7 +1069,6 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Для всех (и гостей, и владельцев) показываем "отменить" и "ты записан"
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
@@ -1092,7 +1082,6 @@ function showBottomSheet(index) {
                 haptic();
 
                 if (isGuest) {
-                    // Гости тоже удаляют себя из Firebase
                     removeParticipant(hike.date).then(() => {
                         hikeBookingStatus[sheetCurrentIndex] = false;
                         saveStatusToLocalStorage();
@@ -1127,7 +1116,6 @@ function showBottomSheet(index) {
             container.appendChild(goBtn);
         } else {
             if (isGuest) {
-                // Гости, не забронировано: показываем одну кнопку "купить билет" с подсветкой
                 const buyBtn = document.createElement('a');
                 buyBtn.href = '#';
                 buyBtn.className = 'btn btn-yellow btn-glow';
@@ -1140,7 +1128,6 @@ function showBottomSheet(index) {
                     
                     haptic();
 
-                    // Сначала добавляем участника в Firebase, ставим статус
                     addParticipant(hike.date)
                         .then(() => setUserRegistrationStatus(hike.date, true))
                         .then(() => {
@@ -1149,7 +1136,6 @@ function showBottomSheet(index) {
                             updateRegistrationInSheet(hike.date, hike.title, 'booked');
                             updateFloatingSheetButtons();
                             
-                            // Затем открываем ссылку на оплату
                             openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
                         })
                         .catch((error) => {
@@ -1157,11 +1143,10 @@ function showBottomSheet(index) {
                             updateFloatingSheetButtons();
                         });
                     
-                    buyBtn.dataset.processing = 'false'; // сбросим для возможных повторных кликов (но кнопка исчезнет)
+                    buyBtn.dataset.processing = 'false';
                 });
                 container.appendChild(buyBtn);
             } else {
-                // Владельцы карты, не забронировано: показываем "задать вопрос" и "иду"
                 const questionBtn = document.createElement('a');
                 questionBtn.href = '#';
                 questionBtn.className = 'btn btn-outline';
@@ -1492,7 +1477,6 @@ function setupBottomNav() {
     popupGift.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
-        // Определяем, гость ли текущий пользователь
         const isGuest = userCard.status !== 'active';
         renderGift(isGuest);
         popup.classList.remove('show');
@@ -1679,7 +1663,7 @@ function renderGuestPriv() {
     setupBottomNav();
 }
 
-// ----- Страница подарка -----
+// ----- Страница подарка (обновлённая) -----
 function renderGift(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1697,18 +1681,27 @@ function renderGift(isGuest = false) {
                 <strong>как подарить карту интеллигента</strong>
                 <p style="white-space: pre-line;">${giftText}</p>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
-                <a href="${CARD_PURCHASE_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_purchase_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">купить в подарок</a>
+            
+            <div id="giftAccordion">
+                <button class="accordion-btn">
+                    купить в подарок <span class="arrow">👀</span>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
+                </div>
             </div>
         </div>
     `;
+
+    setupAccordion('giftAccordion', isGuest);
 
     if (!isGuest) {
         setupBottomNav();
     }
 }
 
-// ----- Попап для гостей -----
+// ----- Попап для гостей (обновлённая ссылка) -----
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -1720,7 +1713,7 @@ function showGuestPopup() {
             <div class="modal-title">карта интеллигента</div>
             <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
             <div style="text-align: center; margin-top: 20px;">
-                <a href="${CARD_PURCHASE_LINK}" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
+                <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
             </div>
         </div>
     `;
@@ -1739,18 +1732,28 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (обновлённая) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
     subtitle.classList.add('subtitle-guest');
-    showBottomNav(true); // Показываем меню гостям
+    showBottomNav(true);
 
     mainDiv.innerHTML = `
         <div class="card-container">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <a href="${CARD_PURCHASE_LINK}" onclick="event.preventDefault(); openLink(this.href, 'buy_card_click', true); return false;" class="btn btn-yellow" id="buyBtn">выпустить карту</a>
+            
+            <div id="cardAccordionGuest">
+                <button class="accordion-btn">
+                    оформить карту <span class="arrow">👀</span>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
+                </div>
+            </div>
+            
             <div id="navAccordionGuest">
                 <button class="accordion-btn">
                     навигация по клубу <span class="arrow">👀</span>
@@ -1800,19 +1803,20 @@ function renderGuestHome() {
         <div class="card-container" id="calendarContainer"></div>
     `;
 
+    setupAccordion('cardAccordionGuest', true);
+    setupAccordion('navAccordionGuest', true);
+
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
         haptic();
         showGuestPopup();
     });
-    document.getElementById('buyBtn')?.addEventListener('click', () => { haptic(); log('buy_card_click', true); });
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic();
         log('newcomer_btn_click', true);
         renderNewcomerPage(true);
     });
 
-    setupAccordion('navAccordionGuest', true);
-    setupBottomNav(); // Инициализируем меню для гостей
+    setupBottomNav();
 
     const calendarContainer = document.getElementById('calendarContainer');
     if (calendarContainer) {
@@ -1820,7 +1824,7 @@ function renderGuestHome() {
     }
 }
 
-// ----- Главная для владельцев карты -----
+// ----- Главная для владельцев карты (обновлённая) -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
@@ -1856,6 +1860,16 @@ function renderHome() {
                 <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
                     <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                     <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
+                </div>
+                
+                <div id="cardAccordionOwner">
+                    <button class="accordion-btn">
+                        оформить карту <span class="arrow">👀</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', false); return false;" class="btn btn-outline">сезонная</a>
+                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', false); return false;" class="btn btn-outline">бессрочная</a>
+                    </div>
                 </div>
                 
                 <div id="navAccordionOwner">
@@ -1907,6 +1921,9 @@ function renderHome() {
             <div class="card-container" id="calendarContainer"></div>
         `;
 
+        setupAccordion('cardAccordionOwner', false);
+        setupAccordion('navAccordionOwner', false);
+
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
             haptic();
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
@@ -1933,8 +1950,6 @@ function renderHome() {
             renderNewcomerPage(false);
         });
 
-        setupAccordion('navAccordionOwner', false);
-
         const calendarContainer = document.getElementById('calendarContainer');
         if (calendarContainer) {
             renderCalendar(calendarContainer);
@@ -1951,7 +1966,7 @@ function buyCard() {
     haptic();
     if (!userId) return;
     log('buy_card_click', true);
-    openLink(CARD_PURCHASE_LINK, null, true);
+    openLink(PERMANENT_CARD_LINK, null, true);
 }
 
 window.addEventListener('load', loadData);
