@@ -519,10 +519,11 @@ function normalizeDate(dateStr) {
 async function loadData() {
     showAnimatedLoader();
 
+    // Увеличим таймаут до 20 секунд
     const loaderTimeout = setTimeout(() => {
         debug('loadData timeout – force hide loader');
         hideAnimatedLoader();
-    }, 10000);
+    }, 20000);
 
     try {
         if (database) {
@@ -580,19 +581,19 @@ async function loadData() {
         
         renderHome();
         
+        // Проверяем параметры запуска из разных источников
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
-        debug('start_param received: ' + startParam);
-        debug('start_param type: ' + typeof startParam);
-        debug('start_param length: ' + (startParam ? startParam.length : 'null'));
-        if (startParam) {
-            debug('start_param chars: ' + JSON.stringify(startParam.split('')));
-        }
+        debug('start_param from tg: ' + startParam);
         
+        // Также проверим URL на наличие параметров startapp и start
         const urlParams = new URLSearchParams(window.location.search);
-        const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
-        debug('URL start param: ' + urlStartParam);
+        const urlStartApp = urlParams.get('startapp');
+        const urlStart = urlParams.get('start');
+        debug('URL startapp: ' + urlStartApp);
+        debug('URL start: ' + urlStart);
         
-        const effectiveStartParam = startParam || urlStartParam;
+        // Выбираем первый найденный
+        const effectiveStartParam = startParam || urlStartApp || urlStart;
         debug('effectiveStartParam: ' + effectiveStartParam);
         
         if (effectiveStartParam) {
