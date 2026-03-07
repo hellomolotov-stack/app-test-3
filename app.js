@@ -35,7 +35,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw'; // ссылка на покупку билета для гостей
+const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
 const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
 const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
 
@@ -722,22 +722,28 @@ document.addEventListener('click', function(e) {
 // Переменные для управления выпадающим списком
 let currentDropdownHikeDate = null;
 
-async function toggleParticipantDropdown(counterElement, hikeDate) {
-    console.log('toggleParticipantDropdown called', hikeDate);
+// Функция для закрытия дропдауна
+function closeParticipantDropdown() {
     const existingDropdown = document.querySelector('.participant-dropdown.show');
-    if (existingDropdown && currentDropdownHikeDate === hikeDate) {
+    if (existingDropdown) {
         existingDropdown.remove();
         currentDropdownHikeDate = null;
+    }
+}
+
+async function toggleParticipantDropdown(counterElement, hikeDate) {
+    // Если открыт этот же дропдаун – закрываем
+    const existingDropdown = document.querySelector('.participant-dropdown.show');
+    if (existingDropdown && currentDropdownHikeDate === hikeDate) {
+        closeParticipantDropdown();
         return;
     }
     
-    if (existingDropdown) {
-        existingDropdown.remove();
-    }
+    // Удаляем предыдущий, если был открыт другой
+    closeParticipantDropdown();
     
     haptic();
     const participants = await loadAllParticipants(hikeDate);
-    console.log('participants loaded', participants);
     
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
@@ -767,7 +773,6 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     }
     
     const rect = counterElement.getBoundingClientRect();
-    console.log('counter rect', rect);
     dropdown.style.position = 'absolute';
     dropdown.style.top = rect.bottom + 'px';
     dropdown.style.right = (window.innerWidth - rect.right) + 'px';
@@ -775,19 +780,16 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.style.zIndex = '1001';
     
     document.body.appendChild(dropdown);
-    console.log('dropdown appended');
     
     setTimeout(() => {
         dropdown.classList.add('show');
-        console.log('show class added');
     }, 10);
     
     currentDropdownHikeDate = hikeDate;
     
     const closeHandler = (e) => {
         if (!dropdown.contains(e.target) && e.target !== counterElement) {
-            dropdown.remove();
-            currentDropdownHikeDate = null;
+            closeParticipantDropdown();
             document.removeEventListener('click', closeHandler);
         }
     };
@@ -1034,9 +1036,11 @@ function showBottomSheet(index) {
             });
         }
 
+        // Добавляем обработчики навигации с закрытием дропдауна
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
+                closeParticipantDropdown(); // закрываем список
                 sheetCurrentIndex--;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1049,6 +1053,7 @@ function showBottomSheet(index) {
         document.getElementById('nextHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex < hikesList.length - 1) {
+                closeParticipantDropdown(); // закрываем список
                 sheetCurrentIndex++;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1068,6 +1073,9 @@ function showBottomSheet(index) {
     }
 
     function updateFloatingSheetButtons() {
+        // При обновлении кнопок закрываем дропдаун (на случай, если пользователь свайпнул и кнопки обновились)
+        closeParticipantDropdown();
+
         const container = document.querySelector('.floating-sheet-buttons');
         if (!container) return;
 
@@ -1311,6 +1319,7 @@ function showBottomSheet(index) {
 }
 
 function closeBottomSheet() {
+    closeParticipantDropdown(); // закрываем список при закрытии bottom sheet
     if (currentUnsubscribe) {
         currentUnsubscribe();
         currentUnsubscribe = null;
