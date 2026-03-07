@@ -15,6 +15,10 @@ function debug(msg) {
     }
 }
 
+// Вывод всей информации о initDataUnsafe
+debug('tg.initDataUnsafe: ' + JSON.stringify(tg.initDataUnsafe));
+debug('tg.initData: ' + JSON.stringify(tg.initData));
+
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
@@ -568,6 +572,11 @@ async function loadData() {
         // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         debug('start_param received: ' + startParam);
+        debug('start_param type: ' + typeof startParam);
+        debug('start_param length: ' + (startParam ? startParam.length : 'null'));
+        if (startParam) {
+            debug('start_param chars: ' + JSON.stringify(startParam.split('')));
+        }
         
         // Также проверим URL на наличие параметра (на случай прямого доступа)
         const urlParams = new URLSearchParams(window.location.search);
@@ -575,55 +584,66 @@ async function loadData() {
         debug('URL start param: ' + urlStartParam);
         
         const effectiveStartParam = startParam || urlStartParam;
+        debug('effectiveStartParam: ' + effectiveStartParam);
         
-        if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
-            const targetDate = effectiveStartParam.substring(5);
-            debug('Target date: "' + targetDate + '"');
-            
-            // Выводим все даты из списка для сравнения
-            debug('Available dates:');
-            hikesList.forEach((hike, idx) => {
-                debug(`  ${idx}: "${hike.date}"`);
-            });
-            
-            // Если список хайков пуст, выходим
-            if (hikesList.length === 0) {
-                debug('hikesList is empty, cannot find target date');
-                return;
-            }
-            
-            let attempts = 0;
-            const maxAttempts = 200; // ~60 секунд (300мс * 200)
-            const interval = setInterval(() => {
-                attempts++;
-                const targetIndex = hikesList.findIndex(h => h.date === targetDate);
-                debug(`Attempt ${attempts}: index = ${targetIndex}`);
-                if (targetIndex !== -1) {
-                    debug(`Found at index ${targetIndex}, opening sheet`);
-                    clearInterval(interval);
-                    // Дадим время на полную отрисовку DOM
-                    setTimeout(() => {
-                        try {
-                            if (typeof showBottomSheet === 'function') {
-                                showBottomSheet(targetIndex);
-                                debug('showBottomSheet called');
-                            } else {
-                                debug('showBottomSheet is not defined');
-                            }
-                        } catch (e) {
-                            debug('Error in showBottomSheet: ' + e.message);
-                        }
-                    }, 200);
-                } else if (attempts >= maxAttempts) {
-                    debug('Not found after max attempts');
-                    // Для диагностики выведем все даты ещё раз
-                    debug('Current hikes list:');
-                    hikesList.forEach((hike, idx) => {
-                        debug(`  ${idx}: "${hike.date}"`);
-                    });
-                    clearInterval(interval);
+        if (effectiveStartParam) {
+            if (effectiveStartParam.startsWith('hike_')) {
+                const targetDate = effectiveStartParam.substring(5);
+                debug('Target date: "' + targetDate + '"');
+                
+                // Выводим все даты из списка для сравнения
+                debug('Available dates for comparison:');
+                hikesList.forEach((hike, idx) => {
+                    debug(`  ${idx}: "${hike.date}"`);
+                });
+                
+                // Если список хайков пуст, выходим
+                if (hikesList.length === 0) {
+                    debug('hikesList is empty, cannot find target date');
+                    return;
                 }
-            }, 300);
+                
+                // Проверим совпадение сразу
+                const immediateIndex = hikesList.findIndex(h => h.date === targetDate);
+                debug('Immediate search result: ' + immediateIndex);
+                
+                let attempts = 0;
+                const maxAttempts = 200; // ~60 секунд (300мс * 200)
+                const interval = setInterval(() => {
+                    attempts++;
+                    const targetIndex = hikesList.findIndex(h => h.date === targetDate);
+                    debug(`Attempt ${attempts}: index = ${targetIndex}`);
+                    if (targetIndex !== -1) {
+                        debug(`Found at index ${targetIndex}, opening sheet`);
+                        clearInterval(interval);
+                        // Дадим время на полную отрисовку DOM
+                        setTimeout(() => {
+                            try {
+                                if (typeof showBottomSheet === 'function') {
+                                    showBottomSheet(targetIndex);
+                                    debug('showBottomSheet called');
+                                } else {
+                                    debug('showBottomSheet is not defined');
+                                }
+                            } catch (e) {
+                                debug('Error in showBottomSheet: ' + e.message);
+                            }
+                        }, 200);
+                    } else if (attempts >= maxAttempts) {
+                        debug('Not found after max attempts');
+                        // Для диагностики выведем все даты ещё раз
+                        debug('Current hikes list:');
+                        hikesList.forEach((hike, idx) => {
+                            debug(`  ${idx}: "${hike.date}"`);
+                        });
+                        clearInterval(interval);
+                    }
+                }, 300);
+            } else {
+                debug('effectiveStartParam does not start with "hike_"');
+            }
+        } else {
+            debug('No start parameter found');
         }
     } catch (e) {
         debug('Unhandled error in loadData: ' + e.message);
