@@ -515,6 +515,12 @@ async function loadData() {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
                 debug('Hikes loaded, list length: ' + hikesList.length);
+                // Выводим все доступные даты для отладки
+                if (hikesList.length > 0) {
+                    debug('Available hike dates: ' + hikesList.map(h => h.date).join(', '));
+                } else {
+                    debug('hikesList is empty!');
+                }
             }
             const metricsData = await loadMetricsFromFirebase();
             if (metricsData) {
@@ -571,6 +577,12 @@ async function loadData() {
         if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
             const targetDate = effectiveStartParam.substring(5);
             debug('Target date: ' + targetDate);
+            
+            // Если список хайков пуст, выходим
+            if (hikesList.length === 0) {
+                debug('hikesList is empty, cannot find target date');
+                return;
+            }
             
             let attempts = 0;
             const maxAttempts = 100; // ~30 секунд (300мс * 100)
