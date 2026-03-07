@@ -502,6 +502,19 @@ function hideAnimatedLoader() {
     }
 }
 
+// Функция нормализации даты (дополнение до двух цифр)
+function normalizeDate(dateStr) {
+    if (!dateStr) return dateStr;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        const year = parts[0].padStart(4, '0');
+        const month = parts[1].padStart(2, '0');
+        const day = parts[2].padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+    return dateStr;
+}
+
 // --- Основная загрузка с Firebase ---
 async function loadData() {
     showAnimatedLoader();
@@ -518,7 +531,6 @@ async function loadData() {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
                 debug('Hikes loaded, list length: ' + hikesList.length);
-                // Выводим все доступные даты с индексами для отладки
                 if (hikesList.length > 0) {
                     debug('Available hikes (index: date):');
                     hikesList.forEach((hike, idx) => {
@@ -561,7 +573,6 @@ async function loadData() {
                 hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
             }
         } else {
-            // Гости: загружаем из localStorage
             hikeBookingStatus = loadUserRegistrationsFromLocal();
         }
 
@@ -569,7 +580,6 @@ async function loadData() {
         
         renderHome();
         
-        // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         debug('start_param received: ' + startParam);
         debug('start_param type: ' + typeof startParam);
@@ -578,7 +588,6 @@ async function loadData() {
             debug('start_param chars: ' + JSON.stringify(startParam.split('')));
         }
         
-        // Также проверим URL на наличие параметра (на случай прямого доступа)
         const urlParams = new URLSearchParams(window.location.search);
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
         debug('URL start param: ' + urlStartParam);
@@ -588,27 +597,26 @@ async function loadData() {
         
         if (effectiveStartParam) {
             if (effectiveStartParam.startsWith('hike_')) {
-                const targetDate = effectiveStartParam.substring(5);
-                debug('Target date: "' + targetDate + '"');
+                const rawTargetDate = effectiveStartParam.substring(5);
+                const targetDate = normalizeDate(rawTargetDate);
+                debug('Raw target date: "' + rawTargetDate + '"');
+                debug('Normalized target date: "' + targetDate + '"');
                 
-                // Выводим все даты из списка для сравнения
-                debug('Available dates for comparison:');
+                debug('Available dates for comparison (normalized):');
                 hikesList.forEach((hike, idx) => {
                     debug(`  ${idx}: "${hike.date}"`);
                 });
                 
-                // Если список хайков пуст, выходим
                 if (hikesList.length === 0) {
                     debug('hikesList is empty, cannot find target date');
                     return;
                 }
                 
-                // Проверим совпадение сразу
                 const immediateIndex = hikesList.findIndex(h => h.date === targetDate);
                 debug('Immediate search result: ' + immediateIndex);
                 
                 let attempts = 0;
-                const maxAttempts = 200; // ~60 секунд (300мс * 200)
+                const maxAttempts = 200;
                 const interval = setInterval(() => {
                     attempts++;
                     const targetIndex = hikesList.findIndex(h => h.date === targetDate);
@@ -616,7 +624,6 @@ async function loadData() {
                     if (targetIndex !== -1) {
                         debug(`Found at index ${targetIndex}, opening sheet`);
                         clearInterval(interval);
-                        // Дадим время на полную отрисовку DOM
                         setTimeout(() => {
                             try {
                                 if (typeof showBottomSheet === 'function') {
@@ -631,7 +638,6 @@ async function loadData() {
                         }, 200);
                     } else if (attempts >= maxAttempts) {
                         debug('Not found after max attempts');
-                        // Для диагностики выведем все даты ещё раз
                         debug('Current hikes list:');
                         hikesList.forEach((hike, idx) => {
                             debug(`  ${idx}: "${hike.date}"`);
@@ -724,7 +730,6 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// Функция для преобразования markdown ссылок в HTML с data-атрибутами
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
@@ -732,7 +737,6 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter');
     if (!link) return;
@@ -773,7 +777,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Переменные для управления выпадающим списком
 let currentDropdownHikeDate = null;
 
 async function toggleParticipantDropdown(counterElement, hikeDate) {
@@ -847,14 +850,12 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     log('participant_dropdown_opened', userCard.status !== 'active');
 }
 
-// ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-// Делаем функцию глобальной для отладки
 window.showBottomSheet = showBottomSheet;
 
 function showBottomSheet(index) {
@@ -1396,7 +1397,6 @@ function closeBottomSheet() {
     }
 }
 
-// ----- Календарь -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -1462,7 +1462,6 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Обновление UI метрик -----
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -1475,7 +1474,6 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
 
-// ----- Настройка нижнего меню -----
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -1592,7 +1590,6 @@ function showBottomNav(show = true) {
     }
 }
 
-// ----- Страница для новичков (FAQ) с меню для всех -----
 function renderNewcomerPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1603,7 +1600,7 @@ function renderNewcomerPage(isGuest = false) {
     haptic();
     log('newcomer_page_opened', isGuest);
     
-    showBottomNav(true); // теперь меню видно всем
+    showBottomNav(true);
 
     let faqHtml = '';
     if (faq && faq.length) {
@@ -1632,10 +1629,9 @@ function renderNewcomerPage(isGuest = false) {
         renderHome();
     });
 
-    setupBottomNav(); // всегда инициализируем меню
+    setupBottomNav();
 }
 
-// ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -1693,7 +1689,6 @@ function renderPriv() {
     setupBottomNav();
 }
 
-// ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -1747,7 +1742,6 @@ function renderGuestPriv() {
     setupBottomNav();
 }
 
-// ----- Страница подарка (обновлённая) -----
 function renderGift(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1785,7 +1779,6 @@ function renderGift(isGuest = false) {
     }
 }
 
-// ----- Попап для гостей (обновлённая ссылка) -----
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -1816,7 +1809,6 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (обновлённая) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -1828,7 +1820,6 @@ function renderGuestHome() {
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             
-            <!-- Аккордеон для выбора карты (жёлтая кнопка) -->
             <div id="cardAccordionGuest" class="card-accordion">
                 <button class="accordion-btn btn-yellow btn-glow">
                     оформить карту
@@ -1909,7 +1900,6 @@ function renderGuestHome() {
     }
 }
 
-// ----- Главная для владельцев карты (обновлённая, без кнопки "оформить карту") -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
