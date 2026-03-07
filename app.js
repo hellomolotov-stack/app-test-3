@@ -485,7 +485,7 @@ function hideAnimatedLoader() {
     }
 }
 
-// Функция нормализации даты (дополнение до двух цифр) – необходима для обработки ссылок
+// Функция нормализации даты (дополнение до двух цифр)
 function normalizeDate(dateStr) {
     if (!dateStr) return dateStr;
     const parts = dateStr.split('-');
