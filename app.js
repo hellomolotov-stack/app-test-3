@@ -1040,7 +1040,7 @@ function showBottomSheet(index) {
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
-                closeParticipantDropdown(); // закрываем список
+                closeParticipantDropdown();
                 sheetCurrentIndex--;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1053,7 +1053,7 @@ function showBottomSheet(index) {
         document.getElementById('nextHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex < hikesList.length - 1) {
-                closeParticipantDropdown(); // закрываем список
+                closeParticipantDropdown();
                 sheetCurrentIndex++;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1073,7 +1073,7 @@ function showBottomSheet(index) {
     }
 
     function updateFloatingSheetButtons() {
-        // При обновлении кнопок закрываем дропдаун (на случай, если пользователь свайпнул и кнопки обновились)
+        // При обновлении кнопок закрываем дропдаун
         closeParticipantDropdown();
 
         const container = document.querySelector('.floating-sheet-buttons');
@@ -1319,7 +1319,7 @@ function showBottomSheet(index) {
 }
 
 function closeBottomSheet() {
-    closeParticipantDropdown(); // закрываем список при закрытии bottom sheet
+    closeParticipantDropdown();
     if (currentUnsubscribe) {
         currentUnsubscribe();
         currentUnsubscribe = null;
