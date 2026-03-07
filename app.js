@@ -11,7 +11,6 @@ function debug(msg) {
     if (el) {
         el.style.display = 'block';
         el.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + msg;
-        // автоматическая прокрутка вниз
         el.scrollTop = el.scrollHeight;
     }
 }
@@ -49,7 +48,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw'; // ссылка на покупку билета для гостей
+const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
 const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
 const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
 
@@ -515,9 +514,12 @@ async function loadData() {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
                 debug('Hikes loaded, list length: ' + hikesList.length);
-                // Выводим все доступные даты для отладки
+                // Выводим все доступные даты с индексами для отладки
                 if (hikesList.length > 0) {
-                    debug('Available hike dates: ' + hikesList.map(h => h.date).join(', '));
+                    debug('Available hikes (index: date):');
+                    hikesList.forEach((hike, idx) => {
+                        debug(`  ${idx}: ${hike.date} - ${hike.title}`);
+                    });
                 } else {
                     debug('hikesList is empty!');
                 }
@@ -585,7 +587,7 @@ async function loadData() {
             }
             
             let attempts = 0;
-            const maxAttempts = 100; // ~30 секунд (300мс * 100)
+            const maxAttempts = 200; // ~60 секунд (300мс * 200)
             const interval = setInterval(() => {
                 attempts++;
                 const targetIndex = hikesList.findIndex(h => h.date === targetDate);
@@ -608,6 +610,11 @@ async function loadData() {
                     }, 200);
                 } else if (attempts >= maxAttempts) {
                     debug('Not found after max attempts');
+                    // Для диагностики выведем все даты ещё раз
+                    debug('Current hikes list:');
+                    hikesList.forEach((hike, idx) => {
+                        debug(`  ${idx}: ${hike.date}`);
+                    });
                     clearInterval(interval);
                 }
             }, 300);
