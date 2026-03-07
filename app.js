@@ -2,23 +2,6 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
-// Отладка
-window.debugLog = [];
-function debug(msg) {
-    console.log(msg);
-    window.debugLog.push(msg);
-    const el = document.getElementById('debug');
-    if (el) {
-        el.style.display = 'block';
-        el.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + msg;
-        el.scrollTop = el.scrollHeight;
-    }
-}
-
-// Вывод всей информации о initDataUnsafe
-debug('tg.initDataUnsafe: ' + JSON.stringify(tg.initDataUnsafe));
-debug('tg.initData: ' + JSON.stringify(tg.initData));
-
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
@@ -52,7 +35,7 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
+const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw'; // ссылка на покупку билета для гостей
 const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
 const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
 
@@ -86,9 +69,9 @@ try {
     };
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
-    debug('Firebase initialized');
+    console.log('Firebase initialized');
 } catch (e) {
-    debug('Firebase initialization failed: ' + e.message);
+    console.error('Firebase initialization failed:', e);
     database = null;
 }
 
@@ -100,9 +83,9 @@ async function saveUserAvatar() {
             photoUrl: userPhotoUrl,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
         });
-        debug('User avatar saved');
+        console.log('User avatar saved');
     } catch (e) {
-        debug('Error saving user avatar: ' + e.message);
+        console.error('Error saving user avatar:', e);
     }
 }
 
@@ -110,10 +93,8 @@ async function saveUserAvatar() {
 async function loadHikesFromFirebase() {
     if (!database) return null;
     try {
-        debug('Loading hikes from Firebase...');
         const snapshot = await database.ref('hikes').once('value');
         const hikes = snapshot.val() || {};
-        debug('Hikes snapshot received, keys: ' + Object.keys(hikes).join(', '));
         const list = Object.entries(hikes).map(([date, data]) => ({
             date,
             title: data.title || 'Хайк',
@@ -126,10 +107,10 @@ async function loadHikesFromFirebase() {
             location_link: data.location_link || '',
             telegram_link: data.telegram_link || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
-        debug('Hikes loaded from Firebase, count: ' + list.length);
+        console.log('Hikes loaded from Firebase, count:', list.length);
         return { data: hikes, list };
     } catch (e) {
-        debug('Error loading hikes from Firebase: ' + e.message);
+        console.error('Error loading hikes from Firebase:', e);
         return null;
     }
 }
@@ -140,7 +121,7 @@ async function loadMetricsFromFirebase() {
         const snapshot = await database.ref('metrics').once('value');
         return snapshot.val() || null;
     } catch (e) {
-        debug('Error loading metrics from Firebase: ' + e.message);
+        console.error('Error loading metrics from Firebase:', e);
         return null;
     }
 }
@@ -151,7 +132,7 @@ async function loadFaqFromFirebase() {
         const snapshot = await database.ref('faq').once('value');
         return snapshot.val() || [];
     } catch (e) {
-        debug('Error loading faq from Firebase: ' + e.message);
+        console.error('Error loading faq from Firebase:', e);
         return null;
     }
 }
@@ -162,7 +143,7 @@ async function loadPrivilegesFromFirebase() {
         const snapshot = await database.ref('privileges').once('value');
         return snapshot.val() || { club: [], city: [] };
     } catch (e) {
-        debug('Error loading privileges from Firebase: ' + e.message);
+        console.error('Error loading privileges from Firebase:', e);
         return null;
     }
 }
@@ -173,7 +154,7 @@ async function loadGiftFromFirebase() {
         const snapshot = await database.ref('gift').once('value');
         return snapshot.val()?.content || '';
     } catch (e) {
-        debug('Error loading gift from Firebase: ' + e.message);
+        console.error('Error loading gift from Firebase:', e);
         return null;
     }
 }
@@ -206,7 +187,7 @@ async function loadAllParticipants(hikeDate) {
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp);
     } catch (e) {
-        debug('Error loading all participants: ' + e.message);
+        console.error('Error loading all participants:', e);
         return [];
     }
 }
@@ -262,7 +243,7 @@ async function loadUserRegistrationsFromFirebase() {
         });
         return statusMap;
     } catch (e) {
-        debug('Error loading user registrations from Firebase: ' + e.message);
+        console.error('Error loading user registrations from Firebase:', e);
         return {};
     }
 }
@@ -334,7 +315,7 @@ async function loadUserData() {
         }
         if (userCard.status !== 'active') userCard.status = 'inactive';
     } catch (e) {
-        debug('Ошибка загрузки members: ' + e.message);
+        console.error('Ошибка загрузки members:', e);
         userCard.status = 'inactive';
     }
 }
@@ -388,9 +369,9 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
             method: 'POST',
             body: params,
             keepalive: true
-        }).catch(e => debug('Ошибка отправки запроса в Google Sheets: ' + e.message));
+        }).catch(e => console.error('Ошибка отправки запроса в Google Sheets:', e));
     } catch (e) {
-        debug('Ошибка в updateRegistrationInSheet: ' + e.message);
+        console.error('Ошибка в updateRegistrationInSheet:', e);
     }
 }
 
@@ -504,7 +485,7 @@ function hideAnimatedLoader() {
     }
 }
 
-// Функция нормализации даты (дополнение до двух цифр)
+// Функция нормализации даты (дополнение до двух цифр) – необходима для обработки ссылок
 function normalizeDate(dateStr) {
     if (!dateStr) return dateStr;
     const parts = dateStr.split('-');
@@ -521,11 +502,9 @@ function normalizeDate(dateStr) {
 async function loadData() {
     showAnimatedLoader();
 
-    // Устанавливаем таймаут 10 секунд – если загрузка не завершится, принудительно рендерим главную
     const loaderTimeout = setTimeout(() => {
-        debug('loadData timeout – force hide loader and render home');
+        console.warn('loadData timeout – force hide loader');
         hideAnimatedLoader();
-        renderHome(); // показываем главную даже без данных
     }, 10000);
 
     try {
@@ -534,15 +513,7 @@ async function loadData() {
             if (hikesResult) {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
-                debug('Hikes loaded, list length: ' + hikesList.length);
-                if (hikesList.length > 0) {
-                    debug('Available hikes (index: date):');
-                    hikesList.forEach((hike, idx) => {
-                        debug(`  ${idx}: "${hike.date}" - ${hike.title}`);
-                    });
-                } else {
-                    debug('hikesList is empty!');
-                }
+                console.log('Hikes loaded, list length:', hikesList.length);
             }
             const metricsData = await loadMetricsFromFirebase();
             if (metricsData) {
@@ -572,11 +543,12 @@ async function loadData() {
             try {
                 hikeBookingStatus = await loadUserRegistrationsFromFirebase();
             } catch (e) {
-                debug('Firebase load failed, using empty');
+                console.error('Firebase load failed, using empty', e);
                 hikeBookingStatus = {};
                 hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
             }
         } else {
+            // Гости: загружаем из localStorage
             hikeBookingStatus = loadUserRegistrationsFromLocal();
         }
 
@@ -584,74 +556,44 @@ async function loadData() {
         
         renderHome();
         
-        // Проверяем параметры запуска из разных источников
+        // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
-        debug('start_param from tg: ' + startParam);
+        console.log('start_param received:', startParam);
         
         const urlParams = new URLSearchParams(window.location.search);
-        const urlStartApp = urlParams.get('startapp');
-        const urlStart = urlParams.get('start');
-        debug('URL startapp: ' + urlStartApp);
-        debug('URL start: ' + urlStart);
+        const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
+        console.log('URL start param:', urlStartParam);
         
-        const effectiveStartParam = startParam || urlStartApp || urlStart;
-        debug('effectiveStartParam: ' + effectiveStartParam);
+        const effectiveStartParam = startParam || urlStartParam;
         
         if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
-            const rawTargetDate = effectiveStartParam.substring(5);
-            const targetDate = normalizeDate(rawTargetDate);
-            debug('Raw target date: "' + rawTargetDate + '"');
-            debug('Normalized target date: "' + targetDate + '"');
-            
-            debug('Available dates for comparison (normalized):');
-            hikesList.forEach((hike, idx) => {
-                debug(`  ${idx}: "${hike.date}"`);
-            });
-            
-            if (hikesList.length === 0) {
-                debug('hikesList is empty, cannot find target date');
-                return;
-            }
-            
-            const immediateIndex = hikesList.findIndex(h => h.date === targetDate);
-            debug('Immediate search result: ' + immediateIndex);
+            const targetDate = normalizeDate(effectiveStartParam.substring(5));
+            console.log('Target date (normalized):', targetDate);
             
             let attempts = 0;
-            const maxAttempts = 200;
+            const maxAttempts = 100; // ~30 секунд
             const interval = setInterval(() => {
                 attempts++;
                 const targetIndex = hikesList.findIndex(h => h.date === targetDate);
-                debug(`Attempt ${attempts}: index = ${targetIndex}`);
                 if (targetIndex !== -1) {
-                    debug(`Found at index ${targetIndex}, opening sheet`);
+                    console.log(`Found hike at index ${targetIndex} after ${attempts} attempts, opening sheet`);
                     clearInterval(interval);
                     setTimeout(() => {
                         try {
-                            if (typeof showBottomSheet === 'function') {
-                                showBottomSheet(targetIndex);
-                                debug('showBottomSheet called');
-                            } else {
-                                debug('showBottomSheet is not defined');
-                            }
+                            showBottomSheet(targetIndex);
                         } catch (e) {
-                            debug('Error in showBottomSheet: ' + e.message);
+                            console.error('Error in showBottomSheet:', e);
                         }
                     }, 200);
                 } else if (attempts >= maxAttempts) {
-                    debug('Not found after max attempts');
-                    debug('Current hikes list:');
-                    hikesList.forEach((hike, idx) => {
-                        debug(`  ${idx}: "${hike.date}"`);
-                    });
+                    console.log('Hike not found after max attempts');
                     clearInterval(interval);
                 }
             }, 300);
-        } else {
-            debug('No valid start parameter found');
         }
     } catch (e) {
-        debug('Unhandled error in loadData: ' + e.message);
-        renderHome(); // при ошибке тоже показываем главную
+        console.error('Unhandled error in loadData:', e);
+        renderHome();
     } finally {
         clearTimeout(loaderTimeout);
         hideAnimatedLoader();
@@ -728,6 +670,7 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
+// Функция для преобразования markdown ссылок в HTML с data-атрибутами
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
@@ -735,6 +678,7 @@ function parseLinks(text, isGuest) {
     });
 }
 
+// Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter');
     if (!link) return;
@@ -775,6 +719,7 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Переменные для управления выпадающим списком
 let currentDropdownHikeDate = null;
 
 async function toggleParticipantDropdown(counterElement, hikeDate) {
@@ -848,20 +793,15 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     log('participant_dropdown_opened', userCard.status !== 'active');
 }
 
+// ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-window.showBottomSheet = showBottomSheet;
-
 function showBottomSheet(index) {
-    debug('showBottomSheet called with index: ' + index);
-    if (!hikesList.length) {
-        debug('hikesList is empty, cannot show bottom sheet');
-        return;
-    }
+    if (!hikesList.length) return;
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
@@ -899,10 +839,7 @@ function showBottomSheet(index) {
 
     function updateContent() {
         const hike = hikesList[sheetCurrentIndex];
-        if (!hike) {
-            debug('hike not found at index: ' + sheetCurrentIndex);
-            return;
-        }
+        if (!hike) return;
 
         const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
                             'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -1172,7 +1109,7 @@ function showBottomSheet(index) {
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                         updateFloatingSheetButtons();
                     }).catch((error) => {
-                        debug('Error during cancellation: ' + error.message);
+                        console.error('Error during cancellation:', error);
                         updateFloatingSheetButtons();
                     });
                 } else {
@@ -1184,7 +1121,7 @@ function showBottomSheet(index) {
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                     }).catch((error) => {
-                        debug('Error during cancellation: ' + error.message);
+                        console.error('Error during cancellation:', error);
                         updateFloatingSheetButtons();
                     });
                 }
@@ -1223,7 +1160,7 @@ function showBottomSheet(index) {
                             openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
                         })
                         .catch((error) => {
-                            debug('Error during booking: ' + error.message);
+                            console.error('Error during booking:', error);
                             updateFloatingSheetButtons();
                         });
                     
@@ -1265,7 +1202,7 @@ function showBottomSheet(index) {
                             updateFloatingSheetButtons();
                         })
                         .catch((error) => {
-                            debug('Error during booking: ' + error.message);
+                            console.error('Error during booking:', error);
                             updateFloatingSheetButtons();
                         });
                     log('sheet_go_click', false);
@@ -1311,7 +1248,6 @@ function showBottomSheet(index) {
     setTimeout(() => {
         overlay.classList.add('visible');
         sheet.classList.add('visible');
-        debug('bottom sheet made visible');
     }, 20);
 
     overlay.addEventListener('click', (e) => {
@@ -1395,6 +1331,7 @@ function closeBottomSheet() {
     }
 }
 
+// ----- Календарь -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -1460,6 +1397,7 @@ function renderCalendar(container) {
     });
 }
 
+// ----- Обновление UI метрик -----
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -1472,6 +1410,7 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
 
+// ----- Настройка нижнего меню -----
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -1588,6 +1527,7 @@ function showBottomNav(show = true) {
     }
 }
 
+// ----- Страница для новичков (FAQ) -----
 function renderNewcomerPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1598,7 +1538,7 @@ function renderNewcomerPage(isGuest = false) {
     haptic();
     log('newcomer_page_opened', isGuest);
     
-    showBottomNav(true);
+    showBottomNav(!isGuest);
 
     let faqHtml = '';
     if (faq && faq.length) {
@@ -1627,9 +1567,12 @@ function renderNewcomerPage(isGuest = false) {
         renderHome();
     });
 
-    setupBottomNav();
+    if (!isGuest) {
+        setupBottomNav();
+    }
 }
 
+// ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -1687,6 +1630,7 @@ function renderPriv() {
     setupBottomNav();
 }
 
+// ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -1740,6 +1684,7 @@ function renderGuestPriv() {
     setupBottomNav();
 }
 
+// ----- Страница подарка -----
 function renderGift(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1777,6 +1722,7 @@ function renderGift(isGuest = false) {
     }
 }
 
+// ----- Попап для гостей -----
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -1807,6 +1753,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
+// ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -1898,6 +1845,7 @@ function renderGuestHome() {
     }
 }
 
+// ----- Главная для владельцев карты -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
