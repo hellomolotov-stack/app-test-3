@@ -593,7 +593,7 @@ function setupAccordion(containerId, isGuest) {
             e.preventDefault();
             log('nav_toggle', isGuest);
             dropdown.classList.toggle('show');
-            arrow.classList.toggle('arrow-down');
+            if (arrow) arrow.classList.toggle('arrow-down');
         });
     }
 }
@@ -1506,7 +1506,7 @@ function showBottomNav(show = true) {
     }
 }
 
-// ----- Страница для новичков (FAQ) -----
+// ----- Страница для новичков (FAQ) с меню для всех -----
 function renderNewcomerPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -1517,7 +1517,7 @@ function renderNewcomerPage(isGuest = false) {
     haptic();
     log('newcomer_page_opened', isGuest);
     
-    showBottomNav(!isGuest);
+    showBottomNav(true); // теперь меню видно всем
 
     let faqHtml = '';
     if (faq && faq.length) {
@@ -1546,9 +1546,7 @@ function renderNewcomerPage(isGuest = false) {
         renderHome();
     });
 
-    if (!isGuest) {
-        setupBottomNav();
-    }
+    setupBottomNav(); // всегда инициализируем меню
 }
 
 // ----- Страница привилегий для владельцев карты -----
@@ -1682,9 +1680,9 @@ function renderGift(isGuest = false) {
                 <p style="white-space: pre-line;">${giftText}</p>
             </div>
             
-            <div id="giftAccordion">
-                <button class="accordion-btn">
-                    купить в подарок <span class="arrow">👀</span>
+            <div id="giftAccordion" class="card-accordion">
+                <button class="accordion-btn btn-yellow btn-glow">
+                    купить в подарок
                 </button>
                 <div class="dropdown-menu">
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
@@ -1744,9 +1742,10 @@ function renderGuestHome() {
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             
-            <div id="cardAccordionGuest">
-                <button class="accordion-btn">
-                    оформить карту <span class="arrow">👀</span>
+            <!-- Аккордеон для выбора карты (жёлтая кнопка) -->
+            <div id="cardAccordionGuest" class="card-accordion">
+                <button class="accordion-btn btn-yellow btn-glow">
+                    оформить карту
                 </button>
                 <div class="dropdown-menu">
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
@@ -1862,9 +1861,10 @@ function renderHome() {
                     <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
                 </div>
                 
-                <div id="cardAccordionOwner">
-                    <button class="accordion-btn">
-                        оформить карту <span class="arrow">👀</span>
+                <!-- Аккордеон для оформления карты (жёлтая кнопка) -->
+                <div id="cardAccordionOwner" class="card-accordion">
+                    <button class="accordion-btn btn-yellow btn-glow">
+                        оформить карту
                     </button>
                     <div class="dropdown-menu">
                         <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', false); return false;" class="btn btn-outline">сезонная</a>
