@@ -723,6 +723,7 @@ document.addEventListener('click', function(e) {
 let currentDropdownHikeDate = null;
 
 async function toggleParticipantDropdown(counterElement, hikeDate) {
+    console.log('toggleParticipantDropdown called', hikeDate);
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown && currentDropdownHikeDate === hikeDate) {
         existingDropdown.remove();
@@ -736,6 +737,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     
     haptic();
     const participants = await loadAllParticipants(hikeDate);
+    console.log('participants loaded', participants);
     
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
@@ -765,6 +767,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     }
     
     const rect = counterElement.getBoundingClientRect();
+    console.log('counter rect', rect);
     dropdown.style.position = 'absolute';
     dropdown.style.top = rect.bottom + 'px';
     dropdown.style.right = (window.innerWidth - rect.right) + 'px';
@@ -772,9 +775,11 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.style.zIndex = '1001';
     
     document.body.appendChild(dropdown);
+    console.log('dropdown appended');
     
     setTimeout(() => {
         dropdown.classList.add('show');
+        console.log('show class added');
     }, 10);
     
     currentDropdownHikeDate = hikeDate;
