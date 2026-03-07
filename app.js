@@ -2,6 +2,20 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
+// Отладка
+window.debugLog = [];
+function debug(msg) {
+    console.log(msg);
+    window.debugLog.push(msg);
+    const el = document.getElementById('debug');
+    if (el) {
+        el.style.display = 'block';
+        el.innerHTML += '<br>' + new Date().toLocaleTimeString() + ': ' + msg;
+        // автоматическая прокрутка вниз
+        el.scrollTop = el.scrollHeight;
+    }
+}
+
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
@@ -69,9 +83,9 @@ try {
     };
     firebase.initializeApp(firebaseConfig);
     database = firebase.database();
-    console.log('Firebase initialized');
+    debug('Firebase initialized');
 } catch (e) {
-    console.error('Firebase initialization failed:', e);
+    debug('Firebase initialization failed: ' + e.message);
     database = null;
 }
 
@@ -83,9 +97,9 @@ async function saveUserAvatar() {
             photoUrl: userPhotoUrl,
             updatedAt: firebase.database.ServerValue.TIMESTAMP
         });
-        console.log('User avatar saved');
+        debug('User avatar saved');
     } catch (e) {
-        console.error('Error saving user avatar:', e);
+        debug('Error saving user avatar: ' + e.message);
     }
 }
 
@@ -107,9 +121,10 @@ async function loadHikesFromFirebase() {
             location_link: data.location_link || '',
             telegram_link: data.telegram_link || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
+        debug('Hikes loaded from Firebase, count: ' + list.length);
         return { data: hikes, list };
     } catch (e) {
-        console.error('Error loading hikes from Firebase:', e);
+        debug('Error loading hikes from Firebase: ' + e.message);
         return null;
     }
 }
@@ -120,7 +135,7 @@ async function loadMetricsFromFirebase() {
         const snapshot = await database.ref('metrics').once('value');
         return snapshot.val() || null;
     } catch (e) {
-        console.error('Error loading metrics from Firebase:', e);
+        debug('Error loading metrics from Firebase: ' + e.message);
         return null;
     }
 }
@@ -131,7 +146,7 @@ async function loadFaqFromFirebase() {
         const snapshot = await database.ref('faq').once('value');
         return snapshot.val() || [];
     } catch (e) {
-        console.error('Error loading faq from Firebase:', e);
+        debug('Error loading faq from Firebase: ' + e.message);
         return null;
     }
 }
@@ -142,7 +157,7 @@ async function loadPrivilegesFromFirebase() {
         const snapshot = await database.ref('privileges').once('value');
         return snapshot.val() || { club: [], city: [] };
     } catch (e) {
-        console.error('Error loading privileges from Firebase:', e);
+        debug('Error loading privileges from Firebase: ' + e.message);
         return null;
     }
 }
@@ -153,7 +168,7 @@ async function loadGiftFromFirebase() {
         const snapshot = await database.ref('gift').once('value');
         return snapshot.val()?.content || '';
     } catch (e) {
-        console.error('Error loading gift from Firebase:', e);
+        debug('Error loading gift from Firebase: ' + e.message);
         return null;
     }
 }
@@ -186,7 +201,7 @@ async function loadAllParticipants(hikeDate) {
             .filter(p => p && p.timestamp)
             .sort((a, b) => b.timestamp - a.timestamp);
     } catch (e) {
-        console.error('Error loading all participants:', e);
+        debug('Error loading all participants: ' + e.message);
         return [];
     }
 }
@@ -242,7 +257,7 @@ async function loadUserRegistrationsFromFirebase() {
         });
         return statusMap;
     } catch (e) {
-        console.error('Error loading user registrations from Firebase:', e);
+        debug('Error loading user registrations from Firebase: ' + e.message);
         return {};
     }
 }
@@ -314,7 +329,7 @@ async function loadUserData() {
         }
         if (userCard.status !== 'active') userCard.status = 'inactive';
     } catch (e) {
-        console.error('Ошибка загрузки members:', e);
+        debug('Ошибка загрузки members: ' + e.message);
         userCard.status = 'inactive';
     }
 }
@@ -368,9 +383,9 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
             method: 'POST',
             body: params,
             keepalive: true
-        }).catch(e => console.error('Ошибка отправки запроса в Google Sheets:', e));
+        }).catch(e => debug('Ошибка отправки запроса в Google Sheets: ' + e.message));
     } catch (e) {
-        console.error('Ошибка в updateRegistrationInSheet:', e);
+        debug('Ошибка в updateRegistrationInSheet: ' + e.message);
     }
 }
 
@@ -489,7 +504,7 @@ async function loadData() {
     showAnimatedLoader();
 
     const loaderTimeout = setTimeout(() => {
-        console.warn('loadData timeout – force hide loader');
+        debug('loadData timeout – force hide loader');
         hideAnimatedLoader();
     }, 10000);
 
@@ -499,27 +514,23 @@ async function loadData() {
             if (hikesResult) {
                 hikesData = hikesResult.data;
                 hikesList = hikesResult.list;
-                console.log('Hikes loaded from Firebase', hikesList);
+                debug('Hikes loaded, list length: ' + hikesList.length);
             }
             const metricsData = await loadMetricsFromFirebase();
             if (metricsData) {
                 metrics = metricsData;
-                console.log('Metrics loaded from Firebase');
             }
             const faqData = await loadFaqFromFirebase();
             if (faqData) {
                 faq = faqData;
-                console.log('FAQ loaded from Firebase');
             }
             const privilegesData = await loadPrivilegesFromFirebase();
             if (privilegesData) {
                 privileges = privilegesData;
-                console.log('Privileges loaded from Firebase');
             }
             const giftData = await loadGiftFromFirebase();
             if (giftData) {
                 giftContent = giftData;
-                console.log('Gift content loaded from Firebase');
             }
         }
 
@@ -533,7 +544,7 @@ async function loadData() {
             try {
                 hikeBookingStatus = await loadUserRegistrationsFromFirebase();
             } catch (e) {
-                console.error('Firebase load failed, using empty', e);
+                debug('Firebase load failed, using empty');
                 hikeBookingStatus = {};
                 hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
             }
@@ -546,32 +557,51 @@ async function loadData() {
         
         renderHome();
         
-        // Проверяем start_param из Telegram (усиленная логика)
-        const startParam = tg.initDataUnsafe?.start_param;
-        console.log('start_param received:', startParam);
-        if (startParam && startParam.startsWith('hike_')) {
-            const targetDate = startParam.substring(5);
-            console.log('Target date:', targetDate);
+        // Проверяем start_param из Telegram
+        const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
+        debug('start_param received: ' + startParam);
+        
+        // Также проверим URL на наличие параметра (на случай прямого доступа)
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
+        debug('URL start param: ' + urlStartParam);
+        
+        const effectiveStartParam = startParam || urlStartParam;
+        
+        if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
+            const targetDate = effectiveStartParam.substring(5);
+            debug('Target date: ' + targetDate);
             
             let attempts = 0;
-            const maxAttempts = 50; // ~15 секунд (300мс * 50)
+            const maxAttempts = 100; // ~30 секунд (300мс * 100)
             const interval = setInterval(() => {
                 attempts++;
                 const targetIndex = hikesList.findIndex(h => h.date === targetDate);
+                debug(`Attempt ${attempts}: index = ${targetIndex}`);
                 if (targetIndex !== -1) {
-                    console.log(`Found hike at index ${targetIndex} after ${attempts} attempts, opening sheet`);
+                    debug(`Found at index ${targetIndex}, opening sheet`);
                     clearInterval(interval);
-                    setTimeout(() => showBottomSheet(targetIndex), 100);
+                    // Дадим время на полную отрисовку DOM
+                    setTimeout(() => {
+                        try {
+                            if (typeof showBottomSheet === 'function') {
+                                showBottomSheet(targetIndex);
+                                debug('showBottomSheet called');
+                            } else {
+                                debug('showBottomSheet is not defined');
+                            }
+                        } catch (e) {
+                            debug('Error in showBottomSheet: ' + e.message);
+                        }
+                    }, 200);
                 } else if (attempts >= maxAttempts) {
-                    console.log('Hike not found after max attempts');
+                    debug('Not found after max attempts');
                     clearInterval(interval);
-                } else {
-                    console.log(`Attempt ${attempts}: hike not found yet`);
                 }
             }, 300);
         }
     } catch (e) {
-        console.error('Unhandled error in loadData:', e);
+        debug('Unhandled error in loadData: ' + e.message);
         renderHome();
     } finally {
         clearTimeout(loaderTimeout);
@@ -779,8 +809,15 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
+// Делаем функцию глобальной для отладки
+window.showBottomSheet = showBottomSheet;
+
 function showBottomSheet(index) {
-    if (!hikesList.length) return;
+    debug('showBottomSheet called with index: ' + index);
+    if (!hikesList.length) {
+        debug('hikesList is empty, cannot show bottom sheet');
+        return;
+    }
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
@@ -818,7 +855,10 @@ function showBottomSheet(index) {
 
     function updateContent() {
         const hike = hikesList[sheetCurrentIndex];
-        if (!hike) return;
+        if (!hike) {
+            debug('hike not found at index: ' + sheetCurrentIndex);
+            return;
+        }
 
         const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
                             'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -1088,7 +1128,7 @@ function showBottomSheet(index) {
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                         updateFloatingSheetButtons();
                     }).catch((error) => {
-                        console.error('Error during cancellation:', error);
+                        debug('Error during cancellation: ' + error.message);
                         updateFloatingSheetButtons();
                     });
                 } else {
@@ -1100,7 +1140,7 @@ function showBottomSheet(index) {
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                     }).catch((error) => {
-                        console.error('Error during cancellation:', error);
+                        debug('Error during cancellation: ' + error.message);
                         updateFloatingSheetButtons();
                     });
                 }
@@ -1139,7 +1179,7 @@ function showBottomSheet(index) {
                             openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
                         })
                         .catch((error) => {
-                            console.error('Error during booking:', error);
+                            debug('Error during booking: ' + error.message);
                             updateFloatingSheetButtons();
                         });
                     
@@ -1181,7 +1221,7 @@ function showBottomSheet(index) {
                             updateFloatingSheetButtons();
                         })
                         .catch((error) => {
-                            console.error('Error during booking:', error);
+                            debug('Error during booking: ' + error.message);
                             updateFloatingSheetButtons();
                         });
                     log('sheet_go_click', false);
@@ -1227,6 +1267,7 @@ function showBottomSheet(index) {
     setTimeout(() => {
         overlay.classList.add('visible');
         sheet.classList.add('visible');
+        debug('bottom sheet made visible');
     }, 20);
 
     overlay.addEventListener('click', (e) => {
