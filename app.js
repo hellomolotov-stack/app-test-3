@@ -1823,7 +1823,7 @@ function renderGuestHome() {
     }
 }
 
-// ----- Главная для владельцев карты (обновлённая) -----
+// ----- Главная для владельцев карты (обновлённая, без кнопки "оформить карту") -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
@@ -1859,17 +1859,6 @@ function renderHome() {
                 <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
                     <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                     <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
-                </div>
-                
-                <!-- Аккордеон для оформления карты (жёлтая кнопка) -->
-                <div id="cardAccordionOwner" class="card-accordion">
-                    <button class="accordion-btn btn-yellow btn-glow">
-                        оформить карту
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', false); return false;" class="btn btn-outline">сезонная</a>
-                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', false); return false;" class="btn btn-outline">бессрочная</a>
-                    </div>
                 </div>
                 
                 <div id="navAccordionOwner">
@@ -1921,7 +1910,6 @@ function renderHome() {
             <div class="card-container" id="calendarContainer"></div>
         `;
 
-        setupAccordion('cardAccordionOwner', false);
         setupAccordion('navAccordionOwner', false);
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
