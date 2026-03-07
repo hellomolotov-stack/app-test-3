@@ -110,8 +110,10 @@ async function saveUserAvatar() {
 async function loadHikesFromFirebase() {
     if (!database) return null;
     try {
+        debug('Loading hikes from Firebase...');
         const snapshot = await database.ref('hikes').once('value');
         const hikes = snapshot.val() || {};
+        debug('Hikes snapshot received, keys: ' + Object.keys(hikes).join(', '));
         const list = Object.entries(hikes).map(([date, data]) => ({
             date,
             title: data.title || 'Хайк',
@@ -519,11 +521,12 @@ function normalizeDate(dateStr) {
 async function loadData() {
     showAnimatedLoader();
 
-    // Увеличим таймаут до 20 секунд
+    // Устанавливаем таймаут 10 секунд – если загрузка не завершится, принудительно рендерим главную
     const loaderTimeout = setTimeout(() => {
-        debug('loadData timeout – force hide loader');
+        debug('loadData timeout – force hide loader and render home');
         hideAnimatedLoader();
-    }, 20000);
+        renderHome(); // показываем главную даже без данных
+    }, 10000);
 
     try {
         if (database) {
@@ -585,76 +588,70 @@ async function loadData() {
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         debug('start_param from tg: ' + startParam);
         
-        // Также проверим URL на наличие параметров startapp и start
         const urlParams = new URLSearchParams(window.location.search);
         const urlStartApp = urlParams.get('startapp');
         const urlStart = urlParams.get('start');
         debug('URL startapp: ' + urlStartApp);
         debug('URL start: ' + urlStart);
         
-        // Выбираем первый найденный
         const effectiveStartParam = startParam || urlStartApp || urlStart;
         debug('effectiveStartParam: ' + effectiveStartParam);
         
-        if (effectiveStartParam) {
-            if (effectiveStartParam.startsWith('hike_')) {
-                const rawTargetDate = effectiveStartParam.substring(5);
-                const targetDate = normalizeDate(rawTargetDate);
-                debug('Raw target date: "' + rawTargetDate + '"');
-                debug('Normalized target date: "' + targetDate + '"');
-                
-                debug('Available dates for comparison (normalized):');
-                hikesList.forEach((hike, idx) => {
-                    debug(`  ${idx}: "${hike.date}"`);
-                });
-                
-                if (hikesList.length === 0) {
-                    debug('hikesList is empty, cannot find target date');
-                    return;
-                }
-                
-                const immediateIndex = hikesList.findIndex(h => h.date === targetDate);
-                debug('Immediate search result: ' + immediateIndex);
-                
-                let attempts = 0;
-                const maxAttempts = 200;
-                const interval = setInterval(() => {
-                    attempts++;
-                    const targetIndex = hikesList.findIndex(h => h.date === targetDate);
-                    debug(`Attempt ${attempts}: index = ${targetIndex}`);
-                    if (targetIndex !== -1) {
-                        debug(`Found at index ${targetIndex}, opening sheet`);
-                        clearInterval(interval);
-                        setTimeout(() => {
-                            try {
-                                if (typeof showBottomSheet === 'function') {
-                                    showBottomSheet(targetIndex);
-                                    debug('showBottomSheet called');
-                                } else {
-                                    debug('showBottomSheet is not defined');
-                                }
-                            } catch (e) {
-                                debug('Error in showBottomSheet: ' + e.message);
-                            }
-                        }, 200);
-                    } else if (attempts >= maxAttempts) {
-                        debug('Not found after max attempts');
-                        debug('Current hikes list:');
-                        hikesList.forEach((hike, idx) => {
-                            debug(`  ${idx}: "${hike.date}"`);
-                        });
-                        clearInterval(interval);
-                    }
-                }, 300);
-            } else {
-                debug('effectiveStartParam does not start with "hike_"');
+        if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
+            const rawTargetDate = effectiveStartParam.substring(5);
+            const targetDate = normalizeDate(rawTargetDate);
+            debug('Raw target date: "' + rawTargetDate + '"');
+            debug('Normalized target date: "' + targetDate + '"');
+            
+            debug('Available dates for comparison (normalized):');
+            hikesList.forEach((hike, idx) => {
+                debug(`  ${idx}: "${hike.date}"`);
+            });
+            
+            if (hikesList.length === 0) {
+                debug('hikesList is empty, cannot find target date');
+                return;
             }
+            
+            const immediateIndex = hikesList.findIndex(h => h.date === targetDate);
+            debug('Immediate search result: ' + immediateIndex);
+            
+            let attempts = 0;
+            const maxAttempts = 200;
+            const interval = setInterval(() => {
+                attempts++;
+                const targetIndex = hikesList.findIndex(h => h.date === targetDate);
+                debug(`Attempt ${attempts}: index = ${targetIndex}`);
+                if (targetIndex !== -1) {
+                    debug(`Found at index ${targetIndex}, opening sheet`);
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        try {
+                            if (typeof showBottomSheet === 'function') {
+                                showBottomSheet(targetIndex);
+                                debug('showBottomSheet called');
+                            } else {
+                                debug('showBottomSheet is not defined');
+                            }
+                        } catch (e) {
+                            debug('Error in showBottomSheet: ' + e.message);
+                        }
+                    }, 200);
+                } else if (attempts >= maxAttempts) {
+                    debug('Not found after max attempts');
+                    debug('Current hikes list:');
+                    hikesList.forEach((hike, idx) => {
+                        debug(`  ${idx}: "${hike.date}"`);
+                    });
+                    clearInterval(interval);
+                }
+            }, 300);
         } else {
-            debug('No start parameter found');
+            debug('No valid start parameter found');
         }
     } catch (e) {
         debug('Unhandled error in loadData: ' + e.message);
-        renderHome();
+        renderHome(); // при ошибке тоже показываем главную
     } finally {
         clearTimeout(loaderTimeout);
         hideAnimatedLoader();
