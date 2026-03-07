@@ -90,10 +90,14 @@ async function saveUserAvatar() {
 }
 
 // --- Firebase функции для данных ---
-async function loadHikesFromFirebase() {
-    if (!database) return null;
-    try {
-        const snapshot = await database.ref('hikes').once('value');
+// Используем on() вместо once() для real-time обновлений
+function subscribeToHikes(callback) {
+    if (!database) {
+        callback([]);
+        return () => {};
+    }
+    const hikesRef = database.ref('hikes');
+    const listener = hikesRef.on('value', (snapshot) => {
         const hikes = snapshot.val() || {};
         const list = Object.entries(hikes).map(([date, data]) => ({
             date,
@@ -107,12 +111,12 @@ async function loadHikesFromFirebase() {
             location_link: data.location_link || '',
             telegram_link: data.telegram_link || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
-        console.log('Hikes loaded from Firebase, count:', list.length);
-        return { data: hikes, list };
-    } catch (e) {
-        console.error('Error loading hikes from Firebase:', e);
-        return null;
-    }
+        console.log('Hikes updated, count:', list.length);
+        hikesList = list;
+        hikesData = hikes;
+        callback(list);
+    });
+    return () => hikesRef.off('value', listener);
 }
 
 async function loadMetricsFromFirebase() {
@@ -508,29 +512,33 @@ async function loadData() {
     }, 10000);
 
     try {
+        // Подписываемся на обновления хайков
         if (database) {
-            const hikesResult = await loadHikesFromFirebase();
-            if (hikesResult) {
-                hikesData = hikesResult.data;
-                hikesList = hikesResult.list;
-                console.log('Hikes loaded, list length:', hikesList.length);
-            }
-            const metricsData = await loadMetricsFromFirebase();
-            if (metricsData) {
-                metrics = metricsData;
-            }
-            const faqData = await loadFaqFromFirebase();
-            if (faqData) {
-                faq = faqData;
-            }
-            const privilegesData = await loadPrivilegesFromFirebase();
-            if (privilegesData) {
-                privileges = privilegesData;
-            }
-            const giftData = await loadGiftFromFirebase();
-            if (giftData) {
-                giftContent = giftData;
-            }
+            subscribeToHikes((newList) => {
+                hikesList = newList;
+                // Если календарь уже отрендерен, обновим его
+                const calendarContainer = document.getElementById('calendarContainer');
+                if (calendarContainer && !isPrivPage) {
+                    renderCalendar(calendarContainer);
+                }
+            });
+        }
+
+        const metricsData = await loadMetricsFromFirebase();
+        if (metricsData) {
+            metrics = metricsData;
+        }
+        const faqData = await loadFaqFromFirebase();
+        if (faqData) {
+            faq = faqData;
+        }
+        const privilegesData = await loadPrivilegesFromFirebase();
+        if (privilegesData) {
+            privileges = privilegesData;
+        }
+        const giftData = await loadGiftFromFirebase();
+        if (giftData) {
+            giftContent = giftData;
         }
 
         await loadUserData();
@@ -732,6 +740,8 @@ function closeParticipantDropdown() {
 }
 
 async function toggleParticipantDropdown(counterElement, hikeDate) {
+    console.log('toggleParticipantDropdown called', hikeDate);
+    
     // Если открыт этот же дропдаун – закрываем
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown && currentDropdownHikeDate === hikeDate) {
@@ -744,6 +754,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     
     haptic();
     const participants = await loadAllParticipants(hikeDate);
+    console.log('participants loaded', participants);
     
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
@@ -773,6 +784,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     }
     
     const rect = counterElement.getBoundingClientRect();
+    console.log('counter rect', rect);
     dropdown.style.position = 'absolute';
     dropdown.style.top = rect.bottom + 'px';
     dropdown.style.right = (window.innerWidth - rect.right) + 'px';
@@ -780,9 +792,11 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.style.zIndex = '1001';
     
     document.body.appendChild(dropdown);
+    console.log('dropdown appended');
     
     setTimeout(() => {
         dropdown.classList.add('show');
+        console.log('show class added');
     }, 10);
     
     currentDropdownHikeDate = hikeDate;
@@ -1040,7 +1054,7 @@ function showBottomSheet(index) {
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
-                closeParticipantDropdown();
+                closeParticipantDropdown(); // закрываем список
                 sheetCurrentIndex--;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1053,7 +1067,7 @@ function showBottomSheet(index) {
         document.getElementById('nextHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex < hikesList.length - 1) {
-                closeParticipantDropdown();
+                closeParticipantDropdown(); // закрываем список
                 sheetCurrentIndex++;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1319,7 +1333,7 @@ function showBottomSheet(index) {
 }
 
 function closeBottomSheet() {
-    closeParticipantDropdown();
+    closeParticipantDropdown(); // закрываем список при закрытии bottom sheet
     if (currentUnsubscribe) {
         currentUnsubscribe();
         currentUnsubscribe = null;
