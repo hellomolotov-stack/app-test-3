@@ -518,7 +518,7 @@ async function loadData() {
                 if (hikesList.length > 0) {
                     debug('Available hikes (index: date):');
                     hikesList.forEach((hike, idx) => {
-                        debug(`  ${idx}: ${hike.date} - ${hike.title}`);
+                        debug(`  ${idx}: "${hike.date}" - ${hike.title}`);
                     });
                 } else {
                     debug('hikesList is empty!');
@@ -578,7 +578,13 @@ async function loadData() {
         
         if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
             const targetDate = effectiveStartParam.substring(5);
-            debug('Target date: ' + targetDate);
+            debug('Target date: "' + targetDate + '"');
+            
+            // Выводим все даты из списка для сравнения
+            debug('Available dates:');
+            hikesList.forEach((hike, idx) => {
+                debug(`  ${idx}: "${hike.date}"`);
+            });
             
             // Если список хайков пуст, выходим
             if (hikesList.length === 0) {
@@ -613,7 +619,7 @@ async function loadData() {
                     // Для диагностики выведем все даты ещё раз
                     debug('Current hikes list:');
                     hikesList.forEach((hike, idx) => {
-                        debug(`  ${idx}: ${hike.date}`);
+                        debug(`  ${idx}: "${hike.date}"`);
                     });
                     clearInterval(interval);
                 }
