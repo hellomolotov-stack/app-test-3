@@ -278,6 +278,24 @@ body::before {
     transform: rotate(-90deg);
 }
 
+/* Специальный класс для жёлтого аккордеона (оформить карту) */
+.card-accordion .accordion-btn {
+    background-color: var(--yellow);
+    color: #000000;
+    font-weight: 600;
+    animation: glow 3s ease-in-out infinite;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    border: none;
+}
+
+.card-accordion .accordion-btn .arrow {
+    display: none; /* убираем эмодзи */
+}
+
+.card-accordion .accordion-btn:hover {
+    opacity: 0.9;
+}
+
 .dropdown-menu {
     display: none;
     grid-template-columns: 1fr 1fr;
@@ -851,7 +869,7 @@ body::before {
     right: 12px;
     display: flex;
     align-items: center;
-    gap: 1px; /* было 3px, теперь 1px */
+    gap: 1px;
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     border-radius: 30px;
