@@ -953,7 +953,7 @@ body::before {
     min-width: 180px;
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(8px);
-    border-radius: 30px;
+    border-radius: 30px;  /* изменено с 12px на 30px */
     padding: 8px 0;
     border: 1px solid rgba(255,255,255,0.2);
     z-index: 20;
