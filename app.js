@@ -501,6 +501,16 @@ function normalizeDate(dateStr) {
     return dateStr;
 }
 
+// Функция скролла к календарю
+function scrollToCalendar() {
+    setTimeout(() => {
+        const calendarContainer = document.getElementById('calendarContainer');
+        if (calendarContainer) {
+            calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+}
+
 // --- Основная загрузка с Firebase ---
 async function loadData() {
     showAnimatedLoader();
@@ -692,7 +702,7 @@ function parseLinks(text, isGuest) {
 
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link');
     if (!link) return;
     
     if (link.classList.contains('dynamic-link')) {
@@ -741,6 +751,14 @@ document.addEventListener('click', function(e) {
         if (index !== undefined) {
             showBottomSheet(parseInt(index));
         }
+        return;
+    }
+    
+    if (link.classList.contains('bookings-calendar-link')) {
+        e.preventDefault();
+        haptic();
+        scrollToCalendar();
+        log('bookings_calendar_click', userCard.status !== 'active');
     }
 });
 
@@ -867,7 +885,10 @@ function renderUserBookings() {
 
     let html = `
         <div class="card-container" id="userBookingsCard">
-            <h2 class="section-title">✍🏻 мои записи</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
+                <h2 class="section-title" style="margin: 0;">✍🏻 мои записи</h2>
+                <a href="#" class="bookings-calendar-link" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">открыть календарь &gt;</a>
+            </div>
     `;
 
     bookings.forEach(booking => {
@@ -1557,15 +1578,6 @@ function setupBottomNav() {
     const navHikesNew = document.getElementById('navHikes');
     const navMoreNew = document.getElementById('navMore');
 
-    function scrollToCalendar() {
-        setTimeout(() => {
-            const calendarContainer = document.getElementById('calendarContainer');
-            if (calendarContainer) {
-                calendarContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        }, 100);
-    }
-
     navHomeNew.addEventListener('click', () => {
         haptic();
         renderHome();
@@ -1924,6 +1936,9 @@ function renderGuestHome() {
         <!-- Контейнер для блока "Мои записи" -->
         <div id="userBookingsContainer"></div>
 
+        <!-- Календарь сразу после записей -->
+        <div class="card-container" id="calendarContainer"></div>
+
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
@@ -1956,8 +1971,6 @@ function renderGuestHome() {
                 </div>
             </div>
         </div>
-
-        <div class="card-container" id="calendarContainer"></div>
     `;
 
     setupAccordion('cardAccordionGuest', true);
@@ -1973,14 +1986,14 @@ function renderGuestHome() {
         renderNewcomerPage(true);
     });
 
-    renderUserBookings(); // отображаем записи
-
-    setupBottomNav();
+    renderUserBookings();
 
     const calendarContainer = document.getElementById('calendarContainer');
     if (calendarContainer) {
         renderCalendar(calendarContainer);
     }
+
+    setupBottomNav();
 }
 
 // ----- Главная для владельцев карты -----
@@ -2037,6 +2050,9 @@ function renderHome() {
             <!-- Контейнер для блока "Мои записи" -->
             <div id="userBookingsContainer"></div>
 
+            <!-- Календарь сразу после записей -->
+            <div class="card-container" id="calendarContainer"></div>
+
             <div class="card-container">
                 <h2 class="section-title">🫖 для новичков</h2>
                 <div class="btn-newcomer" id="newcomerBtn">
@@ -2069,8 +2085,6 @@ function renderHome() {
                     </div>
                 </div>
             </div>
-
-            <div class="card-container" id="calendarContainer"></div>
         `;
 
         setupAccordion('navAccordionOwner', false);
@@ -2101,7 +2115,7 @@ function renderHome() {
             renderNewcomerPage(false);
         });
 
-        renderUserBookings(); // отображаем записи
+        renderUserBookings();
 
         const calendarContainer = document.getElementById('calendarContainer');
         if (calendarContainer) {
