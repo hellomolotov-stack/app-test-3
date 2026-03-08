@@ -741,6 +741,7 @@ body::before {
     min-height: 0;
     scrollbar-width: thin;
     scrollbar-color: #555 #222;
+    position: relative; /* добавлено для корректного позиционирования дропдауна */
 }
 
 .bottom-sheet-content-wrapper::-webkit-scrollbar {
