@@ -688,7 +688,7 @@ function parseLinks(text, isGuest) {
 
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-details-btn');
     if (!link) return;
     
     if (link.classList.contains('dynamic-link')) {
@@ -722,6 +722,15 @@ document.addEventListener('click', function(e) {
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
             toggleParticipantDropdown(link, hikeDate);
+        }
+        return;
+    }
+    
+    if (link.classList.contains('booking-details-btn')) {
+        e.preventDefault();
+        const index = link.dataset.index;
+        if (index !== undefined) {
+            showBottomSheet(parseInt(index));
         }
         return;
     }
@@ -1057,7 +1066,6 @@ function showBottomSheet(index) {
             });
         }
 
-        // Добавляем обработчики навигации с закрытием дропдауна
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
@@ -1382,7 +1390,7 @@ function renderCalendar(container) {
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
     let calendarHtml = `
-        <h2 class="section-title">⚠️ раздел в разработке</h2>
+        <h2 class="section-title">🗓️ календарь хайков</h2>
         <div class="calendar-item">
             <div class="calendar-header">
                 <h3>${monthNames[currentMonth]} ${currentYear}</h3>
@@ -1539,6 +1547,27 @@ function setupBottomNav() {
         isMenuActive = false;
         resetNavActive();
     });
+
+    // Добавляем пункт "новичкам" в попап-меню
+    // Если его ещё нет, создадим динамически
+    if (!document.getElementById('popupNewcomer')) {
+        const newcomerItem = document.createElement('a');
+        newcomerItem.href = '#';
+        newcomerItem.className = 'popup-item';
+        newcomerItem.id = 'popupNewcomer';
+        newcomerItem.textContent = '🫖 новичкам';
+        popup.appendChild(newcomerItem);
+        
+        newcomerItem.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            const isGuest = userCard.status !== 'active';
+            renderNewcomerPage(isGuest);
+            popup.classList.remove('show');
+            isMenuActive = false;
+            resetNavActive();
+        });
+    }
 
     document.addEventListener('click', (e) => {
         if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
@@ -1788,7 +1817,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (обновлённая) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -1809,67 +1838,18 @@ function renderGuestHome() {
                     <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
                 </div>
             </div>
-            
-            <div id="navAccordionGuest">
-                <button class="accordion-btn">
-                    навигация по клубу <span class="arrow">👀</span>
-                </button>
-                <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
-                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
-                </div>
-            </div>
         </div>
 
-        <div class="card-container">
-            <h2 class="section-title">🫖 для новичков</h2>
-            <div class="btn-newcomer" id="newcomerBtnGuest">
-                <span class="newcomer-text">как всё устроено</span>
-                <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
-            </div>
-        </div>
+        ${renderBookingsBlock()}
         
-        <div class="card-container">
-            <div class="metrics-header">
-                <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
-            </div>
-            <div class="metrics-grid">
-                <div class="metric-item">
-                    <div class="metric-label">хайков</div>
-                    <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">локаций</div>
-                    <div class="metric-value" data-metric="locations">${metrics.locations}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">километров</div>
-                    <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">знакомств</div>
-                    <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
-                </div>
-            </div>
-        </div>
-
         <div class="card-container" id="calendarContainer"></div>
     `;
 
     setupAccordion('cardAccordionGuest', true);
-    setupAccordion('navAccordionGuest', true);
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
         haptic();
         showGuestPopup();
-    });
-    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
-        haptic();
-        log('newcomer_btn_click', true);
-        renderNewcomerPage(true);
     });
 
     setupBottomNav();
@@ -1880,7 +1860,7 @@ function renderGuestHome() {
     }
 }
 
-// ----- Главная для владельцев карты -----
+// ----- Главная для владельцев карты (обновлённая) -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
@@ -1917,57 +1897,12 @@ function renderHome() {
                     <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                     <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
                 </div>
-                
-                <div id="navAccordionOwner">
-                    <button class="accordion-btn">
-                        навигация по клубу <span class="arrow">👀</span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
-                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
-                    </div>
-                </div>
             </div>
 
-            <div class="card-container">
-                <h2 class="section-title">🫖 для новичков</h2>
-                <div class="btn-newcomer" id="newcomerBtn">
-                    <span class="newcomer-text">как всё устроено</span>
-                    <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
-                </div>
-            </div>
+            ${renderBookingsBlock()}
             
-            <div class="card-container">
-                <div class="metrics-header">
-                    <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
-                </div>
-                <div class="metrics-grid">
-                    <div class="metric-item">
-                        <div class="metric-label">хайков</div>
-                        <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">локаций</div>
-                        <div class="metric-value" data-metric="locations">${metrics.locations}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">километров</div>
-                        <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">знакомств</div>
-                        <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
-                    </div>
-                </div>
-            </div>
-
             <div class="card-container" id="calendarContainer"></div>
         `;
-
-        setupAccordion('navAccordionOwner', false);
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
             haptic();
@@ -1989,22 +1924,67 @@ function renderHome() {
             openLink('https://t.me/hellointelligent', 'support_click', false);
         });
 
-        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
-            haptic();
-            log('newcomer_btn_click', false);
-            renderNewcomerPage(false);
-        });
+        setupBottomNav();
 
         const calendarContainer = document.getElementById('calendarContainer');
         if (calendarContainer) {
             renderCalendar(calendarContainer);
         }
 
-        setupBottomNav();
-
     } else {
         renderGuestHome();
     }
+}
+
+// Функция для отрисовки блока "Мои записи"
+function renderBookingsBlock() {
+    // Находим все индексы, где статус true
+    const bookedIndices = Object.keys(hikeBookingStatus)
+        .filter(key => hikeBookingStatus[key] === true)
+        .map(Number)
+        .sort((a, b) => a - b); // по порядку дат
+
+    if (bookedIndices.length === 0) {
+        return '';
+    }
+
+    let bookingsHtml = '';
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
+    bookedIndices.forEach(index => {
+        const hike = hikesList[index];
+        if (!hike) return;
+        
+        let formattedDate = '';
+        if (hike.date) {
+            const parts = hike.date.split('-');
+            if (parts.length === 3) {
+                const day = parseInt(parts[2], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                formattedDate = `${day} ${monthNames[month]}`;
+            } else {
+                formattedDate = hike.date;
+            }
+        }
+
+        bookingsHtml += `
+            <div class="booking-item">
+                <div class="booking-info">
+                    <div class="booking-date">${formattedDate}</div>
+                    <div class="booking-title">${hike.title}</div>
+                </div>
+                <button class="booking-details-btn" data-index="${index}">детали</button>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="card-container my-bookings">
+            <h2 class="section-title">✍🏻 мои записи</h2>
+            ${bookingsHtml}
+        </div>
+    `;
 }
 
 function buyCard() {
