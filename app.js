@@ -783,16 +783,23 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
         });
     }
     
-    const rect = counterElement.getBoundingClientRect();
-    console.log('counter rect', rect);
+    // Находим контейнер, в котором находится счётчик (это прокручиваемая область bottom sheet)
+    const container = counterElement.closest('.bottom-sheet-content-wrapper') || document.body;
+    const containerRect = container.getBoundingClientRect();
+    const elementRect = counterElement.getBoundingClientRect();
+    
+    // Вычисляем позицию относительно контейнера
+    const top = elementRect.bottom - containerRect.top + container.scrollTop;
+    const right = containerRect.right - elementRect.right;
+    
     dropdown.style.position = 'absolute';
-    dropdown.style.top = rect.bottom + 'px';
-    dropdown.style.right = (window.innerWidth - rect.right) + 'px';
-    dropdown.style.width = rect.width + 'px';
+    dropdown.style.top = top + 'px';
+    dropdown.style.right = right + 'px';
+    dropdown.style.width = counterElement.offsetWidth + 'px';
     dropdown.style.zIndex = '1001';
     
-    document.body.appendChild(dropdown);
-    console.log('dropdown appended');
+    container.appendChild(dropdown);
+    console.log('dropdown appended to container');
     
     setTimeout(() => {
         dropdown.classList.add('show');
