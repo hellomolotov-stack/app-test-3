@@ -785,33 +785,6 @@ function showLeaderDropdown(leaderElement, leaderData) {
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
     dropdown.style.width = '300px';
-
-    // Функция для создания аватарки с обработкой ошибки
-    function getAvatarHtml() {
-        if (!leaderData.photoUrl) {
-            return `<div class="participant-dropdown-avatar placeholder">${leaderData.name.charAt(0).toUpperCase()}</div>`;
-        }
-        // Возвращаем HTML с img и обработчиком onerror для замены на placeholder при ошибке загрузки
-        return `<img src="${leaderData.photoUrl}" class="participant-dropdown-avatar" alt="${leaderData.name}" 
-            onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder\'>${leaderData.name.charAt(0).toUpperCase()}</div>';">`;
-    }
-
-    const contactHtml = leaderData.username 
-        ? `<a href="#" data-url="https://t.me/${leaderData.username}" data-guest="false" class="dynamic-link" style="color: var(--yellow); text-decoration: none;">@${leaderData.username}</a>`
-        : '';
-
-    dropdown.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px;">
-                ${getAvatarHtml()}
-                <span style="font-weight: 600; color: white;">${leaderData.name}</span>
-            </div>
-            <div style="font-size: 14px; color: rgba(255,255,255,0.9);">${leaderData.bio || ''}</div>
-            <div style="font-size: 14px;">${contactHtml}</div>
-        </div>
-    `;
-
-    // Временное позиционирование в центре экрана для теста (чтобы точно было видно)
     dropdown.style.position = 'fixed';
     dropdown.style.top = '50%';
     dropdown.style.left = '50%';
@@ -820,10 +793,47 @@ function showLeaderDropdown(leaderElement, leaderData) {
     dropdown.style.backgroundColor = 'rgba(0,0,0,0.9)';
     dropdown.style.border = '1px solid rgba(255,255,255,0.2)';
     dropdown.style.borderRadius = '28px';
-    dropdown.style.padding = '8px 0';
+    dropdown.style.padding = '16px 0 8px 0';
+
+    // Аватар из Telegram по username (если есть)
+    const photoUrl = leaderData.username 
+        ? `https://t.me/i/userpic/320/${leaderData.username}.jpg`
+        : null;
+
+    const avatarHtml = photoUrl 
+        ? `<img src="${photoUrl}" class="participant-dropdown-avatar" alt="${leaderData.name}" 
+            onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder\'>${leaderData.name.charAt(0).toUpperCase()}</div>';">`
+        : `<div class="participant-dropdown-avatar placeholder">${leaderData.name.charAt(0).toUpperCase()}</div>`;
+
+    const contactHtml = leaderData.username 
+        ? `<a href="#" data-url="https://t.me/${leaderData.username}" data-guest="false" class="dynamic-link" style="color: var(--yellow); text-decoration: none;">@${leaderData.username}</a>`
+        : '';
+
+    dropdown.innerHTML = `
+        <div style="position: relative; padding: 0 16px;">
+            <button class="leader-close-btn" style="position: absolute; top: -8px; right: 8px; background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; z-index: 10000;">&times;</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                ${avatarHtml}
+                <span style="font-weight: 600; color: white;">${leaderData.name}</span>
+            </div>
+            <div style="font-size: 14px; color: rgba(255,255,255,0.9);">${leaderData.bio || ''}</div>
+            <div style="font-size: 14px;">${contactHtml}</div>
+        </div>
+    `;
 
     document.body.appendChild(dropdown);
     setTimeout(() => dropdown.classList.add('show'), 10);
+
+    // Обработчик закрытия по крестику
+    const closeBtn = dropdown.querySelector('.leader-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeLeaderDropdown();
+        });
+    }
 
     currentLeaderDropdown = dropdown;
 
