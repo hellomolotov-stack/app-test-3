@@ -1704,197 +1704,217 @@ function showBottomNav(show = true) {
 
 // ----- Страница для новичков -----
 function renderNewcomerPage(isGuest = false) {
-    isPrivPage = true;
-    isMenuActive = false;
-    resetNavActive();
+    try {
+        isPrivPage = true;
+        isMenuActive = false;
+        resetNavActive();
 
-    subtitle.textContent = `всё, что нужно знать`;
-    showBack(() => renderHome());
-    haptic();
-    log('newcomer_page_opened', isGuest);
-    
-    showBottomNav(!isGuest);
-
-    let faqHtml = '';
-    if (faq && faq.length) {
-        faq.forEach(item => {
-            let answer = item.a;
-            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" data-url="https://t.me/yaltahiking" data-guest="false" class="dynamic-link">@yaltahiking</a>');
-            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" data-url="https://zapovedcrimea.ru/choose-pass" data-guest="false" class="dynamic-link">zapovedcrimea.ru</a>');
-            faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
-        });
-    } else {
-        faqHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-    }
-
-    mainDiv.innerHTML = `
-        <div class="card-container newcomer-page" style="margin-bottom: 0;">
-            ${faqHtml}
-            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
-                <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('goHomeStatic')?.addEventListener('click', () => {
+        subtitle.textContent = `всё, что нужно знать`;
+        showBack(() => renderHome());
         haptic();
-        setUserInteracted();
-        renderHome();
-    });
+        log('newcomer_page_opened', isGuest);
+        
+        showBottomNav(!isGuest);
 
-    if (!isGuest) {
-        setupBottomNav();
+        let faqHtml = '';
+        if (faq && faq.length) {
+            faq.forEach(item => {
+                let answer = item.a;
+                answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" data-url="https://t.me/yaltahiking" data-guest="false" class="dynamic-link">@yaltahiking</a>');
+                answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" data-url="https://zapovedcrimea.ru/choose-pass" data-guest="false" class="dynamic-link">zapovedcrimea.ru</a>');
+                faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
+            });
+        } else {
+            faqHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        }
+
+        mainDiv.innerHTML = `
+            <div class="card-container newcomer-page" style="margin-bottom: 0;">
+                ${faqHtml}
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
+                    <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                    <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('goHomeStatic')?.addEventListener('click', () => {
+            haptic();
+            setUserInteracted();
+            renderHome();
+        });
+
+        if (!isGuest) {
+            setupBottomNav();
+        }
+    } catch (error) {
+        console.error('Error in renderNewcomerPage:', error);
+        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
     }
 }
 
 // ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
-    isPrivPage = true;
-    isMenuActive = false;
-    resetNavActive();
+    try {
+        isPrivPage = true;
+        isMenuActive = false;
+        resetNavActive();
 
-    subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
-    showBack(renderHome);
-    showBottomNav(true);
+        subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
+        showBack(renderHome);
+        showBottomNav(true);
 
-    let clubHtml = '';
-    if (privileges.club && privileges.club.length) {
-        privileges.club.forEach(item => {
-            let titleHtml = item.title;
-            if (item.title.startsWith('новое:')) {
-                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
-            }
-            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
-            if (item.button_text && item.button_link) {
-                clubHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-            }
-            clubHtml += `</div>`;
-        });
-    } else {
-        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-    }
-
-    let cityHtml = '';
-    if (privileges.city && privileges.city.length) {
-        privileges.city.forEach(item => {
-            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-            if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-            } else if (item.button_link) {
-                let linkHtml = '';
-                if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                    linkHtml = parseLinks(item.button_link, false);
-                } else {
-                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
+        let clubHtml = '';
+        if (privileges.club && privileges.club.length) {
+            privileges.club.forEach(item => {
+                let titleHtml = item.title;
+                if (item.title.startsWith('новое:')) {
+                    titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
                 }
-                cityHtml += `<p>📍 ${linkHtml}</p>`;
-            }
-            cityHtml += `</div>`;
-        });
-    } else {
-        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+                clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
+                if (item.button_text && item.button_link) {
+                    clubHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                }
+                clubHtml += `</div>`;
+            });
+        } else {
+            clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        }
+
+        let cityHtml = '';
+        if (privileges.city && privileges.city.length) {
+            privileges.city.forEach(item => {
+                cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+                if (item.button_text && item.button_link) {
+                    cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                } else if (item.button_link) {
+                    let linkHtml = '';
+                    if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                        linkHtml = parseLinks(item.button_link, false);
+                    } else {
+                        linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
+                    }
+                    cityHtml += `<p>📍 ${linkHtml}</p>`;
+                }
+                cityHtml += `</div>`;
+            });
+        } else {
+            cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        }
+
+        mainDiv.innerHTML = `
+            <div class="card-container">
+                <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+                <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+            </div>
+        `;
+
+        setupBottomNav();
+    } catch (error) {
+        console.error('Error in renderPriv:', error);
+        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
     }
-
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
-            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-        </div>
-    `;
-
-    setupBottomNav();
 }
 
 // ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
-    isPrivPage = true;
-    isMenuActive = false;
-    resetNavActive();
+    try {
+        isPrivPage = true;
+        isMenuActive = false;
+        resetNavActive();
 
-    subtitle.textContent = `💳 привилегии с картой интеллигента`;
-    showBack(renderHome);
-    showBottomNav(true);
+        subtitle.textContent = `💳 привилегии с картой интеллигента`;
+        showBack(renderHome);
+        showBottomNav(true);
 
-    let clubHtml = '';
-    if (privileges.club && privileges.club.length) {
-        privileges.club.forEach(item => {
-            let titleHtml = item.title;
-            if (item.title.startsWith('новое:')) {
-                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
-            }
-            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
-        });
-    } else {
-        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-    }
-
-    let cityHtml = '';
-    if (privileges.city && privileges.city.length) {
-        privileges.city.forEach(item => {
-            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-            if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-            } else if (item.button_link) {
-                let linkHtml = '';
-                if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                    linkHtml = parseLinks(item.button_link, false);
-                } else {
-                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
+        let clubHtml = '';
+        if (privileges.club && privileges.club.length) {
+            privileges.club.forEach(item => {
+                let titleHtml = item.title;
+                if (item.title.startsWith('новое:')) {
+                    titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
                 }
-                cityHtml += `<p>📍 ${linkHtml}</p>`;
-            }
-            cityHtml += `</div>`;
-        });
-    } else {
-        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+                clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
+            });
+        } else {
+            clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        }
+
+        let cityHtml = '';
+        if (privileges.city && privileges.city.length) {
+            privileges.city.forEach(item => {
+                cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+                if (item.button_text && item.button_link) {
+                    cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+                } else if (item.button_link) {
+                    let linkHtml = '';
+                    if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                        linkHtml = parseLinks(item.button_link, false);
+                    } else {
+                        linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
+                    }
+                    cityHtml += `<p>📍 ${linkHtml}</p>`;
+                }
+                cityHtml += `</div>`;
+            });
+        } else {
+            cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        }
+
+        mainDiv.innerHTML = `
+            <div class="card-container">
+                <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+                <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+            </div>
+        `;
+
+        setupBottomNav();
+    } catch (error) {
+        console.error('Error in renderGuestPriv:', error);
+        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
     }
-
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
-            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-        </div>
-    `;
-
-    setupBottomNav();
 }
 
 // ----- Страница подарка -----
 function renderGift(isGuest = false) {
-    isPrivPage = true;
-    isMenuActive = false;
-    resetNavActive();
+    try {
+        isPrivPage = true;
+        isMenuActive = false;
+        resetNavActive();
 
-    subtitle.textContent = `подари новый опыт`;
-    showBack(renderHome);
-    showBottomNav(!isGuest);
+        subtitle.textContent = `подари новый опыт`;
+        showBack(renderHome);
+        showBottomNav(!isGuest);
 
-    const giftText = giftContent || 'Информация о подарке временно недоступна.';
+        const giftText = giftContent || 'Информация о подарке временно недоступна.';
 
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <div class="partner-item">
-                <strong>как подарить карту интеллигента</strong>
-                <p style="white-space: pre-line;">${giftText}</p>
-            </div>
-            
-            <div id="giftAccordion" class="card-accordion">
-                <button class="accordion-btn btn-yellow btn-glow">
-                    купить в подарок
-                </button>
-                <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
+        mainDiv.innerHTML = `
+            <div class="card-container">
+                <div class="partner-item">
+                    <strong>как подарить карту интеллигента</strong>
+                    <p style="white-space: pre-line;">${giftText}</p>
+                </div>
+                
+                <div id="giftAccordion" class="card-accordion">
+                    <button class="accordion-btn btn-yellow btn-glow">
+                        купить в подарок
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
+                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
+                    </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
 
-    setupAccordion('giftAccordion', isGuest);
+        setupAccordion('giftAccordion', isGuest);
 
-    if (!isGuest) {
-        setupBottomNav();
+        if (!isGuest) {
+            setupBottomNav();
+        }
+    } catch (error) {
+        console.error('Error in renderGift:', error);
+        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
     }
 }
 
@@ -1931,151 +1951,36 @@ function showGuestPopup() {
 
 // ----- Главная для гостей -----
 function renderGuestHome() {
-    const isGuest = true;
-    subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
-    subtitle.classList.add('subtitle-guest');
-    showBottomNav(true);
-
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            
-            <div id="cardAccordionGuest" class="card-accordion">
-                <button class="accordion-btn btn-yellow btn-glow">
-                    оформить карту
-                </button>
-                <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
-                </div>
-            </div>
-            
-            <div id="navAccordionGuest">
-                <button class="accordion-btn">
-                    навигация по клубу <span class="arrow">👀</span>
-                </button>
-                <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
-                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Контейнер для блока "Мои записи" -->
-        <div id="userBookingsContainer"></div>
-
-        <!-- Календарь сразу после записей -->
-        <div class="card-container" id="calendarContainer"></div>
-
-        <div class="card-container">
-            <h2 class="section-title">🫖 для новичков</h2>
-            <div class="btn-newcomer" id="newcomerBtnGuest">
-                <span class="newcomer-text">как всё устроено</span>
-                <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
-            </div>
-        </div>
-        
-        <div class="card-container">
-            <div class="metrics-header">
-                <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
-            </div>
-            <div class="metrics-grid">
-                <div class="metric-item">
-                    <div class="metric-label">хайков</div>
-                    <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">локаций</div>
-                    <div class="metric-value" data-metric="locations">${metrics.locations}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">километров</div>
-                    <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">знакомств</div>
-                    <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
-                </div>
-            </div>
-        </div>
-    `;
-
-    setupAccordion('cardAccordionGuest', true);
-    setupAccordion('navAccordionGuest', true);
-
-    document.getElementById('guestCardImage')?.addEventListener('click', () => {
-        haptic();
-        showGuestPopup();
-    });
-    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
-        haptic();
-        setUserInteracted();
-        log('newcomer_btn_click', true);
-        renderNewcomerPage(true);
-    });
-
-    renderUserBookings();
-
-    const calendarContainer = document.getElementById('calendarContainer');
-    if (calendarContainer) {
-        renderCalendar(calendarContainer);
-    }
-
-    setupBottomNav();
-}
-
-// ----- Главная для владельцев карты -----
-function renderHome() {
-    isPrivPage = false;
-    isMenuActive = false;
-
-    if (window._floatingScrollHandler) {
-        window.removeEventListener('scroll', window._floatingScrollHandler);
-        window._floatingScrollHandler = null;
-    }
-
-    hideBack();
-    subtitle.classList.remove('subtitle-guest');
-
-    const existingPopup = document.getElementById('guestPopup');
-    if (existingPopup) existingPopup.remove();
-
-    if (userCard.status === 'loading') {
-        mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
-        showBottomNav(false);
-        return;
-    }
-
-    updateMetricsUI();
-
-    if (userCard.status === 'active') {
-        const cardImageUrl = userCard.cardUrl || 'https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png';
-        subtitle.textContent = `💳 твоя карта, ${firstName}`;
+    try {
+        const isGuest = true;
+        subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
+        subtitle.classList.add('subtitle-guest');
         showBottomNav(true);
 
         mainDiv.innerHTML = `
             <div class="card-container">
-                <img src="${cardImageUrl}" alt="карта" class="card-image" id="ownerCardImage">
-                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
+                <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
                 
-                <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
-                    <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
-                    <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
+                <div id="cardAccordionGuest" class="card-accordion">
+                    <button class="accordion-btn btn-yellow btn-glow">
+                        оформить карту
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
+                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
+                    </div>
                 </div>
                 
-                <div id="navAccordionOwner">
+                <div id="navAccordionGuest">
                     <button class="accordion-btn">
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
-                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
+                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
                     </div>
                 </div>
             </div>
@@ -2088,7 +1993,7 @@ function renderHome() {
 
             <div class="card-container">
                 <h2 class="section-title">🫖 для новичков</h2>
-                <div class="btn-newcomer" id="newcomerBtn">
+                <div class="btn-newcomer" id="newcomerBtnGuest">
                     <span class="newcomer-text">как всё устроено</span>
                     <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
                 </div>
@@ -2097,7 +2002,7 @@ function renderHome() {
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
@@ -2120,35 +2025,18 @@ function renderHome() {
             </div>
         `;
 
-        setupAccordion('navAccordionOwner', false);
+        setupAccordion('cardAccordionGuest', true);
+        setupAccordion('navAccordionGuest', true);
 
-        document.getElementById('ownerCardImage')?.addEventListener('click', () => {
+        document.getElementById('guestCardImage')?.addEventListener('click', () => {
             haptic();
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            showConfetti();
-            log('card_click_celebration');
+            showGuestPopup();
         });
-
-        document.getElementById('privBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
+        document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
             haptic();
             setUserInteracted();
-            log('privilege_click');
-            renderPriv();
-        });
-        
-        document.getElementById('supportBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            setUserInteracted();
-            openLink('https://t.me/hellointelligent', 'support_click', false);
-        });
-
-        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
-            haptic();
-            setUserInteracted();
-            log('newcomer_btn_click', false);
-            renderNewcomerPage(false);
+            log('newcomer_btn_click', true);
+            renderNewcomerPage(true);
         });
 
         renderUserBookings();
@@ -2159,9 +2047,151 @@ function renderHome() {
         }
 
         setupBottomNav();
+    } catch (error) {
+        console.error('Error in renderGuestHome:', error);
+        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
+    }
+}
 
-    } else {
-        renderGuestHome();
+// ----- Главная для владельцев карты -----
+function renderHome() {
+    try {
+        isPrivPage = false;
+        isMenuActive = false;
+
+        if (window._floatingScrollHandler) {
+            window.removeEventListener('scroll', window._floatingScrollHandler);
+            window._floatingScrollHandler = null;
+        }
+
+        hideBack();
+        subtitle.classList.remove('subtitle-guest');
+
+        const existingPopup = document.getElementById('guestPopup');
+        if (existingPopup) existingPopup.remove();
+
+        if (userCard.status === 'loading') {
+            mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
+            showBottomNav(false);
+            return;
+        }
+
+        updateMetricsUI();
+
+        if (userCard.status === 'active') {
+            const cardImageUrl = userCard.cardUrl || 'https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png';
+            subtitle.textContent = `💳 твоя карта, ${firstName}`;
+            showBottomNav(true);
+
+            mainDiv.innerHTML = `
+                <div class="card-container">
+                    <img src="${cardImageUrl}" alt="карта" class="card-image" id="ownerCardImage">
+                    <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
+                    
+                    <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
+                        <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
+                        <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
+                    </div>
+                    
+                    <div id="navAccordionOwner">
+                        <button class="accordion-btn">
+                            навигация по клубу <span class="arrow">👀</span>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
+                            <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
+                            <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
+                            <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Контейнер для блока "Мои записи" -->
+                <div id="userBookingsContainer"></div>
+
+                <!-- Календарь сразу после записей -->
+                <div class="card-container" id="calendarContainer"></div>
+
+                <div class="card-container">
+                    <h2 class="section-title">🫖 для новичков</h2>
+                    <div class="btn-newcomer" id="newcomerBtn">
+                        <span class="newcomer-text">как всё устроено</span>
+                        <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
+                    </div>
+                </div>
+                
+                <div class="card-container">
+                    <div class="metrics-header">
+                        <h2 class="metrics-title">🌍 клуб в цифрах</h2>
+                        <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-label">хайков</div>
+                            <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">локаций</div>
+                            <div class="metric-value" data-metric="locations">${metrics.locations}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">километров</div>
+                            <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">знакомств</div>
+                            <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            setupAccordion('navAccordionOwner', false);
+
+            document.getElementById('ownerCardImage')?.addEventListener('click', () => {
+                haptic();
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                showConfetti();
+                log('card_click_celebration');
+            });
+
+            document.getElementById('privBtn')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                setUserInteracted();
+                log('privilege_click');
+                renderPriv();
+            });
+            
+            document.getElementById('supportBtn')?.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                setUserInteracted();
+                openLink('https://t.me/hellointelligent', 'support_click', false);
+            });
+
+            document.getElementById('newcomerBtn')?.addEventListener('click', () => {
+                haptic();
+                setUserInteracted();
+                log('newcomer_btn_click', false);
+                renderNewcomerPage(false);
+            });
+
+            renderUserBookings();
+
+            const calendarContainer = document.getElementById('calendarContainer');
+            if (calendarContainer) {
+                renderCalendar(calendarContainer);
+            }
+
+            setupBottomNav();
+
+        } else {
+            renderGuestHome();
+        }
+    } catch (error) {
+        console.error('Error in renderHome:', error);
+        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
     }
 }
 
