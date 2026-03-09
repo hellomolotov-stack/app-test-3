@@ -153,7 +153,16 @@ async function loadRandomPhrasesFromFirebase() {
     if (!database) return [];
     try {
         const snapshot = await database.ref('randomPhrases').once('value');
-        return snapshot.val() || [];
+        const data = snapshot.val();
+        // Если данные - массив, возвращаем как есть
+        if (Array.isArray(data)) {
+            return data;
+        }
+        // Если данные - объект с числовыми ключами, преобразуем в массив
+        if (data && typeof data === 'object') {
+            return Object.values(data);
+        }
+        return [];
     } catch (e) {
         console.error('Error loading random phrases from Firebase:', e);
         return [];
