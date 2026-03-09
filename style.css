@@ -92,11 +92,26 @@ body::before {
 }
 
 /* Анимированный загрузчик */
+.initial-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(73, 138, 176, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2000;
+    transition: opacity 0.3s;
+}
+
 .loader-animation {
     text-align: center;
     color: white;
-    position: relative;
-    padding-bottom: 40px;
 }
 
 .loader-emoji {
@@ -113,16 +128,14 @@ body::before {
 
 .loader-message {
     position: absolute;
-    bottom: -30px;
+    bottom: 40px;
     left: 0;
     width: 100%;
+    text-align: center;
     font-size: 14px;
     color: #ffffff;
     opacity: 0.8;
-    text-decoration: none;
     font-weight: 500;
-    white-space: nowrap;
-    text-align: center;
     pointer-events: none;
 }
 
@@ -519,22 +532,6 @@ body::before {
     text-align: right;
     width: 100%;
     line-height: 1;
-}
-
-.initial-loader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: rgba(73, 138, 176, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    z-index: 2000;
-    transition: opacity 0.3s;
 }
 
 .initial-loader.fade-out {
