@@ -2109,4 +2109,67 @@ function renderHome() {
                         <div class="metric-value" data-metric="locations">${metrics.locations}</div>
                     </div>
                     <div class="metric-item">
-                        <div
+                        <div class="metric-label">километров</div>
+                        <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">знакомств</div>
+                        <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        setupAccordion('navAccordionOwner', false);
+
+        document.getElementById('ownerCardImage')?.addEventListener('click', () => {
+            haptic();
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            showConfetti();
+            log('card_click_celebration');
+        });
+
+        document.getElementById('privBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            setUserInteracted();
+            log('privilege_click');
+            renderPriv();
+        });
+        
+        document.getElementById('supportBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            setUserInteracted();
+            openLink('https://t.me/hellointelligent', 'support_click', false);
+        });
+
+        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
+            haptic();
+            setUserInteracted();
+            log('newcomer_btn_click', false);
+            renderNewcomerPage(false);
+        });
+
+        renderUserBookings();
+
+        const calendarContainer = document.getElementById('calendarContainer');
+        if (calendarContainer) {
+            renderCalendar(calendarContainer);
+        }
+
+        setupBottomNav();
+
+    } else {
+        renderGuestHome();
+    }
+}
+
+function buyCard() {
+    haptic();
+    if (!userId) return;
+    log('buy_card_click', true);
+    openLink(PERMANENT_CARD_LINK, null, true);
+}
+
+window.addEventListener('load', loadData);
