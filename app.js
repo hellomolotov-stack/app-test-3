@@ -2324,4 +2324,11 @@ function buyCard() {
     openLink(PERMANENT_CARD_LINK, null, true);
 }
 
+// Отладка: выведем leaders и hikesList через 5 секунд после загрузки
+setTimeout(() => {
+    console.log('🔍 DEBUG: leaders =', leaders);
+    console.log('🔍 DEBUG: hikesList =', hikesList.map(h => h.date));
+    console.log('🔍 DEBUG: есть ли ведущий для первого хайка?', hikesList[0] ? leaders[hikesList[0].date] : 'нет хайков');
+}, 5000);
+
 window.addEventListener('load', loadData);
