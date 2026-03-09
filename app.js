@@ -388,6 +388,12 @@ const subtitle = document.getElementById('subtitle');
 const bottomNav = document.getElementById('bottomNav');
 const navPopup = document.getElementById('navPopup');
 
+// --- Флаг взаимодействия пользователя для меню ---
+let userInteracted = false;
+function setUserInteracted() {
+    userInteracted = true;
+}
+
 // --- Навигация ---
 function setActiveNav(activeId) {
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -407,6 +413,12 @@ function resetNavActive() {
 
 function updateActiveNav() {
     if (isPrivPage || isMenuActive) return;
+
+    // Если пользователь ещё не взаимодействовал, оставляем "главную" активной
+    if (!userInteracted) {
+        setActiveNav('navHome');
+        return;
+    }
 
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -442,6 +454,7 @@ function log(action, isGuest = false) {
 
 // --- Анимированная загрузка ---
 let loaderInterval = null;
+let loaderMessageTimer = null;
 
 function showAnimatedLoader() {
     const loader = document.getElementById('initial-loader');
@@ -450,6 +463,7 @@ function showAnimatedLoader() {
         <div class="loader-animation">
             <div class="loader-emoji" id="loaderEmoji">⛰️</div>
             <div class="loader-text" id="loaderText">выбираем вершину</div>
+            <div class="loader-message" id="loaderMessage" style="display: none;">⚙️для быстрой загрузки включи три буквы</div>
         </div>
     `;
     loader.style.display = 'flex';
@@ -464,19 +478,31 @@ function showAnimatedLoader() {
     let index = 0;
     const emojiEl = document.getElementById('loaderEmoji');
     const textEl = document.getElementById('loaderText');
-    if (!emojiEl || !textEl) return;
+    const messageEl = document.getElementById('loaderMessage');
+    if (!emojiEl || !textEl || !messageEl) return;
     
     loaderInterval = setInterval(() => {
         index = (index + 1) % steps.length;
         emojiEl.textContent = steps[index].emoji;
         textEl.textContent = steps[index].text;
     }, 1500);
+
+    // Показываем сообщение через 5 секунд, если лоадер ещё активен
+    loaderMessageTimer = setTimeout(() => {
+        if (loader.style.display !== 'none' && !loader.classList.contains('fade-out')) {
+            messageEl.style.display = 'block';
+        }
+    }, 5000);
 }
 
 function hideAnimatedLoader() {
     if (loaderInterval) {
         clearInterval(loaderInterval);
         loaderInterval = null;
+    }
+    if (loaderMessageTimer) {
+        clearTimeout(loaderMessageTimer);
+        loaderMessageTimer = null;
     }
     const loader = document.getElementById('initial-loader');
     if (loader) {
@@ -503,6 +529,7 @@ function normalizeDate(dateStr) {
 
 // Функция скролла к календарю
 function scrollToCalendar() {
+    setUserInteracted(); // пользователь явно хочет к календарю
     setTimeout(() => {
         const calendarContainer = document.getElementById('calendarContainer');
         if (calendarContainer) {
@@ -1580,6 +1607,7 @@ function setupBottomNav() {
 
     navHomeNew.addEventListener('click', () => {
         haptic();
+        setUserInteracted();
         renderHome();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         log('nav_home_click');
@@ -1591,6 +1619,7 @@ function setupBottomNav() {
 
     navHikesNew.addEventListener('click', () => {
         haptic();
+        setUserInteracted();
         renderHome();
         scrollToCalendar();
         log('nav_hikes_click');
@@ -1618,6 +1647,7 @@ function setupBottomNav() {
     popupChat.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
+        setUserInteracted();
         openLink('https://t.me/yaltahikingchat', 'popup_chat_click');
         popup.classList.remove('show');
         isMenuActive = false;
@@ -1626,6 +1656,7 @@ function setupBottomNav() {
     popupChannel.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
+        setUserInteracted();
         openLink('https://t.me/yaltahiking', 'popup_channel_click');
         popup.classList.remove('show');
         isMenuActive = false;
@@ -1634,6 +1665,7 @@ function setupBottomNav() {
     popupGift.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
+        setUserInteracted();
         const isGuest = userCard.status !== 'active';
         renderGift(isGuest);
         popup.classList.remove('show');
@@ -1643,6 +1675,7 @@ function setupBottomNav() {
     popupNewcomer.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
+        setUserInteracted();
         const isGuest = userCard.status !== 'active';
         renderNewcomerPage(isGuest);
         popup.classList.remove('show');
@@ -1658,7 +1691,10 @@ function setupBottomNav() {
         }
     });
 
-    window.addEventListener('scroll', () => requestAnimationFrame(updateActiveNav));
+    window.addEventListener('scroll', () => {
+        setUserInteracted(); // любой скролл считается взаимодействием
+        requestAnimationFrame(updateActiveNav);
+    });
     updateActiveNav();
 }
 
@@ -1709,6 +1745,7 @@ function renderNewcomerPage(isGuest = false) {
 
     document.getElementById('goHomeStatic')?.addEventListener('click', () => {
         haptic();
+        setUserInteracted();
         renderHome();
     });
 
@@ -1982,6 +2019,7 @@ function renderGuestHome() {
     });
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic();
+        setUserInteracted();
         log('newcomer_btn_click', true);
         renderNewcomerPage(true);
     });
@@ -2099,6 +2137,7 @@ function renderHome() {
         document.getElementById('privBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
+            setUserInteracted();
             log('privilege_click');
             renderPriv();
         });
@@ -2106,11 +2145,13 @@ function renderHome() {
         document.getElementById('supportBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
+            setUserInteracted();
             openLink('https://t.me/hellointelligent', 'support_click', false);
         });
 
         document.getElementById('newcomerBtn')?.addEventListener('click', () => {
             haptic();
+            setUserInteracted();
             log('newcomer_btn_click', false);
             renderNewcomerPage(false);
         });
