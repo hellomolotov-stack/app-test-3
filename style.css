@@ -95,6 +95,8 @@ body::before {
 .loader-animation {
     text-align: center;
     color: white;
+    position: relative;
+    padding-bottom: 40px;
 }
 
 .loader-emoji {
@@ -107,6 +109,21 @@ body::before {
     font-size: 18px;
     font-weight: 500;
     opacity: 0.9;
+}
+
+.loader-message {
+    position: absolute;
+    bottom: -30px;
+    left: 0;
+    width: 100%;
+    font-size: 14px;
+    color: #ffffff;
+    opacity: 0.8;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+    text-align: center;
+    pointer-events: none;
 }
 
 @keyframes pulse {
