@@ -54,7 +54,7 @@ let faq = [];
 let privileges = { club: [], city: [] };
 let giftContent = '';
 let randomPhrases = [];
-let leaders = {}; // объект, ключ - дата хайка
+let leaders = {}; // объект ведущих
 
 // Firebase инициализация
 let database = null;
@@ -786,7 +786,7 @@ function showLeaderDropdown(leaderElement, leaderData) {
 
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown'; // используем тот же стиль
-    dropdown.style.width = '250px'; // можно задать ширину
+    dropdown.style.width = '250px';
 
     const avatarHtml = leaderData.photoUrl 
         ? `<img src="${leaderData.photoUrl}" class="participant-dropdown-avatar" alt="${leaderData.name}">`
