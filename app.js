@@ -54,7 +54,7 @@ let faq = [];
 let privileges = { club: [], city: [] };
 let giftContent = '';
 let randomPhrases = [];
-let leaders = {}; // объект ведущих
+let leaders = {};
 
 // Firebase инициализация
 let database = null;
@@ -164,7 +164,6 @@ async function loadGiftFromFirebase() {
     }
 }
 
-// --- Загрузка случайных фраз из Firebase ---
 async function loadRandomPhrasesFromFirebase() {
     if (!database) return [];
     try {
@@ -596,7 +595,6 @@ async function loadData() {
     }, 10000);
 
     try {
-        // Подписываемся на обновления хайков
         if (database) {
             subscribeToHikes((newList) => {
                 hikesList = newList;
@@ -658,7 +656,6 @@ async function loadData() {
         
         renderHome();
         
-        // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlParams = new URLSearchParams(window.location.search);
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
@@ -782,10 +779,11 @@ function closeLeaderDropdown() {
 }
 
 function showLeaderDropdown(leaderElement, leaderData) {
+    console.log('showLeaderDropdown called', leaderData); // ОТЛАДКА
     closeLeaderDropdown();
 
     const dropdown = document.createElement('div');
-    dropdown.className = 'participant-dropdown'; // используем тот же стиль
+    dropdown.className = 'participant-dropdown';
     dropdown.style.width = '250px';
 
     const avatarHtml = leaderData.photoUrl 
@@ -813,7 +811,7 @@ function showLeaderDropdown(leaderElement, leaderData) {
     const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
     dropdown.style.position = 'absolute';
-    dropdown.style.bottom = `${window.innerHeight - rect.top + scrollTop + 10}px`; // над элементом
+    dropdown.style.bottom = `${window.innerHeight - rect.top + scrollTop + 10}px`;
     dropdown.style.left = `${rect.left + scrollLeft}px`;
     dropdown.style.zIndex = '2000';
 
@@ -843,6 +841,7 @@ document.addEventListener('click', function(e) {
         e.stopPropagation();
         const hikeDate = link.dataset.date;
         const leaderData = leaders[hikeDate];
+        console.log('leader clicked, date:', hikeDate, 'leaderData:', leaderData); // ОТЛАДКА
         if (leaderData) {
             haptic();
             showLeaderDropdown(link, leaderData);
@@ -2323,12 +2322,5 @@ function buyCard() {
     log('buy_card_click', true);
     openLink(PERMANENT_CARD_LINK, null, true);
 }
-
-// Отладка: выведем leaders и hikesList через 5 секунд после загрузки
-setTimeout(() => {
-    console.log('🔍 DEBUG: leaders =', leaders);
-    console.log('🔍 DEBUG: hikesList =', hikesList.map(h => h.date));
-    console.log('🔍 DEBUG: есть ли ведущий для первого хайка?', hikesList[0] ? leaders[hikesList[0].date] : 'нет хайков');
-}, 5000);
 
 window.addEventListener('load', loadData);
