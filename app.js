@@ -38,7 +38,6 @@ const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7F
 const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
 const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
 const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
-const RANDOM_PHRASES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=537970117&single=true&output=csv';
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -55,6 +54,7 @@ let faq = [];
 let privileges = { club: [], city: [] };
 let giftContent = '';
 let randomPhrases = [];
+let leaders = {}; // объект, ключ - дата хайка
 
 // Firebase инициализация
 let database = null;
@@ -164,7 +164,7 @@ async function loadGiftFromFirebase() {
     }
 }
 
-// --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ СЛУЧАЙНЫХ ФРАЗ ИЗ FIREBASE ---
+// --- Загрузка случайных фраз из Firebase ---
 async function loadRandomPhrasesFromFirebase() {
     if (!database) return [];
     try {
@@ -175,7 +175,6 @@ async function loadRandomPhrasesFromFirebase() {
             return data;
         }
         if (data && typeof data === 'object') {
-            // Преобразуем объект с числовыми ключами в массив
             const arr = Object.values(data);
             console.log('Converted to array:', arr);
             return arr;
@@ -184,6 +183,20 @@ async function loadRandomPhrasesFromFirebase() {
     } catch (e) {
         console.error('Error loading random phrases from Firebase:', e);
         return [];
+    }
+}
+
+// --- Загрузка ведущих из Firebase ---
+async function loadLeadersFromFirebase() {
+    if (!database) return {};
+    try {
+        const snapshot = await database.ref('leaders').once('value');
+        const data = snapshot.val() || {};
+        console.log('Leaders loaded:', data);
+        return data;
+    } catch (e) {
+        console.error('Error loading leaders from Firebase:', e);
+        return {};
     }
 }
 
@@ -276,7 +289,7 @@ async function loadUserRegistrationsFromFirebase() {
     }
 }
 
-// --- Загрузка данных пользователя из CSV (оставляем как есть) ---
+// --- Загрузка данных пользователя из CSV ---
 function parseCSVLine(line) {
     const result = [];
     let start = 0;
@@ -617,7 +630,10 @@ async function loadData() {
         const phrasesData = await loadRandomPhrasesFromFirebase();
         if (phrasesData) {
             randomPhrases = phrasesData;
-            console.log('Final randomPhrases:', randomPhrases);
+        }
+        const leadersData = await loadLeadersFromFirebase();
+        if (leadersData) {
+            leaders = leadersData;
         }
 
         await loadUserData();
@@ -755,10 +771,85 @@ function parseLinks(text, isGuest) {
     });
 }
 
+// --- Выпадающий блок ведущего ---
+let currentLeaderDropdown = null;
+
+function closeLeaderDropdown() {
+    if (currentLeaderDropdown) {
+        currentLeaderDropdown.remove();
+        currentLeaderDropdown = null;
+    }
+}
+
+function showLeaderDropdown(leaderElement, leaderData) {
+    closeLeaderDropdown();
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'participant-dropdown'; // используем тот же стиль
+    dropdown.style.width = '250px'; // можно задать ширину
+
+    const avatarHtml = leaderData.photoUrl 
+        ? `<img src="${leaderData.photoUrl}" class="participant-dropdown-avatar" alt="${leaderData.name}">`
+        : `<div class="participant-dropdown-avatar placeholder">${leaderData.name.charAt(0).toUpperCase()}</div>`;
+
+    const contactHtml = leaderData.username 
+        ? `<a href="#" data-url="https://t.me/${leaderData.username}" data-guest="false" class="dynamic-link" style="color: var(--yellow); text-decoration: none;">@${leaderData.username}</a>`
+        : '';
+
+    dropdown.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                ${avatarHtml}
+                <span style="font-weight: 600; color: white;">${leaderData.name}</span>
+            </div>
+            <div style="font-size: 14px; color: rgba(255,255,255,0.9);">${leaderData.bio || ''}</div>
+            <div style="font-size: 14px;">${contactHtml}</div>
+        </div>
+    `;
+
+    // Позиционируем над элементом
+    const rect = leaderElement.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+    dropdown.style.position = 'absolute';
+    dropdown.style.bottom = `${window.innerHeight - rect.top + scrollTop + 10}px`; // над элементом
+    dropdown.style.left = `${rect.left + scrollLeft}px`;
+    dropdown.style.zIndex = '2000';
+
+    document.body.appendChild(dropdown);
+    setTimeout(() => dropdown.classList.add('show'), 10);
+
+    currentLeaderDropdown = dropdown;
+
+    const closeHandler = (e) => {
+        if (!dropdown.contains(e.target) && e.target !== leaderElement) {
+            closeLeaderDropdown();
+            document.removeEventListener('click', closeHandler);
+        }
+    };
+    setTimeout(() => {
+        document.addEventListener('click', closeHandler);
+    }, 0);
+}
+
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name');
     if (!link) return;
+    
+    if (link.classList.contains('leader-name')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const hikeDate = link.dataset.date;
+        const leaderData = leaders[hikeDate];
+        if (leaderData) {
+            haptic();
+            showLeaderDropdown(link, leaderData);
+            log('leader_click', userCard.status !== 'active');
+        }
+        return;
+    }
     
     if (link.classList.contains('dynamic-link')) {
         e.preventDefault();
@@ -802,10 +893,9 @@ document.addEventListener('click', function(e) {
     
     if (link.classList.contains('booking-detail-btn')) {
         e.preventDefault();
-        const date = link.dataset.date;
-        const index = hikesList.findIndex(h => h.date === date);
-        if (index !== -1) {
-            showBottomSheet(index);
+        const index = link.dataset.index;
+        if (index !== undefined) {
+            showBottomSheet(parseInt(index));
         }
         return;
     }
@@ -1125,7 +1215,7 @@ function showBottomSheet(index) {
         }
 
         let extraInfoHtml = '';
-        if (!isPast && (hike.start_time || hike.location_link)) {
+        if (!isPast) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
                 extraInfoHtml += `
@@ -1156,6 +1246,21 @@ function showBottomSheet(index) {
                             </svg>
                         </span>
                         <span><strong>точка сбора:</strong> ${locationHtml}</span>
+                    </div>
+                `;
+            }
+            // Строка ведущего
+            const leader = leaders[hike.date];
+            if (leader) {
+                extraInfoHtml += `
+                    <div class="info-row">
+                        <span class="info-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
+                                <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
+                            </svg>
+                        </span>
+                        <span><strong>ведущий:</strong> <a href="#" class="leader-name dynamic-link" data-date="${hike.date}" style="color: var(--yellow); text-decoration: none;">${leader.name}</a></span>
                     </div>
                 `;
             }
@@ -1230,6 +1335,7 @@ function showBottomSheet(index) {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
                 closeParticipantDropdown();
+                closeLeaderDropdown();
                 sheetCurrentIndex--;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1243,6 +1349,7 @@ function showBottomSheet(index) {
             e.stopPropagation();
             if (sheetCurrentIndex < hikesList.length - 1) {
                 closeParticipantDropdown();
+                closeLeaderDropdown();
                 sheetCurrentIndex++;
                 updateContent();
                 updateFloatingSheetButtons();
@@ -1512,6 +1619,7 @@ function showBottomSheet(index) {
 
 function closeBottomSheet() {
     closeParticipantDropdown();
+    closeLeaderDropdown();
     if (currentUnsubscribe) {
         currentUnsubscribe();
         currentUnsubscribe = null;
