@@ -53,7 +53,7 @@ let hikesList = [];
 let faq = [];
 let privileges = { club: [], city: [] };
 let giftContent = '';
-let randomPhrases = []; // случайные фразы для блока "Мои записи"
+let randomPhrases = [];
 
 // Firebase инициализация
 let database = null;
@@ -74,20 +74,6 @@ try {
 } catch (e) {
     console.error('Firebase initialization failed:', e);
     database = null;
-}
-
-// --- Функции для работы с аватаром пользователя ---
-async function saveUserAvatar() {
-    if (!database || !userId || !userPhotoUrl) return;
-    try {
-        await database.ref(`userAvatars/${userId}`).set({
-            photoUrl: userPhotoUrl,
-            updatedAt: firebase.database.ServerValue.TIMESTAMP
-        });
-        console.log('User avatar saved');
-    } catch (e) {
-        console.error('Error saving user avatar:', e);
-    }
 }
 
 // --- Firebase функции для данных ---
@@ -174,7 +160,7 @@ async function loadRandomPhrasesFromFirebase() {
     }
 }
 
-// --- Firebase функции для регистраций и участников ---
+// --- Firebase для участников ---
 function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
         callback(0, []);
@@ -247,16 +233,11 @@ function setUserRegistrationStatus(hikeDate, status) {
 }
 
 async function loadUserRegistrationsFromFirebase() {
-    if (!database || !userId || !hikesList.length) return {};
+    if (!database || !userId) return {};
     try {
         const userRef = database.ref(`userRegistrations/${userId}`);
         const snapshot = await userRef.once('value');
-        const registrations = snapshot.val() || {};
-        const statusMap = {};
-        hikesList.forEach((hike, index) => {
-            statusMap[index] = registrations[hike.date] === true;
-        });
-        return statusMap;
+        return snapshot.val() || {};
     } catch (e) {
         console.error('Error loading user registrations from Firebase:', e);
         return {};
@@ -335,31 +316,27 @@ async function loadUserData() {
     }
 }
 
-// --- Функции для гостей (старая система) ---
-function loadUserRegistrationsFromLocal() {
-    const savedStatus = localStorage.getItem('hikeBookingStatus');
-    if (savedStatus) {
-        try {
-            const parsed = JSON.parse(savedStatus);
-            const statusMap = {};
-            hikesList.forEach((hike, index) => {
-                statusMap[index] = parsed[hike.date] || false;
-            });
-            return statusMap;
-        } catch (e) {
-            return {};
-        }
+async function saveUserAvatar() {
+    if (!database || !userId || !userPhotoUrl) return;
+    try {
+        await database.ref(`userAvatars/${userId}`).set({
+            photoUrl: userPhotoUrl,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        console.log('User avatar saved');
+    } catch (e) {
+        console.error('Error saving user avatar:', e);
     }
-    return {};
+}
+
+// --- Функции для гостей (localStorage) ---
+function loadUserRegistrationsFromLocal() {
+    const saved = localStorage.getItem('hikeBookingStatus');
+    return saved ? JSON.parse(saved) : {};
 }
 
 function saveStatusToLocalStorage() {
-    if (!hikesList.length) return;
-    const statusObj = {};
-    hikesList.forEach((hike, index) => {
-        statusObj[hike.date] = hikeBookingStatus[index] || false;
-    });
-    localStorage.setItem('hikeBookingStatus', JSON.stringify(statusObj));
+    localStorage.setItem('hikeBookingStatus', JSON.stringify(hikeBookingStatus));
 }
 
 function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
@@ -393,33 +370,30 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
 // --- Флаги интерфейса ---
 let isPrivPage = false;
 let isMenuActive = false;
-let hikeBookingStatus = {};
+let hikeBookingStatus = {}; // ключ - дата хайка (строка), значение - boolean
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
 const bottomNav = document.getElementById('bottomNav');
 const navPopup = document.getElementById('navPopup');
 
-// --- Флаг взаимодействия пользователя для меню ---
+// --- Навигация ---
 let userInteracted = false;
+let manualNavClick = null;
+let manualNavTimer = null;
+
 function setUserInteracted() {
     userInteracted = true;
 }
 
-// --- Управление ручными кликами по навигации ---
-let manualNavClick = null; // 'home' или 'hikes'
-let manualNavTimer = null;
-
 function setManualNav(target) {
     if (manualNavTimer) clearTimeout(manualNavTimer);
     manualNavClick = target;
-    // Сбрасываем ручной режим через 2 секунды, чтобы скролл снова мог менять активность
     manualNavTimer = setTimeout(() => {
         manualNavClick = null;
     }, 2000);
 }
 
-// --- Навигация ---
 function setActiveNav(activeId) {
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.remove('active');
@@ -439,13 +413,11 @@ function resetNavActive() {
 function updateActiveNav() {
     if (isPrivPage || isMenuActive) return;
 
-    // Если есть недавний ручной клик, принудительно держим нужную кнопку
     if (manualNavClick) {
         setActiveNav(manualNavClick === 'home' ? 'navHome' : 'navHikes');
         return;
     }
 
-    // Если пользователь ещё не взаимодействовал, оставляем "главную" активной
     if (!userInteracted) {
         setActiveNav('navHome');
         return;
@@ -518,7 +490,6 @@ function showAnimatedLoader() {
         textEl.textContent = steps[index].text;
     }, 1500);
 
-    // Показываем сообщение через 5 секунд, если лоадер ещё активен
     loaderMessageTimer = setTimeout(() => {
         if (loader.style.display !== 'none' && !loader.classList.contains('fade-out')) {
             messageEl.style.display = 'block';
@@ -545,7 +516,6 @@ function hideAnimatedLoader() {
     }
 }
 
-// Функция нормализации даты
 function normalizeDate(dateStr) {
     if (!dateStr) return dateStr;
     const parts = dateStr.split('-');
@@ -558,7 +528,6 @@ function normalizeDate(dateStr) {
     return dateStr;
 }
 
-// Функция скролла к календарю
 function scrollToCalendar() {
     setUserInteracted();
     setTimeout(() => {
@@ -569,7 +538,7 @@ function scrollToCalendar() {
     }, 100);
 }
 
-// --- Основная загрузка с Firebase ---
+// --- Основная загрузка ---
 async function loadData() {
     showAnimatedLoader();
 
@@ -579,7 +548,6 @@ async function loadData() {
     }, 10000);
 
     try {
-        // Подписываемся на обновления хайков
         if (database) {
             subscribeToHikes((newList) => {
                 hikesList = newList;
@@ -587,33 +555,20 @@ async function loadData() {
                 if (calendarContainer && !isPrivPage) {
                     renderCalendar(calendarContainer);
                 }
-                const bookingsContainer = document.getElementById('userBookingsContainer');
-                if (bookingsContainer) {
-                    renderUserBookings();
-                }
+                renderUserBookings();
             });
         }
 
         const metricsData = await loadMetricsFromFirebase();
-        if (metricsData) {
-            metrics = metricsData;
-        }
+        if (metricsData) metrics = metricsData;
         const faqData = await loadFaqFromFirebase();
-        if (faqData) {
-            faq = faqData;
-        }
+        if (faqData) faq = faqData;
         const privilegesData = await loadPrivilegesFromFirebase();
-        if (privilegesData) {
-            privileges = privilegesData;
-        }
+        if (privilegesData) privileges = privilegesData;
         const giftData = await loadGiftFromFirebase();
-        if (giftData) {
-            giftContent = giftData;
-        }
+        if (giftData) giftContent = giftData;
         const phrasesData = await loadRandomPhrasesFromFirebase();
-        if (phrasesData) {
-            randomPhrases = phrasesData;
-        }
+        if (phrasesData) randomPhrases = phrasesData;
 
         await loadUserData();
 
@@ -622,13 +577,11 @@ async function loadData() {
         }
 
         if (userCard.status === 'active' && database) {
-            try {
-                hikeBookingStatus = await loadUserRegistrationsFromFirebase();
-            } catch (e) {
-                console.error('Firebase load failed, using empty', e);
-                hikeBookingStatus = {};
-                hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
-            }
+            const fbStatus = await loadUserRegistrationsFromFirebase();
+            hikeBookingStatus = {};
+            hikesList.forEach(hike => {
+                hikeBookingStatus[hike.date] = fbStatus[hike.date] === true;
+            });
         } else {
             hikeBookingStatus = loadUserRegistrationsFromLocal();
         }
@@ -637,7 +590,7 @@ async function loadData() {
         
         renderHome();
         
-        // Проверяем start_param из Telegram
+        // start_param
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlParams = new URLSearchParams(window.location.search);
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
@@ -750,7 +703,7 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// Глобальный обработчик кликов по ссылкам
+// Глобальный обработчик кликов
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn');
     if (!link) return;
@@ -797,9 +750,10 @@ document.addEventListener('click', function(e) {
     
     if (link.classList.contains('booking-detail-btn')) {
         e.preventDefault();
-        const index = link.dataset.index;
-        if (index !== undefined) {
-            showBottomSheet(parseInt(index));
+        const date = link.dataset.date;
+        const index = hikesList.findIndex(h => h.date === date);
+        if (index !== -1) {
+            showBottomSheet(index);
         }
         return;
     }
@@ -813,7 +767,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Переменные для управления выпадающим списком
 let currentDropdownHikeDate = null;
 
 function closeParticipantDropdown() {
@@ -897,7 +850,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     log('participant_dropdown_opened', userCard.status !== 'active');
 }
 
-// Функция для рендера блока "Мои записи"
+// ----- Блок "Мои записи" -----
 function renderUserBookings() {
     const container = document.getElementById('userBookingsContainer');
     if (!container) return;
@@ -906,17 +859,16 @@ function renderUserBookings() {
     today.setHours(0, 0, 0, 0);
     
     const bookings = [];
-    hikesList.forEach((hike, index) => {
-        if (hikeBookingStatus[index]) {
+    hikesList.forEach(hike => {
+        if (hikeBookingStatus[hike.date]) {
             const hikeDate = new Date(hike.date);
             if (hikeDate >= today) {
-                bookings.push({ ...hike, index });
+                bookings.push(hike);
             }
         }
     });
 
     if (bookings.length === 0) {
-        // Показываем призыв с случайной фразой
         const phrase = randomPhrases.length > 0 
             ? randomPhrases[Math.floor(Math.random() * randomPhrases.length)]
             : 'смотреть 5 сезон глухаря или';
@@ -977,7 +929,7 @@ function renderUserBookings() {
                     <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${cleanedTitle}</span>
                 </div>
-                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">детали</button>
+                <button class="btn btn-yellow booking-detail-btn" data-date="${booking.date}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">детали</button>
             </div>
         `;
     });
@@ -1024,6 +976,8 @@ function showBottomSheet(index) {
 
     sheetCurrentIndex = index;
     const isGuest = userCard.status !== 'active';
+    const currentHike = hikesList[index];
+    const currentHikeDate = currentHike.date;
 
     if (currentUnsubscribe) {
         currentUnsubscribe();
@@ -1266,7 +1220,7 @@ function showBottomSheet(index) {
         const hike = hikesList[sheetCurrentIndex];
         if (!hike) return;
 
-        const isBooked = hikeBookingStatus[sheetCurrentIndex] || false;
+        const isBooked = hikeBookingStatus[hike.date] || false;
         const hikeDate = new Date(hike.date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -1299,31 +1253,32 @@ function showBottomSheet(index) {
                 
                 haptic();
 
-                if (isGuest) {
-                    removeParticipant(hike.date).then(() => {
-                        hikeBookingStatus[sheetCurrentIndex] = false;
+                const promise = isGuest
+                    ? removeParticipant(hike.date).then(() => {
+                        delete hikeBookingStatus[hike.date];
                         saveStatusToLocalStorage();
-                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
-                        updateFloatingSheetButtons();
-                        renderUserBookings();
-                    }).catch((error) => {
-                        console.error('Error during cancellation:', error);
-                        updateFloatingSheetButtons();
-                    });
-                } else {
-                    Promise.all([
+                      })
+                    : Promise.all([
                         removeParticipant(hike.date),
                         setUserRegistrationStatus(hike.date, false)
-                    ]).then(() => {
-                        hikeBookingStatus[sheetCurrentIndex] = false;
-                        updateFloatingSheetButtons();
+                      ]).then(() => {
+                        delete hikeBookingStatus[hike.date];
+                      });
+
+                promise
+                    .then(() => {
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
+                        updateFloatingSheetButtons();
                         renderUserBookings();
-                    }).catch((error) => {
+                    })
+                    .catch((error) => {
                         console.error('Error during cancellation:', error);
                         updateFloatingSheetButtons();
+                    })
+                    .finally(() => {
+                        cancelBtn.dataset.processing = 'false';
                     });
-                }
+
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
@@ -1351,7 +1306,7 @@ function showBottomSheet(index) {
                     addParticipant(hike.date)
                         .then(() => setUserRegistrationStatus(hike.date, true))
                         .then(() => {
-                            hikeBookingStatus[sheetCurrentIndex] = true;
+                            hikeBookingStatus[hike.date] = true;
                             saveStatusToLocalStorage();
                             updateRegistrationInSheet(hike.date, hike.title, 'booked');
                             updateFloatingSheetButtons();
@@ -1362,9 +1317,10 @@ function showBottomSheet(index) {
                         .catch((error) => {
                             console.error('Error during booking:', error);
                             updateFloatingSheetButtons();
+                        })
+                        .finally(() => {
+                            buyBtn.dataset.processing = 'false';
                         });
-                    
-                    buyBtn.dataset.processing = 'false';
                 });
                 container.appendChild(buyBtn);
             } else {
@@ -1394,7 +1350,7 @@ function showBottomSheet(index) {
 
                     setUserRegistrationStatus(hike.date, true)
                         .then(() => {
-                            hikeBookingStatus[sheetCurrentIndex] = true;
+                            hikeBookingStatus[hike.date] = true;
                             return incrementParticipantCount(hike.date);
                         })
                         .then(() => {
@@ -1405,6 +1361,9 @@ function showBottomSheet(index) {
                         .catch((error) => {
                             console.error('Error during booking:', error);
                             updateFloatingSheetButtons();
+                        })
+                        .finally(() => {
+                            goBtn.dataset.processing = 'false';
                         });
                     log('sheet_go_click', false);
                 });
@@ -1599,7 +1558,7 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Обновление UI метрик -----
+// ----- Обновление метрик -----
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -1743,7 +1702,7 @@ function showBottomNav(show = true) {
     }
 }
 
-// ----- Страница для новичков (FAQ) -----
+// ----- Страница для новичков -----
 function renderNewcomerPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -2094,7 +2053,6 @@ function renderHome() {
     updateMetricsUI();
 
     if (userCard.status === 'active') {
-        // Владелец карты – используем его картинку или заглушку, если её нет
         const cardImageUrl = userCard.cardUrl || 'https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png';
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
         showBottomNav(true);
@@ -2151,67 +2109,4 @@ function renderHome() {
                         <div class="metric-value" data-metric="locations">${metrics.locations}</div>
                     </div>
                     <div class="metric-item">
-                        <div class="metric-label">километров</div>
-                        <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
-                    </div>
-                    <div class="metric-item">
-                        <div class="metric-label">знакомств</div>
-                        <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        setupAccordion('navAccordionOwner', false);
-
-        document.getElementById('ownerCardImage')?.addEventListener('click', () => {
-            haptic();
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-            showConfetti();
-            log('card_click_celebration');
-        });
-
-        document.getElementById('privBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            setUserInteracted();
-            log('privilege_click');
-            renderPriv();
-        });
-        
-        document.getElementById('supportBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            setUserInteracted();
-            openLink('https://t.me/hellointelligent', 'support_click', false);
-        });
-
-        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
-            haptic();
-            setUserInteracted();
-            log('newcomer_btn_click', false);
-            renderNewcomerPage(false);
-        });
-
-        renderUserBookings();
-
-        const calendarContainer = document.getElementById('calendarContainer');
-        if (calendarContainer) {
-            renderCalendar(calendarContainer);
-        }
-
-        setupBottomNav();
-
-    } else {
-        renderGuestHome();
-    }
-}
-
-function buyCard() {
-    haptic();
-    if (!userId) return;
-    log('buy_card_click', true);
-    openLink(PERMANENT_CARD_LINK, null, true);
-}
-
-window.addEventListener('load', loadData);
+                        <div
