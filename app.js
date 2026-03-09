@@ -53,6 +53,7 @@ let hikesList = [];
 let faq = [];
 let privileges = { club: [], city: [] };
 let giftContent = '';
+let randomPhrases = []; // случайные фразы для блока "Мои записи"
 
 // Firebase инициализация
 let database = null;
@@ -159,6 +160,17 @@ async function loadGiftFromFirebase() {
     } catch (e) {
         console.error('Error loading gift from Firebase:', e);
         return null;
+    }
+}
+
+async function loadRandomPhrasesFromFirebase() {
+    if (!database) return [];
+    try {
+        const snapshot = await database.ref('randomPhrases').once('value');
+        return snapshot.val() || [];
+    } catch (e) {
+        console.error('Error loading random phrases from Firebase:', e);
+        return [];
     }
 }
 
@@ -463,8 +475,8 @@ function showAnimatedLoader() {
         <div class="loader-animation">
             <div class="loader-emoji" id="loaderEmoji">⛰️</div>
             <div class="loader-text" id="loaderText">выбираем вершину</div>
-            <div class="loader-message" id="loaderMessage" style="display: none;">⚙️для быстрой загрузки включи три буквы</div>
         </div>
+        <div class="loader-message" id="loaderMessage" style="display: none;">⚙️для быстрой загрузки включи три буквы</div>
     `;
     loader.style.display = 'flex';
     loader.classList.remove('fade-out');
@@ -580,6 +592,10 @@ async function loadData() {
         const giftData = await loadGiftFromFirebase();
         if (giftData) {
             giftContent = giftData;
+        }
+        const phrasesData = await loadRandomPhrasesFromFirebase();
+        if (phrasesData) {
+            randomPhrases = phrasesData;
         }
 
         await loadUserData();
@@ -729,7 +745,7 @@ function parseLinks(text, isGuest) {
 
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn');
     if (!link) return;
     
     if (link.classList.contains('dynamic-link')) {
@@ -781,11 +797,12 @@ document.addEventListener('click', function(e) {
         return;
     }
     
-    if (link.classList.contains('bookings-calendar-link')) {
+    if (link.classList.contains('bookings-calendar-link') || link.classList.contains('booking-go-btn')) {
         e.preventDefault();
         haptic();
         scrollToCalendar();
         log('bookings_calendar_click', userCard.status !== 'active');
+        return;
     }
 });
 
@@ -885,7 +902,6 @@ function renderUserBookings() {
     const container = document.getElementById('userBookingsContainer');
     if (!container) return;
 
-    // Собираем будущие записи (дата >= сегодня)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
@@ -900,8 +916,25 @@ function renderUserBookings() {
     });
 
     if (bookings.length === 0) {
-        container.innerHTML = '';
-        container.style.display = 'none';
+        // Показываем призыв с случайной фразой
+        const phrase = randomPhrases.length > 0 
+            ? randomPhrases[Math.floor(Math.random() * randomPhrases.length)]
+            : 'смотреть 5 сезон глухаря или'; // запасной вариант
+        container.style.display = 'block';
+        container.innerHTML = `
+            <div class="card-container" id="userBookingsCard">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
+                    <h2 class="section-title" style="margin: 0;">✍🏻 мои записи</h2>
+                    <a href="#" class="bookings-calendar-link" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">открыть календарь &gt;</a>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+                    <div style="flex: 1; margin-right: 16px;">
+                        <span style="color: #ffffff;">${phrase}</span>
+                    </div>
+                    <button class="btn btn-yellow booking-go-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">пойти на хайк</button>
+                </div>
+            </div>
+        `;
         return;
     }
 
@@ -1608,6 +1641,7 @@ function setupBottomNav() {
     navHomeNew.addEventListener('click', () => {
         haptic();
         setUserInteracted();
+        setActiveNav('navHome');
         renderHome();
         window.scrollTo({ top: 0, behavior: 'smooth' });
         log('nav_home_click');
@@ -1620,6 +1654,7 @@ function setupBottomNav() {
     navHikesNew.addEventListener('click', () => {
         haptic();
         setUserInteracted();
+        setActiveNav('navHikes');
         renderHome();
         scrollToCalendar();
         log('nav_hikes_click');
