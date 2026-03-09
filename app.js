@@ -263,7 +263,7 @@ async function loadUserRegistrationsFromFirebase() {
     }
 }
 
-// --- Загрузка данных пользователя из CSV (пока не перенесено в Firebase) ---
+// --- Загрузка данных пользователя из CSV ---
 function parseCSVLine(line) {
     const result = [];
     let start = 0;
@@ -406,6 +406,19 @@ function setUserInteracted() {
     userInteracted = true;
 }
 
+// --- Управление ручными кликами по навигации ---
+let manualNavClick = null; // 'home' или 'hikes'
+let manualNavTimer = null;
+
+function setManualNav(target) {
+    if (manualNavTimer) clearTimeout(manualNavTimer);
+    manualNavClick = target;
+    // Сбрасываем ручной режим через 2 секунды, чтобы скролл снова мог менять активность
+    manualNavTimer = setTimeout(() => {
+        manualNavClick = null;
+    }, 2000);
+}
+
 // --- Навигация ---
 function setActiveNav(activeId) {
     document.querySelectorAll('.nav-item').forEach(item => {
@@ -425,6 +438,12 @@ function resetNavActive() {
 
 function updateActiveNav() {
     if (isPrivPage || isMenuActive) return;
+
+    // Если есть недавний ручной клик, принудительно держим нужную кнопку
+    if (manualNavClick) {
+        setActiveNav(manualNavClick === 'home' ? 'navHome' : 'navHikes');
+        return;
+    }
 
     // Если пользователь ещё не взаимодействовал, оставляем "главную" активной
     if (!userInteracted) {
@@ -526,7 +545,7 @@ function hideAnimatedLoader() {
     }
 }
 
-// Функция нормализации даты (дополнение до двух цифр)
+// Функция нормализации даты
 function normalizeDate(dateStr) {
     if (!dateStr) return dateStr;
     const parts = dateStr.split('-');
@@ -541,7 +560,7 @@ function normalizeDate(dateStr) {
 
 // Функция скролла к календарю
 function scrollToCalendar() {
-    setUserInteracted(); // пользователь явно хочет к календарю
+    setUserInteracted();
     setTimeout(() => {
         const calendarContainer = document.getElementById('calendarContainer');
         if (calendarContainer) {
@@ -564,12 +583,10 @@ async function loadData() {
         if (database) {
             subscribeToHikes((newList) => {
                 hikesList = newList;
-                // Если календарь уже отрендерен, обновим его
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer && !isPrivPage) {
                     renderCalendar(calendarContainer);
                 }
-                // Обновляем блок записей
                 const bookingsContainer = document.getElementById('userBookingsContainer');
                 if (bookingsContainer) {
                     renderUserBookings();
@@ -613,7 +630,6 @@ async function loadData() {
                 hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
             }
         } else {
-            // Гости: загружаем из localStorage
             hikeBookingStatus = loadUserRegistrationsFromLocal();
         }
 
@@ -623,25 +639,18 @@ async function loadData() {
         
         // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
-        console.log('start_param received:', startParam);
-        
         const urlParams = new URLSearchParams(window.location.search);
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
-        console.log('URL start param:', urlStartParam);
-        
         const effectiveStartParam = startParam || urlStartParam;
         
         if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
             const targetDate = normalizeDate(effectiveStartParam.substring(5));
-            console.log('Target date (normalized):', targetDate);
-            
             let attempts = 0;
-            const maxAttempts = 100; // ~30 секунд
+            const maxAttempts = 100;
             const interval = setInterval(() => {
                 attempts++;
                 const targetIndex = hikesList.findIndex(h => h.date === targetDate);
                 if (targetIndex !== -1) {
-                    console.log(`Found hike at index ${targetIndex} after ${attempts} attempts, opening sheet`);
                     clearInterval(interval);
                     setTimeout(() => {
                         try {
@@ -651,7 +660,6 @@ async function loadData() {
                         }
                     }, 200);
                 } else if (attempts >= maxAttempts) {
-                    console.log('Hike not found after max attempts');
                     clearInterval(interval);
                 }
             }, 300);
@@ -735,7 +743,6 @@ function showConfetti() {
     requestAnimationFrame(animate);
 }
 
-// Функция для преобразования markdown ссылок в HTML с data-атрибутами
 function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
@@ -809,7 +816,6 @@ document.addEventListener('click', function(e) {
 // Переменные для управления выпадающим списком
 let currentDropdownHikeDate = null;
 
-// Функция для закрытия дропдауна
 function closeParticipantDropdown() {
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown) {
@@ -819,8 +825,6 @@ function closeParticipantDropdown() {
 }
 
 async function toggleParticipantDropdown(counterElement, hikeDate) {
-    console.log('toggleParticipantDropdown called', hikeDate);
-    
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown && currentDropdownHikeDate === hikeDate) {
         closeParticipantDropdown();
@@ -831,7 +835,6 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     
     haptic();
     const participants = await loadAllParticipants(hikeDate);
-    console.log('participants loaded', participants);
     
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
@@ -860,7 +863,6 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
         });
     }
     
-    // Находим контейнер, в котором находится счётчик (это прокручиваемая область bottom sheet)
     const container = counterElement.closest('.bottom-sheet-content-wrapper') || document.body;
     const containerRect = container.getBoundingClientRect();
     const elementRect = counterElement.getBoundingClientRect();
@@ -875,11 +877,9 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.style.zIndex = '1001';
     
     container.appendChild(dropdown);
-    console.log('dropdown appended to container');
     
     setTimeout(() => {
         dropdown.classList.add('show');
-        console.log('show class added');
     }, 10);
     
     currentDropdownHikeDate = hikeDate;
@@ -919,12 +919,12 @@ function renderUserBookings() {
         // Показываем призыв с случайной фразой
         const phrase = randomPhrases.length > 0 
             ? randomPhrases[Math.floor(Math.random() * randomPhrases.length)]
-            : 'смотреть 5 сезон глухаря или'; // запасной вариант
+            : 'смотреть 5 сезон глухаря или';
         container.style.display = 'block';
         container.innerHTML = `
             <div class="card-container" id="userBookingsCard">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                    <h2 class="section-title" style="margin: 0;">✍🏻 мои записи</h2>
+                    <h2 class="section-title" style="margin: 0;">🎫 мои записи</h2>
                     <a href="#" class="bookings-calendar-link" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">открыть календарь &gt;</a>
                 </div>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
@@ -946,7 +946,7 @@ function renderUserBookings() {
     let html = `
         <div class="card-container" id="userBookingsCard">
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                <h2 class="section-title" style="margin: 0;">✍🏻 мои записи</h2>
+                <h2 class="section-title" style="margin: 0;">🎫 мои записи</h2>
                 <a href="#" class="bookings-calendar-link" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">открыть календарь &gt;</a>
             </div>
     `;
@@ -957,7 +957,6 @@ function renderUserBookings() {
         const month = parseInt(dateParts[1], 10) - 1;
         const formattedDate = `${day} ${monthNames[month]}`;
 
-        // Очищаем название: убираем стандартные префиксы
         let title = booking.title;
         const prefixes = ['тропа на ', 'тропа ', 'маршрут ', 'гора ', 'ущелье ', 'путь на ', 'восхождение на '];
         let cleanedTitle = title;
@@ -967,7 +966,6 @@ function renderUserBookings() {
                 break;
             }
         }
-        // Если осталось "на " в начале, убираем
         if (cleanedTitle.toLowerCase().startsWith('на ')) {
             cleanedTitle = cleanedTitle.substring(3);
         }
@@ -1307,7 +1305,7 @@ function showBottomSheet(index) {
                         saveStatusToLocalStorage();
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                         updateFloatingSheetButtons();
-                        renderUserBookings(); // обновляем блок записей
+                        renderUserBookings();
                     }).catch((error) => {
                         console.error('Error during cancellation:', error);
                         updateFloatingSheetButtons();
@@ -1320,7 +1318,7 @@ function showBottomSheet(index) {
                         hikeBookingStatus[sheetCurrentIndex] = false;
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
-                        renderUserBookings(); // обновляем блок записей
+                        renderUserBookings();
                     }).catch((error) => {
                         console.error('Error during cancellation:', error);
                         updateFloatingSheetButtons();
@@ -1357,7 +1355,7 @@ function showBottomSheet(index) {
                             saveStatusToLocalStorage();
                             updateRegistrationInSheet(hike.date, hike.title, 'booked');
                             updateFloatingSheetButtons();
-                            renderUserBookings(); // обновляем блок записей
+                            renderUserBookings();
                             
                             openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
                         })
@@ -1402,7 +1400,7 @@ function showBottomSheet(index) {
                         .then(() => {
                             updateRegistrationInSheet(hike.date, hike.title, 'booked');
                             updateFloatingSheetButtons();
-                            renderUserBookings(); // обновляем блок записей
+                            renderUserBookings();
                         })
                         .catch((error) => {
                             console.error('Error during booking:', error);
@@ -1641,6 +1639,7 @@ function setupBottomNav() {
     navHomeNew.addEventListener('click', () => {
         haptic();
         setUserInteracted();
+        setManualNav('home');
         setActiveNav('navHome');
         renderHome();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1654,6 +1653,7 @@ function setupBottomNav() {
     navHikesNew.addEventListener('click', () => {
         haptic();
         setUserInteracted();
+        setManualNav('hikes');
         setActiveNav('navHikes');
         renderHome();
         scrollToCalendar();
@@ -1727,7 +1727,7 @@ function setupBottomNav() {
     });
 
     window.addEventListener('scroll', () => {
-        setUserInteracted(); // любой скролл считается взаимодействием
+        setUserInteracted();
         requestAnimationFrame(updateActiveNav);
     });
     updateActiveNav();
@@ -2093,13 +2093,15 @@ function renderHome() {
 
     updateMetricsUI();
 
-    if (userCard.status === 'active' && userCard.cardUrl) {
+    if (userCard.status === 'active') {
+        // Владелец карты – используем его картинку или заглушку, если её нет
+        const cardImageUrl = userCard.cardUrl || 'https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png';
         subtitle.textContent = `💳 твоя карта, ${firstName}`;
         showBottomNav(true);
 
         mainDiv.innerHTML = `
             <div class="card-container">
-                <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
+                <img src="${cardImageUrl}" alt="карта" class="card-image" id="ownerCardImage">
                 <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
                 
                 <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
