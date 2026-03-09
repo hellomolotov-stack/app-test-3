@@ -38,6 +38,7 @@ const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7F
 const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
 const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
 const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
+const RANDOM_PHRASES_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?gid=537970117&single=true&output=csv';
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -74,6 +75,20 @@ try {
 } catch (e) {
     console.error('Firebase initialization failed:', e);
     database = null;
+}
+
+// --- Функции для работы с аватаром пользователя ---
+async function saveUserAvatar() {
+    if (!database || !userId || !userPhotoUrl) return;
+    try {
+        await database.ref(`userAvatars/${userId}`).set({
+            photoUrl: userPhotoUrl,
+            updatedAt: firebase.database.ServerValue.TIMESTAMP
+        });
+        console.log('User avatar saved');
+    } catch (e) {
+        console.error('Error saving user avatar:', e);
+    }
 }
 
 // --- Firebase функции для данных ---
@@ -149,18 +164,21 @@ async function loadGiftFromFirebase() {
     }
 }
 
+// --- ИСПРАВЛЕННАЯ ФУНКЦИЯ ЗАГРУЗКИ СЛУЧАЙНЫХ ФРАЗ ИЗ FIREBASE ---
 async function loadRandomPhrasesFromFirebase() {
     if (!database) return [];
     try {
         const snapshot = await database.ref('randomPhrases').once('value');
         const data = snapshot.val();
-        // Если данные - массив, возвращаем как есть
+        console.log('Raw randomPhrases from Firebase:', data);
         if (Array.isArray(data)) {
             return data;
         }
-        // Если данные - объект с числовыми ключами, преобразуем в массив
         if (data && typeof data === 'object') {
-            return Object.values(data);
+            // Преобразуем объект с числовыми ключами в массив
+            const arr = Object.values(data);
+            console.log('Converted to array:', arr);
+            return arr;
         }
         return [];
     } catch (e) {
@@ -169,7 +187,7 @@ async function loadRandomPhrasesFromFirebase() {
     }
 }
 
-// --- Firebase для участников ---
+// --- Firebase функции для регистраций и участников ---
 function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
         callback(0, []);
@@ -242,18 +260,23 @@ function setUserRegistrationStatus(hikeDate, status) {
 }
 
 async function loadUserRegistrationsFromFirebase() {
-    if (!database || !userId) return {};
+    if (!database || !userId || !hikesList.length) return {};
     try {
         const userRef = database.ref(`userRegistrations/${userId}`);
         const snapshot = await userRef.once('value');
-        return snapshot.val() || {};
+        const registrations = snapshot.val() || {};
+        const statusMap = {};
+        hikesList.forEach((hike, index) => {
+            statusMap[index] = registrations[hike.date] === true;
+        });
+        return statusMap;
     } catch (e) {
         console.error('Error loading user registrations from Firebase:', e);
         return {};
     }
 }
 
-// --- Загрузка данных пользователя из CSV ---
+// --- Загрузка данных пользователя из CSV (оставляем как есть) ---
 function parseCSVLine(line) {
     const result = [];
     let start = 0;
@@ -325,27 +348,31 @@ async function loadUserData() {
     }
 }
 
-async function saveUserAvatar() {
-    if (!database || !userId || !userPhotoUrl) return;
-    try {
-        await database.ref(`userAvatars/${userId}`).set({
-            photoUrl: userPhotoUrl,
-            updatedAt: firebase.database.ServerValue.TIMESTAMP
-        });
-        console.log('User avatar saved');
-    } catch (e) {
-        console.error('Error saving user avatar:', e);
-    }
-}
-
-// --- Функции для гостей (localStorage) ---
+// --- Функции для гостей (старая система) ---
 function loadUserRegistrationsFromLocal() {
-    const saved = localStorage.getItem('hikeBookingStatus');
-    return saved ? JSON.parse(saved) : {};
+    const savedStatus = localStorage.getItem('hikeBookingStatus');
+    if (savedStatus) {
+        try {
+            const parsed = JSON.parse(savedStatus);
+            const statusMap = {};
+            hikesList.forEach((hike, index) => {
+                statusMap[index] = parsed[hike.date] || false;
+            });
+            return statusMap;
+        } catch (e) {
+            return {};
+        }
+    }
+    return {};
 }
 
 function saveStatusToLocalStorage() {
-    localStorage.setItem('hikeBookingStatus', JSON.stringify(hikeBookingStatus));
+    if (!hikesList.length) return;
+    const statusObj = {};
+    hikesList.forEach((hike, index) => {
+        statusObj[hike.date] = hikeBookingStatus[index] || false;
+    });
+    localStorage.setItem('hikeBookingStatus', JSON.stringify(statusObj));
 }
 
 function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
@@ -379,14 +406,14 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status) {
 // --- Флаги интерфейса ---
 let isPrivPage = false;
 let isMenuActive = false;
-let hikeBookingStatus = {}; // ключ - дата хайка (строка), значение - boolean
+let hikeBookingStatus = {};
 
 const mainDiv = document.getElementById('mainContent');
 const subtitle = document.getElementById('subtitle');
 const bottomNav = document.getElementById('bottomNav');
 const navPopup = document.getElementById('navPopup');
 
-// --- Навигация ---
+// --- Флаг взаимодействия пользователя для меню ---
 let userInteracted = false;
 let manualNavClick = null;
 let manualNavTimer = null;
@@ -450,7 +477,6 @@ function updateActiveNav() {
     }
 }
 
-// --- Логирование ---
 function log(action, isGuest = false) {
     if (!userId) return;
     const finalAction = isGuest ? `${action}_guest` : action;
@@ -547,7 +573,7 @@ function scrollToCalendar() {
     }, 100);
 }
 
-// --- Основная загрузка ---
+// --- Основная загрузка с Firebase ---
 async function loadData() {
     showAnimatedLoader();
 
@@ -557,6 +583,7 @@ async function loadData() {
     }, 10000);
 
     try {
+        // Подписываемся на обновления хайков
         if (database) {
             subscribeToHikes((newList) => {
                 hikesList = newList;
@@ -564,20 +591,34 @@ async function loadData() {
                 if (calendarContainer && !isPrivPage) {
                     renderCalendar(calendarContainer);
                 }
-                renderUserBookings();
+                const bookingsContainer = document.getElementById('userBookingsContainer');
+                if (bookingsContainer) {
+                    renderUserBookings();
+                }
             });
         }
 
         const metricsData = await loadMetricsFromFirebase();
-        if (metricsData) metrics = metricsData;
+        if (metricsData) {
+            metrics = metricsData;
+        }
         const faqData = await loadFaqFromFirebase();
-        if (faqData) faq = faqData;
+        if (faqData) {
+            faq = faqData;
+        }
         const privilegesData = await loadPrivilegesFromFirebase();
-        if (privilegesData) privileges = privilegesData;
+        if (privilegesData) {
+            privileges = privilegesData;
+        }
         const giftData = await loadGiftFromFirebase();
-        if (giftData) giftContent = giftData;
+        if (giftData) {
+            giftContent = giftData;
+        }
         const phrasesData = await loadRandomPhrasesFromFirebase();
-        if (phrasesData) randomPhrases = phrasesData;
+        if (phrasesData) {
+            randomPhrases = phrasesData;
+            console.log('Final randomPhrases:', randomPhrases);
+        }
 
         await loadUserData();
 
@@ -586,11 +627,13 @@ async function loadData() {
         }
 
         if (userCard.status === 'active' && database) {
-            const fbStatus = await loadUserRegistrationsFromFirebase();
-            hikeBookingStatus = {};
-            hikesList.forEach(hike => {
-                hikeBookingStatus[hike.date] = fbStatus[hike.date] === true;
-            });
+            try {
+                hikeBookingStatus = await loadUserRegistrationsFromFirebase();
+            } catch (e) {
+                console.error('Firebase load failed, using empty', e);
+                hikeBookingStatus = {};
+                hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
+            }
         } else {
             hikeBookingStatus = loadUserRegistrationsFromLocal();
         }
@@ -599,7 +642,7 @@ async function loadData() {
         
         renderHome();
         
-        // start_param
+        // Проверяем start_param из Telegram
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlParams = new URLSearchParams(window.location.search);
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
@@ -712,7 +755,7 @@ function parseLinks(text, isGuest) {
     });
 }
 
-// Глобальный обработчик кликов
+// Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn');
     if (!link) return;
@@ -859,7 +902,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     log('participant_dropdown_opened', userCard.status !== 'active');
 }
 
-// ----- Блок "Мои записи" -----
+// Функция для рендера блока "Мои записи"
 function renderUserBookings() {
     const container = document.getElementById('userBookingsContainer');
     if (!container) return;
@@ -868,11 +911,11 @@ function renderUserBookings() {
     today.setHours(0, 0, 0, 0);
     
     const bookings = [];
-    hikesList.forEach(hike => {
-        if (hikeBookingStatus[hike.date]) {
+    hikesList.forEach((hike, index) => {
+        if (hikeBookingStatus[index]) {
             const hikeDate = new Date(hike.date);
             if (hikeDate >= today) {
-                bookings.push(hike);
+                bookings.push({ ...hike, index });
             }
         }
     });
@@ -938,7 +981,7 @@ function renderUserBookings() {
                     <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${cleanedTitle}</span>
                 </div>
-                <button class="btn btn-yellow booking-detail-btn" data-date="${booking.date}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">детали</button>
+                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">детали</button>
             </div>
         `;
     });
@@ -985,8 +1028,6 @@ function showBottomSheet(index) {
 
     sheetCurrentIndex = index;
     const isGuest = userCard.status !== 'active';
-    const currentHike = hikesList[index];
-    const currentHikeDate = currentHike.date;
 
     if (currentUnsubscribe) {
         currentUnsubscribe();
@@ -1229,7 +1270,7 @@ function showBottomSheet(index) {
         const hike = hikesList[sheetCurrentIndex];
         if (!hike) return;
 
-        const isBooked = hikeBookingStatus[hike.date] || false;
+        const isBooked = hikeBookingStatus[sheetCurrentIndex] || false;
         const hikeDate = new Date(hike.date);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -1262,32 +1303,31 @@ function showBottomSheet(index) {
                 
                 haptic();
 
-                const promise = isGuest
-                    ? removeParticipant(hike.date).then(() => {
-                        delete hikeBookingStatus[hike.date];
+                if (isGuest) {
+                    removeParticipant(hike.date).then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = false;
                         saveStatusToLocalStorage();
-                      })
-                    : Promise.all([
-                        removeParticipant(hike.date),
-                        setUserRegistrationStatus(hike.date, false)
-                      ]).then(() => {
-                        delete hikeBookingStatus[hike.date];
-                      });
-
-                promise
-                    .then(() => {
                         updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
                         updateFloatingSheetButtons();
                         renderUserBookings();
-                    })
-                    .catch((error) => {
+                    }).catch((error) => {
                         console.error('Error during cancellation:', error);
                         updateFloatingSheetButtons();
-                    })
-                    .finally(() => {
-                        cancelBtn.dataset.processing = 'false';
                     });
-
+                } else {
+                    Promise.all([
+                        removeParticipant(hike.date),
+                        setUserRegistrationStatus(hike.date, false)
+                    ]).then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = false;
+                        updateFloatingSheetButtons();
+                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled');
+                        renderUserBookings();
+                    }).catch((error) => {
+                        console.error('Error during cancellation:', error);
+                        updateFloatingSheetButtons();
+                    });
+                }
                 log('sheet_cancel_click', false);
             });
             container.appendChild(cancelBtn);
@@ -1315,7 +1355,7 @@ function showBottomSheet(index) {
                     addParticipant(hike.date)
                         .then(() => setUserRegistrationStatus(hike.date, true))
                         .then(() => {
-                            hikeBookingStatus[hike.date] = true;
+                            hikeBookingStatus[sheetCurrentIndex] = true;
                             saveStatusToLocalStorage();
                             updateRegistrationInSheet(hike.date, hike.title, 'booked');
                             updateFloatingSheetButtons();
@@ -1326,10 +1366,9 @@ function showBottomSheet(index) {
                         .catch((error) => {
                             console.error('Error during booking:', error);
                             updateFloatingSheetButtons();
-                        })
-                        .finally(() => {
-                            buyBtn.dataset.processing = 'false';
                         });
+                    
+                    buyBtn.dataset.processing = 'false';
                 });
                 container.appendChild(buyBtn);
             } else {
@@ -1359,7 +1398,7 @@ function showBottomSheet(index) {
 
                     setUserRegistrationStatus(hike.date, true)
                         .then(() => {
-                            hikeBookingStatus[hike.date] = true;
+                            hikeBookingStatus[sheetCurrentIndex] = true;
                             return incrementParticipantCount(hike.date);
                         })
                         .then(() => {
@@ -1370,9 +1409,6 @@ function showBottomSheet(index) {
                         .catch((error) => {
                             console.error('Error during booking:', error);
                             updateFloatingSheetButtons();
-                        })
-                        .finally(() => {
-                            goBtn.dataset.processing = 'false';
                         });
                     log('sheet_go_click', false);
                 });
@@ -1567,7 +1603,7 @@ function renderCalendar(container) {
     });
 }
 
-// ----- Обновление метрик -----
+// ----- Обновление UI метрик -----
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -1711,219 +1747,199 @@ function showBottomNav(show = true) {
     }
 }
 
-// ----- Страница для новичков -----
+// ----- Страница для новичков (FAQ) -----
 function renderNewcomerPage(isGuest = false) {
-    try {
-        isPrivPage = true;
-        isMenuActive = false;
-        resetNavActive();
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
 
-        subtitle.textContent = `всё, что нужно знать`;
-        showBack(() => renderHome());
-        haptic();
-        log('newcomer_page_opened', isGuest);
-        
-        showBottomNav(!isGuest);
+    subtitle.textContent = `всё, что нужно знать`;
+    showBack(() => renderHome());
+    haptic();
+    log('newcomer_page_opened', isGuest);
+    
+    showBottomNav(!isGuest);
 
-        let faqHtml = '';
-        if (faq && faq.length) {
-            faq.forEach(item => {
-                let answer = item.a;
-                answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" data-url="https://t.me/yaltahiking" data-guest="false" class="dynamic-link">@yaltahiking</a>');
-                answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" data-url="https://zapovedcrimea.ru/choose-pass" data-guest="false" class="dynamic-link">zapovedcrimea.ru</a>');
-                faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
-            });
-        } else {
-            faqHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-        }
-
-        mainDiv.innerHTML = `
-            <div class="card-container newcomer-page" style="margin-bottom: 0;">
-                ${faqHtml}
-                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
-                    <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
-                    <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
-                </div>
-            </div>
-        `;
-
-        document.getElementById('goHomeStatic')?.addEventListener('click', () => {
-            haptic();
-            setUserInteracted();
-            renderHome();
+    let faqHtml = '';
+    if (faq && faq.length) {
+        faq.forEach(item => {
+            let answer = item.a;
+            answer = answer.replace(/\[@yaltahiking\]\(https:\/\/t\.me\/yaltahiking\)/g, '<a href="#" data-url="https://t.me/yaltahiking" data-guest="false" class="dynamic-link">@yaltahiking</a>');
+            answer = answer.replace(/zapovedcrimea\.ru/g, '<a href="#" data-url="https://zapovedcrimea.ru/choose-pass" data-guest="false" class="dynamic-link">zapovedcrimea.ru</a>');
+            faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
         });
+    } else {
+        faqHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
 
-        if (!isGuest) {
-            setupBottomNav();
-        }
-    } catch (error) {
-        console.error('Error in renderNewcomerPage:', error);
-        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
+    mainDiv.innerHTML = `
+        <div class="card-container newcomer-page" style="margin-bottom: 0;">
+            ${faqHtml}
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('goHomeStatic')?.addEventListener('click', () => {
+        haptic();
+        setUserInteracted();
+        renderHome();
+    });
+
+    if (!isGuest) {
+        setupBottomNav();
     }
 }
 
 // ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
-    try {
-        isPrivPage = true;
-        isMenuActive = false;
-        resetNavActive();
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
 
-        subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
-        showBack(renderHome);
-        showBottomNav(true);
+    subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
+    showBack(renderHome);
+    showBottomNav(true);
 
-        let clubHtml = '';
-        if (privileges.club && privileges.club.length) {
-            privileges.club.forEach(item => {
-                let titleHtml = item.title;
-                if (item.title.startsWith('новое:')) {
-                    titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
-                }
-                clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
-                if (item.button_text && item.button_link) {
-                    clubHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-                }
-                clubHtml += `</div>`;
-            });
-        } else {
-            clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-        }
-
-        let cityHtml = '';
-        if (privileges.city && privileges.city.length) {
-            privileges.city.forEach(item => {
-                cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-                if (item.button_text && item.button_link) {
-                    cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-                } else if (item.button_link) {
-                    let linkHtml = '';
-                    if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                        linkHtml = parseLinks(item.button_link, false);
-                    } else {
-                        linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
-                    }
-                    cityHtml += `<p>📍 ${linkHtml}</p>`;
-                }
-                cityHtml += `</div>`;
-            });
-        } else {
-            cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-        }
-
-        mainDiv.innerHTML = `
-            <div class="card-container">
-                <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
-                <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-            </div>
-        `;
-
-        setupBottomNav();
-    } catch (error) {
-        console.error('Error in renderPriv:', error);
-        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
+    let clubHtml = '';
+    if (privileges.club && privileges.club.length) {
+        privileges.club.forEach(item => {
+            let titleHtml = item.title;
+            if (item.title.startsWith('новое:')) {
+                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
+            }
+            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                clubHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            }
+            clubHtml += `</div>`;
+        });
+    } else {
+        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
     }
+
+    let cityHtml = '';
+    if (privileges.city && privileges.city.length) {
+        privileges.city.forEach(item => {
+            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            } else if (item.button_link) {
+                let linkHtml = '';
+                if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                    linkHtml = parseLinks(item.button_link, false);
+                } else {
+                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
+                }
+                cityHtml += `<p>📍 ${linkHtml}</p>`;
+            }
+            cityHtml += `</div>`;
+        });
+    } else {
+        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+        </div>
+    `;
+
+    setupBottomNav();
 }
 
 // ----- Страница привилегий для гостей -----
 function renderGuestPriv() {
-    try {
-        isPrivPage = true;
-        isMenuActive = false;
-        resetNavActive();
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
 
-        subtitle.textContent = `💳 привилегии с картой интеллигента`;
-        showBack(renderHome);
-        showBottomNav(true);
+    subtitle.textContent = `💳 привилегии с картой интеллигента`;
+    showBack(renderHome);
+    showBottomNav(true);
 
-        let clubHtml = '';
-        if (privileges.club && privileges.club.length) {
-            privileges.club.forEach(item => {
-                let titleHtml = item.title;
-                if (item.title.startsWith('новое:')) {
-                    titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
-                }
-                clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
-            });
-        } else {
-            clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-        }
-
-        let cityHtml = '';
-        if (privileges.city && privileges.city.length) {
-            privileges.city.forEach(item => {
-                cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-                if (item.button_text && item.button_link) {
-                    cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-                } else if (item.button_link) {
-                    let linkHtml = '';
-                    if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                        linkHtml = parseLinks(item.button_link, false);
-                    } else {
-                        linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
-                    }
-                    cityHtml += `<p>📍 ${linkHtml}</p>`;
-                }
-                cityHtml += `</div>`;
-            });
-        } else {
-            cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-        }
-
-        mainDiv.innerHTML = `
-            <div class="card-container">
-                <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
-                <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-            </div>
-        `;
-
-        setupBottomNav();
-    } catch (error) {
-        console.error('Error in renderGuestPriv:', error);
-        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
+    let clubHtml = '';
+    if (privileges.club && privileges.club.length) {
+        privileges.club.forEach(item => {
+            let titleHtml = item.title;
+            if (item.title.startsWith('новое:')) {
+                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
+            }
+            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
+        });
+    } else {
+        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
     }
+
+    let cityHtml = '';
+    if (privileges.city && privileges.city.length) {
+        privileges.city.forEach(item => {
+            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            } else if (item.button_link) {
+                let linkHtml = '';
+                if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                    linkHtml = parseLinks(item.button_link, false);
+                } else {
+                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
+                }
+                cityHtml += `<p>📍 ${linkHtml}</p>`;
+            }
+            cityHtml += `</div>`;
+        });
+    } else {
+        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+        </div>
+    `;
+
+    setupBottomNav();
 }
 
 // ----- Страница подарка -----
 function renderGift(isGuest = false) {
-    try {
-        isPrivPage = true;
-        isMenuActive = false;
-        resetNavActive();
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
 
-        subtitle.textContent = `подари новый опыт`;
-        showBack(renderHome);
-        showBottomNav(!isGuest);
+    subtitle.textContent = `подари новый опыт`;
+    showBack(renderHome);
+    showBottomNav(!isGuest);
 
-        const giftText = giftContent || 'Информация о подарке временно недоступна.';
+    const giftText = giftContent || 'Информация о подарке временно недоступна.';
 
-        mainDiv.innerHTML = `
-            <div class="card-container">
-                <div class="partner-item">
-                    <strong>как подарить карту интеллигента</strong>
-                    <p style="white-space: pre-line;">${giftText}</p>
-                </div>
-                
-                <div id="giftAccordion" class="card-accordion">
-                    <button class="accordion-btn btn-yellow btn-glow">
-                        купить в подарок
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
-                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
-                    </div>
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <div class="partner-item">
+                <strong>как подарить карту интеллигента</strong>
+                <p style="white-space: pre-line;">${giftText}</p>
+            </div>
+            
+            <div id="giftAccordion" class="card-accordion">
+                <button class="accordion-btn btn-yellow btn-glow">
+                    купить в подарок
+                </button>
+                <div class="dropdown-menu">
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
                 </div>
             </div>
-        `;
+        </div>
+    `;
 
-        setupAccordion('giftAccordion', isGuest);
+    setupAccordion('giftAccordion', isGuest);
 
-        if (!isGuest) {
-            setupBottomNav();
-        }
-    } catch (error) {
-        console.error('Error in renderGift:', error);
-        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
+    if (!isGuest) {
+        setupBottomNav();
     }
 }
 
@@ -1960,36 +1976,150 @@ function showGuestPopup() {
 
 // ----- Главная для гостей -----
 function renderGuestHome() {
-    try {
-        const isGuest = true;
-        subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
-        subtitle.classList.add('subtitle-guest');
+    const isGuest = true;
+    subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
+    subtitle.classList.add('subtitle-guest');
+    showBottomNav(true);
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
+            
+            <div id="cardAccordionGuest" class="card-accordion">
+                <button class="accordion-btn btn-yellow btn-glow">
+                    оформить карту
+                </button>
+                <div class="dropdown-menu">
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
+                </div>
+            </div>
+            
+            <div id="navAccordionGuest">
+                <button class="accordion-btn">
+                    навигация по клубу <span class="arrow">👀</span>
+                </button>
+                <div class="dropdown-menu">
+                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
+                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
+                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
+                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контейнер для блока "Мои записи" -->
+        <div id="userBookingsContainer"></div>
+
+        <!-- Календарь сразу после записей -->
+        <div class="card-container" id="calendarContainer"></div>
+
+        <div class="card-container">
+            <h2 class="section-title">🫖 для новичков</h2>
+            <div class="btn-newcomer" id="newcomerBtnGuest">
+                <span class="newcomer-text">как всё устроено</span>
+                <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
+            </div>
+        </div>
+        
+        <div class="card-container">
+            <div class="metrics-header">
+                <h2 class="metrics-title">🌍 клуб в цифрах</h2>
+                <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+            </div>
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">хайков</div>
+                    <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">локаций</div>
+                    <div class="metric-value" data-metric="locations">${metrics.locations}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">километров</div>
+                    <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">знакомств</div>
+                    <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    setupAccordion('cardAccordionGuest', true);
+    setupAccordion('navAccordionGuest', true);
+
+    document.getElementById('guestCardImage')?.addEventListener('click', () => {
+        haptic();
+        showGuestPopup();
+    });
+    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
+        haptic();
+        setUserInteracted();
+        log('newcomer_btn_click', true);
+        renderNewcomerPage(true);
+    });
+
+    renderUserBookings();
+
+    const calendarContainer = document.getElementById('calendarContainer');
+    if (calendarContainer) {
+        renderCalendar(calendarContainer);
+    }
+
+    setupBottomNav();
+}
+
+// ----- Главная для владельцев карты -----
+function renderHome() {
+    isPrivPage = false;
+    isMenuActive = false;
+
+    if (window._floatingScrollHandler) {
+        window.removeEventListener('scroll', window._floatingScrollHandler);
+        window._floatingScrollHandler = null;
+    }
+
+    hideBack();
+    subtitle.classList.remove('subtitle-guest');
+
+    const existingPopup = document.getElementById('guestPopup');
+    if (existingPopup) existingPopup.remove();
+
+    if (userCard.status === 'loading') {
+        mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
+        showBottomNav(false);
+        return;
+    }
+
+    updateMetricsUI();
+
+    if (userCard.status === 'active' && userCard.cardUrl) {
+        subtitle.textContent = `💳 твоя карта, ${firstName}`;
         showBottomNav(true);
 
         mainDiv.innerHTML = `
             <div class="card-container">
-                <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
+                <img src="${userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
+                <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
                 
-                <div id="cardAccordionGuest" class="card-accordion">
-                    <button class="accordion-btn btn-yellow btn-glow">
-                        оформить карту
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
-                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
-                    </div>
+                <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
+                    <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
+                    <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
                 </div>
                 
-                <div id="navAccordionGuest">
+                <div id="navAccordionOwner">
                     <button class="accordion-btn">
                         навигация по клубу <span class="arrow">👀</span>
                     </button>
                     <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
-                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
+                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
+                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
+                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
+                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
                     </div>
                 </div>
             </div>
@@ -2002,7 +2132,7 @@ function renderGuestHome() {
 
             <div class="card-container">
                 <h2 class="section-title">🫖 для новичков</h2>
-                <div class="btn-newcomer" id="newcomerBtnGuest">
+                <div class="btn-newcomer" id="newcomerBtn">
                     <span class="newcomer-text">как всё устроено</span>
                     <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
                 </div>
@@ -2011,7 +2141,7 @@ function renderGuestHome() {
             <div class="card-container">
                 <div class="metrics-header">
                     <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', true); return false;" class="metrics-link">смотреть отчёты &gt;</a>
+                    <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
                 </div>
                 <div class="metrics-grid">
                     <div class="metric-item">
@@ -2034,18 +2164,35 @@ function renderGuestHome() {
             </div>
         `;
 
-        setupAccordion('cardAccordionGuest', true);
-        setupAccordion('navAccordionGuest', true);
+        setupAccordion('navAccordionOwner', false);
 
-        document.getElementById('guestCardImage')?.addEventListener('click', () => {
+        document.getElementById('ownerCardImage')?.addEventListener('click', () => {
             haptic();
-            showGuestPopup();
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            showConfetti();
+            log('card_click_celebration');
         });
-        document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
+
+        document.getElementById('privBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
             haptic();
             setUserInteracted();
-            log('newcomer_btn_click', true);
-            renderNewcomerPage(true);
+            log('privilege_click');
+            renderPriv();
+        });
+        
+        document.getElementById('supportBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            setUserInteracted();
+            openLink('https://t.me/hellointelligent', 'support_click', false);
+        });
+
+        document.getElementById('newcomerBtn')?.addEventListener('click', () => {
+            haptic();
+            setUserInteracted();
+            log('newcomer_btn_click', false);
+            renderNewcomerPage(false);
         });
 
         renderUserBookings();
@@ -2056,151 +2203,9 @@ function renderGuestHome() {
         }
 
         setupBottomNav();
-    } catch (error) {
-        console.error('Error in renderGuestHome:', error);
-        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
-    }
-}
 
-// ----- Главная для владельцев карты -----
-function renderHome() {
-    try {
-        isPrivPage = false;
-        isMenuActive = false;
-
-        if (window._floatingScrollHandler) {
-            window.removeEventListener('scroll', window._floatingScrollHandler);
-            window._floatingScrollHandler = null;
-        }
-
-        hideBack();
-        subtitle.classList.remove('subtitle-guest');
-
-        const existingPopup = document.getElementById('guestPopup');
-        if (existingPopup) existingPopup.remove();
-
-        if (userCard.status === 'loading') {
-            mainDiv.innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
-            showBottomNav(false);
-            return;
-        }
-
-        updateMetricsUI();
-
-        if (userCard.status === 'active') {
-            const cardImageUrl = userCard.cardUrl || 'https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png';
-            subtitle.textContent = `💳 твоя карта, ${firstName}`;
-            showBottomNav(true);
-
-            mainDiv.innerHTML = `
-                <div class="card-container">
-                    <img src="${cardImageUrl}" alt="карта" class="card-image" id="ownerCardImage">
-                    <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${userCard.hikes}</span></div>
-                    
-                    <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
-                        <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
-                        <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
-                    </div>
-                    
-                    <div id="navAccordionOwner">
-                        <button class="accordion-btn">
-                            навигация по клубу <span class="arrow">👀</span>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
-                            <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
-                            <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
-                            <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Контейнер для блока "Мои записи" -->
-                <div id="userBookingsContainer"></div>
-
-                <!-- Календарь сразу после записей -->
-                <div class="card-container" id="calendarContainer"></div>
-
-                <div class="card-container">
-                    <h2 class="section-title">🫖 для новичков</h2>
-                    <div class="btn-newcomer" id="newcomerBtn">
-                        <span class="newcomer-text">как всё устроено</span>
-                        <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
-                    </div>
-                </div>
-                
-                <div class="card-container">
-                    <div class="metrics-header">
-                        <h2 class="metrics-title">🌍 клуб в цифрах</h2>
-                        <a href="https://t.me/yaltahiking/148" onclick="event.preventDefault(); openLink(this.href, 'reports_click', false); return false;" class="metrics-link">смотреть отчёты &gt;</a>
-                    </div>
-                    <div class="metrics-grid">
-                        <div class="metric-item">
-                            <div class="metric-label">хайков</div>
-                            <div class="metric-value" data-metric="hikes">${metrics.hikes}</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-label">локаций</div>
-                            <div class="metric-value" data-metric="locations">${metrics.locations}</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-label">километров</div>
-                            <div class="metric-value" data-metric="kilometers">${metrics.kilometers}</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-label">знакомств</div>
-                            <div class="metric-value" data-metric="meetings">${metrics.meetings}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            setupAccordion('navAccordionOwner', false);
-
-            document.getElementById('ownerCardImage')?.addEventListener('click', () => {
-                haptic();
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-                showConfetti();
-                log('card_click_celebration');
-            });
-
-            document.getElementById('privBtn')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                setUserInteracted();
-                log('privilege_click');
-                renderPriv();
-            });
-            
-            document.getElementById('supportBtn')?.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                setUserInteracted();
-                openLink('https://t.me/hellointelligent', 'support_click', false);
-            });
-
-            document.getElementById('newcomerBtn')?.addEventListener('click', () => {
-                haptic();
-                setUserInteracted();
-                log('newcomer_btn_click', false);
-                renderNewcomerPage(false);
-            });
-
-            renderUserBookings();
-
-            const calendarContainer = document.getElementById('calendarContainer');
-            if (calendarContainer) {
-                renderCalendar(calendarContainer);
-            }
-
-            setupBottomNav();
-
-        } else {
-            renderGuestHome();
-        }
-    } catch (error) {
-        console.error('Error in renderHome:', error);
-        mainDiv.innerHTML = `<div class="card-container" style="color: red; padding: 20px;">Ошибка: ${error.message}</div>`;
+    } else {
+        renderGuestHome();
     }
 }
 
