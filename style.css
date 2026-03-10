@@ -345,6 +345,12 @@ body::before {
     padding: 14px 16px;
 }
 
+/* Кнопка на всю ширину в аккордеоне */
+.dropdown-menu .btn-fullwidth {
+    grid-column: span 2;
+    width: 100%;
+}
+
 .btn-newcomer {
     display: flex;
     align-items: center;
@@ -1090,6 +1096,22 @@ body::before {
 
 .bottom-sheet-section-content a:hover {
     text-decoration: underline;
+}
+
+/* Кнопки под особенностями */
+.bottom-sheet-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
+
+.bottom-sheet-buttons .btn {
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
 }
 
 /* Остальные стили */
