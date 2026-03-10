@@ -55,6 +55,7 @@ let privileges = { club: [], city: [] };
 let giftContent = '';
 let randomPhrases = [];
 let leaders = {};
+let guestPrivileges = { club: [], city: [] }; // новый узел
 
 // Firebase инициализация
 let database = null;
@@ -150,6 +151,17 @@ async function loadPrivilegesFromFirebase() {
     } catch (e) {
         console.error('Error loading privileges from Firebase:', e);
         return null;
+    }
+}
+
+async function loadGuestPrivilegesFromFirebase() {
+    if (!database) return { club: [], city: [] };
+    try {
+        const snapshot = await database.ref('guestPrivileges').once('value');
+        return snapshot.val() || { club: [], city: [] };
+    } catch (e) {
+        console.error('Error loading guest privileges from Firebase:', e);
+        return { club: [], city: [] };
     }
 }
 
@@ -620,6 +632,10 @@ async function loadData() {
         const privilegesData = await loadPrivilegesFromFirebase();
         if (privilegesData) {
             privileges = privilegesData;
+        }
+        const guestPrivilegesData = await loadGuestPrivilegesFromFirebase();
+        if (guestPrivilegesData) {
+            guestPrivileges = guestPrivilegesData;
         }
         const giftData = await loadGiftFromFirebase();
         if (giftData) {
@@ -1322,8 +1338,27 @@ function showBottomSheet(index) {
                 ${imageHtml}
                 ${extraInfoHtml}
                 ${sectionsHtml}
+                <!-- Добавленные кнопки -->
+                <div class="bottom-sheet-buttons">
+                    <a href="#" class="btn btn-outline" id="sheetQuestionBtn2" style="margin: 0 auto;">задать вопрос</a>
+                    <a href="#" class="btn btn-outline" id="sheetPassBtn" style="margin: 0 auto;">оформить пропуск</a>
+                </div>
             </div>
         `;
+
+        // Обработчики для новых кнопок
+        document.getElementById('sheetQuestionBtn2')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+        });
+
+        document.getElementById('sheetPassBtn')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            // TODO: добавить ссылку позже
+            log('sheet_pass_click', false);
+        });
 
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
@@ -1514,7 +1549,7 @@ function showBottomSheet(index) {
 
                 const goBtn = document.createElement('a');
                 goBtn.href = '#';
-                goBtn.className = 'btn btn-yellow btn-glow'; // добавили glow
+                goBtn.className = 'btn btn-yellow btn-glow';
                 goBtn.id = 'sheetGoBtn';
                 goBtn.textContent = 'иду';
                 goBtn.addEventListener('click', (e) => {
@@ -1887,7 +1922,8 @@ function renderNewcomerPage(isGuest = false) {
     haptic();
     log('newcomer_page_opened', isGuest);
     
-    showBottomNav(!isGuest);
+    showBottomNav(true); // всегда показываем меню
+    setupBottomNav(); // всегда настраиваем
 
     let faqHtml = '';
     if (faq && faq.length) {
@@ -1916,13 +1952,66 @@ function renderNewcomerPage(isGuest = false) {
         setUserInteracted();
         renderHome();
     });
-
-    if (!isGuest) {
-        setupBottomNav();
-    }
 }
 
-// ----- Страница привилегий для владельцев карты -----
+// ----- Страница привилегий для гостей (отдельный контент) -----
+function renderGuestPrivileges() {
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
+
+    subtitle.textContent = `✨ привилегии для гостей`;
+    showBack(renderHome);
+    showBottomNav(true);
+    setupBottomNav();
+
+    let clubHtml = '';
+    if (guestPrivileges.club && guestPrivileges.club.length) {
+        guestPrivileges.club.forEach(item => {
+            let titleHtml = item.title;
+            if (item.title.startsWith('новое:')) {
+                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
+            }
+            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                clubHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            }
+            clubHtml += `</div>`;
+        });
+    } else {
+        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
+
+    let cityHtml = '';
+    if (guestPrivileges.city && guestPrivileges.city.length) {
+        guestPrivileges.city.forEach(item => {
+            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
+            if (item.button_text && item.button_link) {
+                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
+            } else if (item.button_link) {
+                let linkHtml = '';
+                if (item.button_link.includes('[') && item.button_link.includes('](')) {
+                    linkHtml = parseLinks(item.button_link, false);
+                } else {
+                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
+                }
+                cityHtml += `<p>📍 ${linkHtml}</p>`;
+            }
+            cityHtml += `</div>`;
+        });
+    } else {
+        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+    }
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
+            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
+        </div>
+    `;
+}
+
+// ----- Страница привилегий для владельцев карты (оставляем) -----
 function renderPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -1931,6 +2020,7 @@ function renderPriv() {
     subtitle.textContent = `🤘🏻твои привилегии, ${firstName}`;
     showBack(renderHome);
     showBottomNav(true);
+    setupBottomNav();
 
     let clubHtml = '';
     if (privileges.club && privileges.club.length) {
@@ -1976,62 +2066,6 @@ function renderPriv() {
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
         </div>
     `;
-
-    setupBottomNav();
-}
-
-// ----- Страница привилегий для гостей -----
-function renderGuestPriv() {
-    isPrivPage = true;
-    isMenuActive = false;
-    resetNavActive();
-
-    subtitle.textContent = `💳 привилегии с картой интеллигента`;
-    showBack(renderHome);
-    showBottomNav(true);
-
-    let clubHtml = '';
-    if (privileges.club && privileges.club.length) {
-        privileges.club.forEach(item => {
-            let titleHtml = item.title;
-            if (item.title.startsWith('новое:')) {
-                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
-            }
-            clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p></div>`;
-        });
-    } else {
-        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-    }
-
-    let cityHtml = '';
-    if (privileges.city && privileges.city.length) {
-        privileges.city.forEach(item => {
-            cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
-            if (item.button_text && item.button_link) {
-                cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
-            } else if (item.button_link) {
-                let linkHtml = '';
-                if (item.button_link.includes('[') && item.button_link.includes('](')) {
-                    linkHtml = parseLinks(item.button_link, false);
-                } else {
-                    linkHtml = `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link">📍 ${item.button_link}</a>`;
-                }
-                cityHtml += `<p>📍 ${linkHtml}</p>`;
-            }
-            cityHtml += `</div>`;
-        });
-    } else {
-        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
-    }
-
-    mainDiv.innerHTML = `
-        <div class="card-container">
-            <h2 class="section-title" style="font-style: italic;">в клубе</h2>${clubHtml}
-            <h2 class="section-title second" style="font-style: italic;">в городе</h2>${cityHtml}
-        </div>
-    `;
-
-    setupBottomNav();
 }
 
 // ----- Страница подарка -----
@@ -2042,7 +2076,8 @@ function renderGift(isGuest = false) {
 
     subtitle.textContent = `подари новый опыт`;
     showBack(renderHome);
-    showBottomNav(!isGuest);
+    showBottomNav(true);
+    setupBottomNav();
 
     const giftText = giftContent || 'Информация о подарке временно недоступна.';
 
@@ -2066,10 +2101,6 @@ function renderGift(isGuest = false) {
     `;
 
     setupAccordion('giftAccordion', isGuest);
-
-    if (!isGuest) {
-        setupBottomNav();
-    }
 }
 
 // ----- Попап для гостей -----
@@ -2122,6 +2153,8 @@ function renderGuestHome() {
                 <div class="dropdown-menu">
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
                     <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
+                    <!-- Новая кнопка на всю ширину -->
+                    <a href="#" class="btn btn-outline btn-fullwidth" id="guestPrivilegesBtn" style="margin-top: 8px;">узнать о привилегиях</a>
                 </div>
             </div>
             
@@ -2190,6 +2223,13 @@ function renderGuestHome() {
         setUserInteracted();
         log('newcomer_btn_click', true);
         renderNewcomerPage(true);
+    });
+
+    document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        renderGuestPrivileges();
+        log('guest_privileges_click', true);
     });
 
     renderUserBookings();
