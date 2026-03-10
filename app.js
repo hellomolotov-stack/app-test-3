@@ -660,10 +660,12 @@ async function loadData() {
         const guestPrivilegesData = await loadGuestPrivilegesFromFirebase();
         if (guestPrivilegesData) {
             guestPrivileges = guestPrivilegesData;
+            console.log('Guest privileges loaded:', guestPrivileges);
         }
         const passInfoData = await loadPassInfoFromFirebase();
         if (passInfoData) {
             passInfo = passInfoData;
+            console.log('Pass info loaded:', passInfo);
         }
         const giftData = await loadGiftFromFirebase();
         if (giftData) {
@@ -1469,12 +1471,14 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Кнопка "пригласить друга"
+            // Кнопка "пригласить друга" на всю ширину сверху
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
             inviteBtn.className = 'btn btn-yellow btn-glow';
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
+            inviteBtn.style.width = '100%';
+            inviteBtn.style.marginBottom = '8px';
             inviteBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
@@ -1489,11 +1493,19 @@ function showBottomSheet(index) {
             });
             container.appendChild(inviteBtn);
 
+            // Контейнер для двух кнопок в ряд
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '12px';
+            row.style.justifyContent = 'center';
+            row.style.width = '100%';
+
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
+            cancelBtn.style.flex = '1';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (cancelBtn.dataset.processing === 'true') return;
@@ -1528,14 +1540,17 @@ function showBottomSheet(index) {
                 }
                 log('sheet_cancel_click', false);
             });
-            container.appendChild(cancelBtn);
+            row.appendChild(cancelBtn);
 
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow-outline';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
-            container.appendChild(goBtn);
+            goBtn.style.flex = '1';
+            row.appendChild(goBtn);
+
+            container.appendChild(row);
 
         } else {
             if (isGuest) {
