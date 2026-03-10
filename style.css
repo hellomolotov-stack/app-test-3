@@ -1176,12 +1176,6 @@ body::before {
     pointer-events: none;
 }
 
-/* Кнопка пригласить друга на всю ширину */
-#sheetInviteBtn {
-    width: 100%;
-    margin-top: 8px;
-}
-
 .calendar-item {
     background-color: rgba(255,255,255,0.1);
     border-radius: 12px;
