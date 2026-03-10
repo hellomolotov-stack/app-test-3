@@ -10,7 +10,6 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    // Не закрываем приложение для ссылок с шарингом
     if (url.startsWith('https://t.me/') && !url.includes('/share/')) {
         window.open(url, '_blank');
         tg.close();
@@ -1480,7 +1479,7 @@ function showBottomSheet(index) {
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow';
+            inviteBtn.className = 'btn btn-yellow-outline'; // Изменено с btn-yellow на btn-yellow-outline
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
             inviteBtn.addEventListener('click', (e) => {
@@ -1490,7 +1489,8 @@ function showBottomSheet(index) {
                 const text = `пойдём на хайк ${formattedDate}`;
                 const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
                 const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-                openLink(shareUrl, 'invite_friend_click', isGuest);
+                // Используем tg.openTelegramLink для открытия без выхода из приложения
+                tg.openTelegramLink(shareUrl);
                 log('invite_friend_click', isGuest);
             });
             inviteRow.appendChild(inviteBtn);
