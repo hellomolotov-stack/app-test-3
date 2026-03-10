@@ -599,6 +599,18 @@ function normalizeDate(dateStr) {
     return dateStr;
 }
 
+function formatDateForDisplay(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        const day = parseInt(parts[2], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        return `${day} ${monthNames[month]}`;
+    }
+    return dateStr;
+}
+
 function scrollToCalendar() {
     setUserInteracted();
     setTimeout(() => {
@@ -1457,6 +1469,26 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
+            // Кнопка "пригласить друга" (теперь над остальными)
+            const inviteBtn = document.createElement('a');
+            inviteBtn.href = '#';
+            inviteBtn.className = 'btn btn-yellow btn-glow';
+            inviteBtn.id = 'sheetInviteBtn';
+            inviteBtn.textContent = 'пригласить друга';
+            inviteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                const formattedDate = formatDateForDisplay(hike.date);
+                const text = `пошли со мной на хайк ${formattedDate} ${hike.title}`;
+                const link = hike.telegram_link || '';
+                const shareUrl = link 
+                    ? `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`
+                    : `https://t.me/share/url?url=&text=${encodeURIComponent(text)}`;
+                openLink(shareUrl, 'invite_friend_click', isGuest);
+                log('invite_friend_click', isGuest);
+            });
+            container.appendChild(inviteBtn);
+
             const cancelBtn = document.createElement('a');
             cancelBtn.href = '#';
             cancelBtn.className = 'btn btn-outline';
@@ -1504,27 +1536,6 @@ function showBottomSheet(index) {
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
             container.appendChild(goBtn);
-
-            // Кнопка "пригласить друга"
-            const inviteBtn = document.createElement('a');
-            inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow btn-glow';
-            inviteBtn.id = 'sheetInviteBtn';
-            inviteBtn.textContent = 'пригласить друга';
-            inviteBtn.style.width = '100%';
-            inviteBtn.style.marginTop = '8px';
-            inviteBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                const text = `пошли со мной на хайк ${hike.date} ${hike.title}`;
-                const link = hike.telegram_link || '';
-                const shareUrl = link 
-                    ? `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`
-                    : `https://t.me/share/url?url=&text=${encodeURIComponent(text)}`;
-                openLink(shareUrl, 'invite_friend_click', isGuest);
-                log('invite_friend_click', isGuest);
-            });
-            container.appendChild(inviteBtn);
 
         } else {
             if (isGuest) {
