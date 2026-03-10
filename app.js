@@ -112,7 +112,8 @@ function subscribeToHikes(callback) {
             tags: data.tags || [],
             start_time: data.start_time || '',
             location_link: data.location_link || '',
-            telegram_link: data.telegram_link || ''
+            telegram_link: data.telegram_link || '',
+            report_link: data.report_link || '' // добавлено поле для отчёта
         })).sort((a, b) => a.date.localeCompare(b.date));
         console.log('Hikes updated, count:', list.length);
         hikesList = list;
@@ -1458,12 +1459,36 @@ function showBottomSheet(index) {
         container.innerHTML = '';
 
         if (isPast) {
+            // Контейнер для двух кнопок в ряд
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '12px';
+            row.style.justifyContent = 'center';
+            row.style.width = '100%';
+
+            // Неактивная кнопка "хайк завершен"
             const completedBtn = document.createElement('a');
             completedBtn.href = '#';
             completedBtn.className = 'btn btn-outline';
             completedBtn.textContent = 'хайк завершен';
             completedBtn.style.pointerEvents = 'none';
-            container.appendChild(completedBtn);
+            row.appendChild(completedBtn);
+
+            // Кнопка "отчёт", если есть ссылка
+            if (hike.report_link && hike.report_link.trim() !== '') {
+                const reportBtn = document.createElement('a');
+                reportBtn.href = '#';
+                reportBtn.className = 'btn btn-yellow'; // или btn-yellow-outline
+                reportBtn.textContent = 'отчёт';
+                reportBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    haptic();
+                    openLink(hike.report_link, 'report_click', isGuest);
+                });
+                row.appendChild(reportBtn);
+            }
+
+            container.appendChild(row);
             return;
         }
 
@@ -1479,7 +1504,7 @@ function showBottomSheet(index) {
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow-outline'; // Изменено с btn-yellow на btn-yellow-outline
+            inviteBtn.className = 'btn btn-yellow-outline';
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
             inviteBtn.addEventListener('click', (e) => {
