@@ -56,6 +56,7 @@ let giftContent = '';
 let randomPhrases = [];
 let leaders = {};
 let guestPrivileges = { club: [], city: [] };
+let passInfo = { content: '', buttonLink: '' };
 
 // Firebase инициализация
 let database = null;
@@ -162,6 +163,17 @@ async function loadGuestPrivilegesFromFirebase() {
     } catch (e) {
         console.error('Error loading guest privileges from Firebase:', e);
         return { club: [], city: [] };
+    }
+}
+
+async function loadPassInfoFromFirebase() {
+    if (!database) return { content: '', buttonLink: '' };
+    try {
+        const snapshot = await database.ref('passInfo').once('value');
+        return snapshot.val() || { content: '', buttonLink: '' };
+    } catch (e) {
+        console.error('Error loading pass info from Firebase:', e);
+        return { content: '', buttonLink: '' };
     }
 }
 
@@ -526,7 +538,7 @@ function showAnimatedLoader() {
             <div class="loader-emoji" id="loaderEmoji">⛰️</div>
             <div class="loader-text" id="loaderText">выбираем вершину</div>
         </div>
-        <div class="loader-message" id="loaderMessage" style="display: none;">⚙️для быстрой загрузки включи три буквы</div>
+        <div class="loader-message" id="loaderMessage" style="display: none;">⚙️ для быстрой загрузки включи три буквы</div>
     `;
     loader.style.display = 'flex';
     loader.classList.remove('fade-out');
@@ -636,6 +648,10 @@ async function loadData() {
         const guestPrivilegesData = await loadGuestPrivilegesFromFirebase();
         if (guestPrivilegesData) {
             guestPrivileges = guestPrivilegesData;
+        }
+        const passInfoData = await loadPassInfoFromFirebase();
+        if (passInfoData) {
+            passInfo = passInfoData;
         }
         const giftData = await loadGiftFromFirebase();
         if (giftData) {
@@ -811,6 +827,7 @@ function showLeaderDropdown(leaderElement, leaderData) {
     dropdown.style.borderRadius = '28px';
     dropdown.style.padding = '20px 0 12px 0';
 
+    // Аватар из Telegram по username
     const photoUrl = leaderData.username 
         ? `https://t.me/i/userpic/320/${leaderData.username}.jpg`
         : null;
@@ -896,6 +913,12 @@ document.addEventListener('click', function(e) {
             if (link.id === 'popupNewcomer') {
                 const isGuest = userCard.status !== 'active';
                 renderNewcomerPage(isGuest);
+            } else if (link.id === 'popupGift') {
+                const isGuest = userCard.status !== 'active';
+                renderGift(isGuest);
+            } else if (link.id === 'popupPass') {
+                const isGuest = userCard.status !== 'active';
+                renderPassPage(isGuest);
             } else {
                 openLink(href, 'nav_popup_click', false);
             }
@@ -1044,6 +1067,7 @@ function renderUserBookings() {
         const phrase = randomPhrases.length > 0 
             ? randomPhrases[Math.floor(Math.random() * randomPhrases.length)]
             : 'смотреть 5 сезон глухаря или';
+        // Разделяем фразу и слово "или" для выделения курсивом
         const phraseParts = phrase.split(' или');
         const mainPart = phraseParts[0];
         const italicPart = phraseParts.length > 1 ? ' или' : '';
@@ -1283,9 +1307,10 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
+            // Строка ведущего (только имя, без фамилии)
             const leader = leaders[hike.date];
             if (leader) {
-                const firstNameOnly = leader.name.split(' ')[0];
+                const firstNameOnly = leader.name.split(' ')[0]; // первое слово
                 extraInfoHtml += `
                     <div class="info-row">
                         <span class="info-icon">
@@ -1317,7 +1342,6 @@ function showBottomSheet(index) {
                </div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        // Убираем кнопки "задать вопрос" и "оформить пропуск"
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -1480,6 +1504,28 @@ function showBottomSheet(index) {
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
             container.appendChild(goBtn);
+
+            // Кнопка "пригласить друга"
+            const inviteBtn = document.createElement('a');
+            inviteBtn.href = '#';
+            inviteBtn.className = 'btn btn-yellow btn-glow';
+            inviteBtn.id = 'sheetInviteBtn';
+            inviteBtn.textContent = 'пригласить друга';
+            inviteBtn.style.width = '100%';
+            inviteBtn.style.marginTop = '8px';
+            inviteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                const text = `пошли со мной на хайк ${hike.date} ${hike.title}`;
+                const link = hike.telegram_link || '';
+                const shareUrl = link 
+                    ? `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`
+                    : `https://t.me/share/url?url=&text=${encodeURIComponent(text)}`;
+                openLink(shareUrl, 'invite_friend_click', isGuest);
+                log('invite_friend_click', isGuest);
+            });
+            container.appendChild(inviteBtn);
+
         } else {
             if (isGuest) {
                 const buyBtn = document.createElement('a');
@@ -1769,6 +1815,7 @@ function setupBottomNav() {
     const popupChannel = document.getElementById('popupChannel');
     const popupGift = document.getElementById('popupGift');
     const popupNewcomer = document.getElementById('popupNewcomer');
+    const popupPass = document.getElementById('popupPass');
 
     if (!navHome || !navHikes || !navMore || !popup) return;
 
@@ -1864,6 +1911,16 @@ function setupBottomNav() {
         isMenuActive = false;
         resetNavActive();
     });
+    popupPass.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        setUserInteracted();
+        const isGuest = userCard.status !== 'active';
+        renderPassPage(isGuest);
+        popup.classList.remove('show');
+        isMenuActive = false;
+        resetNavActive();
+    });
 
     document.addEventListener('click', (e) => {
         if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
@@ -1933,7 +1990,7 @@ function renderNewcomerPage(isGuest = false) {
     });
 }
 
-// ----- Страница привилегий для гостей (обновлён заголовок) -----
+// ----- Страница привилегий для гостей -----
 function renderGuestPrivileges() {
     isPrivPage = true;
     isMenuActive = false;
@@ -2082,6 +2139,43 @@ function renderGift(isGuest = false) {
     setupAccordion('giftAccordion', isGuest);
 }
 
+// ----- Страница пропуска в заповедник -----
+function renderPassPage(isGuest = false) {
+    isPrivPage = true;
+    isMenuActive = false;
+    resetNavActive();
+
+    subtitle.textContent = `🪪 пропуск в заповедник`;
+    showBack(renderHome);
+    showBottomNav(true);
+    setupBottomNav();
+
+    const content = passInfo.content || 'Информация о пропуске временно недоступна.';
+    const buttonLink = passInfo.buttonLink || '';
+
+    mainDiv.innerHTML = `
+        <div class="card-container">
+            <div class="partner-item">
+                <strong>как оформить пропуск</strong>
+                <p style="white-space: pre-line;">${content}</p>
+            </div>
+            
+            <div style="display: flex; justify-content: center; margin: 20px 16px 0;">
+                <a href="#" class="btn btn-yellow" id="passButton" style="width: 100%;">оформить пропуск</a>
+            </div>
+        </div>
+    `;
+
+    const passButton = document.getElementById('passButton');
+    if (passButton && buttonLink) {
+        passButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            openLink(buttonLink, 'pass_button_click', isGuest);
+        });
+    }
+}
+
 // ----- Попап для гостей -----
 function showGuestPopup() {
     haptic();
@@ -2132,7 +2226,6 @@ function renderGuestHome() {
                 <div class="dropdown-menu">
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
                     <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
-                    <!-- Кнопка с эмодзи 💳 -->
                     <a href="#" class="btn btn-outline btn-fullwidth" id="guestPrivilegesBtn" style="margin-top: 8px;">узнать о привилегиях 💳</a>
                 </div>
             </div>
