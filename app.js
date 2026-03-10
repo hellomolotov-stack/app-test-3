@@ -55,7 +55,7 @@ let privileges = { club: [], city: [] };
 let giftContent = '';
 let randomPhrases = [];
 let leaders = {};
-let guestPrivileges = { club: [], city: [] }; // новый узел
+let guestPrivileges = { club: [], city: [] }; // для гостей
 
 // Firebase инициализация
 let database = null;
@@ -1922,8 +1922,8 @@ function renderNewcomerPage(isGuest = false) {
     haptic();
     log('newcomer_page_opened', isGuest);
     
-    showBottomNav(true); // всегда показываем меню
-    setupBottomNav(); // всегда настраиваем
+    showBottomNav(true);
+    setupBottomNav();
 
     let faqHtml = '';
     if (faq && faq.length) {
@@ -1954,7 +1954,7 @@ function renderNewcomerPage(isGuest = false) {
     });
 }
 
-// ----- Страница привилегий для гостей (отдельный контент) -----
+// ----- Страница привилегий для гостей -----
 function renderGuestPrivileges() {
     isPrivPage = true;
     isMenuActive = false;
@@ -2011,7 +2011,7 @@ function renderGuestPrivileges() {
     `;
 }
 
-// ----- Страница привилегий для владельцев карты (оставляем) -----
+// ----- Страница привилегий для владельцев карты -----
 function renderPriv() {
     isPrivPage = true;
     isMenuActive = false;
@@ -2153,7 +2153,6 @@ function renderGuestHome() {
                 <div class="dropdown-menu">
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
                     <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
-                    <!-- Новая кнопка на всю ширину -->
                     <a href="#" class="btn btn-outline btn-fullwidth" id="guestPrivilegesBtn" style="margin-top: 8px;">узнать о привилегиях</a>
                 </div>
             </div>
