@@ -10,7 +10,8 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    if (url.startsWith('https://t.me/')) {
+    // Не закрываем приложение для ссылок с шарингом
+    if (url.startsWith('https://t.me/') && !url.includes('/share/')) {
         window.open(url, '_blank');
         tg.close();
     } else {
@@ -1473,9 +1474,9 @@ function showBottomSheet(index) {
             // Контейнер для кнопки "пригласить друга" с выравниванием по центру
             const inviteRow = document.createElement('div');
             inviteRow.style.display = 'flex';
-            inviteRow.style.justifyContent = 'center';  // изменено с flex-end на center
+            inviteRow.style.justifyContent = 'center';
             inviteRow.style.width = '100%';
-            inviteRow.style.marginBottom = '8px';
+            inviteRow.style.marginBottom = '4px'; // Уменьшено с 8px до 4px
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
@@ -1499,7 +1500,7 @@ function showBottomSheet(index) {
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
-            row.style.justifyContent = 'center';  // изменено с flex-end на center
+            row.style.justifyContent = 'center';
             row.style.width = '100%';
 
             const cancelBtn = document.createElement('a');
