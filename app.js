@@ -1470,16 +1470,16 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Контейнер для кнопки "пригласить друга" с выравниванием вправо
+            // Контейнер для кнопки "пригласить друга" с выравниванием по центру
             const inviteRow = document.createElement('div');
             inviteRow.style.display = 'flex';
-            inviteRow.style.justifyContent = 'flex-end';
+            inviteRow.style.justifyContent = 'center';  // изменено с flex-end на center
             inviteRow.style.width = '100%';
             inviteRow.style.marginBottom = '8px';
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow'; // убрали btn-glow
+            inviteBtn.className = 'btn btn-yellow';
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
             inviteBtn.addEventListener('click', (e) => {
@@ -1495,11 +1495,11 @@ function showBottomSheet(index) {
             inviteRow.appendChild(inviteBtn);
             container.appendChild(inviteRow);
 
-            // Контейнер для двух кнопок в ряд, тоже выравнен вправо
+            // Контейнер для двух кнопок в ряд, тоже по центру
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
-            row.style.justifyContent = 'flex-end';
+            row.style.justifyContent = 'center';  // изменено с flex-end на center
             row.style.width = '100%';
 
             const cancelBtn = document.createElement('a');
