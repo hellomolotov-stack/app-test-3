@@ -1469,7 +1469,7 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Кнопка "пригласить друга" (такого же размера, как остальные)
+            // Кнопка "пригласить друга"
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
             inviteBtn.className = 'btn btn-yellow btn-glow';
@@ -1479,8 +1479,7 @@ function showBottomSheet(index) {
                 e.preventDefault();
                 haptic();
                 const formattedDate = formatDateForDisplay(hike.date);
-                const text = `пошли со мной на хайк ${formattedDate} ${hike.title}`;
-                // Формируем ссылку вида https://t.me/yaltahiking_bot?startapp=hike_YYYY-MM-DD
+                const text = `пойдём на хайк ${formattedDate}`;
                 const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
                 const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
                 openLink(shareUrl, 'invite_friend_click', isGuest);
@@ -1500,7 +1499,6 @@ function showBottomSheet(index) {
             cancelBtn.className = 'btn btn-outline';
             cancelBtn.id = 'sheetCancelBtn';
             cancelBtn.textContent = 'отменить';
-            cancelBtn.style.flex = '1';
             cancelBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 if (cancelBtn.dataset.processing === 'true') return;
@@ -1542,7 +1540,6 @@ function showBottomSheet(index) {
             goBtn.className = 'btn btn-yellow-outline';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'ты записан';
-            goBtn.style.flex = '1';
             row.appendChild(goBtn);
 
             container.appendChild(row);
