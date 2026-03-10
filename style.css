@@ -1098,22 +1098,6 @@ body::before {
     text-decoration: underline;
 }
 
-/* Кнопки под особенностями */
-.bottom-sheet-buttons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    margin-top: 16px;
-    margin-bottom: 16px;
-}
-
-.bottom-sheet-buttons .btn {
-    width: 100%;
-    max-width: 280px;
-    margin: 0 auto;
-}
-
 /* Остальные стили */
 .floating-sheet-buttons {
     position: fixed;
@@ -1121,6 +1105,7 @@ body::before {
     right: 16px;
     left: 16px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
     gap: 12px;
@@ -1189,6 +1174,12 @@ body::before {
 .floating-sheet-buttons.hidden {
     opacity: 0;
     pointer-events: none;
+}
+
+/* Кнопка пригласить друга на всю ширину */
+#sheetInviteBtn {
+    width: 100%;
+    margin-top: 8px;
 }
 
 .calendar-item {
