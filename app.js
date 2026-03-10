@@ -1469,7 +1469,7 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Кнопка "пригласить друга" (теперь над остальными)
+            // Кнопка "пригласить друга"
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
             inviteBtn.className = 'btn btn-yellow btn-glow';
