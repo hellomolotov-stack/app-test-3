@@ -1081,7 +1081,6 @@ function renderUserBookings() {
         const phrase = randomPhrases.length > 0 
             ? randomPhrases[Math.floor(Math.random() * randomPhrases.length)]
             : 'смотреть 5 сезон глухаря или';
-        // Разделяем фразу и слово "или" для выделения курсивом
         const phraseParts = phrase.split(' или');
         const mainPart = phraseParts[0];
         const italicPart = phraseParts.length > 1 ? ' или' : '';
@@ -1321,10 +1320,9 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            // Строка ведущего (только имя, без фамилии)
             const leader = leaders[hike.date];
             if (leader) {
-                const firstNameOnly = leader.name.split(' ')[0]; // первое слово
+                const firstNameOnly = leader.name.split(' ')[0];
                 extraInfoHtml += `
                     <div class="info-row">
                         <span class="info-icon">
@@ -1471,23 +1469,20 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Кнопка "пригласить друга" на всю ширину сверху
+            // Кнопка "пригласить друга" (такого же размера, как остальные)
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
             inviteBtn.className = 'btn btn-yellow btn-glow';
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
-            inviteBtn.style.width = '100%';
-            inviteBtn.style.marginBottom = '8px';
             inviteBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
                 const formattedDate = formatDateForDisplay(hike.date);
                 const text = `пошли со мной на хайк ${formattedDate} ${hike.title}`;
-                const link = hike.telegram_link || '';
-                const shareUrl = link 
-                    ? `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`
-                    : `https://t.me/share/url?url=&text=${encodeURIComponent(text)}`;
+                // Формируем ссылку вида https://t.me/yaltahiking_bot?startapp=hike_YYYY-MM-DD
+                const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
+                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
                 openLink(shareUrl, 'invite_friend_click', isGuest);
                 log('invite_friend_click', isGuest);
             });
@@ -2269,10 +2264,7 @@ function renderGuestHome() {
             </div>
         </div>
 
-        <!-- Контейнер для блока "Мои записи" -->
         <div id="userBookingsContainer"></div>
-
-        <!-- Календарь сразу после записей -->
         <div class="card-container" id="calendarContainer"></div>
 
         <div class="card-container">
@@ -2391,10 +2383,7 @@ function renderHome() {
                 </div>
             </div>
 
-            <!-- Контейнер для блока "Мои записи" -->
             <div id="userBookingsContainer"></div>
-
-            <!-- Календарь сразу после записей -->
             <div class="card-container" id="calendarContainer"></div>
 
             <div class="card-container">
