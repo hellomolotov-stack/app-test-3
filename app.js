@@ -55,7 +55,7 @@ let privileges = { club: [], city: [] };
 let giftContent = '';
 let randomPhrases = [];
 let leaders = {};
-let guestPrivileges = { club: [], city: [] }; // для гостей
+let guestPrivileges = { club: [], city: [] };
 
 // Firebase инициализация
 let database = null;
@@ -811,7 +811,6 @@ function showLeaderDropdown(leaderElement, leaderData) {
     dropdown.style.borderRadius = '28px';
     dropdown.style.padding = '20px 0 12px 0';
 
-    // Аватар из Telegram по username
     const photoUrl = leaderData.username 
         ? `https://t.me/i/userpic/320/${leaderData.username}.jpg`
         : null;
@@ -1045,7 +1044,6 @@ function renderUserBookings() {
         const phrase = randomPhrases.length > 0 
             ? randomPhrases[Math.floor(Math.random() * randomPhrases.length)]
             : 'смотреть 5 сезон глухаря или';
-        // Разделяем фразу и слово "или" для выделения курсивом
         const phraseParts = phrase.split(' или');
         const mainPart = phraseParts[0];
         const italicPart = phraseParts.length > 1 ? ' или' : '';
@@ -1285,10 +1283,9 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            // Строка ведущего (только имя, без фамилии)
             const leader = leaders[hike.date];
             if (leader) {
-                const firstNameOnly = leader.name.split(' ')[0]; // первое слово
+                const firstNameOnly = leader.name.split(' ')[0];
                 extraInfoHtml += `
                     <div class="info-row">
                         <span class="info-icon">
@@ -1320,6 +1317,7 @@ function showBottomSheet(index) {
                </div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
+        // Убираем кнопки "задать вопрос" и "оформить пропуск"
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -1338,27 +1336,8 @@ function showBottomSheet(index) {
                 ${imageHtml}
                 ${extraInfoHtml}
                 ${sectionsHtml}
-                <!-- Добавленные кнопки -->
-                <div class="bottom-sheet-buttons">
-                    <a href="#" class="btn btn-outline" id="sheetQuestionBtn2" style="margin: 0 auto;">задать вопрос</a>
-                    <a href="#" class="btn btn-outline" id="sheetPassBtn" style="margin: 0 auto;">оформить пропуск</a>
-                </div>
             </div>
         `;
-
-        // Обработчики для новых кнопок
-        document.getElementById('sheetQuestionBtn2')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
-        });
-
-        document.getElementById('sheetPassBtn')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            // TODO: добавить ссылку позже
-            log('sheet_pass_click', false);
-        });
 
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
@@ -1954,13 +1933,13 @@ function renderNewcomerPage(isGuest = false) {
     });
 }
 
-// ----- Страница привилегий для гостей -----
+// ----- Страница привилегий для гостей (обновлён заголовок) -----
 function renderGuestPrivileges() {
     isPrivPage = true;
     isMenuActive = false;
     resetNavActive();
 
-    subtitle.textContent = `✨ привилегии для гостей`;
+    subtitle.textContent = `💳 привилегии с картой`;
     showBack(renderHome);
     showBottomNav(true);
     setupBottomNav();
@@ -2153,7 +2132,8 @@ function renderGuestHome() {
                 <div class="dropdown-menu">
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
                     <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
-                    <a href="#" class="btn btn-outline btn-fullwidth" id="guestPrivilegesBtn" style="margin-top: 8px;">узнать о привилегиях</a>
+                    <!-- Кнопка с эмодзи 💳 -->
+                    <a href="#" class="btn btn-outline btn-fullwidth" id="guestPrivilegesBtn" style="margin-top: 8px;">узнать о привилегиях 💳</a>
                 </div>
             </div>
             
