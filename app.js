@@ -935,7 +935,7 @@ document.addEventListener('click', function(e) {
             } else if (link.id === 'popupPass') {
                 const isGuest = userCard.status !== 'active';
                 renderPassPage(isGuest);
-            } else if (link.id === 'popupQuestion') { // новый пункт
+            } else if (link.id === 'popupQuestion') {
                 const isGuest = userCard.status !== 'active';
                 openLink('https://t.me/hellointelligent', 'popup_question_click', isGuest);
             } else {
@@ -1462,17 +1462,14 @@ function showBottomSheet(index) {
         container.innerHTML = '';
 
         if (isPast) {
-            // Явно определяем isGuest для использования в обработчике
             const isGuest = userCard.status !== 'active';
             
-            // Контейнер для двух кнопок в ряд
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
             row.style.justifyContent = 'center';
             row.style.width = '100%';
 
-            // Неактивная кнопка "хайк завершен"
             const completedBtn = document.createElement('a');
             completedBtn.href = '#';
             completedBtn.className = 'btn btn-outline';
@@ -1480,7 +1477,6 @@ function showBottomSheet(index) {
             completedBtn.style.pointerEvents = 'none';
             row.appendChild(completedBtn);
 
-            // Кнопка "отчёт", если есть ссылка
             if (hike.report_link && hike.report_link.trim() !== '') {
                 const reportBtn = document.createElement('a');
                 reportBtn.href = '#';
@@ -1508,11 +1504,11 @@ function showBottomSheet(index) {
             inviteRow.style.display = 'flex';
             inviteRow.style.justifyContent = 'center';
             inviteRow.style.width = '100%';
-            inviteRow.style.marginBottom = '12px'; // увеличено до 12px (как gap между кнопками)
+            inviteRow.style.marginBottom = '3px'; // Установлено 3px
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow btn-glow'; // теперь жёлтая с свечением
+            inviteBtn.className = 'btn btn-yellow btn-glow';
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
             inviteBtn.addEventListener('click', (e) => {
@@ -1875,7 +1871,7 @@ function setupBottomNav() {
     const popupGift = document.getElementById('popupGift');
     const popupNewcomer = document.getElementById('popupNewcomer');
     const popupPass = document.getElementById('popupPass');
-    const popupQuestion = document.getElementById('popupQuestion'); // новый пункт
+    const popupQuestion = document.getElementById('popupQuestion');
 
     if (!navHome || !navHikes || !navMore || !popup) return;
 
@@ -2355,7 +2351,6 @@ function renderGuestHome() {
     setupAccordion('cardAccordionGuest', true);
     setupAccordion('navAccordionGuest', true);
 
-    // Замена обработчика карты-заглушки: теперь ведёт на страницу привилегий
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
         haptic();
         renderGuestPrivileges();
