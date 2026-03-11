@@ -1497,7 +1497,6 @@ function showBottomSheet(index) {
                     haptic();
                     const url = hike.report_link.trim();
                     if (url) {
-                        // Используем openLink для единообразия с другими ссылками
                         openLink(url, 'report_click', isGuest);
                     }
                     return false;
@@ -2257,7 +2256,7 @@ function renderPassPage(isGuest = false) {
     }
 }
 
-// ----- Попап для гостей (обновлён) -----
+// ----- Попап для гостей -----
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -2385,7 +2384,7 @@ function renderGuestHome() {
     setupBottomNav();
 }
 
-// ----- Главная для владельцев карты -----
+// ----- Главная для владельцев карты (без навигации) -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
@@ -2421,18 +2420,6 @@ function renderHome() {
                 <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
                     <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                     <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
-                </div>
-                
-                <div id="navAccordionOwner">
-                    <button class="accordion-btn">
-                        навигация по клубу <span class="arrow">👀</span>
-                    </button>
-                    <div class="dropdown-menu">
-                        <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', false); return false;" class="btn btn-outline">о клубе</a>
-                        <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', false); return false;" class="btn btn-outline">философия</a>
-                        <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', false); return false;" class="btn btn-outline">о хайкинге</a>
-                        <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', false); return false;" class="btn btn-outline">отзывы</a>
-                    </div>
                 </div>
             </div>
 
@@ -2472,8 +2459,6 @@ function renderHome() {
                 </div>
             </div>
         `;
-
-        setupAccordion('navAccordionOwner', false);
 
         document.getElementById('ownerCardImage')?.addEventListener('click', () => {
             haptic();
