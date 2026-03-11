@@ -57,7 +57,6 @@ let randomPhrases = [];
 let leaders = {};
 let guestPrivileges = { club: [], city: [] };
 let passInfo = { content: '', buttonLink: '' };
-let registrationsPopup = {}; // { "userId_hikeDate": { popupText, popupLink, ... } }
 
 // Firebase инициализация
 let database = null;
@@ -222,18 +221,6 @@ async function loadLeadersFromFirebase() {
         return data;
     } catch (e) {
         console.error('Error loading leaders from Firebase:', e);
-        return {};
-    }
-}
-
-// --- Загрузка попапов для регистраций ---
-async function loadRegistrationsPopupFromFirebase() {
-    if (!database) return {};
-    try {
-        const snapshot = await database.ref('registrationsPopup').once('value');
-        return snapshot.val() || {};
-    } catch (e) {
-        console.error('Error loading registrations popup:', e);
         return {};
     }
 }
@@ -695,8 +682,6 @@ async function loadData() {
         if (leadersData) {
             leaders = leadersData;
         }
-        const regPopupData = await loadRegistrationsPopupFromFirebase();
-        registrationsPopup = regPopupData;
 
         await loadUserData();
 
@@ -859,6 +844,7 @@ function showLeaderDropdown(leaderElement, leaderData) {
     dropdown.style.borderRadius = '28px';
     dropdown.style.padding = '20px 0 12px 0';
 
+    // Пытаемся получить аватарку по username
     const photoUrl = leaderData.username 
         ? `https://t.me/i/userpic/320/${leaderData.username}.jpg`
         : null;
@@ -1006,6 +992,7 @@ function closeParticipantDropdown() {
     }
 }
 
+// *** ИСПРАВЛЕННАЯ ФУНКЦИЯ ***
 async function toggleParticipantDropdown(counterElement, hikeDate) {
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown && currentDropdownHikeDate === hikeDate) {
@@ -1020,7 +1007,8 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
-    dropdown.style.maxHeight = '250px';
+    // Ограничиваем высоту и добавляем прокрутку
+    dropdown.style.maxHeight = '250px'; // примерно 5 элементов
     dropdown.style.overflowY = 'auto';
     
     if (participants.length === 0) {
@@ -1172,82 +1160,6 @@ function renderUserBookings() {
 
     html += '</div>';
     container.innerHTML = html;
-}
-
-// ========== НОВАЯ ФУНКЦИЯ ДЛЯ ПОКАЗА ПОПАПА ==========
-function showPaymentPopup(container, popupData, isGuest) {
-    container.innerHTML = '';
-
-    const messageDiv = document.createElement('div');
-    messageDiv.style.margin = '0 0 12px 0';
-    messageDiv.style.padding = '12px';
-    messageDiv.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    messageDiv.style.borderRadius = '12px';
-    messageDiv.style.color = '#ffffff';
-    messageDiv.style.textAlign = 'center';
-    messageDiv.style.whiteSpace = 'pre-line';
-    messageDiv.textContent = popupData.popupText;
-    container.appendChild(messageDiv);
-
-    // Кнопка "Купить билет"
-    const buyBtn = document.createElement('a');
-    buyBtn.href = '#';
-    buyBtn.className = 'btn btn-yellow btn-glow';
-    buyBtn.textContent = 'купить билет';
-    buyBtn.style.marginBottom = '8px';
-    buyBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink(popupData.popupLink, 'popup_buy_click', isGuest);
-    });
-    container.appendChild(buyBtn);
-
-    // Аккордеон для карт
-    const cardRow = document.createElement('div');
-    cardRow.style.width = '100%';
-
-    const accordionBtn = document.createElement('button');
-    accordionBtn.className = 'accordion-btn btn-yellow btn-glow';
-    accordionBtn.textContent = 'оформить карту';
-    accordionBtn.style.marginBottom = '0';
-    accordionBtn.style.width = '100%';
-
-    const dropdown = document.createElement('div');
-    dropdown.className = 'dropdown-menu';
-    dropdown.style.marginTop = '8px';
-
-    const seasonBtn = document.createElement('a');
-    seasonBtn.href = '#';
-    seasonBtn.className = 'btn btn-outline';
-    seasonBtn.textContent = 'сезонная';
-    seasonBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink(SEASON_CARD_LINK, 'popup_season_card', isGuest);
-    });
-
-    const permanentBtn = document.createElement('a');
-    permanentBtn.href = '#';
-    permanentBtn.className = 'btn btn-outline';
-    permanentBtn.textContent = 'бессрочная';
-    permanentBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink(PERMANENT_CARD_LINK, 'popup_permanent_card', isGuest);
-    });
-
-    dropdown.appendChild(seasonBtn);
-    dropdown.appendChild(permanentBtn);
-    cardRow.appendChild(accordionBtn);
-    cardRow.appendChild(dropdown);
-    container.appendChild(cardRow);
-
-    accordionBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        dropdown.classList.toggle('show');
-        log('popup_card_toggle', isGuest);
-    });
 }
 
 // ----- Bottom Sheet -----
@@ -1573,16 +1485,6 @@ function showBottomSheet(index) {
 
         container.innerHTML = '';
 
-        // ПРОВЕРКА НА ПОПАП
-        if (userId) {
-            const popupKey = `${userId}_${hike.date}`;
-            const popupData = registrationsPopup[popupKey];
-            if (popupData && popupData.popupText && popupData.popupLink) {
-                showPaymentPopup(container, popupData, userCard.status !== 'active');
-                return;
-            }
-        }
-
         if (isPast) {
             const isGuest = userCard.status !== 'active';
             
@@ -1719,30 +1621,23 @@ function showBottomSheet(index) {
                     
                     haptic();
 
-                    // Генерация ссылки на Robokassa (можно заменить на серверную)
-                    const paymentId = `${userId}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-                    const merchantLogin = 'ваш_логин'; // замените
-                    const outSum = '1500';
-                    const description = `Билет на хайк ${formatDateForDisplay(hike.date)}`;
-                    const shp_hikeDate = hike.date;
-                    const shp_userId = userId;
-                    const shp_paymentId = paymentId;
-
-                    const robokassaUrl = `https://auth.robokassa.ru/Merchant/Index.aspx?` +
-                        `MerchantLogin=${merchantLogin}` +
-                        `&OutSum=${outSum}` +
-                        `&Description=${encodeURIComponent(description)}` +
-                        `&shp_hikeDate=${shp_hikeDate}` +
-                        `&shp_userId=${shp_userId}` +
-                        `&shp_paymentId=${shp_paymentId}` +
-                        `&IsTest=1`;
-
-                    tg.openLink(robokassaUrl);
-                    log('buy_click', true);
+                    addParticipant(hike.date)
+                        .then(() => setUserRegistrationStatus(hike.date, true))
+                        .then(() => {
+                            hikeBookingStatus[sheetCurrentIndex] = true;
+                            saveStatusToLocalStorage();
+                            updateRegistrationInSheet(hike.date, hike.title, 'booked');
+                            updateFloatingSheetButtons();
+                            renderUserBookings();
+                            
+                            openLink(ROBOKASSA_LINK, 'sheet_buy_click', true);
+                        })
+                        .catch((error) => {
+                            console.error('Error during booking:', error);
+                            updateFloatingSheetButtons();
+                        });
                     
-                    setTimeout(() => {
-                        buyBtn.dataset.processing = 'false';
-                    }, 5000);
+                    buyBtn.dataset.processing = 'false';
                 });
                 container.appendChild(buyBtn);
             } else {
@@ -1956,14 +1851,18 @@ function renderCalendar(container) {
             if (isPast) classes += ' past';
         }
 
+        // Проверяем, записан ли пользователь на этот хайк
         if (hasHike) {
             const hikeIndex = hikesList.findIndex(h => h.date === dateStr);
             const isUserBooked = hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true;
             
             if (isUserBooked) {
+                // Добавляем класс для записанных хайков, если они ещё актуальны (не прошли)
                 if (!isPast) {
                     classes += ' booked-day';
                 }
+                // Текст даты делаем жирным и курсивным для всех записанных (и прошлых, и будущих)
+                // Но свечение (через booked-day) добавится только для будущих
             }
         }
         
@@ -2349,7 +2248,7 @@ function renderGift(isGuest = false) {
     setupAccordion('giftAccordion', isGuest);
 }
 
-// ----- Страница пропуска в заповедник -----
+// ----- Страница пропуска в заповедник (исправленная ширина кнопки) -----
 function renderPassPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -2422,7 +2321,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (с новой картинкой) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2514,7 +2413,7 @@ function renderGuestHome() {
     setupBottomNav();
 }
 
-// ----- Главная для владельцев карты -----
+// ----- Главная для владельцев карты (с новой картинкой) -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
