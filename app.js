@@ -114,7 +114,7 @@ function subscribeToHikes(callback) {
             location_link: data.location_link || '',
             telegram_link: data.telegram_link || '',
             report_link: data.report_link || '',
-            feature_tags: data.feature_tags || [] // новый массив тегов
+            feature_tags: data.feature_tags || []
         })).sort((a, b) => a.date.localeCompare(b.date));
         console.log('Hikes updated, count:', list.length);
         hikesList = list;
@@ -1532,7 +1532,7 @@ function showBottomSheet(index) {
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow btn-glow'; // те же классы, что и у "иду"
+            inviteBtn.className = 'btn btn-yellow btn-glow';
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
             inviteBtn.addEventListener('click', (e) => {
@@ -1540,8 +1540,9 @@ function showBottomSheet(index) {
                 haptic();
                 const formattedDate = formatDateForDisplay(hike.date);
                 const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
-                const featuresPreview = hike.features ? hike.features.substring(0, 100) + '…' : '';
-                const message = `пойдём на хайк ${formattedDate}, ${link}, ${featuresPreview}, @yaltahiking`;
+                const featuresText = hike.features || '';
+                // Формируем сообщение с переносами строк
+                const message = `пойдём на хайк ${formattedDate}\n${link}\n\n${featuresText}\n\n@yaltahiking`;
                 const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
                 tg.openTelegramLink(shareUrl);
                 log('invite_friend_click', isGuest);
