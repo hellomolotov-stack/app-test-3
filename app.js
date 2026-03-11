@@ -935,6 +935,9 @@ document.addEventListener('click', function(e) {
             } else if (link.id === 'popupPass') {
                 const isGuest = userCard.status !== 'active';
                 renderPassPage(isGuest);
+            } else if (link.id === 'popupQuestion') { // новый пункт
+                const isGuest = userCard.status !== 'active';
+                openLink('https://t.me/hellointelligent', 'popup_question_click', isGuest);
             } else {
                 openLink(href, 'nav_popup_click', false);
             }
@@ -1487,7 +1490,6 @@ function showBottomSheet(index) {
                     e.preventDefault();
                     e.stopPropagation();
                     haptic();
-                    // Используем openTelegramLink для открытия внутри Telegram
                     tg.openTelegramLink(hike.report_link.trim());
                     log('report_click', isGuest);
                 });
@@ -1506,11 +1508,11 @@ function showBottomSheet(index) {
             inviteRow.style.display = 'flex';
             inviteRow.style.justifyContent = 'center';
             inviteRow.style.width = '100%';
-            inviteRow.style.marginBottom = '4px'; // Уменьшено с 8px до 4px
+            inviteRow.style.marginBottom = '12px'; // увеличено до 12px (как gap между кнопками)
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow-outline';
+            inviteBtn.className = 'btn btn-yellow btn-glow'; // теперь жёлтая с свечением
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
             inviteBtn.addEventListener('click', (e) => {
@@ -1873,6 +1875,7 @@ function setupBottomNav() {
     const popupGift = document.getElementById('popupGift');
     const popupNewcomer = document.getElementById('popupNewcomer');
     const popupPass = document.getElementById('popupPass');
+    const popupQuestion = document.getElementById('popupQuestion'); // новый пункт
 
     if (!navHome || !navHikes || !navMore || !popup) return;
 
@@ -1978,6 +1981,18 @@ function setupBottomNav() {
         isMenuActive = false;
         resetNavActive();
     });
+    if (popupQuestion) {
+        popupQuestion.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            setUserInteracted();
+            const isGuest = userCard.status !== 'active';
+            openLink('https://t.me/hellointelligent', 'popup_question_click', isGuest);
+            popup.classList.remove('show');
+            isMenuActive = false;
+            resetNavActive();
+        });
+    }
 
     document.addEventListener('click', (e) => {
         if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
@@ -2340,10 +2355,13 @@ function renderGuestHome() {
     setupAccordion('cardAccordionGuest', true);
     setupAccordion('navAccordionGuest', true);
 
+    // Замена обработчика карты-заглушки: теперь ведёт на страницу привилегий
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
         haptic();
-        showGuestPopup();
+        renderGuestPrivileges();
+        log('guest_card_privileges_click', true);
     });
+    
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic();
         setUserInteracted();
