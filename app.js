@@ -113,7 +113,8 @@ function subscribeToHikes(callback) {
             start_time: data.start_time || '',
             location_link: data.location_link || '',
             telegram_link: data.telegram_link || '',
-            report_link: data.report_link || ''
+            report_link: data.report_link || '',
+            feature_tags: data.feature_tags || [] // новый массив тегов
         })).sort((a, b) => a.date.localeCompare(b.date));
         console.log('Hikes updated, count:', list.length);
         hikesList = list;
@@ -1236,9 +1237,21 @@ function showBottomSheet(index) {
         if (hike.features && hike.features.trim() !== '') {
             let processedText = parseLinks(hike.features, isGuest);
             processedText = processedText.replace(/\n/g, '<br>');
+            
+            // Добавляем жёлтые теги, если они есть
+            let featureTagsHtml = '';
+            if (hike.feature_tags && hike.feature_tags.length > 0) {
+                featureTagsHtml = '<div class="feature-tags-container">';
+                hike.feature_tags.forEach(tag => {
+                    featureTagsHtml += `<span class="feature-tag">${tag}</span>`;
+                });
+                featureTagsHtml += '</div>';
+            }
+            
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title">особенности</div>
+                    ${featureTagsHtml}
                     <div class="bottom-sheet-section-content">${processedText}</div>
                 </div>
             `;
@@ -1396,7 +1409,6 @@ function showBottomSheet(index) {
                             img.alt = p.name || '';
                             img.title = p.name || '';
                             img.onerror = function() {
-                                // При ошибке загрузки заменяем на плейсхолдер
                                 const placeholder = document.createElement('div');
                                 placeholder.className = 'participant-avatar placeholder';
                                 const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
@@ -1511,7 +1523,7 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Контейнер для кнопки "пригласить друга" с выравниванием по центру
+            // Контейнер для кнопки "пригласить друга"
             const inviteRow = document.createElement('div');
             inviteRow.style.display = 'flex';
             inviteRow.style.justifyContent = 'center';
@@ -1520,23 +1532,24 @@ function showBottomSheet(index) {
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow btn-glow';
+            inviteBtn.className = 'btn btn-yellow btn-glow'; // те же классы, что и у "иду"
             inviteBtn.id = 'sheetInviteBtn';
             inviteBtn.textContent = 'пригласить друга';
             inviteBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
                 const formattedDate = formatDateForDisplay(hike.date);
-                const text = `пойдём на хайк ${formattedDate}`;
                 const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
-                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+                const featuresPreview = hike.features ? hike.features.substring(0, 100) + '…' : '';
+                const message = `пойдём на хайк ${formattedDate}, ${link}, ${featuresPreview}, @yaltahiking`;
+                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
                 tg.openTelegramLink(shareUrl);
                 log('invite_friend_click', isGuest);
             });
             inviteRow.appendChild(inviteBtn);
             container.appendChild(inviteRow);
 
-            // Контейнер для двух кнопок в ряд, тоже по центру
+            // Контейнер для двух кнопок в ряд
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
@@ -2292,7 +2305,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (без навигации) -----
+// ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2384,7 +2397,7 @@ function renderGuestHome() {
     setupBottomNav();
 }
 
-// ----- Главная для владельцев карты (без навигации) -----
+// ----- Главная для владельцев карты -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
