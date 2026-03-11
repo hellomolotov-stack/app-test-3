@@ -1487,8 +1487,8 @@ function showBottomSheet(index) {
                     e.preventDefault();
                     e.stopPropagation();
                     haptic();
-                    // Прямой вызов tg.openLink – приложение не закрывается
-                    tg.openLink(hike.report_link.trim());
+                    // Используем openTelegramLink для открытия внутри Telegram
+                    tg.openTelegramLink(hike.report_link.trim());
                     log('report_click', isGuest);
                 });
                 row.appendChild(reportBtn);
