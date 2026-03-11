@@ -843,7 +843,7 @@ function showLeaderDropdown(leaderElement, leaderData) {
     dropdown.style.borderRadius = '28px';
     dropdown.style.padding = '20px 0 12px 0';
 
-    // Аватар из Telegram по username
+    // Пытаемся получить аватарку по username
     const photoUrl = leaderData.username 
         ? `https://t.me/i/userpic/320/${leaderData.username}.jpg`
         : null;
@@ -1015,7 +1015,8 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
             item.className = 'participant-dropdown-item';
             
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar" alt="${name}">`;
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar" alt="${name}" 
+                    onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder\'>${name.charAt(0).toUpperCase()}</div>';">`;
             } else {
                 const initial = name.charAt(0).toUpperCase();
                 item.innerHTML = `<div class="participant-dropdown-avatar placeholder">${initial}</div>`;
@@ -1394,6 +1395,14 @@ function showBottomSheet(index) {
                             img.className = 'participant-avatar';
                             img.alt = p.name || '';
                             img.title = p.name || '';
+                            img.onerror = function() {
+                                // При ошибке загрузки заменяем на плейсхолдер
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'participant-avatar placeholder';
+                                const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                                placeholder.textContent = initial;
+                                this.parentNode.replaceChild(placeholder, this);
+                            };
                             avatarsEl.appendChild(img);
                         } else {
                             const placeholder = document.createElement('div');
@@ -1486,8 +1495,12 @@ function showBottomSheet(index) {
                     e.preventDefault();
                     e.stopPropagation();
                     haptic();
-                    tg.openTelegramLink(hike.report_link.trim());
-                    log('report_click', isGuest);
+                    const url = hike.report_link.trim();
+                    if (url) {
+                        tg.openTelegramLink(url);
+                        log('report_click', isGuest);
+                    }
+                    return false;
                 });
                 row.appendChild(reportBtn);
             }
@@ -1504,7 +1517,7 @@ function showBottomSheet(index) {
             inviteRow.style.display = 'flex';
             inviteRow.style.justifyContent = 'center';
             inviteRow.style.width = '100%';
-            inviteRow.style.marginBottom = '3px'; // Установлено 3px
+            inviteRow.style.marginBottom = '3px';
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
