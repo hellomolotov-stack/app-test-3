@@ -1363,3 +1363,34 @@ body::before {
     margin: 0;
     width: 100%;
 }
+
+/* Стиль для дат, на которые пользователь записан (свечение и жирный курсив) */
+.calendar-day.booked-day {
+    background: var(--yellow);
+    color: #000000;
+    font-weight: 900;
+    font-style: italic;
+    box-shadow: 0 0 10px var(--yellow);
+    border: 2px solid transparent;
+    animation: glow 3s ease-in-out infinite;
+}
+
+/* Если дата записанная и при этом сегодняшняя */
+.calendar-day.today.booked-day {
+    background: var(--yellow);
+    color: #000000;
+    border: 2px solid #ffffff;
+    font-weight: 900;
+    font-style: italic;
+    box-shadow: 0 0 10px var(--yellow);
+}
+
+/* Если дата записанная, но уже прошлая (просто жирный курсив, без свечения) */
+.calendar-day.hike-day.past.booked-day {
+    background: rgba(217, 253, 25, 0.3);
+    color: #000000;
+    font-weight: 900;
+    font-style: italic;
+    box-shadow: none;
+    animation: none;
+}
