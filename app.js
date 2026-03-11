@@ -992,6 +992,7 @@ function closeParticipantDropdown() {
     }
 }
 
+// *** ИСПРАВЛЕННАЯ ФУНКЦИЯ ***
 async function toggleParticipantDropdown(counterElement, hikeDate) {
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown && currentDropdownHikeDate === hikeDate) {
@@ -1006,6 +1007,9 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
+    // Ограничиваем высоту и добавляем прокрутку
+    dropdown.style.maxHeight = '250px'; // примерно 5 элементов
+    dropdown.style.overflowY = 'auto';
     
     if (participants.length === 0) {
         dropdown.innerHTML = '<div class="participant-dropdown-item" style="justify-content:center;">Пока никого нет</div>';
