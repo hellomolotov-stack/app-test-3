@@ -1238,7 +1238,6 @@ function showBottomSheet(index) {
             let processedText = parseLinks(hike.features, isGuest);
             processedText = processedText.replace(/\n/g, '<br>');
             
-            // Добавляем жёлтые теги, если они есть
             let featureTagsHtml = '';
             if (hike.feature_tags && hike.feature_tags.length > 0) {
                 featureTagsHtml = '<div class="feature-tags-container">';
@@ -1523,7 +1522,6 @@ function showBottomSheet(index) {
         const isGuest = userCard.status !== 'active';
 
         if (isBooked) {
-            // Контейнер для кнопки "пригласить друга"
             const inviteRow = document.createElement('div');
             inviteRow.style.display = 'flex';
             inviteRow.style.justifyContent = 'center';
@@ -1541,7 +1539,6 @@ function showBottomSheet(index) {
                 const formattedDate = formatDateForDisplay(hike.date);
                 const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
                 const featuresText = hike.features || '';
-                // Формируем сообщение с переносами строк
                 const message = `пойдём на хайк ${formattedDate}\n${link}\n\n${featuresText}\n\n@yaltahiking`;
                 const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
                 tg.openTelegramLink(shareUrl);
@@ -1550,7 +1547,6 @@ function showBottomSheet(index) {
             inviteRow.appendChild(inviteBtn);
             container.appendChild(inviteRow);
 
-            // Контейнер для двух кнопок в ряд
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
@@ -1849,6 +1845,21 @@ function renderCalendar(container) {
         if (hasHike) {
             classes += ' hike-day';
             if (isPast) classes += ' past';
+        }
+
+        // Проверяем, записан ли пользователь на этот хайк
+        if (hasHike) {
+            const hikeIndex = hikesList.findIndex(h => h.date === dateStr);
+            const isUserBooked = hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true;
+            
+            if (isUserBooked) {
+                // Добавляем класс для записанных хайков, если они ещё актуальны (не прошли)
+                if (!isPast) {
+                    classes += ' booked-day';
+                }
+                // Текст даты делаем жирным и курсивным для всех записанных (и прошлых, и будущих)
+                // Но свечение (через booked-day) добавится только для будущих
+            }
         }
         
         if (hasHike) {
@@ -2233,7 +2244,7 @@ function renderGift(isGuest = false) {
     setupAccordion('giftAccordion', isGuest);
 }
 
-// ----- Страница пропуска в заповедник -----
+// ----- Страница пропуска в заповедник (исправленная ширина кнопки) -----
 function renderPassPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -2306,7 +2317,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (с новой картинкой) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2337,7 +2348,7 @@ function renderGuestHome() {
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
                 <span class="newcomer-text">как всё устроено</span>
-                <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
+                <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
             </div>
         </div>
         
@@ -2398,7 +2409,7 @@ function renderGuestHome() {
     setupBottomNav();
 }
 
-// ----- Главная для владельцев карты -----
+// ----- Главная для владельцев карты (с новой картинкой) -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
@@ -2444,7 +2455,7 @@ function renderHome() {
                 <h2 class="section-title">🫖 для новичков</h2>
                 <div class="btn-newcomer" id="newcomerBtn">
                     <span class="newcomer-text">как всё устроено</span>
-                    <img src="https://i.postimg.cc/k533cR9Z/fv.png" alt="новичкам" class="newcomer-image">
+                    <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
                 </div>
             </div>
             
