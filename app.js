@@ -1459,6 +1459,9 @@ function showBottomSheet(index) {
         container.innerHTML = '';
 
         if (isPast) {
+            // Явно определяем isGuest для использования в обработчике
+            const isGuest = userCard.status !== 'active';
+            
             // Контейнер для двух кнопок в ряд
             const row = document.createElement('div');
             row.style.display = 'flex';
@@ -1484,8 +1487,9 @@ function showBottomSheet(index) {
                     e.preventDefault();
                     e.stopPropagation();
                     haptic();
-                    // Используем общую функцию openLink
-                    openLink(hike.report_link, 'report_click', isGuest);
+                    // Прямой вызов tg.openLink – приложение не закрывается
+                    tg.openLink(hike.report_link.trim());
+                    log('report_click', isGuest);
                 });
                 row.appendChild(reportBtn);
             }
@@ -1502,7 +1506,7 @@ function showBottomSheet(index) {
             inviteRow.style.display = 'flex';
             inviteRow.style.justifyContent = 'center';
             inviteRow.style.width = '100%';
-            inviteRow.style.marginBottom = '4px';
+            inviteRow.style.marginBottom = '4px'; // Уменьшено с 8px до 4px
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
