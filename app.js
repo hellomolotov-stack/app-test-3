@@ -113,7 +113,7 @@ function subscribeToHikes(callback) {
             start_time: data.start_time || '',
             location_link: data.location_link || '',
             telegram_link: data.telegram_link || '',
-            report_link: data.report_link || '' // добавлено поле для отчёта
+            report_link: data.report_link || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
         console.log('Hikes updated, count:', list.length);
         hikesList = list;
@@ -1478,11 +1478,13 @@ function showBottomSheet(index) {
             if (hike.report_link && hike.report_link.trim() !== '') {
                 const reportBtn = document.createElement('a');
                 reportBtn.href = '#';
-                reportBtn.className = 'btn btn-yellow'; // или btn-yellow-outline
+                reportBtn.className = 'btn btn-yellow';
                 reportBtn.textContent = 'отчёт';
                 reportBtn.addEventListener('click', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     haptic();
+                    // Используем общую функцию openLink
                     openLink(hike.report_link, 'report_click', isGuest);
                 });
                 row.appendChild(reportBtn);
@@ -1500,7 +1502,7 @@ function showBottomSheet(index) {
             inviteRow.style.display = 'flex';
             inviteRow.style.justifyContent = 'center';
             inviteRow.style.width = '100%';
-            inviteRow.style.marginBottom = '4px'; // Уменьшено с 8px до 4px
+            inviteRow.style.marginBottom = '4px';
 
             const inviteBtn = document.createElement('a');
             inviteBtn.href = '#';
@@ -1514,7 +1516,6 @@ function showBottomSheet(index) {
                 const text = `пойдём на хайк ${formattedDate}`;
                 const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
                 const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
-                // Используем tg.openTelegramLink для открытия без выхода из приложения
                 tg.openTelegramLink(shareUrl);
                 log('invite_friend_click', isGuest);
             });
