@@ -607,6 +607,17 @@ body::before {
     margin-bottom: 2px;
 }
 
+/* Уменьшаем толщину линий у иконки календаря */
+#navHikes svg rect,
+#navHikes svg line {
+    stroke-width: 1.5;
+}
+
+/* Немного увеличиваем иконку главной для визуального баланса */
+#navHome svg {
+    transform: scale(1.05);
+}
+
 .nav-label {
     font-size: 12px;
     font-weight: 500;
