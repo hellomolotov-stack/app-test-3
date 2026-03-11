@@ -1497,8 +1497,8 @@ function showBottomSheet(index) {
                     haptic();
                     const url = hike.report_link.trim();
                     if (url) {
-                        tg.openTelegramLink(url);
-                        log('report_click', isGuest);
+                        // Используем openLink для единообразия с другими ссылками
+                        openLink(url, 'report_click', isGuest);
                     }
                     return false;
                 });
@@ -2257,7 +2257,7 @@ function renderPassPage(isGuest = false) {
     }
 }
 
-// ----- Попап для гостей -----
+// ----- Попап для гостей (обновлён) -----
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -2269,7 +2269,7 @@ function showGuestPopup() {
             <div class="modal-title">карта интеллигента</div>
             <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
             <div style="text-align: center; margin-top: 20px;">
-                <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'popup_learn_click', true); return false;" class="btn btn-yellow" id="popupLearnBtn">узнать о карте подробнее</a>
+                <button class="btn btn-yellow" id="popupPrivilegesBtn">узнать о привилегиях</button>
             </div>
         </div>
     `;
@@ -2285,10 +2285,15 @@ function showGuestPopup() {
             overlay.remove();
         }
     });
+    document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+        renderGuestPrivileges();
+    });
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (без навигации) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2308,18 +2313,6 @@ function renderGuestHome() {
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
                     <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
                     <a href="#" class="btn btn-outline btn-fullwidth" id="guestPrivilegesBtn" style="margin-top: 8px;">узнать о привилегиях 💳</a>
-                </div>
-            </div>
-            
-            <div id="navAccordionGuest">
-                <button class="accordion-btn">
-                    навигация по клубу <span class="arrow">👀</span>
-                </button>
-                <div class="dropdown-menu">
-                    <a href="https://t.me/yaltahiking/149" onclick="event.preventDefault(); openLink(this.href, 'nav_about', true); return false;" class="btn btn-outline">о клубе</a>
-                    <a href="https://t.me/yaltahiking/170" onclick="event.preventDefault(); openLink(this.href, 'nav_philosophy', true); return false;" class="btn btn-outline">философия</a>
-                    <a href="https://t.me/yaltahiking/246" onclick="event.preventDefault(); openLink(this.href, 'nav_hiking', true); return false;" class="btn btn-outline">о хайкинге</a>
-                    <a href="https://t.me/yaltahiking/a/2" onclick="event.preventDefault(); openLink(this.href, 'nav_reviews', true); return false;" class="btn btn-outline">отзывы</a>
                 </div>
             </div>
         </div>
@@ -2362,12 +2355,10 @@ function renderGuestHome() {
     `;
 
     setupAccordion('cardAccordionGuest', true);
-    setupAccordion('navAccordionGuest', true);
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
         haptic();
-        renderGuestPrivileges();
-        log('guest_card_privileges_click', true);
+        showGuestPopup();
     });
     
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
