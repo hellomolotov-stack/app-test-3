@@ -935,8 +935,10 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         haptic();
-        // ссылка берётся из data-атрибута, но мы в addPaymentPopup используем popupData.popupLink
-        // поэтому клик обрабатывается в самой функции
+        const url = link.dataset.url;
+        if (url) {
+            openLink(url, 'popup_link_click', userCard.status !== 'active');
+        }
         return;
     }
     
@@ -1188,15 +1190,8 @@ function renderUserBookings() {
 // ========== НОВАЯ ФУНКЦИЯ ДЛЯ ПОПАПА (без своих кнопок) ==========
 function addPaymentPopup(container, popupData, isGuest) {
     const popupDiv = document.createElement('div');
-    popupDiv.style.margin = '0 0 12px 0';
-    popupDiv.style.padding = '12px';
-    popupDiv.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    popupDiv.style.borderRadius = '12px';
-    popupDiv.style.color = '#ffffff';
-    popupDiv.style.textAlign = 'center';
-    popupDiv.style.whiteSpace = 'pre-line';
+    popupDiv.className = 'payment-popup';
 
-    // Обрабатываем текст: ищем [текст] и заменяем на ссылки
     let text = popupData.popupText;
     const linkRegex = /\[([^\]]+)\]/g;
     let lastIndex = 0;
@@ -1204,31 +1199,22 @@ function addPaymentPopup(container, popupData, isGuest) {
     const fragments = [];
 
     while ((match = linkRegex.exec(text)) !== null) {
-        // текст до совпадения
         if (match.index > lastIndex) {
             fragments.push(document.createTextNode(text.substring(lastIndex, match.index)));
         }
-        // создаём ссылку
         const link = document.createElement('a');
         link.href = '#';
         link.className = 'popup-link';
-        link.textContent = match[1]; // текст внутри скобок
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            openLink(popupData.popupLink, 'popup_link_click', isGuest);
-        });
+        link.textContent = match[1];
+        link.dataset.url = popupData.popupLink;
         fragments.push(link);
         lastIndex = match.index + match[0].length;
     }
-    // остаток текста
     if (lastIndex < text.length) {
         fragments.push(document.createTextNode(text.substring(lastIndex)));
     }
 
     fragments.forEach(fragment => popupDiv.appendChild(fragment));
-
-    // Вставляем попап в начало контейнера
     container.insertBefore(popupDiv, container.firstChild);
 }
 // ================================================================
