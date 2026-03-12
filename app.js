@@ -57,7 +57,9 @@ let randomPhrases = [];
 let leaders = {};
 let guestPrivileges = { club: [], city: [] };
 let passInfo = { content: '', buttonLink: '' };
-let registrationsPopup = {}; // данные о попапах для неоплаченных
+
+// Новое: для попапов неоплаченных
+let registrationsPopup = {};
 
 // Firebase инициализация
 let database = null;
@@ -226,7 +228,7 @@ async function loadLeadersFromFirebase() {
     }
 }
 
-// --- Загрузка попапов для неоплаченных участников ---
+// --- НОВОЕ: Загрузка попапов ---
 async function loadRegistrationsPopup() {
     if (!database) return;
     try {
@@ -696,7 +698,8 @@ async function loadData() {
             leaders = leadersData;
         }
 
-        await loadRegistrationsPopup(); // загружаем попапы
+        // НОВОЕ: загружаем попапы
+        await loadRegistrationsPopup();
 
         await loadUserData();
 
@@ -859,7 +862,6 @@ function showLeaderDropdown(leaderElement, leaderData) {
     dropdown.style.borderRadius = '28px';
     dropdown.style.padding = '20px 0 12px 0';
 
-    // Пытаемся получить аватарку по username
     const photoUrl = leaderData.username 
         ? `https://t.me/i/userpic/320/${leaderData.username}.jpg`
         : null;
@@ -1007,7 +1009,6 @@ function closeParticipantDropdown() {
     }
 }
 
-// *** ИСПРАВЛЕННАЯ ФУНКЦИЯ ***
 async function toggleParticipantDropdown(counterElement, hikeDate) {
     const existingDropdown = document.querySelector('.participant-dropdown.show');
     if (existingDropdown && currentDropdownHikeDate === hikeDate) {
@@ -1022,8 +1023,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
-    // Ограничиваем высоту и добавляем прокрутку
-    dropdown.style.maxHeight = '250px'; // примерно 5 элементов
+    dropdown.style.maxHeight = '250px';
     dropdown.style.overflowY = 'auto';
     
     if (participants.length === 0) {
@@ -1177,55 +1177,36 @@ function renderUserBookings() {
     container.innerHTML = html;
 }
 
-// ----- Попап для неоплаченных участников -----
+// ========== НОВАЯ ФУНКЦИЯ ДЛЯ ПОПАПА ==========
 function showPaymentPopup(container, popupData, isGuest) {
     container.innerHTML = ''; // очищаем контейнер
 
-    // Создаём оверлей (если его нет, но в вашем CSS уже есть классы)
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.style.position = 'relative'; // чтобы не перекрывать весь экран, а быть внутри bottom sheet
-    overlay.style.backgroundColor = 'transparent';
-    overlay.style.backdropFilter = 'none';
-    overlay.style.padding = '0';
+    const messageDiv = document.createElement('div');
+    messageDiv.style.margin = '0 0 12px 0';
+    messageDiv.style.padding = '12px';
+    messageDiv.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    messageDiv.style.borderRadius = '12px';
+    messageDiv.style.color = '#ffffff';
+    messageDiv.style.textAlign = 'center';
+    messageDiv.style.whiteSpace = 'pre-line';
+    messageDiv.textContent = popupData.popupText;
+    container.appendChild(messageDiv);
 
-    const modal = document.createElement('div');
-    modal.className = 'modal-content';
-    modal.style.maxWidth = '100%';
-    modal.style.margin = '0';
-
-    // Кнопка закрытия (опционально)
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'modal-close';
-    closeBtn.innerHTML = '&times;';
-    closeBtn.onclick = () => overlay.remove();
-    modal.appendChild(closeBtn);
-
-    const title = document.createElement('div');
-    title.className = 'modal-title';
-    title.textContent = 'Внимание';
-    modal.appendChild(title);
-
-    const text = document.createElement('div');
-    text.className = 'modal-text';
-    text.style.whiteSpace = 'pre-line';
-    text.textContent = popupData.popupText;
-    modal.appendChild(text);
-
-    // Кнопка "Купить билет"
     const buyBtn = document.createElement('a');
     buyBtn.href = '#';
     buyBtn.className = 'btn btn-yellow btn-glow';
     buyBtn.textContent = 'купить билет';
-    buyBtn.style.marginBottom = '12px';
+    buyBtn.style.marginBottom = '8px';
     buyBtn.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
         openLink(popupData.popupLink, 'popup_buy_click', isGuest);
     });
-    modal.appendChild(buyBtn);
+    container.appendChild(buyBtn);
 
-    // Аккордеон для "Оформить карту"
+    const cardRow = document.createElement('div');
+    cardRow.style.width = '100%';
+
     const accordionBtn = document.createElement('button');
     accordionBtn.className = 'accordion-btn btn-yellow btn-glow';
     accordionBtn.textContent = 'оформить карту';
@@ -1258,8 +1239,9 @@ function showPaymentPopup(container, popupData, isGuest) {
 
     dropdown.appendChild(seasonBtn);
     dropdown.appendChild(permanentBtn);
-    modal.appendChild(accordionBtn);
-    modal.appendChild(dropdown);
+    cardRow.appendChild(accordionBtn);
+    cardRow.appendChild(dropdown);
+    container.appendChild(cardRow);
 
     accordionBtn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1267,10 +1249,8 @@ function showPaymentPopup(container, popupData, isGuest) {
         dropdown.classList.toggle('show');
         log('popup_card_toggle', isGuest);
     });
-
-    overlay.appendChild(modal);
-    container.appendChild(overlay);
 }
+// ================================================
 
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
@@ -1578,6 +1558,7 @@ function showBottomSheet(index) {
         if (btnContainer) btnContainer.remove();
     }
 
+    // *** ПОЛНАЯ ФУНКЦИЯ updateFloatingSheetButtons С ПРОВЕРКОЙ ПОПАПА ***
     function updateFloatingSheetButtons() {
         closeParticipantDropdown();
 
@@ -1635,7 +1616,7 @@ function showBottomSheet(index) {
 
         const isGuest = userCard.status !== 'active';
 
-        // === НОВАЯ ПРОВЕРКА: если есть попап для этого пользователя и хайка ===
+        // === ПРОВЕРКА ПОПАПА ===
         if (userId) {
             const popupKey = `${userId}_${hike.date}`;
             const popupData = registrationsPopup[popupKey];
@@ -1971,18 +1952,12 @@ function renderCalendar(container) {
             if (isPast) classes += ' past';
         }
 
-        // Проверяем, записан ли пользователь на этот хайк
         if (hasHike) {
             const hikeIndex = hikesList.findIndex(h => h.date === dateStr);
             const isUserBooked = hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true;
             
-            if (isUserBooked) {
-                // Добавляем класс для записанных хайков, если они ещё актуальны (не прошли)
-                if (!isPast) {
-                    classes += ' booked-day';
-                }
-                // Текст даты делаем жирным и курсивным для всех записанных (и прошлых, и будущих)
-                // Но свечение (через booked-day) добавится только для будущих
+            if (isUserBooked && !isPast) {
+                classes += ' booked-day';
             }
         }
         
@@ -2368,7 +2343,7 @@ function renderGift(isGuest = false) {
     setupAccordion('giftAccordion', isGuest);
 }
 
-// ----- Страница пропуска в заповедник (исправленная ширина кнопки) -----
+// ----- Страница пропуска в заповедник -----
 function renderPassPage(isGuest = false) {
     isPrivPage = true;
     isMenuActive = false;
@@ -2441,7 +2416,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (с новой картинкой) -----
+// ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2533,7 +2508,7 @@ function renderGuestHome() {
     setupBottomNav();
 }
 
-// ----- Главная для владельцев карты (с новой картинкой) -----
+// ----- Главная для владельцев карты -----
 function renderHome() {
     isPrivPage = false;
     isMenuActive = false;
