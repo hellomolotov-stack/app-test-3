@@ -1327,7 +1327,7 @@ function renderUserBookings() {
     container.innerHTML = html;
 }
 
-// ========== ПОПАП ДЛЯ НЕОПЛАЧЕННЫХ (оставляем как есть, но он не используется в гостевом сценарии) ==========
+// ========== ПОПАП ДЛЯ НЕОПЛАЧЕННЫХ ==========
 function addPaymentPopup(container, popupData, isGuest) {
     const popupDiv = document.createElement('div');
     popupDiv.className = 'payment-popup';
@@ -1654,6 +1654,8 @@ function showBottomSheet(index) {
             });
         }
 
+        updateFloatingSheetButtons(); // обновляем кнопки сразу после загрузки контента
+
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
@@ -1661,7 +1663,6 @@ function showBottomSheet(index) {
                 closeLeaderDropdown();
                 sheetCurrentIndex--;
                 updateContent();
-                updateFloatingSheetButtons();
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_prev', false);
@@ -1675,7 +1676,6 @@ function showBottomSheet(index) {
                 closeLeaderDropdown();
                 sheetCurrentIndex++;
                 updateContent();
-                updateFloatingSheetButtons();
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('hike_swipe_next', false);
@@ -1691,224 +1691,6 @@ function showBottomSheet(index) {
         if (btnContainer) btnContainer.remove();
     }
 
-    function updateFloatingSheetButtons() {
-        closeParticipantDropdown();
-
-        const container = document.querySelector('.floating-sheet-buttons');
-        if (!container) return;
-
-        const hike = hikesList[sheetCurrentIndex];
-        if (!hike) return;
-
-        const isBooked = hikeBookingStatus[sheetCurrentIndex] || false;
-        const hikeDate = new Date(hike.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const isPast = hikeDate < today;
-
-        container.innerHTML = '';
-
-        if (isPast) {
-            const isGuest = userCard.status !== 'active';
-            
-            const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.gap = '12px';
-            row.style.justifyContent = 'center';
-            row.style.width = '100%';
-
-            const completedBtn = document.createElement('a');
-            completedBtn.href = '#';
-            completedBtn.className = 'btn btn-outline';
-            completedBtn.textContent = 'хайк завершен';
-            completedBtn.style.pointerEvents = 'none';
-            row.appendChild(completedBtn);
-
-            if (hike.report_link && hike.report_link.trim() !== '') {
-                const reportBtn = document.createElement('a');
-                reportBtn.href = '#';
-                reportBtn.className = 'btn btn-yellow';
-                reportBtn.textContent = 'отчёт';
-                reportBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    haptic();
-                    const url = hike.report_link.trim();
-                    if (url) {
-                        openLink(url, 'report_click', isGuest);
-                    }
-                    return false;
-                });
-                row.appendChild(reportBtn);
-            }
-
-            container.appendChild(row);
-            return;
-        }
-
-        const isGuest = userCard.status !== 'active';
-
-        // === ПОПАП ДЛЯ НЕОПЛАЧЕННЫХ (оставляем, но в гостевом сценарии не используется) ===
-        if (userId) {
-            const popupKey = `${userId}_${hike.date}`;
-            const popupData = registrationsPopup[popupKey];
-            if (popupData && popupData.popupText && popupData.popupLink) {
-                addPaymentPopup(container, popupData, isGuest);
-            }
-        }
-
-        if (isBooked) {
-            const inviteRow = document.createElement('div');
-            inviteRow.style.display = 'flex';
-            inviteRow.style.justifyContent = 'center';
-            inviteRow.style.width = '100%';
-            inviteRow.style.marginBottom = '3px';
-
-            const inviteBtn = document.createElement('a');
-            inviteBtn.href = '#';
-            inviteBtn.className = 'btn btn-yellow btn-glow';
-            inviteBtn.id = 'sheetInviteBtn';
-            inviteBtn.textContent = 'пригласить друга';
-            inviteBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                const formattedDate = formatDateForDisplay(hike.date);
-                const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
-                const featuresText = hike.features || '';
-                const message = `пойдём на хайк ${formattedDate}\n${link}\n\n${featuresText}\n\n@yaltahiking`;
-                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
-                tg.openTelegramLink(shareUrl);
-                log('invite_friend_click', isGuest);
-            });
-            inviteRow.appendChild(inviteBtn);
-            container.appendChild(inviteRow);
-
-            const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.gap = '12px';
-            row.style.justifyContent = 'center';
-            row.style.width = '100%';
-
-            const cancelBtn = document.createElement('a');
-            cancelBtn.href = '#';
-            cancelBtn.className = 'btn btn-outline';
-            cancelBtn.id = 'sheetCancelBtn';
-            cancelBtn.textContent = 'отменить';
-            cancelBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (cancelBtn.dataset.processing === 'true') return;
-                cancelBtn.dataset.processing = 'true';
-                
-                haptic();
-
-                if (isGuest) {
-                    removeParticipant(hike.date).then(() => {
-                        delete hikeBookingStatus[sheetCurrentIndex];
-                        saveStatusToLocalStorage();
-                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
-                        updateFloatingSheetButtons();
-                        renderUserBookings();
-                    }).catch((error) => {
-                        console.error('Error during cancellation:', error);
-                        updateFloatingSheetButtons();
-                    });
-                } else {
-                    Promise.all([
-                        removeParticipant(hike.date),
-                        setUserRegistrationStatus(hike.date, false)
-                    ]).then(() => {
-                        delete hikeBookingStatus[sheetCurrentIndex];
-                        updateFloatingSheetButtons();
-                        updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
-                        renderUserBookings();
-                    }).catch((error) => {
-                        console.error('Error during cancellation:', error);
-                        updateFloatingSheetButtons();
-                    });
-                }
-                log('sheet_cancel_click', false);
-            });
-            row.appendChild(cancelBtn);
-
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-yellow-outline';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'ты записан';
-            row.appendChild(goBtn);
-
-            container.appendChild(row);
-
-        } else {
-            // Для гостей (без карты) показываем одну кнопку "иду"
-            if (isGuest) {
-                const goBtn = document.createElement('a');
-                goBtn.href = '#';
-                goBtn.className = 'btn btn-yellow btn-glow';
-                goBtn.id = 'sheetGoBtn';
-                goBtn.textContent = 'иду';
-                goBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (goBtn.dataset.processing === 'true') return;
-                    goBtn.dataset.processing = 'true';
-                    
-                    haptic();
-                    
-                    // Показываем попап с выбором
-                    showGuestBookingPopup(hike.date, hike.title, true);
-                    
-                    setTimeout(() => {
-                        goBtn.dataset.processing = 'false';
-                    }, 1000);
-                });
-                container.appendChild(goBtn);
-            } else {
-                // Для владельцев карты (у них есть карта, они активны) — показываем кнопки "задать вопрос" и "иду"
-                const questionBtn = document.createElement('a');
-                questionBtn.href = '#';
-                questionBtn.className = 'btn btn-outline';
-                questionBtn.id = 'sheetQuestionBtn';
-                questionBtn.textContent = 'задать вопрос';
-                questionBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    haptic();
-                    openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
-                });
-                container.appendChild(questionBtn);
-
-                const goBtn = document.createElement('a');
-                goBtn.href = '#';
-                goBtn.className = 'btn btn-yellow btn-glow';
-                goBtn.id = 'sheetGoBtn';
-                goBtn.textContent = 'иду';
-                goBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (goBtn.dataset.processing === 'true') return;
-                    goBtn.dataset.processing = 'true';
-                    
-                    haptic();
-
-                    setUserRegistrationStatus(hike.date, true)
-                        .then(() => {
-                            hikeBookingStatus[sheetCurrentIndex] = true;
-                            return incrementParticipantCount(hike.date);
-                        })
-                        .then(() => {
-                            updateRegistrationInSheet(hike.date, hike.title, 'booked', 'card_holder');
-                            updateFloatingSheetButtons();
-                            renderUserBookings();
-                        })
-                        .catch((error) => {
-                            console.error('Error during booking:', error);
-                            updateFloatingSheetButtons();
-                        });
-                    log('sheet_go_click', false);
-                });
-                container.appendChild(goBtn);
-            }
-        }
-    }
-
     function createFloatingButtons() {
         removeFloatingSheetButtons();
 
@@ -1917,7 +1699,7 @@ function showBottomSheet(index) {
         container.id = 'floatingSheetButtons';
         document.body.appendChild(container);
 
-        updateFloatingSheetButtons();
+        updateFloatingSheetButtons(); // вызываем глобальную функцию
     }
 
     function checkScroll() {
@@ -2027,6 +1809,250 @@ function closeBottomSheet() {
         setTimeout(() => {
             overlay.remove();
         }, 300);
+    }
+}
+
+// ========== ГЛОБАЛЬНАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ КНОПОК ==========
+function updateFloatingSheetButtons() {
+    const container = document.querySelector('.floating-sheet-buttons');
+    if (!container) return;
+
+    const hike = hikesList[sheetCurrentIndex];
+    if (!hike) return;
+
+    const isBooked = hikeBookingStatus[sheetCurrentIndex] || false;
+    const hikeDate = new Date(hike.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isPast = hikeDate < today;
+
+    container.innerHTML = '';
+
+    if (isPast) {
+        const isGuest = userCard.status !== 'active';
+        
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '12px';
+        row.style.justifyContent = 'center';
+        row.style.width = '100%';
+
+        const completedBtn = document.createElement('a');
+        completedBtn.href = '#';
+        completedBtn.className = 'btn btn-outline';
+        completedBtn.textContent = 'хайк завершен';
+        completedBtn.style.pointerEvents = 'none';
+        row.appendChild(completedBtn);
+
+        if (hike.report_link && hike.report_link.trim() !== '') {
+            const reportBtn = document.createElement('a');
+            reportBtn.href = '#';
+            reportBtn.className = 'btn btn-yellow';
+            reportBtn.textContent = 'отчёт';
+            reportBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                haptic();
+                const url = hike.report_link.trim();
+                if (url) {
+                    openLink(url, 'report_click', isGuest);
+                }
+                return false;
+            });
+            row.appendChild(reportBtn);
+        }
+
+        container.appendChild(row);
+        return;
+    }
+
+    const isGuest = userCard.status !== 'active';
+
+    // Попап для неоплаченных (если есть)
+    if (userId) {
+        const popupKey = `${userId}_${hike.date}`;
+        const popupData = registrationsPopup[popupKey];
+        if (popupData && popupData.popupText && popupData.popupLink) {
+            addPaymentPopup(container, popupData, isGuest);
+        }
+    }
+
+    if (isBooked) {
+        const inviteRow = document.createElement('div');
+        inviteRow.style.display = 'flex';
+        inviteRow.style.justifyContent = 'center';
+        inviteRow.style.width = '100%';
+        inviteRow.style.marginBottom = '3px';
+
+        const inviteBtn = document.createElement('a');
+        inviteBtn.href = '#';
+        inviteBtn.className = 'btn btn-yellow btn-glow';
+        inviteBtn.id = 'sheetInviteBtn';
+        inviteBtn.textContent = 'пригласить друга';
+        inviteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            const formattedDate = formatDateForDisplay(hike.date);
+            const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
+            const featuresText = hike.features || '';
+            const message = `пойдём на хайк ${formattedDate}\n${link}\n\n${featuresText}\n\n@yaltahiking`;
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(message)}`;
+            tg.openTelegramLink(shareUrl);
+            log('invite_friend_click', isGuest);
+        });
+        inviteRow.appendChild(inviteBtn);
+        container.appendChild(inviteRow);
+
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '12px';
+        row.style.justifyContent = 'center';
+        row.style.width = '100%';
+
+        const cancelBtn = document.createElement('a');
+        cancelBtn.href = '#';
+        cancelBtn.className = 'btn btn-outline';
+        cancelBtn.id = 'sheetCancelBtn';
+        cancelBtn.textContent = 'отменить';
+        cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (cancelBtn.dataset.processing === 'true') return;
+            cancelBtn.dataset.processing = 'true';
+            
+            haptic();
+
+            if (isGuest) {
+                removeParticipant(hike.date).then(() => {
+                    delete hikeBookingStatus[sheetCurrentIndex];
+                    saveStatusToLocalStorage();
+                    updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
+                    updateFloatingSheetButtons();
+                    renderUserBookings();
+                }).catch((error) => {
+                    console.error('Error during cancellation:', error);
+                    updateFloatingSheetButtons();
+                });
+            } else {
+                Promise.all([
+                    removeParticipant(hike.date),
+                    setUserRegistrationStatus(hike.date, false)
+                ]).then(() => {
+                    delete hikeBookingStatus[sheetCurrentIndex];
+                    updateFloatingSheetButtons();
+                    updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
+                    renderUserBookings();
+                }).catch((error) => {
+                    console.error('Error during cancellation:', error);
+                    updateFloatingSheetButtons();
+                });
+            }
+            log('sheet_cancel_click', false);
+        });
+        row.appendChild(cancelBtn);
+
+        const goBtn = document.createElement('a');
+        goBtn.href = '#';
+        goBtn.className = 'btn btn-yellow-outline';
+        goBtn.id = 'sheetGoBtn';
+        goBtn.textContent = 'ты записан';
+        row.appendChild(goBtn);
+
+        container.appendChild(row);
+
+    } else {
+        if (isGuest) {
+            // Для гостей: две кнопки в ряд: "задать вопрос" и "иду"
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '12px';
+            row.style.justifyContent = 'center';
+            row.style.width = '100%';
+
+            const questionBtn = document.createElement('a');
+            questionBtn.href = '#';
+            questionBtn.className = 'btn btn-outline';
+            questionBtn.id = 'sheetQuestionBtn';
+            questionBtn.textContent = 'задать вопрос';
+            questionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                openLink('https://t.me/hellointelligent', 'sheet_question_click', true);
+            });
+            row.appendChild(questionBtn);
+
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-yellow btn-glow';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'иду';
+            goBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (goBtn.dataset.processing === 'true') return;
+                goBtn.dataset.processing = 'true';
+                
+                haptic();
+                
+                showGuestBookingPopup(hike.date, hike.title, true);
+                
+                setTimeout(() => {
+                    goBtn.dataset.processing = 'false';
+                }, 1000);
+            });
+            row.appendChild(goBtn);
+
+            container.appendChild(row);
+        } else {
+            // Для владельцев карты: две кнопки "задать вопрос" и "иду"
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '12px';
+            row.style.justifyContent = 'center';
+            row.style.width = '100%';
+
+            const questionBtn = document.createElement('a');
+            questionBtn.href = '#';
+            questionBtn.className = 'btn btn-outline';
+            questionBtn.id = 'sheetQuestionBtn';
+            questionBtn.textContent = 'задать вопрос';
+            questionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+            });
+            row.appendChild(questionBtn);
+
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-yellow btn-glow';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'иду';
+            goBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (goBtn.dataset.processing === 'true') return;
+                goBtn.dataset.processing = 'true';
+                
+                haptic();
+
+                setUserRegistrationStatus(hike.date, true)
+                    .then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = true;
+                        return incrementParticipantCount(hike.date);
+                    })
+                    .then(() => {
+                        updateRegistrationInSheet(hike.date, hike.title, 'booked', 'card_holder');
+                        updateFloatingSheetButtons();
+                        renderUserBookings();
+                    })
+                    .catch((error) => {
+                        console.error('Error during booking:', error);
+                        updateFloatingSheetButtons();
+                    });
+                log('sheet_go_click', false);
+            });
+            row.appendChild(goBtn);
+
+            container.appendChild(row);
+        }
     }
 }
 
