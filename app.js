@@ -57,6 +57,7 @@ let randomPhrases = [];
 let leaders = {};
 let guestPrivileges = { club: [], city: [] };
 let passInfo = { content: '', buttonLink: '' };
+let registrationsPopup = {}; // данные о попапах для неоплаченных
 
 // Firebase инициализация
 let database = null;
@@ -222,6 +223,18 @@ async function loadLeadersFromFirebase() {
     } catch (e) {
         console.error('Error loading leaders from Firebase:', e);
         return {};
+    }
+}
+
+// --- Загрузка попапов для неоплаченных участников ---
+async function loadRegistrationsPopup() {
+    if (!database) return;
+    try {
+        const snapshot = await database.ref('registrationsPopup').once('value');
+        registrationsPopup = snapshot.val() || {};
+        console.log('Registrations popup loaded, count:', Object.keys(registrationsPopup).length);
+    } catch (e) {
+        console.error('Error loading registrations popup:', e);
     }
 }
 
@@ -682,6 +695,8 @@ async function loadData() {
         if (leadersData) {
             leaders = leadersData;
         }
+
+        await loadRegistrationsPopup(); // загружаем попапы
 
         await loadUserData();
 
@@ -1162,6 +1177,101 @@ function renderUserBookings() {
     container.innerHTML = html;
 }
 
+// ----- Попап для неоплаченных участников -----
+function showPaymentPopup(container, popupData, isGuest) {
+    container.innerHTML = ''; // очищаем контейнер
+
+    // Создаём оверлей (если его нет, но в вашем CSS уже есть классы)
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.position = 'relative'; // чтобы не перекрывать весь экран, а быть внутри bottom sheet
+    overlay.style.backgroundColor = 'transparent';
+    overlay.style.backdropFilter = 'none';
+    overlay.style.padding = '0';
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-content';
+    modal.style.maxWidth = '100%';
+    modal.style.margin = '0';
+
+    // Кнопка закрытия (опционально)
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'modal-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.onclick = () => overlay.remove();
+    modal.appendChild(closeBtn);
+
+    const title = document.createElement('div');
+    title.className = 'modal-title';
+    title.textContent = 'Внимание';
+    modal.appendChild(title);
+
+    const text = document.createElement('div');
+    text.className = 'modal-text';
+    text.style.whiteSpace = 'pre-line';
+    text.textContent = popupData.popupText;
+    modal.appendChild(text);
+
+    // Кнопка "Купить билет"
+    const buyBtn = document.createElement('a');
+    buyBtn.href = '#';
+    buyBtn.className = 'btn btn-yellow btn-glow';
+    buyBtn.textContent = 'купить билет';
+    buyBtn.style.marginBottom = '12px';
+    buyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink(popupData.popupLink, 'popup_buy_click', isGuest);
+    });
+    modal.appendChild(buyBtn);
+
+    // Аккордеон для "Оформить карту"
+    const accordionBtn = document.createElement('button');
+    accordionBtn.className = 'accordion-btn btn-yellow btn-glow';
+    accordionBtn.textContent = 'оформить карту';
+    accordionBtn.style.marginBottom = '0';
+    accordionBtn.style.width = '100%';
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'dropdown-menu';
+    dropdown.style.marginTop = '8px';
+
+    const seasonBtn = document.createElement('a');
+    seasonBtn.href = '#';
+    seasonBtn.className = 'btn btn-outline';
+    seasonBtn.textContent = 'сезонная';
+    seasonBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink(SEASON_CARD_LINK, 'popup_season_card', isGuest);
+    });
+
+    const permanentBtn = document.createElement('a');
+    permanentBtn.href = '#';
+    permanentBtn.className = 'btn btn-outline';
+    permanentBtn.textContent = 'бессрочная';
+    permanentBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink(PERMANENT_CARD_LINK, 'popup_permanent_card', isGuest);
+    });
+
+    dropdown.appendChild(seasonBtn);
+    dropdown.appendChild(permanentBtn);
+    modal.appendChild(accordionBtn);
+    modal.appendChild(dropdown);
+
+    accordionBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        dropdown.classList.toggle('show');
+        log('popup_card_toggle', isGuest);
+    });
+
+    overlay.appendChild(modal);
+    container.appendChild(overlay);
+}
+
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
@@ -1524,6 +1634,16 @@ function showBottomSheet(index) {
         }
 
         const isGuest = userCard.status !== 'active';
+
+        // === НОВАЯ ПРОВЕРКА: если есть попап для этого пользователя и хайка ===
+        if (userId) {
+            const popupKey = `${userId}_${hike.date}`;
+            const popupData = registrationsPopup[popupKey];
+            if (popupData && popupData.popupText && popupData.popupLink) {
+                showPaymentPopup(container, popupData, isGuest);
+                return;
+            }
+        }
 
         if (isBooked) {
             const inviteRow = document.createElement('div');
