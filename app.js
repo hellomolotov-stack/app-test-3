@@ -914,7 +914,7 @@ function showLeaderDropdown(leaderElement, leaderData) {
 
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name');
     if (!link) return;
     
     if (link.classList.contains('leader-name')) {
@@ -927,17 +927,6 @@ document.addEventListener('click', function(e) {
             haptic();
             showLeaderDropdown(link, leaderData);
             log('leader_click', userCard.status !== 'active');
-        }
-        return;
-    }
-    
-    if (link.classList.contains('popup-link')) {
-        e.preventDefault();
-        e.stopPropagation();
-        haptic();
-        const url = link.dataset.url;
-        if (url) {
-            openLink(url, 'popup_link_click', userCard.status !== 'active');
         }
         return;
     }
@@ -1187,10 +1176,15 @@ function renderUserBookings() {
     container.innerHTML = html;
 }
 
-// ========== НОВАЯ ФУНКЦИЯ ДЛЯ ПОПАПА (без своих кнопок) ==========
+// ========== ИСПРАВЛЕННАЯ ФУНКЦИЯ ДЛЯ ПОПАПА ==========
 function addPaymentPopup(container, popupData, isGuest) {
     const popupDiv = document.createElement('div');
     popupDiv.className = 'payment-popup';
+
+    // Предотвращаем всплытие кликов с самого попапа (чтобы они не уходили в bottom sheet)
+    popupDiv.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
 
     let text = popupData.popupText;
     const linkRegex = /\[([^\]]+)\]/g;
@@ -1206,7 +1200,13 @@ function addPaymentPopup(container, popupData, isGuest) {
         link.href = '#';
         link.className = 'popup-link';
         link.textContent = match[1];
-        link.dataset.url = popupData.popupLink;
+        // Добавляем прямой обработчик клика на ссылку
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation(); // чтобы клик не уходил дальше
+            haptic();
+            openLink(popupData.popupLink, 'popup_link_click', isGuest);
+        });
         fragments.push(link);
         lastIndex = match.index + match[0].length;
     }
@@ -1217,7 +1217,7 @@ function addPaymentPopup(container, popupData, isGuest) {
     fragments.forEach(fragment => popupDiv.appendChild(fragment));
     container.insertBefore(popupDiv, container.firstChild);
 }
-// ================================================================
+// ======================================================
 
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
