@@ -1206,20 +1206,26 @@ function addPaymentPopup(container, popupData, isGuest) {
             fragments.push(document.createTextNode(text.substring(lastIndex, match.index)));
         }
         
-        // Создаём ссылку как span с прямым обработчиком
-        const link = document.createElement('span');
+        // Используем button для гарантированной кликабельности
+        const link = document.createElement('button');
         link.className = 'popup-link';
         link.textContent = match[1];
         link.dataset.url = popupData.popupLink;
-        link.setAttribute('role', 'link');
-        link.setAttribute('tabindex', '0');
+        link.style.background = 'none';
+        link.style.border = 'none';
+        link.style.padding = '0';
+        link.style.font = 'inherit';
+        link.style.color = '#D9FD19';
+        link.style.textDecoration = 'underline';
         link.style.cursor = 'pointer';
+        link.style.display = 'inline';
         
-        // Прямой обработчик клика
+        // Прямой обработчик клика с отладкой
         link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             haptic();
+            console.log('Popup link clicked, url:', this.dataset.url); // отладка
             const url = this.dataset.url;
             if (url && url.trim() !== '') {
                 openLink(url, 'popup_link_click', userCard.status !== 'active');
