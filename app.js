@@ -1201,10 +1201,13 @@ function addPaymentPopup(container, popupData, isGuest) {
         if (match.index > lastIndex) {
             fragments.push(document.createTextNode(text.substring(lastIndex, match.index)));
         }
-        const link = document.createElement('a');
-        link.href = '#';
-        link.className = 'popup-link';
-        link.textContent = match[1];
+      const link = document.createElement('span');
+link.className = 'popup-link';
+link.textContent = match[1];
+link.dataset.url = popupData.popupLink;
+link.setAttribute('role', 'link');
+link.setAttribute('tabindex', '0');
+link.style.cursor = 'pointer';
         // Добавляем прямой обработчик клика на ссылку с отладкой
         link.addEventListener('click', (e) => {
             e.preventDefault();
