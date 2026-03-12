@@ -679,14 +679,14 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
             <div class="modal-title">бронирование места</div>
             <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
             
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%;">купить билет · ${config.ticketPrice} ₽</button>
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет · ${config.ticketPrice} ₽</button>
                 
-                <div id="cardAccordionPopup">
-                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%;">купить карту · от ${config.seasonCardPrice} ₽</button>
-                    <div id="cardOptions" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px;">
-                        <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%;">сезонная · ${config.seasonCardPrice} ₽</button>
-                        <button class="btn btn-outline" id="buyPermanentCardBtn" style="width: 100%;">бессрочная · ${config.permanentCardPrice} ₽</button>
+                <div id="cardAccordionPopup" style="width: 100%;">
+                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">купить карту</button>
+                    <div id="cardOptions" style="display: none; flex-direction: column; gap: 8px; margin-top: 8px; width: 100%;">
+                        <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0; box-sizing: border-box;">сезонная · ${config.seasonCardPrice} ₽</button>
+                        <button class="btn btn-outline" id="buyPermanentCardBtn" style="width: 100%; margin: 0; box-sizing: border-box;">бессрочная · ${config.permanentCardPrice} ₽</button>
                     </div>
                 </div>
             </div>
@@ -708,15 +708,20 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
 
     // Вспомогательная функция для регистрации и открытия ссылки
     const handlePurchase = (purchaseType, link) => {
+        console.log('handlePurchase', purchaseType, link); // отладка
         // Сначала регистрируем пользователя
         addParticipant(hikeDate)
             .then(() => setUserRegistrationStatus(hikeDate, true))
             .then(() => {
-                hikeBookingStatus[hikesList.findIndex(h => h.date === hikeDate)] = true;
+                // Обновляем статус в памяти
+                const hikeIndex = hikesList.findIndex(h => h.date === hikeDate);
+                if (hikeIndex !== -1) {
+                    hikeBookingStatus[hikeIndex] = true;
+                }
                 if (userCard.status !== 'active') {
                     saveStatusToLocalStorage();
                 }
-                // Обновляем UI в реальном времени (кнопки в bottom sheet)
+                // Обновляем UI
                 updateFloatingSheetButtons();
                 renderUserBookings();
                 
@@ -732,6 +737,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
             .catch(error => {
                 console.error('Error during registration:', error);
                 // Можно показать ошибку
+                alert('Ошибка при регистрации. Попробуйте ещё раз.');
             });
     };
 
@@ -749,7 +755,11 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
     showCardOptionsBtn.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
-        cardOptions.style.display = cardOptions.style.display === 'none' ? 'flex' : 'none';
+        if (cardOptions.style.display === 'none' || cardOptions.style.display === '') {
+            cardOptions.style.display = 'flex';
+        } else {
+            cardOptions.style.display = 'none';
+        }
     });
 
     document.getElementById('buySeasonCardBtn').addEventListener('click', (e) => {
