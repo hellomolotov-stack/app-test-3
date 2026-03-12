@@ -1185,6 +1185,8 @@ function renderUserBookings() {
 function addPaymentPopup(container, popupData, isGuest) {
     const popupDiv = document.createElement('div');
     popupDiv.className = 'payment-popup';
+    popupDiv.style.pointerEvents = 'auto'; // переопределяем наследование от родителя
+    popupDiv.style.zIndex = '2000'; // гарантируем, что попап поверх всего
 
     let text = popupData.popupText;
     if (!text) return;
@@ -1219,13 +1221,14 @@ function addPaymentPopup(container, popupData, isGuest) {
         link.style.textDecoration = 'underline';
         link.style.cursor = 'pointer';
         link.style.display = 'inline';
+        link.style.pointerEvents = 'auto'; // тоже для надёжности
         
         // Прямой обработчик клика с отладкой
         link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             haptic();
-            console.log('Popup link clicked, url:', this.dataset.url); // отладка
+            console.log('Popup link clicked, url:', this.dataset.url);
             const url = this.dataset.url;
             if (url && url.trim() !== '') {
                 openLink(url, 'popup_link_click', userCard.status !== 'active');
