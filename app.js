@@ -912,10 +912,15 @@ function showLeaderDropdown(leaderElement, leaderData) {
     }, 0);
 }
 
-// Глобальный обработчик кликов по ссылкам
+// Глобальный обработчик кликов по ссылкам (исправлен)
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name');
     if (!link) return;
+
+    // Игнорируем попап-ссылки, они обрабатываются отдельно
+    if (link.classList.contains('popup-link')) {
+        return;
+    }
     
     if (link.classList.contains('leader-name')) {
         e.preventDefault();
@@ -1200,11 +1205,12 @@ function addPaymentPopup(container, popupData, isGuest) {
         link.href = '#';
         link.className = 'popup-link';
         link.textContent = match[1];
-        // Добавляем прямой обработчик клика на ссылку
+        // Добавляем прямой обработчик клика на ссылку с отладкой
         link.addEventListener('click', (e) => {
             e.preventDefault();
-            e.stopPropagation(); // чтобы клик не уходил дальше
+            e.stopPropagation();
             haptic();
+            console.log('Popup link clicked, url:', popupData.popupLink); // отладка
             openLink(popupData.popupLink, 'popup_link_click', isGuest);
         });
         fragments.push(link);
