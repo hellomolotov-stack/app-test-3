@@ -1186,12 +1186,16 @@ function addPaymentPopup(container, popupData, isGuest) {
     const popupDiv = document.createElement('div');
     popupDiv.className = 'payment-popup';
 
-    // Предотвращаем всплытие кликов с самого попапа (чтобы они не уходили в bottom sheet)
-    popupDiv.addEventListener('click', (e) => {
-        e.stopPropagation();
-    });
-
     let text = popupData.popupText;
+    if (!text) return;
+
+    // Если нет ссылки — просто текст
+    if (!popupData.popupLink) {
+        popupDiv.textContent = text;
+        container.insertBefore(popupDiv, container.firstChild);
+        return;
+    }
+
     const linkRegex = /\[([^\]]+)\]/g;
     let lastIndex = 0;
     let match;
@@ -1201,21 +1205,27 @@ function addPaymentPopup(container, popupData, isGuest) {
         if (match.index > lastIndex) {
             fragments.push(document.createTextNode(text.substring(lastIndex, match.index)));
         }
-      const link = document.createElement('span');
-link.className = 'popup-link';
-link.textContent = match[1];
-link.dataset.url = popupData.popupLink;
-link.setAttribute('role', 'link');
-link.setAttribute('tabindex', '0');
-link.style.cursor = 'pointer';
-        // Добавляем прямой обработчик клика на ссылку с отладкой
-        link.addEventListener('click', (e) => {
+        
+        // Создаём ссылку как span с прямым обработчиком
+        const link = document.createElement('span');
+        link.className = 'popup-link';
+        link.textContent = match[1];
+        link.dataset.url = popupData.popupLink;
+        link.setAttribute('role', 'link');
+        link.setAttribute('tabindex', '0');
+        link.style.cursor = 'pointer';
+        
+        // Прямой обработчик клика
+        link.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             haptic();
-            console.log('Popup link clicked, url:', popupData.popupLink); // отладка
-            openLink(popupData.popupLink, 'popup_link_click', isGuest);
+            const url = this.dataset.url;
+            if (url && url.trim() !== '') {
+                openLink(url, 'popup_link_click', userCard.status !== 'active');
+            }
         });
+        
         fragments.push(link);
         lastIndex = match.index + match[0].length;
     }
