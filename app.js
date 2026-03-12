@@ -58,7 +58,7 @@ let leaders = {};
 let guestPrivileges = { club: [], city: [] };
 let passInfo = { content: '', buttonLink: '' };
 
-// Новое: для попапов неоплаченных
+// Данные о попапах для неоплаченных
 let registrationsPopup = {};
 
 // Firebase инициализация
@@ -228,7 +228,7 @@ async function loadLeadersFromFirebase() {
     }
 }
 
-// --- НОВОЕ: Загрузка попапов ---
+// --- Загрузка попапов ---
 async function loadRegistrationsPopup() {
     if (!database) return;
     try {
@@ -698,8 +698,7 @@ async function loadData() {
             leaders = leadersData;
         }
 
-        // НОВОЕ: загружаем попапы
-        await loadRegistrationsPopup();
+        await loadRegistrationsPopup(); // загружаем попапы
 
         await loadUserData();
 
@@ -915,7 +914,7 @@ function showLeaderDropdown(leaderElement, leaderData) {
 
 // Глобальный обработчик кликов по ссылкам
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link');
     if (!link) return;
     
     if (link.classList.contains('leader-name')) {
@@ -929,6 +928,15 @@ document.addEventListener('click', function(e) {
             showLeaderDropdown(link, leaderData);
             log('leader_click', userCard.status !== 'active');
         }
+        return;
+    }
+    
+    if (link.classList.contains('popup-link')) {
+        e.preventDefault();
+        e.stopPropagation();
+        haptic();
+        // ссылка берётся из data-атрибута, но мы в addPaymentPopup используем popupData.popupLink
+        // поэтому клик обрабатывается в самой функции
         return;
     }
     
@@ -1177,80 +1185,53 @@ function renderUserBookings() {
     container.innerHTML = html;
 }
 
-// ========== НОВАЯ ФУНКЦИЯ ДЛЯ ПОПАПА ==========
-function showPaymentPopup(container, popupData, isGuest) {
-    container.innerHTML = ''; // очищаем контейнер
+// ========== НОВАЯ ФУНКЦИЯ ДЛЯ ПОПАПА (без своих кнопок) ==========
+function addPaymentPopup(container, popupData, isGuest) {
+    const popupDiv = document.createElement('div');
+    popupDiv.style.margin = '0 0 12px 0';
+    popupDiv.style.padding = '12px';
+    popupDiv.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    popupDiv.style.borderRadius = '12px';
+    popupDiv.style.color = '#ffffff';
+    popupDiv.style.textAlign = 'center';
+    popupDiv.style.whiteSpace = 'pre-line';
 
-    const messageDiv = document.createElement('div');
-    messageDiv.style.margin = '0 0 12px 0';
-    messageDiv.style.padding = '12px';
-    messageDiv.style.backgroundColor = 'rgba(0,0,0,0.5)';
-    messageDiv.style.borderRadius = '12px';
-    messageDiv.style.color = '#ffffff';
-    messageDiv.style.textAlign = 'center';
-    messageDiv.style.whiteSpace = 'pre-line';
-    messageDiv.textContent = popupData.popupText;
-    container.appendChild(messageDiv);
+    // Обрабатываем текст: ищем [текст] и заменяем на ссылки
+    let text = popupData.popupText;
+    const linkRegex = /\[([^\]]+)\]/g;
+    let lastIndex = 0;
+    let match;
+    const fragments = [];
 
-    const buyBtn = document.createElement('a');
-    buyBtn.href = '#';
-    buyBtn.className = 'btn btn-yellow btn-glow';
-    buyBtn.textContent = 'купить билет';
-    buyBtn.style.marginBottom = '8px';
-    buyBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink(popupData.popupLink, 'popup_buy_click', isGuest);
-    });
-    container.appendChild(buyBtn);
+    while ((match = linkRegex.exec(text)) !== null) {
+        // текст до совпадения
+        if (match.index > lastIndex) {
+            fragments.push(document.createTextNode(text.substring(lastIndex, match.index)));
+        }
+        // создаём ссылку
+        const link = document.createElement('a');
+        link.href = '#';
+        link.className = 'popup-link';
+        link.textContent = match[1]; // текст внутри скобок
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            openLink(popupData.popupLink, 'popup_link_click', isGuest);
+        });
+        fragments.push(link);
+        lastIndex = match.index + match[0].length;
+    }
+    // остаток текста
+    if (lastIndex < text.length) {
+        fragments.push(document.createTextNode(text.substring(lastIndex)));
+    }
 
-    const cardRow = document.createElement('div');
-    cardRow.style.width = '100%';
+    fragments.forEach(fragment => popupDiv.appendChild(fragment));
 
-    const accordionBtn = document.createElement('button');
-    accordionBtn.className = 'accordion-btn btn-yellow btn-glow';
-    accordionBtn.textContent = 'оформить карту';
-    accordionBtn.style.marginBottom = '0';
-    accordionBtn.style.width = '100%';
-
-    const dropdown = document.createElement('div');
-    dropdown.className = 'dropdown-menu';
-    dropdown.style.marginTop = '8px';
-
-    const seasonBtn = document.createElement('a');
-    seasonBtn.href = '#';
-    seasonBtn.className = 'btn btn-outline';
-    seasonBtn.textContent = 'сезонная';
-    seasonBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink(SEASON_CARD_LINK, 'popup_season_card', isGuest);
-    });
-
-    const permanentBtn = document.createElement('a');
-    permanentBtn.href = '#';
-    permanentBtn.className = 'btn btn-outline';
-    permanentBtn.textContent = 'бессрочная';
-    permanentBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink(PERMANENT_CARD_LINK, 'popup_permanent_card', isGuest);
-    });
-
-    dropdown.appendChild(seasonBtn);
-    dropdown.appendChild(permanentBtn);
-    cardRow.appendChild(accordionBtn);
-    cardRow.appendChild(dropdown);
-    container.appendChild(cardRow);
-
-    accordionBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        dropdown.classList.toggle('show');
-        log('popup_card_toggle', isGuest);
-    });
+    // Вставляем попап в начало контейнера
+    container.insertBefore(popupDiv, container.firstChild);
 }
-// ================================================
+// ================================================================
 
 // ----- Bottom Sheet -----
 let sheetCurrentIndex = 0;
@@ -1558,7 +1539,6 @@ function showBottomSheet(index) {
         if (btnContainer) btnContainer.remove();
     }
 
-    // *** ПОЛНАЯ ФУНКЦИЯ updateFloatingSheetButtons С ПРОВЕРКОЙ ПОПАПА ***
     function updateFloatingSheetButtons() {
         closeParticipantDropdown();
 
@@ -1621,8 +1601,8 @@ function showBottomSheet(index) {
             const popupKey = `${userId}_${hike.date}`;
             const popupData = registrationsPopup[popupKey];
             if (popupData && popupData.popupText && popupData.popupLink) {
-                showPaymentPopup(container, popupData, isGuest);
-                return;
+                addPaymentPopup(container, popupData, isGuest);
+                // НЕ ВОЗВРАЩАЕМСЯ, продолжаем добавлять обычные кнопки
             }
         }
 
