@@ -1901,10 +1901,10 @@ function updateFloatingSheetButtons() {
             const formattedDate = formatDateForDisplay(hike.date);
             const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
             const featuresText = hike.features || '';
-            // Новый формат сообщения (убрали параметр url, оставили только текст)
             const message = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nзарегистрируйся вот тут: ${link}\nи подпишись вот туда: @yaltahiking`;
-            const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
-            tg.openTelegramLink(shareUrl);
+            // Используем tg://msg для гарантированного открытия диалога отправки сообщения
+            const shareUrl = `tg://msg?text=${encodeURIComponent(message)}`;
+            tg.openLink(shareUrl);
             log('invite_friend_click', isGuest);
         });
         inviteRow.appendChild(inviteBtn);
