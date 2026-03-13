@@ -10,9 +10,9 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    if (url.startsWith('https://t.me/') && !url.includes('/share/')) {
-        window.open(url, '_blank');
-        tg.close();
+    if (url.startsWith('https://t.me/')) {
+        // Все t.me ссылки открываем через Telegram (включая share)
+        tg.openTelegramLink(url);
     } else {
         tg.openLink(url);
     }
