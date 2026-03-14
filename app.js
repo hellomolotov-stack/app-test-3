@@ -680,11 +680,11 @@ async function createOrder(invId, orderData) {
 
 // Формирование ссылки на Robokassa (тестовый режим)
 function getRobokassaLink(invId, amount, description, extraParams = {}) {
-    const merchantLogin = 'ваш_логин'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
+    const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
     const isTest = 1; // для теста, в боевом уберите
 
     // Формируем SuccessUrl2 (адрес страницы хайка)
-    let successUrl2 = `https://ваш-домен/`; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
+    let successUrl2 = `https://t.me/yaltahiking_bot?startapp`; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
     if (extraParams.hikeDate) {
         successUrl2 += `?hike=${extraParams.hikeDate}`;
     }
