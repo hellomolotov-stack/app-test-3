@@ -665,73 +665,121 @@ function scrollToCalendar() {
     }, 100);
 }
 
-// === НОВЫЕ ФУНКЦИИ ДЛЯ ОПЛАТЫ ===
-
-// Создание заказа в Firebase
-async function createOrder(invId, orderData) {
-    if (!database) throw new Error('No database');
-    const orderRef = database.ref(`orders/${invId}`);
-    await orderRef.set({
-        ...orderData,
-        status: 'pending',
-        createdAt: firebase.database.ServerValue.TIMESTAMP
-    });
-}
-
-// Формирование ссылки на Robokassa (тестовый режим)
-function getRobokassaLink(invId, amount, description, extraParams = {}) {
-    const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
-    const isTest = 1; // для теста, в боевом уберите
-
-    // Формируем SuccessUrl2 (адрес страницы хайка)
-    let successUrl2 = `https://t.me/yaltahiking_bot?startapp`; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
-    if (extraParams.hikeDate) {
-        successUrl2 += `?hike=${extraParams.hikeDate}`;
-    }
-    successUrl2 += `&payment_success=1&InvId=${invId}`;
-
-    const failUrl2 = `https://ваш-домен/payment-fail`; // можно создать простую страницу
-
-    let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}&OutSum=${amount}&InvId=${invId}&Desc=${encodeURIComponent(description)}&IsTest=${isTest}`;
-    url += `&SuccessUrl2=${encodeURIComponent(successUrl2)}`;
-    url += `&FailUrl2=${encodeURIComponent(failUrl2)}`;
-
-    // Добавляем пользовательские параметры (Shp_)
-    for (let [key, value] of Object.entries(extraParams)) {
-        url += `&Shp_${key}=${encodeURIComponent(value)}`;
-    }
-
-    // Подпись (для теста можно не добавлять)
-    // const password1 = 'ваш_пароль_1';
-    // const signature = md5(merchantLogin + ':' + amount + ':' + invId + ':' + password1);
-    // url += `&SignatureValue=${signature}`;
-
-    return url;
-}
-
-// Показ попапа об успешной оплате
-function showPaymentSuccessPopup(type, hikeDate) {
-    let message = '';
-    if (type === 'ticket') {
-        message = 'Билет оплачен! Вы записаны на хайк.';
-    } else if (type === 'season_card') {
-        message = 'Сезонная карта активирована! Теперь все хайки для вас бесплатны.';
-    } else if (type === 'permanent_card') {
-        message = 'Бессрочная карта активирована! Добро пожаловать в клуб.';
-    }
-
+// --- Функция показа попапа для гостей с выбором оплаты ---
+function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
+    haptic();
+    const config = popupConfig;
+    
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
+    overlay.id = 'guestBookingPopup';
     overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-title">Успешно!</div>
-            <div class="modal-text">${message}</div>
-            <button class="btn btn-yellow" id="closeSuccessPopup">ОК</button>
+        <div class="modal-content" style="max-width: 500px; padding: 20px;">
+            <button class="modal-close" id="closePopup" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; backdrop-filter: blur(4px);">&times;</button>
+            <div class="modal-title">бронирование места</div>
+            <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
+                
+                <div id="cardAccordionPopup" style="width: 100%;">
+                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">купить карту 💳</button>
+                    <div id="cardOptions" style="display: none; margin-top: 12px;">
+                        <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
+                            <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
+                            <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
+                        </div>
+                        <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
+                            <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
+                            <div style="flex: 1;">${config.permanentCardPrice} ₽</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     `;
     document.body.appendChild(overlay);
-    document.getElementById('closeSuccessPopup').addEventListener('click', () => {
+
+    // Закрытие
+    document.getElementById('closePopup').addEventListener('click', () => {
+        haptic();
         overlay.remove();
+    });
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+
+    // Вспомогательная функция для регистрации и открытия ссылки
+    const handlePurchase = (purchaseType, link) => {
+        console.log('handlePurchase', purchaseType, link); // отладка
+        // Сначала регистрируем пользователя
+        addParticipant(hikeDate)
+            .then(() => setUserRegistrationStatus(hikeDate, true))
+            .then(() => {
+                // Обновляем статус в памяти
+                const hikeIndex = hikesList.findIndex(h => h.date === hikeDate);
+                if (hikeIndex !== -1) {
+                    hikeBookingStatus[hikeIndex] = true;
+                }
+                if (userCard.status !== 'active') {
+                    saveStatusToLocalStorage();
+                }
+                // Обновляем UI
+                updateFloatingSheetButtons();
+                renderUserBookings();
+                
+                // Логируем в Google Sheets с типом покупки
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
+                
+                // Открываем ссылку оплаты
+                openLink(link, `purchase_${purchaseType}`, isGuest);
+                
+                // Закрываем попап
+                overlay.remove();
+            })
+            .catch(error => {
+                console.error('Error during registration:', error);
+                // Можно показать ошибку
+                alert('Ошибка при регистрации. Попробуйте ещё раз.');
+            });
+    };
+
+    // Кнопка купить билет
+    document.getElementById('buyTicketBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        handlePurchase('ticket', config.ticketLink);
+    });
+
+    // Аккордеон для карт
+    const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
+    const cardOptions = document.getElementById('cardOptions');
+    showCardOptionsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        if (cardOptions.style.display === 'none' || cardOptions.style.display === '') {
+            cardOptions.style.display = 'block';
+        } else {
+            cardOptions.style.display = 'none';
+        }
+    });
+
+    document.getElementById('buySeasonCardBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        handlePurchase('season_card', config.seasonCardLink);
+    });
+
+    document.getElementById('buyPermanentCardBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        handlePurchase('permanent_card', config.permanentCardLink);
     });
 }
 
@@ -819,38 +867,9 @@ async function loadData() {
         log('visit', userCard.status !== 'active');
         
         renderHome();
-
-        // === ПРОВЕРКА ПАРАМЕТРОВ ВОЗВРАТА ===
-        const urlParams = new URLSearchParams(window.location.search);
-        const paymentSuccess = urlParams.get('payment_success');
-        const invId = urlParams.get('InvId');
-        const hikeDate = urlParams.get('hike');
-
-        if (paymentSuccess === '1' && invId && database) {
-            const orderRef = database.ref(`orders/${invId}`);
-            const snapshot = await orderRef.once('value');
-            const order = snapshot.val();
-            if (order && order.status === 'paid') {
-                showPaymentSuccessPopup(order.type, order.hikeDate);
-
-                if (order.type === 'ticket' && order.hikeDate) {
-                    const hikeIndex = hikesList.findIndex(h => h.date === order.hikeDate);
-                    if (hikeIndex !== -1) {
-                        hikeBookingStatus[hikeIndex] = true;
-                        renderUserBookings();
-                        if (sheetCurrentIndex !== undefined && hikesList[sheetCurrentIndex]?.date === order.hikeDate) {
-                            updateFloatingSheetButtons();
-                        }
-                    }
-                }
-                // Очищаем параметры из URL
-                const newUrl = window.location.pathname + (hikeDate ? `?hike=${hikeDate}` : '');
-                window.history.replaceState({}, '', newUrl);
-            }
-        }
-
-        // Обработка start_param (если есть)
+        
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
+        const urlParams = new URLSearchParams(window.location.search);
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
         const effectiveStartParam = startParam || urlStartParam;
         
@@ -1882,6 +1901,7 @@ function updateFloatingSheetButtons() {
             const formattedDate = formatDateForDisplay(hike.date);
             const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
             const featuresText = hike.features || '';
+            // Новый формат сообщения (убрали параметр url, оставили только текст)
             const message = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nзарегистрируйся вот тут: ${link}\nи подпишись вот туда: @yaltahiking`;
             const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
             tg.openTelegramLink(shareUrl);
@@ -2041,142 +2061,6 @@ function updateFloatingSheetButtons() {
             container.appendChild(row);
         }
     }
-}
-
-// --- ИЗМЕНЁННАЯ ФУНКЦИЯ showGuestBookingPopup ---
-function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
-    haptic();
-    const config = popupConfig;
-    
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'guestBookingPopup';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 500px; padding: 20px;">
-            <button class="modal-close" id="closePopup" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; backdrop-filter: blur(4px);">&times;</button>
-            <div class="modal-title">бронирование места</div>
-            <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
-            
-            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
-                
-                <div id="cardAccordionPopup" style="width: 100%;">
-                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">купить карту 💳</button>
-                    <div id="cardOptions" style="display: none; margin-top: 12px;">
-                        <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
-                            <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
-                            <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
-                        </div>
-                        <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
-                            <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
-                            <div style="flex: 1;">${config.permanentCardPrice} ₽</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    // Закрытие
-    document.getElementById('closePopup').addEventListener('click', () => {
-        haptic();
-        overlay.remove();
-    });
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-
-    // Кнопка купить билет
-    document.getElementById('buyTicketBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-
-        const invId = `${userId}_${Date.now()}`;
-        const amount = config.ticketPrice;
-        const description = `Билет на хайк ${hikeTitle} ${hikeDate}`;
-
-        await createOrder(invId, {
-            userId: userId,
-            hikeDate: hikeDate,
-            type: 'ticket',
-            amount: amount
-        });
-
-        const extraParams = {
-            hikeDate: hikeDate,
-            type: 'ticket',
-            userId: userId
-        };
-        const robokassaLink = getRobokassaLink(invId, amount, description, extraParams);
-        openLink(robokassaLink, 'robokassa_ticket', isGuest);
-        overlay.remove();
-    });
-
-    // Аккордеон для карт
-    const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
-    const cardOptions = document.getElementById('cardOptions');
-    showCardOptionsBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        if (cardOptions.style.display === 'none' || cardOptions.style.display === '') {
-            cardOptions.style.display = 'block';
-        } else {
-            cardOptions.style.display = 'none';
-        }
-    });
-
-    document.getElementById('buySeasonCardBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-
-        const invId = `${userId}_${Date.now()}`;
-        const amount = config.seasonCardPrice;
-        const description = 'Сезонная карта интеллигента';
-
-        await createOrder(invId, {
-            userId: userId,
-            type: 'season_card',
-            amount: amount
-        });
-
-        const extraParams = {
-            type: 'season_card',
-            userId: userId
-        };
-        const robokassaLink = getRobokassaLink(invId, amount, description, extraParams);
-        openLink(robokassaLink, 'robokassa_season_card', isGuest);
-        overlay.remove();
-    });
-
-    document.getElementById('buyPermanentCardBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-
-        const invId = `${userId}_${Date.now()}`;
-        const amount = config.permanentCardPrice;
-        const description = 'Бессрочная карта интеллигента';
-
-        await createOrder(invId, {
-            userId: userId,
-            type: 'permanent_card',
-            amount: amount
-        });
-
-        const extraParams = {
-            type: 'permanent_card',
-            userId: userId
-        };
-        const robokassaLink = getRobokassaLink(invId, amount, description, extraParams);
-        openLink(robokassaLink, 'robokassa_permanent_card', isGuest);
-        overlay.remove();
-    });
 }
 
 // ----- Календарь -----
