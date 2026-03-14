@@ -11,7 +11,7 @@ function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
     if (url.startsWith('https://t.me/')) {
-        // Все t.me ссылки открываем через Telegram (включая share)
+        // Все t.me ссылки открываем через Telegram
         tg.openTelegramLink(url);
     } else {
         tg.openLink(url);
@@ -1901,9 +1901,9 @@ function updateFloatingSheetButtons() {
             const formattedDate = formatDateForDisplay(hike.date);
             const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
             const featuresText = hike.features || '';
-            const message = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nзарегистрируйся вот тут: ${link}\nи подпишись вот туда: @yaltahiking`;
-            // Используем https://t.me/share/url?text=... и открываем через tg.openTelegramLink
-            const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
+            // Формируем сообщение без ссылки в тексте, ссылка будет в параметре url
+            const messageText = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nи подпишись вот туда: @yaltahiking`;
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(messageText)}`;
             tg.openTelegramLink(shareUrl);
             log('invite_friend_click', isGuest);
         });
