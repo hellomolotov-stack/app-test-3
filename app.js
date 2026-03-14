@@ -2,6 +2,11 @@
 const tg = window.Telegram.WebApp;
 tg.ready();
 
+// Инициализация PuzzleBot (если доступен)
+if (window.puzzleBot) {
+    puzzleBot.ready();
+}
+
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
@@ -10,9 +15,9 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    if (url.startsWith('https://t.me/')) {
-        // Все t.me ссылки открываем через Telegram
-        tg.openTelegramLink(url);
+    if (url.startsWith('https://t.me/') && !url.includes('/share/')) {
+        window.open(url, '_blank');
+        tg.close();
     } else {
         tg.openLink(url);
     }
@@ -557,9 +562,26 @@ function updateActiveNav() {
     }
 }
 
+// --- Функция отправки событий в PuzzleBot ---
+function logPuzzleBotEvent(eventName, eventData = {}) {
+    if (!window.puzzleBot) return;
+    try {
+        puzzleBot.sendEvent(eventName, {
+            ...eventData,
+            user_id: userId,
+            timestamp: Date.now()
+        });
+    } catch (e) {
+        console.error('Ошибка отправки события в PuzzleBot:', e);
+    }
+}
+
+// --- Расширенная функция логирования (Google Sheets + PuzzleBot) ---
 function log(action, isGuest = false) {
     if (!userId) return;
     const finalAction = isGuest ? `${action}_guest` : action;
+    
+    // Отправка в Google Sheets (как было)
     const params = new URLSearchParams({
         user_id: userId,
         username: user?.username || '',
@@ -568,6 +590,9 @@ function log(action, isGuest = false) {
         action: finalAction
     });
     new Image().src = `${GUEST_API_URL}?${params}`;
+    
+    // Отправка в PuzzleBot
+    logPuzzleBotEvent('user_action', { action: finalAction, isGuest });
 }
 
 // --- Анимированная загрузка ---
@@ -734,6 +759,9 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
                 // Логируем в Google Sheets с типом покупки
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
                 
+                // Логируем в PuzzleBot
+                logPuzzleBotEvent('purchase', { hikeDate, hikeTitle, purchaseType });
+                
                 // Открываем ссылку оплаты
                 openLink(link, `purchase_${purchaseType}`, isGuest);
                 
@@ -742,7 +770,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
             })
             .catch(error => {
                 console.error('Error during registration:', error);
-                // Можно показать ошибку
                 alert('Ошибка при регистрации. Попробуйте ещё раз.');
             });
     };
@@ -1901,9 +1928,9 @@ function updateFloatingSheetButtons() {
             const formattedDate = formatDateForDisplay(hike.date);
             const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
             const featuresText = hike.features || '';
-            // Формируем сообщение без ссылки в тексте, ссылка будет в параметре url
-            const messageText = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nи подпишись вот туда: @yaltahiking`;
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(messageText)}`;
+            // Новый формат сообщения (убрали параметр url, оставили только текст)
+            const message = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nзарегистрируйся вот тут: ${link}\nи подпишись вот туда: @yaltahiking`;
+            const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
             tg.openTelegramLink(shareUrl);
             log('invite_friend_click', isGuest);
         });
@@ -1935,6 +1962,7 @@ function updateFloatingSheetButtons() {
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
                     updateFloatingSheetButtons();
                     renderUserBookings();
+                    logPuzzleBotEvent('cancel_registration', { hikeDate: hike.date, hikeTitle: hike.title });
                 }).catch((error) => {
                     console.error('Error during cancellation:', error);
                     updateFloatingSheetButtons();
@@ -1948,6 +1976,7 @@ function updateFloatingSheetButtons() {
                     updateFloatingSheetButtons();
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
                     renderUserBookings();
+                    logPuzzleBotEvent('cancel_registration', { hikeDate: hike.date, hikeTitle: hike.title });
                 }).catch((error) => {
                     console.error('Error during cancellation:', error);
                     updateFloatingSheetButtons();
@@ -2049,6 +2078,7 @@ function updateFloatingSheetButtons() {
                         updateRegistrationInSheet(hike.date, hike.title, 'booked', 'card_holder');
                         updateFloatingSheetButtons();
                         renderUserBookings();
+                        logPuzzleBotEvent('booked_by_card', { hikeDate: hike.date, hikeTitle: hike.title });
                     })
                     .catch((error) => {
                         console.error('Error during booking:', error);
