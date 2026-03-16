@@ -867,9 +867,38 @@ async function loadData() {
         log('visit', userCard.status !== 'active');
         
         renderHome();
-        
-        const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
+
+        // Проверка параметров возврата (если есть) - для совместимости с будущей оплатой
         const urlParams = new URLSearchParams(window.location.search);
+        const paymentSuccess = urlParams.get('payment_success');
+        const invId = urlParams.get('InvId');
+        const hikeDate = urlParams.get('hike');
+
+        if (paymentSuccess === '1' && invId && database) {
+            const orderRef = database.ref(`orders/${invId}`);
+            const snapshot = await orderRef.once('value');
+            const order = snapshot.val();
+            if (order && order.status === 'paid') {
+                // Пока нет готовой функции showPaymentSuccessPopup, можно добавить позже
+                console.log('Payment success for order', order);
+                if (order.type === 'ticket' && order.hikeDate) {
+                    const hikeIndex = hikesList.findIndex(h => h.date === order.hikeDate);
+                    if (hikeIndex !== -1) {
+                        hikeBookingStatus[hikeIndex] = true;
+                        renderUserBookings();
+                        if (sheetCurrentIndex !== undefined && hikesList[sheetCurrentIndex]?.date === order.hikeDate) {
+                            updateFloatingSheetButtons();
+                        }
+                    }
+                }
+                // Очищаем параметры
+                const newUrl = window.location.pathname + (hikeDate ? `?hike=${hikeDate}` : '');
+                window.history.replaceState({}, '', newUrl);
+            }
+        }
+
+        // Обработка start_param (если есть)
+        const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
         const effectiveStartParam = startParam || urlStartParam;
         
@@ -1901,7 +1930,6 @@ function updateFloatingSheetButtons() {
             const formattedDate = formatDateForDisplay(hike.date);
             const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
             const featuresText = hike.features || '';
-            // Новый формат сообщения (убрали параметр url, оставили только текст)
             const message = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nзарегистрируйся вот тут: ${link}\nи подпишись вот туда: @yaltahiking`;
             const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
             tg.openTelegramLink(shareUrl);
@@ -2063,12 +2091,13 @@ function updateFloatingSheetButtons() {
     }
 }
 
-// ----- Календарь -----
+// ----- КАЛЕНДАРЬ (обновлённая версия) -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
     const currentDate = now.getDate();
+    const today = new Date(currentYear, currentMonth, currentDate); // для сравнения
 
     const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
 
@@ -2098,7 +2127,7 @@ function renderCalendar(container) {
         const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const isToday = (day === currentDate);
         const hasHike = hikesData[dateStr] ? true : false;
-        const isPast = new Date(dateStr) < new Date(currentYear, currentMonth, currentDate);
+        const isPast = new Date(dateStr) < today;
         
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
@@ -2107,26 +2136,54 @@ function renderCalendar(container) {
             if (isPast) classes += ' past';
         }
 
+        let innerHtml = `${day}`; // само число
+
+        // Определяем, нужно ли добавить эмодзи
         if (hasHike) {
             const hikeIndex = hikesList.findIndex(h => h.date === dateStr);
-            const isUserBooked = hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true;
+            const hike = hikesList[hikeIndex];
             
-            if (isUserBooked && !isPast) {
-                classes += ' booked-day';
+            // Для прошедших хайков с отчётом добавляем 📝
+            if (isPast && hike && hike.report_link && hike.report_link.trim() !== '') {
+                innerHtml += `<span class="calendar-emoji">📝</span>`;
+            }
+            
+            // Для будущих записанных добавляем 🎫
+            if (!isPast && hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true) {
+                innerHtml += `<span class="calendar-emoji">🎫</span>`;
+                // также добавляем класс booked-day (уже есть в классах)
             }
         }
-        
+
         if (hasHike) {
-            calendarHtml += `<div class="${classes}" data-date="${dateStr}">${day}</div>`;
+            calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
         } else {
             calendarHtml += `<div class="${classes}">${day}</div>`;
         }
     }
 
-    calendarHtml += `</div></div>`;
+    calendarHtml += `</div>`;
+
+    // Добавляем легенду под календарём
+    const hasReportHikes = hikesList.some(h => h.report_link && new Date(h.date) < today);
+    const hasBookedHikes = Object.values(hikeBookingStatus).some(v => v === true);
+    
+    if (hasReportHikes || hasBookedHikes) {
+        calendarHtml += `<div class="calendar-legend">`;
+        if (hasReportHikes) {
+            calendarHtml += `<span class="legend-item"><span class="legend-emoji">📝</span> – отчёт о прошедшем хайке</span>`;
+        }
+        if (hasBookedHikes) {
+            calendarHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span> – хайк, на который ты записан</span>`;
+        }
+        calendarHtml += `</div>`;
+    }
+
+    calendarHtml += `</div>`; // закрываем calendar-item
 
     container.innerHTML = calendarHtml;
 
+    // Добавляем обработчики кликов на дни с хайками
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
