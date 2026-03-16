@@ -1431,26 +1431,40 @@ body::before {
 /* === Календарь: позиционирование эмодзи === */
 .calendar-day {
     position: relative;
+    overflow: visible; /* чтобы эмодзи не обрезалось */
 }
 
 .calendar-emoji {
     position: absolute;
-    bottom: 2px;
-    right: 2px;
-    font-size: 0.7em;
+    bottom: -4px;      /* смещение вниз за границу кружка */
+    right: -4px;       /* смещение вправо за границу кружка */
+    font-size: 0.8em;
     line-height: 1;
     pointer-events: none;
+    z-index: 2;        /* поверх кружка */
 }
 
-/* === Легенда под календарём === */
-.calendar-legend {
-    margin-top: 16px;
+/* === Легенда под календарём (теперь внутри заголовка) === */
+.calendar-header-with-legend {
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.calendar-header-with-legend h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #ffffff;
+}
+
+.calendar-legend {
+    display: flex;
     gap: 16px;
     font-size: 12px;
     color: rgba(255,255,255,0.7);
-    padding: 0 16px 16px 16px;
 }
 
 .legend-item {
@@ -1488,3 +1502,28 @@ body::before {
     box-shadow: none;
     animation: none;
 }
+
+/* === Свечение для записанных дат (возвращаем) === */
+.calendar-day.booked-day {
+    background: var(--yellow);
+    color: #000000;
+    box-shadow: 0 0 10px var(--yellow);
+    border: 2px solid transparent;
+    animation: glow 3s ease-in-out infinite;
+}
+
+.calendar-day.today.booked-day {
+    background: var(--yellow);
+    color: #000000;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 10px var(--yellow);
+}
+
+.calendar-day.hike-day.past.booked-day {
+    background: rgba(217, 253, 25, 0.3);
+    color: #000000;
+    box-shadow: none;
+    animation: none;
+}
+
+
