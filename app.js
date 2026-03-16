@@ -2636,8 +2636,8 @@ function renderGuestHome() {
                     оформить карту
                 </button>
                 <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="width: 100%; margin: 0; box-sizing: border-box;">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="width: 100%; margin: 0; box-sizing: border-box;">бессрочная</a>
                     <!-- Пояснения -->
                     <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
                         <div style="flex: 1;">до конца 2026</div>
