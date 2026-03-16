@@ -714,7 +714,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
 
     // Вспомогательная функция для регистрации и открытия ссылки
     const handlePurchase = (purchaseType, link) => {
-        console.log('handlePurchase', purchaseType, link); // отладка
+        console.log('handlePurchase', purchaseType, link);
         // Сначала регистрируем пользователя
         addParticipant(hikeDate)
             .then(() => setUserRegistrationStatus(hikeDate, true))
@@ -730,6 +730,9 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
                 // Обновляем UI
                 updateFloatingSheetButtons();
                 renderUserBookings();
+                // Обновляем календарь, чтобы появился эмодзи 🎫
+                const calendarContainer = document.getElementById('calendarContainer');
+                if (calendarContainer) renderCalendar(calendarContainer);
                 
                 // Логируем в Google Sheets с типом покупки
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
@@ -742,7 +745,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
             })
             .catch(error => {
                 console.error('Error during registration:', error);
-                // Можно показать ошибку
                 alert('Ошибка при регистрации. Попробуйте ещё раз.');
             });
     };
@@ -879,7 +881,6 @@ async function loadData() {
             const snapshot = await orderRef.once('value');
             const order = snapshot.val();
             if (order && order.status === 'paid') {
-                // Пока нет готовой функции showPaymentSuccessPopup, можно добавить позже
                 console.log('Payment success for order', order);
                 if (order.type === 'ticket' && order.hikeDate) {
                     const hikeIndex = hikesList.findIndex(h => h.date === order.hikeDate);
@@ -889,6 +890,8 @@ async function loadData() {
                         if (sheetCurrentIndex !== undefined && hikesList[sheetCurrentIndex]?.date === order.hikeDate) {
                             updateFloatingSheetButtons();
                         }
+                        const calendarContainer = document.getElementById('calendarContainer');
+                        if (calendarContainer) renderCalendar(calendarContainer);
                     }
                 }
                 // Очищаем параметры
@@ -1927,11 +1930,8 @@ function updateFloatingSheetButtons() {
         inviteBtn.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
-            const formattedDate = formatDateForDisplay(hike.date);
             const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
-            const featuresText = hike.features || '';
-            const message = `привет! пойдём на хайк ${formattedDate}\n\n${featuresText}\n\nзарегистрируйся вот тут: ${link}\nи подпишись вот туда: @yaltahiking`;
-            const shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}`;
             tg.openTelegramLink(shareUrl);
             log('invite_friend_click', isGuest);
         });
@@ -1963,6 +1963,8 @@ function updateFloatingSheetButtons() {
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
                     updateFloatingSheetButtons();
                     renderUserBookings();
+                    const calendarContainer = document.getElementById('calendarContainer');
+                    if (calendarContainer) renderCalendar(calendarContainer);
                 }).catch((error) => {
                     console.error('Error during cancellation:', error);
                     updateFloatingSheetButtons();
@@ -1976,6 +1978,8 @@ function updateFloatingSheetButtons() {
                     updateFloatingSheetButtons();
                     updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
                     renderUserBookings();
+                    const calendarContainer = document.getElementById('calendarContainer');
+                    if (calendarContainer) renderCalendar(calendarContainer);
                 }).catch((error) => {
                     console.error('Error during cancellation:', error);
                     updateFloatingSheetButtons();
@@ -2077,6 +2081,8 @@ function updateFloatingSheetButtons() {
                         updateRegistrationInSheet(hike.date, hike.title, 'booked', 'card_holder');
                         updateFloatingSheetButtons();
                         renderUserBookings();
+                        const calendarContainer = document.getElementById('calendarContainer');
+                        if (calendarContainer) renderCalendar(calendarContainer);
                     })
                     .catch((error) => {
                         console.error('Error during booking:', error);
@@ -2097,7 +2103,7 @@ function renderCalendar(container) {
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
     const currentDate = now.getDate();
-    const today = new Date(currentYear, currentMonth, currentDate); // для сравнения
+    const today = new Date(currentYear, currentMonth, currentDate);
 
     const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
 
@@ -2107,11 +2113,28 @@ function renderCalendar(container) {
 
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
+    // Проверяем, есть ли хайки с отчётами или записями для отображения легенды
+    const hasReportHikes = hikesList.some(h => h.report_link && new Date(h.date) < today);
+    const hasBookedHikes = Object.values(hikeBookingStatus).some(v => v === true);
+
+    let legendHtml = '';
+    if (hasReportHikes || hasBookedHikes) {
+        legendHtml = `<div class="calendar-legend">`;
+        if (hasReportHikes) {
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">📷</span> – отчёт о прошедшем хайке</span>`;
+        }
+        if (hasBookedHikes) {
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span> – хайк, на который ты записан</span>`;
+        }
+        legendHtml += `</div>`;
+    }
+
     let calendarHtml = `
         <h2 class="section-title">🗓️ календарь хайков</h2>
         <div class="calendar-item">
-            <div class="calendar-header">
+            <div class="calendar-header-with-legend">
                 <h3>${monthNames[currentMonth]} ${currentYear}</h3>
+                ${legendHtml}
             </div>
             <div class="weekdays">
                 ${weekdays.map(d => `<span>${d}</span>`).join('')}
@@ -2143,15 +2166,15 @@ function renderCalendar(container) {
             const hikeIndex = hikesList.findIndex(h => h.date === dateStr);
             const hike = hikesList[hikeIndex];
             
-            // Для прошедших хайков с отчётом добавляем 📝
+            // Для прошедших хайков с отчётом добавляем 📷
             if (isPast && hike && hike.report_link && hike.report_link.trim() !== '') {
-                innerHtml += `<span class="calendar-emoji">📝</span>`;
+                innerHtml += `<span class="calendar-emoji">📷</span>`;
             }
             
-            // Для будущих записанных добавляем 🎫
+            // Для будущих записанных добавляем 🎫 и класс booked-day
             if (!isPast && hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true) {
                 innerHtml += `<span class="calendar-emoji">🎫</span>`;
-                // также добавляем класс booked-day (уже есть в классах)
+                classes += ' booked-day'; // добавляем класс для свечения
             }
         }
 
@@ -2162,24 +2185,7 @@ function renderCalendar(container) {
         }
     }
 
-    calendarHtml += `</div>`;
-
-    // Добавляем легенду под календарём
-    const hasReportHikes = hikesList.some(h => h.report_link && new Date(h.date) < today);
-    const hasBookedHikes = Object.values(hikeBookingStatus).some(v => v === true);
-    
-    if (hasReportHikes || hasBookedHikes) {
-        calendarHtml += `<div class="calendar-legend">`;
-        if (hasReportHikes) {
-            calendarHtml += `<span class="legend-item"><span class="legend-emoji">📝</span> – отчёт о прошедшем хайке</span>`;
-        }
-        if (hasBookedHikes) {
-            calendarHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span> – хайк, на который ты записан</span>`;
-        }
-        calendarHtml += `</div>`;
-    }
-
-    calendarHtml += `</div>`; // закрываем calendar-item
+    calendarHtml += `</div></div>`; // закрываем calendar-grid и calendar-item
 
     container.innerHTML = calendarHtml;
 
