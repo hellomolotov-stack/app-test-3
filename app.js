@@ -676,19 +676,25 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <button class="modal-close" id="closePopup" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; backdrop-filter: blur(4px);">&times;</button>
-            <div class="modal-title">бронирование места</div>
+            <div class="modal-title">регистрация на хайк</div>
             <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
             
             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
                 <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
                 
                 <div id="cardAccordionPopup" style="width: 100%;">
-                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">купить карту 💳</button>
+                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">оформить карту 💳</button>
                     <div id="cardOptions" style="display: none; margin-top: 12px;">
                         <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
                             <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
                             <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
                         </div>
+                        <!-- Пояснения -->
+                        <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
+                            <div style="flex: 1;">до конца 2026</div>
+                            <div style="flex: 1;">все сезоны</div>
+                        </div>
+                        <!-- Цены -->
                         <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
                             <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
                             <div style="flex: 1;">${config.permanentCardPrice} ₽</div>
@@ -714,7 +720,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
 
     // Вспомогательная функция для регистрации и открытия ссылки
     const handlePurchase = (purchaseType, link) => {
-        console.log('handlePurchase', purchaseType, link);
+        console.log('handlePurchase', purchaseType, link); // отладка
         // Сначала регистрируем пользователя
         addParticipant(hikeDate)
             .then(() => setUserRegistrationStatus(hikeDate, true))
@@ -730,7 +736,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
                 // Обновляем UI
                 updateFloatingSheetButtons();
                 renderUserBookings();
-                // Обновляем календарь, чтобы появился эмодзи 🎫
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer) renderCalendar(calendarContainer);
                 
