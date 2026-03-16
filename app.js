@@ -582,7 +582,7 @@ function showAnimatedLoader() {
             <div class="loader-emoji" id="loaderEmoji">⛰️</div>
             <div class="loader-text" id="loaderText">выбираем вершину</div>
         </div>
-        <div class="loader-message" id="loaderMessage" style="display: none;">🗝️ для работы приложения включи три буквы</div>
+        <div class="loader-message" id="loaderMessage" style="display: none;">⚡️ для работы приложения включи три буквы</div>
     `;
     loader.style.display = 'flex';
     loader.classList.remove('fade-out');
@@ -609,7 +609,7 @@ function showAnimatedLoader() {
         if (loader.style.display !== 'none' && !loader.classList.contains('fade-out')) {
             messageEl.style.display = 'block';
         }
-    }, 3000); // теперь через 3 секунды
+    }, 3000);
 }
 
 function hideAnimatedLoader() {
@@ -720,12 +720,10 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
 
     // Вспомогательная функция для регистрации и открытия ссылки
     const handlePurchase = (purchaseType, link) => {
-        console.log('handlePurchase', purchaseType, link); // отладка
-        // Сначала регистрируем пользователя
+        console.log('handlePurchase', purchaseType, link);
         addParticipant(hikeDate)
             .then(() => setUserRegistrationStatus(hikeDate, true))
             .then(() => {
-                // Обновляем статус в памяти
                 const hikeIndex = hikesList.findIndex(h => h.date === hikeDate);
                 if (hikeIndex !== -1) {
                     hikeBookingStatus[hikeIndex] = true;
@@ -733,19 +731,13 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
                 if (userCard.status !== 'active') {
                     saveStatusToLocalStorage();
                 }
-                // Обновляем UI
                 updateFloatingSheetButtons();
                 renderUserBookings();
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer) renderCalendar(calendarContainer);
                 
-                // Логируем в Google Sheets с типом покупки
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
-                
-                // Открываем ссылку оплаты
                 openLink(link, `purchase_${purchaseType}`, isGuest);
-                
-                // Закрываем попап
                 overlay.remove();
             })
             .catch(error => {
@@ -754,7 +746,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
             });
     };
 
-    // Кнопка купить билет
     document.getElementById('buyTicketBtn').addEventListener('click', (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
@@ -762,7 +753,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
         handlePurchase('ticket', config.ticketLink);
     });
 
-    // Аккордеон для карт
     const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
     const cardOptions = document.getElementById('cardOptions');
     showCardOptionsBtn.addEventListener('click', (e) => {
@@ -850,9 +840,8 @@ async function loadData() {
             leaders = leadersData;
         }
 
-        await loadRegistrationsPopup(); // загружаем попапы
-        await loadPopupConfig(); // загружаем конфиг попапа для гостей
-
+        await loadRegistrationsPopup();
+        await loadPopupConfig();
         await loadUserData();
 
         if (userCard.status === 'active' && database && userPhotoUrl) {
@@ -872,10 +861,8 @@ async function loadData() {
         }
 
         log('visit', userCard.status !== 'active');
-        
         renderHome();
 
-        // Проверка параметров возврата (если есть) - для совместимости с будущей оплатой
         const urlParams = new URLSearchParams(window.location.search);
         const paymentSuccess = urlParams.get('payment_success');
         const invId = urlParams.get('InvId');
@@ -899,13 +886,11 @@ async function loadData() {
                         if (calendarContainer) renderCalendar(calendarContainer);
                     }
                 }
-                // Очищаем параметры
                 const newUrl = window.location.pathname + (hikeDate ? `?hike=${hikeDate}` : '');
                 window.history.replaceState({}, '', newUrl);
             }
         }
 
-        // Обработка start_param (если есть)
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
         const effectiveStartParam = startParam || urlStartParam;
@@ -1697,7 +1682,7 @@ function showBottomSheet(index) {
             });
         }
 
-        updateFloatingSheetButtons(); // обновляем кнопки сразу после загрузки контента
+        updateFloatingSheetButtons();
 
         document.getElementById('prevHike')?.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1742,7 +1727,7 @@ function showBottomSheet(index) {
         container.id = 'floatingSheetButtons';
         document.body.appendChild(container);
 
-        updateFloatingSheetButtons(); // вызываем глобальную функцию
+        updateFloatingSheetButtons();
     }
 
     function checkScroll() {
@@ -1911,7 +1896,6 @@ function updateFloatingSheetButtons() {
 
     const isGuest = userCard.status !== 'active';
 
-    // Попап для неоплаченных (если есть)
     if (userId) {
         const popupKey = `${userId}_${hike.date}`;
         const popupData = registrationsPopup[popupKey];
@@ -2005,7 +1989,6 @@ function updateFloatingSheetButtons() {
 
     } else {
         if (isGuest) {
-            // Для гостей: две кнопки в ряд: "задать вопрос" и "иду"
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
@@ -2035,7 +2018,6 @@ function updateFloatingSheetButtons() {
                 goBtn.dataset.processing = 'true';
                 
                 haptic();
-                
                 showGuestBookingPopup(hike.date, hike.title, true);
                 
                 setTimeout(() => {
@@ -2046,7 +2028,6 @@ function updateFloatingSheetButtons() {
 
             container.appendChild(row);
         } else {
-            // Для владельцев карты: две кнопки "задать вопрос" и "иду"
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
@@ -2126,10 +2107,10 @@ function renderCalendar(container) {
     if (hasReportHikes || hasBookedHikes) {
         legendHtml = `<div class="calendar-legend">`;
         if (hasReportHikes) {
-            legendHtml += `<span class="legend-item"><span class="legend-emoji">📷</span> – отчёт о прошедшем хайке</span>`;
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">📷</span> – отчёт</span>`;
         }
         if (hasBookedHikes) {
-            legendHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span> – хайк, на который ты записан</span>`;
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span> – запись</span>`;
         }
         legendHtml += `</div>`;
     }
@@ -2179,7 +2160,7 @@ function renderCalendar(container) {
             // Для будущих записанных добавляем 🎫 и класс booked-day
             if (!isPast && hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true) {
                 innerHtml += `<span class="calendar-emoji">🎫</span>`;
-                classes += ' booked-day'; // добавляем класс для свечения
+                classes += ' booked-day';
             }
         }
 
@@ -2190,11 +2171,10 @@ function renderCalendar(container) {
         }
     }
 
-    calendarHtml += `</div></div>`; // закрываем calendar-grid и calendar-item
+    calendarHtml += `</div></div>`;
 
     container.innerHTML = calendarHtml;
 
-    // Добавляем обработчики кликов на дни с хайками
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
