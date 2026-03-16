@@ -2099,7 +2099,6 @@ function renderCalendar(container) {
 
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
-    // Проверяем, есть ли хайки с отчётами или записями для отображения легенды
     const hasReportHikes = hikesList.some(h => h.report_link && new Date(h.date) < today);
     const hasBookedHikes = Object.values(hikeBookingStatus).some(v => v === true);
 
@@ -2632,7 +2631,7 @@ function renderGuestHome() {
                 <button class="accordion-btn btn-yellow btn-glow">
                     оформить карту
                 </button>
-                <div class="dropdown-menu" style="display: none;">
+                <div class="dropdown-menu">
                     <!-- Две кнопки карт в ряд -->
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
                         <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 12px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
