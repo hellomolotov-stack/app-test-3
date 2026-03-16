@@ -1436,9 +1436,9 @@ body::before {
 
 .calendar-emoji {
     position: absolute;
-    bottom: -2px;      /* немного подняли */
-    right: -2px;       /* немного сдвинули влево */
-    font-size: 1em;    /* увеличили размер */
+    bottom: -5px;      /* немного ниже, чтобы выступало за круг */
+    right: -2px;
+    font-size: 1em;
     line-height: 1;
     pointer-events: none;
     z-index: 2;
