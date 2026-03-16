@@ -5,7 +5,7 @@ tg.ready();
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
-window.haptic = haptic;ч
+window.haptic = haptic;
 
 function openLink(url, action, isGuest) {
     haptic();
@@ -2083,7 +2083,7 @@ function updateFloatingSheetButtons() {
     }
 }
 
-// ----- КАЛЕНДАРЬ (обновлённая версия) -----
+// ----- КАЛЕНДАРЬ -----
 function renderCalendar(container) {
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -2145,19 +2145,16 @@ function renderCalendar(container) {
             if (isPast) classes += ' past';
         }
 
-        let innerHtml = `${day}`; // само число
+        let innerHtml = `${day}`;
 
-        // Определяем, нужно ли добавить эмодзи
         if (hasHike) {
             const hikeIndex = hikesList.findIndex(h => h.date === dateStr);
             const hike = hikesList[hikeIndex];
             
-            // Для прошедших хайков с отчётом добавляем 📷
             if (isPast && hike && hike.report_link && hike.report_link.trim() !== '') {
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
             }
             
-            // Для будущих записанных добавляем 🎫 и класс booked-day
             if (!isPast && hikeIndex !== -1 && hikeBookingStatus[hikeIndex] === true) {
                 innerHtml += `<span class="calendar-emoji">🎫</span>`;
                 classes += ' booked-day';
@@ -2618,6 +2615,7 @@ function showGuestPopup() {
     });
     log('guest_popup_opened', true);
 }
+
 // ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
