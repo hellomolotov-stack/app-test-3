@@ -5,7 +5,7 @@ tg.ready();
 function haptic() {
     tg.HapticFeedback?.impactOccurred('light');
 }
-window.haptic = haptic;
+window.haptic = haptic;ч
 
 function openLink(url, action, isGuest) {
     haptic();
@@ -2634,11 +2634,11 @@ function renderGuestHome() {
                 <button class="accordion-btn btn-yellow btn-glow">
                     оформить карту
                 </button>
-                <div class="dropdown-menu">
+                <div class="dropdown-menu" style="display: none;">
                     <!-- Две кнопки карт в ряд -->
-                    <div style="display: flex; gap: 8px; width: 100%;">
-                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</a>
-                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</a>
+                    <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
+                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 12px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
+                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 12px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
                     </div>
                     <!-- Пояснения (две колонки) -->
                     <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
@@ -2651,7 +2651,7 @@ function renderGuestHome() {
                         <div style="flex: 1;">${popupConfig.permanentCardPrice} ₽</div>
                     </div>
                     <!-- Кнопка "узнать о привилегиях" на всю ширину -->
-                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-top: 12px; width: 100%; box-sizing: border-box;">узнать о привилегиях 💳</a>
+                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-top: 12px; width: 100%; padding: 12px 0; box-sizing: border-box; text-align: center; display: block;">узнать о привилегиях 💳</a>
                 </div>
             </div>
         </div>
