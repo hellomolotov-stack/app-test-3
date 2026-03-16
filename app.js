@@ -582,7 +582,7 @@ function showAnimatedLoader() {
             <div class="loader-emoji" id="loaderEmoji">⛰️</div>
             <div class="loader-text" id="loaderText">выбираем вершину</div>
         </div>
-        <div class="loader-message" id="loaderMessage" style="display: none;">⚙️ для быстрой загрузки включи три буквы</div>
+        <div class="loader-message" id="loaderMessage" style="display: none;">🗝️ для работы приложения включи три буквы</div>
     `;
     loader.style.display = 'flex';
     loader.classList.remove('fade-out');
@@ -609,7 +609,7 @@ function showAnimatedLoader() {
         if (loader.style.display !== 'none' && !loader.classList.contains('fade-out')) {
             messageEl.style.display = 'block';
         }
-    }, 5000);
+    }, 3000); // теперь через 3 секунды
 }
 
 function hideAnimatedLoader() {
@@ -1619,7 +1619,7 @@ function showBottomSheet(index) {
                                 <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
                             </svg>
                         </span>
-                        <span><strong>ведущий:</strong> <a href="#" class="leader-name dynamic-link" data-date="${hike.date}" style="color: var(--yellow); text-decoration: none;">${firstNameOnly}</a></span>
+                        <span><strong>ведёт:</strong> <a href="#" class="leader-name dynamic-link" data-date="${hike.date}" style="color: var(--yellow); text-decoration: none;">${firstNameOnly}</a></span>
                     </div>
                 `;
             }
@@ -2126,10 +2126,10 @@ function renderCalendar(container) {
     if (hasReportHikes || hasBookedHikes) {
         legendHtml = `<div class="calendar-legend">`;
         if (hasReportHikes) {
-            legendHtml += `<span class="legend-item"><span class="legend-emoji">📷</span>отчёт</span>`;
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">📷</span> – отчёт о прошедшем хайке</span>`;
         }
         if (hasBookedHikes) {
-            legendHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span>запись</span>`;
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span> – хайк, на который ты записан</span>`;
         }
         legendHtml += `</div>`;
     }
@@ -2658,7 +2658,16 @@ function renderGuestHome() {
                 <div class="dropdown-menu">
                     <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
                     <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
-                    <a href="#" class="btn btn-outline btn-fullwidth" id="guestPrivilegesBtn" style="margin-top: 8px;">узнать о привилегиях 💳</a>
+                    <!-- Пояснения -->
+                    <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
+                        <div style="flex: 1;">до конца 2026</div>
+                        <div style="flex: 1;">все сезоны</div>
+                    </div>
+                    <!-- Цены -->
+                    <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
+                        <div style="flex: 1;">${popupConfig.seasonCardPrice} ₽</div>
+                        <div style="flex: 1;">${popupConfig.permanentCardPrice} ₽</div>
+                    </div>
                 </div>
             </div>
         </div>
