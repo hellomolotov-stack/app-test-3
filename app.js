@@ -2635,19 +2635,15 @@ function renderGuestHome() {
                 <button class="accordion-btn btn-yellow btn-glow">
                     оформить карту
                 </button>
-                <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="width: 100%; margin: 0; box-sizing: border-box;">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="width: 100%; margin: 0; box-sizing: border-box;">бессрочная</a>
+                <div class="dropdown-menu" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="margin: 0; box-sizing: border-box;">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="margin: 0; box-sizing: border-box;">бессрочная</a>
                     <!-- Пояснения -->
-                    <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
-                        <div style="flex: 1;">до конца 2026</div>
-                        <div style="flex: 1;">все сезоны</div>
-                    </div>
+                    <div style="text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">до конца 2026</div>
+                    <div style="text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">все сезоны</div>
                     <!-- Цены -->
-                    <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
-                        <div style="flex: 1;">${popupConfig.seasonCardPrice} ₽</div>
-                        <div style="flex: 1;">${popupConfig.permanentCardPrice} ₽</div>
-                    </div>
+                    <div style="text-align: center; color: #ffffff; font-size: 14px;">${popupConfig.seasonCardPrice} ₽</div>
+                    <div style="text-align: center; color: #ffffff; font-size: 14px;">${popupConfig.permanentCardPrice} ₽</div>
                 </div>
             </div>
         </div>
