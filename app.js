@@ -2618,7 +2618,6 @@ function showGuestPopup() {
     });
     log('guest_popup_opened', true);
 }
-
 // ----- Главная для гостей -----
 function renderGuestHome() {
     const isGuest = true;
@@ -2636,18 +2635,23 @@ function renderGuestHome() {
                     оформить карту
                 </button>
                 <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline">бессрочная</a>
-                    <!-- Пояснения -->
-                    <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 8px; width: 100%;">
-                        <div style="flex: 1; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">до конца 2026</div>
-                        <div style="flex: 1; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">все сезоны</div>
+                    <!-- Две кнопки карт в ряд -->
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</a>
+                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</a>
                     </div>
-                    <!-- Цены -->
-                    <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%;">
-                        <div style="flex: 1; text-align: center; color: #ffffff; font-size: 14px;">${popupConfig.seasonCardPrice} ₽</div>
-                        <div style="flex: 1; text-align: center; color: #ffffff; font-size: 14px;">${popupConfig.permanentCardPrice} ₽</div>
+                    <!-- Пояснения (две колонки) -->
+                    <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
+                        <div style="flex: 1;">до конца 2026</div>
+                        <div style="flex: 1;">все сезоны</div>
                     </div>
+                    <!-- Цены (две колонки) -->
+                    <div style="display: flex; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
+                        <div style="flex: 1;">${popupConfig.seasonCardPrice} ₽</div>
+                        <div style="flex: 1;">${popupConfig.permanentCardPrice} ₽</div>
+                    </div>
+                    <!-- Кнопка "узнать о привилегиях" на всю ширину -->
+                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-top: 12px; width: 100%; box-sizing: border-box;">узнать о привилегиях 💳</a>
                 </div>
             </div>
         </div>
