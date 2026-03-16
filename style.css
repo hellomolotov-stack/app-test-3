@@ -1436,12 +1436,12 @@ body::before {
 
 .calendar-emoji {
     position: absolute;
-    bottom: -4px;      /* смещение вниз за границу кружка */
-    right: -4px;       /* смещение вправо за границу кружка */
-    font-size: 0.8em;
+    bottom: -2px;      /* немного подняли */
+    right: -2px;       /* немного сдвинули влево */
+    font-size: 1em;    /* увеличили размер */
     line-height: 1;
     pointer-events: none;
-    z-index: 2;        /* поверх кружка */
+    z-index: 2;
 }
 
 /* === Легенда под календарём (теперь внутри заголовка) === */
