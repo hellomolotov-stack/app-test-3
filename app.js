@@ -2121,10 +2121,10 @@ function renderCalendar(container) {
     if (hasReportHikes || hasBookedHikes) {
         legendHtml = `<div class="calendar-legend">`;
         if (hasReportHikes) {
-            legendHtml += `<span class="legend-item"><span class="legend-emoji">📷</span> – отчёт о прошедшем хайке</span>`;
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">📷</span>отчёт</span>`;
         }
         if (hasBookedHikes) {
-            legendHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span> – хайк, на который ты записан</span>`;
+            legendHtml += `<span class="legend-item"><span class="legend-emoji">🎫</span>запись</span>`;
         }
         legendHtml += `</div>`;
     }
