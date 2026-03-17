@@ -866,7 +866,7 @@ const failUrl2 = `${baseUrl}?startapp=payment_${invId}&payment_fail=1`;
     const shpParts = shpKeys.map(k => `Shp_${k}=${extraParams[k]}`);
     const shpString = shpParts.length ? ':' + shpParts.join(':') : '';
     
-    const password1 = 'nU519GVUsYsheG8UyGb1'; // ЗАМЕНИТЕ НА ПАРОЛЬ #1 (тестовый или боевой)
+    const password1 = 'ODN9PY2r9vUxC5kjUlc7'; // ЗАМЕНИТЕ НА ПАРОЛЬ #1 (тестовый или боевой)
     const baseString = `${merchantLogin}:${amount}:${invId}${shpString}:${password1}`;
     const signature = md5(baseString);
     
