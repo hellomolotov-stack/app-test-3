@@ -2633,7 +2633,7 @@ function renderGuestHome() {
                 </button>
                 <div class="dropdown-menu">
                     <!-- Кнопка "узнать о привилегиях" на всю ширину (теперь сверху) -->
-                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px; width: 100%; padding: 16px 0; box-sizing: border-box; text-align: center; display: block;">узнать о привилегиях 💳</a>
+                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px; width: 100%; padding: 16px; box-sizing: border-box; text-align: center; display: block;">узнать о привилегиях 💳</a>
                     
                     <!-- Две кнопки карт в ряд -->
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
