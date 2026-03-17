@@ -828,63 +828,37 @@ async function createOrder(invId, orderData) {
     });
 }
 
-// Формирование ссылки на Robokassa с подписью (резервный план: подпись отключена)
-function getRobokassaLink(invId, amount, description, extraParams = {}) {
+// Упрощённая функция формирования ссылки на Robokassa (без Shp-параметров)
+function getRobokassaLink(invId, amount, description) {
     const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
     const isTest = 1; // 1 – тестовый, 0 – боевой
 
-    // Убедитесь, что invId – целое число (без символов)
+    // InvId должно быть целым числом
     invId = parseInt(invId) || Date.now();
 
-    // Базовый URL для возврата (адрес вашего бота)
+    // Адрес вашего бота (или сайта)
     const baseUrl = 'https://t.me/yaltahiking_bot'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
-
-    // Формируем SuccessUrl2 – все параметры помещаем в startapp
-    const startappParams = new URLSearchParams({
-        payment_success: '1',
-        InvId: invId,
-        ...extraParams
-    });
-    const successUrl2 = `${baseUrl}?startapp=${encodeURIComponent(startappParams.toString())}`;
-
+    const successUrl2 = `${baseUrl}?startapp=payment_${invId}`;
     const failUrl2 = `${baseUrl}?startapp=payment_fail`;
 
-    // Основной URL Robokassa
     let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}` +
               `&OutSum=${amount.toFixed(2)}&InvId=${invId}&Desc=${encodeURIComponent(description)}` +
               `&IsTest=${isTest}&SuccessUrl2=${encodeURIComponent(successUrl2)}` +
               `&FailUrl2=${encodeURIComponent(failUrl2)}`;
 
-    // Добавляем Shp-параметры (если нужны)
-    for (let [key, value] of Object.entries(extraParams)) {
-        url += `&Shp_${key}=${encodeURIComponent(value)}`;
-    }
+    // Пароль #1 (скопируйте из настроек Robokassa)
+    const password1 = 'nU519GVUsYsheG8UyGb1'; // ЗАМЕНИТЕ НА ПРАВИЛЬНЫЙ ПАРОЛЬ
 
-    // === РЕЗЕРВНЫЙ ПЛАН: временно отключаем подпись ===
-    const USE_SIGNATURE = false; // установите true, когда вернёте подпись
+    // Подпись без Shp-параметров
+    const baseString = `${merchantLogin}:${amount.toFixed(2)}:${invId}:${password1}`;
+    const signature = md5(baseString);
+    url += `&SignatureValue=${signature}`;
 
-    if (USE_SIGNATURE) {
-        // Пароль #1 (тестовый) – скопируйте из настроек Robokassa
-        const password1 = 'nU519GVUsYsheG8UyGb1'; // ЗАМЕНИТЕ НА ПРАВИЛЬНЫЙ ПАРОЛЬ
-
-        // Сортировка Shp-параметров для подписи
-        const shpKeys = Object.keys(extraParams).sort();
-        const shpString = shpKeys.map(k => `Shp_${k}=${extraParams[k]}`).join(':');
-
-        // Формируем строку для подписи: MrchLogin:OutSum:InvId:Shp_...:Password1
-        const baseString = `${merchantLogin}:${amount.toFixed(2)}:${invId}` +
-                           (shpString ? ':' + shpString : '') + ':' + password1;
-        const signature = md5(baseString);
-        url += `&SignatureValue=${signature}`;
-    } else {
-        console.log('Подпись отключена (резервный план). Используйте для теста.');
-    }
-
-    console.log('Robokassa URL:', url); // для отладки
+    console.log('Robokassa URL:', url);
     return url;
 }
 
-// Новая функция: создание заказа и переход на оплату
+// Функция: создание заказа и переход на оплату
 async function purchaseWithRobokassa(hikeDate, type, amount, description, isGuest) {
     if (!userId) return;
     
@@ -903,15 +877,8 @@ async function purchaseWithRobokassa(hikeDate, type, amount, description, isGues
     try {
         await createOrder(invId.toString(), orderData);
         
-        // Дополнительные параметры для Robokassa (Shp_)
-        const extraParams = {
-            hikeDate: hikeDate,
-            type: type,
-            userId: userId
-        };
-        
-        // Формируем ссылку
-        const link = getRobokassaLink(invId, amount, description, extraParams);
+        // Формируем ссылку (без extraParams)
+        const link = getRobokassaLink(invId, amount, description);
         
         // Открываем ссылку
         openLink(link, `purchase_${type}`, isGuest);
@@ -1216,6 +1183,13 @@ async function loadData() {
                 }
             }, 300);
         }
+
+        // Обработка возврата после оплаты (payment_* в startapp)
+        if (effectiveStartParam && effectiveStartParam.startsWith('payment_')) {
+            const invIdFromStart = effectiveStartParam.substring(8); // 'payment_123' -> '123'
+            // Можно показать сообщение, но статус уже обновлён через payment_success выше
+        }
+
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
         renderHome();
@@ -2842,7 +2816,6 @@ function renderGift(isGuest = false) {
     document.getElementById('giftSeasonBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         haptic();
-        // Для подарка создаём заказ с типом gift_season? Можно позже реализовать отдельно
         openLink('https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug', 'gift_season_click', isGuest);
     });
 
@@ -3028,7 +3001,6 @@ function renderGuestHome() {
     document.getElementById('guestSeasonCardBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         haptic();
-        // Переход на оплату сезонной карты (без привязки к конкретному хайку)
         openLink('https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug', 'guest_season_card_click', true);
     });
 
