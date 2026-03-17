@@ -840,7 +840,7 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
 
     // Формируем SuccessUrl2 – ссылка на ваше приложение с параметрами
     // Предполагаем, что приложение доступно по этому URL (замените на свой)
-    const baseUrl = 'https://yourdomain.com'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
+    const baseUrl = 'https://t.me/yaltahiking_bot?startapp'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
     let successUrl2 = `${baseUrl}?payment_success=1&InvId=${invId}`;
     if (extraParams.hikeDate) {
         successUrl2 += `&hike=${encodeURIComponent(extraParams.hikeDate)}`;
