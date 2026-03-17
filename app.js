@@ -665,118 +665,234 @@ function scrollToCalendar() {
     }, 100);
 }
 
-// --- Функция показа попапа для гостей с выбором оплаты ---
-function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
-    haptic();
-    const config = popupConfig;
+// ========== ФУНКЦИИ ДЛЯ РОБОКАССЫ ==========
+
+// Реализация MD5 для браузера (взято из открытых источников)
+function md5(str) {
+    function rotateLeft(lValue, iShiftBits) {
+        return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
+    }
+    function addUnsigned(lX, lY) {
+        var lX4, lY4, lX8, lY8, lResult;
+        lX8 = (lX & 0x80000000);
+        lY8 = (lY & 0x80000000);
+        lX4 = (lX & 0x40000000);
+        lY4 = (lY & 0x40000000);
+        lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
+        if (lX4 & lY4) return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
+        if (lX4 | lY4) {
+            if (lResult & 0x40000000) return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
+            else return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
+        } else return (lResult ^ lX8 ^ lY8);
+    }
+    function F(x, y, z) { return (x & y) | ((~x) & z); }
+    function G(x, y, z) { return (x & z) | (y & (~z)); }
+    function H(x, y, z) { return (x ^ y ^ z); }
+    function I(x, y, z) { return (y ^ (x | (~z))); }
+    function FF(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function GG(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(G(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function HH(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(H(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function II(a, b, c, d, x, s, ac) {
+        a = addUnsigned(a, addUnsigned(addUnsigned(I(b, c, d), x), ac));
+        return addUnsigned(rotateLeft(a, s), b);
+    }
+    function convertToWordArray(str) {
+        var lWordCount;
+        var lMessageLength = str.length;
+        var lNumberOfWords_temp1 = lMessageLength + 8;
+        var lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
+        var lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
+        var lWordArray = Array(lNumberOfWords - 1);
+        var lBytePosition = 0;
+        var lByteCount = 0;
+        while (lByteCount < lMessageLength) {
+            lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+            lBytePosition = (lByteCount % 4) * 8;
+            lWordArray[lWordCount] = (lWordArray[lWordCount] | (str.charCodeAt(lByteCount) << lBytePosition));
+            lByteCount++;
+        }
+        lWordCount = (lByteCount - (lByteCount % 4)) / 4;
+        lBytePosition = (lByteCount % 4) * 8;
+        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition);
+        lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
+        lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
+        return lWordArray;
+    }
+    function wordToHex(lValue) {
+        var WordToHexValue = "", WordToHexValue_temp = "", lByte, lCount;
+        for (lCount = 0; lCount <= 3; lCount++) {
+            lByte = (lValue >>> (lCount * 8)) & 255;
+            WordToHexValue_temp = "0" + lByte.toString(16);
+            WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
+        }
+        return WordToHexValue;
+    }
+    var x = [];
+    var k, AA, BB, CC, DD, a, b, c, d;
+    var S11 = 7, S12 = 12, S13 = 17, S14 = 22;
+    var S21 = 5, S22 = 9, S23 = 14, S24 = 20;
+    var S31 = 4, S32 = 11, S33 = 16, S34 = 23;
+    var S41 = 6, S42 = 10, S43 = 15, S44 = 21;
+    str = unescape(encodeURIComponent(str));
+    x = convertToWordArray(str);
+    a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
+    for (k = 0; k < x.length; k += 16) {
+        AA = a; BB = b; CC = c; DD = d;
+        a = FF(a, b, c, d, x[k + 0], S11, 0xD76AA478);
+        d = FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
+        c = FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
+        b = FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
+        a = FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
+        d = FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
+        c = FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
+        b = FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
+        a = FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
+        d = FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
+        c = FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
+        b = FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
+        a = FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
+        d = FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
+        c = FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
+        b = FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
+        a = GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
+        d = GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
+        c = GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
+        b = GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
+        a = GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
+        d = GG(d, a, b, c, x[k + 10], S22, 0x2441453);
+        c = GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
+        b = GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
+        a = GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
+        d = GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
+        c = GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
+        b = GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
+        a = GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
+        d = GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
+        c = GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
+        b = GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
+        a = HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
+        d = HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
+        c = HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
+        b = HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
+        a = HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
+        d = HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
+        c = HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
+        b = HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
+        a = HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
+        d = HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA);
+        c = HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
+        b = HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
+        a = HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
+        d = HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
+        c = HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
+        b = HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
+        a = II(a, b, c, d, x[k + 0], S41, 0xF4292244);
+        d = II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
+        c = II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
+        b = II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
+        a = II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
+        d = II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
+        c = II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
+        b = II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
+        a = II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
+        d = II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
+        c = II(c, d, a, b, x[k + 6], S43, 0xA3014314);
+        b = II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
+        a = II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
+        d = II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
+        c = II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
+        b = II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
+        a = addUnsigned(a, AA);
+        b = addUnsigned(b, BB);
+        c = addUnsigned(c, CC);
+        d = addUnsigned(d, DD);
+    }
+    var temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
+    return temp.toLowerCase();
+}
+
+// Создание заказа в Firebase
+async function createOrder(invId, orderData) {
+    if (!database) throw new Error('No database');
+    const orderRef = database.ref(`orders/${invId}`);
+    await orderRef.set({
+        ...orderData,
+        status: 'pending',
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+    });
+}
+
+// Формирование ссылки на Robokassa с подписью
+function getRobokassaLink(invId, amount, description, extraParams = {}) {
+    const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
+    const isTest = 1; // 1 – тестовый, 0 – боевой. В боевом уберите параметр или поставьте 0.
+
+    // Формируем SuccessUrl2 (адрес страницы хайка)
+    let successUrl2 = `https://t.me/yaltahiking_bot?startapp`; // ЗАМЕНИТЕ НА ВАШ ДОМЕН (например, https://app-test-3-delta.vercel.app/)
+    if (extraParams.hikeDate) {
+        successUrl2 += `?hike=${extraParams.hikeDate}`;
+    }
+    successUrl2 += `&payment_success=1&InvId=${invId}`;
+
+    const failUrl2 = `https://ваш-домен/payment-fail`; // можно создать простую страницу
+
+    let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}&OutSum=${amount}&InvId=${invId}&Desc=${encodeURIComponent(description)}&IsTest=${isTest}`;
+    url += `&SuccessUrl2=${encodeURIComponent(successUrl2)}`;
+    url += `&FailUrl2=${encodeURIComponent(failUrl2)}`;
+
+    // Добавляем пользовательские параметры (Shp_)
+    for (let [key, value] of Object.entries(extraParams)) {
+        url += `&Shp_${key}=${encodeURIComponent(value)}`;
+    }
+
+    // --- Расчёт подписи (обязательно для боевого режима) ---
+    // Параметры должны быть отсортированы по алфавиту!
+    const shpKeys = Object.keys(extraParams).sort();
+    const shpParts = shpKeys.map(k => `Shp_${k}=${extraParams[k]}`);
+    const shpString = shpParts.length ? ':' + shpParts.join(':') : '';
     
+    const password1 = 'ваш_пароль_1'; // ЗАМЕНИТЕ НА ПАРОЛЬ #1 (тестовый или боевой)
+    const baseString = `${merchantLogin}:${amount}:${invId}${shpString}:${password1}`;
+    const signature = md5(baseString);
+    
+    url += `&SignatureValue=${signature}`;
+    // ------------------------------------------------------
+
+    return url;
+}
+
+// Показ попапа об успешной оплате
+function showPaymentSuccessPopup(type, hikeDate) {
+    let message = '';
+    if (type === 'ticket') {
+        message = 'Билет оплачен! Вы записаны на хайк.';
+    } else if (type === 'season_card') {
+        message = 'Сезонная карта активирована! Теперь все хайки для вас бесплатны.';
+    } else if (type === 'permanent_card') {
+        message = 'Бессрочная карта активирована! Добро пожаловать в клуб.';
+    }
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    overlay.id = 'guestBookingPopup';
     overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 500px; padding: 20px;">
-            <button class="modal-close" id="closePopup" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; backdrop-filter: blur(4px);">&times;</button>
-            <div class="modal-title">регистрация на хайк</div>
-            <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
-            
-            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
-                
-                <div id="cardAccordionPopup" style="width: 100%;">
-                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">оформить карту 💳</button>
-                    <div id="cardOptions" style="display: none; margin-top: 12px;">
-                        <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
-                            <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
-                            <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
-                        </div>
-                        <!-- Пояснения -->
-                        <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
-                            <div style="flex: 1;">до конца 2026</div>
-                            <div style="flex: 1;">все сезоны</div>
-                        </div>
-                        <!-- Цены -->
-                        <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
-                            <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
-                            <div style="flex: 1;">${config.permanentCardPrice} ₽</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-title">Успешно!</div>
+            <div class="modal-text">${message}</div>
+            <button class="btn btn-yellow" id="closeSuccessPopup">ОК</button>
         </div>
     `;
     document.body.appendChild(overlay);
-
-    // Закрытие
-    document.getElementById('closePopup').addEventListener('click', () => {
-        haptic();
+    document.getElementById('closeSuccessPopup').addEventListener('click', () => {
         overlay.remove();
-    });
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-
-    // Вспомогательная функция для регистрации и открытия ссылки
-    const handlePurchase = (purchaseType, link) => {
-        console.log('handlePurchase', purchaseType, link);
-        addParticipant(hikeDate)
-            .then(() => setUserRegistrationStatus(hikeDate, true))
-            .then(() => {
-                const hikeIndex = hikesList.findIndex(h => h.date === hikeDate);
-                if (hikeIndex !== -1) {
-                    hikeBookingStatus[hikeIndex] = true;
-                }
-                if (userCard.status !== 'active') {
-                    saveStatusToLocalStorage();
-                }
-                updateFloatingSheetButtons();
-                renderUserBookings();
-                const calendarContainer = document.getElementById('calendarContainer');
-                if (calendarContainer) renderCalendar(calendarContainer);
-                
-                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
-                openLink(link, `purchase_${purchaseType}`, isGuest);
-                overlay.remove();
-            })
-            .catch(error => {
-                console.error('Error during registration:', error);
-                alert('Ошибка при регистрации. Попробуйте ещё раз.');
-            });
-    };
-
-    document.getElementById('buyTicketBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        handlePurchase('ticket', config.ticketLink);
-    });
-
-    const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
-    const cardOptions = document.getElementById('cardOptions');
-    showCardOptionsBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        if (cardOptions.style.display === 'none' || cardOptions.style.display === '') {
-            cardOptions.style.display = 'block';
-        } else {
-            cardOptions.style.display = 'none';
-        }
-    });
-
-    document.getElementById('buySeasonCardBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        handlePurchase('season_card', config.seasonCardLink);
-    });
-
-    document.getElementById('buyPermanentCardBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        handlePurchase('permanent_card', config.permanentCardLink);
     });
 }
 
@@ -863,6 +979,7 @@ async function loadData() {
         log('visit', userCard.status !== 'active');
         renderHome();
 
+        // === ПРОВЕРКА ПАРАМЕТРОВ ВОЗВРАТА ===
         const urlParams = new URLSearchParams(window.location.search);
         const paymentSuccess = urlParams.get('payment_success');
         const invId = urlParams.get('InvId');
@@ -873,7 +990,8 @@ async function loadData() {
             const snapshot = await orderRef.once('value');
             const order = snapshot.val();
             if (order && order.status === 'paid') {
-                console.log('Payment success for order', order);
+                showPaymentSuccessPopup(order.type, order.hikeDate);
+
                 if (order.type === 'ticket' && order.hikeDate) {
                     const hikeIndex = hikesList.findIndex(h => h.date === order.hikeDate);
                     if (hikeIndex !== -1) {
@@ -886,11 +1004,13 @@ async function loadData() {
                         if (calendarContainer) renderCalendar(calendarContainer);
                     }
                 }
+                // Очищаем параметры из URL
                 const newUrl = window.location.pathname + (hikeDate ? `?hike=${hikeDate}` : '');
                 window.history.replaceState({}, '', newUrl);
             }
         }
 
+        // Обработка start_param (если есть)
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
         const effectiveStartParam = startParam || urlStartParam;
@@ -2615,7 +2735,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (исправленная версия) -----
+// ----- Главная для гостей (исправленный аккордеон с правильными отступами) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2632,8 +2752,8 @@ function renderGuestHome() {
                     оформить карту
                 </button>
                 <div class="dropdown-menu">
-                    <!-- Кнопка "узнать о привилегиях" на всю ширину (теперь сверху) -->
-                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px;">узнать о привилегиях 💳</a>
+                    <!-- Кнопка "узнать о привилегиях" на всю ширину (с компенсацией отступов) -->
+                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px; width: calc(100% + 32px); margin-left: -16px; margin-right: -16px; padding: 16px; box-sizing: border-box; text-align: center; display: block;">узнать о привилегиях 💳</a>
                     
                     <!-- Две кнопки карт в ряд -->
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
