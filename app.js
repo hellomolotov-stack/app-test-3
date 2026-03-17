@@ -834,32 +834,61 @@ async function createOrder(invId, orderData) {
 }
 
 // Формирование ссылки на Robokassa с подписью
+// Формирование ссылки на Robokassa (с возможностью отключения подписи)
 function getRobokassaLink(invId, amount, description, extraParams = {}) {
     const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
-    const isTest = 1; // 1 – тестовый, 0 – боевой. В боевом уберите параметр или поставьте 0.
+    const isTest = 1; // 1 – тестовый, 0 – боевой
 
-    // Формируем SuccessUrl2 – ссылка на ваше приложение с параметрами
-    // Предполагаем, что приложение доступно по этому URL (замените на свой)
-  const baseUrl = 'https://t.me/yaltahiking_bot'; // только адрес бота, без параметров
-let successUrl2 = `${baseUrl}?startapp=payment_${invId}&payment_success=1&InvId=${invId}`;
-if (extraParams.hikeDate) {
-    successUrl2 += `&hike=${encodeURIComponent(extraParams.hikeDate)}`;
-}
-if (extraParams.type) {
-    successUrl2 += `&type=${encodeURIComponent(extraParams.type)}`;
-}
+    // Убедитесь, что invId – целое число (без символов)
+    invId = parseInt(invId) || Date.now();
 
-const failUrl2 = `${baseUrl}?startapp=payment_${invId}&payment_fail=1`;
+    // Базовый URL для возврата (адрес вашего бота или сайта)
+    const baseUrl = 'https://t.me/yaltahiking_bot'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
 
-    let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}&OutSum=${amount}&InvId=${invId}&Desc=${encodeURIComponent(description)}&IsTest=${isTest}`;
-    url += `&SuccessUrl2=${encodeURIComponent(successUrl2)}`;
-    url += `&FailUrl2=${encodeURIComponent(failUrl2)}`;
+    // Формируем SuccessUrl2 – все параметры помещаем в startapp
+    const startappParams = new URLSearchParams({
+        payment_success: '1',
+        InvId: invId,
+        ...extraParams
+    });
+    const successUrl2 = `${baseUrl}?startapp=${encodeURIComponent(startappParams.toString())}`;
 
-    // Добавляем пользовательские параметры (Shp_)
+    const failUrl2 = `${baseUrl}?startapp=payment_fail`;
+
+    // Основной URL Robokassa
+    let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}` +
+              `&OutSum=${amount.toFixed(2)}&InvId=${invId}&Desc=${encodeURIComponent(description)}` +
+              `&IsTest=${isTest}&SuccessUrl2=${encodeURIComponent(successUrl2)}` +
+              `&FailUrl2=${encodeURIComponent(failUrl2)}`;
+
+    // Добавляем Shp-параметры (если нужны)
     for (let [key, value] of Object.entries(extraParams)) {
         url += `&Shp_${key}=${encodeURIComponent(value)}`;
     }
 
+    // === РЕЗЕРВНЫЙ ПЛАН: временно отключаем подпись ===
+    const USE_SIGNATURE = false; // установите true, когда вернёте подпись
+
+    if (USE_SIGNATURE) {
+        // Пароль #1 (тестовый) – скопируйте из настроек Robokassa
+        const password1 = 'nU519GVUsYsheG8UyGb1'; // ЗАМЕНИТЕ НА ПРАВИЛЬНЫЙ ПАРОЛЬ
+
+        // Сортировка Shp-параметров для подписи
+        const shpKeys = Object.keys(extraParams).sort();
+        const shpString = shpKeys.map(k => `Shp_${k}=${extraParams[k]}`).join(':');
+
+        // Формируем строку для подписи: MrchLogin:OutSum:InvId:Shp_...:Password1
+        const baseString = `${merchantLogin}:${amount.toFixed(2)}:${invId}` +
+                           (shpString ? ':' + shpString : '') + ':' + password1;
+        const signature = md5(baseString);
+        url += `&SignatureValue=${signature}`;
+    } else {
+        console.log('Подпись отключена (резервный план). Используйте для теста.');
+    }
+
+    console.log('Robokassa URL:', url); // для отладки
+    return url;
+}
     // --- Расчёт подписи (обязательно для боевого режима) ---
     // Параметры должны быть отсортированы по алфавиту!
     const shpKeys = Object.keys(extraParams).sort();
