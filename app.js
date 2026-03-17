@@ -667,7 +667,7 @@ function scrollToCalendar() {
 
 // ========== ФУНКЦИИ ДЛЯ РОБОКАССЫ ==========
 
-// Реализация MD5 для браузера (взято из открытых источников)
+// Реализация MD5 для браузера
 function md5(str) {
     function rotateLeft(lValue, iShiftBits) {
         return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
@@ -837,7 +837,7 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
     const isTest = 1; // 1 – тестовый, 0 – боевой. В боевом уберите параметр или поставьте 0.
 
     // Формируем SuccessUrl2 (адрес страницы хайка)
-    let successUrl2 = `https://t.me/yaltahiking_bot?startapp`; // ЗАМЕНИТЕ НА ВАШ ДОМЕН (например, https://app-test-3-delta.vercel.app/)
+    let successUrl2 = `https://t.me/yaltahiking_bot?startapp; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
     if (extraParams.hikeDate) {
         successUrl2 += `?hike=${extraParams.hikeDate}`;
     }
@@ -860,7 +860,7 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
     const shpParts = shpKeys.map(k => `Shp_${k}=${extraParams[k]}`);
     const shpString = shpParts.length ? ':' + shpParts.join(':') : '';
     
-    const password1 = 'ваш_пароль_1'; // ЗАМЕНИТЕ НА ПАРОЛЬ #1 (тестовый или боевой)
+    const password1 = 'nU519GVUsYsheG8UyGb1'; // ЗАМЕНИТЕ НА ПАРОЛЬ #1 (тестовый или боевой)
     const baseString = `${merchantLogin}:${amount}:${invId}${shpString}:${password1}`;
     const signature = md5(baseString);
     
@@ -874,18 +874,18 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
 function showPaymentSuccessPopup(type, hikeDate) {
     let message = '';
     if (type === 'ticket') {
-        message = 'Билет оплачен! Вы записаны на хайк.';
+        message = 'билет оплачен! ты записан на хайк';
     } else if (type === 'season_card') {
-        message = 'Сезонная карта активирована! Теперь все хайки для вас бесплатны.';
+        message = 'сезонная карта активирована! теперь все хайки для тебя бесплатны';
     } else if (type === 'permanent_card') {
-        message = 'Бессрочная карта активирована! Добро пожаловать в клуб.';
+        message = 'бессрочная карта активирована! добро пожаловать в клуб';
     }
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-title">Успешно!</div>
+            <div class="modal-title">успешно!</div>
             <div class="modal-text">${message}</div>
             <button class="btn btn-yellow" id="closeSuccessPopup">ОК</button>
         </div>
@@ -893,6 +893,119 @@ function showPaymentSuccessPopup(type, hikeDate) {
     document.body.appendChild(overlay);
     document.getElementById('closeSuccessPopup').addEventListener('click', () => {
         overlay.remove();
+    });
+}
+
+// ========== ФУНКЦИЯ ПОКАЗА ПОПАПА ДЛЯ ГОСТЕЙ ==========
+function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
+    haptic();
+    const config = popupConfig;
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'guestBookingPopup';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; padding: 20px;">
+            <button class="modal-close" id="closePopup" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; backdrop-filter: blur(4px);">&times;</button>
+            <div class="modal-title">регистрация на хайк</div>
+            <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
+                
+                <div id="cardAccordionPopup" style="width: 100%;">
+                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">оформить карту 💳</button>
+                    <div id="cardOptions" style="display: none; margin-top: 12px;">
+                        <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
+                            <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
+                            <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
+                        </div>
+                        <!-- Пояснения -->
+                        <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
+                            <div style="flex: 1;">до конца 2026</div>
+                            <div style="flex: 1;">все сезоны</div>
+                        </div>
+                        <!-- Цены -->
+                        <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
+                            <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
+                            <div style="flex: 1;">${config.permanentCardPrice} ₽</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('closePopup').addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+
+    const handlePurchase = (purchaseType, link) => {
+        console.log('handlePurchase', purchaseType, link);
+        addParticipant(hikeDate)
+            .then(() => setUserRegistrationStatus(hikeDate, true))
+            .then(() => {
+                const hikeIndex = hikesList.findIndex(h => h.date === hikeDate);
+                if (hikeIndex !== -1) {
+                    hikeBookingStatus[hikeIndex] = true;
+                }
+                if (userCard.status !== 'active') {
+                    saveStatusToLocalStorage();
+                }
+                updateFloatingSheetButtons();
+                renderUserBookings();
+                const calendarContainer = document.getElementById('calendarContainer');
+                if (calendarContainer) renderCalendar(calendarContainer);
+                
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
+                openLink(link, `purchase_${purchaseType}`, isGuest);
+                overlay.remove();
+            })
+            .catch(error => {
+                console.error('Error during registration:', error);
+                alert('ошибка при регистрации. попробуйте ещё раз.');
+            });
+    };
+
+    document.getElementById('buyTicketBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        handlePurchase('ticket', config.ticketLink);
+    });
+
+    const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
+    const cardOptions = document.getElementById('cardOptions');
+    showCardOptionsBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        if (cardOptions.style.display === 'none' || cardOptions.style.display === '') {
+            cardOptions.style.display = 'block';
+        } else {
+            cardOptions.style.display = 'none';
+        }
+    });
+
+    document.getElementById('buySeasonCardBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        handlePurchase('season_card', config.seasonCardLink);
+    });
+
+    document.getElementById('buyPermanentCardBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        handlePurchase('permanent_card', config.permanentCardLink);
     });
 }
 
@@ -2735,7 +2848,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (исправленный аккордеон с правильными отступами) -----
+// ----- Главная для гостей (исправленный аккордеон) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2752,7 +2865,7 @@ function renderGuestHome() {
                     оформить карту
                 </button>
                 <div class="dropdown-menu">
-                    <!-- Кнопка "узнать о привилегиях" на всю ширину (с компенсацией отступов) -->
+                    <!-- Кнопка "узнать о привилегиях" с правильными отступами -->
                     <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px; width: calc(100% + 32px); margin-left: -16px; margin-right: -16px; padding: 16px; box-sizing: border-box; text-align: center; display: block;">узнать о привилегиях 💳</a>
                     
                     <!-- Две кнопки карт в ряд -->
