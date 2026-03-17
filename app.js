@@ -35,9 +35,11 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
-const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
-const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
-const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
+
+// Эти ссылки больше не используются напрямую, заменены динамическими через getRobokassaLink
+// const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
+// const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
+// const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -65,11 +67,11 @@ let registrationsPopup = {};
 let popupConfig = {
     text: 'чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента',
     ticketPrice: 1500,
-    ticketLink: ROBOKASSA_LINK,
+    ticketLink: '', // не используется, заменено динамической ссылкой
     seasonCardPrice: 5500,
-    seasonCardLink: SEASON_CARD_LINK,
+    seasonCardLink: '',
     permanentCardPrice: 7500,
-    permanentCardLink: PERMANENT_CARD_LINK
+    permanentCardLink: ''
 };
 
 // Firebase инициализация
@@ -836,14 +838,18 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
     const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
     const isTest = 1; // 1 – тестовый, 0 – боевой. В боевом уберите параметр или поставьте 0.
 
-    // Формируем SuccessUrl2 (адрес страницы хайка)
-    let successUrl2 = `https://t.me/yaltahiking_bot?startapp; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
+    // Формируем SuccessUrl2 – ссылка на ваше приложение с параметрами
+    // Предполагаем, что приложение доступно по этому URL (замените на свой)
+    const baseUrl = 'https://yourdomain.com'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
+    let successUrl2 = `${baseUrl}?payment_success=1&InvId=${invId}`;
     if (extraParams.hikeDate) {
-        successUrl2 += `?hike=${extraParams.hikeDate}`;
+        successUrl2 += `&hike=${encodeURIComponent(extraParams.hikeDate)}`;
     }
-    successUrl2 += `&payment_success=1&InvId=${invId}`;
+    if (extraParams.type) {
+        successUrl2 += `&type=${encodeURIComponent(extraParams.type)}`;
+    }
 
-    const failUrl2 = `https://ваш-домен/payment-fail`; // можно создать простую страницу
+    const failUrl2 = `${baseUrl}?payment_fail=1`;
 
     let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}&OutSum=${amount}&InvId=${invId}&Desc=${encodeURIComponent(description)}&IsTest=${isTest}`;
     url += `&SuccessUrl2=${encodeURIComponent(successUrl2)}`;
@@ -868,6 +874,46 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
     // ------------------------------------------------------
 
     return url;
+}
+
+// Новая функция: создание заказа и переход на оплату
+async function purchaseWithRobokassa(hikeDate, type, amount, description, isGuest) {
+    if (!userId) return;
+    
+    const invId = `${userId}_${Date.now()}`;
+    
+    // Создаём заказ в Firebase со статусом pending
+    const orderData = {
+        userId: userId,
+        hikeDate: type === 'ticket' ? hikeDate : '',
+        type: type,
+        amount: amount,
+        status: 'pending',
+        createdAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    
+    try {
+        await createOrder(invId, orderData);
+        
+        // Дополнительные параметры для Robokassa (Shp_)
+        const extraParams = {
+            hikeDate: hikeDate,
+            type: type,
+            userId: userId
+        };
+        
+        // Формируем ссылку
+        const link = getRobokassaLink(invId, amount, description, extraParams);
+        
+        // Открываем ссылку
+        openLink(link, `purchase_${type}`, isGuest);
+        
+        return invId;
+    } catch (error) {
+        console.error('Ошибка при создании заказа:', error);
+        alert('Не удалось создать заказ. Попробуйте позже.');
+        throw error;
+    }
 }
 
 // Показ попапа об успешной оплате
@@ -948,38 +994,25 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
         }
     });
 
-    const handlePurchase = (purchaseType, link) => {
-        console.log('handlePurchase', purchaseType, link);
-        addParticipant(hikeDate)
-            .then(() => setUserRegistrationStatus(hikeDate, true))
-            .then(() => {
-                const hikeIndex = hikesList.findIndex(h => h.date === hikeDate);
-                if (hikeIndex !== -1) {
-                    hikeBookingStatus[hikeIndex] = true;
-                }
-                if (userCard.status !== 'active') {
-                    saveStatusToLocalStorage();
-                }
-                updateFloatingSheetButtons();
-                renderUserBookings();
-                const calendarContainer = document.getElementById('calendarContainer');
-                if (calendarContainer) renderCalendar(calendarContainer);
-                
-                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
-                openLink(link, `purchase_${purchaseType}`, isGuest);
-                overlay.remove();
-            })
-            .catch(error => {
-                console.error('Error during registration:', error);
-                alert('ошибка при регистрации. попробуйте ещё раз.');
-            });
-    };
-
-    document.getElementById('buyTicketBtn').addEventListener('click', (e) => {
+    // Обработчики с использованием purchaseWithRobokassa
+    document.getElementById('buyTicketBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        handlePurchase('ticket', config.ticketLink);
+        
+        try {
+            await purchaseWithRobokassa(
+                hikeDate,
+                'ticket',
+                config.ticketPrice,
+                `Билет на хайк ${hikeTitle}`,
+                true
+            );
+            overlay.remove();
+        } catch (error) {
+            console.error(error);
+            e.target.dataset.processing = 'false';
+        }
     });
 
     const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
@@ -994,18 +1027,44 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
         }
     });
 
-    document.getElementById('buySeasonCardBtn').addEventListener('click', (e) => {
+    document.getElementById('buySeasonCardBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        handlePurchase('season_card', config.seasonCardLink);
+        
+        try {
+            await purchaseWithRobokassa(
+                hikeDate,
+                'season_card',
+                config.seasonCardPrice,
+                'Сезонная карта интеллигента',
+                true
+            );
+            overlay.remove();
+        } catch (error) {
+            console.error(error);
+            e.target.dataset.processing = 'false';
+        }
     });
 
-    document.getElementById('buyPermanentCardBtn').addEventListener('click', (e) => {
+    document.getElementById('buyPermanentCardBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        handlePurchase('permanent_card', config.permanentCardLink);
+        
+        try {
+            await purchaseWithRobokassa(
+                hikeDate,
+                'permanent_card',
+                config.permanentCardPrice,
+                'Бессрочная карта интеллигента',
+                true
+            );
+            overlay.remove();
+        } catch (error) {
+            console.error(error);
+            e.target.dataset.processing = 'false';
+        }
     });
 }
 
@@ -2765,12 +2824,25 @@ function renderGift(isGuest = false) {
                     купить в подарок
                 </button>
                 <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
+                    <a href="#" class="btn btn-outline" id="giftSeasonBtn">сезонная</a>
+                    <a href="#" class="btn btn-outline" id="giftPermanentBtn">бессрочная</a>
                 </div>
             </div>
         </div>
     `;
+
+    document.getElementById('giftSeasonBtn').addEventListener('click', async (e) => {
+        e.preventDefault();
+        haptic();
+        // Для подарка создаём заказ с типом gift_season? Можно позже реализовать отдельно
+        openLink('https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug', 'gift_season_click', isGuest);
+    });
+
+    document.getElementById('giftPermanentBtn').addEventListener('click', async (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A', 'gift_permanent_click', isGuest);
+    });
 
     setupAccordion('giftAccordion', isGuest);
 }
@@ -2870,8 +2942,8 @@ function renderGuestHome() {
                     
                     <!-- Две кнопки карт в ряд -->
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
-                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
-                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
+                        <a href="#" class="btn btn-outline" id="guestSeasonCardBtn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
+                        <a href="#" class="btn btn-outline" id="guestPermanentCardBtn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
                     </div>
                     <!-- Пояснения (две колонки) -->
                     <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
@@ -2943,6 +3015,19 @@ function renderGuestHome() {
         haptic();
         renderGuestPrivileges();
         log('guest_privileges_click', true);
+    });
+
+    document.getElementById('guestSeasonCardBtn').addEventListener('click', async (e) => {
+        e.preventDefault();
+        haptic();
+        // Переход на оплату сезонной карты (без привязки к конкретному хайку)
+        openLink('https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug', 'guest_season_card_click', true);
+    });
+
+    document.getElementById('guestPermanentCardBtn').addEventListener('click', async (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A', 'guest_permanent_card_click', true);
     });
 
     renderUserBookings();
@@ -3078,7 +3163,7 @@ function buyCard() {
     haptic();
     if (!userId) return;
     log('buy_card_click', true);
-    openLink(PERMANENT_CARD_LINK, null, true);
+    openLink('https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A', null, true);
 }
 
 window.addEventListener('load', loadData);
