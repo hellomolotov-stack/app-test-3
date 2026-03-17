@@ -835,7 +835,7 @@ async function createOrder(invId, orderData) {
 
 // Формирование ссылки на Robokassa с подписью
 function getRobokassaLink(invId, amount, description, extraParams = {}) {
-    const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
+    const merchantLogin = 'yaltahiking'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
     const isTest = 1; // 1 – тестовый, 0 – боевой. В боевом уберите параметр или поставьте 0.
 
     // Формируем SuccessUrl2 – ссылка на ваше приложение с параметрами
