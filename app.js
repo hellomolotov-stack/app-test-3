@@ -2615,7 +2615,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей -----
+// ----- Главная для гостей (исправленная версия) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2633,7 +2633,7 @@ function renderGuestHome() {
                 </button>
                 <div class="dropdown-menu">
                     <!-- Кнопка "узнать о привилегиях" на всю ширину (теперь сверху) -->
-                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px; width: 100%; padding: 16px; box-sizing: border-box; text-align: center; display: block;">узнать о привилегиях 💳</a>
+                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px;">узнать о привилегиях 💳</a>
                     
                     <!-- Две кнопки карт в ряд -->
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
