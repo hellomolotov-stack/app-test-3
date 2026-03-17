@@ -840,16 +840,16 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
 
     // Формируем SuccessUrl2 – ссылка на ваше приложение с параметрами
     // Предполагаем, что приложение доступно по этому URL (замените на свой)
-    const baseUrl = 'https://t.me/yaltahiking_bot?startapp=payment_${invId}'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
-    let successUrl2 = `${baseUrl}?payment_success=1&InvId=${invId}`;
-    if (extraParams.hikeDate) {
-        successUrl2 += `&hike=${encodeURIComponent(extraParams.hikeDate)}`;
-    }
-    if (extraParams.type) {
-        successUrl2 += `&type=${encodeURIComponent(extraParams.type)}`;
-    }
+  const baseUrl = 'https://t.me/yaltahiking_bot'; // только адрес бота, без параметров
+let successUrl2 = `${baseUrl}?startapp=payment_${invId}&payment_success=1&InvId=${invId}`;
+if (extraParams.hikeDate) {
+    successUrl2 += `&hike=${encodeURIComponent(extraParams.hikeDate)}`;
+}
+if (extraParams.type) {
+    successUrl2 += `&type=${encodeURIComponent(extraParams.type)}`;
+}
 
-    const failUrl2 = `${baseUrl}?payment_fail=1`;
+const failUrl2 = `${baseUrl}?startapp=payment_${invId}&payment_fail=1`;
 
     let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}&OutSum=${amount}&InvId=${invId}&Desc=${encodeURIComponent(description)}&IsTest=${isTest}`;
     url += `&SuccessUrl2=${encodeURIComponent(successUrl2)}`;
