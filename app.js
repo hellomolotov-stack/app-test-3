@@ -36,11 +36,6 @@ const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJ
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 
-// Эти ссылки больше не используются напрямую, заменены динамическими через getRobokassaLink
-// const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
-// const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
-// const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
-
 const CACHE_TTL = 600000; // 10 минут
 
 const user = tg.initDataUnsafe?.user;
@@ -67,7 +62,7 @@ let registrationsPopup = {};
 let popupConfig = {
     text: 'чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента',
     ticketPrice: 1500,
-    ticketLink: '', // не используется, заменено динамической ссылкой
+    ticketLink: '',
     seasonCardPrice: 5500,
     seasonCardLink: '',
     permanentCardPrice: 7500,
@@ -473,7 +468,7 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType = '
             hike_title: hikeTitle,
             status: status,
             has_card: hasCard,
-            purchase_type: purchaseType // 'ticket', 'season_card', 'permanent_card'
+            purchase_type: purchaseType
         });
         fetch(REGISTRATION_API_URL, {
             method: 'POST',
@@ -833,8 +828,7 @@ async function createOrder(invId, orderData) {
     });
 }
 
-// Формирование ссылки на Robokassa с подписью
-// Формирование ссылки на Robokassa (с возможностью отключения подписи)
+// Формирование ссылки на Robokassa с подписью (резервный план: подпись отключена)
 function getRobokassaLink(invId, amount, description, extraParams = {}) {
     const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
     const isTest = 1; // 1 – тестовый, 0 – боевой
@@ -842,7 +836,7 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
     // Убедитесь, что invId – целое число (без символов)
     invId = parseInt(invId) || Date.now();
 
-    // Базовый URL для возврата (адрес вашего бота или сайта)
+    // Базовый URL для возврата (адрес вашего бота)
     const baseUrl = 'https://t.me/yaltahiking_bot'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
 
     // Формируем SuccessUrl2 – все параметры помещаем в startapp
@@ -889,30 +883,14 @@ function getRobokassaLink(invId, amount, description, extraParams = {}) {
     console.log('Robokassa URL:', url); // для отладки
     return url;
 }
-    // --- Расчёт подписи (обязательно для боевого режима) ---
-    // Параметры должны быть отсортированы по алфавиту!
-    const shpKeys = Object.keys(extraParams).sort();
-    const shpParts = shpKeys.map(k => `Shp_${k}=${extraParams[k]}`);
-    const shpString = shpParts.length ? ':' + shpParts.join(':') : '';
-    
-    const password1 = 'ODN9PY2r9vUxC5kjUlc7'; // ЗАМЕНИТЕ НА ПАРОЛЬ #1 (тестовый или боевой)
-    const baseString = `${merchantLogin}:${amount}:${invId}${shpString}:${password1}`;
-    const signature = md5(baseString);
-    
-    url += `&SignatureValue=${signature}`;
-    // ------------------------------------------------------
-
-    return url;
-}
 
 // Новая функция: создание заказа и переход на оплату
 async function purchaseWithRobokassa(hikeDate, type, amount, description, isGuest) {
     if (!userId) return;
     
-    // InvId должен быть целым числом
-    const invId = Date.now(); // или Date.now() + Math.floor(Math.random() * 1000)
+    const invId = Date.now(); // целое число
     
-    // Создаём заказ в Firebase
+    // Создаём заказ в Firebase со статусом pending
     const orderData = {
         userId: userId,
         hikeDate: type === 'ticket' ? hikeDate : '',
@@ -923,15 +901,19 @@ async function purchaseWithRobokassa(hikeDate, type, amount, description, isGues
     };
     
     try {
-        await createOrder(invId.toString(), orderData); // в Firebase ключ может быть строкой
+        await createOrder(invId.toString(), orderData);
         
+        // Дополнительные параметры для Robokassa (Shp_)
         const extraParams = {
             hikeDate: hikeDate,
             type: type,
             userId: userId
         };
         
+        // Формируем ссылку
         const link = getRobokassaLink(invId, amount, description, extraParams);
+        
+        // Открываем ссылку
         openLink(link, `purchase_${type}`, isGuest);
         
         return invId;
