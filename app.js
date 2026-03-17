@@ -880,9 +880,10 @@ const failUrl2 = `${baseUrl}?startapp=payment_${invId}&payment_fail=1`;
 async function purchaseWithRobokassa(hikeDate, type, amount, description, isGuest) {
     if (!userId) return;
     
-    const invId = `${userId}_${Date.now()}`;
+    // InvId должен быть целым числом
+    const invId = Date.now(); // или Date.now() + Math.floor(Math.random() * 1000)
     
-    // Создаём заказ в Firebase со статусом pending
+    // Создаём заказ в Firebase
     const orderData = {
         userId: userId,
         hikeDate: type === 'ticket' ? hikeDate : '',
@@ -893,19 +894,15 @@ async function purchaseWithRobokassa(hikeDate, type, amount, description, isGues
     };
     
     try {
-        await createOrder(invId, orderData);
+        await createOrder(invId.toString(), orderData); // в Firebase ключ может быть строкой
         
-        // Дополнительные параметры для Robokassa (Shp_)
         const extraParams = {
             hikeDate: hikeDate,
             type: type,
             userId: userId
         };
         
-        // Формируем ссылку
         const link = getRobokassaLink(invId, amount, description, extraParams);
-        
-        // Открываем ссылку
         openLink(link, `purchase_${type}`, isGuest);
         
         return invId;
