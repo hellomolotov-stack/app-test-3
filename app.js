@@ -830,23 +830,19 @@ async function createOrder(invId, orderData) {
 
 // Упрощённая функция формирования ссылки на Robokassa (без Shp-параметров)
 function getRobokassaLink(invId, amount, description) {
-    const merchantLogin = 'yaltahikingclub'; // ваш логин
-    const isTest = 1; // 1 – тестовый
-  
-    invId = parseInt(invId) || Date.now();
-  
-    const baseUrl = 'https://t.me/yaltahiking_bot'; // без ? и без параметров
-    const successUrl2 = `${baseUrl}?startapp=payment_${invId}`;
-    const failUrl2 = `${baseUrl}?startapp=payment_fail`;
-  
-    let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}` +
-              `&OutSum=${amount.toFixed(2)}&InvId=${invId}&Desc=${encodeURIComponent(description)}` +
-              `&IsTest=${isTest}&SuccessUrl2=${encodeURIComponent(successUrl2)}` +
-              `&FailUrl2=${encodeURIComponent(failUrl2)}`;
-  
-    // ПОДПИСЬ ПОЛНОСТЬЮ УДАЛЕНА — параметра SignatureValue нет
-  
-    console.log('Robokassa URL (без подписи):', url);
+    const merchantLogin = 'yaltahikingclub';  // ваш логин
+    const isTest = 1;
+    
+    // Используем ТЕСТОВЫЙ домен
+    const baseUrl = 'http://test.robokassa.ru';
+    
+    // Для теста убираем все лишнее
+    let url = `${baseUrl}/Index.aspx?MrchLogin=${merchantLogin}` +
+              `&OutSum=${amount.toFixed(2)}&InvId=${invId}` +
+              `&Description=${encodeURIComponent(description)}` +
+              `&IsTest=${isTest}`;
+    
+    console.log('🔗 TEST URL (открой в браузере):', url);
     return url;
 }
 // Функция: создание заказа и переход на оплату
