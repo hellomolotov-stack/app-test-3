@@ -35,6 +35,9 @@ function hideBack() {
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
+const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
+const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
+const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
 
 const CACHE_TTL = 600000; // 10 минут
 
@@ -62,11 +65,11 @@ let registrationsPopup = {};
 let popupConfig = {
     text: 'чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента',
     ticketPrice: 1500,
-    ticketLink: '',
+    ticketLink: ROBOKASSA_LINK,
     seasonCardPrice: 5500,
-    seasonCardLink: '',
+    seasonCardLink: SEASON_CARD_LINK,
     permanentCardPrice: 7500,
-    permanentCardLink: ''
+    permanentCardLink: PERMANENT_CARD_LINK
 };
 
 // Firebase инициализация
@@ -468,7 +471,7 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType = '
             hike_title: hikeTitle,
             status: status,
             has_card: hasCard,
-            purchase_type: purchaseType
+            purchase_type: purchaseType // 'ticket', 'season_card', 'permanent_card'
         });
         fetch(REGISTRATION_API_URL, {
             method: 'POST',
@@ -662,243 +665,7 @@ function scrollToCalendar() {
     }, 100);
 }
 
-// ========== ФУНКЦИИ ДЛЯ РОБОКАССЫ ==========
-
-// Реализация MD5 для браузера (оставлена, но не используется)
-function md5(str) {
-    function rotateLeft(lValue, iShiftBits) {
-        return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
-    }
-    function addUnsigned(lX, lY) {
-        var lX4, lY4, lX8, lY8, lResult;
-        lX8 = (lX & 0x80000000);
-        lY8 = (lY & 0x80000000);
-        lX4 = (lX & 0x40000000);
-        lY4 = (lY & 0x40000000);
-        lResult = (lX & 0x3FFFFFFF) + (lY & 0x3FFFFFFF);
-        if (lX4 & lY4) return (lResult ^ 0x80000000 ^ lX8 ^ lY8);
-        if (lX4 | lY4) {
-            if (lResult & 0x40000000) return (lResult ^ 0xC0000000 ^ lX8 ^ lY8);
-            else return (lResult ^ 0x40000000 ^ lX8 ^ lY8);
-        } else return (lResult ^ lX8 ^ lY8);
-    }
-    function F(x, y, z) { return (x & y) | ((~x) & z); }
-    function G(x, y, z) { return (x & z) | (y & (~z)); }
-    function H(x, y, z) { return (x ^ y ^ z); }
-    function I(x, y, z) { return (y ^ (x | (~z))); }
-    function FF(a, b, c, d, x, s, ac) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function GG(a, b, c, d, x, s, ac) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(G(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function HH(a, b, c, d, x, s, ac) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(H(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function II(a, b, c, d, x, s, ac) {
-        a = addUnsigned(a, addUnsigned(addUnsigned(I(b, c, d), x), ac));
-        return addUnsigned(rotateLeft(a, s), b);
-    }
-    function convertToWordArray(str) {
-        var lWordCount;
-        var lMessageLength = str.length;
-        var lNumberOfWords_temp1 = lMessageLength + 8;
-        var lNumberOfWords_temp2 = (lNumberOfWords_temp1 - (lNumberOfWords_temp1 % 64)) / 64;
-        var lNumberOfWords = (lNumberOfWords_temp2 + 1) * 16;
-        var lWordArray = Array(lNumberOfWords - 1);
-        var lBytePosition = 0;
-        var lByteCount = 0;
-        while (lByteCount < lMessageLength) {
-            lWordCount = (lByteCount - (lByteCount % 4)) / 4;
-            lBytePosition = (lByteCount % 4) * 8;
-            lWordArray[lWordCount] = (lWordArray[lWordCount] | (str.charCodeAt(lByteCount) << lBytePosition));
-            lByteCount++;
-        }
-        lWordCount = (lByteCount - (lByteCount % 4)) / 4;
-        lBytePosition = (lByteCount % 4) * 8;
-        lWordArray[lWordCount] = lWordArray[lWordCount] | (0x80 << lBytePosition);
-        lWordArray[lNumberOfWords - 2] = lMessageLength << 3;
-        lWordArray[lNumberOfWords - 1] = lMessageLength >>> 29;
-        return lWordArray;
-    }
-    function wordToHex(lValue) {
-        var WordToHexValue = "", WordToHexValue_temp = "", lByte, lCount;
-        for (lCount = 0; lCount <= 3; lCount++) {
-            lByte = (lValue >>> (lCount * 8)) & 255;
-            WordToHexValue_temp = "0" + lByte.toString(16);
-            WordToHexValue = WordToHexValue + WordToHexValue_temp.substr(WordToHexValue_temp.length - 2, 2);
-        }
-        return WordToHexValue;
-    }
-    var x = [];
-    var k, AA, BB, CC, DD, a, b, c, d;
-    var S11 = 7, S12 = 12, S13 = 17, S14 = 22;
-    var S21 = 5, S22 = 9, S23 = 14, S24 = 20;
-    var S31 = 4, S32 = 11, S33 = 16, S34 = 23;
-    var S41 = 6, S42 = 10, S43 = 15, S44 = 21;
-    str = unescape(encodeURIComponent(str));
-    x = convertToWordArray(str);
-    a = 0x67452301; b = 0xEFCDAB89; c = 0x98BADCFE; d = 0x10325476;
-    for (k = 0; k < x.length; k += 16) {
-        AA = a; BB = b; CC = c; DD = d;
-        a = FF(a, b, c, d, x[k + 0], S11, 0xD76AA478);
-        d = FF(d, a, b, c, x[k + 1], S12, 0xE8C7B756);
-        c = FF(c, d, a, b, x[k + 2], S13, 0x242070DB);
-        b = FF(b, c, d, a, x[k + 3], S14, 0xC1BDCEEE);
-        a = FF(a, b, c, d, x[k + 4], S11, 0xF57C0FAF);
-        d = FF(d, a, b, c, x[k + 5], S12, 0x4787C62A);
-        c = FF(c, d, a, b, x[k + 6], S13, 0xA8304613);
-        b = FF(b, c, d, a, x[k + 7], S14, 0xFD469501);
-        a = FF(a, b, c, d, x[k + 8], S11, 0x698098D8);
-        d = FF(d, a, b, c, x[k + 9], S12, 0x8B44F7AF);
-        c = FF(c, d, a, b, x[k + 10], S13, 0xFFFF5BB1);
-        b = FF(b, c, d, a, x[k + 11], S14, 0x895CD7BE);
-        a = FF(a, b, c, d, x[k + 12], S11, 0x6B901122);
-        d = FF(d, a, b, c, x[k + 13], S12, 0xFD987193);
-        c = FF(c, d, a, b, x[k + 14], S13, 0xA679438E);
-        b = FF(b, c, d, a, x[k + 15], S14, 0x49B40821);
-        a = GG(a, b, c, d, x[k + 1], S21, 0xF61E2562);
-        d = GG(d, a, b, c, x[k + 6], S22, 0xC040B340);
-        c = GG(c, d, a, b, x[k + 11], S23, 0x265E5A51);
-        b = GG(b, c, d, a, x[k + 0], S24, 0xE9B6C7AA);
-        a = GG(a, b, c, d, x[k + 5], S21, 0xD62F105D);
-        d = GG(d, a, b, c, x[k + 10], S22, 0x2441453);
-        c = GG(c, d, a, b, x[k + 15], S23, 0xD8A1E681);
-        b = GG(b, c, d, a, x[k + 4], S24, 0xE7D3FBC8);
-        a = GG(a, b, c, d, x[k + 9], S21, 0x21E1CDE6);
-        d = GG(d, a, b, c, x[k + 14], S22, 0xC33707D6);
-        c = GG(c, d, a, b, x[k + 3], S23, 0xF4D50D87);
-        b = GG(b, c, d, a, x[k + 8], S24, 0x455A14ED);
-        a = GG(a, b, c, d, x[k + 13], S21, 0xA9E3E905);
-        d = GG(d, a, b, c, x[k + 2], S22, 0xFCEFA3F8);
-        c = GG(c, d, a, b, x[k + 7], S23, 0x676F02D9);
-        b = GG(b, c, d, a, x[k + 12], S24, 0x8D2A4C8A);
-        a = HH(a, b, c, d, x[k + 5], S31, 0xFFFA3942);
-        d = HH(d, a, b, c, x[k + 8], S32, 0x8771F681);
-        c = HH(c, d, a, b, x[k + 11], S33, 0x6D9D6122);
-        b = HH(b, c, d, a, x[k + 14], S34, 0xFDE5380C);
-        a = HH(a, b, c, d, x[k + 1], S31, 0xA4BEEA44);
-        d = HH(d, a, b, c, x[k + 4], S32, 0x4BDECFA9);
-        c = HH(c, d, a, b, x[k + 7], S33, 0xF6BB4B60);
-        b = HH(b, c, d, a, x[k + 10], S34, 0xBEBFBC70);
-        a = HH(a, b, c, d, x[k + 13], S31, 0x289B7EC6);
-        d = HH(d, a, b, c, x[k + 0], S32, 0xEAA127FA);
-        c = HH(c, d, a, b, x[k + 3], S33, 0xD4EF3085);
-        b = HH(b, c, d, a, x[k + 6], S34, 0x4881D05);
-        a = HH(a, b, c, d, x[k + 9], S31, 0xD9D4D039);
-        d = HH(d, a, b, c, x[k + 12], S32, 0xE6DB99E5);
-        c = HH(c, d, a, b, x[k + 15], S33, 0x1FA27CF8);
-        b = HH(b, c, d, a, x[k + 2], S34, 0xC4AC5665);
-        a = II(a, b, c, d, x[k + 0], S41, 0xF4292244);
-        d = II(d, a, b, c, x[k + 7], S42, 0x432AFF97);
-        c = II(c, d, a, b, x[k + 14], S43, 0xAB9423A7);
-        b = II(b, c, d, a, x[k + 5], S44, 0xFC93A039);
-        a = II(a, b, c, d, x[k + 12], S41, 0x655B59C3);
-        d = II(d, a, b, c, x[k + 3], S42, 0x8F0CCC92);
-        c = II(c, d, a, b, x[k + 10], S43, 0xFFEFF47D);
-        b = II(b, c, d, a, x[k + 1], S44, 0x85845DD1);
-        a = II(a, b, c, d, x[k + 8], S41, 0x6FA87E4F);
-        d = II(d, a, b, c, x[k + 15], S42, 0xFE2CE6E0);
-        c = II(c, d, a, b, x[k + 6], S43, 0xA3014314);
-        b = II(b, c, d, a, x[k + 13], S44, 0x4E0811A1);
-        a = II(a, b, c, d, x[k + 4], S41, 0xF7537E82);
-        d = II(d, a, b, c, x[k + 11], S42, 0xBD3AF235);
-        c = II(c, d, a, b, x[k + 2], S43, 0x2AD7D2BB);
-        b = II(b, c, d, a, x[k + 9], S44, 0xEB86D391);
-        a = addUnsigned(a, AA);
-        b = addUnsigned(b, BB);
-        c = addUnsigned(c, CC);
-        d = addUnsigned(d, DD);
-    }
-    var temp = wordToHex(a) + wordToHex(b) + wordToHex(c) + wordToHex(d);
-    return temp.toLowerCase();
-}
-
-// Создание заказа в Firebase
-async function createOrder(invId, orderData) {
-    if (!database) throw new Error('No database');
-    const orderRef = database.ref(`orders/${invId}`);
-    await orderRef.set({
-        ...orderData,
-        status: 'pending',
-        createdAt: firebase.database.ServerValue.TIMESTAMP
-    });
-}
-
-// Упрощённая функция формирования ссылки на Robokassa (без Shp-параметров)
-function getRobokassaLink(invId, amount, description) {
-    const merchantLogin = 'yaltahikingclub';  // ваш логин
-    const isTest = 1;
-    
-    // Используем ТЕСТОВЫЙ домен
-    const baseUrl = 'http://test.robokassa.ru';
-    
-    // Для теста убираем все лишнее
-    let url = `${baseUrl}/Index.aspx?MrchLogin=${merchantLogin}` +
-              `&OutSum=${amount.toFixed(2)}&InvId=${invId}` +
-              `&Description=${encodeURIComponent(description)}` +
-              `&IsTest=${isTest}`;
-    
-    console.log('🔗 TEST URL (открой в браузере):', url);
-    return url;
-}
-// Функция: создание заказа и переход на оплату
-async function purchaseWithRobokassa(hikeDate, type, amount, description, isGuest) {
-    if (!userId) return;
-    
-    const invId = Date.now(); // целое число
-    
-    const orderData = {
-        userId: userId,
-        hikeDate: type === 'ticket' ? hikeDate : '',
-        type: type,
-        amount: amount,
-        status: 'pending',
-        createdAt: firebase.database.ServerValue.TIMESTAMP
-    };
-    
-    try {
-        await createOrder(invId.toString(), orderData);
-        const link = getRobokassaLink(invId, amount, description);
-        openLink(link, `purchase_${type}`, isGuest);
-        return invId;
-    } catch (error) {
-        console.error('Ошибка при создании заказа:', error);
-        alert('Не удалось создать заказ. Попробуйте позже.');
-        throw error;
-    }
-}
-
-// Показ попапа об успешной оплате
-function showPaymentSuccessPopup(type, hikeDate) {
-    let message = '';
-    if (type === 'ticket') {
-        message = 'билет оплачен! ты записан на хайк';
-    } else if (type === 'season_card') {
-        message = 'сезонная карта активирована! теперь все хайки для тебя бесплатны';
-    } else if (type === 'permanent_card') {
-        message = 'бессрочная карта активирована! добро пожаловать в клуб';
-    }
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 400px;">
-            <div class="modal-title">успешно!</div>
-            <div class="modal-text">${message}</div>
-            <button class="btn btn-yellow" id="closeSuccessPopup">ОК</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    document.getElementById('closeSuccessPopup').addEventListener('click', () => {
-        overlay.remove();
-    });
-}
-
-// ========== ФУНКЦИЯ ПОКАЗА ПОПАПА ДЛЯ ГОСТЕЙ ==========
+// --- Функция показа попапа для гостей с выбором оплаты ---
 function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
     haptic();
     const config = popupConfig;
@@ -939,6 +706,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
     `;
     document.body.appendChild(overlay);
 
+    // Закрытие
     document.getElementById('closePopup').addEventListener('click', () => {
         haptic();
         overlay.remove();
@@ -950,24 +718,39 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
         }
     });
 
-    document.getElementById('buyTicketBtn').addEventListener('click', async (e) => {
+    // Вспомогательная функция для регистрации и открытия ссылки
+    const handlePurchase = (purchaseType, link) => {
+        console.log('handlePurchase', purchaseType, link);
+        addParticipant(hikeDate)
+            .then(() => setUserRegistrationStatus(hikeDate, true))
+            .then(() => {
+                const hikeIndex = hikesList.findIndex(h => h.date === hikeDate);
+                if (hikeIndex !== -1) {
+                    hikeBookingStatus[hikeIndex] = true;
+                }
+                if (userCard.status !== 'active') {
+                    saveStatusToLocalStorage();
+                }
+                updateFloatingSheetButtons();
+                renderUserBookings();
+                const calendarContainer = document.getElementById('calendarContainer');
+                if (calendarContainer) renderCalendar(calendarContainer);
+                
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType);
+                openLink(link, `purchase_${purchaseType}`, isGuest);
+                overlay.remove();
+            })
+            .catch(error => {
+                console.error('Error during registration:', error);
+                alert('Ошибка при регистрации. Попробуйте ещё раз.');
+            });
+    };
+
+    document.getElementById('buyTicketBtn').addEventListener('click', (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        
-        try {
-            await purchaseWithRobokassa(
-                hikeDate,
-                'ticket',
-                config.ticketPrice,
-                `Билет на хайк ${hikeTitle}`,
-                true
-            );
-            overlay.remove();
-        } catch (error) {
-            console.error(error);
-            e.target.dataset.processing = 'false';
-        }
+        handlePurchase('ticket', config.ticketLink);
     });
 
     const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
@@ -982,44 +765,18 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
         }
     });
 
-    document.getElementById('buySeasonCardBtn').addEventListener('click', async (e) => {
+    document.getElementById('buySeasonCardBtn').addEventListener('click', (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        
-        try {
-            await purchaseWithRobokassa(
-                hikeDate,
-                'season_card',
-                config.seasonCardPrice,
-                'Сезонная карта интеллигента',
-                true
-            );
-            overlay.remove();
-        } catch (error) {
-            console.error(error);
-            e.target.dataset.processing = 'false';
-        }
+        handlePurchase('season_card', config.seasonCardLink);
     });
 
-    document.getElementById('buyPermanentCardBtn').addEventListener('click', async (e) => {
+    document.getElementById('buyPermanentCardBtn').addEventListener('click', (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        
-        try {
-            await purchaseWithRobokassa(
-                hikeDate,
-                'permanent_card',
-                config.permanentCardPrice,
-                'Бессрочная карта интеллигента',
-                true
-            );
-            overlay.remove();
-        } catch (error) {
-            console.error(error);
-            e.target.dataset.processing = 'false';
-        }
+        handlePurchase('permanent_card', config.permanentCardLink);
     });
 }
 
@@ -1106,7 +863,6 @@ async function loadData() {
         log('visit', userCard.status !== 'active');
         renderHome();
 
-        // === ПРОВЕРКА ПАРАМЕТРОВ ВОЗВРАТА ===
         const urlParams = new URLSearchParams(window.location.search);
         const paymentSuccess = urlParams.get('payment_success');
         const invId = urlParams.get('InvId');
@@ -1117,8 +873,7 @@ async function loadData() {
             const snapshot = await orderRef.once('value');
             const order = snapshot.val();
             if (order && order.status === 'paid') {
-                showPaymentSuccessPopup(order.type, order.hikeDate);
-
+                console.log('Payment success for order', order);
                 if (order.type === 'ticket' && order.hikeDate) {
                     const hikeIndex = hikesList.findIndex(h => h.date === order.hikeDate);
                     if (hikeIndex !== -1) {
@@ -1161,11 +916,6 @@ async function loadData() {
                 }
             }, 300);
         }
-
-        if (effectiveStartParam && effectiveStartParam.startsWith('payment_')) {
-            // Можем ничего не делать, так как статус уже обновлён через payment_success
-        }
-
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
         renderHome();
@@ -2782,24 +2532,12 @@ function renderGift(isGuest = false) {
                     купить в подарок
                 </button>
                 <div class="dropdown-menu">
-                    <a href="#" class="btn btn-outline" id="giftSeasonBtn">сезонная</a>
-                    <a href="#" class="btn btn-outline" id="giftPermanentBtn">бессрочная</a>
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
                 </div>
             </div>
         </div>
     `;
-
-    document.getElementById('giftSeasonBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        haptic();
-        openLink('https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug', 'gift_season_click', isGuest);
-    });
-
-    document.getElementById('giftPermanentBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        haptic();
-        openLink('https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A', 'gift_permanent_click', isGuest);
-    });
 
     setupAccordion('giftAccordion', isGuest);
 }
@@ -2877,7 +2615,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true);
 }
 
-// ----- Главная для гостей (исправленный аккордеон) -----
+// ----- Главная для гостей (исправленная версия) -----
 function renderGuestHome() {
     const isGuest = true;
     subtitle.textContent = `💳 здесь будет твоя карта, ${firstName}`;
@@ -2894,13 +2632,13 @@ function renderGuestHome() {
                     оформить карту
                 </button>
                 <div class="dropdown-menu">
-                    <!-- Кнопка "узнать о привилегиях" с правильными отступами -->
-                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px; width: calc(100% + 32px); margin-left: -16px; margin-right: -16px; padding: 16px; box-sizing: border-box; text-align: center; display: block;">узнать о привилегиях 💳</a>
+                    <!-- Кнопка "узнать о привилегиях" на всю ширину (теперь сверху) -->
+                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px;">узнать о привилегиях 💳</a>
                     
                     <!-- Две кнопки карт в ряд -->
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
-                        <a href="#" class="btn btn-outline" id="guestSeasonCardBtn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
-                        <a href="#" class="btn btn-outline" id="guestPermanentCardBtn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
+                        <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
+                        <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
                     </div>
                     <!-- Пояснения (две колонки) -->
                     <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
@@ -2972,18 +2710,6 @@ function renderGuestHome() {
         haptic();
         renderGuestPrivileges();
         log('guest_privileges_click', true);
-    });
-
-    document.getElementById('guestSeasonCardBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        haptic();
-        openLink('https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug', 'guest_season_card_click', true);
-    });
-
-    document.getElementById('guestPermanentCardBtn').addEventListener('click', async (e) => {
-        e.preventDefault();
-        haptic();
-        openLink('https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A', 'guest_permanent_card_click', true);
     });
 
     renderUserBookings();
@@ -3119,7 +2845,7 @@ function buyCard() {
     haptic();
     if (!userId) return;
     log('buy_card_click', true);
-    openLink('https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A', null, true);
+    openLink(PERMANENT_CARD_LINK, null, true);
 }
 
 window.addEventListener('load', loadData);
