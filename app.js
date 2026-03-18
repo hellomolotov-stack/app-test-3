@@ -830,14 +830,12 @@ async function createOrder(invId, orderData) {
 
 // Упрощённая функция формирования ссылки на Robokassa (без Shp-параметров)
 function getRobokassaLink(invId, amount, description) {
-    const merchantLogin = 'yaltahikingclub'; // ЗАМЕНИТЕ НА СВОЙ ЛОГИН
-    const isTest = 1; // 1 – тестовый, 0 – боевой
+    const merchantLogin = 'yaltahikingclub';
+    const isTest = 1;
 
-    // InvId должно быть целым числом
     invId = parseInt(invId) || Date.now();
 
-    // Адрес вашего бота (или сайта)
-    const baseUrl = 'https://t.me/yaltahiking_bot'; // ЗАМЕНИТЕ НА ВАШ ДОМЕН
+    const baseUrl = 'https://t.me/yaltahiking_bot';  // ← правильно
     const successUrl2 = `${baseUrl}?startapp=payment_${invId}`;
     const failUrl2 = `${baseUrl}?startapp=payment_fail`;
 
@@ -846,10 +844,9 @@ function getRobokassaLink(invId, amount, description) {
               `&IsTest=${isTest}&SuccessUrl2=${encodeURIComponent(successUrl2)}` +
               `&FailUrl2=${encodeURIComponent(failUrl2)}`;
 
-    // Пароль #1 (скопируйте из настроек Robokassa)
-    const password1 = 'nU519GVUsYsheG8UyGb1'; // ЗАМЕНИТЕ НА ПРАВИЛЬНЫЙ ПАРОЛЬ
+    // Новый пароль #1
+    const password1 = 'MN2MSa1tg9PY5Hvcmfh4';
 
-    // Подпись без Shp-параметров
     const baseString = `${merchantLogin}:${amount.toFixed(2)}:${invId}:${password1}`;
     const signature = md5(baseString);
     url += `&SignatureValue=${signature}`;
