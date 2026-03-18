@@ -664,7 +664,7 @@ function scrollToCalendar() {
 
 // ========== ФУНКЦИИ ДЛЯ РОБОКАССЫ ==========
 
-// Реализация MD5 для браузера
+// Реализация MD5 для браузера (оставлена, но не используется)
 function md5(str) {
     function rotateLeft(lValue, iShiftBits) {
         return (lValue << iShiftBits) | (lValue >>> (32 - iShiftBits));
@@ -829,13 +829,14 @@ async function createOrder(invId, orderData) {
 }
 
 // Упрощённая функция формирования ссылки на Robokassa (без Shp-параметров)
+// Подпись отключена – параметр SignatureValue не добавляется
 function getRobokassaLink(invId, amount, description) {
-    const merchantLogin = 'yaltahikingclub';
-    const isTest = 1;
+    const merchantLogin = 'yaltahikingclub'; // ваш логин
+    const isTest = 1; // 1 – тестовый, 0 – боевой
 
     invId = parseInt(invId) || Date.now();
 
-    const baseUrl = 'https://t.me/yaltahiking_bot';  // ← правильно
+    const baseUrl = 'https://t.me/yaltahiking_bot'; // ваш бот
     const successUrl2 = `${baseUrl}?startapp=payment_${invId}`;
     const failUrl2 = `${baseUrl}?startapp=payment_fail`;
 
@@ -844,14 +845,13 @@ function getRobokassaLink(invId, amount, description) {
               `&IsTest=${isTest}&SuccessUrl2=${encodeURIComponent(successUrl2)}` +
               `&FailUrl2=${encodeURIComponent(failUrl2)}`;
 
-    // Новый пароль #1
-    const password1 = 'MN2MSa1tg9PY5Hvcmfh4';
+    // Пароль #1 (новый тестовый) – не используется, так как подпись отключена
+    // const password1 = 'MN2MSa1tg9PY5Hvcmfh4';
+    // const baseString = `${merchantLogin}:${amount.toFixed(2)}:${invId}:${password1}`;
+    // const signature = md5(baseString);
+    // url += `&SignatureValue=${signature}`;
 
-    const baseString = `${merchantLogin}:${amount.toFixed(2)}:${invId}:${password1}`;
-    const signature = md5(baseString);
-    url += `&SignatureValue=${signature}`;
-
-    console.log('Robokassa URL:', url);
+    console.log('Robokassa URL (без подписи):', url);
     return url;
 }
 
@@ -861,7 +861,6 @@ async function purchaseWithRobokassa(hikeDate, type, amount, description, isGues
     
     const invId = Date.now(); // целое число
     
-    // Создаём заказ в Firebase со статусом pending
     const orderData = {
         userId: userId,
         hikeDate: type === 'ticket' ? hikeDate : '',
@@ -873,13 +872,8 @@ async function purchaseWithRobokassa(hikeDate, type, amount, description, isGues
     
     try {
         await createOrder(invId.toString(), orderData);
-        
-        // Формируем ссылку (без extraParams)
         const link = getRobokassaLink(invId, amount, description);
-        
-        // Открываем ссылку
         openLink(link, `purchase_${type}`, isGuest);
-        
         return invId;
     } catch (error) {
         console.error('Ошибка при создании заказа:', error);
@@ -966,7 +960,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
         }
     });
 
-    // Обработчики с использованием purchaseWithRobokassa
     document.getElementById('buyTicketBtn').addEventListener('click', async (e) => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
@@ -1148,13 +1141,11 @@ async function loadData() {
                         if (calendarContainer) renderCalendar(calendarContainer);
                     }
                 }
-                // Очищаем параметры из URL
                 const newUrl = window.location.pathname + (hikeDate ? `?hike=${hikeDate}` : '');
                 window.history.replaceState({}, '', newUrl);
             }
         }
 
-        // Обработка start_param (если есть)
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
         const effectiveStartParam = startParam || urlStartParam;
@@ -1181,10 +1172,8 @@ async function loadData() {
             }, 300);
         }
 
-        // Обработка возврата после оплаты (payment_* в startapp)
         if (effectiveStartParam && effectiveStartParam.startsWith('payment_')) {
-            const invIdFromStart = effectiveStartParam.substring(8); // 'payment_123' -> '123'
-            // Можно показать сообщение, но статус уже обновлён через payment_success выше
+            // Можем ничего не делать, так как статус уже обновлён через payment_success
         }
 
     } catch (e) {
