@@ -829,32 +829,26 @@ async function createOrder(invId, orderData) {
 }
 
 // Упрощённая функция формирования ссылки на Robokassa (без Shp-параметров)
-// Подпись отключена – параметр SignatureValue не добавляется
 function getRobokassaLink(invId, amount, description) {
     const merchantLogin = 'yaltahikingclub'; // ваш логин
-    const isTest = 1; // 1 – тестовый, 0 – боевой
-
+    const isTest = 1; // 1 – тестовый
+  
     invId = parseInt(invId) || Date.now();
-
-    const baseUrl = 'https://t.me/yaltahiking_bot'; // ваш бот
+  
+    const baseUrl = 'https://t.me/yaltahiking_bot'; // без ? и без параметров
     const successUrl2 = `${baseUrl}?startapp=payment_${invId}`;
     const failUrl2 = `${baseUrl}?startapp=payment_fail`;
-
+  
     let url = `https://auth.robokassa.ru/merchant/Index.aspx?MrchLogin=${merchantLogin}` +
               `&OutSum=${amount.toFixed(2)}&InvId=${invId}&Desc=${encodeURIComponent(description)}` +
               `&IsTest=${isTest}&SuccessUrl2=${encodeURIComponent(successUrl2)}` +
               `&FailUrl2=${encodeURIComponent(failUrl2)}`;
-
-    // Пароль #1 (новый тестовый) – не используется, так как подпись отключена
-    // const password1 = 'MN2MSa1tg9PY5Hvcmfh4';
-    // const baseString = `${merchantLogin}:${amount.toFixed(2)}:${invId}:${password1}`;
-    // const signature = md5(baseString);
-    // url += `&SignatureValue=${signature}`;
-
+  
+    // ПОДПИСЬ ПОЛНОСТЬЮ УДАЛЕНА — параметра SignatureValue нет
+  
     console.log('Robokassa URL (без подписи):', url);
     return url;
 }
-
 // Функция: создание заказа и переход на оплату
 async function purchaseWithRobokassa(hikeDate, type, amount, description, isGuest) {
     if (!userId) return;
