@@ -93,7 +93,7 @@ try {
     database = null;
 }
 
-// --- Вспомогательная функция для динамического добавления стилей ---
+// --- Вспомогательная функция для динамического добавления стилей (для календаря) ---
 function addCustomStyles() {
     if (document.getElementById('customAppStyles')) return;
     const style = document.createElement('style');
@@ -119,9 +119,17 @@ function addCustomStyles() {
         .calendar-nav-arrow:not(:disabled):hover {
             background: rgba(255,255,255,0.3);
         }
+        @keyframes glow-pink {
+            0% { box-shadow: 0 0 3px #FF54DE; }
+            50% { box-shadow: 0 0 10px #FF54DE; }
+            100% { box-shadow: 0 0 3px #FF54DE; }
+        }
         .calendar-day.woman-hike {
             background: #FF54DE;
             color: white;
+        }
+        .calendar-day.woman-hike.booked-day {
+            animation: glow-pink 3s ease-in-out infinite;
         }
         .calendar-day.woman-hike.today {
             border: 2px solid white;
@@ -509,7 +517,7 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType = '
             hike_title: hikeTitle,
             status: status,
             has_card: hasCard,
-            purchase_type: purchaseType
+            purchase_type: purchaseType // 'ticket', 'season_card', 'permanent_card'
         });
         fetch(REGISTRATION_API_URL, {
             method: 'POST',
@@ -818,7 +826,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
     });
 }
 
-// --- КАЛЕНДАРЬ С ПЕРЕКЛЮЧЕНИЕМ МЕСЯЦЕВ ---
+// --- КАЛЕНДАРЬ С ПЕРЕКЛЮЧЕНИЕМ МЕСЯЦЕВ (стрелки справа) ---
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth(); // 0-11
 
@@ -828,7 +836,7 @@ function hasHikesInMonth(year, month) {
 }
 
 function renderCalendar(container) {
-    addCustomStyles();
+    addCustomStyles(); // добавляем стили для стрелок и розовых дней
     const year = currentCalendarYear;
     const month = currentCalendarMonth;
     const today = new Date();
@@ -844,8 +852,8 @@ function renderCalendar(container) {
 
     const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
 
-    const hasPrevMonth = hasHikesInMonth(year, month - 1);
-    const hasNextMonth = hasHikesInMonth(year, month + 1);
+    const hasPrevMonth = hasHikesInMonth(year, month-1);
+    const hasNextMonth = hasHikesInMonth(year, month+1);
 
     let calendarHtml = `
         <h2 class="section-title">🗓️ календарь хайков</h2>
@@ -882,7 +890,7 @@ function renderCalendar(container) {
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         const isToday = (year === currentYear && month === currentMonth && day === currentDate);
         const hasHike = hikesData[dateStr] ? true : false;
         const isPast = new Date(dateStr) < today;
@@ -926,6 +934,7 @@ function renderCalendar(container) {
 
     container.innerHTML = calendarHtml;
 
+    // Обработчики кнопок
     const prevBtn = document.getElementById('prevMonthBtn');
     const nextBtn = document.getElementById('nextMonthBtn');
     if (prevBtn) {
@@ -953,6 +962,7 @@ function renderCalendar(container) {
         });
     }
 
+    // Клик по дню
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
@@ -962,6 +972,686 @@ function renderCalendar(container) {
             }
         });
     });
+}
+
+// --- Bottom Sheet с поддержкой woman ---
+let sheetCurrentIndex = 0;
+let sheetScrollListener = null;
+let dragStartY = 0;
+let isDragging = false;
+let currentUnsubscribe = null;
+
+function showBottomSheet(index) {
+    if (!hikesList.length) return;
+
+    const existingOverlay = document.querySelector('.bottom-sheet-overlay');
+    if (existingOverlay) existingOverlay.remove();
+
+    const existingSheetButtons = document.querySelector('.floating-sheet-buttons');
+    if (existingSheetButtons) existingSheetButtons.remove();
+
+    document.body.style.overflow = 'hidden';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'bottom-sheet-overlay';
+    overlay.innerHTML = `
+        <div class="bottom-sheet" id="hikeBottomSheet">
+            <div class="bottom-sheet-handle"></div>
+            <div class="bottom-sheet-content-wrapper" id="bottomSheetContent">
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const sheet = document.getElementById('hikeBottomSheet');
+    const contentWrapper = document.getElementById('bottomSheetContent');
+
+    const windowHeight = window.innerHeight;
+    sheet.style.maxHeight = `${windowHeight * 0.9}px`;
+    sheet.style.height = `${windowHeight * 0.9}px`;
+
+    sheetCurrentIndex = index;
+    const isGuest = userCard.status !== 'active';
+
+    if (currentUnsubscribe) {
+        currentUnsubscribe();
+        currentUnsubscribe = null;
+    }
+
+    function updateContent() {
+        const hike = hikesList[sheetCurrentIndex];
+        if (!hike) return;
+
+        const isWoman = hike.woman === 'yes';
+        const accentColor = isWoman ? '#FF54DE' : 'var(--yellow)';
+
+        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+                            'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        let formattedDate = '';
+        if (hike.date) {
+            const parts = hike.date.split('-');
+            if (parts.length === 3) {
+                const day = parseInt(parts[2], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                formattedDate = `${day} ${monthNames[month]}`;
+            } else {
+                formattedDate = hike.date;
+            }
+        }
+
+        const hasPrev = sheetCurrentIndex > 0;
+        const hasNext = sheetCurrentIndex < hikesList.length - 1;
+
+        let tagsHtml = '';
+        if (hike.tags && hike.tags.length > 0) {
+            tagsHtml = '<div class="bottom-sheet-tags">';
+            hike.tags.forEach(tag => {
+                tagsHtml += `<span class="bottom-sheet-tag">${tag}</span>`;
+            });
+            tagsHtml += '</div>';
+        }
+
+        let sectionsHtml = '';
+
+        if (hike.features && hike.features.trim() !== '') {
+            let processedText = parseLinks(hike.features, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
+            
+            let featureTagsHtml = '';
+            if (hike.feature_tags && hike.feature_tags.length > 0) {
+                featureTagsHtml = '<div class="feature-tags-container">';
+                hike.feature_tags.forEach(tag => {
+                    featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor};">${tag}</span>`;
+                });
+                featureTagsHtml += '</div>';
+            }
+            
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title">особенности</div>
+                    ${featureTagsHtml}
+                    <div class="bottom-sheet-section-content">${processedText}</div>
+                </div>
+            `;
+        }
+
+        if (hike.access && hike.access.trim() !== '') {
+            let processedText = parseLinks(hike.access, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title">как добраться</div>
+                    <div class="bottom-sheet-section-content">${processedText}</div>
+                </div>
+            `;
+        }
+
+        if (hike.details && hike.details.trim() !== '') {
+            let processedText = parseLinks(hike.details, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title">детали</div>
+                    <div class="bottom-sheet-section-content">${processedText}</div>
+                </div>
+            `;
+        }
+
+        const hikeDate = new Date(hike.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const isPast = hikeDate < today;
+
+        let imageHtml = '';
+        if (hike.image) {
+            if (!isPast) {
+                imageHtml = `
+                    <div class="image-container">
+                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                            <span class="participant-text" style="color: ${accentColor};">идут</span>
+                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor};">0</span>
+                            <div class="participant-avatars" id="participantAvatars"></div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                imageHtml = `
+                    <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                `;
+            }
+        }
+
+        let extraInfoHtml = '';
+        if (!isPast) {
+            extraInfoHtml = '<div class="hike-extra-info">';
+            if (hike.start_time) {
+                extraInfoHtml += `
+                    <div class="info-row">
+                        <span class="info-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none"/>
+                                <polyline points="12 6 12 12 16 14" stroke="currentColor" fill="none"/>
+                            </svg>
+                        </span>
+                        <span><strong>начало:</strong> ${hike.start_time}</span>
+                    </div>
+                `;
+            }
+            if (hike.location_link) {
+                let locationHtml = '';
+                if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
+                    locationHtml = parseLinks(hike.location_link, isGuest);
+                } else {
+                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
+                }
+                extraInfoHtml += `
+                    <div class="info-row">
+                        <span class="info-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" fill="none"/>
+                                <circle cx="12" cy="10" r="3" stroke="currentColor" fill="none"/>
+                            </svg>
+                        </span>
+                        <span><strong>точка сбора:</strong> ${locationHtml}</span>
+                    </div>
+                `;
+            }
+            const leader = leaders[hike.date];
+            if (leader) {
+                const firstNameOnly = leader.name.split(' ')[0];
+                extraInfoHtml += `
+                    <div class="info-row">
+                        <span class="info-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
+                                <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
+                            </svg>
+                        </span>
+                        <span><strong>ведёт:</strong> <a href="#" class="leader-name dynamic-link" data-date="${hike.date}" style="color: ${accentColor};">${firstNameOnly}</a></span>
+                    </div>
+                `;
+            }
+            extraInfoHtml += '</div>';
+        }
+
+        const prevArrow = hasPrev 
+            ? `<div class="bottom-sheet-nav-arrow" id="prevHike">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+               </div>`
+            : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
+        
+        const nextArrow = hasNext
+            ? `<div class="bottom-sheet-nav-arrow" id="nextHike">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+               </div>`
+            : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
+
+        contentWrapper.innerHTML = `
+            <div class="bottom-sheet-header-block">
+                <div class="bottom-sheet-header">
+                    <div class="bottom-sheet-header-left">
+                        <div class="bottom-sheet-header-date" style="color: ${accentColor};">${formattedDate}</div>
+                        <div class="bottom-sheet-header-title">${hike.title}</div>
+                    </div>
+                    <div class="bottom-sheet-nav">
+                        ${prevArrow}
+                        ${nextArrow}
+                    </div>
+                </div>
+                ${tagsHtml}
+            </div>
+            <div>
+                ${imageHtml}
+                ${extraInfoHtml}
+                ${sectionsHtml}
+            </div>
+        `;
+
+        if (!isPast) {
+            currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+                const countEl = document.getElementById('participantCountValue');
+                if (countEl) countEl.textContent = count;
+                const avatarsEl = document.getElementById('participantAvatars');
+                if (avatarsEl) {
+                    avatarsEl.innerHTML = '';
+                    participants.forEach(p => {
+                        if (p.photoUrl) {
+                            const img = document.createElement('img');
+                            img.src = p.photoUrl;
+                            img.className = 'participant-avatar';
+                            img.alt = p.name || '';
+                            img.title = p.name || '';
+                            img.onerror = function() {
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'participant-avatar placeholder';
+                                const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                                placeholder.textContent = initial;
+                                this.parentNode.replaceChild(placeholder, this);
+                            };
+                            avatarsEl.appendChild(img);
+                        } else {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'participant-avatar placeholder';
+                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                            placeholder.textContent = initial;
+                            avatarsEl.appendChild(placeholder);
+                        }
+                    });
+                }
+            });
+        }
+
+        updateFloatingSheetButtons();
+
+        document.getElementById('prevHike')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sheetCurrentIndex > 0) {
+                closeParticipantDropdown();
+                closeLeaderDropdown();
+                sheetCurrentIndex--;
+                updateContent();
+                contentWrapper.scrollTop = 0;
+                haptic();
+                log('hike_swipe_prev', false);
+            }
+        });
+
+        document.getElementById('nextHike')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (sheetCurrentIndex < hikesList.length - 1) {
+                closeParticipantDropdown();
+                closeLeaderDropdown();
+                sheetCurrentIndex++;
+                updateContent();
+                contentWrapper.scrollTop = 0;
+                haptic();
+                log('hike_swipe_next', false);
+            }
+        });
+    }
+
+    updateContent();
+    createFloatingButtons();
+
+    function removeFloatingSheetButtons() {
+        const btnContainer = document.querySelector('.floating-sheet-buttons');
+        if (btnContainer) btnContainer.remove();
+    }
+
+    function createFloatingButtons() {
+        removeFloatingSheetButtons();
+
+        const container = document.createElement('div');
+        container.className = 'floating-sheet-buttons';
+        container.id = 'floatingSheetButtons';
+        document.body.appendChild(container);
+
+        updateFloatingSheetButtons();
+    }
+
+    function checkScroll() {
+        const container = document.querySelector('.floating-sheet-buttons');
+        if (!container) return;
+        const scrollTop = contentWrapper.scrollTop;
+        const scrollHeight = contentWrapper.scrollHeight;
+        const clientHeight = contentWrapper.clientHeight;
+        const maxScroll = scrollHeight - clientHeight;
+        if (maxScroll <= 0) return;
+        const scrollPercentage = (scrollTop / maxScroll) * 100;
+        if (scrollPercentage > 95) {
+            container.classList.add('hidden');
+        } else {
+            container.classList.remove('hidden');
+        }
+    }
+
+    if (sheetScrollListener) {
+        contentWrapper.removeEventListener('scroll', sheetScrollListener);
+    }
+    sheetScrollListener = checkScroll;
+    contentWrapper.addEventListener('scroll', sheetScrollListener);
+
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        sheet.classList.add('visible');
+    }, 20);
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeBottomSheet();
+        }
+    });
+
+    const onTouchStart = (e) => {
+        const target = e.target;
+        const isInteractive = target.closest('.bottom-sheet-nav-arrow') || 
+                            target.closest('a') || 
+                            target.closest('.btn') ||
+                            target.closest('.bottom-sheet-handle');
+        if (isInteractive) {
+            isDragging = false;
+            return;
+        }
+        dragStartY = e.touches[0].clientY;
+        isDragging = true;
+        sheet.classList.add('dragging');
+    };
+    const onTouchMove = (e) => {
+        if (!isDragging) return;
+        if (contentWrapper.scrollTop > 0) {
+            isDragging = false;
+            sheet.classList.remove('dragging');
+            return;
+        }
+        const deltaY = e.touches[0].clientY - dragStartY;
+        if (deltaY > 0) {
+            e.preventDefault();
+            sheet.style.transform = `translateY(${deltaY}px)`;
+        } else {
+            isDragging = false;
+            sheet.classList.remove('dragging');
+        }
+    };
+    const onTouchEnd = (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.classList.remove('dragging');
+        const deltaY = e.changedTouches[0].clientY - dragStartY;
+        if (deltaY > 80) {
+            closeBottomSheet();
+        } else {
+            sheet.style.transform = '';
+        }
+    };
+    sheet.addEventListener('touchstart', onTouchStart, { passive: false });
+    sheet.addEventListener('touchmove', onTouchMove, { passive: false });
+    sheet.addEventListener('touchend', onTouchEnd, { passive: false });
+    sheet.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+    log('bottom_sheet_opened', false);
+}
+
+function closeBottomSheet() {
+    closeParticipantDropdown();
+    closeLeaderDropdown();
+    if (currentUnsubscribe) {
+        currentUnsubscribe();
+        currentUnsubscribe = null;
+    }
+    const overlay = document.querySelector('.bottom-sheet-overlay');
+    if (overlay) {
+        overlay.classList.remove('visible');
+        const sheet = document.getElementById('hikeBottomSheet');
+        if (sheet) {
+            sheet.classList.remove('visible');
+        }
+        document.body.style.overflow = '';
+        const sheetButtons = document.querySelector('.floating-sheet-buttons');
+        if (sheetButtons) sheetButtons.remove();
+        if (sheetScrollListener) {
+            const contentWrapper = document.getElementById('bottomSheetContent');
+            if (contentWrapper) contentWrapper.removeEventListener('scroll', sheetScrollListener);
+            sheetScrollListener = null;
+        }
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+    }
+}
+
+// ========== ГЛОБАЛЬНАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ КНОПОК (с учётом woman) ==========
+function updateFloatingSheetButtons() {
+    const container = document.querySelector('.floating-sheet-buttons');
+    if (!container) return;
+
+    const hike = hikesList[sheetCurrentIndex];
+    if (!hike) return;
+
+    const isWoman = hike.woman === 'yes';
+    const accentColor = isWoman ? '#FF54DE' : 'var(--yellow)';
+    const isBooked = hikeBookingStatus[sheetCurrentIndex] || false;
+    const hikeDate = new Date(hike.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isPast = hikeDate < today;
+
+    container.innerHTML = '';
+
+    if (isPast) {
+        const isGuest = userCard.status !== 'active';
+        
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '12px';
+        row.style.justifyContent = 'center';
+        row.style.width = '100%';
+
+        const completedBtn = document.createElement('a');
+        completedBtn.href = '#';
+        completedBtn.className = 'btn btn-outline';
+        completedBtn.textContent = 'хайк завершен';
+        completedBtn.style.pointerEvents = 'none';
+        row.appendChild(completedBtn);
+
+        if (hike.report_link && hike.report_link.trim() !== '') {
+            const reportBtn = document.createElement('a');
+            reportBtn.href = '#';
+            reportBtn.className = 'btn btn-yellow';
+            if (isWoman) reportBtn.style.backgroundColor = '#FF54DE';
+            reportBtn.textContent = 'отчёт';
+            reportBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                haptic();
+                const url = hike.report_link.trim();
+                if (url) {
+                    openLink(url, 'report_click', isGuest);
+                }
+                return false;
+            });
+            row.appendChild(reportBtn);
+        }
+
+        container.appendChild(row);
+        return;
+    }
+
+    const isGuest = userCard.status !== 'active';
+
+    if (userId) {
+        const popupKey = `${userId}_${hike.date}`;
+        const popupData = registrationsPopup[popupKey];
+        if (popupData && popupData.popupText && popupData.popupLink) {
+            addPaymentPopup(container, popupData, isGuest);
+        }
+    }
+
+    if (isBooked) {
+        const inviteRow = document.createElement('div');
+        inviteRow.style.display = 'flex';
+        inviteRow.style.justifyContent = 'center';
+        inviteRow.style.width = '100%';
+        inviteRow.style.marginBottom = '3px';
+
+        const inviteBtn = document.createElement('a');
+        inviteBtn.href = '#';
+        inviteBtn.className = 'btn btn-yellow btn-glow';
+        if (isWoman) inviteBtn.style.backgroundColor = '#FF54DE';
+        inviteBtn.id = 'sheetInviteBtn';
+        inviteBtn.textContent = 'пригласить друга';
+        inviteBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}`;
+            tg.openTelegramLink(shareUrl);
+            log('invite_friend_click', isGuest);
+        });
+        inviteRow.appendChild(inviteBtn);
+        container.appendChild(inviteRow);
+
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '12px';
+        row.style.justifyContent = 'center';
+        row.style.width = '100%';
+
+        const cancelBtn = document.createElement('a');
+        cancelBtn.href = '#';
+        cancelBtn.className = 'btn btn-outline';
+        cancelBtn.id = 'sheetCancelBtn';
+        cancelBtn.textContent = 'отменить';
+        cancelBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (cancelBtn.dataset.processing === 'true') return;
+            cancelBtn.dataset.processing = 'true';
+            
+            haptic();
+
+            if (isGuest) {
+                removeParticipant(hike.date).then(() => {
+                    delete hikeBookingStatus[sheetCurrentIndex];
+                    saveStatusToLocalStorage();
+                    updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
+                    updateFloatingSheetButtons();
+                    renderUserBookings();
+                    const calendarContainer = document.getElementById('calendarContainer');
+                    if (calendarContainer) renderCalendar(calendarContainer);
+                }).catch((error) => {
+                    console.error('Error during cancellation:', error);
+                    updateFloatingSheetButtons();
+                });
+            } else {
+                Promise.all([
+                    removeParticipant(hike.date),
+                    setUserRegistrationStatus(hike.date, false)
+                ]).then(() => {
+                    delete hikeBookingStatus[sheetCurrentIndex];
+                    updateFloatingSheetButtons();
+                    updateRegistrationInSheet(hike.date, hike.title, 'cancelled', '');
+                    renderUserBookings();
+                    const calendarContainer = document.getElementById('calendarContainer');
+                    if (calendarContainer) renderCalendar(calendarContainer);
+                }).catch((error) => {
+                    console.error('Error during cancellation:', error);
+                    updateFloatingSheetButtons();
+                });
+            }
+            log('sheet_cancel_click', false);
+        });
+        row.appendChild(cancelBtn);
+
+        const goBtn = document.createElement('a');
+        goBtn.href = '#';
+        goBtn.className = 'btn btn-yellow-outline';
+        goBtn.id = 'sheetGoBtn';
+        goBtn.textContent = 'ты записан';
+        if (isWoman) goBtn.style.color = '#FF54DE';
+        row.appendChild(goBtn);
+
+        container.appendChild(row);
+
+    } else {
+        if (isGuest) {
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '12px';
+            row.style.justifyContent = 'center';
+            row.style.width = '100%';
+
+            const questionBtn = document.createElement('a');
+            questionBtn.href = '#';
+            questionBtn.className = 'btn btn-outline';
+            questionBtn.id = 'sheetQuestionBtn';
+            questionBtn.textContent = 'задать вопрос';
+            questionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                openLink('https://t.me/hellointelligent', 'sheet_question_click', true);
+            });
+            row.appendChild(questionBtn);
+
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-yellow btn-glow';
+            if (isWoman) goBtn.style.backgroundColor = '#FF54DE';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'иду';
+            goBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (goBtn.dataset.processing === 'true') return;
+                goBtn.dataset.processing = 'true';
+                
+                haptic();
+                showGuestBookingPopup(hike.date, hike.title, true);
+                
+                setTimeout(() => {
+                    goBtn.dataset.processing = 'false';
+                }, 1000);
+            });
+            row.appendChild(goBtn);
+
+            container.appendChild(row);
+        } else {
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '12px';
+            row.style.justifyContent = 'center';
+            row.style.width = '100%';
+
+            const questionBtn = document.createElement('a');
+            questionBtn.href = '#';
+            questionBtn.className = 'btn btn-outline';
+            questionBtn.id = 'sheetQuestionBtn';
+            questionBtn.textContent = 'задать вопрос';
+            questionBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+            });
+            row.appendChild(questionBtn);
+
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-yellow btn-glow';
+            if (isWoman) goBtn.style.backgroundColor = '#FF54DE';
+            goBtn.id = 'sheetGoBtn';
+            goBtn.textContent = 'иду';
+            goBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (goBtn.dataset.processing === 'true') return;
+                goBtn.dataset.processing = 'true';
+                
+                haptic();
+
+                setUserRegistrationStatus(hike.date, true)
+                    .then(() => {
+                        hikeBookingStatus[sheetCurrentIndex] = true;
+                        return incrementParticipantCount(hike.date);
+                    })
+                    .then(() => {
+                        updateRegistrationInSheet(hike.date, hike.title, 'booked', 'card_holder');
+                        updateFloatingSheetButtons();
+                        renderUserBookings();
+                        const calendarContainer = document.getElementById('calendarContainer');
+                        if (calendarContainer) renderCalendar(calendarContainer);
+                    })
+                    .catch((error) => {
+                        console.error('Error during booking:', error);
+                        updateFloatingSheetButtons();
+                    });
+                log('sheet_go_click', false);
+            });
+            row.appendChild(goBtn);
+
+            container.appendChild(row);
+        }
+    }
 }
 
 // ----- Функция для рендера блока "Мои записи" (без изменений) -----
