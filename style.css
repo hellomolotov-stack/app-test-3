@@ -1337,6 +1337,40 @@ body::before {
     filter: brightness(0.9);
 }
 
+/* Новые стили для навигации календаря */
+.calendar-nav-arrow {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: white;
+    transition: 0.2s;
+}
+
+.calendar-nav-arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.calendar-nav-arrow:not(:disabled):hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Стили для женских хайков */
+.calendar-day.woman-hike {
+    background: #FF54DE;
+    color: white;
+}
+
+.calendar-day.woman-hike.today {
+    border: 2px solid white;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;
