@@ -1480,7 +1480,7 @@ function updateFloatingSheetButtons() {
 
         const inviteBtn = document.createElement('a');
         inviteBtn.href = '#';
-        inviteBtn.className = 'btn btn-yellow btn-glow';
+        inviteBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
         if (isWoman) inviteBtn.style.backgroundColor = '#FF54DE';
         inviteBtn.id = 'sheetInviteBtn';
         inviteBtn.textContent = 'пригласить друга';
@@ -1578,7 +1578,7 @@ function updateFloatingSheetButtons() {
 
             const goBtn = document.createElement('a');
             goBtn.href = '#';
-            goBtn.className = 'btn btn-yellow btn-glow';
+            goBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
             if (isWoman) goBtn.style.backgroundColor = '#FF54DE';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
@@ -1618,7 +1618,7 @@ function updateFloatingSheetButtons() {
 
             const goBtn = document.createElement('a');
             goBtn.href = '#';
-            goBtn.className = 'btn btn-yellow btn-glow';
+            goBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
             if (isWoman) goBtn.style.backgroundColor = '#FF54DE';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
