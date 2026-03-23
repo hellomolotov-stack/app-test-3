@@ -1461,3 +1461,22 @@ body::before {
 .popup-link:hover {
     opacity: 0.8;
 }
+/* Розовое свечение для женских хайков */
+@keyframes glow-pink {
+    0% { box-shadow: 0 0 3px #FF54DE; }
+    50% { box-shadow: 0 0 10px #FF54DE; }
+    100% { box-shadow: 0 0 3px #FF54DE; }
+}
+
+.calendar-day.woman-hike {
+    background: #FF54DE;
+    color: white;
+}
+
+.calendar-day.woman-hike.booked-day {
+    animation: glow-pink 3s ease-in-out infinite;
+}
+
+.calendar-day.woman-hike.today {
+    border: 2px solid white;
+}
