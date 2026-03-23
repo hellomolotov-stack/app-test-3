@@ -134,6 +134,9 @@ function addCustomStyles() {
         .calendar-day.woman-hike.today {
             border: 2px solid white;
         }
+        .btn-glow.woman-glow {
+            animation: glow-pink 3s ease-in-out infinite;
+        }
     `;
     document.head.appendChild(style);
 }
@@ -517,7 +520,7 @@ function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType = '
             hike_title: hikeTitle,
             status: status,
             has_card: hasCard,
-            purchase_type: purchaseType // 'ticket', 'season_card', 'permanent_card'
+            purchase_type: purchaseType
         });
         fetch(REGISTRATION_API_URL, {
             method: 'POST',
@@ -974,7 +977,7 @@ function renderCalendar(container) {
     });
 }
 
-// --- Bottom Sheet с поддержкой woman ---
+// --- Bottom Sheet с поддержкой woman (полное окрашивание) ---
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -1068,7 +1071,7 @@ function showBottomSheet(index) {
             
             sectionsHtml += `
                 <div class="bottom-sheet-section">
-                    <div class="bottom-sheet-section-title">особенности</div>
+                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">особенности</div>
                     ${featureTagsHtml}
                     <div class="bottom-sheet-section-content">${processedText}</div>
                 </div>
@@ -1080,7 +1083,7 @@ function showBottomSheet(index) {
             processedText = processedText.replace(/\n/g, '<br>');
             sectionsHtml += `
                 <div class="bottom-sheet-section">
-                    <div class="bottom-sheet-section-title">как добраться</div>
+                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">как добраться</div>
                     <div class="bottom-sheet-section-content">${processedText}</div>
                 </div>
             `;
@@ -1091,7 +1094,7 @@ function showBottomSheet(index) {
             processedText = processedText.replace(/\n/g, '<br>');
             sectionsHtml += `
                 <div class="bottom-sheet-section">
-                    <div class="bottom-sheet-section-title">детали</div>
+                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">детали</div>
                     <div class="bottom-sheet-section-content">${processedText}</div>
                 </div>
             `;
@@ -1127,8 +1130,8 @@ function showBottomSheet(index) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
                 extraInfoHtml += `
-                    <div class="info-row">
-                        <span class="info-icon">
+                    <div class="info-row" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" fill="none"/>
                                 <polyline points="12 6 12 12 16 14" stroke="currentColor" fill="none"/>
@@ -1143,11 +1146,11 @@ function showBottomSheet(index) {
                 if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
                     locationHtml = parseLinks(hike.location_link, isGuest);
                 } else {
-                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
+                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link" style="color: ${accentColor};">открыть на карте</a>`;
                 }
                 extraInfoHtml += `
-                    <div class="info-row">
-                        <span class="info-icon">
+                    <div class="info-row" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" fill="none"/>
                                 <circle cx="12" cy="10" r="3" stroke="currentColor" fill="none"/>
@@ -1161,8 +1164,8 @@ function showBottomSheet(index) {
             if (leader) {
                 const firstNameOnly = leader.name.split(' ')[0];
                 extraInfoHtml += `
-                    <div class="info-row">
-                        <span class="info-icon">
+                    <div class="info-row" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
                                 <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
