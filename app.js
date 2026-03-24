@@ -1162,10 +1162,15 @@ function showBottomSheet(index) {
                 `;
             }
             // Блок ведущих с форматированием «и»
-       if (hike.leaders && hike.leaders.length) {
+     if (hike.leaders && hike.leaders.length) {
     const leaderLinks = hike.leaders.map(leaderUsername => {
         const leaderData = leaders[leaderUsername];
-        const displayName = leaderData ? leaderData.name : leaderUsername;
+        let displayName = leaderUsername; // fallback
+        if (leaderData && leaderData.name) {
+            // Берём только имя (первую часть)
+            const nameParts = leaderData.name.split(' ');
+            displayName = nameParts[0];
+        }
         return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
     });
     
