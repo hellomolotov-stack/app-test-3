@@ -1162,35 +1162,35 @@ function showBottomSheet(index) {
                 `;
             }
             // Блок ведущих с форматированием «и»
-            if (hike.leaders && hike.leaders.length) {
-                const leaderLinks = hike.leaders.map(leaderUsername => {
-                    const leaderData = leaders[leaderUsername];
-                    const displayName = leaderData ? leaderData.name : leaderUsername;
-                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
-                });
-                
-                let leaderText = '';
-                if (leaderLinks.length === 1) {
-                    leaderText = leaderLinks[0];
-                } else if (leaderLinks.length === 2) {
-                    leaderText = `${leaderLinks[0]} и ${leaderLinks[1]}`;
-                } else {
-                    const last = leaderLinks.pop();
-                    leaderText = `${leaderLinks.join(', ')} и ${last}`;
-                }
-                
-                extraInfoHtml += `
-                    <div class="info-row" style="color: ${accentColor};">
-                        <span class="info-icon" style="color: ${accentColor};">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
-                                <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
-                            </svg>
-                        </span>
-                        <span><strong>ведут:</strong> ${leaderText}</span>
-                    </div>
-                `;
-            }
+       if (hike.leaders && hike.leaders.length) {
+    const leaderLinks = hike.leaders.map(leaderUsername => {
+        const leaderData = leaders[leaderUsername];
+        const displayName = leaderData ? leaderData.name : leaderUsername;
+        return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
+    });
+    
+    let leaderText = '';
+    if (leaderLinks.length === 1) {
+        leaderText = leaderLinks[0];
+    } else if (leaderLinks.length === 2) {
+        leaderText = `${leaderLinks[0]} <span style="color: white;">и</span> ${leaderLinks[1]}`;
+    } else {
+        const last = leaderLinks.pop();
+        leaderText = `${leaderLinks.join(', ')} <span style="color: white;">и</span> ${last}`;
+    }
+    
+    extraInfoHtml += `
+        <div class="info-row" style="color: ${accentColor};">
+            <span class="info-icon" style="color: ${accentColor};">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
+                    <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
+                </svg>
+            </span>
+            <span><strong>ведут:</strong> ${leaderText}</span>
+        </div>
+    `;
+}
             extraInfoHtml += '</div>';
         }
 
@@ -1984,17 +1984,22 @@ document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link');
     if (!link) return;
     
-    if (link.classList.contains('leader-name')) {
-        e.preventDefault();
-        e.stopPropagation();
-        const username = link.dataset.leaderUsername;
-        if (username && leaders[username]) {
-            haptic();
+   if (link.classList.contains('leader-name')) {
+    e.preventDefault();
+    e.stopPropagation();
+    const username = link.dataset.leaderUsername;
+    if (username) {
+        haptic();
+        // Если есть данные в leaders – показываем попап, иначе – открываем Telegram
+        if (leaders[username]) {
             showLeaderDropdown(link, leaders[username]);
-            log('leader_click', userCard.status !== 'active');
+        } else {
+            openLink(`https://t.me/${username}`, 'leader_click', userCard.status !== 'active');
         }
-        return;
+        log('leader_click', userCard.status !== 'active');
     }
+    return;
+}
     
     if (link.classList.contains('popup-link')) {
         e.preventDefault();
