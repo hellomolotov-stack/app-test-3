@@ -170,14 +170,15 @@ function subscribeToHikes(callback) {
             features: data.features || '',
             access: data.access || '',
             details: data.details || '',
-            image: data.image || data.image_url || '',
+            image: data.image || data.image_url || '',   // поддержка обоих названий
             tags: data.tags || [],
             start_time: data.start_time || '',
             location_link: data.location_link || '',
             telegram_link: data.telegram_link || '',
             report_link: data.report_link || '',
             feature_tags: data.feature_tags || [],
-            woman: data.woman || ''
+            woman: data.woman || '',
+            leaders: data.leaders || []   // массив юзернеймов ведущих
         })).sort((a, b) => a.date.localeCompare(b.date));
         console.log('Hikes updated, count:', list.length);
         hikesList = list;
@@ -1160,25 +1161,25 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            const leader = leaders[hike.date];
-           if (hike.leaders && hike.leaders.length) {
-  const leaderNames = hike.leaders.map(leaderUsername => {
-    const leaderData = leaders[leaderUsername];
-    const displayName = leaderData ? leaderData.name : leaderUsername;
-    return `<a href="#" class="leader-name dynamic-link" data-date="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
-  }).join(', ');
-  extraInfoHtml += `
-    <div class="info-row" style="color: ${accentColor};">
-      <span class="info-icon" style="color: ${accentColor};">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
-          <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
-        </svg>
-      </span>
-      <span><strong>ведут:</strong> ${leaderNames}</span>
-    </div>
-  `;
-}
+            // Блок ведущих
+            if (hike.leaders && hike.leaders.length) {
+                const leaderNames = hike.leaders.map(leaderUsername => {
+                    const leaderData = leaders[leaderUsername];
+                    const displayName = leaderData ? leaderData.name : leaderUsername;
+                    return `<a href="#" class="leader-name dynamic-link" data-date="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
+                }).join(', ');
+                extraInfoHtml += `
+                    <div class="info-row" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
+                                <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
+                            </svg>
+                        </span>
+                        <span><strong>ведут:</strong> ${leaderNames}</span>
+                    </div>
+                `;
+            }
             extraInfoHtml += '</div>';
         }
 
