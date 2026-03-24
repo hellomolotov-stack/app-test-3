@@ -170,7 +170,7 @@ function subscribeToHikes(callback) {
             features: data.features || '',
             access: data.access || '',
             details: data.details || '',
-            image: data.image || data.image_url || '',   // поддержка обоих названий
+            image: data.image || data.image_url || '',
             tags: data.tags || [],
             start_time: data.start_time || '',
             location_link: data.location_link || '',
@@ -178,7 +178,7 @@ function subscribeToHikes(callback) {
             report_link: data.report_link || '',
             feature_tags: data.feature_tags || [],
             woman: data.woman || '',
-            leaders: data.leaders || []   // массив юзернеймов ведущих
+            leaders: data.leaders || []
         })).sort((a, b) => a.date.localeCompare(b.date));
         console.log('Hikes updated, count:', list.length);
         hikesList = list;
@@ -978,7 +978,7 @@ function renderCalendar(container) {
     });
 }
 
-// --- Bottom Sheet с поддержкой woman (полное окрашивание) ---
+// --- Bottom Sheet с поддержкой woman и ведущими ---
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -1161,13 +1161,24 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            // Блок ведущих
+            // Блок ведущих с форматированием «и»
             if (hike.leaders && hike.leaders.length) {
-                const leaderNames = hike.leaders.map(leaderUsername => {
+                const leaderLinks = hike.leaders.map(leaderUsername => {
                     const leaderData = leaders[leaderUsername];
                     const displayName = leaderData ? leaderData.name : leaderUsername;
-                    return `<a href="#" class="leader-name dynamic-link" data-date="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
-                }).join(', ');
+                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
+                });
+                
+                let leaderText = '';
+                if (leaderLinks.length === 1) {
+                    leaderText = leaderLinks[0];
+                } else if (leaderLinks.length === 2) {
+                    leaderText = `${leaderLinks[0]} и ${leaderLinks[1]}`;
+                } else {
+                    const last = leaderLinks.pop();
+                    leaderText = `${leaderLinks.join(', ')} и ${last}`;
+                }
+                
                 extraInfoHtml += `
                     <div class="info-row" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
@@ -1176,7 +1187,7 @@ function showBottomSheet(index) {
                                 <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
                             </svg>
                         </span>
-                        <span><strong>ведут:</strong> ${leaderNames}</span>
+                        <span><strong>ведут:</strong> ${leaderText}</span>
                     </div>
                 `;
             }
@@ -1976,12 +1987,10 @@ document.addEventListener('click', function(e) {
     if (link.classList.contains('leader-name')) {
         e.preventDefault();
         e.stopPropagation();
-        const hikeDate = link.dataset.date;
-        const leaderData = leaders[hikeDate];
-        console.log('leader clicked, date:', hikeDate, 'leaderData:', leaderData);
-        if (leaderData) {
+        const username = link.dataset.leaderUsername;
+        if (username && leaders[username]) {
             haptic();
-            showLeaderDropdown(link, leaderData);
+            showLeaderDropdown(link, leaders[username]);
             log('leader_click', userCard.status !== 'active');
         }
         return;
