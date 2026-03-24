@@ -1989,13 +1989,15 @@ document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link');
     if (!link) return;
     
-   if (link.classList.contains('leader-name')) {
+  if (link.classList.contains('leader-name')) {
     e.preventDefault();
     e.stopPropagation();
     const username = link.dataset.leaderUsername;
     if (username) {
         haptic();
-        // Если есть данные в leaders – показываем попап, иначе – открываем Telegram
+        // Закрываем текущий попап, если он открыт
+        closeLeaderDropdown();
+        // Открываем новый
         if (leaders[username]) {
             showLeaderDropdown(link, leaders[username]);
         } else {
