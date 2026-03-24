@@ -1161,20 +1161,24 @@ function showBottomSheet(index) {
                 `;
             }
             const leader = leaders[hike.date];
-            if (leader) {
-                const firstNameOnly = leader.name.split(' ')[0];
-                extraInfoHtml += `
-                    <div class="info-row" style="color: ${accentColor};">
-                        <span class="info-icon" style="color: ${accentColor};">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
-                                <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
-                            </svg>
-                        </span>
-                        <span><strong>ведёт:</strong> <a href="#" class="leader-name dynamic-link" data-date="${hike.date}" style="color: ${accentColor};">${firstNameOnly}</a></span>
-                    </div>
-                `;
-            }
+           if (hike.leaders && hike.leaders.length) {
+  const leaderNames = hike.leaders.map(leaderUsername => {
+    const leaderData = leaders[leaderUsername];
+    const displayName = leaderData ? leaderData.name : leaderUsername;
+    return `<a href="#" class="leader-name dynamic-link" data-date="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
+  }).join(', ');
+  extraInfoHtml += `
+    <div class="info-row" style="color: ${accentColor};">
+      <span class="info-icon" style="color: ${accentColor};">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
+          <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
+        </svg>
+      </span>
+      <span><strong>ведут:</strong> ${leaderNames}</span>
+    </div>
+  `;
+}
             extraInfoHtml += '</div>';
         }
 
