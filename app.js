@@ -120,12 +120,12 @@ function addCustomStyles() {
             background: rgba(255,255,255,0.3);
         }
         @keyframes glow-pink {
-            0% { box-shadow: 0 0 3px #FF54DE; }
-            50% { box-shadow: 0 0 10px #FF54DE; }
-            100% { box-shadow: 0 0 3px #FF54DE; }
+            0% { box-shadow: 0 0 3px #FB5EB0; }
+            50% { box-shadow: 0 0 10px #FB5EB0; }
+            100% { box-shadow: 0 0 3px #FB5EB0; }
         }
         .calendar-day.woman-hike {
-            background: #FF54DE;
+            background: #FB5EB0;
             color: white;
         }
         .calendar-day.woman-hike.booked-day {
@@ -177,7 +177,7 @@ function subscribeToHikes(callback) {
             telegram_link: data.telegram_link || '',
             report_link: data.report_link || '',
             feature_tags: data.feature_tags || [],
-            woman: data.woman || ''  // новый столбец
+            woman: data.woman || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
         console.log('Hikes updated, count:', list.length);
         hikesList = list;
@@ -1026,7 +1026,7 @@ function showBottomSheet(index) {
         if (!hike) return;
 
         const isWoman = hike.woman === 'yes';
-        const accentColor = isWoman ? '#FF54DE' : 'var(--yellow)';
+        const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
 
         const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
                             'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -1416,7 +1416,7 @@ function updateFloatingSheetButtons() {
     if (!hike) return;
 
     const isWoman = hike.woman === 'yes';
-    const accentColor = isWoman ? '#FF54DE' : 'var(--yellow)';
+    const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
     const isBooked = hikeBookingStatus[sheetCurrentIndex] || false;
     const hikeDate = new Date(hike.date);
     const today = new Date();
@@ -1445,7 +1445,7 @@ function updateFloatingSheetButtons() {
             const reportBtn = document.createElement('a');
             reportBtn.href = '#';
             reportBtn.className = 'btn btn-yellow';
-            if (isWoman) reportBtn.style.backgroundColor = '#FF54DE';
+            if (isWoman) reportBtn.style.backgroundColor = '#FB5EB0';
             reportBtn.textContent = 'отчёт';
             reportBtn.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1484,9 +1484,9 @@ function updateFloatingSheetButtons() {
         const inviteBtn = document.createElement('a');
         inviteBtn.href = '#';
         inviteBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
-        if (isWoman) inviteBtn.style.backgroundColor = '#FF54DE';
+        if (isWoman) inviteBtn.style.backgroundColor = '#FB5EB0';
         inviteBtn.id = 'sheetInviteBtn';
-        inviteBtn.textContent = 'пригласить друга';
+        inviteBtn.textContent = isWoman ? 'пригласить подругу' : 'пригласить друга';
         inviteBtn.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
@@ -1553,8 +1553,8 @@ function updateFloatingSheetButtons() {
         goBtn.href = '#';
         goBtn.className = 'btn btn-yellow-outline';
         goBtn.id = 'sheetGoBtn';
-        goBtn.textContent = 'ты записан';
-        if (isWoman) goBtn.style.color = '#FF54DE';
+        goBtn.textContent = isWoman ? 'ты записана' : 'ты записан';
+        if (isWoman) goBtn.style.color = '#FB5EB0';
         row.appendChild(goBtn);
 
         container.appendChild(row);
@@ -1582,7 +1582,7 @@ function updateFloatingSheetButtons() {
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
-            if (isWoman) goBtn.style.backgroundColor = '#FF54DE';
+            if (isWoman) goBtn.style.backgroundColor = '#FB5EB0';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
             goBtn.addEventListener('click', (e) => {
@@ -1622,7 +1622,7 @@ function updateFloatingSheetButtons() {
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
-            if (isWoman) goBtn.style.backgroundColor = '#FF54DE';
+            if (isWoman) goBtn.style.backgroundColor = '#FB5EB0';
             goBtn.id = 'sheetGoBtn';
             goBtn.textContent = 'иду';
             goBtn.addEventListener('click', (e) => {
