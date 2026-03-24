@@ -1496,8 +1496,26 @@ body::before {
     animation: glow-pink 3s ease-in-out infinite;
 }
 
-/* Если хотите, чтобы даже без записи женский день имел лёгкое свечение – раскомментируйте:
+/* Розовое свечение для женских хайков */
+@keyframes glow-pink {
+    0% { box-shadow: 0 0 3px #FB5EB0; }
+    50% { box-shadow: 0 0 10px #FB5EB0; }
+    100% { box-shadow: 0 0 3px #FB5EB0; }
+}
+
 .calendar-day.woman-hike {
+    background: #FB5EB0;
+    color: white;
+}
+
+.calendar-day.woman-hike.booked-day {
     animation: glow-pink 3s ease-in-out infinite;
 }
-*/
+
+.calendar-day.woman-hike.today {
+    border: 2px solid white;
+}
+
+.btn-glow.woman-glow {
+    animation: glow-pink 3s ease-in-out infinite;
+}
