@@ -144,7 +144,7 @@ function addCustomStyles() {
         .participant-avatars {
             margin-left: 2px;
         }
-        /* Предотвращаем горизонтальный скролл в контенте */
+        /* Перенос длинных слов в текстовых блоках */
         .bottom-sheet-section-content {
             word-break: break-word;
             overflow-wrap: break-word;
@@ -1175,13 +1175,12 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            // Блок ведущих с форматированием «и» и только именем
+            // Блок ведущих с форматированием «и»
             if (hike.leaders && hike.leaders.length) {
                 const leaderLinks = hike.leaders.map(leaderUsername => {
                     const leaderData = leaders[leaderUsername];
-                    const fullName = leaderData ? leaderData.name : leaderUsername;
-                    const firstNameOnly = fullName.split(' ')[0]; // только имя
-                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${firstNameOnly}</a>`;
+                    const displayName = leaderData ? leaderData.name.split(' ')[0] : leaderUsername; // только имя
+                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
                 });
                 
                 let leaderText = '';
@@ -2012,9 +2011,7 @@ document.addEventListener('click', function(e) {
         const username = link.dataset.leaderUsername;
         if (username) {
             haptic();
-            // Закрываем текущий попап, если он открыт
             closeLeaderDropdown();
-            // Открываем новый
             if (leaders[username]) {
                 showLeaderDropdown(link, leaders[username]);
             } else {
@@ -2080,12 +2077,10 @@ document.addEventListener('click', function(e) {
         e.stopPropagation();
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
-            // Проверяем, зарегистрирован ли пользователь на этот хайк
             const index = hikesList.findIndex(h => h.date === hikeDate);
             if (index !== -1 && hikeBookingStatus[index]) {
                 toggleParticipantDropdown(link, hikeDate);
             } else {
-                // Показываем сообщение о том, что нужно зарегистрироваться
                 const msg = document.createElement('div');
                 msg.className = 'modal-overlay';
                 msg.innerHTML = `
@@ -2493,20 +2488,16 @@ function renderGuestHome() {
                     оформить карту
                 </button>
                 <div class="dropdown-menu">
-                    <!-- Кнопка "узнать о привилегиях" на всю ширину (теперь сверху) -->
                     <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px;">узнать о привилегиях 💳</a>
                     
-                    <!-- Две кнопки карт в ряд -->
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
                         <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'season_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
                         <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'permanent_card_click', true); return false;" class="btn btn-outline" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
                     </div>
-                    <!-- Пояснения (две колонки) -->
                     <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
                         <div style="flex: 1;">до конца 2026</div>
                         <div style="flex: 1;">все сезоны</div>
                     </div>
-                    <!-- Цены (две колонки) -->
                     <div style="display: flex; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
                         <div style="flex: 1;">${popupConfig.seasonCardPrice} ₽</div>
                         <div style="flex: 1;">${popupConfig.permanentCardPrice} ₽</div>
