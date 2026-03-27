@@ -93,7 +93,7 @@ try {
     database = null;
 }
 
-// --- Вспомогательная функция для динамического добавления стилей (для календаря) ---
+// --- Вспомогательная функция для динамического добавления стилей ---
 function addCustomStyles() {
     if (document.getElementById('customAppStyles')) return;
     const style = document.createElement('style');
@@ -136,6 +136,18 @@ function addCustomStyles() {
         }
         .btn-glow.woman-glow {
             animation: glow-pink 3s ease-in-out infinite;
+        }
+        /* Уменьшаем расстояние между "идут" и аватарками */
+        .participant-counter {
+            gap: 0px;
+        }
+        .participant-avatars {
+            margin-left: 2px;
+        }
+        /* Предотвращаем горизонтальный скролл в контенте */
+        .bottom-sheet-section-content {
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
     `;
     document.head.appendChild(style);
@@ -1163,12 +1175,13 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            // Блок ведущих с форматированием «и»
+            // Блок ведущих с форматированием «и» и только именем
             if (hike.leaders && hike.leaders.length) {
                 const leaderLinks = hike.leaders.map(leaderUsername => {
                     const leaderData = leaders[leaderUsername];
-                    const displayName = leaderData ? leaderData.name : leaderUsername;
-                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
+                    const fullName = leaderData ? leaderData.name : leaderUsername;
+                    const firstNameOnly = fullName.split(' ')[0]; // только имя
+                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${firstNameOnly}</a>`;
                 });
                 
                 let leaderText = '';
