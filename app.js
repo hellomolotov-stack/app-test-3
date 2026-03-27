@@ -1057,6 +1057,7 @@ function showBottomSheet(index) {
 
         let sectionsHtml = '';
 
+        // особенности
         if (hike.features && hike.features.trim() !== '') {
             let processedText = parseLinks(hike.features, isGuest);
             processedText = processedText.replace(/\n/g, '<br>');
@@ -1079,6 +1080,7 @@ function showBottomSheet(index) {
             `;
         }
 
+        // как добраться (access)
         if (hike.access && hike.access.trim() !== '') {
             let processedText = parseLinks(hike.access, isGuest);
             processedText = processedText.replace(/\n/g, '<br>');
@@ -1114,7 +1116,7 @@ function showBottomSheet(index) {
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
                         <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
                             <span class="participant-text" style="color: ${accentColor};">идут</span>
-                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor};">0</span>
+                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
                             <div class="participant-avatars" id="participantAvatars"></div>
                         </div>
                     </div>
@@ -1162,40 +1164,35 @@ function showBottomSheet(index) {
                 `;
             }
             // Блок ведущих с форматированием «и»
-     if (hike.leaders && hike.leaders.length) {
-    const leaderLinks = hike.leaders.map(leaderUsername => {
-        const leaderData = leaders[leaderUsername];
-        let displayName = leaderUsername; // fallback
-        if (leaderData && leaderData.name) {
-            // Берём только имя (первую часть)
-            const nameParts = leaderData.name.split(' ');
-            displayName = nameParts[0];
-        }
-        return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
-    });
-    
-    let leaderText = '';
-    if (leaderLinks.length === 1) {
-        leaderText = leaderLinks[0];
-    } else if (leaderLinks.length === 2) {
-        leaderText = `${leaderLinks[0]} <span style="color: white;">и</span> ${leaderLinks[1]}`;
-    } else {
-        const last = leaderLinks.pop();
-        leaderText = `${leaderLinks.join(', ')} <span style="color: white;">и</span> ${last}`;
-    }
-    
-    extraInfoHtml += `
-        <div class="info-row" style="color: ${accentColor};">
-            <span class="info-icon" style="color: ${accentColor};">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
-                    <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
-                </svg>
-            </span>
-            <span><strong>ведут:</strong> ${leaderText}</span>
-        </div>
-    `;
-}
+            if (hike.leaders && hike.leaders.length) {
+                const leaderLinks = hike.leaders.map(leaderUsername => {
+                    const leaderData = leaders[leaderUsername];
+                    const displayName = leaderData ? leaderData.name : leaderUsername;
+                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
+                });
+                
+                let leaderText = '';
+                if (leaderLinks.length === 1) {
+                    leaderText = leaderLinks[0];
+                } else if (leaderLinks.length === 2) {
+                    leaderText = `${leaderLinks[0]} <span style="color: white;">и</span> ${leaderLinks[1]}`;
+                } else {
+                    const last = leaderLinks.pop();
+                    leaderText = `${leaderLinks.join(', ')} <span style="color: white;">и</span> ${last}`;
+                }
+                
+                extraInfoHtml += `
+                    <div class="info-row" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="8" r="4" stroke="currentColor" fill="none"/>
+                                <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
+                            </svg>
+                        </span>
+                        <span><strong>ведут:</strong> ${leaderText}</span>
+                    </div>
+                `;
+            }
             extraInfoHtml += '</div>';
         }
 
@@ -1239,8 +1236,15 @@ function showBottomSheet(index) {
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
                 const countEl = document.getElementById('participantCountValue');
-                if (countEl) countEl.textContent = count;
                 const avatarsEl = document.getElementById('participantAvatars');
+                if (countEl) {
+                    if (count === 0) {
+                        countEl.style.display = 'inline';
+                        countEl.textContent = count;
+                    } else {
+                        countEl.style.display = 'none';
+                    }
+                }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
                     participants.forEach(p => {
@@ -1989,24 +1993,24 @@ document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link');
     if (!link) return;
     
-  if (link.classList.contains('leader-name')) {
-    e.preventDefault();
-    e.stopPropagation();
-    const username = link.dataset.leaderUsername;
-    if (username) {
-        haptic();
-        // Закрываем текущий попап, если он открыт
-        closeLeaderDropdown();
-        // Открываем новый
-        if (leaders[username]) {
-            showLeaderDropdown(link, leaders[username]);
-        } else {
-            openLink(`https://t.me/${username}`, 'leader_click', userCard.status !== 'active');
+    if (link.classList.contains('leader-name')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const username = link.dataset.leaderUsername;
+        if (username) {
+            haptic();
+            // Закрываем текущий попап, если он открыт
+            closeLeaderDropdown();
+            // Открываем новый
+            if (leaders[username]) {
+                showLeaderDropdown(link, leaders[username]);
+            } else {
+                openLink(`https://t.me/${username}`, 'leader_click', userCard.status !== 'active');
+            }
+            log('leader_click', userCard.status !== 'active');
         }
-        log('leader_click', userCard.status !== 'active');
+        return;
     }
-    return;
-}
     
     if (link.classList.contains('popup-link')) {
         e.preventDefault();
@@ -2063,7 +2067,29 @@ document.addEventListener('click', function(e) {
         e.stopPropagation();
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
-            toggleParticipantDropdown(link, hikeDate);
+            // Проверяем, зарегистрирован ли пользователь на этот хайк
+            const index = hikesList.findIndex(h => h.date === hikeDate);
+            if (index !== -1 && hikeBookingStatus[index]) {
+                toggleParticipantDropdown(link, hikeDate);
+            } else {
+                // Показываем сообщение о том, что нужно зарегистрироваться
+                const msg = document.createElement('div');
+                msg.className = 'modal-overlay';
+                msg.innerHTML = `
+                    <div class="modal-content" style="max-width: 300px;">
+                        <div class="modal-title">доступ ограничен</div>
+                        <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
+                        <button class="btn btn-yellow" style="margin-top: 12px;" onclick="this.closest('.modal-overlay').remove()">понятно</button>
+                    </div>
+                `;
+                document.body.appendChild(msg);
+                setTimeout(() => {
+                    msg.addEventListener('click', (e) => {
+                        if (e.target === msg) msg.remove();
+                    });
+                }, 0);
+                log('participant_counter_not_registered', userCard.status !== 'active');
+            }
         }
         return;
     }
