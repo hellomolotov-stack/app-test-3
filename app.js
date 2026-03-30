@@ -10,9 +10,13 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
-    if (url.startsWith('https://t.me/') && !url.includes('/share/')) {
-        window.open(url, '_blank');
-        tg.close();
+    if (url.startsWith('https://t.me/')) {
+        if (url.includes('/share/')) {
+            tg.openTelegramLink(url);
+        } else {
+            window.open(url, '_blank');
+            tg.close();
+        }
     } else {
         tg.openLink(url);
     }
@@ -137,14 +141,13 @@ function addCustomStyles() {
         .btn-glow.woman-glow {
             animation: glow-pink 3s ease-in-out infinite;
         }
-        /* Уменьшаем расстояние между "идут" и аватарками */
         .participant-counter {
             gap: 0px;
         }
         .participant-avatars {
-            margin-left: 2px;
+            margin-left: 4px;
+            margin-right: 2px;
         }
-        /* Перенос длинных слов в текстовых блоках */
         .bottom-sheet-section-content {
             word-break: break-word;
             overflow-wrap: break-word;
@@ -1175,15 +1178,16 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            // Блок ведущих с форматированием «и»
+            // Блок ведущих с форматированием «и» и правильным словом «ведёт» / «ведут»
             if (hike.leaders && hike.leaders.length) {
                 const leaderLinks = hike.leaders.map(leaderUsername => {
                     const leaderData = leaders[leaderUsername];
-                    const displayName = leaderData ? leaderData.name.split(' ')[0] : leaderUsername; // только имя
+                    const displayName = leaderData ? leaderData.name.split(' ')[0] : leaderUsername;
                     return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
                 });
                 
                 let leaderText = '';
+                const leaderVerb = hike.leaders.length === 1 ? 'ведёт' : 'ведут';
                 if (leaderLinks.length === 1) {
                     leaderText = leaderLinks[0];
                 } else if (leaderLinks.length === 2) {
@@ -1201,7 +1205,7 @@ function showBottomSheet(index) {
                                 <path d="M5 20v-2a7 7 0 0 1 14 0v2" stroke="currentColor" fill="none"/>
                             </svg>
                         </span>
-                        <span><strong>ведут:</strong> ${leaderText}</span>
+                        <span><strong>${leaderVerb}:</strong> ${leaderText}</span>
                     </div>
                 `;
             }
@@ -1694,7 +1698,7 @@ function updateFloatingSheetButtons() {
     }
 }
 
-// ----- Функция для рендера блока "Мои записи" (без изменений) -----
+// ----- Функция для рендера блока "Мои записи" (с поддержкой woman) -----
 function renderUserBookings() {
     const container = document.getElementById('userBookingsContainer');
     if (!container) return;
@@ -1752,6 +1756,8 @@ function renderUserBookings() {
     `;
 
     bookings.forEach(booking => {
+        const isWoman = booking.woman === 'yes';
+        const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
         const dateParts = booking.date.split('-');
         const day = parseInt(dateParts[2], 10);
         const month = parseInt(dateParts[1], 10) - 1;
@@ -1774,10 +1780,10 @@ function renderUserBookings() {
         html += `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1; margin-right: 16px;">
-                    <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
+                    <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${cleanedTitle}</span>
                 </div>
-                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">детали</button>
+                <button class="btn booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background-color: ${accentColor}; color: #000000; border: none; border-radius: 12px; font-weight: 500;">детали</button>
             </div>
         `;
     });
@@ -1917,7 +1923,11 @@ function showConfetti() {
 
 function parseLinks(text, isGuest) {
     if (!text) return '';
+    // Убираем точку в конце, если она попала в ссылку
+    text = text.replace(/\.([)\s])/g, '$1');
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
+        // Убираем возможную точку в конце URL
+        url = url.replace(/\.$/, '');
         return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
     });
 }
@@ -2078,16 +2088,19 @@ document.addEventListener('click', function(e) {
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
             const index = hikesList.findIndex(h => h.date === hikeDate);
+            const hike = hikesList[index];
             if (index !== -1 && hikeBookingStatus[index]) {
                 toggleParticipantDropdown(link, hikeDate);
             } else {
+                const isWoman = hike && hike.woman === 'yes';
+                const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
                 const msg = document.createElement('div');
                 msg.className = 'modal-overlay';
                 msg.innerHTML = `
                     <div class="modal-content" style="max-width: 300px;">
-                        <div class="modal-title">доступ ограничен</div>
+                        <div class="modal-title" style="color: ${accentColor};">доступ ограничен</div>
                         <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
-                        <button class="btn btn-yellow" style="margin-top: 12px;" onclick="this.closest('.modal-overlay').remove()">понятно</button>
+                        <button class="btn" style="margin-top: 12px; background-color: ${accentColor}; color: #000000; border: none; border-radius: 12px; padding: 12px; font-weight: 500;" onclick="this.closest('.modal-overlay').remove()">понятно</button>
                     </div>
                 `;
                 document.body.appendChild(msg);
