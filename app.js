@@ -10,14 +10,18 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
+    // Если ссылка на Telegram (чат, канал, профиль) – открываем как внутреннюю ссылку Telegram
     if (url.startsWith('https://t.me/')) {
         if (url.includes('/share/')) {
+            // Ссылка для приглашения – открываем через специальный метод
             tg.openTelegramLink(url);
         } else {
+            // Простая ссылка на Telegram – открываем в новом окне, закрываем мини-приложение
             window.open(url, '_blank');
             tg.close();
         }
     } else {
+        // Все остальные ссылки (включая Яндекс.Карты) – открываем во встроенном браузере Telegram
         tg.openLink(url);
     }
 }
@@ -141,16 +145,31 @@ function addCustomStyles() {
         .btn-glow.woman-glow {
             animation: glow-pink 3s ease-in-out infinite;
         }
+        /* Уменьшаем расстояние между "идут" и аватарками */
         .participant-counter {
             gap: 0px;
+            padding-left: 1px;
+            padding-right: 1px;
         }
         .participant-avatars {
-            margin-left: 4px;
-            margin-right: 2px;
+            margin-left: 2px;
         }
+        /* Перенос длинных слов в текстовых блоках */
         .bottom-sheet-section-content {
             word-break: break-word;
             overflow-wrap: break-word;
+        }
+        /* Ссылки в секциях наследуют цвет акцента */
+        .bottom-sheet-section-content a {
+            color: inherit;
+            text-decoration: underline;
+        }
+        /* Кнопка в модалке */
+        .modal-overlay .btn {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
         }
     `;
     document.head.appendChild(style);
@@ -1178,7 +1197,7 @@ function showBottomSheet(index) {
                     </div>
                 `;
             }
-            // Блок ведущих с форматированием «и» и правильным словом «ведёт» / «ведут»
+            // Блок ведущих с форматированием «и» и правильным склонением
             if (hike.leaders && hike.leaders.length) {
                 const leaderLinks = hike.leaders.map(leaderUsername => {
                     const leaderData = leaders[leaderUsername];
@@ -1301,7 +1320,7 @@ function showBottomSheet(index) {
                 updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
-                log('hike_swipe_prev', false);
+                log('slider_prev', false);
             }
         });
 
@@ -1314,7 +1333,7 @@ function showBottomSheet(index) {
                 updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
-                log('hike_swipe_next', false);
+                log('slider_next', false);
             }
         });
     }
@@ -1417,7 +1436,7 @@ function showBottomSheet(index) {
     sheet.addEventListener('touchend', onTouchEnd, { passive: false });
     sheet.addEventListener('touchcancel', onTouchEnd, { passive: false });
 
-    log('bottom_sheet_opened', false);
+    log('slider_haikov_opened', false);
 }
 
 function closeBottomSheet() {
@@ -1534,7 +1553,7 @@ function updateFloatingSheetButtons() {
             const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
             const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}`;
             tg.openTelegramLink(shareUrl);
-            log('invite_friend_click', isGuest);
+            log('invite_click', isGuest);
         });
         inviteRow.appendChild(inviteBtn);
         container.appendChild(inviteRow);
@@ -1586,7 +1605,7 @@ function updateFloatingSheetButtons() {
                     updateFloatingSheetButtons();
                 });
             }
-            log('sheet_cancel_click', false);
+            log('cancel_click', false);
         });
         row.appendChild(cancelBtn);
 
@@ -1616,7 +1635,7 @@ function updateFloatingSheetButtons() {
             questionBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                openLink('https://t.me/hellointelligent', 'sheet_question_click', true);
+                openLink('https://t.me/hellointelligent', 'question_click', true);
             });
             row.appendChild(questionBtn);
 
@@ -1656,7 +1675,7 @@ function updateFloatingSheetButtons() {
             questionBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 haptic();
-                openLink('https://t.me/hellointelligent', 'sheet_question_click', false);
+                openLink('https://t.me/hellointelligent', 'question_click', false);
             });
             row.appendChild(questionBtn);
 
@@ -1689,7 +1708,7 @@ function updateFloatingSheetButtons() {
                         console.error('Error during booking:', error);
                         updateFloatingSheetButtons();
                     });
-                log('sheet_go_click', false);
+                log('idut_click', false);
             });
             row.appendChild(goBtn);
 
@@ -1698,7 +1717,7 @@ function updateFloatingSheetButtons() {
     }
 }
 
-// ----- Функция для рендера блока "Мои записи" (с поддержкой woman) -----
+// ----- Функция для рендера блока "Мои записи" (с учётом женского цвета) -----
 function renderUserBookings() {
     const container = document.getElementById('userBookingsContainer');
     if (!container) return;
@@ -1783,7 +1802,7 @@ function renderUserBookings() {
                     <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${cleanedTitle}</span>
                 </div>
-                <button class="btn booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background-color: ${accentColor}; color: #000000; border: none; border-radius: 12px; font-weight: 500;">детали</button>
+                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background-color: ${isWoman ? '#FB5EB0' : 'var(--yellow)'};">детали</button>
             </div>
         `;
     });
@@ -2047,7 +2066,7 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
         const url = link.dataset.url;
         const isGuest = link.dataset.guest === 'true';
-        openLink(url, 'dynamic_link_click', isGuest);
+        openLink(url, 'link_click', isGuest);
         return;
     }
     
@@ -2066,7 +2085,7 @@ document.addEventListener('click', function(e) {
                 renderPassPage(isGuest);
             } else if (link.id === 'popupQuestion') {
                 const isGuest = userCard.status !== 'active';
-                openLink('https://t.me/hellointelligent', 'popup_question_click', isGuest);
+                openLink('https://t.me/hellointelligent', 'question_click', isGuest);
             } else {
                 openLink(href, 'nav_popup_click', false);
             }
@@ -2089,18 +2108,18 @@ document.addEventListener('click', function(e) {
         if (hikeDate) {
             const index = hikesList.findIndex(h => h.date === hikeDate);
             const hike = hikesList[index];
+            const isWoman = hike && hike.woman === 'yes';
+            const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
             if (index !== -1 && hikeBookingStatus[index]) {
                 toggleParticipantDropdown(link, hikeDate);
             } else {
-                const isWoman = hike && hike.woman === 'yes';
-                const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
                 const msg = document.createElement('div');
                 msg.className = 'modal-overlay';
                 msg.innerHTML = `
                     <div class="modal-content" style="max-width: 300px;">
                         <div class="modal-title" style="color: ${accentColor};">доступ ограничен</div>
                         <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
-                        <button class="btn" style="margin-top: 12px; background-color: ${accentColor}; color: #000000; border: none; border-radius: 12px; padding: 12px; font-weight: 500;" onclick="this.closest('.modal-overlay').remove()">понятно</button>
+                        <button class="btn" style="margin-top: 12px; background-color: ${accentColor}; color: #000000; width: 100%; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;" onclick="this.closest('.modal-overlay').remove()">понятно</button>
                     </div>
                 `;
                 document.body.appendChild(msg);
@@ -2109,7 +2128,7 @@ document.addEventListener('click', function(e) {
                         if (e.target === msg) msg.remove();
                     });
                 }, 0);
-                log('participant_counter_not_registered', userCard.status !== 'active');
+                log('uchastniki_not_registered', userCard.status !== 'active');
             }
         }
         return;
@@ -2128,7 +2147,7 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
         haptic();
         scrollToCalendar();
-        log('bookings_calendar_click', userCard.status !== 'active');
+        log('moi_zapisi_kalendar_click', userCard.status !== 'active');
         return;
     }
 });
@@ -2216,7 +2235,7 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
         document.addEventListener('click', closeHandler);
     }, 0);
     
-    log('participant_dropdown_opened', userCard.status !== 'active');
+    log('uchastniki_click', userCard.status !== 'active');
 }
 
 // ----- Страница для новичков (FAQ) -----
@@ -2228,7 +2247,7 @@ function renderNewcomerPage(isGuest = false) {
     subtitle.textContent = `всё, что нужно знать`;
     showBack(() => renderHome());
     haptic();
-    log('newcomer_page_opened', isGuest);
+    log('novichkam_page_opened', isGuest);
     
     showBottomNav(true);
     setupBottomNav();
@@ -2249,7 +2268,7 @@ function renderNewcomerPage(isGuest = false) {
         <div class="card-container newcomer-page" style="margin-bottom: 0;">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'newcomer_support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
@@ -2566,7 +2585,7 @@ function renderGuestHome() {
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic();
         setUserInteracted();
-        log('newcomer_btn_click', true);
+        log('novichkam_click', true);
         renderNewcomerPage(true);
     });
 
@@ -2574,7 +2593,7 @@ function renderGuestHome() {
         e.preventDefault();
         haptic();
         renderGuestPrivileges();
-        log('guest_privileges_click', true);
+        log('privilegii_click', true);
     });
 
     renderUserBookings();
@@ -2667,14 +2686,14 @@ function renderHome() {
             haptic();
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             showConfetti();
-            log('card_click_celebration');
+            log('card_click', false);
         });
 
         document.getElementById('privBtn')?.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
             setUserInteracted();
-            log('privilege_click');
+            log('privilege_click', false);
             renderPriv();
         });
         
@@ -2688,7 +2707,7 @@ function renderHome() {
         document.getElementById('newcomerBtn')?.addEventListener('click', () => {
             haptic();
             setUserInteracted();
-            log('newcomer_btn_click', false);
+            log('novichkam_click', false);
             renderNewcomerPage(false);
         });
 
@@ -2746,7 +2765,7 @@ function setupBottomNav() {
         setActiveNav('navHome');
         renderHome();
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        log('nav_home_click');
+        log('glavnaya_click', false);
         if (popup.classList.contains('show')) {
             popup.classList.remove('show');
         }
@@ -2760,7 +2779,7 @@ function setupBottomNav() {
         setActiveNav('navHikes');
         renderHome();
         scrollToCalendar();
-        log('nav_hikes_click');
+        log('kalendar_click', false);
         if (popup.classList.contains('show')) {
             popup.classList.remove('show');
         }
@@ -2779,14 +2798,14 @@ function setupBottomNav() {
             setActiveNav('navMore');
             isMenuActive = true;
         }
-        log('nav_more_click');
+        log('menu_click', false);
     });
 
     popupChat.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
         setUserInteracted();
-        openLink('https://t.me/yaltahikingchat', 'popup_chat_click');
+        openLink('https://t.me/yaltahikingchat', 'chat_click', false);
         popup.classList.remove('show');
         isMenuActive = false;
         updateActiveNav();
@@ -2795,7 +2814,7 @@ function setupBottomNav() {
         e.preventDefault();
         haptic();
         setUserInteracted();
-        openLink('https://t.me/yaltahiking', 'popup_channel_click');
+        openLink('https://t.me/yaltahiking', 'channel_click', false);
         popup.classList.remove('show');
         isMenuActive = false;
         updateActiveNav();
@@ -2836,7 +2855,7 @@ function setupBottomNav() {
             haptic();
             setUserInteracted();
             const isGuest = userCard.status !== 'active';
-            openLink('https://t.me/hellointelligent', 'popup_question_click', isGuest);
+            openLink('https://t.me/hellointelligent', 'question_click', isGuest);
             popup.classList.remove('show');
             isMenuActive = false;
             resetNavActive();
