@@ -141,10 +141,18 @@ function addCustomStyles() {
         .bottom-sheet-section-content {
             word-break: break-word;
             overflow-wrap: break-word;
+            color: rgba(255,255,255,0.9);
         }
         .bottom-sheet-section-content a {
-            color: inherit !important;
+            color: var(--yellow);
             text-decoration: underline;
+        }
+        .bottom-sheet-section-content.woman-content a {
+            color: #FB5EB0;
+        }
+        .floating-sheet-buttons.hidden,
+        .floating-sheet-buttons.hidden .btn {
+            pointer-events: none;
         }
         .modal-content .btn {
             width: 100%;
@@ -866,7 +874,7 @@ function showBottomSheet(index) {
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title" style="color: ${accentColor};">особенности</div>
                     ${featureTagsHtml}
-                    <div class="bottom-sheet-section-content" style="color: ${accentColor};">${processedText}</div>
+                    <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
                 </div>
             `;
         }
@@ -876,7 +884,7 @@ function showBottomSheet(index) {
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title" style="color: ${accentColor};">как добраться</div>
-                    <div class="bottom-sheet-section-content" style="color: ${accentColor};">${processedText}</div>
+                    <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
                 </div>
             `;
         }
@@ -886,7 +894,7 @@ function showBottomSheet(index) {
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title" style="color: ${accentColor};">детали</div>
-                    <div class="bottom-sheet-section-content" style="color: ${accentColor};">${processedText}</div>
+                    <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
                 </div>
             `;
         }
