@@ -39,6 +39,7 @@ const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06
 const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
 
 const CACHE_TTL = 600000; // 10 минут
+const DATA_TIMEOUT = 10000; // 10 секунд на загрузку данных
 
 const user = tg.initDataUnsafe?.user;
 const userId = user?.id;
@@ -160,10 +161,51 @@ function addCustomStyles() {
             display: block;
             text-align: center;
         }
+        .retry-button {
+            background-color: var(--yellow);
+            color: #000000;
+            margin-top: 20px;
+        }
     `;
     document.head.appendChild(style);
 }
 
+// --- Кэширование данных ---
+function loadCachedData() {
+    try {
+        const cached = localStorage.getItem('hikingAppCache');
+        if (cached) {
+            const data = JSON.parse(cached);
+            if (data.hikesList) {
+                hikesList = data.hikesList;
+                hikesData = data.hikesData;
+            }
+            if (data.metrics) metrics = data.metrics;
+            if (data.faq) faq = data.faq;
+            if (data.privileges) privileges = data.privileges;
+            if (data.guestPrivileges) guestPrivileges = data.guestPrivileges;
+            if (data.passInfo) passInfo = data.passInfo;
+            if (data.giftContent) giftContent = data.giftContent;
+            if (data.randomPhrases) randomPhrases = data.randomPhrases;
+            if (data.leaders) leaders = data.leaders;
+            return true;
+        }
+    } catch (e) {}
+    return false;
+}
+
+function saveCachedData() {
+    try {
+        const toCache = {
+            hikesList, hikesData,
+            metrics, faq, privileges, guestPrivileges,
+            passInfo, giftContent, randomPhrases, leaders
+        };
+        localStorage.setItem('hikingAppCache', JSON.stringify(toCache));
+    } catch (e) {}
+}
+
+// --- Вспомогательные функции (без изменений) ---
 async function saveUserAvatar() {
     if (!database || !userId || !userPhotoUrl) return;
     try {
@@ -201,10 +243,10 @@ function subscribeToHikes(callback) {
             woman: data.woman || '',
             leaders: data.leaders || []
         })).sort((a, b) => a.date.localeCompare(b.date));
-        console.log('Hikes updated, count:', list.length);
         hikesList = list;
         hikesData = hikes;
         callback(list);
+        saveCachedData();
     });
     return () => hikesRef.off('value', listener);
 }
@@ -1495,7 +1537,6 @@ function showConfetti() {
 
 function parseLinks(text, isGuest) {
     if (!text) return '';
-    // Убираем точку в конце URL, если она есть
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
         url = url.replace(/\.$/, '');
         return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
@@ -1985,47 +2026,91 @@ function updateMetricsUI() {
 
 async function loadData() {
     showAnimatedLoader();
-    const loaderTimeout = setTimeout(() => { console.warn('loadData timeout – force hide loader'); hideAnimatedLoader(); }, 10000);
+
+    // Сразу настраиваем навигацию, чтобы меню было активным
+    setupBottomNav();
+
+    const loaderTimeout = setTimeout(() => {
+        console.warn('loadData timeout – force hide loader');
+        hideAnimatedLoader();
+    }, 10000);
+
     try {
+        // Загружаем кэш, если есть
+        loadCachedData();
+
+        // Подписываемся на хайки, чтобы обновления приходили в реальном времени
         if (database) {
             subscribeToHikes((newList) => {
                 hikesList = newList;
+                // Если уже есть календарь, перерисовываем его
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer && !isPrivPage) renderCalendar(calendarContainer);
                 const bookingsContainer = document.getElementById('userBookingsContainer');
                 if (bookingsContainer) renderUserBookings();
+                saveCachedData();
             });
         }
-        const metricsData = await loadMetricsFromFirebase();
-        if (metricsData) metrics = metricsData;
-        const faqData = await loadFaqFromFirebase();
-        if (faqData) faq = faqData;
-        const privilegesData = await loadPrivilegesFromFirebase();
-        if (privilegesData) privileges = privilegesData;
-        const guestPrivilegesData = await loadGuestPrivilegesFromFirebase();
-        if (guestPrivilegesData) guestPrivileges = guestPrivilegesData;
-        const passInfoData = await loadPassInfoFromFirebase();
-        if (passInfoData) passInfo = passInfoData;
-        const giftData = await loadGiftFromFirebase();
-        if (giftData) giftContent = giftData;
-        const phrasesData = await loadRandomPhrasesFromFirebase();
-        if (phrasesData) randomPhrases = phrasesData;
-        const leadersData = await loadLeadersFromFirebase();
-        if (leadersData) leaders = leadersData;
+
+        // Загружаем остальные данные с таймаутами
+        const metricsPromise = loadMetricsFromFirebase();
+        const faqPromise = loadFaqFromFirebase();
+        const privilegesPromise = loadPrivilegesFromFirebase();
+        const guestPrivilegesPromise = loadGuestPrivilegesFromFirebase();
+        const passInfoPromise = loadPassInfoFromFirebase();
+        const giftPromise = loadGiftFromFirebase();
+        const phrasesPromise = loadRandomPhrasesFromFirebase();
+        const leadersPromise = loadLeadersFromFirebase();
+
+        // Ждём все с таймаутом
+        const results = await Promise.allSettled([
+            metricsPromise, faqPromise, privilegesPromise,
+            guestPrivilegesPromise, passInfoPromise, giftPromise,
+            phrasesPromise, leadersPromise
+        ]);
+
+        if (results[0].status === 'fulfilled' && results[0].value) metrics = results[0].value;
+        if (results[1].status === 'fulfilled' && results[1].value) faq = results[1].value;
+        if (results[2].status === 'fulfilled' && results[2].value) privileges = results[2].value;
+        if (results[3].status === 'fulfilled' && results[3].value) guestPrivileges = results[3].value;
+        if (results[4].status === 'fulfilled' && results[4].value) passInfo = results[4].value;
+        if (results[5].status === 'fulfilled' && results[5].value) giftContent = results[5].value;
+        if (results[6].status === 'fulfilled' && results[6].value) randomPhrases = results[6].value;
+        if (results[7].status === 'fulfilled' && results[7].value) leaders = results[7].value;
+
+        // Загружаем остальное
         await loadRegistrationsPopup();
         await loadPopupConfig();
         await loadUserData();
+
         if (userCard.status === 'active' && database && userPhotoUrl) await saveUserAvatar();
+
         if (userCard.status === 'active' && database) {
-            try { hikeBookingStatus = await loadUserRegistrationsFromFirebase(); }
-            catch (e) { console.error(e); hikeBookingStatus = {}; hikesList.forEach((_, index) => hikeBookingStatus[index] = false); }
-        } else hikeBookingStatus = loadUserRegistrationsFromLocal();
+            try {
+                hikeBookingStatus = await loadUserRegistrationsFromFirebase();
+            } catch (e) {
+                console.error('Firebase user registrations load failed', e);
+                hikeBookingStatus = {};
+                hikesList.forEach((_, index) => hikeBookingStatus[index] = false);
+            }
+        } else {
+            hikeBookingStatus = loadUserRegistrationsFromLocal();
+        }
+
         log('visit', userCard.status !== 'active');
+
+        // Сохраняем в кэш
+        saveCachedData();
+
+        // Рендерим главную страницу
         renderHome();
+
+        // Обработка параметров из URL
         const urlParams = new URLSearchParams(window.location.search);
         const paymentSuccess = urlParams.get('payment_success');
         const invId = urlParams.get('InvId');
         const hikeDate = urlParams.get('hike');
+
         if (paymentSuccess === '1' && invId && database) {
             const orderRef = database.ref(`orders/${invId}`);
             const snapshot = await orderRef.once('value');
@@ -2045,9 +2130,11 @@ async function loadData() {
                 window.history.replaceState({}, '', newUrl);
             }
         }
+
         const startParam = tg.initDataUnsafe?.start_param || tg.initData?.start_param;
         const urlStartParam = urlParams.get('startapp') || urlParams.get('start');
         const effectiveStartParam = startParam || urlStartParam;
+
         if (effectiveStartParam && effectiveStartParam.startsWith('hike_')) {
             const targetDate = normalizeDate(effectiveStartParam.substring(5));
             let attempts = 0;
@@ -2061,8 +2148,14 @@ async function loadData() {
                 } else if (attempts >= maxAttempts) clearInterval(interval);
             }, 300);
         }
-    } catch (e) { console.error('Unhandled error in loadData:', e); renderHome(); }
-    finally { clearTimeout(loaderTimeout); hideAnimatedLoader(); }
+
+    } catch (e) {
+        console.error('Unhandled error in loadData:', e);
+        renderHome();
+    } finally {
+        clearTimeout(loaderTimeout);
+        hideAnimatedLoader();
+    }
 }
 
 window.addEventListener('load', loadData);
