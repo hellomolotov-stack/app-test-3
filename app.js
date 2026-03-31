@@ -11,12 +11,7 @@ function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
     if (url.startsWith('https://t.me/')) {
-        if (url.includes('/share/')) {
-            tg.openTelegramLink(url);
-        } else {
-            window.open(url, '_blank');
-            tg.close();
-        }
+        tg.openTelegramLink(url);
     } else {
         tg.openLink(url);
     }
@@ -871,7 +866,7 @@ function showBottomSheet(index) {
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title" style="color: ${accentColor};">особенности</div>
                     ${featureTagsHtml}
-                    <div class="bottom-sheet-section-content">${processedText}</div>
+                    <div class="bottom-sheet-section-content" style="color: ${accentColor};">${processedText}</div>
                 </div>
             `;
         }
@@ -881,7 +876,7 @@ function showBottomSheet(index) {
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title" style="color: ${accentColor};">как добраться</div>
-                    <div class="bottom-sheet-section-content">${processedText}</div>
+                    <div class="bottom-sheet-section-content" style="color: ${accentColor};">${processedText}</div>
                 </div>
             `;
         }
@@ -891,7 +886,7 @@ function showBottomSheet(index) {
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title" style="color: ${accentColor};">детали</div>
-                    <div class="bottom-sheet-section-content">${processedText}</div>
+                    <div class="bottom-sheet-section-content" style="color: ${accentColor};">${processedText}</div>
                 </div>
             `;
         }
@@ -1596,7 +1591,7 @@ document.addEventListener('click', function(e) {
                     <div class="modal-content" style="max-width: 300px;">
                         <div class="modal-title" style="color: ${accentColor};">доступ ограничен</div>
                         <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
-                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
+                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
                     </div>
                 `;
                 document.body.appendChild(msg);
