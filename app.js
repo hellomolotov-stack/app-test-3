@@ -1495,7 +1495,7 @@ function showConfetti() {
 
 function parseLinks(text, isGuest) {
     if (!text) return '';
-    text = text.replace(/\.([)\s])/g, '$1');
+    // Убираем точку в конце URL, если она есть
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
         url = url.replace(/\.$/, '');
         return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
