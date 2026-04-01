@@ -151,6 +151,10 @@ function addCustomStyles() {
         .bottom-sheet-section-content.woman-content a {
             color: #FB5EB0;
         }
+        .info-row a {
+            color: inherit;
+            text-decoration: underline;
+        }
         .floating-sheet-buttons.hidden,
         .floating-sheet-buttons.hidden .btn {
             pointer-events: none;
@@ -979,7 +983,7 @@ function showBottomSheet(index) {
                 if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
                     locationHtml = parseLinks(hike.location_link, isGuest);
                 } else {
-                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link" style="color: ${accentColor};">открыть на карте</a>`;
+                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
                 extraInfoHtml += `
                     <div class="info-row" style="color: ${accentColor};">
@@ -994,7 +998,7 @@ function showBottomSheet(index) {
                 const leaderLinks = hike.leaders.map(leaderUsername => {
                     const leaderData = leaders[leaderUsername];
                     const displayName = leaderData ? leaderData.name.split(' ')[0] : leaderUsername;
-                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}" style="color: ${accentColor};">${displayName}</a>`;
+                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}">${displayName}</a>`;
                 });
                 let leaderText = '';
                 const leaderVerb = hike.leaders.length === 1 ? 'ведёт' : 'ведут';
