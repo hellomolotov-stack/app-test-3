@@ -31,7 +31,6 @@ function hideBack() {
 }
 
 // Конфигурация
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZVtOiVkMUUzwJbLgZ9qCqqkgPEbMcZv4DANnZdWQFkpSVXT6zMy4GRj9BfWay_e1Ta3WKh1HVXCqR/pub?output=csv';
 const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
 const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbxbtauKP7FO0quR0yktXfbnU-x_Vk6zOzKZlms-tgQSszVDQH1POGrREYdjPBzHqyUJFg/exec';
 const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
@@ -209,7 +208,32 @@ function saveCachedData() {
     } catch (e) {}
 }
 
-// --- Вспомогательные функции (без изменений) ---
+// --- Загрузка данных пользователя из Firebase (вместо CSV) ---
+async function loadUserDataFromFirebase() {
+    if (!database || !userId) {
+        userCard.status = 'inactive';
+        return;
+    }
+    try {
+        const snapshot = await database.ref(`members/${userId}`).once('value');
+        const data = snapshot.val();
+        if (data && data.user_id) {
+            userCard = {
+                status: 'active',
+                hikes: data.hikes_count || 0,
+                cardUrl: data.card_image_url || ''
+            };
+            console.log('User data loaded from Firebase:', userCard);
+        } else {
+            userCard.status = 'inactive';
+            console.log('No user data in Firebase, treating as inactive');
+        }
+    } catch (e) {
+        console.error('Error loading user data from Firebase:', e);
+        userCard.status = 'inactive';
+    }
+}
+
 async function saveUserAvatar() {
     if (!database || !userId || !userPhotoUrl) return;
     try {
@@ -447,68 +471,6 @@ async function loadUserRegistrationsFromFirebase() {
     } catch (e) {
         console.error('Error loading user registrations:', e);
         return {};
-    }
-}
-
-function parseCSVLine(line) {
-    const result = [];
-    let start = 0, inQuotes = false;
-    for (let i = 0; i < line.length; i++) {
-        if (line[i] === '"') {
-            inQuotes = !inQuotes;
-        } else if (line[i] === ',' && !inQuotes) {
-            let field = line.substring(start, i).trim();
-            if (field.startsWith('"') && field.endsWith('"')) field = field.slice(1, -1);
-            result.push(field);
-            start = i + 1;
-        }
-    }
-    let field = line.substring(start).trim();
-    if (field.startsWith('"') && field.endsWith('"')) field = field.slice(1, -1);
-    result.push(field);
-    return result;
-}
-
-async function fetchWithCache(key, url, ttl = CACHE_TTL) {
-    const cached = localStorage.getItem(key);
-    if (cached) {
-        const { timestamp, data } = JSON.parse(cached);
-        if (Date.now() - timestamp < ttl) return data;
-    }
-    const resp = await fetch(`${url}&t=${Date.now()}`, { cache: 'no-cache' });
-    const text = await resp.text();
-    const data = { text };
-    localStorage.setItem(key, JSON.stringify({ timestamp: Date.now(), data }));
-    return data;
-}
-
-async function loadUserData() {
-    if (!userId) {
-        userCard.status = 'inactive';
-        return;
-    }
-    try {
-        const { text } = await fetchWithCache(`members_${userId}`, CSV_URL, CACHE_TTL);
-        const lines = text.trim().split('\n');
-        if (lines.length < 2) throw new Error('Нет данных');
-        const headers = parseCSVLine(lines[0]);
-        for (let i = 1; i < lines.length; i++) {
-            const row = parseCSVLine(lines[i]);
-            if (row[0] === String(userId)) {
-                let data = {};
-                headers.forEach((key, idx) => { data[key] = row[idx] || ''; });
-                userCard = {
-                    status: 'active',
-                    hikes: parseInt(data.hikes_count) || 0,
-                    cardUrl: data.card_image_url || ''
-                };
-                break;
-            }
-        }
-        if (userCard.status !== 'active') userCard.status = 'inactive';
-    } catch (e) {
-        console.error('Ошибка загрузки members:', e);
-        userCard.status = 'inactive';
     }
 }
 
@@ -2085,7 +2047,7 @@ async function loadData() {
         // Загружаем остальное
         await loadRegistrationsPopup();
         await loadPopupConfig();
-        await loadUserData();
+        await loadUserDataFromFirebase(); // ← загрузка карты из Firebase
 
         if (userCard.status === 'active' && database && userPhotoUrl) await saveUserAvatar();
 
