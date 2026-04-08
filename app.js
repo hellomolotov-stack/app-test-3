@@ -10,8 +10,15 @@ window.haptic = haptic;
 function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest);
+    
     if (url.startsWith('https://t.me/')) {
+        // Открываем ссылку в Telegram
         tg.openTelegramLink(url);
+        // Закрываем мини-приложение (на Android сворачивает, на iOS закрывает)
+        // Небольшая задержка, чтобы успел отработать переход
+        setTimeout(() => {
+            tg.close();
+        }, 100);
     } else {
         tg.openLink(url);
     }
@@ -2047,7 +2054,7 @@ async function loadData() {
         // Загружаем остальное
         await loadRegistrationsPopup();
         await loadPopupConfig();
-        await loadUserDataFromFirebase(); // ← загрузка карты из Firebase
+        await loadUserDataFromFirebase();
 
         if (userCard.status === 'active' && database && userPhotoUrl) await saveUserAvatar();
 
