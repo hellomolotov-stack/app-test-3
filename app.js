@@ -2300,10 +2300,10 @@ function showProfilesComingSoonPopup() {
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 300px;">
             <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title" style="color: var(--yellow);">✨ новая функция</div>
-            <div class="modal-text">скоро владельцы карт получат доступ к знакомствам, качество которых недоступно ни в одном другом сервисе.</div>
+            <div class="modal-title" style="color: var(--yellow);">новая функция</div>
+            <div class="modal-text">скоро владельцы карт получат доступ к знакомствам, качество которых недоступно ни в одном другом сервисе</div>
             <div style="margin-top: 20px; text-align: center;">
-                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">воу, давайте скорее 🚀</button>
+                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">ого, давайте скорее</button>
             </div>
         </div>
     `;
