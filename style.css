@@ -532,42 +532,55 @@ body::before {
     pointer-events: none;
 }
 
+/* Нижнее плавающее меню - новая версия */
 .bottom-nav {
     position: fixed;
     bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 16px;
+    right: 16px;
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
-    width: auto;
-    min-width: 260px;
     background-color: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 50px;
-    padding: 4px 4px;
+    padding: 4px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.2);
     border: 1px solid rgba(255,255,255,0.2);
     z-index: 100;
     transition: opacity 0.3s;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
-.bottom-nav.hidden {
-    opacity: 0;
-    pointer-events: none;
+.bottom-nav-left {
+    display: flex;
+    gap: 4px;
+    background-color: rgba(73, 138, 176, 0.2);
+    border-radius: 50px;
+    padding: 2px;
+}
+
+.bottom-nav-right {
+    margin-left: auto;
 }
 
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 24px;
+    padding: 6px 20px;
     border-radius: 40px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
     color: rgba(255,255,255,0.7);
     border: 1px solid transparent;
+    position: relative;
+}
+
+.nav-more {
+    padding: 6px 18px;
 }
 
 .nav-item.active {
@@ -586,26 +599,24 @@ body::before {
     fill: none;
 }
 
-.nav-icon img {
-    width: 24px;
-    height: 24px;
-    display: block;
-    margin-bottom: 2px;
-}
-
-#navHikes svg rect,
-#navHikes svg line {
-    stroke-width: 1.5;
-}
-
-#navHome svg {
-    transform: scale(1.05);
-}
-
 .nav-label {
     font-size: 12px;
     font-weight: 500;
     line-height: 1.2;
+}
+
+.nav-badge {
+    position: absolute;
+    top: -8px;
+    right: 5px;
+    background-color: var(--yellow);
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 30px;
+    white-space: nowrap;
+    z-index: 2;
 }
 
 .nav-popup {
@@ -655,14 +666,15 @@ body::before {
 @media (orientation: landscape) {
     .bottom-nav {
         bottom: 10px;
-        padding: 4px 4px;
-        min-width: 240px;
+        padding: 4px;
     }
     .nav-item {
-        padding: 6px 20px;
+        padding: 4px 16px;
     }
-    .nav-icon svg,
-    .nav-icon img {
+    .nav-more {
+        padding: 4px 14px;
+    }
+    .nav-icon svg {
         width: 20px;
         height: 20px;
     }
@@ -1550,7 +1562,7 @@ body::before {
 }
 
 .status-tag {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
     padding: 4px 10px;
     border-radius: 20px;
@@ -1576,7 +1588,7 @@ body::before {
     font-size: 14px;
     font-weight: 700;
     color: var(--yellow);
-    margin: 8px 0 4px 0;
+    margin: 12px 0 4px 0;
 }
 
 .profile-section-text {
@@ -1592,7 +1604,7 @@ body::before {
     font-weight: 400;
     font-size: 14px;
     cursor: pointer;
-    margin-top: 4px;
+    margin-top: 0;
     display: inline-block;
 }
 
@@ -1684,6 +1696,7 @@ body::before {
 }
 
 .checkbox-group label {
+    font-size: 16px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1726,12 +1739,12 @@ body::before {
 .nav-badge {
     position: absolute;
     top: -8px;
-    right: 10px;
+    right: 5px;
     background-color: var(--yellow);
     color: #000000;
     font-size: 10px;
     font-weight: 700;
-    padding: 2px 8px;
+    padding: 2px 6px;
     border-radius: 30px;
     white-space: nowrap;
     z-index: 2;
