@@ -532,14 +532,14 @@ body::before {
     pointer-events: none;
 }
 
-/* Нижнее плавающее меню - адаптивная версия */
+/* Нижнее плавающее меню - компактная версия */
 .bottom-nav {
     position: fixed;
     bottom: 20px;
     left: 16px;
     right: 16px;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     background-color: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
@@ -552,26 +552,26 @@ body::before {
     transition: opacity 0.3s;
     max-width: 600px;
     margin: 0 auto;
+    gap: 0;
 }
 
 .bottom-nav-left {
     display: flex;
-    gap: 4px;
+    gap: 2px;
     background-color: rgba(73, 138, 176, 0.2);
     border-radius: 50px;
     padding: 2px;
-    flex-wrap: nowrap;
 }
 
 .bottom-nav-right {
-    margin-left: auto;
+    margin-left: 0;
 }
 
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 6px 16px;
+    padding: 6px 14px;
     border-radius: 40px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
@@ -583,7 +583,7 @@ body::before {
 
 @media (max-width: 480px) {
     .nav-item {
-        padding: 6px 12px;
+        padding: 6px 10px;
     }
     .nav-label {
         font-size: 10px;
@@ -608,7 +608,7 @@ body::before {
 }
 
 .nav-more {
-    padding: 6px 14px;
+    padding: 6px 12px;
 }
 
 .nav-item.active {
@@ -697,10 +697,10 @@ body::before {
         padding: 4px;
     }
     .nav-item {
-        padding: 4px 12px;
+        padding: 4px 10px;
     }
     .nav-more {
-        padding: 4px 10px;
+        padding: 4px 8px;
     }
     .nav-icon svg {
         width: 20px;
@@ -1112,6 +1112,12 @@ body::before {
     text-decoration: underline;
 }
 
+/* Для женских хайков ссылки розовые */
+.bottom-sheet-section-content.woman-content a,
+.info-row.woman-row a {
+    color: #FB5EB0 !important;
+}
+
 .bottom-sheet-section {
     margin-top: 20px;
 }
@@ -1391,12 +1397,14 @@ body::before {
     background: rgba(255,255,255,0.3);
 }
 
+/* Женский хайк в календаре – розовый фон, сегодняшний с белой обводкой */
 .calendar-day.woman-hike {
     background: #FB5EB0;
     color: white;
 }
-
 .calendar-day.woman-hike.today {
+    background: #FB5EB0;
+    color: white;
     border: 2px solid white;
 }
 
@@ -1498,19 +1506,6 @@ body::before {
     100% { box-shadow: 0 0 3px #FB5EB0; }
 }
 
-.calendar-day.woman-hike {
-    background: #FB5EB0;
-    color: white;
-}
-
-.calendar-day.woman-hike.booked-day {
-    animation: glow-pink 3s ease-in-out infinite;
-}
-
-.calendar-day.woman-hike.today {
-    border: 2px solid white;
-}
-
 .btn-glow.woman-glow {
     animation: glow-pink 3s ease-in-out infinite;
 }
@@ -1574,9 +1569,8 @@ body::before {
 
 .profile-name-status {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 8px;
     margin-bottom: 12px;
 }
@@ -1749,7 +1743,7 @@ body::before {
     accent-color: var(--yellow);
 }
 
-.checkbox-group input[value="романтика"]:checked {
+.checkbox-group input[value="отношения"]:checked {
     accent-color: #FB5EB0;
 }
 
@@ -1788,4 +1782,31 @@ body::before {
     font-size: 14px;
     color: rgba(255,255,255,0.7);
     margin-top: 4px;
+}
+
+/* Pull-to-refresh индикатор */
+.ptr-element {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    background: transparent;
+    z-index: 3000;
+    pointer-events: none;
+    transform: translateY(-100%);
+    transition: transform 0.3s;
+}
+.ptr-element.show {
+    transform: translateY(0);
+}
+.ptr-loader {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top-color: var(--yellow);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
 }
