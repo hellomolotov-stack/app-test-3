@@ -91,315 +91,6 @@ try {
     database = null;
 }
 
-function addCustomStyles() {
-    if (document.getElementById('customAppStyles')) return;
-    const style = document.createElement('style');
-    style.id = 'customAppStyles';
-    style.textContent = `
-        .calendar-nav-arrow {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-            transition: 0.2s;
-        }
-        .calendar-nav-arrow:disabled {
-            opacity: 0.3;
-            cursor: default;
-        }
-        .calendar-nav-arrow:not(:disabled):hover {
-            background: rgba(255,255,255,0.3);
-        }
-        @keyframes glow-pink {
-            0% { box-shadow: 0 0 3px #FB5EB0; }
-            50% { box-shadow: 0 0 10px #FB5EB0; }
-            100% { box-shadow: 0 0 3px #FB5EB0; }
-        }
-        .calendar-day.woman-hike {
-            background: #FB5EB0;
-            color: white;
-        }
-        .calendar-day.woman-hike.booked-day {
-            animation: glow-pink 3s ease-in-out infinite;
-        }
-        .calendar-day.woman-hike.today {
-            border: 2px solid white;
-        }
-        .btn-glow.woman-glow {
-            animation: glow-pink 3s ease-in-out infinite;
-        }
-        .participant-counter {
-            gap: 1px;
-            padding: 4px 10px;
-        }
-        .participant-avatars {
-            margin-left: 6px;
-        }
-        .bottom-sheet-section-content {
-            word-break: break-word;
-            overflow-wrap: break-word;
-            color: rgba(255,255,255,0.9);
-        }
-        .bottom-sheet-section-content a {
-            color: var(--yellow);
-            text-decoration: underline;
-        }
-        .bottom-sheet-section-content.woman-content a {
-            color: #FB5EB0;
-        }
-        .info-row a {
-            color: inherit;
-            text-decoration: underline;
-        }
-        .floating-sheet-buttons.hidden,
-        .floating-sheet-buttons.hidden .btn {
-            pointer-events: none;
-        }
-        .modal-content .btn {
-            width: 100%;
-            box-sizing: border-box;
-            display: block;
-            text-align: center;
-        }
-        .retry-button {
-            background-color: var(--yellow);
-            color: #000000;
-            margin-top: 20px;
-        }
-        .profiles-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin: 0 0 20px 0;
-        }
-        .profile-card {
-            background-color: rgba(255,255,255,0.1);
-            border-radius: 28px;
-            padding: 12px;
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-            transition: transform 0.2s;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        .profile-card.blurred {
-            filter: blur(8px);
-            pointer-events: none;
-            opacity: 0.7;
-        }
-        .profile-card.blurred .status-tag,
-        .profile-card.blurred .profile-section-title,
-        .profile-card.blurred .profile-name,
-        .profile-card.blurred .profile-section-text {
-            color: rgba(255,255,255,0.3) !important;
-        }
-        .profile-avatar {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            border-radius: 20px;
-            object-fit: cover;
-            margin-bottom: 12px;
-            background-color: rgba(255,255,255,0.2);
-        }
-        .profile-avatar-placeholder {
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            border-radius: 20px;
-            background-color: #40a7e3;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            font-weight: bold;
-            color: white;
-            margin-bottom: 12px;
-        }
-        .profile-name-status {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 12px;
-        }
-        .profile-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: #ffffff;
-        }
-        .profile-status-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-        .status-tag {
-            font-size: 12px;
-            font-weight: 500;
-            padding: 4px 10px;
-            border-radius: 20px;
-            white-space: nowrap;
-        }
-        .status-tag-friendship {
-            background-color: var(--yellow);
-            color: #000000;
-        }
-        .status-tag-romance {
-            background-color: #FB5EB0;
-            color: #ffffff;
-        }
-        .status-tag-business {
-            background-color: #5E9FC5;
-            color: #ffffff;
-        }
-        .profile-section-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin: 8px 0 4px 0;
-        }
-        .profile-section-text {
-            font-size: 14px;
-            color: rgba(255,255,255,0.9);
-            word-break: break-word;
-            margin-bottom: 8px;
-        }
-        .profile-hike-link {
-            color: #ffffff;
-            text-decoration: none;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 4px;
-            display: inline-block;
-        }
-        .profile-hike-link:hover {
-            text-decoration: underline;
-        }
-        .floating-edit-btn {
-            position: fixed;
-            bottom: 100px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1100;
-            pointer-events: none;
-        }
-        .floating-edit-btn .btn {
-            pointer-events: auto;
-            margin: 0;
-            width: auto;
-            padding: 12px 24px;
-            border-radius: 40px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        }
-        .edit-form {
-            padding: 16px;
-        }
-        .edit-form .form-field {
-            margin-bottom: 20px;
-        }
-        .edit-form label {
-            display: block;
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--yellow);
-            margin-bottom: 8px;
-        }
-        .edit-form input, .edit-form textarea {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: none;
-            background-color: rgba(255,255,255,0.2);
-            color: #ffffff;
-            font-size: 16px;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-        .edit-form textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-        .checkbox-group {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .checkbox-group label {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: #ffffff;
-            font-weight: normal;
-            cursor: pointer;
-        }
-        .checkbox-group input {
-            width: auto;
-            margin: 0;
-            accent-color: currentColor;
-        }
-        .checkbox-group input[value="дружба"]:checked {
-            accent-color: var(--yellow);
-        }
-        .checkbox-group input[value="романтика"]:checked {
-            accent-color: #FB5EB0;
-        }
-        .checkbox-group input[value="бизнес"]:checked {
-            accent-color: #5E9FC5;
-        }
-        .delete-profile-btn {
-            background: none;
-            border: none;
-            color: #ff3b30;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: underline;
-            cursor: pointer;
-            margin-top: 20px;
-            width: 100%;
-            text-align: center;
-        }
-        .blur-overlay {
-            position: relative;
-        }
-        .blur-overlay::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            backdrop-filter: blur(8px);
-            background-color: rgba(0,0,0,0.3);
-            border-radius: 28px;
-            pointer-events: none;
-        }
-        .nav-badge {
-            position: absolute;
-            top: -8px;
-            right: 10px;
-            background-color: var(--yellow);
-            color: #000000;
-            font-size: 10px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 30px;
-            white-space: nowrap;
-            z-index: 2;
-        }
-    `;
-    document.head.appendChild(style);
-}
-
 // --- Кэширование данных ---
 function loadCachedData() {
     try {
@@ -1081,7 +772,6 @@ function hasHikesInMonth(year, month) {
 }
 
 function renderCalendar(container) {
-    addCustomStyles();
     const year = currentCalendarYear, month = currentCalendarMonth;
     const today = new Date();
     const currentYear = today.getFullYear(), currentMonth = today.getMonth(), currentDate = today.getDate();
@@ -2423,7 +2113,7 @@ async function renderProfiles() {
         }
         mainDiv.innerHTML = `
             <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
-            <div class="floating-edit-btn">
+            <div class="center-floating-btn">
                 <button class="btn btn-yellow btn-glow" id="createProfileBtn">создать профиль 👋🏻</button>
             </div>
         `;
@@ -2487,7 +2177,7 @@ function renderProfileCard(profile, isBlurred = false) {
     const nextHikeHtml = (nextHike && !isBlurred) ? `
         <div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div>
         <a href="#" class="profile-hike-link" data-hike-date="${nextHike.date}" data-hike-title="${nextHike.title}" style="color: #ffffff;">${nextHike.title}</a>
-    ` : (isBlurred ? '' : `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">не записан</span>`);
+    ` : (isBlurred ? '' : `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">скоро узнаем</span>`);
 
     const avatarHtml = profile.avatarUrl
         ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0) || '?').toUpperCase()}</div>';">`
@@ -2541,7 +2231,7 @@ async function renderEditProfile() {
                     <input type="text" id="profileName" value="${escapeHtml(currentName)}" placeholder="как вас зовут">
                 </div>
                 <div class="form-field">
-                    <label>статус знакомств (можно выбрать несколько)</label>
+                    <label>статус знакомств</label>
                     <div class="checkbox-group">
                         <label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба') ? 'checked' : ''}> дружба</label>
                         <label><input type="checkbox" value="романтика" ${currentStatuses.includes('романтика') ? 'checked' : ''}> романтика</label>
