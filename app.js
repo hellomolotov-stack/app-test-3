@@ -195,6 +195,12 @@ function addCustomStyles() {
             pointer-events: none;
             opacity: 0.7;
         }
+        .profile-card.blurred .status-tag,
+        .profile-card.blurred .profile-section-title,
+        .profile-card.blurred .profile-name,
+        .profile-card.blurred .profile-section-text {
+            color: rgba(255,255,255,0.3) !important;
+        }
         .profile-avatar {
             width: 100%;
             aspect-ratio: 1 / 1;
@@ -279,13 +285,19 @@ function addCustomStyles() {
         .floating-edit-btn {
             position: fixed;
             bottom: 100px;
-            right: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             z-index: 1100;
+            pointer-events: none;
         }
         .floating-edit-btn .btn {
+            pointer-events: auto;
             margin: 0;
             width: auto;
-            padding: 12px 20px;
+            padding: 12px 24px;
             border-radius: 40px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
@@ -297,9 +309,9 @@ function addCustomStyles() {
         }
         .edit-form label {
             display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #ffffff;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--yellow);
             margin-bottom: 8px;
         }
         .edit-form input, .edit-form textarea {
@@ -311,6 +323,7 @@ function addCustomStyles() {
             color: #ffffff;
             font-size: 16px;
             font-family: inherit;
+            box-sizing: border-box;
         }
         .edit-form textarea {
             resize: vertical;
@@ -332,6 +345,16 @@ function addCustomStyles() {
         .checkbox-group input {
             width: auto;
             margin: 0;
+            accent-color: currentColor;
+        }
+        .checkbox-group input[value="дружба"]:checked {
+            accent-color: var(--yellow);
+        }
+        .checkbox-group input[value="романтика"]:checked {
+            accent-color: #FB5EB0;
+        }
+        .checkbox-group input[value="бизнес"]:checked {
+            accent-color: #5E9FC5;
         }
         .delete-profile-btn {
             background: none;
@@ -372,12 +395,6 @@ function addCustomStyles() {
             border-radius: 30px;
             white-space: nowrap;
             z-index: 2;
-        }
-        body.keyboard-open {
-            position: fixed;
-            width: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
     `;
     document.head.appendChild(style);
@@ -1863,7 +1880,6 @@ document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link');
     if (!link) return;
     
-    // Обработка клика по названию хайка в профиле
     if (link.classList.contains('profile-hike-link')) {
         e.preventDefault();
         const hikeDate = link.dataset.hikeDate;
@@ -2277,11 +2293,9 @@ function setupBottomNav() {
     const navProfilesNew = document.getElementById('navProfiles');
     const navMoreNew = document.getElementById('navMore');
 
-    // Изменяем текст кнопки на "интеллигенты"
     const profilesLabel = navProfilesNew?.querySelector('.nav-label');
     if (profilesLabel) profilesLabel.textContent = 'интеллигенты';
 
-    // Добавляем плашку «скоро»
     if (navProfilesNew && !navProfilesNew.querySelector('.nav-badge')) {
         const badge = document.createElement('span');
         badge.className = 'nav-badge';
@@ -2348,7 +2362,6 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
 
-// === Функция попапа «скоро» (без эмодзи ракеты) ===
 function showProfilesComingSoonPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -2372,7 +2385,6 @@ function showProfilesComingSoonPopup() {
     log('profiles_coming_soon_popup', userCard.status !== 'active');
 }
 
-// === СТРАНИЦА ПРОФИЛЕЙ (интеллигенты) ===
 async function renderProfiles() {
     isPrivPage = true;
     isMenuActive = false;
@@ -2391,23 +2403,21 @@ async function renderProfiles() {
     const hasMyProfile = !!myProfile;
     const hasAnyProfile = Object.keys(allProfiles).length > 0;
 
-    // Если у пользователя нет своего профиля, показываем заблюренные заглушки
     if (!hasMyProfile) {
-        // Генерируем 6 пустых заглушек (или столько, сколько нужно для заполнения сетки)
         const placeholderCount = 6;
         let profilesHtml = '';
         for (let i = 0; i < placeholderCount; i++) {
             profilesHtml += `
                 <div class="profile-card blurred">
-                    <div class="profile-avatar-placeholder">?</div>
+                    <div class="profile-avatar-placeholder" style="background-color: rgba(255,255,255,0.1);">?</div>
                     <div class="profile-name-status">
-                        <span class="profile-name">???</span>
-                        <div class="profile-status-tags"><span class="status-tag status-tag-friendship">дружба</span></div>
+                        <span class="profile-name" style="color: rgba(255,255,255,0.3);">???</span>
+                        <div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3);">дружба</span></div>
                     </div>
-                    <div class="profile-section-title" style="color: var(--yellow);">увлечения</div>
-                    <div class="profile-section-text">———</div>
-                    <div class="profile-section-title" style="color: var(--yellow);">профессия</div>
-                    <div class="profile-section-text">———</div>
+                    <div class="profile-section-title" style="color: rgba(255,255,255,0.3);">увлечения</div>
+                    <div class="profile-section-text" style="color: rgba(255,255,255,0.3);">———</div>
+                    <div class="profile-section-title" style="color: rgba(255,255,255,0.3);">профессия</div>
+                    <div class="profile-section-text" style="color: rgba(255,255,255,0.3);">———</div>
                 </div>
             `;
         }
@@ -2424,26 +2434,24 @@ async function renderProfiles() {
         return;
     }
 
-    // Если профиль есть, показываем реальные карточки всех владельцев
     let profilesHtml = '';
     if (hasAnyProfile) {
         for (const [uid, profile] of Object.entries(allProfiles)) {
             profilesHtml += renderProfileCard(profile, false);
         }
     } else {
-        // Если нет ни одного профиля, показываем заглушки (но с кнопкой редактирования)
         for (let i = 0; i < 6; i++) {
             profilesHtml += `
                 <div class="profile-card blurred">
-                    <div class="profile-avatar-placeholder">?</div>
+                    <div class="profile-avatar-placeholder" style="background-color: rgba(255,255,255,0.1);">?</div>
                     <div class="profile-name-status">
-                        <span class="profile-name">???</span>
-                        <div class="profile-status-tags"><span class="status-tag status-tag-friendship">дружба</span></div>
+                        <span class="profile-name" style="color: rgba(255,255,255,0.3);">???</span>
+                        <div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3);">дружба</span></div>
                     </div>
-                    <div class="profile-section-title" style="color: var(--yellow);">увлечения</div>
-                    <div class="profile-section-text">———</div>
-                    <div class="profile-section-title" style="color: var(--yellow);">профессия</div>
-                    <div class="profile-section-text">———</div>
+                    <div class="profile-section-title" style="color: rgba(255,255,255,0.3);">увлечения</div>
+                    <div class="profile-section-text" style="color: rgba(255,255,255,0.3);">———</div>
+                    <div class="profile-section-title" style="color: rgba(255,255,255,0.3);">профессия</div>
+                    <div class="profile-section-text" style="color: rgba(255,255,255,0.3);">———</div>
                 </div>
             `;
         }
@@ -2519,14 +2527,6 @@ async function renderEditProfile() {
     log('edit_profile_opened', false);
     showBottomNav(false);
 
-    // Фиксация фона при открытии клавиатуры
-    document.body.classList.add('keyboard-open');
-    const onBlur = () => {
-        document.body.classList.remove('keyboard-open');
-        window.removeEventListener('resize', onBlur);
-    };
-    window.addEventListener('resize', onBlur);
-
     await loadMyProfile();
     const currentName = myProfile?.name || firstName;
     const currentStatuses = myProfile?.friendshipStatuses || [];
@@ -2550,13 +2550,13 @@ async function renderEditProfile() {
                 </div>
                 <div class="form-field">
                     <label>увлечения</label>
-                    <textarea id="profileHobbies" rows="3" placeholder="что вас вдохновляет?">${escapeHtml(currentHobbies)}</textarea>
+                    <textarea id="profileHobbies" rows="3" placeholder="что тебя вдохновляет?">${escapeHtml(currentHobbies)}</textarea>
                 </div>
                 <div class="form-field">
                     <label>профессия</label>
-                    <textarea id="profileProfession" rows="2" placeholder="кем вы работаете?">${escapeHtml(currentProfession)}</textarea>
+                    <textarea id="profileProfession" rows="2" placeholder="в какой сфере ты работаешь?">${escapeHtml(currentProfession)}</textarea>
                 </div>
-                <button type="submit" class="btn btn-yellow" id="saveProfileBtn">сохранить профиль</button>
+                <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="width: 100%; margin: 0;">сохранить профиль</button>
                 ${myProfile ? `<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>` : ''}
             </form>
         </div>
