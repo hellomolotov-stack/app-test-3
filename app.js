@@ -566,18 +566,20 @@ function setActiveNav(activeId) {
 function resetNavActive() { document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active')); }
 
 function updateActiveNav() {
-    if (isPrivPage || isMenuActive) return;
+    if (isMenuActive) return;
     if (manualNavClick) {
-        setActiveNav(manualNavClick === 'home' ? 'navHome' : 'navHikes');
+        setActiveNav(manualNavClick === 'home' ? 'navHome' : manualNavClick === 'hikes' ? 'navHikes' : 'navProfiles');
         return;
     }
     if (!userInteracted) { setActiveNav('navHome'); return; }
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
     const navProfiles = document.getElementById('navProfiles');
-    if (!navHome || !navHikes) return;
-    const isProfilesPage = document.getElementById('profilesContainer') !== null || document.querySelector('.profiles-grid') !== null;
-    if (isProfilesPage) {
+    if (!navHome || !navHikes || !navProfiles) return;
+
+    const isProfilesPage = document.getElementById('profilesGrid') !== null;
+    const isEditProfilePage = document.getElementById('editProfileForm') !== null;
+    if (isProfilesPage || isEditProfilePage) {
         setActiveNav('navProfiles');
         return;
     }
@@ -1970,6 +1972,11 @@ function setupBottomNav() {
     const popupPass = document.getElementById('popupPass');
     const popupQuestion = document.getElementById('popupQuestion');
     if (!navHome || !navHikes || !navMore || !popup) return;
+
+    const bottomNavLeft = document.querySelector('.bottom-nav-left');
+    const bottomNavRight = document.querySelector('.bottom-nav-right');
+    if (!bottomNavLeft || !bottomNavRight) return;
+
     const newNavHome = navHome.cloneNode(true);
     const newNavHikes = navHikes.cloneNode(true);
     const newNavProfiles = navProfiles.cloneNode(true);
@@ -1978,38 +1985,30 @@ function setupBottomNav() {
     navHikes.parentNode.replaceChild(newNavHikes, navHikes);
     navProfiles.parentNode.replaceChild(newNavProfiles, navProfiles);
     navMore.parentNode.replaceChild(newNavMore, navMore);
+
     const navHomeNew = document.getElementById('navHome');
     const navHikesNew = document.getElementById('navHikes');
     const navProfilesNew = document.getElementById('navProfiles');
     const navMoreNew = document.getElementById('navMore');
 
-    const profilesLabel = navProfilesNew?.querySelector('.nav-label');
-    if (profilesLabel) profilesLabel.textContent = 'интеллигенты';
-
-    if (navProfilesNew && !navProfilesNew.querySelector('.nav-badge')) {
-        const badge = document.createElement('span');
-        badge.className = 'nav-badge';
-        badge.textContent = 'скоро';
-        navProfilesNew.style.position = 'relative';
-        navProfilesNew.appendChild(badge);
-    }
-
     navHomeNew.addEventListener('click', () => {
-        haptic(); setUserInteracted(); setManualNav('home'); setActiveNav('navHome');
+        haptic(); setUserInteracted(); setManualNav('home');
         renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
         log('glavnaya_click', false);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         isMenuActive = false;
+        updateActiveNav();
     });
     navHikesNew.addEventListener('click', () => {
-        haptic(); setUserInteracted(); setManualNav('hikes'); setActiveNav('navHikes');
+        haptic(); setUserInteracted(); setManualNav('hikes');
         renderHome(); scrollToCalendar();
         log('kalendar_click', false);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         isMenuActive = false;
+        updateActiveNav();
     });
     navProfilesNew.addEventListener('click', () => {
-        haptic(); setUserInteracted(); setManualNav('profiles'); setActiveNav('navProfiles');
+        haptic(); setUserInteracted(); setManualNav('profiles');
         const isMaxMolotov = user?.username === 'maxmolotov';
         if (isMaxMolotov) {
             renderProfiles();
@@ -2019,23 +2018,41 @@ function setupBottomNav() {
         log('profiles_click', false);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         isMenuActive = false;
+        updateActiveNav();
     });
     navMoreNew.addEventListener('click', (e) => {
         e.stopPropagation(); haptic();
-        if (popup.classList.contains('show')) { popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); }
-        else { popup.classList.add('show'); setActiveNav('navMore'); isMenuActive = true; }
+        if (popup.classList.contains('show')) {
+            popup.classList.remove('show');
+            isMenuActive = false;
+        } else {
+            popup.classList.add('show');
+            isMenuActive = true;
+        }
         log('menu_click', false);
+        updateActiveNav();
     });
+
     popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', false); popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); });
     popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', false); popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); });
-    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; renderGift(isGuest); popup.classList.remove('show'); isMenuActive = false; resetNavActive(); });
-    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; renderNewcomerPage(isGuest); popup.classList.remove('show'); isMenuActive = false; resetNavActive(); });
-    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; renderPassPage(isGuest); popup.classList.remove('show'); isMenuActive = false; resetNavActive(); });
+    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; renderGift(isGuest); popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); });
+    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; renderNewcomerPage(isGuest); popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); });
+    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; renderPassPage(isGuest); popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); });
     if (popupQuestion) {
-        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; openLink('https://t.me/hellointelligent', 'question_click', isGuest); popup.classList.remove('show'); isMenuActive = false; resetNavActive(); });
+        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); const isGuest = userCard.status !== 'active'; openLink('https://t.me/hellointelligent', 'question_click', isGuest); popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); });
     }
-    document.addEventListener('click', (e) => { if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) { popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); } });
-    window.addEventListener('scroll', () => { setUserInteracted(); requestAnimationFrame(updateActiveNav); });
+
+    document.addEventListener('click', (e) => {
+        if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
+            popup.classList.remove('show');
+            isMenuActive = false;
+            updateActiveNav();
+        }
+    });
+    window.addEventListener('scroll', () => {
+        setUserInteracted();
+        requestAnimationFrame(updateActiveNav);
+    });
     updateActiveNav();
 }
 
@@ -2079,6 +2096,7 @@ async function renderProfiles() {
     isPrivPage = true;
     isMenuActive = false;
     resetNavActive();
+    setActiveNav('navProfiles');
     subtitle.textContent = `интеллигенты`;
     showBack(() => renderHome());
     haptic();
@@ -2211,6 +2229,7 @@ async function renderEditProfile() {
     isPrivPage = true;
     isMenuActive = false;
     resetNavActive();
+    setActiveNav('navProfiles');
     subtitle.textContent = `мой профиль`;
     showBack(() => renderProfiles());
     haptic();
