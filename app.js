@@ -299,7 +299,7 @@ function addCustomStyles() {
             display: block;
             font-size: 14px;
             font-weight: 500;
-            color: var(--yellow);
+            color: #ffffff;
             margin-bottom: 8px;
         }
         .edit-form input, .edit-form textarea {
@@ -359,6 +359,25 @@ function addCustomStyles() {
             background-color: rgba(0,0,0,0.3);
             border-radius: 28px;
             pointer-events: none;
+        }
+        .nav-badge {
+            position: absolute;
+            top: -8px;
+            right: 10px;
+            background-color: var(--yellow);
+            color: #000000;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 30px;
+            white-space: nowrap;
+            z-index: 2;
+        }
+        body.keyboard-open {
+            position: fixed;
+            width: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
     `;
     document.head.appendChild(style);
@@ -460,7 +479,9 @@ async function saveProfile(profileData) {
     await profileRef.set(data);
     myProfile = data;
     profiles[userId] = data;
+    // Синхронизация с Google Sheets (если настроена)
     syncProfileToSheet(data);
+    console.log('Profile saved to Firebase', data);
     return data;
 }
 
@@ -471,30 +492,39 @@ async function deleteProfile() {
     delete profiles[userId];
     myProfile = null;
     syncProfileDeleteToSheet(userId);
+    console.log('Profile deleted');
 }
 
 function syncProfileToSheet(profile) {
-    const url = 'https://script.google.com/macros/s/ВАШ_НОВЫЙ_СКРИПТ/exec'; // Замените на реальный URL
-    const params = new URLSearchParams({
-        action: 'syncProfile',
-        user_id: profile.userId,
-        name: profile.name || '',
-        statuses: (profile.friendshipStatuses || []).join(','),
-        hobbies: profile.hobbies || '',
-        profession: profile.profession || '',
-        avatar_url: profile.avatarUrl || '',
-        updated_at: new Date().toISOString()
-    });
-    fetch(`${url}?${params}`, { keepalive: true }).catch(e => console.error('Profile sync error:', e));
+    const url = 'ВАШ_НОВЫЙ_СКРИПТ'; // замените на реальный URL веб-приложения
+    fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'syncProfile',
+            user_id: profile.userId,
+            name: profile.name,
+            statuses: profile.friendshipStatuses,
+            hobbies: profile.hobbies,
+            profession: profile.profession,
+            avatar_url: profile.avatarUrl,
+            updated_at: new Date().toISOString()
+        })
+    }).catch(e => console.error('Profile sync error:', e));
 }
 
 function syncProfileDeleteToSheet(userId) {
-    const url = 'https://script.google.com/macros/s/ВАШ_НОВЫЙ_СКРИПТ/exec';
-    const params = new URLSearchParams({
-        action: 'deleteProfile',
-        user_id: userId
-    });
-    fetch(`${url}?${params}`, { keepalive: true }).catch(e => console.error('Profile delete sync error:', e));
+    const url = 'ВАШ_НОВЫЙ_СКРИПТ';
+    fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            action: 'deleteProfile',
+            user_id: userId
+        })
+    }).catch(e => console.error('Profile delete sync error:', e));
 }
 
 async function updateAvatarIfNeeded() {
@@ -965,7 +995,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, isGuest) {
                         </div>
                         <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
                             <div style="flex: 1;">до конца 2026</div>
-                            <div style="flex: 1;">все сезоны</div>
+                            <div style: "flex: 1;">все сезоны</div>
                         </div>
                         <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
                             <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
@@ -1108,7 +1138,6 @@ function renderCalendar(container) {
         });
     });
 }
-
 let sheetCurrentIndex = 0, sheetScrollListener = null, dragStartY = 0, isDragging = false, currentUnsubscribe = null;
 
 function showBottomSheet(index) {
@@ -2234,6 +2263,17 @@ function setupBottomNav() {
     const navHikesNew = document.getElementById('navHikes');
     const navProfilesNew = document.getElementById('navProfiles');
     const navMoreNew = document.getElementById('navMore');
+
+    // Добавляем плашку «скоро» над кнопкой профилей
+    const profilesNavItem = document.getElementById('navProfiles');
+    if (profilesNavItem && !profilesNavItem.querySelector('.nav-badge')) {
+        const badge = document.createElement('span');
+        badge.className = 'nav-badge';
+        badge.textContent = 'скоро';
+        profilesNavItem.style.position = 'relative';
+        profilesNavItem.appendChild(badge);
+    }
+
     navHomeNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('home'); setActiveNav('navHome');
         renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2248,19 +2288,18 @@ function setupBottomNav() {
         if (popup.classList.contains('show')) popup.classList.remove('show');
         isMenuActive = false;
     });
- navProfilesNew.addEventListener('click', () => {
-    haptic(); setUserInteracted(); setManualNav('profiles'); setActiveNav('navProfiles');
-    // Проверяем, является ли пользователь @maxmolotov
-    const isMaxMolotov = user?.username === 'maxmolotov';
-    if (isMaxMolotov) {
-        renderProfiles();
-    } else {
-        showProfilesComingSoonPopup();
-    }
-    log('profiles_click', false);
-    if (popup.classList.contains('show')) popup.classList.remove('show');
-    isMenuActive = false;
-});
+    navProfilesNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('profiles'); setActiveNav('navProfiles');
+        const isMaxMolotov = user?.username === 'maxmolotov';
+        if (isMaxMolotov) {
+            renderProfiles();
+        } else {
+            showProfilesComingSoonPopup();
+        }
+        log('profiles_click', false);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        isMenuActive = false;
+    });
     navMoreNew.addEventListener('click', (e) => {
         e.stopPropagation(); haptic();
         if (popup.classList.contains('show')) { popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); }
@@ -2292,6 +2331,8 @@ function updateMetricsUI() {
     if (kilometersEl) kilometersEl.textContent = metrics.kilometers;
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
+
+// === Функция попапа «скоро» ===
 function showProfilesComingSoonPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -2303,7 +2344,7 @@ function showProfilesComingSoonPopup() {
             <div class="modal-title" style="color: var(--yellow);">новая функция</div>
             <div class="modal-text">скоро владельцы карт получат доступ к знакомствам, качество которых недоступно ни в одном другом сервисе</div>
             <div style="margin-top: 20px; text-align: center;">
-                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">ого, давайте скорее</button>
+                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">воу, давайте скорее 🚀</button>
             </div>
         </div>
     `;
@@ -2314,29 +2355,53 @@ function showProfilesComingSoonPopup() {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     log('profiles_coming_soon_popup', userCard.status !== 'active');
 }
-// === НОВАЯ СТРАНИЦА ПРОФИЛЕЙ ===
+
+// === СТРАНИЦА ПРОФИЛЕЙ ===
 async function renderProfiles() {
     isPrivPage = true;
     isMenuActive = false;
     resetNavActive();
-    subtitle.textContent = `👥 профили участников`;
+    subtitle.textContent = `профили участников`;
     showBack(() => renderHome());
     haptic();
     log('profiles_page_opened', userCard.status !== 'active');
     showBottomNav(true);
     setupBottomNav();
 
-    // Загружаем все профили
     const allProfiles = await loadAllProfiles();
     await loadMyProfile();
     await updateAvatarIfNeeded();
 
     const hasMyProfile = !!myProfile;
 
+    // Если профиля нет — показываем заблюренные карточки и кнопку «создать свой профиль»
+    if (!hasMyProfile) {
+        mainDiv.innerHTML = `
+            <div class="profiles-grid" id="profilesGrid"></div>
+            <div class="floating-edit-btn">
+                <button class="btn btn-yellow btn-glow" id="createProfileBtn">создать свой профиль ✨</button>
+            </div>
+        `;
+        const grid = document.getElementById('profilesGrid');
+        if (grid) {
+            grid.innerHTML = '';
+            for (const [uid, profile] of Object.entries(allProfiles)) {
+                const cardHtml = renderProfileCard(profile, true);
+                grid.innerHTML += cardHtml;
+            }
+        }
+        document.getElementById('createProfileBtn')?.addEventListener('click', () => {
+            haptic();
+            renderEditProfile();
+        });
+        return;
+    }
+
+    // Если профиль есть — показываем сетку с карточками и кнопку «редактировать профиль»
     mainDiv.innerHTML = `
         <div class="profiles-grid" id="profilesGrid"></div>
         <div class="floating-edit-btn" id="editProfileBtnContainer">
-            <button class="btn btn-yellow btn-glow" id="editProfileBtn">${hasMyProfile ? 'редактировать профиль ✏️' : 'опубликовать профиль ✨'}</button>
+            <button class="btn btn-yellow btn-glow" id="editProfileBtn">редактировать профиль ✏️</button>
         </div>
     `;
 
@@ -2370,9 +2435,9 @@ function renderProfileCard(profile, isBlurred = false) {
         }
     }
     const nextHikeHtml = (nextHike && !isBlurred) ? `
-        <div class="profile-section-title" style="color: var(--yellow);">идёт на ближайший хайк:</div>
-        <a href="#" class="profile-hike-link" data-hike-date="${nextHike.date}" data-hike-title="${nextHike.title}">${nextHike.title}</a>
-    ` : (isBlurred ? '' : `<div class="profile-section-title" style="color: var(--yellow);">идёт на ближайший хайк:</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">не записан</span>`);
+        <div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div>
+        <a href="#" class="profile-hike-link" data-hike-date="${nextHike.date}" data-hike-title="${nextHike.title}" style="color: #ffffff;">${nextHike.title}</a>
+    ` : (isBlurred ? '' : `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">не записан</span>`);
 
     const avatarHtml = profile.avatarUrl
         ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0) || '?').toUpperCase()}</div>';">`
@@ -2406,11 +2471,19 @@ async function renderEditProfile() {
     isPrivPage = true;
     isMenuActive = false;
     resetNavActive();
-    subtitle.textContent = `✏️ редактирование профиля`;
+    subtitle.textContent = `мой профиль`;
     showBack(() => renderProfiles());
     haptic();
     log('edit_profile_opened', false);
     showBottomNav(false);
+
+    // Фиксация фона при открытии клавиатуры
+    document.body.classList.add('keyboard-open');
+    const onBlur = () => {
+        document.body.classList.remove('keyboard-open');
+        window.removeEventListener('resize', onBlur);
+    };
+    window.addEventListener('resize', onBlur);
 
     await loadMyProfile();
     const currentName = myProfile?.name || firstName;
