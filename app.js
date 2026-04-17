@@ -2008,19 +2008,20 @@ function setupBottomNav() {
         isMenuActive = false;
         updateActiveNav();
     });
-    navProfilesNew.addEventListener('click', () => {
-        haptic(); setUserInteracted(); setManualNav('profiles');
-        const isMaxMolotov = user?.username === 'maxmolotov';
-        if (isMaxMolotov) {
-            renderProfiles();
-        } else {
-            showProfilesComingSoonPopup();
-        }
-        log('profiles_click', false);
-        if (popup.classList.contains('show')) popup.classList.remove('show');
-        isMenuActive = false;
-        updateActiveNav();
-    });
+ navProfilesNew.addEventListener('click', () => {
+    haptic(); setUserInteracted(); setManualNav('profiles');
+    const allowedUsernames = ['maxmolotov', 'basokni'];
+    const isAllowed = allowedUsernames.includes(user?.username);
+    if (isAllowed) {
+        renderProfiles();
+    } else {
+        showProfilesComingSoonPopup();
+    }
+    log('profiles_click', false);
+    if (popup.classList.contains('show')) popup.classList.remove('show');
+    isMenuActive = false;
+    updateActiveNav();
+});
     navMoreNew.addEventListener('click', (e) => {
         e.stopPropagation(); haptic();
         if (popup.classList.contains('show')) {
