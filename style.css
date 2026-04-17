@@ -1519,3 +1519,221 @@ body::before {
 .btn-glow.woman-glow {
     animation: glow-pink 3s ease-in-out infinite;
 }
+
+/* Стили для профилей */
+.profiles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 0 0 20px 0;
+}
+
+.profile-card {
+    background-color: rgba(255,255,255,0.1);
+    border-radius: 28px;
+    padding: 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+    transition: transform 0.2s;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.profile-card.blurred {
+    filter: blur(8px);
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.profile-avatar {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
+    object-fit: cover;
+    margin-bottom: 12px;
+    background-color: rgba(255,255,255,0.2);
+}
+
+.profile-avatar-placeholder {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 20px;
+    background-color: #40a7e3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: bold;
+    color: white;
+    margin-bottom: 12px;
+}
+
+.profile-name-status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.profile-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.profile-status-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.status-tag {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.status-tag-friendship {
+    background-color: var(--yellow);
+    color: #000000;
+}
+
+.status-tag-romance {
+    background-color: #FB5EB0;
+    color: #ffffff;
+}
+
+.status-tag-business {
+    background-color: #5E9FC5;
+    color: #ffffff;
+}
+
+.profile-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--yellow);
+    margin: 8px 0 4px 0;
+}
+
+.profile-section-text {
+    font-size: 14px;
+    color: rgba(255,255,255,0.9);
+    word-break: break-word;
+    margin-bottom: 8px;
+}
+
+.profile-hike-link {
+    color: var(--yellow);
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    margin-top: 4px;
+    display: inline-block;
+}
+
+.profile-hike-link:hover {
+    text-decoration: underline;
+}
+
+.floating-edit-btn {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    z-index: 1100;
+}
+
+.floating-edit-btn .btn {
+    margin: 0;
+    width: auto;
+    padding: 12px 20px;
+    border-radius: 40px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.edit-form {
+    padding: 16px;
+}
+
+.edit-form .form-field {
+    margin-bottom: 20px;
+}
+
+.edit-form label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--yellow);
+    margin-bottom: 8px;
+}
+
+.edit-form input, .edit-form textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: rgba(255,255,255,0.2);
+    color: #ffffff;
+    font-size: 16px;
+    font-family: inherit;
+}
+
+.edit-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-group input {
+    width: auto;
+    margin: 0;
+}
+
+.delete-profile-btn {
+    background: none;
+    border: none;
+    color: #ff3b30;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 20px;
+    width: 100%;
+    text-align: center;
+}
+
+.blur-overlay {
+    position: relative;
+}
+
+.blur-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    backdrop-filter: blur(8px);
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 28px;
+    pointer-events: none;
+}
