@@ -266,7 +266,7 @@ function addCustomStyles() {
             margin-bottom: 8px;
         }
         .profile-hike-link {
-            color: var(--yellow);
+            color: #ffffff;
             text-decoration: none;
             font-weight: 500;
             cursor: pointer;
@@ -479,7 +479,6 @@ async function saveProfile(profileData) {
     await profileRef.set(data);
     myProfile = data;
     profiles[userId] = data;
-    // Синхронизация с Google Sheets (если настроена)
     syncProfileToSheet(data);
     console.log('Profile saved to Firebase', data);
     return data;
@@ -496,7 +495,7 @@ async function deleteProfile() {
 }
 
 function syncProfileToSheet(profile) {
-    const url = 'ВАШ_НОВЫЙ_СКРИПТ'; // замените на реальный URL веб-приложения
+    const url = 'ВАШ_НОВЫЙ_СКРИПТ'; // замените на реальный URL
     fetch(url, {
         method: 'POST',
         mode: 'no-cors',
@@ -1138,6 +1137,7 @@ function renderCalendar(container) {
         });
     });
 }
+
 let sheetCurrentIndex = 0, sheetScrollListener = null, dragStartY = 0, isDragging = false, currentUnsubscribe = null;
 
 function showBottomSheet(index) {
@@ -1644,7 +1644,6 @@ function updateFloatingSheetButtons() {
         }
     }
 }
-
 function renderUserBookings() {
     const container = document.getElementById('userBookingsContainer');
     if (!container) return;
@@ -1861,8 +1860,22 @@ function showLeaderDropdown(leaderElement, leaderData) {
 }
 
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link');
     if (!link) return;
+    
+    // Обработка клика по названию хайка в профиле
+    if (link.classList.contains('profile-hike-link')) {
+        e.preventDefault();
+        const hikeDate = link.dataset.hikeDate;
+        if (hikeDate) {
+            const index = hikesList.findIndex(h => h.date === hikeDate);
+            if (index !== -1) {
+                showBottomSheet(index);
+            }
+        }
+        return;
+    }
+    
     if (link.classList.contains('leader-name')) {
         e.preventDefault(); e.stopPropagation();
         const username = link.dataset.leaderUsername;
@@ -2264,14 +2277,17 @@ function setupBottomNav() {
     const navProfilesNew = document.getElementById('navProfiles');
     const navMoreNew = document.getElementById('navMore');
 
-    // Добавляем плашку «скоро» над кнопкой профилей
-    const profilesNavItem = document.getElementById('navProfiles');
-    if (profilesNavItem && !profilesNavItem.querySelector('.nav-badge')) {
+    // Изменяем текст кнопки на "интеллигенты"
+    const profilesLabel = navProfilesNew?.querySelector('.nav-label');
+    if (profilesLabel) profilesLabel.textContent = 'интеллигенты';
+
+    // Добавляем плашку «скоро»
+    if (navProfilesNew && !navProfilesNew.querySelector('.nav-badge')) {
         const badge = document.createElement('span');
         badge.className = 'nav-badge';
         badge.textContent = 'скоро';
-        profilesNavItem.style.position = 'relative';
-        profilesNavItem.appendChild(badge);
+        navProfilesNew.style.position = 'relative';
+        navProfilesNew.appendChild(badge);
     }
 
     navHomeNew.addEventListener('click', () => {
@@ -2332,7 +2348,7 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
 
-// === Функция попапа «скоро» ===
+// === Функция попапа «скоро» (без эмодзи ракеты) ===
 function showProfilesComingSoonPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -2344,7 +2360,7 @@ function showProfilesComingSoonPopup() {
             <div class="modal-title" style="color: var(--yellow);">новая функция</div>
             <div class="modal-text">скоро владельцы карт получат доступ к знакомствам, качество которых недоступно ни в одном другом сервисе</div>
             <div style="margin-top: 20px; text-align: center;">
-                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">воу, давайте скорее 🚀</button>
+                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">воу, давайте скорее</button>
             </div>
         </div>
     `;
@@ -2356,12 +2372,12 @@ function showProfilesComingSoonPopup() {
     log('profiles_coming_soon_popup', userCard.status !== 'active');
 }
 
-// === СТРАНИЦА ПРОФИЛЕЙ ===
+// === СТРАНИЦА ПРОФИЛЕЙ (интеллигенты) ===
 async function renderProfiles() {
     isPrivPage = true;
     isMenuActive = false;
     resetNavActive();
-    subtitle.textContent = `профили участников`;
+    subtitle.textContent = `интеллигенты`;
     showBack(() => renderHome());
     haptic();
     log('profiles_page_opened', userCard.status !== 'active');
@@ -2373,23 +2389,34 @@ async function renderProfiles() {
     await updateAvatarIfNeeded();
 
     const hasMyProfile = !!myProfile;
+    const hasAnyProfile = Object.keys(allProfiles).length > 0;
 
-    // Если профиля нет — показываем заблюренные карточки и кнопку «создать свой профиль»
+    // Если у пользователя нет своего профиля, показываем заблюренные заглушки
     if (!hasMyProfile) {
+        // Генерируем 6 пустых заглушек (или столько, сколько нужно для заполнения сетки)
+        const placeholderCount = 6;
+        let profilesHtml = '';
+        for (let i = 0; i < placeholderCount; i++) {
+            profilesHtml += `
+                <div class="profile-card blurred">
+                    <div class="profile-avatar-placeholder">?</div>
+                    <div class="profile-name-status">
+                        <span class="profile-name">???</span>
+                        <div class="profile-status-tags"><span class="status-tag status-tag-friendship">дружба</span></div>
+                    </div>
+                    <div class="profile-section-title" style="color: var(--yellow);">увлечения</div>
+                    <div class="profile-section-text">———</div>
+                    <div class="profile-section-title" style="color: var(--yellow);">профессия</div>
+                    <div class="profile-section-text">———</div>
+                </div>
+            `;
+        }
         mainDiv.innerHTML = `
-            <div class="profiles-grid" id="profilesGrid"></div>
+            <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
             <div class="floating-edit-btn">
-                <button class="btn btn-yellow btn-glow" id="createProfileBtn">создать свой профиль ✨</button>
+                <button class="btn btn-yellow btn-glow" id="createProfileBtn">создать профиль 👋🏻</button>
             </div>
         `;
-        const grid = document.getElementById('profilesGrid');
-        if (grid) {
-            grid.innerHTML = '';
-            for (const [uid, profile] of Object.entries(allProfiles)) {
-                const cardHtml = renderProfileCard(profile, true);
-                grid.innerHTML += cardHtml;
-            }
-        }
         document.getElementById('createProfileBtn')?.addEventListener('click', () => {
             haptic();
             renderEditProfile();
@@ -2397,22 +2424,37 @@ async function renderProfiles() {
         return;
     }
 
-    // Если профиль есть — показываем сетку с карточками и кнопку «редактировать профиль»
-    mainDiv.innerHTML = `
-        <div class="profiles-grid" id="profilesGrid"></div>
-        <div class="floating-edit-btn" id="editProfileBtnContainer">
-            <button class="btn btn-yellow btn-glow" id="editProfileBtn">редактировать профиль ✏️</button>
-        </div>
-    `;
-
-    const grid = document.getElementById('profilesGrid');
-    if (grid) {
-        grid.innerHTML = '';
+    // Если профиль есть, показываем реальные карточки всех владельцев
+    let profilesHtml = '';
+    if (hasAnyProfile) {
         for (const [uid, profile] of Object.entries(allProfiles)) {
-            const cardHtml = renderProfileCard(profile, false);
-            grid.innerHTML += cardHtml;
+            profilesHtml += renderProfileCard(profile, false);
+        }
+    } else {
+        // Если нет ни одного профиля, показываем заглушки (но с кнопкой редактирования)
+        for (let i = 0; i < 6; i++) {
+            profilesHtml += `
+                <div class="profile-card blurred">
+                    <div class="profile-avatar-placeholder">?</div>
+                    <div class="profile-name-status">
+                        <span class="profile-name">???</span>
+                        <div class="profile-status-tags"><span class="status-tag status-tag-friendship">дружба</span></div>
+                    </div>
+                    <div class="profile-section-title" style="color: var(--yellow);">увлечения</div>
+                    <div class="profile-section-text">———</div>
+                    <div class="profile-section-title" style="color: var(--yellow);">профессия</div>
+                    <div class="profile-section-text">———</div>
+                </div>
+            `;
         }
     }
+
+    mainDiv.innerHTML = `
+        <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
+        <div class="floating-edit-btn" id="editProfileBtnContainer">
+            <button class="btn btn-outline" id="editProfileBtn" style="background-color: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">мой профиль ✍🏻</button>
+        </div>
+    `;
 
     document.getElementById('editProfileBtn')?.addEventListener('click', () => {
         haptic();
