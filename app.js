@@ -1528,7 +1528,6 @@ function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
         url = url.replace(/\.$/, '');
-        // Для женских хайков цвет ссылок будет розовым через CSS
         return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
     });
 }
@@ -2008,20 +2007,20 @@ function setupBottomNav() {
         isMenuActive = false;
         updateActiveNav();
     });
- navProfilesNew.addEventListener('click', () => {
-    haptic(); setUserInteracted(); setManualNav('profiles');
-    const allowedUsernames = ['maxmolotov', 'basokni'];
-    const isAllowed = allowedUsernames.includes(user?.username);
-    if (isAllowed) {
-        renderProfiles();
-    } else {
-        showProfilesComingSoonPopup();
-    }
-    log('profiles_click', false);
-    if (popup.classList.contains('show')) popup.classList.remove('show');
-    isMenuActive = false;
-    updateActiveNav();
-});
+    navProfilesNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('profiles');
+        const allowedUsernames = ['maxmolotov', 'basokni'];
+        const isAllowed = allowedUsernames.includes(user?.username);
+        if (isAllowed) {
+            renderProfiles();
+        } else {
+            showProfilesComingSoonPopup();
+        }
+        log('profiles_click', false);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        isMenuActive = false;
+        updateActiveNav();
+    });
     navMoreNew.addEventListener('click', (e) => {
         e.stopPropagation(); haptic();
         if (popup.classList.contains('show')) {
@@ -2144,9 +2143,16 @@ async function renderProfiles() {
         return;
     }
 
+    // Сортируем профили: новые сверху (по updatedAt)
+    const sortedProfiles = Object.entries(allProfiles).sort((a, b) => {
+        const dateA = a[1].updatedAt || 0;
+        const dateB = b[1].updatedAt || 0;
+        return dateB - dateA;
+    });
+
     let profilesHtml = '';
     if (hasAnyProfile) {
-        for (const [uid, profile] of Object.entries(allProfiles)) {
+        for (const [uid, profile] of sortedProfiles) {
             profilesHtml += renderProfileCard(profile, false);
         }
     } else {
@@ -2182,17 +2188,14 @@ async function renderProfiles() {
 
 function renderProfileCard(profile, isBlurred = false) {
     let nextHike = null;
-    if (!isBlurred && hikesList.length) {
+    if (!isBlurred && hikesList.length && profile.userId) {
         const today = new Date();
         today.setHours(0,0,0,0);
         const futureHikes = hikesList.filter(h => new Date(h.date) >= today);
-        for (let hike of futureHikes) {
-            const hikeIndex = hikesList.findIndex(h => h.date === hike.date);
-            if (hikeIndex !== -1 && hikeBookingStatus[hikeIndex]) {
-                nextHike = hike;
-                break;
-            }
-        }
+        // Проверяем регистрацию этого пользователя на хайки через отдельный Firebase путь
+        // Для простоты пока не реализовано, оставляем заглушку
+        // В будущем нужно будет загружать регистрации каждого пользователя
+        // Пока оставляем "скоро узнаем"
     }
     const nextHikeHtml = (nextHike && !isBlurred) ? `
         <div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div>
