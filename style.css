@@ -90,7 +90,6 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
-/* Анимированный загрузчик */
 .initial-loader {
     position: fixed;
     top: 0;
@@ -235,7 +234,6 @@ body::before {
     color: #ffffff;
 }
 
-/* Кнопка "ты записан" – стиль как у счётчика */
 .btn-yellow-outline {
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
@@ -255,7 +253,6 @@ body::before {
     -webkit-backdrop-filter: blur(4px);
 }
 
-/* Кнопка с подсветкой для гостей и для "иду" */
 .btn-glow {
     animation: glow 3s ease-in-out infinite;
     position: relative;
@@ -307,7 +304,6 @@ body::before {
     transform: rotate(-90deg);
 }
 
-/* Специальный класс для жёлтого аккордеона (оформить карту) */
 .card-accordion .accordion-btn {
     background-color: var(--yellow);
     color: #000000;
@@ -321,11 +317,6 @@ body::before {
     display: none;
 }
 
-.card-accordion .accordion-btn:hover {
-    opacity: 0.9;
-}
-
-/* ===== ИСПРАВЛЕНИЕ: убираем margin, добавляем padding ===== */
 .dropdown-menu {
     display: none;
     margin: 0 0 12px 0;
@@ -336,15 +327,13 @@ body::before {
     display: block;
 }
 
-/* Кнопки внутри аккордеона */
 .dropdown-menu .btn-outline {
     width: 100%;
-    margin: 0 0 8px 0; /* нижний отступ для кнопок, если нужно */
+    margin: 0 0 8px 0;
     padding: 16px;
     box-sizing: border-box;
 }
 
-/* Для кнопок в ряду (сезонная/бессрочная) убираем нижний отступ, т.к. они в flex-контейнере */
 .dropdown-menu .flex-row .btn-outline {
     margin: 0;
 }
@@ -543,7 +532,6 @@ body::before {
     pointer-events: none;
 }
 
-/* ===== ПЛАВАЮЩЕЕ НИЖНЕЕ МЕНЮ ===== */
 .bottom-nav {
     position: fixed;
     bottom: 20px;
@@ -693,7 +681,6 @@ body::before {
     }
 }
 
-/* ----- Bottom Sheet с секциями ----- */
 .bottom-sheet-overlay {
     position: fixed;
     top: 0;
@@ -915,7 +902,7 @@ body::before {
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     border-radius: 30px;
-    padding: 4px 10px 4px 10px;
+    padding: 4px 10px;
     color: #ffffff;
     z-index: 10;
     border: 1px solid rgba(255,255,255,0.2);
@@ -948,7 +935,7 @@ body::before {
     display: flex;
     align-items: center;
     height: 36px;
-    margin-left: 8px;
+    margin-left: 6px;
 }
 
 .participant-avatar {
@@ -1337,7 +1324,6 @@ body::before {
     filter: brightness(0.9);
 }
 
-/* Новые стили для навигации календаря */
 .calendar-nav-arrow {
     background: rgba(255,255,255,0.2);
     border: none;
@@ -1361,9 +1347,8 @@ body::before {
     background: rgba(255,255,255,0.3);
 }
 
-/* Стили для женских хайков */
 .calendar-day.woman-hike {
-    background: #FF54DE;
+    background: #FB5EB0;
     color: white;
 }
 
@@ -1461,40 +1446,6 @@ body::before {
 .popup-link:hover {
     opacity: 0.8;
 }
-/* Розовое свечение для женских хайков */
-@keyframes glow-pink {
-    0% { box-shadow: 0 0 3px #FF54DE; }
-    50% { box-shadow: 0 0 10px #FF54DE; }
-    100% { box-shadow: 0 0 3px #FF54DE; }
-}
-
-.calendar-day.woman-hike {
-    background: #FF54DE;
-    color: white;
-}
-
-.calendar-day.woman-hike.booked-day {
-    animation: glow-pink 3s ease-in-out infinite;
-}
-
-.calendar-day.woman-hike.today {
-    border: 2px solid white;
-}
-/* Розовое свечение для кнопок */
-@keyframes glow-pink {
-    0% { box-shadow: 0 0 3px #FF54DE; }
-    50% { box-shadow: 0 0 10px #FF54DE; }
-    100% { box-shadow: 0 0 3px #FF54DE; }
-}
-
-.btn-glow.woman-glow {
-    animation: glow-pink 3s ease-in-out infinite;
-}
-
-/* Розовое свечение для дней календаря (если хайк женский и есть запись) */
-.calendar-day.woman-hike.booked-day {
-    animation: glow-pink 3s ease-in-out infinite;
-}
 
 /* Розовое свечение для женских хайков */
 @keyframes glow-pink {
@@ -1520,7 +1471,7 @@ body::before {
     animation: glow-pink 3s ease-in-out infinite;
 }
 
-/* Стили для профилей */
+/* Стили для страницы профилей */
 .profiles-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1545,6 +1496,13 @@ body::before {
     filter: blur(8px);
     pointer-events: none;
     opacity: 0.7;
+}
+
+.profile-card.blurred .status-tag,
+.profile-card.blurred .profile-section-title,
+.profile-card.blurred .profile-name,
+.profile-card.blurred .profile-section-text {
+    color: rgba(255,255,255,0.3) !important;
 }
 
 .profile-avatar {
@@ -1592,7 +1550,7 @@ body::before {
 }
 
 .status-tag {
-    font-size: 12px;
+    font-size: 16px;
     font-weight: 500;
     padding: 4px 10px;
     border-radius: 20px;
@@ -1629,9 +1587,10 @@ body::before {
 }
 
 .profile-hike-link {
-    color: var(--yellow);
+    color: #ffffff;
     text-decoration: none;
-    font-weight: 500;
+    font-weight: 400;
+    font-size: 14px;
     cursor: pointer;
     margin-top: 4px;
     display: inline-block;
@@ -1644,18 +1603,47 @@ body::before {
 .floating-edit-btn {
     position: fixed;
     bottom: 100px;
-    right: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
     z-index: 1100;
+    pointer-events: none;
+    padding-right: 20px;
 }
 
 .floating-edit-btn .btn {
+    pointer-events: auto;
     margin: 0;
     width: auto;
-    padding: 12px 20px;
+    padding: 12px 24px;
     border-radius: 40px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
+.center-floating-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+    pointer-events: none;
+}
+
+.center-floating-btn .btn {
+    pointer-events: auto;
+    margin: 0;
+    width: auto;
+    padding: 12px 24px;
+    border-radius: 40px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Стили для формы редактирования профиля */
 .edit-form {
     padding: 16px;
 }
@@ -1666,9 +1654,9 @@ body::before {
 
 .edit-form label {
     display: block;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--yellow);
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
     margin-bottom: 8px;
 }
 
@@ -1681,6 +1669,7 @@ body::before {
     color: #ffffff;
     font-size: 16px;
     font-family: inherit;
+    box-sizing: border-box;
 }
 
 .edit-form textarea {
@@ -1706,6 +1695,19 @@ body::before {
 .checkbox-group input {
     width: auto;
     margin: 0;
+    accent-color: currentColor;
+}
+
+.checkbox-group input[value="дружба"]:checked {
+    accent-color: var(--yellow);
+}
+
+.checkbox-group input[value="романтика"]:checked {
+    accent-color: #FB5EB0;
+}
+
+.checkbox-group input[value="бизнес"]:checked {
+    accent-color: #5E9FC5;
 }
 
 .delete-profile-btn {
@@ -1721,19 +1723,16 @@ body::before {
     text-align: center;
 }
 
-.blur-overlay {
-    position: relative;
-}
-
-.blur-overlay::after {
-    content: '';
+.nav-badge {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    backdrop-filter: blur(8px);
-    background-color: rgba(0,0,0,0.3);
-    border-radius: 28px;
-    pointer-events: none;
+    top: -8px;
+    right: 10px;
+    background-color: var(--yellow);
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 30px;
+    white-space: nowrap;
+    z-index: 2;
 }
