@@ -956,7 +956,7 @@ function showBottomSheet(index) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
                 extraInfoHtml += `
-                    <div class="info-row" style="color: ${accentColor};">
+                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         </span>
@@ -972,7 +972,7 @@ function showBottomSheet(index) {
                     locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
                 extraInfoHtml += `
-                    <div class="info-row" style="color: ${accentColor};">
+                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         </span>
@@ -992,7 +992,7 @@ function showBottomSheet(index) {
                 else if (leaderLinks.length === 2) leaderText = `${leaderLinks[0]} <span style="color: white;">и</span> ${leaderLinks[1]}`;
                 else { const last = leaderLinks.pop(); leaderText = `${leaderLinks.join(', ')} <span style="color: white;">и</span> ${last}`; }
                 extraInfoHtml += `
-                    <div class="info-row" style="color: ${accentColor};">
+                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
                         </span>
@@ -2192,10 +2192,10 @@ function renderProfileCard(profile, isBlurred = false) {
         const today = new Date();
         today.setHours(0,0,0,0);
         const futureHikes = hikesList.filter(h => new Date(h.date) >= today);
-        // Проверяем регистрацию этого пользователя на хайки через отдельный Firebase путь
-        // Для простоты пока не реализовано, оставляем заглушку
-        // В будущем нужно будет загружать регистрации каждого пользователя
-        // Пока оставляем "скоро узнаем"
+        // Проверяем регистрацию этого пользователя на хайки
+        // Для этого нужно загрузить его записи. Пока заглушка – показываем "скоро узнаем"
+        // В реальном приложении нужно будет загружать userRegistrations для каждого userId
+        // Для простоты пока не реализовано
     }
     const nextHikeHtml = (nextHike && !isBlurred) ? `
         <div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div>
@@ -2209,7 +2209,7 @@ function renderProfileCard(profile, isBlurred = false) {
     const statusTags = (profile.friendshipStatuses || []).map(status => {
         let tagClass = '';
         if (status === 'дружба') tagClass = 'status-tag-friendship';
-        else if (status === 'романтика') tagClass = 'status-tag-romance';
+        else if (status === 'отношения') tagClass = 'status-tag-romance';
         else if (status === 'бизнес') tagClass = 'status-tag-business';
         return `<span class="status-tag ${tagClass}">${status}</span>`;
     }).join('');
@@ -2263,7 +2263,7 @@ async function renderEditProfile() {
                     <label>статус знакомств</label>
                     <div class="checkbox-group">
                         <label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба') ? 'checked' : ''}> дружба</label>
-                        <label><input type="checkbox" value="романтика" ${currentStatuses.includes('романтика') ? 'checked' : ''}> романтика</label>
+                        <label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения') ? 'checked' : ''}> отношения</label>
                         <label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес') ? 'checked' : ''}> бизнес</label>
                     </div>
                     <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">выбери к чему ты открыт на хайках. просто общение и дружба, или тебе нужен бизнес-партнёр, человек в команду, инвестор или же ты хочешь встретить того, с кем можно поиграть в романтику?</div>
@@ -2338,6 +2338,37 @@ function escapeHtml(str) {
         return m;
     });
 }
+
+// Pull-to-refresh
+let startY = 0;
+let isPulling = false;
+const ptrElement = document.createElement('div');
+ptrElement.className = 'ptr-element';
+ptrElement.innerHTML = '<div class="ptr-loader"></div>';
+document.body.appendChild(ptrElement);
+
+document.addEventListener('touchstart', (e) => {
+    if (window.scrollY === 0) {
+        startY = e.touches[0].clientY;
+        isPulling = true;
+    }
+});
+document.addEventListener('touchmove', (e) => {
+    if (isPulling && window.scrollY === 0) {
+        const deltaY = e.touches[0].clientY - startY;
+        if (deltaY > 50) {
+            e.preventDefault();
+            ptrElement.classList.add('show');
+        }
+    }
+});
+document.addEventListener('touchend', () => {
+    if (ptrElement.classList.contains('show')) {
+        ptrElement.classList.remove('show');
+        location.reload();
+    }
+    isPulling = false;
+});
 
 async function loadData() {
     showAnimatedLoader();
