@@ -2248,13 +2248,19 @@ function setupBottomNav() {
         if (popup.classList.contains('show')) popup.classList.remove('show');
         isMenuActive = false;
     });
-    navProfilesNew.addEventListener('click', () => {
-        haptic(); setUserInteracted(); setManualNav('profiles'); setActiveNav('navProfiles');
+ navProfilesNew.addEventListener('click', () => {
+    haptic(); setUserInteracted(); setManualNav('profiles'); setActiveNav('navProfiles');
+    // Проверяем, является ли пользователь @maxmolotov
+    const isMaxMolotov = user?.username === 'maxmolotov';
+    if (isMaxMolotov) {
         renderProfiles();
-        log('profiles_click', false);
-        if (popup.classList.contains('show')) popup.classList.remove('show');
-        isMenuActive = false;
-    });
+    } else {
+        showProfilesComingSoonPopup();
+    }
+    log('profiles_click', false);
+    if (popup.classList.contains('show')) popup.classList.remove('show');
+    isMenuActive = false;
+});
     navMoreNew.addEventListener('click', (e) => {
         e.stopPropagation(); haptic();
         if (popup.classList.contains('show')) { popup.classList.remove('show'); isMenuActive = false; updateActiveNav(); }
@@ -2286,7 +2292,28 @@ function updateMetricsUI() {
     if (kilometersEl) kilometersEl.textContent = metrics.kilometers;
     if (meetingsEl) meetingsEl.textContent = metrics.meetings;
 }
-
+function showProfilesComingSoonPopup() {
+    haptic();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'comingSoonPopup';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 300px;">
+            <button class="modal-close" id="closePopup">&times;</button>
+            <div class="modal-title" style="color: var(--yellow);">✨ новая функция</div>
+            <div class="modal-text">скоро владельцы карт получат доступ к знакомствам, качество которых недоступно ни в одном другом сервисе.</div>
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">воу, давайте скорее 🚀</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const close = () => overlay.remove();
+    document.getElementById('closePopup')?.addEventListener('click', close);
+    document.getElementById('comingSoonOkBtn')?.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    log('profiles_coming_soon_popup', userCard.status !== 'active');
+}
 // === НОВАЯ СТРАНИЦА ПРОФИЛЕЙ ===
 async function renderProfiles() {
     isPrivPage = true;
@@ -2299,34 +2326,12 @@ async function renderProfiles() {
     showBottomNav(true);
     setupBottomNav();
 
-    if (userCard.status !== 'active') {
-        const allProfiles = await loadAllProfiles();
-        mainDiv.innerHTML = `
-            <div class="profiles-grid" id="profilesGrid"></div>
-            <div class="floating-edit-btn">
-                <button class="btn btn-yellow btn-glow" id="buyCardFromProfiles">оформить карту 💳</button>
-            </div>
-        `;
-        const grid = document.getElementById('profilesGrid');
-        if (grid) {
-            grid.innerHTML = '';
-            for (const [uid, profile] of Object.entries(allProfiles)) {
-                const cardHtml = renderProfileCard(profile, true);
-                grid.innerHTML += cardHtml;
-            }
-        }
-        document.getElementById('buyCardFromProfiles')?.addEventListener('click', () => {
-            haptic();
-            openLink(PERMANENT_CARD_LINK, 'buy_card_from_profiles', true);
-        });
-        return;
-    }
-
+    // Загружаем все профили
     const allProfiles = await loadAllProfiles();
     await loadMyProfile();
     await updateAvatarIfNeeded();
 
-    let hasMyProfile = !!myProfile;
+    const hasMyProfile = !!myProfile;
 
     mainDiv.innerHTML = `
         <div class="profiles-grid" id="profilesGrid"></div>
