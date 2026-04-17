@@ -532,7 +532,7 @@ body::before {
     pointer-events: none;
 }
 
-/* Нижнее плавающее меню - обновлённая версия */
+/* Нижнее плавающее меню - адаптивная версия */
 .bottom-nav {
     position: fixed;
     bottom: 20px;
@@ -550,7 +550,7 @@ body::before {
     border: 1px solid rgba(255,255,255,0.2);
     z-index: 100;
     transition: opacity 0.3s;
-    max-width: calc(100% - 32px);
+    max-width: 600px;
     margin: 0 auto;
 }
 
@@ -581,6 +581,32 @@ body::before {
     white-space: nowrap;
 }
 
+@media (max-width: 480px) {
+    .nav-item {
+        padding: 6px 12px;
+    }
+    .nav-label {
+        font-size: 10px;
+    }
+    .nav-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (max-width: 400px) {
+    .nav-item {
+        padding: 6px 8px;
+    }
+    .nav-label {
+        font-size: 9px;
+    }
+    .nav-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
 .nav-more {
     padding: 6px 14px;
 }
@@ -593,8 +619,8 @@ body::before {
 }
 
 .nav-icon svg {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     display: block;
     margin-bottom: 2px;
     stroke: currentColor;
@@ -602,7 +628,7 @@ body::before {
 }
 
 .nav-label {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 500;
     line-height: 1.2;
 }
@@ -610,31 +636,15 @@ body::before {
 .nav-badge {
     position: absolute;
     top: -8px;
-    right: 0px;
+    right: 5px;
     background-color: var(--yellow);
     color: #000000;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 700;
-    padding: 2px 5px;
+    padding: 2px 6px;
     border-radius: 30px;
     white-space: nowrap;
     z-index: 2;
-}
-
-@media (min-width: 400px) {
-    .nav-item {
-        padding: 6px 20px;
-    }
-    .nav-more {
-        padding: 6px 18px;
-    }
-    .nav-icon svg {
-        width: 24px;
-        height: 24px;
-    }
-    .nav-label {
-        font-size: 12px;
-    }
 }
 
 .nav-popup {
@@ -687,10 +697,10 @@ body::before {
         padding: 4px;
     }
     .nav-item {
-        padding: 4px 14px;
+        padding: 4px 12px;
     }
     .nav-more {
-        padding: 4px 12px;
+        padding: 4px 10px;
     }
     .nav-icon svg {
         width: 20px;
@@ -1129,12 +1139,12 @@ body::before {
     text-decoration: none;
 }
 
-.bottom-sheet-section-content.woman-content a {
-    color: #FB5EB0 !important;
-}
-
 .bottom-sheet-section-content a:hover {
     text-decoration: underline;
+}
+
+.bottom-sheet-section-content.woman-content a {
+    color: #FB5EB0;
 }
 
 .floating-sheet-buttons {
@@ -1654,6 +1664,7 @@ body::before {
     padding: 12px 24px;
     border-radius: 40px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    white-space: nowrap;
 }
 
 .center-floating-btn {
@@ -1675,6 +1686,7 @@ body::before {
     padding: 12px 24px;
     border-radius: 40px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    white-space: nowrap;
 }
 
 /* Стили для формы редактирования профиля */
@@ -1758,9 +1770,22 @@ body::before {
     text-align: center;
 }
 
+.nav-badge {
+    position: absolute;
+    top: -8px;
+    right: 5px;
+    background-color: var(--yellow);
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 30px;
+    white-space: nowrap;
+    z-index: 2;
+}
+
 .field-hint {
     font-size: 14px;
     color: rgba(255,255,255,0.7);
     margin-top: 4px;
-    line-height: 1.4;
 }
