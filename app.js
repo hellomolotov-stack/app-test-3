@@ -1528,6 +1528,7 @@ function parseLinks(text, isGuest) {
     if (!text) return '';
     return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
         url = url.replace(/\.$/, '');
+        // Для женских хайков цвет ссылок будет розовым через CSS
         return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
     });
 }
@@ -2097,7 +2098,7 @@ async function renderProfiles() {
     isMenuActive = false;
     resetNavActive();
     setActiveNav('navProfiles');
-    subtitle.textContent = `интеллигенты`;
+    subtitle.textContent = `👤 интеллигенты`;
     showBack(() => renderHome());
     haptic();
     log('profiles_page_opened', userCard.status !== 'active');
@@ -2132,7 +2133,7 @@ async function renderProfiles() {
         mainDiv.innerHTML = `
             <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
             <div class="center-floating-btn">
-                <button class="btn btn-yellow btn-glow" id="createProfileBtn">создать профиль 👋🏻</button>
+                <button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>
             </div>
         `;
         document.getElementById('createProfileBtn')?.addEventListener('click', () => {
@@ -2168,7 +2169,7 @@ async function renderProfiles() {
     mainDiv.innerHTML = `
         <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
         <div class="floating-edit-btn" id="editProfileBtnContainer">
-            <button class="btn btn-outline" id="editProfileBtn" style="background-color: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">мой профиль ✍🏻</button>
+            <button class="btn btn-outline" id="editProfileBtn" style="background-color: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">📝 мой профиль</button>
         </div>
     `;
 
@@ -2230,11 +2231,15 @@ async function renderEditProfile() {
     isMenuActive = false;
     resetNavActive();
     setActiveNav('navProfiles');
-    subtitle.textContent = `мой профиль`;
+    subtitle.textContent = `📝 мой профиль`;
     showBack(() => renderProfiles());
     haptic();
     log('edit_profile_opened', false);
     showBottomNav(false);
+
+    // Предотвращаем выезд меню над клавиатурой – скрываем нижнее меню
+    const bottomNav = document.getElementById('bottomNav');
+    if (bottomNav) bottomNav.style.display = 'none';
 
     await loadMyProfile();
     const currentName = myProfile?.name || firstName;
@@ -2247,7 +2252,8 @@ async function renderEditProfile() {
             <form id="editProfileForm" class="edit-form">
                 <div class="form-field">
                     <label>имя</label>
-                    <input type="text" id="profileName" value="${escapeHtml(currentName)}" placeholder="как вас зовут">
+                    <input type="text" id="profileName" value="${escapeHtml(currentName)}" placeholder="">
+                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div>
                 </div>
                 <div class="form-field">
                     <label>статус знакомств</label>
@@ -2256,20 +2262,28 @@ async function renderEditProfile() {
                         <label><input type="checkbox" value="романтика" ${currentStatuses.includes('романтика') ? 'checked' : ''}> романтика</label>
                         <label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес') ? 'checked' : ''}> бизнес</label>
                     </div>
+                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">выбери к чему ты открыт на хайках. просто общение и дружба, или тебе нужен бизнес-партнёр, человек в команду, инвестор или же ты хочешь встретить того, с кем можно поиграть в романтику?</div>
                 </div>
                 <div class="form-field">
                     <label>увлечения</label>
-                    <textarea id="profileHobbies" rows="3" placeholder="что тебя вдохновляет?">${escapeHtml(currentHobbies)}</textarea>
+                    <textarea id="profileHobbies" rows="3" placeholder="">${escapeHtml(currentHobbies)}</textarea>
+                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">перечисли через запятую то, что тебя вдохновляет, то без чего ты не можешь и то, о чём ты готов говорить часами</div>
                 </div>
                 <div class="form-field">
                     <label>профессия</label>
-                    <textarea id="profileProfession" rows="2" placeholder="в какой сфере ты работаешь?">${escapeHtml(currentProfession)}</textarea>
+                    <textarea id="profileProfession" rows="2" placeholder="">${escapeHtml(currentProfession)}</textarea>
+                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">в какой одной или нескольких сферах ты имеешь больше всего опыта?</div>
                 </div>
                 <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="width: 100%; margin: 0;">сохранить профиль</button>
                 ${myProfile ? `<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>` : ''}
             </form>
         </div>
     `;
+
+    // Убираем placeholder у полей (они не нужны, так как есть подсказки)
+    document.getElementById('profileName').placeholder = '';
+    document.getElementById('profileHobbies').placeholder = '';
+    document.getElementById('profileProfession').placeholder = '';
 
     const form = document.getElementById('editProfileForm');
     form.addEventListener('submit', async (e) => {
@@ -2294,6 +2308,8 @@ async function renderEditProfile() {
             userId: userId
         };
         await saveProfile(profileData);
+        // Восстанавливаем нижнее меню
+        if (bottomNav) bottomNav.style.display = 'flex';
         renderProfiles();
     });
 
@@ -2302,6 +2318,7 @@ async function renderEditProfile() {
             haptic();
             if (confirm('Вы уверены, что хотите снять профиль с публикации? Он перестанет быть виден другим участникам.')) {
                 await deleteProfile();
+                if (bottomNav) bottomNav.style.display = 'flex';
                 renderProfiles();
             }
         });
