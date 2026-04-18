@@ -2337,7 +2337,7 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-
+}
 async function loadData() {
     showAnimatedLoader();
     setupBottomNav();
