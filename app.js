@@ -2337,38 +2337,6 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-}
-
-// Pull-to-refresh
-let startY = 0;
-let isPulling = false;
-const ptrElement = document.createElement('div');
-ptrElement.className = 'ptr-element';
-ptrElement.innerHTML = '<div class="ptr-loader"></div>';
-document.body.appendChild(ptrElement);
-
-document.addEventListener('touchstart', (e) => {
-    if (window.scrollY === 0) {
-        startY = e.touches[0].clientY;
-        isPulling = true;
-    }
-});
-document.addEventListener('touchmove', (e) => {
-    if (isPulling && window.scrollY === 0) {
-        const deltaY = e.touches[0].clientY - startY;
-        if (deltaY > 50) {
-            e.preventDefault();
-            ptrElement.classList.add('show');
-        }
-    }
-});
-document.addEventListener('touchend', () => {
-    if (ptrElement.classList.contains('show')) {
-        ptrElement.classList.remove('show');
-        location.reload();
-    }
-    isPulling = false;
-});
 
 async function loadData() {
     showAnimatedLoader();
