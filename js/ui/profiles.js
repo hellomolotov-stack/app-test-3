@@ -1,7 +1,7 @@
 // js/ui/profiles.js
 import { haptic, openLink, mainDiv, subtitle, tg, showUnicornConfetti } from '../utils.js';
 import { state } from '../state.js';
-import { log } from '../api.js';
+import { log, syncProfileToSheet } from '../api.js';
 import {
     getDatabase,
     loadAllProfiles,
@@ -9,12 +9,15 @@ import {
     saveProfile,
     deleteProfile,
     saveUserAvatar,
+    loadUserRegistrations,
 } from '../firebase.js';
 import { showBottomNav, setupBottomNav, showBack, setUserInteracted, setActiveNav, resetNavActive, hideBack } from './common.js';
 import { renderHome } from './home.js';
 
 let profiles = {};
 let myProfile = null;
+// Кэш регистраций для отображения хайков в профилях
+const userHikesCache = {};
 
 async function loadProfilesData() {
     profiles = await loadAllProfiles();
@@ -43,7 +46,35 @@ async function updateAvatarIfNeeded() {
     }
 }
 
-function renderProfileCard(profile, isBlurred = false) {
+// Получить ближайший будущий хайк, на который записан пользователь
+async function getNextHikeForUser(userId) {
+    if (!userId) return null;
+    if (userHikesCache[userId] !== undefined) return userHikesCache[userId];
+
+    try {
+        const registrations = await loadUserRegistrations(userId);
+        if (!registrations) return null;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const futureHikes = state.hikesList.filter(hike => {
+            const hikeDate = new Date(hike.date);
+            return hikeDate >= today && registrations[hike.date] === true;
+        });
+        if (futureHikes.length === 0) return null;
+
+        // Сортируем по дате, берём ближайший
+        futureHikes.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const nextHike = futureHikes[0];
+        userHikesCache[userId] = nextHike;
+        return nextHike;
+    } catch (e) {
+        console.error('Error loading user registrations for profile:', e);
+        return null;
+    }
+}
+
+async function renderProfileCard(profile, isBlurred = false) {
     const avatarHtml = profile.avatarUrl
         ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0) || '?').toUpperCase()}</div>';">`
         : `<div class="profile-avatar-placeholder">${(profile.name?.charAt(0) || '?').toUpperCase()}</div>`;
@@ -56,9 +87,23 @@ function renderProfileCard(profile, isBlurred = false) {
         return `<span class="status-tag ${tagClass}">${status}</span>`;
     }).join('');
 
-    const nextHikeHtml = isBlurred
-        ? ''
-        : `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">скоро узнаем</span>`;
+    let nextHikeHtml = '';
+    if (!isBlurred && profile.userId) {
+        const nextHike = await getNextHikeForUser(profile.userId);
+        if (nextHike) {
+            const formattedDate = formatDateForDisplay(nextHike.date);
+            nextHikeHtml = `
+                <div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div>
+                <a href="#" class="profile-hike-link" data-hike-date="${nextHike.date}">${formattedDate} · ${nextHike.title}</a>
+            `;
+        } else {
+            nextHikeHtml = `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">пока нет записей</span>`;
+        }
+    } else if (isBlurred) {
+        nextHikeHtml = '';
+    } else {
+        nextHikeHtml = `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">скоро узнаем</span>`;
+    }
 
     return `
         <div class="profile-card ${isBlurred ? 'blurred' : ''}">
@@ -140,14 +185,8 @@ export async function renderProfiles() {
     });
 
     let profilesHtml = '';
-    if (hasAnyProfile) {
-        for (const [uid, profile] of sortedProfiles) {
-            profilesHtml += renderProfileCard(profile, false);
-        }
-    } else {
-        for (let i = 0; i < 6; i++) {
-            profilesHtml += renderProfileCard({}, true);
-        }
+    for (const [uid, profile] of sortedProfiles) {
+        profilesHtml += await renderProfileCard(profile, false);
     }
 
     mainDiv().innerHTML = `
@@ -171,10 +210,7 @@ async function renderEditProfile() {
     resetNavActive();
     setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`;
-    showBack(() => {
-        // При возврате из редактирования явно перерисовываем сетку
-        renderProfiles();
-    });
+    showBack(() => renderProfiles());
     haptic();
     log('edit_profile_opened', false, state.user);
     showBottomNav(false);
@@ -248,6 +284,9 @@ async function renderEditProfile() {
             userId: state.user?.id
         };
         await saveProfile(state.user?.id, profileData);
+        // Синхронизация с Google Sheets
+        await syncProfileToSheet(profileData, state.user);
+
         if (bottomNav) bottomNav.style.display = 'flex';
         renderProfiles();
     });
@@ -272,4 +311,16 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
+}
+
+function formatDateForDisplay(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        const day = parseInt(parts[2], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        return `${day} ${monthNames[month]}`;
+    }
+    return dateStr;
 }
