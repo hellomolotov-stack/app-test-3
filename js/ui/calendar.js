@@ -97,6 +97,7 @@ export function renderCalendar(container) {
     const nextBtn = document.getElementById('nextMonthBtn');
     if (prevBtn)
         prevBtn.addEventListener('click', () => {
+            haptic();
             if (hasPrevMonth) {
                 currentCalendarMonth--;
                 if (currentCalendarMonth < 0) {
@@ -108,6 +109,7 @@ export function renderCalendar(container) {
         });
     if (nextBtn)
         nextBtn.addEventListener('click', () => {
+            haptic();
             if (hasNextMonth) {
                 currentCalendarMonth++;
                 if (currentCalendarMonth > 11) {
@@ -120,6 +122,7 @@ export function renderCalendar(container) {
 
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
+            haptic();
             const date = el.dataset.date;
             const index = state.hikesList.findIndex(h => h.date === date);
             if (index !== -1) showBottomSheet(index);
@@ -371,25 +374,25 @@ export function showBottomSheet(index) {
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
+            haptic();
             if (sheetCurrentIndex > 0) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
                 sheetCurrentIndex--;
                 updateContent();
                 contentWrapper.scrollTop = 0;
-                haptic();
                 log('slider_prev', false, state.user);
             }
         });
         document.getElementById('nextHike')?.addEventListener('click', e => {
             e.stopPropagation();
+            haptic();
             if (sheetCurrentIndex < state.hikesList.length - 1) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
                 sheetCurrentIndex++;
                 updateContent();
                 contentWrapper.scrollTop = 0;
-                haptic();
                 log('slider_next', false, state.user);
             }
         });
@@ -606,9 +609,9 @@ function updateFloatingSheetButtons() {
         cancelBtn.textContent = 'отменить';
         cancelBtn.addEventListener('click', e => {
             e.preventDefault();
+            haptic();
             if (cancelBtn.dataset.processing === 'true') return;
             cancelBtn.dataset.processing = 'true';
-            haptic();
 
             const userId = state.user?.id;
             const hikeDate = hike.date;
@@ -684,9 +687,9 @@ function updateFloatingSheetButtons() {
             goBtn.textContent = 'иду';
             goBtn.addEventListener('click', e => {
                 e.preventDefault();
+                haptic();
                 if (goBtn.dataset.processing === 'true') return;
                 goBtn.dataset.processing = 'true';
-                haptic();
                 showGuestBookingPopup(hike.date, hike.title);
                 setTimeout(() => (goBtn.dataset.processing = 'false'), 1000);
             });
@@ -719,9 +722,9 @@ function updateFloatingSheetButtons() {
             goBtn.textContent = 'иду';
             goBtn.addEventListener('click', e => {
                 e.preventDefault();
+                haptic();
                 if (goBtn.dataset.processing === 'true') return;
                 goBtn.dataset.processing = 'true';
-                haptic();
 
                 const userId = state.user?.id;
                 const hikeDate = hike.date;
@@ -827,6 +830,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
 
     document.getElementById('buyTicketBtn').addEventListener('click', e => {
         e.preventDefault();
+        haptic();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
         handlePurchase('ticket', config.ticketLink || ROBOKASSA_LINK);
@@ -844,6 +848,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
 
     document.getElementById('buySeasonCardBtn').addEventListener('click', e => {
         e.preventDefault();
+        haptic();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
         handlePurchase('season_card', config.seasonCardLink || SEASON_CARD_LINK);
@@ -851,6 +856,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
 
     document.getElementById('buyPermanentCardBtn').addEventListener('click', e => {
         e.preventDefault();
+        haptic();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
         handlePurchase('permanent_card', config.permanentCardLink || PERMANENT_CARD_LINK);
@@ -1040,6 +1046,7 @@ document.addEventListener('click', function(e) {
 
     if (link.classList.contains('profile-hike-link')) {
         e.preventDefault();
+        haptic();
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
             const index = state.hikesList.findIndex(h => h.date === hikeDate);
@@ -1052,9 +1059,10 @@ document.addEventListener('click', function(e) {
 
     if (link.classList.contains('leader-name')) {
         e.preventDefault(); e.stopPropagation();
+        haptic();
         const username = link.dataset.leaderUsername;
         if (username) {
-            haptic(); closeLeaderDropdown();
+            closeLeaderDropdown();
             if (state.leaders[username]) showLeaderDropdown(link, state.leaders[username]);
             else openLink(`https://t.me/${username}`, 'leader_click', state.userCard.status !== 'active');
             log('leader_click', state.userCard.status !== 'active', state.user);
@@ -1069,6 +1077,7 @@ document.addEventListener('click', function(e) {
     }
     if (link.classList.contains('dynamic-link')) {
         e.preventDefault();
+        haptic();
         const url = link.dataset.url;
         const isGuest = link.dataset.guest === 'true';
         openLink(url, 'link_click', isGuest);
@@ -1076,6 +1085,7 @@ document.addEventListener('click', function(e) {
     }
     if (link.closest('.nav-popup')) {
         e.preventDefault();
+        haptic();
         const href = link.getAttribute('href');
         if (href && href !== '#') {
             if (link.id === 'popupNewcomer') { const isGuest = state.userCard.status !== 'active'; renderNewcomerPage(isGuest); }
@@ -1094,6 +1104,7 @@ document.addEventListener('click', function(e) {
     }
     if (link.classList.contains('participant-counter')) {
         e.preventDefault(); e.stopPropagation();
+        haptic();
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
             const index = state.hikesList.findIndex(h => h.date === hikeDate);
@@ -1122,6 +1133,7 @@ document.addEventListener('click', function(e) {
     }
     if (link.classList.contains('booking-detail-btn')) {
         e.preventDefault();
+        haptic();
         const index = link.dataset.index;
         if (index !== undefined) showBottomSheet(parseInt(index));
         return;
