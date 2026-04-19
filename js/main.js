@@ -69,7 +69,6 @@ function setupBottomNav() {
         if (isAllowed) {
             renderProfiles();
         } else {
-            // showProfilesComingSoonPopup();
             alert('Скоро');
         }
         log('profiles_click', state.userCard.status !== 'active', state.user);
