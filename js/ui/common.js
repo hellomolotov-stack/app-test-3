@@ -1,11 +1,14 @@
+// js/ui/common.js
 import { haptic, openLink } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 
-// Нижнее меню и попап
+// Глобальные флаги UI
+export let isPrivPage = false;
 export let isMenuActive = false;
 export let manualNavClick = null;
 export let manualNavTimer = null;
+export let userInteracted = false;
 
 export function setManualNav(target) {
     if (manualNavTimer) clearTimeout(manualNavTimer);
@@ -28,7 +31,7 @@ export function updateActiveNav() {
         setActiveNav(manualNavClick === 'home' ? 'navHome' : manualNavClick === 'hikes' ? 'navHikes' : 'navProfiles');
         return;
     }
-    if (!window.userInteracted) {
+    if (!userInteracted) {
         setActiveNav('navHome');
         return;
     }
@@ -49,10 +52,9 @@ export function updateActiveNav() {
     else setActiveNav('navHome');
 }
 
+// Временная реализация setupBottomNav (будет переопределена в main.js)
 export function setupBottomNav() {
-    // Эта функция будет определена позже с учетом зависимостей от renderHome и т.д.
-    // Пока оставим заглушку, реальная реализация будет в main.js после импорта всех частей
-    console.log('setupBottomNav called - implement in main');
+    console.log('setupBottomNav called - will be overridden in main');
 }
 
 export function showBottomNav(show = true) {
@@ -124,6 +126,4 @@ export function hideBack() {
     window.Telegram?.WebApp?.BackButton?.hide();
 }
 
-// Глобальные переменные для UI
-export let userInteracted = false;
 export function setUserInteracted() { userInteracted = true; }
