@@ -289,8 +289,12 @@ async function renderEditProfile() {
             avatarUpdatedAt: myProfile?.avatarUpdatedAt || Date.now(),
             userId: state.user?.id
         };
+        
+        // Сначала сохраняем в Firebase (обязательно)
         await saveProfile(state.user?.id, profileData);
-        await syncProfileToSheet(profileData, state.user);
+        
+        // Синхронизация с Google Sheets в фоне (не блокирует интерфейс)
+        syncProfileToSheet(profileData, state.user).catch(err => console.error('BG sync error:', err));
 
         tg.BackButton.offClick(backHandler);
         if (bottomNav) bottomNav.style.display = 'flex';
@@ -304,7 +308,7 @@ async function renderEditProfile() {
             haptic();
             if (confirm('Вы уверены, что хотите снять профиль с публикации? Он перестанет быть виден другим участникам.')) {
                 await deleteProfile(state.user?.id);
-                await syncProfileDeleteToSheet(state.user?.id);
+                syncProfileDeleteToSheet(state.user?.id).catch(err => console.error('BG delete sync error:', err));
                 tg.BackButton.offClick(backHandler);
                 if (bottomNav) bottomNav.style.display = 'flex';
                 showBottomNav(true);
