@@ -1,7 +1,12 @@
+// js/api.js
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
-import { getDatabase } from './firebase.js';
 
-// Логирование действий
+/**
+ * Логирование действий пользователя (отправка через Image beacon)
+ * @param {string} action - название действия
+ * @param {boolean} isGuest - гость или владелец карты
+ * @param {object} user - объект пользователя Telegram (id, username, first_name, last_name)
+ */
 export function log(action, isGuest = false, user) {
     if (!user?.id) return;
     const finalAction = isGuest ? `${action}_guest` : action;
@@ -12,11 +17,19 @@ export function log(action, isGuest = false, user) {
         last_name: user.last_name || '',
         action: finalAction
     });
-    // Отправляем через Image beacon для надёжности
+    // Используем Image для гарантированной отправки без CORS
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-// Обновление регистрации в Google Sheets
+/**
+ * Обновление информации о регистрации на хайк в Google Sheets
+ * @param {string} hikeDate - дата хайка (YYYY-MM-DD)
+ * @param {string} hikeTitle - название хайка
+ * @param {string} status - статус регистрации ('booked', 'cancelled')
+ * @param {string} purchaseType - тип покупки ('ticket', 'season_card', 'permanent_card', 'card_holder')
+ * @param {object} user - объект пользователя Telegram
+ * @param {boolean} hasCard - есть ли у пользователя карта интеллигента
+ */
 export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType, user, hasCard) {
     if (!user?.id || !REGISTRATION_API_URL) return;
     try {
@@ -41,10 +54,13 @@ export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseT
     }
 }
 
-// Синхронизация профиля с Google Sheets (через Apps Script)
+/**
+ * Синхронизация профиля пользователя с Google Sheets (создание/обновление)
+ * @param {object} profile - данные профиля (name, friendshipStatuses, hobbies, profession, avatarUrl)
+ * @param {object} user - объект пользователя Telegram
+ */
 export async function syncProfileToSheet(profile, user) {
-    // URL вашего скрипта (замените на реальный)
-    const SCRIPT_URL = 'ВАШ_НОВЫЙ_СКРИПТ';
+    if (!user?.id || !REGISTRATION_API_URL) return;
     const payload = {
         action: 'syncProfile',
         user_id: user.id,
@@ -56,7 +72,7 @@ export async function syncProfileToSheet(profile, user) {
         updated_at: new Date().toISOString()
     };
     try {
-        await fetch(SCRIPT_URL, {
+        await fetch(REGISTRATION_API_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
@@ -67,14 +83,22 @@ export async function syncProfileToSheet(profile, user) {
     }
 }
 
+/**
+ * Удаление профиля пользователя из Google Sheets
+ * @param {string|number} userId - Telegram user ID
+ */
 export async function syncProfileDeleteToSheet(userId) {
-    const SCRIPT_URL = 'ВАШ_НОВЫЙ_СКРИПТ';
+    if (!userId || !REGISTRATION_API_URL) return;
+    const payload = {
+        action: 'deleteProfile',
+        user_id: userId
+    };
     try {
-        await fetch(SCRIPT_URL, {
+        await fetch(REGISTRATION_API_URL, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'deleteProfile', user_id: userId })
+            body: JSON.stringify(payload)
         });
     } catch (e) {
         console.error('Profile delete sync error:', e);
