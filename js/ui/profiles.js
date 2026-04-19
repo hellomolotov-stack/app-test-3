@@ -140,7 +140,6 @@ export async function renderProfiles() {
     await updateAvatarIfNeeded();
 
     const hasMyProfile = !!myProfile;
-    const hasAnyProfile = Object.keys(profiles).length > 0;
 
     if (!hasMyProfile) {
         const placeholderCount = 6;
@@ -215,11 +214,12 @@ async function renderEditProfile() {
     const bottomNav = document.getElementById('bottomNav');
     if (bottomNav) bottomNav.style.display = 'none';
 
-    await loadMyProfile(state.user?.id);
-    const currentName = myProfile?.name || state.user?.first_name || '';
-    const currentStatuses = myProfile?.friendshipStatuses || [];
-    const currentHobbies = myProfile?.hobbies || '';
-    const currentProfession = myProfile?.profession || '';
+    // Загружаем свежие данные профиля
+    const freshProfile = await loadMyProfile(state.user?.id);
+    const currentName = freshProfile?.name || state.user?.first_name || '';
+    const currentStatuses = freshProfile?.friendshipStatuses || [];
+    const currentHobbies = freshProfile?.hobbies || '';
+    const currentProfession = freshProfile?.profession || '';
 
     mainDiv().innerHTML = `
         <div class="card-container">
@@ -249,7 +249,7 @@ async function renderEditProfile() {
                     <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">в какой одной или нескольких сферах ты имеешь больше всего опыта?</div>
                 </div>
                 <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="width: 100%; margin: 0;">сохранить профиль</button>
-                ${myProfile ? `<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>` : ''}
+                ${freshProfile ? `<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>` : ''}
             </form>
         </div>
     `;
@@ -285,16 +285,19 @@ async function renderEditProfile() {
             friendshipStatuses: selectedStatuses,
             hobbies,
             profession,
-            avatarUrl: myProfile?.avatarUrl || state.user?.photo_url || null,
-            avatarUpdatedAt: myProfile?.avatarUpdatedAt || Date.now(),
+            avatarUrl: freshProfile?.avatarUrl || state.user?.photo_url || null,
+            avatarUpdatedAt: freshProfile?.avatarUpdatedAt || Date.now(),
             userId: state.user?.id
         };
         
-        // Сначала сохраняем в Firebase (обязательно)
+        // Сохраняем в Firebase
         await saveProfile(state.user?.id, profileData);
         
-        // Синхронизация с Google Sheets в фоне (не блокирует интерфейс)
+        // Синхронизация с Google Sheets в фоне
         syncProfileToSheet(profileData, state.user).catch(err => console.error('BG sync error:', err));
+
+        // Очищаем кэш, чтобы обновился список хайков
+        delete userHikesCache[state.user?.id];
 
         tg.BackButton.offClick(backHandler);
         if (bottomNav) bottomNav.style.display = 'flex';
@@ -309,6 +312,7 @@ async function renderEditProfile() {
             if (confirm('Вы уверены, что хотите снять профиль с публикации? Он перестанет быть виден другим участникам.')) {
                 await deleteProfile(state.user?.id);
                 syncProfileDeleteToSheet(state.user?.id).catch(err => console.error('BG delete sync error:', err));
+                delete userHikesCache[state.user?.id];
                 tg.BackButton.offClick(backHandler);
                 if (bottomNav) bottomNav.style.display = 'flex';
                 showBottomNav(true);
