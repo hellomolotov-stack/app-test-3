@@ -1,15 +1,25 @@
 // js/ui/privileges.js
-import { haptic, openLink, mainDiv, subtitle } from '../utils.js';
+import { haptic, openLink, mainDiv, subtitle, parseLinks } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
-import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive } from './common.js';
+import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, isPrivPage, isMenuActive } from './common.js';
 import { renderHome } from './home.js';
 
 // Страница "для новичков" (FAQ)
 export function renderNewcomerPage(isGuest = false) {
-    isPrivPage = true;
-    isMenuActive = false;
+    // Устанавливаем флаги через импортированные переменные (они let, можно менять)
+    // Но лучше использовать отдельные функции setPrivPage, но пока так
+    // Для обхода "isPrivPage is not defined" — мы теперь используем импортированную переменную.
+    // В модуле common.js мы экспортировали let isPrivPage, можем присвоить ей значение.
+    // Однако в ES модулях импортированные let доступны только для чтения.
+    // Поэтому нужно создать функции setPrivPage / setMenuActive в common.js и экспортировать их.
+    // Быстрое решение: использовать window.isPrivPage, но это плохо.
+    // Давайте добавим в common.js функции-сеттеры.
+    // Я обновлю common.js ещё раз, добавив setPrivPage и setMenuActive.
+    // Пока для срочности используем временное решение: объявим глобально через window.
+    window.isPrivPage = true;
+    window.isMenuActive = false;
     resetNavActive();
     subtitle().textContent = `всё, что нужно знать`;
     showBack(() => renderHome());
@@ -48,8 +58,8 @@ export function renderNewcomerPage(isGuest = false) {
 
 // Привилегии гостя (ознакомительная)
 export function renderGuestPrivileges() {
-    isPrivPage = true;
-    isMenuActive = false;
+    window.isPrivPage = true;
+    window.isMenuActive = false;
     resetNavActive();
     subtitle().textContent = `💳 привилегии с картой`;
     showBack(renderHome);
@@ -106,8 +116,8 @@ export function renderGuestPrivileges() {
 
 // Привилегии владельца карты
 export function renderPriv() {
-    isPrivPage = true;
-    isMenuActive = false;
+    window.isPrivPage = true;
+    window.isMenuActive = false;
     resetNavActive();
     subtitle().textContent = `🤘🏻твои привилегии, ${state.user?.first_name || 'друг'}`;
     showBack(renderHome);
@@ -164,8 +174,8 @@ export function renderPriv() {
 
 // Страница "подарить карту"
 export function renderGift(isGuest = false) {
-    isPrivPage = true;
-    isMenuActive = false;
+    window.isPrivPage = true;
+    window.isMenuActive = false;
     resetNavActive();
     subtitle().textContent = `подари новый опыт`;
     showBack(renderHome);
@@ -190,8 +200,8 @@ export function renderGift(isGuest = false) {
 
 // Страница "пропуск в заповедник"
 export function renderPassPage(isGuest = false) {
-    isPrivPage = true;
-    isMenuActive = false;
+    window.isPrivPage = true;
+    window.isMenuActive = false;
     resetNavActive();
     subtitle().textContent = `🪪 пропуск в заповедник`;
     showBack(renderHome);
