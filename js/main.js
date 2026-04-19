@@ -1,5 +1,5 @@
 // js/main.js
-import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from './utils.js';
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, showUnicornConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations } from './firebase.js';
 import { log } from './api.js';
@@ -69,7 +69,7 @@ function setupBottomNav() {
         if (isAllowed) {
             renderProfiles();
         } else {
-            showProfilesComingSoon(); // ✅ анимация с вопросами вместо алерта
+            showProfilesComingSoon(); // анимация единорогов
         }
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
