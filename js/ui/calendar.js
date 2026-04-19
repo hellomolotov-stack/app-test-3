@@ -12,12 +12,11 @@ import {
 } from '../firebase.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { renderHome } from './home.js';
-import { renderUserBookings } from './home.js'; // Будет экспортирована
+import { renderUserBookings } from './home.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
 
-// Вспомогательные функции для календаря
 function hasHikesInMonth(year, month) {
     const monthStr = `${year}-${String(month + 1).padStart(2, '0')}`;
     return state.hikesList.some(hike => hike.date.startsWith(monthStr));
@@ -80,13 +79,13 @@ export function renderCalendar(container) {
             const hikeIndex = state.hikesList.findIndex(h => h.date === dateStr);
             const hike = state.hikesList[hikeIndex];
             const isWoman = hike && hike.woman === 'yes';
+            if (isWoman) classes += ' woman-hike';
             if (isPast && hike && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
             if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
                 innerHtml += `<span class="calendar-emoji">🎫</span>`;
                 classes += ' booked-day';
             }
-            if (isWoman) classes += ' woman-hike';
         }
         if (hasHike) calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
         else calendarHtml += `<div class="${classes}">${day}</div>`;
@@ -128,7 +127,6 @@ export function renderCalendar(container) {
     });
 }
 
-// ---------- Боттом-шит с деталями хайка ----------
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -512,7 +510,6 @@ function closeBottomSheet() {
     }
 }
 
-// Обновление кнопок в плавающей панели
 function updateFloatingSheetButtons() {
     const container = document.querySelector('.floating-sheet-buttons');
     if (!container) return;
@@ -757,7 +754,6 @@ function updateFloatingSheetButtons() {
     }
 }
 
-// Гостевой попап оплаты
 function showGuestBookingPopup(hikeDate, hikeTitle) {
     haptic();
     const config = state.popupConfig;
@@ -907,9 +903,8 @@ function addPaymentPopup(container, popupData, isGuest) {
     container.insertBefore(popupDiv, container.firstChild);
 }
 
-// Управление дропдауном участников
 let currentDropdownHikeDate = null;
-function closeParticipantDropdown() {
+export function closeParticipantDropdown() {
     const existing = document.querySelector('.participant-dropdown.show');
     if (existing) {
         existing.remove();
@@ -917,7 +912,7 @@ function closeParticipantDropdown() {
     }
 }
 
-async function toggleParticipantDropdown(counterElement, hikeDate) {
+export async function toggleParticipantDropdown(counterElement, hikeDate) {
     const existing = document.querySelector('.participant-dropdown.show');
     if (existing && currentDropdownHikeDate === hikeDate) {
         closeParticipantDropdown();
@@ -978,16 +973,15 @@ async function toggleParticipantDropdown(counterElement, hikeDate) {
     log('uchastniki_click', state.userCard.status !== 'active', state.user);
 }
 
-// Управление дропдауном ведущего
 let currentLeaderDropdown = null;
-function closeLeaderDropdown() {
+export function closeLeaderDropdown() {
     if (currentLeaderDropdown) {
         currentLeaderDropdown.remove();
         currentLeaderDropdown = null;
     }
 }
 
-function showLeaderDropdown(leaderElement, leaderData) {
+export function showLeaderDropdown(leaderElement, leaderData) {
     closeLeaderDropdown();
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
@@ -1039,5 +1033,103 @@ function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
-// Экспортируем для использования в других модулях
-export { closeParticipantDropdown, closeLeaderDropdown, showLeaderDropdown, toggleParticipantDropdown };
+// Делегирование событий для динамических кнопок
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link');
+    if (!link) return;
+
+    if (link.classList.contains('profile-hike-link')) {
+        e.preventDefault();
+        const hikeDate = link.dataset.hikeDate;
+        if (hikeDate) {
+            const index = state.hikesList.findIndex(h => h.date === hikeDate);
+            if (index !== -1) {
+                showBottomSheet(index);
+            }
+        }
+        return;
+    }
+
+    if (link.classList.contains('leader-name')) {
+        e.preventDefault(); e.stopPropagation();
+        const username = link.dataset.leaderUsername;
+        if (username) {
+            haptic(); closeLeaderDropdown();
+            if (state.leaders[username]) showLeaderDropdown(link, state.leaders[username]);
+            else openLink(`https://t.me/${username}`, 'leader_click', state.userCard.status !== 'active');
+            log('leader_click', state.userCard.status !== 'active', state.user);
+        }
+        return;
+    }
+    if (link.classList.contains('popup-link')) {
+        e.preventDefault(); e.stopPropagation(); haptic();
+        const url = link.dataset.url;
+        if (url && url.trim() !== '') openLink(url, 'popup_link_click', state.userCard.status !== 'active');
+        return;
+    }
+    if (link.classList.contains('dynamic-link')) {
+        e.preventDefault();
+        const url = link.dataset.url;
+        const isGuest = link.dataset.guest === 'true';
+        openLink(url, 'link_click', isGuest);
+        return;
+    }
+    if (link.closest('.nav-popup')) {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+            if (link.id === 'popupNewcomer') { const isGuest = state.userCard.status !== 'active'; renderNewcomerPage(isGuest); }
+            else if (link.id === 'popupGift') { const isGuest = state.userCard.status !== 'active'; renderGift(isGuest); }
+            else if (link.id === 'popupPass') { const isGuest = state.userCard.status !== 'active'; renderPassPage(isGuest); }
+            else if (link.id === 'popupQuestion') { const isGuest = state.userCard.status !== 'active'; openLink('https://t.me/hellointelligent', 'question_click', isGuest); }
+            else openLink(href, 'nav_popup_click', false);
+        }
+        return;
+    }
+    if (link.classList.contains('btn-newcomer')) {
+        e.preventDefault(); haptic();
+        const isGuest = link.id === 'newcomerBtnGuest';
+        renderNewcomerPage(isGuest);
+        return;
+    }
+    if (link.classList.contains('participant-counter')) {
+        e.preventDefault(); e.stopPropagation();
+        const hikeDate = link.dataset.hikeDate;
+        if (hikeDate) {
+            const index = state.hikesList.findIndex(h => h.date === hikeDate);
+            const hike = state.hikesList[index];
+            const isWoman = hike && hike.woman === 'yes';
+            const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
+            if (index !== -1 && state.hikeBookingStatus[index]) toggleParticipantDropdown(link, hikeDate);
+            else {
+                const msg = document.createElement('div');
+                msg.className = 'modal-overlay';
+                msg.innerHTML = `
+                    <div class="modal-content" style="max-width: 300px;">
+                        <div class="modal-title" style="color: ${accentColor};">доступ ограничен</div>
+                        <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
+                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
+                    </div>
+                `;
+                document.body.appendChild(msg);
+                const closeBtn = msg.querySelector('.btn');
+                closeBtn.addEventListener('click', () => msg.remove());
+                setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
+                log('uchastniki_not_registered', state.userCard.status !== 'active', state.user);
+            }
+        }
+        return;
+    }
+    if (link.classList.contains('booking-detail-btn')) {
+        e.preventDefault();
+        const index = link.dataset.index;
+        if (index !== undefined) showBottomSheet(parseInt(index));
+        return;
+    }
+    if (link.classList.contains('bookings-calendar-link') || link.classList.contains('booking-go-btn')) {
+        e.preventDefault(); haptic();
+        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
+        return;
+    }
+});
