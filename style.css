@@ -1321,7 +1321,7 @@ body::before {
 }
 
 .calendar-day.hike-day.past {
-    background: rgba(217, 253, 25, 0.3);
+    background: rgba(46, 204, 113, 0.3) !important; /* бледно-зелёный */
     color: #000000;
     border: 2px solid transparent;
 }
