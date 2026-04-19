@@ -10,6 +10,18 @@ export let manualNavClick = null;
 export let manualNavTimer = null;
 export let userInteracted = false;
 
+// Объект для переопределяемых действий
+export const uiActions = {
+    setupBottomNav: () => {
+        console.log('setupBottomNav called - will be overridden in main');
+    }
+};
+
+// Для обратной совместимости
+export function setupBottomNav() {
+    uiActions.setupBottomNav();
+}
+
 export function setManualNav(target) {
     if (manualNavTimer) clearTimeout(manualNavTimer);
     manualNavClick = target;
@@ -50,11 +62,6 @@ export function updateActiveNav() {
     const isCalendarVisible = rect.top < window.innerHeight && rect.bottom > 0;
     if (isCalendarVisible) setActiveNav('navHikes');
     else setActiveNav('navHome');
-}
-
-// Временная реализация setupBottomNav (будет переопределена в main.js)
-export function setupBottomNav() {
-    console.log('setupBottomNav called - will be overridden in main');
 }
 
 export function showBottomNav(show = true) {
