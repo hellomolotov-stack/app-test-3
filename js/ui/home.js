@@ -22,7 +22,7 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = state.metrics.meetings;
 }
 
-function renderUserBookings(container) {
+export function renderUserBookings(container) {
     if (!container) return;
     const today = new Date();
     today.setHours(0,0,0,0);
