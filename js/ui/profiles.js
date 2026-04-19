@@ -1,7 +1,7 @@
 // js/ui/profiles.js
-import { haptic, openLink, mainDiv, subtitle, tg, showUnicornConfetti } from '../utils.js';
+import { haptic, openLink, mainDiv, subtitle, tg, showUnicornConfetti, formatDateForDisplay } from '../utils.js';
 import { state } from '../state.js';
-import { log, syncProfileToSheet } from '../api.js';
+import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
     getDatabase,
     loadAllProfiles,
@@ -11,12 +11,11 @@ import {
     saveUserAvatar,
     loadUserRegistrations,
 } from '../firebase.js';
-import { showBottomNav, setupBottomNav, showBack, setUserInteracted, setActiveNav, resetNavActive, hideBack } from './common.js';
+import { showBottomNav, setupBottomNav, setUserInteracted, setActiveNav, resetNavActive, hideBack } from './common.js';
 import { renderHome } from './home.js';
 
 let profiles = {};
 let myProfile = null;
-// Кэш регистраций для отображения хайков в профилях
 const userHikesCache = {};
 
 async function loadProfilesData() {
@@ -46,7 +45,6 @@ async function updateAvatarIfNeeded() {
     }
 }
 
-// Получить ближайший будущий хайк, на который записан пользователь
 async function getNextHikeForUser(userId) {
     if (!userId) return null;
     if (userHikesCache[userId] !== undefined) return userHikesCache[userId];
@@ -63,7 +61,6 @@ async function getNextHikeForUser(userId) {
         });
         if (futureHikes.length === 0) return null;
 
-        // Сортируем по дате, берём ближайший
         futureHikes.sort((a, b) => new Date(a.date) - new Date(b.date));
         const nextHike = futureHikes[0];
         userHikesCache[userId] = nextHike;
@@ -210,7 +207,7 @@ async function renderEditProfile() {
     resetNavActive();
     setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`;
-    showBack(() => renderProfiles());
+    hideBack();
     haptic();
     log('edit_profile_opened', false, state.user);
     showBottomNav(false);
@@ -261,6 +258,15 @@ async function renderEditProfile() {
     document.getElementById('profileHobbies').placeholder = '';
     document.getElementById('profileProfession').placeholder = '';
 
+    const backHandler = () => {
+        if (bottomNav) bottomNav.style.display = 'flex';
+        showBottomNav(true);
+        setupBottomNav();
+        renderProfiles();
+    };
+    tg.BackButton.onClick(backHandler);
+    tg.BackButton.show();
+
     const form = document.getElementById('editProfileForm');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -284,10 +290,12 @@ async function renderEditProfile() {
             userId: state.user?.id
         };
         await saveProfile(state.user?.id, profileData);
-        // Синхронизация с Google Sheets
         await syncProfileToSheet(profileData, state.user);
 
+        tg.BackButton.offClick(backHandler);
         if (bottomNav) bottomNav.style.display = 'flex';
+        showBottomNav(true);
+        setupBottomNav();
         renderProfiles();
     });
 
@@ -296,7 +304,11 @@ async function renderEditProfile() {
             haptic();
             if (confirm('Вы уверены, что хотите снять профиль с публикации? Он перестанет быть виден другим участникам.')) {
                 await deleteProfile(state.user?.id);
+                await syncProfileDeleteToSheet(state.user?.id);
+                tg.BackButton.offClick(backHandler);
                 if (bottomNav) bottomNav.style.display = 'flex';
+                showBottomNav(true);
+                setupBottomNav();
                 renderProfiles();
             }
         });
@@ -311,16 +323,4 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-}
-
-function formatDateForDisplay(dateStr) {
-    if (!dateStr) return '';
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-        const day = parseInt(parts[2], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-        return `${day} ${monthNames[month]}`;
-    }
-    return dateStr;
 }
