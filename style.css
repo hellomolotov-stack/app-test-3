@@ -532,7 +532,7 @@ body::before {
     pointer-events: none;
 }
 
-/* Нижнее плавающее меню - равномерное распределение */
+/* Нижнее плавающее меню */
 .bottom-nav {
     position: fixed;
     bottom: 20px;
@@ -552,6 +552,9 @@ body::before {
     transition: opacity 0.3s;
     max-width: 600px;
     margin: 0 auto;
+    /* Выравнивание отступов */
+    padding-left: 6px;
+    padding-right: 6px;
 }
 
 .bottom-nav-left {
@@ -562,11 +565,13 @@ body::before {
     padding: 2px;
     flex: 1;
     justify-content: space-evenly;
+    margin-left: 0;
 }
 
 .bottom-nav-right {
     margin-left: 0;
     flex-shrink: 0;
+    margin-right: 0;
 }
 
 .nav-item {
@@ -583,6 +588,14 @@ body::before {
     white-space: nowrap;
     flex: 1;
     text-align: center;
+    margin: 0 2px;
+}
+
+.nav-item:first-child {
+    margin-left: 0;
+}
+.nav-item:last-child {
+    margin-right: 0;
 }
 
 .nav-more {
@@ -1307,21 +1320,20 @@ body::before {
     color: #ffffff;
 }
 
-/* Обычный хайк (активный) — ярко-жёлтый */
+/* Активные хайки */
 .calendar-day.hike-day {
     background: #D9FD19 !important;
     color: #000000 !important;
     border: 2px solid transparent;
 }
 
-/* Женский хайк (активный) — ярко-розовый */
 .calendar-day.woman-hike {
     background: #FB5EB0 !important;
     color: #ffffff !important;
     border: 2px solid transparent;
 }
 
-/* Обычный прошедший хайк — бледно-жёлтый */
+/* Прошедшие хайки */
 .calendar-day.hike-day.past {
     background: rgba(217, 253, 25, 0.3) !important;
     color: #000000 !important;
@@ -1341,7 +1353,6 @@ body::before {
     font-weight: bold;
 }
 
-/* Сегодняшний день, если это хайк */
 .calendar-day.today.hike-day {
     background: #D9FD19 !important;
     color: #000000 !important;
@@ -1396,17 +1407,6 @@ body::before {
 
 .calendar-nav-arrow:not(:disabled):hover {
     background: rgba(255,255,255,0.3);
-}
-
-/* Женский хайк в календаре – розовый фон, сегодняшний с белой обводкой */
-.calendar-day.woman-hike {
-    background: #FB5EB0;
-    color: white;
-}
-.calendar-day.woman-hike.today {
-    background: #FB5EB0;
-    color: white;
-    border: 2px solid white;
 }
 
 .modal-overlay {
@@ -1500,7 +1500,6 @@ body::before {
     opacity: 0.8;
 }
 
-/* Розовое свечение для женских хайков */
 @keyframes glow-pink {
     0% { box-shadow: 0 0 3px #FB5EB0; }
     50% { box-shadow: 0 0 10px #FB5EB0; }
@@ -1516,7 +1515,14 @@ body::before {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    margin: 0 0 20px 0;
+    margin: 0;
+    padding: 0 16px 16px 16px;
+}
+
+/* Обеспечиваем, что внутри card-container сетка не вылезает */
+.card-container .profiles-grid {
+    margin: 0;
+    padding: 0 16px 16px 16px;
 }
 
 .profile-card {
