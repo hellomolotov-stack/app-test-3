@@ -10,7 +10,7 @@ import {
     deleteProfile,
     saveUserAvatar,
 } from '../firebase.js';
-import { showBottomNav, setupBottomNav, showBack, setUserInteracted, setActiveNav, resetNavActive } from './common.js';
+import { showBottomNav, setupBottomNav, showBack, setUserInteracted, setActiveNav, resetNavActive, hideBack } from './common.js';
 import { renderHome } from './home.js';
 
 let profiles = {};
@@ -106,12 +106,12 @@ function showProfilesComingSoonPopup() {
 
 // Основная функция рендера страницы профилей
 export async function renderProfiles() {
-    isPrivPage = true;
-    isMenuActive = false;
+    window.isPrivPage = true;
+    window.isMenuActive = false;
     resetNavActive();
     setActiveNav('navProfiles');
     subtitle().textContent = `👤 интеллигенты`;
-    showBack(() => renderHome());
+    hideBack(); // ✅ кнопка назад убрана
     haptic();
     log('profiles_page_opened', state.userCard.status !== 'active', state.user);
     showBottomNav(true);
@@ -188,8 +188,8 @@ export async function renderProfiles() {
 
 // Рендер формы редактирования профиля
 async function renderEditProfile() {
-    isPrivPage = true;
-    isMenuActive = false;
+    window.isPrivPage = true;
+    window.isMenuActive = false;
     resetNavActive();
     setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`;
