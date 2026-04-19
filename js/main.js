@@ -4,7 +4,7 @@ import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, sa
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations } from './firebase.js';
 import { log } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
-import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive } from './ui/common.js';
+import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, uiActions } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
@@ -15,7 +15,7 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Переопределяем setupBottomNav
+// Реализация setupBottomNav
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -112,9 +112,8 @@ function setupBottomNav() {
     updateActiveNav();
 }
 
-// Переопределяем commonSetupBottomNav
-import * as common from './ui/common.js';
-common.setupBottomNav = setupBottomNav;
+// Переопределяем действие в uiActions
+uiActions.setupBottomNav = setupBottomNav;
 
 // Инициализация приложения
 async function loadAppData() {
@@ -131,11 +130,11 @@ async function loadAppData() {
                 state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer && !window.isPrivPage) {
-                    // renderCalendar(calendarContainer); // Будет вызвано позже
+                    // renderCalendar будет вызван позже через renderHome
                 }
                 const bookingsContainer = document.getElementById('userBookingsContainer');
                 if (bookingsContainer) {
-                    // renderUserBookings(bookingsContainer);
+                    // renderUserBookings будет вызван позже
                 }
                 saveCachedState();
             });
