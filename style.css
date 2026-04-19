@@ -1307,62 +1307,62 @@ body::before {
     color: #ffffff;
 }
 
-.calendar-day.today {
-    background: #ffffff;
-    color: #000000;
-    border: 2px solid transparent;
-    font-weight: bold;
-}
-
+/* Обычный хайк (активный) — ярко-жёлтый */
 .calendar-day.hike-day {
-    background: var(--yellow);
-    color: #000000;
+    background: #D9FD19 !important;
+    color: #000000 !important;
     border: 2px solid transparent;
 }
 
+/* Женский хайк (активный) — ярко-розовый */
+.calendar-day.woman-hike {
+    background: #FB5EB0 !important;
+    color: #ffffff !important;
+    border: 2px solid transparent;
+}
+
+/* Обычный прошедший хайк — бледно-жёлтый */
 .calendar-day.hike-day.past {
-    background: rgba(46, 204, 113, 0.3) !important; /* бледно-зелёный */
-    color: #000000;
-    border: 2px solid transparent;
+    background: rgba(217, 253, 25, 0.3) !important;
+    color: #000000 !important;
 }
 
-.calendar-day.today.hike-day {
-    background: var(--yellow);
-    color: #000000;
-    border: 2px solid #ffffff;
+/* Женский прошедший хайк — бледно-розовый */
+.calendar-day.woman-hike.past {
+    background: rgba(251, 94, 176, 0.3) !important;
+    color: #000000 !important;
+}
+
+/* Сегодняшний день */
+.calendar-day.today {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: 2px solid #D9FD19 !important;
     font-weight: bold;
 }
 
+/* Сегодняшний день, если это хайк */
+.calendar-day.today.hike-day {
+    background: #D9FD19 !important;
+    color: #000000 !important;
+    border: 2px solid #ffffff !important;
+}
+
+.calendar-day.today.woman-hike {
+    background: #FB5EB0 !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+}
+
+/* Забронированный хайк */
 .calendar-day.booked-day {
-    background: var(--yellow);
-    color: #000000;
-    box-shadow: 0 0 10px var(--yellow);
-    border: 2px solid transparent;
+    box-shadow: 0 0 10px #D9FD19;
     animation: glow 3s ease-in-out infinite;
 }
 
-.calendar-day.today.booked-day {
-    background: var(--yellow);
-    color: #000000;
-    border: 2px solid #ffffff;
-    box-shadow: 0 0 10px var(--yellow);
-}
-
-.calendar-day.hike-day.past.booked-day {
-    background: rgba(217, 253, 25, 0.3);
-    color: #000000;
-    box-shadow: none;
-    animation: none;
-}
-
-.calendar-emoji {
-    position: absolute;
-    bottom: -5px;
-    right: -2px;
-    font-size: 1em;
-    line-height: 1;
-    pointer-events: none;
-    z-index: 2;
+.calendar-day.woman-hike.booked-day {
+    box-shadow: 0 0 10px #FB5EB0;
+    animation: glow-pink 3s ease-in-out infinite;
 }
 
 .calendar-day.empty {
