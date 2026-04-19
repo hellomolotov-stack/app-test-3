@@ -1,4 +1,4 @@
-// Вспомогательные функции
+// js/utils.js
 export function haptic() {
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
 }
@@ -46,6 +46,46 @@ export function parseLinks(text, isGuest) {
         url = url.replace(/\.$/, '');
         return `<a href="#" data-url="${url}" data-guest="${isGuest}" class="dynamic-link">${linkText}</a>`;
     });
+}
+
+export function showConfetti() {
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '9999';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth, height = window.innerHeight;
+    canvas.width = width; canvas.height = height;
+    const particles = [];
+    const colors = ['#D9FD19', '#40a7e3', '#ffffff', '#ff69b4', '#ffa500'];
+    for (let i = 0; i < 80; i++) {
+        particles.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: Math.random() * 6 - 3,
+            vy: Math.random() * -5 - 2,
+            size: Math.random() * 6 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        });
+    }
+    let frame = 0;
+    function animate() {
+        if (frame > 120) { document.body.removeChild(canvas); return; }
+        ctx.clearRect(0, 0, width, height);
+        particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy; p.vy += 0.1;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        });
+        frame++;
+        requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
 }
 
 // Глобальные ссылки на объекты Telegram и DOM
