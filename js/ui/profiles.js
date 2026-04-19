@@ -1,5 +1,5 @@
 // js/ui/profiles.js
-import { haptic, openLink, mainDiv, subtitle, tg } from '../utils.js';
+import { haptic, openLink, mainDiv, subtitle, tg, showQuestionConfetti } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import {
@@ -80,28 +80,11 @@ function renderProfileCard(profile, isBlurred = false) {
     `;
 }
 
-// Показ попапа "скоро" для неавторизованных
-function showProfilesComingSoonPopup() {
+// Анимация с вопросами для гостей
+function showProfilesComingSoon() {
     haptic();
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'comingSoonPopup';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 300px;">
-            <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title" style="color: var(--yellow);">новая функция</div>
-            <div class="modal-text">скоро владельцы карт получат доступ к знакомствам, качество которых недоступно ни в одном другом сервисе</div>
-            <div style="margin-top: 20px; text-align: center;">
-                <button class="btn btn-yellow" id="comingSoonOkBtn" style="width: 100%;">воу, давайте скорее</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    const close = () => overlay.remove();
-    document.getElementById('closePopup')?.addEventListener('click', close);
-    document.getElementById('comingSoonOkBtn')?.addEventListener('click', close);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-    log('profiles_coming_soon_popup', state.userCard.status !== 'active', state.user);
+    showQuestionConfetti();
+    log('profiles_coming_soon', true, state.user);
 }
 
 // Основная функция рендера страницы профилей
@@ -111,7 +94,7 @@ export async function renderProfiles() {
     resetNavActive();
     setActiveNav('navProfiles');
     subtitle().textContent = `👤 интеллигенты`;
-    hideBack(); // ✅ кнопка назад убрана
+    hideBack(); // кнопка назад убрана
     haptic();
     log('profiles_page_opened', state.userCard.status !== 'active', state.user);
     showBottomNav(true);
@@ -292,3 +275,6 @@ function escapeHtml(str) {
         return m;
     });
 }
+
+// Экспортируем новую функцию для вызова из main.js при клике гостя на «Интеллигенты»
+export { showProfilesComingSoon };
