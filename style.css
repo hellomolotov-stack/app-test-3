@@ -1354,10 +1354,11 @@ body::before {
     color: #000000 !important;
 }
 
+
 /* Сегодняшний день */
 .calendar-day.today {
-    background: transparent !important;
-    color: #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
     border: 2px solid #ffffff !important;
     font-weight: bold;
 }
