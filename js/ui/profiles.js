@@ -1,5 +1,5 @@
 // js/ui/profiles.js
-import { haptic, openLink, mainDiv, subtitle, tg, showQuestionConfetti } from '../utils.js';
+import { haptic, openLink, mainDiv, subtitle, tg, showUnicornConfetti } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import {
@@ -78,7 +78,7 @@ function renderProfileCard(profile, isBlurred = false) {
 
 export function showProfilesComingSoon() {
     haptic();
-    showQuestionConfetti();
+    showUnicornConfetti();
     log('profiles_coming_soon', true, state.user);
 }
 
@@ -171,7 +171,10 @@ async function renderEditProfile() {
     resetNavActive();
     setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`;
-    showBack(() => renderProfiles());
+    showBack(() => {
+        // При возврате из редактирования явно перерисовываем сетку
+        renderProfiles();
+    });
     haptic();
     log('edit_profile_opened', false, state.user);
     showBottomNav(false);
