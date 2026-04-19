@@ -16,7 +16,6 @@ import { renderHome } from './home.js';
 let profiles = {};
 let myProfile = null;
 
-// Загрузка всех профилей из Firebase
 async function loadProfilesData() {
     profiles = await loadAllProfiles();
     myProfile = await loadMyProfile(state.user?.id);
@@ -24,7 +23,6 @@ async function loadProfilesData() {
     state.myProfile = myProfile;
 }
 
-// Обновление аватара пользователя из Telegram (если нужно)
 async function updateAvatarIfNeeded() {
     if (!state.user?.id || !myProfile) return;
     const lastUpdated = myProfile.avatarUpdatedAt || 0;
@@ -45,7 +43,6 @@ async function updateAvatarIfNeeded() {
     }
 }
 
-// Рендер одной карточки профиля
 function renderProfileCard(profile, isBlurred = false) {
     const avatarHtml = profile.avatarUrl
         ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0) || '?').toUpperCase()}</div>';">`
@@ -59,7 +56,6 @@ function renderProfileCard(profile, isBlurred = false) {
         return `<span class="status-tag ${tagClass}">${status}</span>`;
     }).join('');
 
-    // Заглушка для "идёт на хайк"
     const nextHikeHtml = isBlurred
         ? ''
         : `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">скоро узнаем</span>`;
@@ -80,21 +76,19 @@ function renderProfileCard(profile, isBlurred = false) {
     `;
 }
 
-// Анимация с вопросами для гостей
-function showProfilesComingSoon() {
+export function showProfilesComingSoon() {
     haptic();
     showQuestionConfetti();
     log('profiles_coming_soon', true, state.user);
 }
 
-// Основная функция рендера страницы профилей
 export async function renderProfiles() {
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
     setActiveNav('navProfiles');
     subtitle().textContent = `👤 интеллигенты`;
-    hideBack(); // кнопка назад убрана
+    hideBack();
     haptic();
     log('profiles_page_opened', state.userCard.status !== 'active', state.user);
     showBottomNav(true);
@@ -107,7 +101,6 @@ export async function renderProfiles() {
     const hasAnyProfile = Object.keys(profiles).length > 0;
 
     if (!hasMyProfile) {
-        // Показываем заглушки
         const placeholderCount = 6;
         let profilesHtml = '';
         for (let i = 0; i < placeholderCount; i++) {
@@ -126,7 +119,9 @@ export async function renderProfiles() {
             `;
         }
         mainDiv().innerHTML = `
-            <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
+            <div class="card-container">
+                <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
+            </div>
             <div class="center-floating-btn">
                 <button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>
             </div>
@@ -138,7 +133,6 @@ export async function renderProfiles() {
         return;
     }
 
-    // Сортируем профили: новые сверху
     const sortedProfiles = Object.entries(profiles).sort((a, b) => {
         const dateA = a[1].updatedAt || 0;
         const dateB = b[1].updatedAt || 0;
@@ -157,7 +151,9 @@ export async function renderProfiles() {
     }
 
     mainDiv().innerHTML = `
-        <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
+        <div class="card-container">
+            <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
+        </div>
         <div class="floating-edit-btn" id="editProfileBtnContainer">
             <button class="btn btn-outline" id="editProfileBtn" style="background-color: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">📝 мой профиль</button>
         </div>
@@ -169,7 +165,6 @@ export async function renderProfiles() {
     });
 }
 
-// Рендер формы редактирования профиля
 async function renderEditProfile() {
     window.isPrivPage = true;
     window.isMenuActive = false;
@@ -275,6 +270,3 @@ function escapeHtml(str) {
         return m;
     });
 }
-
-// Экспортируем новую функцию для вызова из main.js при клике гостя на «Интеллигенты»
-export { showProfilesComingSoon };
