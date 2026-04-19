@@ -552,7 +552,6 @@ body::before {
     transition: opacity 0.3s;
     max-width: 600px;
     margin: 0 auto;
-    /* Выравнивание отступов */
     padding-left: 6px;
     padding-right: 6px;
 }
@@ -1320,6 +1319,17 @@ body::before {
     color: #ffffff;
 }
 
+/* Эмодзи на 5 часов */
+.calendar-emoji {
+    position: absolute;
+    bottom: -5px;
+    right: -5px;
+    font-size: 1em;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 2;
+}
+
 /* Активные хайки */
 .calendar-day.hike-day {
     background: #D9FD19 !important;
@@ -1339,7 +1349,6 @@ body::before {
     color: #000000 !important;
 }
 
-/* Женский прошедший хайк — бледно-розовый */
 .calendar-day.woman-hike.past {
     background: rgba(251, 94, 176, 0.3) !important;
     color: #000000 !important;
@@ -1347,9 +1356,9 @@ body::before {
 
 /* Сегодняшний день */
 .calendar-day.today {
-    background: #ffffff !important;
-    color: #000000 !important;
-    border: 2px solid #D9FD19 !important;
+    background: transparent !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
     font-weight: bold;
 }
 
@@ -1519,7 +1528,6 @@ body::before {
     padding: 0 16px 16px 16px;
 }
 
-/* Обеспечиваем, что внутри card-container сетка не вылезает */
 .card-container .profiles-grid {
     margin: 0;
     padding: 0 16px 16px 16px;
