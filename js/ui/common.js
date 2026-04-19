@@ -3,21 +3,18 @@ import { haptic, openLink } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 
-// Глобальные флаги UI
 export let isPrivPage = false;
 export let isMenuActive = false;
 export let manualNavClick = null;
 export let manualNavTimer = null;
 export let userInteracted = false;
 
-// Объект для переопределяемых действий
 export const uiActions = {
     setupBottomNav: () => {
         console.log('setupBottomNav called - will be overridden in main');
     }
 };
 
-// Для обратной совместимости
 export function setupBottomNav() {
     uiActions.setupBottomNav();
 }
@@ -72,7 +69,6 @@ export function showBottomNav(show = true) {
     }
 }
 
-// Анимированный лоадер
 let loaderInterval = null, loaderMessageTimer = null;
 export function showAnimatedLoader() {
     const loader = document.getElementById('initial-loader');
@@ -119,7 +115,6 @@ export function hideAnimatedLoader() {
     }
 }
 
-// Back button
 export function showBack(callback) {
     const tg = window.Telegram?.WebApp;
     if (!tg) return;
