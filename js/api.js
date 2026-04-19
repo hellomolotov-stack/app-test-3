@@ -1,12 +1,6 @@
 // js/api.js
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
 
-/**
- * Логирование действий пользователя (отправка через Image beacon)
- * @param {string} action - название действия
- * @param {boolean} isGuest - гость или владелец карты
- * @param {object} user - объект пользователя Telegram (id, username, first_name, last_name)
- */
 export function log(action, isGuest = false, user) {
     if (!user?.id) return;
     const finalAction = isGuest ? `${action}_guest` : action;
@@ -17,19 +11,9 @@ export function log(action, isGuest = false, user) {
         last_name: user.last_name || '',
         action: finalAction
     });
-    // Используем Image для гарантированной отправки без CORS
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
-/**
- * Обновление информации о регистрации на хайк в Google Sheets
- * @param {string} hikeDate - дата хайка (YYYY-MM-DD)
- * @param {string} hikeTitle - название хайка
- * @param {string} status - статус регистрации ('booked', 'cancelled')
- * @param {string} purchaseType - тип покупки ('ticket', 'season_card', 'permanent_card', 'card_holder')
- * @param {object} user - объект пользователя Telegram
- * @param {boolean} hasCard - есть ли у пользователя карта интеллигента
- */
 export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType, user, hasCard) {
     if (!user?.id || !REGISTRATION_API_URL) return;
     try {
@@ -54,51 +38,40 @@ export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseT
     }
 }
 
-/**
- * Синхронизация профиля пользователя с Google Sheets (создание/обновление)
- * @param {object} profile - данные профиля (name, friendshipStatuses, hobbies, profession, avatarUrl)
- * @param {object} user - объект пользователя Telegram
- */
 export async function syncProfileToSheet(profile, user) {
     if (!user?.id || !REGISTRATION_API_URL) return;
-    const payload = {
+    const params = new URLSearchParams({
         action: 'syncProfile',
         user_id: user.id,
         name: profile.name,
-        statuses: profile.friendshipStatuses,
-        hobbies: profile.hobbies,
-        profession: profile.profession,
-        avatar_url: profile.avatarUrl,
+        statuses: (profile.friendshipStatuses || []).join(','),
+        hobbies: profile.hobbies || '',
+        profession: profile.profession || '',
+        avatar_url: profile.avatarUrl || '',
         updated_at: new Date().toISOString()
-    };
+    });
     try {
         await fetch(REGISTRATION_API_URL, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: params,
+            keepalive: true
         });
     } catch (e) {
         console.error('Profile sync error:', e);
     }
 }
 
-/**
- * Удаление профиля пользователя из Google Sheets
- * @param {string|number} userId - Telegram user ID
- */
 export async function syncProfileDeleteToSheet(userId) {
     if (!userId || !REGISTRATION_API_URL) return;
-    const payload = {
+    const params = new URLSearchParams({
         action: 'deleteProfile',
         user_id: userId
-    };
+    });
     try {
         await fetch(REGISTRATION_API_URL, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: params,
+            keepalive: true
         });
     } catch (e) {
         console.error('Profile delete sync error:', e);
