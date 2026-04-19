@@ -103,12 +103,14 @@ export function showQuestionConfetti() {
     canvas.width = width; canvas.height = height;
 
     const particles = [];
+    const questionColor = '#D9FD19'; // жёлтый
+
     for (let i = 0; i < 60; i++) {
         particles.push({
             x: Math.random() * width,
-            y: Math.random() * height * 0.5,
-            vx: Math.random() * 4 - 2,
-            vy: Math.random() * 3 + 1,
+            y: Math.random() * height,
+            vx: Math.random() * 6 - 3,
+            vy: Math.random() * -5 - 2,
             size: Math.random() * 20 + 20,
             opacity: Math.random() * 0.5 + 0.5
         });
@@ -124,13 +126,10 @@ export function showQuestionConfetti() {
         particles.forEach(p => {
             p.x += p.vx;
             p.y += p.vy;
-            p.vy += 0.15;
-            if (p.y > height + 50) {
-                p.y = -50;
-                p.x = Math.random() * width;
-            }
+            p.vy += 0.1;
+            if (p.y > height + 50) return;
             ctx.font = `${p.size}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
-            ctx.fillStyle = `rgba(255, 255, 255, ${p.opacity})`;
+            ctx.fillStyle = questionColor;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('❓', p.x, p.y);
@@ -141,7 +140,6 @@ export function showQuestionConfetti() {
     requestAnimationFrame(animate);
 }
 
-// Глобальные ссылки на объекты Telegram и DOM
 export const tg = window.Telegram?.WebApp;
 export const mainDiv = () => document.getElementById('mainContent');
 export const subtitle = () => document.getElementById('subtitle');
