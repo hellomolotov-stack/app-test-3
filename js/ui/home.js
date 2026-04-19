@@ -1,13 +1,12 @@
 // js/ui/home.js
-import { haptic, openLink, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from '../utils.js';
+import { haptic, openLink, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack } from './common.js';
 import { renderCalendar } from './calendar.js';
-import { renderNewcomerPage } from './privileges.js'; // Будет позже
-import { renderPriv, renderGuestPrivileges } from './privileges.js';
+import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 
 // Вспомогательные функции для домашней страницы
@@ -223,7 +222,12 @@ function renderOwnerHome() {
         </div>
     `;
 
-    document.getElementById('ownerCardImage')?.addEventListener('click', () => { haptic(); if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium'); log('card_click', false, user); });
+    document.getElementById('ownerCardImage')?.addEventListener('click', () => {
+        haptic();
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        showConfetti(); // ✅ исправлено
+        log('card_click', false, user);
+    });
     document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('privilege_click', false, user); renderPriv(); });
     document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'support_click', false); });
     document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', false, user); renderNewcomerPage(false); });
