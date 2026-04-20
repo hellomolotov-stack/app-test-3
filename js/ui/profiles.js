@@ -292,11 +292,12 @@ async function renderEditProfile() {
         
         // Сохраняем в Firebase
         await saveProfile(state.user?.id, profileData);
-        
+        console.log('✅ Профиль сохранён в Firebase');
+
         // Синхронизация с Google Sheets в фоне
         syncProfileToSheet(profileData, state.user).catch(err => console.error('BG sync error:', err));
 
-        // Очищаем кэш, чтобы обновился список хайков
+        // Очищаем кэш
         delete userHikesCache[state.user?.id];
 
         tg.BackButton.offClick(backHandler);
