@@ -50,8 +50,8 @@ async function renderProfileCard(profile, isBlurred = false) {
 
     const contactButtons = (!isBlurred && profile.userId) ? `
         <div class="profile-contact-row">
-            ${profile.allowMessages !== false ? `<button class="profile-contact-btn" data-action="chat" data-username="${profile.username || profile.userId}">💬 написать</button>` : ''}
-            ${profile.customLink ? `<button class="profile-contact-btn" data-action="link" data-url="${escapeHtml(profile.customLink)}">🔗 ссылка</button>` : ''}
+            ${profile.allowMessages !== false ? `<button class="profile-contact-btn" data-action="chat" data-username="${profile.username || profile.userId}">💬</button>` : ''}
+            ${profile.customLink ? `<button class="profile-contact-btn" data-action="link" data-url="${escapeHtml(profile.customLink)}">🔗</button>` : ''}
         </div>
     ` : '';
 
@@ -59,7 +59,6 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
-    // Удаляем плавающую кнопку, если она есть с предыдущих страниц
     document.querySelector('.profile-edit-fab')?.remove();
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
