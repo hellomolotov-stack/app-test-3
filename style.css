@@ -1850,3 +1850,54 @@ body::before {
 .profile-contact-link:hover {
     transform: scale(1.1);
 }
+/* Блоки внутри формы редактирования профиля */
+.profile-field {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.profile-field-label {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+    margin-bottom: 12px !important;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
+}
+
+.checkbox-row span {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: normal;
+}
+
+/* Чтобы текст в чекбоксах статусов был не жирным */
+.checkbox-group label {
+    font-weight: normal !important;
+}
+
+/* Строка контактов в карточке профиля */
+.profile-contact-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 12px;
+    justify-content: flex-start;
+}
+
+.profile-contact-link {
+    transition: transform 0.2s;
+    cursor: pointer;
+}
+.profile-contact-link:hover {
+    transform: scale(1.1);
+}
