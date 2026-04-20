@@ -48,6 +48,10 @@ async function renderProfileCard(profile, isBlurred = false) {
         else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
     } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
+    // Убираем плюсы из hobbies и profession для отображения
+    const displayHobbies = (profile.hobbies || '').replace(/\+/g, ', ');
+    const displayProfession = (profile.profession || '').replace(/\+/g, ', ');
+
     const contactButtons = (!isBlurred && profile.userId) ? `
         <div class="profile-contact-row">
             ${profile.allowMessages !== false ? `<a href="#" class="profile-contact-link" data-action="chat" data-username="${profile.username || profile.userId}" style="color: var(--yellow); text-decoration: none; font-size: 20px;">💬</a>` : ''}
@@ -55,7 +59,7 @@ async function renderProfileCard(profile, isBlurred = false) {
         </div>
     ` : '';
 
-    return `<div class="profile-card ${isBlurred?'blurred':''}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
+    return `<div class="profile-card ${isBlurred?'blurred':''}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${displayHobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${displayProfession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
 }
 
 export async function renderProfiles() {
@@ -98,7 +102,14 @@ export async function renderProfiles() {
 
     const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const cards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p,false)));
-    mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${cards.join('')}</div></div><div class="floating-edit-btn" id="editProfileBtnContainer"><button class="btn btn-outline" id="editProfileBtn" style="background:rgba(255,255,255,0.1);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,0.2);backdrop-filter:blur(4px);">📝 мой профиль</button></div>`;
+    mainDiv().innerHTML = `
+        <div class="card-container">
+            <div class="profiles-grid" id="profilesGrid">${cards.join('')}</div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; padding-right: 16px; margin-top: -10px; margin-bottom: 20px;">
+            <button class="btn btn-outline" id="editProfileBtn" style="width: auto; padding: 12px 24px; background: rgba(255,255,255,0.1); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">📝 мой профиль</button>
+        </div>
+    `;
     document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
 }
 
