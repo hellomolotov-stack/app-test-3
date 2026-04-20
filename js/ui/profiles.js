@@ -11,6 +11,12 @@ let profiles = {};
 let myProfile = null;
 const userHikesCache = {};
 
+// Удаление гостевой кнопки (вызывается при любом рендеринге)
+function removeGuestButton() {
+    const old = document.querySelector('.guest-center-btn');
+    if (old) old.remove();
+}
+
 async function loadProfilesData() {
     const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
     profiles = allProfiles; myProfile = myProf;
@@ -59,8 +65,7 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
-    document.querySelector('.guest-center-btn')?.remove();
-
+    removeGuestButton();
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
     showBottomNav(true); setupBottomNav();
@@ -101,8 +106,7 @@ export async function renderProfiles() {
 }
 
 async function renderEditProfile() {
-    document.querySelector('.guest-center-btn')?.remove();
-
+    removeGuestButton();
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
     showBottomNav(true); setupBottomNav();
@@ -167,6 +171,7 @@ async function renderEditProfile() {
             userId: state.user?.id
         };
         await saveProfile(state.user?.id, data);
+        // Синхронизация с Google Sheets
         syncProfileToSheet(data, state.user).catch(console.error);
         delete userHikesCache[state.user?.id];
         tg.BackButton.offClick(backHandler);
