@@ -185,7 +185,7 @@ async function renderEditProfile() {
         if(bottomNav) bottomNav.style.display='flex';
         showBottomNav(true);
         setupBottomNav();
-        setActiveNav('navProfiles');  // фикс: активный пункт остаётся "интеллигенты"
+        setActiveNav('navProfiles');  // активный пункт остаётся "интеллигенты"
         renderProfiles();
     });
 
