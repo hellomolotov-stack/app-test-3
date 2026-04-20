@@ -183,7 +183,9 @@ async function renderEditProfile() {
         delete userHikesCache[state.user?.id];
         tg.BackButton.offClick(backHandler);
         if(bottomNav) bottomNav.style.display='flex';
-        showBottomNav(true); setupBottomNav();
+        showBottomNav(true);
+        setupBottomNav();
+        setActiveNav('navProfiles');  // фикс: активный пункт остаётся "интеллигенты"
         renderProfiles();
     });
 
@@ -196,7 +198,9 @@ async function renderEditProfile() {
                 delete userHikesCache[state.user?.id];
                 tg.BackButton.offClick(backHandler);
                 if(bottomNav) bottomNav.style.display='flex';
-                showBottomNav(true); setupBottomNav();
+                showBottomNav(true);
+                setupBottomNav();
+                setActiveNav('navProfiles');
                 renderProfiles();
             }
         });
