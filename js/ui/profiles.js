@@ -50,8 +50,8 @@ async function renderProfileCard(profile, isBlurred = false) {
 
     const contactButtons = (!isBlurred && profile.userId) ? `
         <div class="profile-contact-row">
-            ${profile.allowMessages !== false ? `<a href="#" class="profile-contact-link" data-action="chat" data-username="${profile.username || profile.userId}" style="color: var(--yellow); text-decoration: none; font-size: 20px;">💬</a>` : ''}
-            ${profile.customLink ? `<a href="#" class="profile-contact-link" data-action="link" data-url="${escapeHtml(profile.customLink)}" style="color: var(--yellow); text-decoration: none; font-size: 20px;">🔗</a>` : ''}
+            ${profile.allowMessages !== false ? `<button class="profile-contact-btn" data-action="chat" data-username="${profile.username || profile.userId}">💬 написать</button>` : ''}
+            ${profile.customLink ? `<button class="profile-contact-btn" data-action="link" data-url="${escapeHtml(profile.customLink)}">🔗 ссылка</button>` : ''}
         </div>
     ` : '';
 
@@ -59,6 +59,9 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
+    // Удаляем плавающую кнопку, если она есть с предыдущих страниц
+    document.querySelector('.profile-edit-fab')?.remove();
+
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
     showBottomNav(true); setupBottomNav();
@@ -103,7 +106,6 @@ export async function renderProfiles() {
             <div class="profiles-grid" id="profilesGrid">${cards.join('')}</div>
         </div>
     `;
-    // Кнопка фиксированная, закруглённая, прижатая к правому краю
     const btnContainer = document.createElement('div');
     btnContainer.className = 'profile-edit-fab';
     btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
@@ -112,9 +114,7 @@ export async function renderProfiles() {
 }
 
 async function renderEditProfile() {
-    // Удаляем плавающую кнопку при входе в редактирование
-    const oldFab = document.querySelector('.profile-edit-fab');
-    if (oldFab) oldFab.remove();
+    document.querySelector('.profile-edit-fab')?.remove();
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
