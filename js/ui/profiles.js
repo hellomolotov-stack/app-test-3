@@ -48,7 +48,6 @@ async function renderProfileCard(profile, isBlurred = false) {
         else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
     } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
-    // Кнопки контактов: 💬 только если allowMessages !== false, 🔗 если есть customLink
     const contactButtons = (!isBlurred && profile.userId) ? `
         <div class="profile-contact-row">
             ${profile.allowMessages !== false ? `<a href="#" class="profile-contact-link" data-action="chat" data-username="${profile.username || profile.userId}" style="color: var(--yellow); text-decoration: none; font-size: 20px;">💬</a>` : ''}
@@ -113,13 +112,18 @@ async function renderEditProfile() {
         <div class="form-field"><label>👀 статус знакомств</label><div class="checkbox-group"><label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба')?'checked':''}> дружба</label><label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения')?'checked':''}> отношения</label><label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес')?'checked':''}> бизнес</label></div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
         <div class="form-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
         <div class="form-field"><label>💼 профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
-        <div class="form-field"><label>💬 личные сообщения</label><div style="display:flex; align-items:center; gap:12px;"><input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}> <span id="allowMessagesLabel">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телеграм'}</span></div></div>
+        <div class="form-field">
+            <label>💬 личные сообщения</label>
+            <div style="display: flex; align-items: center; gap: 12px; color: #ffffff;">
+                <input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}>
+                <span id="allowMessagesLabel" style="color: #ffffff;">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телеграм'}</span>
+            </div>
+        </div>
         <div class="form-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
         <button type="submit" class="btn btn-yellow" id="saveProfileBtn">сохранить профиль</button>
         ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>':''}
     </form></div>`;
 
-    // Обновление текста чекбокса
     const allowCheck = document.getElementById('allowMessagesCheck');
     const allowLabel = document.getElementById('allowMessagesLabel');
     allowCheck.addEventListener('change', ()=>{
@@ -145,7 +149,7 @@ async function renderEditProfile() {
         const data = {
             name, friendshipStatuses: selected, hobbies, profession,
             allowMessages, customLink,
-            username: state.user?.username || '',  // сохраняем username для ссылки 💬
+            username: state.user?.username || '',
             avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null,
             avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(),
             userId: state.user?.id
