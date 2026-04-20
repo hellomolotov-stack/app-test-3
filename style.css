@@ -2461,3 +2461,63 @@ body::before {
 .card-container {
     padding-bottom: 8px;
 }
+/* Гостевая кнопка по центру экрана */
+.guest-center-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+    min-width: 220px;
+}
+
+.guest-center-btn .btn {
+    width: 100%;
+    margin: 0;
+}
+
+/* Убираем лишние отступы у карточки в редактировании */
+.card-container {
+    padding-top: 12px;
+    padding-bottom: 8px;
+}
+
+/* Кнопка "Мой профиль" в правом нижнем углу */
+.floating-edit-btn {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    left: auto;
+    display: flex;
+    justify-content: flex-end;
+    z-index: 1100;
+    pointer-events: none;
+}
+
+.floating-edit-btn .btn {
+    pointer-events: auto;
+    width: auto;
+    padding: 12px 24px;
+    border-radius: 40px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Увеличиваем отступ над кнопкой "Сохранить" */
+#saveProfileBtn {
+    margin-top: 24px !important;
+    margin-bottom: 8px;
+}
+
+/* Уменьшаем отступ сверху у первого блока в форме */
+.edit-form {
+    padding: 0 16px 8px 16px;
+}
+
+.edit-form .profile-field:first-of-type {
+    margin-top: 0;
+}
