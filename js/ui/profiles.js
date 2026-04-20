@@ -102,14 +102,20 @@ export async function renderProfiles() {
         <div class="card-container">
             <div class="profiles-grid" id="profilesGrid">${cards.join('')}</div>
         </div>
-        <div class="profile-edit-btn-wrapper">
-            <button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>
-        </div>
     `;
+    // Кнопка фиксированная, закруглённая, прижатая к правому краю
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'profile-edit-fab';
+    btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
+    document.body.appendChild(btnContainer);
     document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
 }
 
 async function renderEditProfile() {
+    // Удаляем плавающую кнопку при входе в редактирование
+    const oldFab = document.querySelector('.profile-edit-fab');
+    if (oldFab) oldFab.remove();
+
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
     showBottomNav(true); setupBottomNav();
