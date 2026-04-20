@@ -214,12 +214,11 @@ async function renderEditProfile() {
     const bottomNav = document.getElementById('bottomNav');
     if (bottomNav) bottomNav.style.display = 'none';
 
-    // Загружаем свежие данные профиля
     const freshProfile = await loadMyProfile(state.user?.id);
-    const currentName = freshProfile?.name || state.user?.first_name || '';
-    const currentStatuses = freshProfile?.friendshipStatuses || [];
-    const currentHobbies = freshProfile?.hobbies || '';
-    const currentProfession = freshProfile?.profession || '';
+    const currentName = String(freshProfile?.name || state.user?.first_name || '');
+    const currentStatuses = Array.isArray(freshProfile?.friendshipStatuses) ? freshProfile.friendshipStatuses : [];
+    const currentHobbies = String(freshProfile?.hobbies || '');
+    const currentProfession = String(freshProfile?.profession || '');
 
     mainDiv().innerHTML = `
         <div class="card-container">
@@ -294,8 +293,14 @@ async function renderEditProfile() {
         await saveProfile(state.user?.id, profileData);
         console.log('✅ Профиль сохранён в Firebase');
 
-        // Синхронизация с Google Sheets в фоне
-        syncProfileToSheet(profileData, state.user).catch(err => console.error('BG sync error:', err));
+        // Синхронизация с Google Sheets
+        try {
+            console.log('📤 Отправка профиля в Google Sheets...');
+            await syncProfileToSheet(profileData, state.user);
+            console.log('✅ Профиль отправлен в Google Sheets');
+        } catch (err) {
+            console.error('❌ Ошибка отправки профиля в Google Sheets:', err);
+        }
 
         // Очищаем кэш
         delete userHikesCache[state.user?.id];
@@ -325,8 +330,9 @@ async function renderEditProfile() {
 }
 
 function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
+    if (str === undefined || str === null) return '';
+    const s = String(str);
+    return s.replace(/[&<>]/g, function(m) {
         if (m === '&') return '&amp;';
         if (m === '<') return '&lt;';
         if (m === '>') return '&gt;';
