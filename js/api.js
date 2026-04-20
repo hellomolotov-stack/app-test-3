@@ -1,6 +1,9 @@
 // js/api.js
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
 
+/**
+ * Логирование действий пользователя (отправка через Image beacon)
+ */
 export function log(action, isGuest = false, user) {
     if (!user?.id) return;
     const finalAction = isGuest ? `${action}_guest` : action;
@@ -11,9 +14,13 @@ export function log(action, isGuest = false, user) {
         last_name: user.last_name || '',
         action: finalAction
     });
+    // Используем Image для гарантированной отправки без CORS
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
+/**
+ * Обновление информации о регистрации на хайк в Google Sheets
+ */
 export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType, user, hasCard) {
     if (!user?.id || !REGISTRATION_API_URL) return;
     try {
@@ -38,12 +45,19 @@ export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseT
     }
 }
 
+/**
+ * Синхронизация профиля пользователя с Google Sheets (создание/обновление)
+ * Отправляет данные через URLSearchParams, как и регистрации
+ */
 export async function syncProfileToSheet(profile, user) {
-    if (!user?.id || !REGISTRATION_API_URL) return;
+    if (!user?.id || !REGISTRATION_API_URL) {
+        console.warn('syncProfileToSheet: нет user.id или REGISTRATION_API_URL');
+        return;
+    }
     const params = new URLSearchParams({
         action: 'syncProfile',
         user_id: user.id,
-        name: profile.name,
+        name: profile.name || '',
         statuses: (profile.friendshipStatuses || []).join(','),
         hobbies: profile.hobbies || '',
         profession: profile.profession || '',
@@ -51,17 +65,20 @@ export async function syncProfileToSheet(profile, user) {
         updated_at: new Date().toISOString()
     });
     try {
-        await fetch(REGISTRATION_API_URL, {
+        const response = await fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params,
             keepalive: true
         });
-        console.log('📤 Профиль отправлен в Google Sheets (URLSearchParams)');
+        console.log('📤 syncProfileToSheet: запрос отправлен, статус:', response.status);
     } catch (e) {
-        console.error('Profile sync error:', e);
+        console.error('❌ syncProfileToSheet error:', e);
     }
 }
 
+/**
+ * Удаление профиля пользователя из Google Sheets
+ */
 export async function syncProfileDeleteToSheet(userId) {
     if (!userId || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams({
