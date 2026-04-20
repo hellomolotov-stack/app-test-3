@@ -105,13 +105,14 @@ export function showUnicornConfetti() {
     const particles = [];
     const unicornColor = '#D9FD19';
 
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 60; i++) {
         particles.push({
             x: Math.random() * width,
             y: Math.random() * height,
-            vx: Math.random() * 6 - 3,
-            vy: Math.random() * -5 - 2,
-            size: Math.random() * 24 + 16,
+            vx: Math.random() * 8 - 4,
+            vy: Math.random() * -6 - 2,
+            size: Math.random() * 28 + 18,
+            rotation: Math.random() * 0.5 - 0.25,
         });
     }
 
