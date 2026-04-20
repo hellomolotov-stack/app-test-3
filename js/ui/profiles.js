@@ -59,9 +59,7 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
-    // Удаляем плавающую кнопку гостя, если она осталась
-    const oldGuestBtn = document.querySelector('.guest-center-btn');
-    if (oldGuestBtn) oldGuestBtn.remove();
+    document.querySelector('.guest-center-btn')?.remove();
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
@@ -103,14 +101,13 @@ export async function renderProfiles() {
 }
 
 async function renderEditProfile() {
-    const oldGuestBtn = document.querySelector('.guest-center-btn');
-    if (oldGuestBtn) oldGuestBtn.remove();
+    document.querySelector('.guest-center-btn')?.remove();
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
-    showBottomNav(true); setupBottomNav(); // меню возвращено
+    showBottomNav(true); setupBottomNav();
     const bottomNav = document.getElementById('bottomNav');
-    if(bottomNav) bottomNav.style.display = 'flex'; // показываем меню
+    if(bottomNav) bottomNav.style.display = 'flex';
 
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     const fresh = await loadMyProfile(state.user?.id);
