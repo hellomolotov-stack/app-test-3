@@ -1044,22 +1044,7 @@ document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link');
     if (!link) return;
 
-        // Обработка кнопок 💬 и 🔗 в профилях
-    if (link.classList.contains('profile-contact-link')) {
-        e.preventDefault();
-        haptic();
-        const action = link.dataset.action;
-        if (action === 'chat') {
-            const userId = link.dataset.userId;
-            openLink(`https://t.me/${userId}`, 'profile_chat_click', false);
-        } else if (action === 'link') {
-            const url = link.dataset.url;
-            if (url) openLink(url, 'profile_link_click', false);
-        }
-        return;
-    }
-
-        // Обработка кнопок контактов в профиле (💬 и 🔗)
+         // Обработка кнопок контактов в профиле (💬 и 🔗)
     if (link.classList.contains('profile-contact-link')) {
         e.preventDefault();
         haptic();
@@ -1068,7 +1053,11 @@ document.addEventListener('click', function(e) {
             const username = link.dataset.username;
             if (username) {
                 const cleanUsername = username.replace(/^@/, '');
-                openLink(`https://t.me/${cleanUsername}`, 'profile_chat_click', false);
+                if (tg && tg.openTelegramLink) {
+                    tg.openTelegramLink(`https://t.me/${cleanUsername}`);
+                } else {
+                    openLink(`https://t.me/${cleanUsername}`, 'profile_chat_click', false);
+                }
             }
         } else if (action === 'link') {
             const url = link.dataset.url;
