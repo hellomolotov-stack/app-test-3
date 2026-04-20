@@ -1,5 +1,5 @@
 // js/main.js
-import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, showUnicornConfetti } from './utils.js';
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations } from './firebase.js';
 import { log } from './api.js';
@@ -7,7 +7,7 @@ import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, uiActions } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
-import { renderProfiles, showProfilesComingSoon } from './ui/profiles.js';
+import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet, closeParticipantDropdown, closeLeaderDropdown, showLeaderDropdown, toggleParticipantDropdown } from './ui/calendar.js';
 
 // Глобальные переменные UI
@@ -64,13 +64,7 @@ function setupBottomNav() {
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
-        // Раздел доступен всем владельцам карт, гостям показываем заглушку
-        const isCardHolder = state.userCard.status === 'active';
-        if (isCardHolder) {
-            renderProfiles();
-        } else {
-            showProfilesComingSoon();
-        }
+        renderProfiles();  // внутри renderProfiles уже есть проверка на гостя
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
