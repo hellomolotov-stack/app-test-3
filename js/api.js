@@ -43,15 +43,17 @@ export async function syncProfileToSheet(profile, user) {
         console.warn('syncProfileToSheet: нет user.id или REGISTRATION_API_URL');
         return;
     }
-    const params = new URLSearchParams({
+       const params = new URLSearchParams({
         action: 'syncProfile',
         user_id: user.id,
-        name: profile.name || '',
+        name: profile.name,
         statuses: (profile.friendshipStatuses || []).join(','),
         hobbies: profile.hobbies || '',
         profession: profile.profession || '',
         avatar_url: profile.avatarUrl || '',
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        allow_messages: profile.allowMessages ? 'да' : 'нет',
+        custom_link: profile.customLink || ''
     });
     try {
         console.log('📤 Отправка профиля на', REGISTRATION_API_URL);
