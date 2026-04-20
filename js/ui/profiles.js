@@ -30,290 +30,137 @@ async function loadProfilesData() {
 async function getNextHikeForUser(userId) {
     if (!userId) return null;
     if (userHikesCache[userId] !== undefined) return userHikesCache[userId];
-
     try {
         const registrations = await loadUserRegistrations(userId);
         if (!registrations) return null;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const futureHikes = state.hikesList.filter(hike => {
-            const hikeDate = new Date(hike.date);
-            return hikeDate >= today && registrations[hike.date] === true;
-        });
-        if (futureHikes.length === 0) return null;
-
-        futureHikes.sort((a, b) => new Date(a.date) - new Date(b.date));
-        const nextHike = futureHikes[0];
-        userHikesCache[userId] = nextHike;
-        return nextHike;
-    } catch (e) {
-        console.error('Error loading user registrations for profile:', e);
-        return null;
-    }
+        const today = new Date(); today.setHours(0,0,0,0);
+        const futureHikes = state.hikesList.filter(h => new Date(h.date) >= today && registrations[h.date] === true);
+        if (!futureHikes.length) return null;
+        futureHikes.sort((a,b) => new Date(a.date) - new Date(b.date));
+        const next = futureHikes[0];
+        userHikesCache[userId] = next;
+        return next;
+    } catch { return null; }
 }
 
 async function renderProfileCard(profile, isBlurred = false) {
     const avatarHtml = profile.avatarUrl
-        ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0) || '?').toUpperCase()}</div>';">`
-        : `<div class="profile-avatar-placeholder">${(profile.name?.charAt(0) || '?').toUpperCase()}</div>`;
-
-    const statusTags = (profile.friendshipStatuses || []).map(status => {
-        let tagClass = '';
-        if (status === 'дружба') tagClass = 'status-tag-friendship';
-        else if (status === 'отношения') tagClass = 'status-tag-romance';
-        else if (status === 'бизнес') tagClass = 'status-tag-business';
-        return `<span class="status-tag ${tagClass}">${status}</span>`;
+        ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0)||'?').toUpperCase()}</div>';">`
+        : `<div class="profile-avatar-placeholder">${(profile.name?.charAt(0)||'?').toUpperCase()}</div>`;
+    const statusTags = (profile.friendshipStatuses||[]).map(s => {
+        let cls = ''; if (s==='дружба') cls='status-tag-friendship'; else if (s==='отношения') cls='status-tag-romance'; else if (s==='бизнес') cls='status-tag-business';
+        return `<span class="status-tag ${cls}">${s}</span>`;
     }).join('');
-
     let nextHikeHtml = '';
     if (!isBlurred && profile.userId) {
-        const nextHike = await getNextHikeForUser(profile.userId);
-        if (nextHike) {
-            const formattedDate = formatDateForDisplay(nextHike.date);
-            nextHikeHtml = `
-                <div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div>
-                <a href="#" class="profile-hike-link" data-hike-date="${nextHike.date}">${formattedDate} · ${nextHike.title}</a>
-            `;
-        } else {
-            nextHikeHtml = `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">пока нет записей</span>`;
-        }
-    } else if (isBlurred) {
-        nextHikeHtml = '';
-    } else {
-        nextHikeHtml = `<div class="profile-section-title" style="color: var(--yellow);">идёт на хайк</div><span style="color: rgba(255,255,255,0.6); font-size: 14px;">скоро узнаем</span>`;
-    }
-
-    return `
-        <div class="profile-card ${isBlurred ? 'blurred' : ''}">
-            ${avatarHtml}
-            <div class="profile-name-status">
-                <span class="profile-name">${profile.name || 'Участник'}</span>
-                <div class="profile-status-tags">${statusTags || '<span class="status-tag status-tag-friendship">дружба</span>'}</div>
-            </div>
-            <div class="profile-section-title" style="color: var(--yellow);">увлечения</div>
-            <div class="profile-section-text">${profile.hobbies || '—'}</div>
-            <div class="profile-section-title" style="color: var(--yellow);">профессия</div>
-            <div class="profile-section-text">${profile.profession || '—'}</div>
-            ${nextHikeHtml}
-        </div>
-    `;
+        const next = await getNextHikeForUser(profile.userId);
+        if (next) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><a href="#" class="profile-hike-link" data-hike-date="${next.date}">${formatDateForDisplay(next.date)} · ${next.title}</a>`;
+        else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
+    } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
+    return `<div class="profile-card ${isBlurred?'blurred':''}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}</div>`;
 }
 
-export function showProfilesComingSoon() {
-    haptic();
-    showUnicornConfetti();
-    log('profiles_coming_soon', true, state.user);
-}
+export function showProfilesComingSoon() { haptic(); showUnicornConfetti(); log('profiles_coming_soon',true,state.user); }
 
 export async function renderProfiles() {
-    window.isPrivPage = true;
-    window.isMenuActive = false;
-    resetNavActive();
-    setActiveNav('navProfiles');
-    subtitle().textContent = `👤 интеллигенты`;
-    hideBack();
-    haptic();
-    log('profiles_page_opened', state.userCard.status !== 'active', state.user);
-    showBottomNav(true);
-    setupBottomNav();
-
-    // Показываем лоадер
-    mainDiv().innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;"></div>';
-
+    window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
+    subtitle().textContent = `👤 интеллигенты`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
+    showBottomNav(true); setupBottomNav();
+    mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     await loadProfilesData();
 
+    const isCardHolder = state.userCard.status === 'active';
     const hasMyProfile = !!myProfile;
+    const placeholderCount = 6;
 
-    if (!hasMyProfile) {
-        const placeholderCount = 6;
-        let profilesHtml = '';
-        for (let i = 0; i < placeholderCount; i++) {
-            profilesHtml += `
-                <div class="profile-card blurred">
-                    <div class="profile-avatar-placeholder" style="background-color: rgba(255,255,255,0.1);">?</div>
-                    <div class="profile-name-status">
-                        <span class="profile-name" style="color: rgba(255,255,255,0.3);">???</span>
-                        <div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3);">дружба</span></div>
-                    </div>
-                    <div class="profile-section-title" style="color: rgba(255,255,255,0.3);">увлечения</div>
-                    <div class="profile-section-text" style="color: rgba(255,255,255,0.3);">———</div>
-                    <div class="profile-section-title" style="color: rgba(255,255,255,0.3);">профессия</div>
-                    <div class="profile-section-text" style="color: rgba(255,255,255,0.3);">———</div>
-                </div>
-            `;
-        }
-        mainDiv().innerHTML = `
-            <div class="card-container">
-                <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
-            </div>
-            <div class="center-floating-btn">
-                <button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>
-            </div>
-        `;
-        document.getElementById('createProfileBtn')?.addEventListener('click', () => {
+    if (!hasMyProfile && isCardHolder) {
+        let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
+        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn"><button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button></div>`;
+        document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
+        return;
+    }
+
+    if (!isCardHolder) {
+        let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
+        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn"><button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">🔓 смотреть профили</button></div><div id="guestMessage" style="text-align:center; margin-top:12px; color:#fff; display:none;"></div>`;
+        document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
             haptic();
-            renderEditProfile();
+            const msgDiv = document.getElementById('guestMessage');
+            msgDiv.style.display = 'block';
+            msgDiv.innerHTML = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента.';
         });
         return;
     }
 
-    const sortedProfiles = Object.entries(profiles).sort((a, b) => {
-        const dateA = a[1].updatedAt || 0;
-        const dateB = b[1].updatedAt || 0;
-        return dateB - dateA;
-    });
-
-    // Рендерим карточки параллельно
-    const profileCards = await Promise.all(
-        sortedProfiles.map(([uid, profile]) => renderProfileCard(profile, false))
-    );
-    const profilesHtml = profileCards.join('');
-
-    mainDiv().innerHTML = `
-        <div class="card-container">
-            <div class="profiles-grid" id="profilesGrid">${profilesHtml}</div>
-        </div>
-        <div class="floating-edit-btn" id="editProfileBtnContainer">
-            <button class="btn btn-outline" id="editProfileBtn" style="background-color: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">📝 мой профиль</button>
-        </div>
-    `;
-
-    document.getElementById('editProfileBtn')?.addEventListener('click', () => {
-        haptic();
-        renderEditProfile();
-    });
+    const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
+    const cards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p,false)));
+    mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${cards.join('')}</div></div><div class="floating-edit-btn" id="editProfileBtnContainer"><button class="btn btn-outline" id="editProfileBtn" style="background:rgba(255,255,255,0.1);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,0.2);backdrop-filter:blur(4px);">📝 мой профиль</button></div>`;
+    document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
 }
 
 async function renderEditProfile() {
-    window.isPrivPage = true;
-    window.isMenuActive = false;
-    resetNavActive();
-    setActiveNav('navProfiles');
-    subtitle().textContent = `📝 мой профиль`;
-    hideBack();
-    haptic();
-    log('edit_profile_opened', false, state.user);
-    showBottomNav(false);
+    window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
+    subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
+    showBottomNav(false); const bottomNav = document.getElementById('bottomNav'); if(bottomNav) bottomNav.style.display = 'none';
+    mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
+    const fresh = await loadMyProfile(state.user?.id);
+    const currentName = fresh?.name || state.user?.first_name || '';
+    const currentStatuses = fresh?.friendshipStatuses || [];
+    const currentHobbies = fresh?.hobbies || '';
+    const currentProfession = fresh?.profession || '';
 
-    const bottomNav = document.getElementById('bottomNav');
-    if (bottomNav) bottomNav.style.display = 'none';
+    mainDiv().innerHTML = `<div class="card-container"><form id="editProfileForm" class="edit-form">
+        <div class="form-field"><label>имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
+        <div class="form-field"><label>статус знакомств</label><div class="checkbox-group"><label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба')?'checked':''}> дружба</label><label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения')?'checked':''}> отношения</label><label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес')?'checked':''}> бизнес</label></div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
+        <div class="form-field"><label>увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
+        <div class="form-field"><label>профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
+        <button type="submit" class="btn btn-yellow" id="saveProfileBtn">сохранить профиль</button>
+        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>':''}
+    </form></div>`;
 
-    // Показываем лоадер
-    mainDiv().innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;"></div>';
-
-    const freshProfile = await loadMyProfile(state.user?.id);
-    const currentName = freshProfile?.name || state.user?.first_name || '';
-    const currentStatuses = freshProfile?.friendshipStatuses || [];
-    const currentHobbies = freshProfile?.hobbies || '';
-    const currentProfession = freshProfile?.profession || '';
-
-    mainDiv().innerHTML = `
-        <div class="card-container">
-            <form id="editProfileForm" class="edit-form">
-                <div class="form-field">
-                    <label>имя</label>
-                    <input type="text" id="profileName" value="${escapeHtml(currentName)}" placeholder="">
-                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div>
-                </div>
-                <div class="form-field">
-                    <label>статус знакомств</label>
-                    <div class="checkbox-group">
-                        <label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба') ? 'checked' : ''}> дружба</label>
-                        <label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения') ? 'checked' : ''}> отношения</label>
-                        <label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес') ? 'checked' : ''}> бизнес</label>
-                    </div>
-                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">выбери к чему ты открыт на хайках. просто общение и дружба, или тебе нужен бизнес-партнёр, человек в команду, инвестор или же ты хочешь встретить того, с кем можно поиграть в романтику?</div>
-                </div>
-                <div class="form-field">
-                    <label>увлечения</label>
-                    <textarea id="profileHobbies" rows="3" placeholder="">${escapeHtml(currentHobbies)}</textarea>
-                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">перечисли через запятую то, что тебя вдохновляет, то без чего ты не можешь и то, о чём ты готов говорить часами</div>
-                </div>
-                <div class="form-field">
-                    <label>профессия</label>
-                    <textarea id="profileProfession" rows="2" placeholder="">${escapeHtml(currentProfession)}</textarea>
-                    <div class="field-hint" style="font-size: 14px; color: rgba(255,255,255,0.7); margin-top: 4px;">в какой одной или нескольких сферах ты имеешь больше всего опыта?</div>
-                </div>
-                <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="width: 100%; margin: 0;">сохранить профиль</button>
-                ${freshProfile ? `<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>` : ''}
-            </form>
-        </div>
-    `;
-
+    const backHandler = ()=>{ if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
+    tg.BackButton.onClick(backHandler); tg.BackButton.show();
     document.getElementById('profileName').placeholder = '';
     document.getElementById('profileHobbies').placeholder = '';
     document.getElementById('profileProfession').placeholder = '';
 
-    const backHandler = () => {
-        if (bottomNav) bottomNav.style.display = 'flex';
-        showBottomNav(true);
-        setupBottomNav();
-        renderProfiles();
-    };
-    tg.BackButton.onClick(backHandler);
-    tg.BackButton.show();
-
-    const form = document.getElementById('editProfileForm');
-    form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        haptic();
+    document.getElementById('editProfileForm').addEventListener('submit', async (e)=>{
+        e.preventDefault(); haptic();
         const name = document.getElementById('profileName').value.trim();
-        if (!name) {
-            alert('Пожалуйста, укажите имя');
-            return;
-        }
-        const selectedStatuses = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(cb => cb.value);
+        if(!name) { alert('Укажите имя'); return; }
+        const selected = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(cb=>cb.value);
         const hobbies = document.getElementById('profileHobbies').value.trim();
         const profession = document.getElementById('profileProfession').value.trim();
 
-        const profileData = {
-            name,
-            friendshipStatuses: selectedStatuses,
-            hobbies,
-            profession,
-            avatarUrl: freshProfile?.avatarUrl || state.user?.photo_url || null,
-            avatarUpdatedAt: freshProfile?.avatarUpdatedAt || Date.now(),
+        const data = {
+            name, friendshipStatuses: selected, hobbies, profession,
+            avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null,
+            avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(),
             userId: state.user?.id
         };
-        
-        await saveProfile(state.user?.id, profileData);
-        console.log('✅ Профиль сохранён в Firebase');
-
-        syncProfileToSheet(profileData, state.user).catch(err => console.error('BG sync error:', err));
-
+        await saveProfile(state.user?.id, data);
+        syncProfileToSheet(data, state.user).catch(console.error);
         delete userHikesCache[state.user?.id];
-
         tg.BackButton.offClick(backHandler);
-        if (bottomNav) bottomNav.style.display = 'flex';
-        showBottomNav(true);
-        setupBottomNav();
+        if(bottomNav) bottomNav.style.display='flex';
+        showBottomNav(true); setupBottomNav();
         renderProfiles();
     });
 
-    if (document.getElementById('deleteProfileBtn')) {
-        document.getElementById('deleteProfileBtn').addEventListener('click', async () => {
+    if(document.getElementById('deleteProfileBtn')){
+        document.getElementById('deleteProfileBtn').addEventListener('click', async ()=>{
             haptic();
-            if (confirm('Вы уверены, что хотите снять профиль с публикации? Он перестанет быть виден другим участникам.')) {
+            if(confirm('Снять профиль с публикации?')){
                 await deleteProfile(state.user?.id);
-                syncProfileDeleteToSheet(state.user?.id).catch(err => console.error('BG delete sync error:', err));
+                syncProfileDeleteToSheet(state.user?.id).catch(console.error);
                 delete userHikesCache[state.user?.id];
                 tg.BackButton.offClick(backHandler);
-                if (bottomNav) bottomNav.style.display = 'flex';
-                showBottomNav(true);
-                setupBottomNav();
+                if(bottomNav) bottomNav.style.display='flex';
+                showBottomNav(true); setupBottomNav();
                 renderProfiles();
             }
         });
     }
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
-}
+function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' })[m]); }
