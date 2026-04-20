@@ -39,11 +39,8 @@ export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseT
 }
 
 export async function syncProfileToSheet(profile, user) {
-    if (!user?.id || !REGISTRATION_API_URL) {
-        console.warn('syncProfileToSheet: нет user.id или REGISTRATION_API_URL');
-        return;
-    }
-       const params = new URLSearchParams({
+    if (!user?.id || !REGISTRATION_API_URL) return;
+    const params = new URLSearchParams({
         action: 'syncProfile',
         user_id: user.id,
         name: profile.name || '',
@@ -52,26 +49,17 @@ export async function syncProfileToSheet(profile, user) {
         profession: profile.profession || '',
         avatar_url: profile.avatarUrl || '',
         updated_at: new Date().toISOString(),
-        allow_messages: profile.allowMessages ? 'да' : 'нет',   // ← добавили
-        custom_link: profile.customLink || '',                  // ← добавили
-        username: profile.username || ''                        // ← добавили
-           
+        allow_messages: profile.allowMessages ? 'да' : 'нет',
+        custom_link: profile.customLink || '',
+        username: profile.username || ''
     });
     try {
-        console.log('📤 Отправка профиля на', REGISTRATION_API_URL);
-        console.log('Параметры:', params.toString());
         const response = await fetch(REGISTRATION_API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: params.toString() // явно в строку
+            body: params,
+            keepalive: true
         });
-        console.log('📤 syncProfileToSheet: статус', response.status);
-        if (!response.ok) {
-            const text = await response.text();
-            console.error('Ответ сервера:', text);
-        }
+        console.log('📤 syncProfileToSheet: статус –', response.status);
     } catch (e) {
         console.error('❌ syncProfileToSheet error:', e);
     }
@@ -86,10 +74,8 @@ export async function syncProfileDeleteToSheet(userId) {
     try {
         await fetch(REGISTRATION_API_URL, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: params.toString()
+            body: params,
+            keepalive: true
         });
     } catch (e) {
         console.error('Profile delete sync error:', e);
