@@ -71,7 +71,11 @@ export async function renderProfiles() {
 
     if (!isCardHolder) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn" style="position:static; margin-top:16px; display:flex; flex-direction:column; align-items:center; gap:8px;"><button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center;"></div></div>`;
+        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div>
+        <div style="display: flex; flex-direction: column; align-items: center; margin-top: 20px;">
+            <button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn" style="width: auto; min-width: 200px;">👀 смотреть профили</button>
+            <div id="guestMessage" style="color:#fff; font-size:14px; display:none; margin-top: 12px; text-align: center;"></div>
+        </div>`;
         document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
             haptic();
             const msg = document.getElementById('guestMessage');
@@ -83,14 +87,20 @@ export async function renderProfiles() {
 
     if (!hasMyProfile) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn"><button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button></div>`;
+        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div>
+        <div style="display: flex; justify-content: center; margin-top: 20px;">
+            <button class="btn btn-yellow btn-glow" id="createProfileBtn" style="width: auto; min-width: 200px;">💬 создать профиль</button>
+        </div>`;
         document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
         return;
     }
 
     const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const cards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p,false)));
-    mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${cards.join('')}</div></div><div class="floating-edit-btn" id="editProfileBtnContainer"><button class="btn btn-outline" id="editProfileBtn" style="background:rgba(255,255,255,0.1);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,0.2);backdrop-filter:blur(4px);">📝 мой профиль</button></div>`;
+    mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${cards.join('')}</div></div>
+    <div class="floating-edit-btn" id="editProfileBtnContainer">
+        <button class="btn btn-outline" id="editProfileBtn" style="background:rgba(255,255,255,0.1);color:#fff;box-shadow:inset 0 0 0 2px rgba(255,255,255,0.2);backdrop-filter:blur(4px);">📝 мой профиль</button>
+    </div>`;
     document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
 }
 
@@ -107,7 +117,7 @@ async function renderEditProfile() {
     const currentAllowMessages = fresh?.allowMessages !== false;
     const currentCustomLink = fresh?.customLink || '';
 
-    mainDiv().innerHTML = `<div class="card-container" style="padding-bottom:12px;"><form id="editProfileForm" class="edit-form">
+    mainDiv().innerHTML = `<div class="card-container" style="padding-top:8px; padding-bottom:8px;"><form id="editProfileForm" class="edit-form">
         <div class="profile-field"><label>👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
         <div class="profile-field"><label>👀 статус знакомств</label><div class="checkbox-group"><label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба')?'checked':''}> дружба</label><label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения')?'checked':''}> отношения</label><label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес')?'checked':''}> бизнес</label></div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
         <div class="profile-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
@@ -120,8 +130,8 @@ async function renderEditProfile() {
             </div>
         </div>
         <div class="profile-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
-        <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="margin-top:8px;">сохранить профиль</button>
-        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn" style="margin-top:8px;">снять с публикации</button>':''}
+        <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="margin-top:4px; margin-bottom:4px;">сохранить профиль</button>
+        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn" style="margin-top:4px; margin-bottom:4px;">снять с публикации</button>':''}
     </form></div>`;
 
     const allowCheck = document.getElementById('allowMessagesCheck');
