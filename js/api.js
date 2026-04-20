@@ -51,12 +51,12 @@ export async function syncProfileToSheet(profile, user) {
         updated_at: new Date().toISOString()
     });
     try {
-        const response = await fetch(REGISTRATION_API_URL, {
+        await fetch(REGISTRATION_API_URL, {
             method: 'POST',
             body: params,
             keepalive: true
         });
-        console.log('📤 Профиль отправлен, статус:', response.status);
+        console.log('📤 Профиль отправлен в Google Sheets (URLSearchParams)');
     } catch (e) {
         console.error('Profile sync error:', e);
     }
