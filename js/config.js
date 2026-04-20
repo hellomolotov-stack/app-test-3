@@ -1,6 +1,6 @@
 // Конфигурация приложения
 export const GUEST_API_URL = 'https://script.google.com/macros/s/AKfycby0943sdi-neS00sFzcyT-rsmzQgPOD4vsOYMnnLYSK8XcEIQJynP1CGsSWP62gK1zxSw/exec';
-export const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbyA1gGA1LFLkW3wRM8247A51M5HoZKbiQjA5Ovx5cbOPjk1CFGlfkwvXi3Z7TGTFCI_/exec';
+export const REGISTRATION_API_URL = 'https://script.google.com/macros/s/AKfycbz65YQi7ZEQLFLeiHGKaOaxnCoRF8lmzURV8vXQuMfNRQ-JQsmfe0oIFyAF-pXTw-Fztw/exec';
 export const ROBOKASSA_LINK = 'https://auth.robokassa.ru/merchant/Invoice/1PA1-yY5CEO9FPrxJnvIJw';
 export const SEASON_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/l8qjTjiBi06GlZIPFgo4Ug';
 export const PERMANENT_CARD_LINK = 'https://auth.robokassa.ru/merchant/Invoice/Es0zC2xYmkaM9Q-TvYgw0A';
