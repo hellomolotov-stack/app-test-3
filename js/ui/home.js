@@ -225,7 +225,7 @@ function renderOwnerHome() {
     document.getElementById('ownerCardImage')?.addEventListener('click', () => {
         haptic();
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-        showConfetti(); // ✅ исправлено
+        showConfetti();
         log('card_click', false, user);
     });
     document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('privilege_click', false, user); renderPriv(); });
@@ -239,6 +239,9 @@ function renderOwnerHome() {
 
 // Основная функция рендера главной страницы
 export function renderHome() {
+    // Удаляем гостевую кнопку, если она осталась с предыдущих экранов
+    document.querySelector('.guest-center-btn')?.remove();
+
     hideBack();
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
