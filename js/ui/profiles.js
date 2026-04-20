@@ -8,41 +8,23 @@ import {
     loadMyProfile,
     saveProfile,
     deleteProfile,
-    saveUserAvatar,
     loadUserRegistrations,
 } from '../firebase.js';
-import { showBottomNav, setupBottomNav, setUserInteracted, setActiveNav, resetNavActive, hideBack } from './common.js';
-import { renderHome } from './home.js';
+import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack } from './common.js';
 
 let profiles = {};
 let myProfile = null;
 const userHikesCache = {};
 
 async function loadProfilesData() {
-    profiles = await loadAllProfiles();
-    myProfile = await loadMyProfile(state.user?.id);
+    const [allProfiles, myProf] = await Promise.all([
+        loadAllProfiles(),
+        loadMyProfile(state.user?.id)
+    ]);
+    profiles = allProfiles;
+    myProfile = myProf;
     state.profiles = profiles;
     state.myProfile = myProfile;
-}
-
-async function updateAvatarIfNeeded() {
-    if (!state.user?.id || !myProfile) return;
-    const lastUpdated = myProfile.avatarUpdatedAt || 0;
-    const now = Date.now();
-    const oneDay = 24 * 60 * 60 * 1000;
-    if (now - lastUpdated > oneDay && state.user?.photo_url) {
-        const db = getDatabase();
-        if (!db) return;
-        try {
-            await db.ref(`userProfiles/${state.user.id}/avatarUrl`).set(state.user.photo_url);
-            await db.ref(`userProfiles/${state.user.id}/avatarUpdatedAt`).set(firebase.database.ServerValue.TIMESTAMP);
-            myProfile.avatarUrl = state.user.photo_url;
-            myProfile.avatarUpdatedAt = Date.now();
-            if (profiles[state.user.id]) profiles[state.user.id].avatarUrl = state.user.photo_url;
-        } catch (e) {
-            console.error('Error updating avatar:', e);
-        }
-    }
 }
 
 async function getNextHikeForUser(userId) {
@@ -136,8 +118,10 @@ export async function renderProfiles() {
     showBottomNav(true);
     setupBottomNav();
 
+    // Показываем лоадер
+    mainDiv().innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;"></div>';
+
     await loadProfilesData();
-    await updateAvatarIfNeeded();
 
     const hasMyProfile = !!myProfile;
 
@@ -180,10 +164,11 @@ export async function renderProfiles() {
         return dateB - dateA;
     });
 
-    let profilesHtml = '';
-    for (const [uid, profile] of sortedProfiles) {
-        profilesHtml += await renderProfileCard(profile, false);
-    }
+    // Рендерим карточки параллельно
+    const profileCards = await Promise.all(
+        sortedProfiles.map(([uid, profile]) => renderProfileCard(profile, false))
+    );
+    const profilesHtml = profileCards.join('');
 
     mainDiv().innerHTML = `
         <div class="card-container">
@@ -214,11 +199,14 @@ async function renderEditProfile() {
     const bottomNav = document.getElementById('bottomNav');
     if (bottomNav) bottomNav.style.display = 'none';
 
+    // Показываем лоадер
+    mainDiv().innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;"></div>';
+
     const freshProfile = await loadMyProfile(state.user?.id);
-    const currentName = String(freshProfile?.name || state.user?.first_name || '');
-    const currentStatuses = Array.isArray(freshProfile?.friendshipStatuses) ? freshProfile.friendshipStatuses : [];
-    const currentHobbies = String(freshProfile?.hobbies || '');
-    const currentProfession = String(freshProfile?.profession || '');
+    const currentName = freshProfile?.name || state.user?.first_name || '';
+    const currentStatuses = freshProfile?.friendshipStatuses || [];
+    const currentHobbies = freshProfile?.hobbies || '';
+    const currentProfession = freshProfile?.profession || '';
 
     mainDiv().innerHTML = `
         <div class="card-container">
@@ -289,20 +277,11 @@ async function renderEditProfile() {
             userId: state.user?.id
         };
         
-        // Сохраняем в Firebase
         await saveProfile(state.user?.id, profileData);
         console.log('✅ Профиль сохранён в Firebase');
 
-        // Синхронизация с Google Sheets
-        try {
-            console.log('📤 Отправка профиля в Google Sheets...');
-            await syncProfileToSheet(profileData, state.user);
-            console.log('✅ Профиль отправлен в Google Sheets');
-        } catch (err) {
-            console.error('❌ Ошибка отправки профиля в Google Sheets:', err);
-        }
+        syncProfileToSheet(profileData, state.user).catch(err => console.error('BG sync error:', err));
 
-        // Очищаем кэш
         delete userHikesCache[state.user?.id];
 
         tg.BackButton.offClick(backHandler);
@@ -330,9 +309,8 @@ async function renderEditProfile() {
 }
 
 function escapeHtml(str) {
-    if (str === undefined || str === null) return '';
-    const s = String(str);
-    return s.replace(/[&<>]/g, function(m) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
         if (m === '&') return '&amp;';
         if (m === '<') return '&lt;';
         if (m === '>') return '&gt;';
