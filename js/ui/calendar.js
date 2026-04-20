@@ -1066,15 +1066,24 @@ document.addEventListener('click', function(e) {
         return;
     }
 
-    if (link.classList.contains('profile-hike-link')) {
+       // Обработка кнопок контактов в профиле (💬 и 🔗)
+    if (link.classList.contains('profile-contact-link')) {
         e.preventDefault();
         haptic();
-        const hikeDate = link.dataset.hikeDate;
-        if (hikeDate) {
-            const index = state.hikesList.findIndex(h => h.date === hikeDate);
-            if (index !== -1) {
-                showBottomSheet(index);
+        const action = link.dataset.action;
+        if (action === 'chat') {
+            const username = link.dataset.username;
+            if (username) {
+                const cleanUsername = username.replace(/^@/, '');
+                if (tg && tg.openTelegramLink) {
+                    tg.openTelegramLink(`https://t.me/${cleanUsername}`);
+                } else {
+                    openLink(`https://t.me/${cleanUsername}`, 'profile_chat_click', false);
+                }
             }
+        } else if (action === 'link') {
+            const url = link.dataset.url;
+            if (url) openLink(url, 'profile_link_click', false);
         }
         return;
     }
