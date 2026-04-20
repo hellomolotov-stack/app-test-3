@@ -71,7 +71,7 @@ export async function renderProfiles() {
 
     if (!isCardHolder) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn"><button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button></div><div id="guestMessage" style="text-align:center; margin-top:8px; color:#fff; display:none; font-size:14px;"></div>`;
+        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div><div style="text-align:center; margin-top:12px;"><button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button></div><div id="guestMessage" style="text-align:center; margin-top:12px; color:#fff; display:none; font-size:14px;"></div></div>`;
         document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
             haptic();
             const msg = document.getElementById('guestMessage');
@@ -142,7 +142,11 @@ async function renderEditProfile() {
         const hobbies = document.getElementById('profileHobbies').value.trim();
         const profession = document.getElementById('profileProfession').value.trim();
         const allowMessages = document.getElementById('allowMessagesCheck').checked;
-        const customLink = document.getElementById('customLinkInput').value.trim();
+        let customLink = document.getElementById('customLinkInput').value.trim();
+        // Автоматически добавляем https:// если ссылка без протокола
+        if (customLink && !customLink.match(/^https?:\/\//i)) {
+            customLink = 'https://' + customLink;
+        }
 
         const data = {
             name, friendshipStatuses: selected, hobbies, profession,
