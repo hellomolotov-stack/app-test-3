@@ -71,7 +71,7 @@ export async function renderProfiles() {
 
     if (!isCardHolder) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div><div style="text-align:center; margin-top:12px;"><button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button></div><div id="guestMessage" style="text-align:center; margin-top:12px; color:#fff; display:none; font-size:14px;"></div></div>`;
+        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn" style="position:static; margin-top:16px; display:flex; flex-direction:column; align-items:center; gap:8px;"><button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center;"></div></div>`;
         document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
             haptic();
             const msg = document.getElementById('guestMessage');
@@ -107,7 +107,7 @@ async function renderEditProfile() {
     const currentAllowMessages = fresh?.allowMessages !== false;
     const currentCustomLink = fresh?.customLink || '';
 
-    mainDiv().innerHTML = `<div class="card-container"><form id="editProfileForm" class="edit-form">
+    mainDiv().innerHTML = `<div class="card-container" style="padding-bottom:12px;"><form id="editProfileForm" class="edit-form">
         <div class="profile-field"><label>👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
         <div class="profile-field"><label>👀 статус знакомств</label><div class="checkbox-group"><label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба')?'checked':''}> дружба</label><label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения')?'checked':''}> отношения</label><label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес')?'checked':''}> бизнес</label></div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
         <div class="profile-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
@@ -120,8 +120,8 @@ async function renderEditProfile() {
             </div>
         </div>
         <div class="profile-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
-        <button type="submit" class="btn btn-yellow" id="saveProfileBtn">сохранить профиль</button>
-        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>':''}
+        <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="margin-top:8px;">сохранить профиль</button>
+        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn" style="margin-top:8px;">снять с публикации</button>':''}
     </form></div>`;
 
     const allowCheck = document.getElementById('allowMessagesCheck');
@@ -143,7 +143,6 @@ async function renderEditProfile() {
         const profession = document.getElementById('profileProfession').value.trim();
         const allowMessages = document.getElementById('allowMessagesCheck').checked;
         let customLink = document.getElementById('customLinkInput').value.trim();
-        // Автоматически добавляем https:// если ссылка без протокола
         if (customLink && !customLink.match(/^https?:\/\//i)) {
             customLink = 'https://' + customLink;
         }
