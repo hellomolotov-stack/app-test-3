@@ -46,14 +46,16 @@ export async function syncProfileToSheet(profile, user) {
        const params = new URLSearchParams({
         action: 'syncProfile',
         user_id: user.id,
-        name: profile.name,
+        name: profile.name || '',
         statuses: (profile.friendshipStatuses || []).join(','),
         hobbies: profile.hobbies || '',
         profession: profile.profession || '',
         avatar_url: profile.avatarUrl || '',
         updated_at: new Date().toISOString(),
-        allow_messages: profile.allowMessages ? 'да' : 'нет',
-        custom_link: profile.customLink || ''
+        allow_messages: profile.allowMessages ? 'да' : 'нет',   // ← добавили
+        custom_link: profile.customLink || '',                  // ← добавили
+        username: profile.username || ''                        // ← добавили
+           
     });
     try {
         console.log('📤 Отправка профиля на', REGISTRATION_API_URL);
