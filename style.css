@@ -1901,3 +1901,48 @@ body::before {
 .profile-contact-link:hover {
     transform: scale(1.1);
 }
+.profile-field {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+.profile-field label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #ffffff;
+    font-weight: normal;
+}
+.checkbox-row span {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: normal;
+}
+.checkbox-group label {
+    font-weight: normal;
+}
+.profile-contact-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 12px;
+    justify-content: flex-start;
+}
+.profile-contact-link {
+    transition: transform 0.2s;
+    cursor: pointer;
+    display: inline-block;
+}
+.profile-contact-link:hover {
+    transform: scale(1.1);
+}
