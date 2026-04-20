@@ -93,7 +93,14 @@ export async function renderProfiles() {
 
     if (!hasMyProfile) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn"><button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button></div>`;
+        mainDiv().innerHTML = `
+            <div class="card-container">
+                <div class="profiles-grid" id="profilesGrid">${ph}</div>
+            </div>
+            <div class="center-floating-btn">
+                <button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>
+            </div>
+        `;
         document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
         return;
     }
@@ -185,7 +192,7 @@ async function renderEditProfile() {
         if(bottomNav) bottomNav.style.display='flex';
         showBottomNav(true);
         setupBottomNav();
-        setActiveNav('navProfiles');  // активный пункт остаётся "интеллигенты"
+        setActiveNav('navProfiles');
         renderProfiles();
     });
 
