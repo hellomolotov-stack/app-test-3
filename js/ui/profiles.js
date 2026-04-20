@@ -102,8 +102,8 @@ export async function renderProfiles() {
         <div class="card-container">
             <div class="profiles-grid" id="profilesGrid">${cards.join('')}</div>
         </div>
-        <div style="display: flex; justify-content: flex-end; padding-right: 16px; margin-top: -10px; margin-bottom: 20px;">
-            <button class="btn btn-outline" id="editProfileBtn" style="width: auto; padding: 12px 24px; background: rgba(255,255,255,0.1); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">📝 мой профиль</button>
+        <div style="display: flex; justify-content: flex-end; max-width: 600px; margin: -10px auto 20px; padding-right: 16px;">
+            <button class="btn btn-outline" id="editProfileBtn" style="width: auto; padding: 12px 28px; border-radius: 40px; background: rgba(255,255,255,0.1); color: #fff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px);">📝 мой профиль</button>
         </div>
     `;
     document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
