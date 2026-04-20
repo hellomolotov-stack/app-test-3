@@ -1044,6 +1044,21 @@ document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link');
     if (!link) return;
 
+        // Обработка кнопок 💬 и 🔗 в профилях
+    if (link.classList.contains('profile-contact-link')) {
+        e.preventDefault();
+        haptic();
+        const action = link.dataset.action;
+        if (action === 'chat') {
+            const userId = link.dataset.userId;
+            openLink(`https://t.me/${userId}`, 'profile_chat_click', false);
+        } else if (action === 'link') {
+            const url = link.dataset.url;
+            if (url) openLink(url, 'profile_link_click', false);
+        }
+        return;
+    }
+
     if (link.classList.contains('profile-hike-link')) {
         e.preventDefault();
         haptic();
