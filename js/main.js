@@ -69,7 +69,7 @@ function setupBottomNav() {
         if (isAllowed) {
             renderProfiles();
         } else {
-            showProfilesComingSoon(); // анимация единорогов
+            renderProfiles();   // теперь гостевая страница показывается без анимации
         }
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
