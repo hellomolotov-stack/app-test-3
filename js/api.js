@@ -40,19 +40,21 @@ export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseT
 
 export async function syncProfileToSheet(profile, user) {
     if (!user?.id || !REGISTRATION_API_URL) return;
-    const params = new URLSearchParams({
-        action: 'syncProfile',
-        user_id: user.id,
-        name: profile.name || '',
-        statuses: (profile.friendshipStatuses || []).join(','),
-        hobbies: profile.hobbies || '',
-        profession: profile.profession || '',
-        avatar_url: profile.avatarUrl || '',
-        updated_at: new Date().toISOString(),
-        allow_messages: profile.allowMessages ? 'да' : 'нет',
-        custom_link: profile.customLink || '',
-        username: profile.username || ''
-    });
+    const params = new URLSearchParams();
+    params.append('action', 'syncProfile');
+    params.append('user_id', user.id);
+    params.append('name', profile.name || '');
+    params.append('statuses', (profile.friendshipStatuses || []).join(','));
+    params.append('hobbies', profile.hobbies || '');
+    params.append('profession', profile.profession || '');
+    params.append('avatar_url', profile.avatarUrl || '');
+    params.append('updated_at', new Date().toISOString());
+    params.append('allow_messages', profile.allowMessages ? 'да' : 'нет');
+    params.append('custom_link', profile.customLink || '');
+    params.append('username', profile.username || '');
+
+    console.log('📤 Отправка профиля. Параметры:', params.toString());
+
     try {
         const response = await fetch(REGISTRATION_API_URL, {
             method: 'POST',
