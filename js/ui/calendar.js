@@ -1044,7 +1044,7 @@ document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link');
     if (!link) return;
 
-         // Обработка кнопок контактов в профиле (💬 и 🔗)
+        // Обработка кнопок контактов в профиле (💬 и 🔗)
     if (link.classList.contains('profile-contact-link')) {
         e.preventDefault();
         haptic();
