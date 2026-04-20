@@ -239,8 +239,8 @@ function renderOwnerHome() {
 
 // Основная функция рендера главной страницы
 export function renderHome() {
-    // Удаляем гостевую кнопку, если она осталась с предыдущих экранов
-    document.querySelector('.guest-center-btn')?.remove();
+    // Удаляем кнопку "Мой профиль", если она осталась с предыдущих страниц
+    document.querySelector('.profile-edit-fab')?.remove();
 
     hideBack();
     if (window._floatingScrollHandler) {
