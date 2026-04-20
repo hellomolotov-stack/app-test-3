@@ -59,8 +59,12 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
+    // Удаляем плавающую кнопку гостя, если она осталась
+    const oldGuestBtn = document.querySelector('.guest-center-btn');
+    if (oldGuestBtn) oldGuestBtn.remove();
+
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `🎩члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
+    subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
     showBottomNav(true); setupBottomNav();
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     await loadProfilesData();
@@ -72,7 +76,6 @@ export async function renderProfiles() {
     if (!isCardHolder) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div>`;
-        // Кнопка по центру экрана
         const guestBtnContainer = document.createElement('div');
         guestBtnContainer.className = 'guest-center-btn';
         guestBtnContainer.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
@@ -100,9 +103,15 @@ export async function renderProfiles() {
 }
 
 async function renderEditProfile() {
+    const oldGuestBtn = document.querySelector('.guest-center-btn');
+    if (oldGuestBtn) oldGuestBtn.remove();
+
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
-    showBottomNav(false); const bottomNav = document.getElementById('bottomNav'); if(bottomNav) bottomNav.style.display = 'none';
+    showBottomNav(true); setupBottomNav(); // меню возвращено
+    const bottomNav = document.getElementById('bottomNav');
+    if(bottomNav) bottomNav.style.display = 'flex'; // показываем меню
+
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     const fresh = await loadMyProfile(state.user?.id);
     const currentName = fresh?.name || state.user?.first_name || '';
