@@ -40,7 +40,7 @@ export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseT
 
 export async function syncProfileToSheet(profile, user) {
     if (!user?.id || !REGISTRATION_API_URL) return;
-    const params = new URLSearchParams({
+    const payload = {
         action: 'syncProfile',
         user_id: user.id,
         name: profile.name,
@@ -49,13 +49,15 @@ export async function syncProfileToSheet(profile, user) {
         profession: profile.profession || '',
         avatar_url: profile.avatarUrl || '',
         updated_at: new Date().toISOString()
-    });
+    };
     try {
         await fetch(REGISTRATION_API_URL, {
             method: 'POST',
-            body: params,
-            keepalive: true
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
+        console.log('📤 Профиль отправлен в Google Sheets');
     } catch (e) {
         console.error('Profile sync error:', e);
     }
@@ -63,15 +65,16 @@ export async function syncProfileToSheet(profile, user) {
 
 export async function syncProfileDeleteToSheet(userId) {
     if (!userId || !REGISTRATION_API_URL) return;
-    const params = new URLSearchParams({
+    const payload = {
         action: 'deleteProfile',
         user_id: userId
-    });
+    };
     try {
         await fetch(REGISTRATION_API_URL, {
             method: 'POST',
-            body: params,
-            keepalive: true
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
     } catch (e) {
         console.error('Profile delete sync error:', e);
