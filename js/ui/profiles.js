@@ -48,11 +48,11 @@ async function renderProfileCard(profile, isBlurred = false) {
         else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
     } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
-    // Кнопки 💬 и 🔗
+    // Кнопки контактов: 💬 только если allowMessages !== false, 🔗 если есть customLink
     const contactButtons = (!isBlurred && profile.userId) ? `
-        <div style="display: flex; gap: 12px; margin-top: 12px;">
-            ${profile.allowMessages !== false ? `<a href="#" class="profile-contact-link" data-action="chat" data-user-id="${profile.userId}" style="color: var(--yellow); text-decoration: none; font-size: 18px;">💬</a>` : ''}
-            ${profile.customLink ? `<a href="#" class="profile-contact-link" data-action="link" data-url="${escapeHtml(profile.customLink)}" style="color: var(--yellow); text-decoration: none; font-size: 18px;">🔗</a>` : ''}
+        <div class="profile-contact-row">
+            ${profile.allowMessages !== false ? `<a href="#" class="profile-contact-link" data-action="chat" data-username="${profile.username || profile.userId}" style="color: var(--yellow); text-decoration: none; font-size: 20px;">💬</a>` : ''}
+            ${profile.customLink ? `<a href="#" class="profile-contact-link" data-action="link" data-url="${escapeHtml(profile.customLink)}" style="color: var(--yellow); text-decoration: none; font-size: 20px;">🔗</a>` : ''}
         </div>
     ` : '';
 
@@ -70,7 +70,6 @@ export async function renderProfiles() {
     const hasMyProfile = !!myProfile;
     const placeholderCount = 6;
 
-    // ГОСТЬ
     if (!isCardHolder) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn"><button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button></div><div id="guestMessage" style="text-align:center; margin-top:8px; color:#fff; display:none; font-size:14px;"></div>`;
@@ -78,12 +77,11 @@ export async function renderProfiles() {
             haptic();
             const msg = document.getElementById('guestMessage');
             msg.style.display = 'block';
-            msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента'; // без точки
+            msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
         });
         return;
     }
 
-    // ВЛАДЕЛЕЦ КАРТЫ, но нет своего профиля
     if (!hasMyProfile) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div><div class="center-floating-btn"><button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button></div>`;
@@ -107,19 +105,26 @@ async function renderEditProfile() {
     const currentStatuses = fresh?.friendshipStatuses || [];
     const currentHobbies = fresh?.hobbies || '';
     const currentProfession = fresh?.profession || '';
-    const currentAllowMessages = fresh?.allowMessages !== false; // по умолчанию true
+    const currentAllowMessages = fresh?.allowMessages !== false;
     const currentCustomLink = fresh?.customLink || '';
 
     mainDiv().innerHTML = `<div class="card-container"><form id="editProfileForm" class="edit-form">
-        <div class="form-field"><label>имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
-        <div class="form-field"><label>статус знакомств</label><div class="checkbox-group"><label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба')?'checked':''}> дружба</label><label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения')?'checked':''}> отношения</label><label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес')?'checked':''}> бизнес</label></div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
-        <div class="form-field"><label>увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
-        <div class="form-field"><label>профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
-        <div class="form-field"><label><input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}> 💬 разрешить писать в сообщения</label></div>
-        <div class="form-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, соцсеть или что угодно</div></div>
+        <div class="form-field"><label>👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
+        <div class="form-field"><label>👀 статус знакомств</label><div class="checkbox-group"><label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба')?'checked':''}> дружба</label><label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения')?'checked':''}> отношения</label><label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес')?'checked':''}> бизнес</label></div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
+        <div class="form-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
+        <div class="form-field"><label>💼 профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
+        <div class="form-field"><label>💬 личные сообщения</label><div style="display:flex; align-items:center; gap:12px;"><input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}> <span id="allowMessagesLabel">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телеграм'}</span></div></div>
+        <div class="form-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
         <button type="submit" class="btn btn-yellow" id="saveProfileBtn">сохранить профиль</button>
         ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn">снять с публикации</button>':''}
     </form></div>`;
+
+    // Обновление текста чекбокса
+    const allowCheck = document.getElementById('allowMessagesCheck');
+    const allowLabel = document.getElementById('allowMessagesLabel');
+    allowCheck.addEventListener('change', ()=>{
+        allowLabel.textContent = allowCheck.checked ? 'разрешено писать в телеграм' : 'запрещено писать в телеграм';
+    });
 
     const backHandler = ()=>{ if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
     tg.BackButton.onClick(backHandler); tg.BackButton.show();
@@ -140,6 +145,7 @@ async function renderEditProfile() {
         const data = {
             name, friendshipStatuses: selected, hobbies, profession,
             allowMessages, customLink,
+            username: state.user?.username || '',  // сохраняем username для ссылки 💬
             avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null,
             avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(),
             userId: state.user?.id
