@@ -48,7 +48,6 @@ async function renderProfileCard(profile, isBlurred = false) {
         else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
     } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
-    // Убираем плюсы из hobbies и profession для отображения
     const displayHobbies = (profile.hobbies || '').replace(/\+/g, ', ');
     const displayProfession = (profile.profession || '').replace(/\+/g, ', ');
 
