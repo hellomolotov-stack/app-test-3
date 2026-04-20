@@ -48,9 +48,6 @@ async function renderProfileCard(profile, isBlurred = false) {
         else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
     } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
-    const displayHobbies = (profile.hobbies || '').replace(/\+/g, ', ');
-    const displayProfession = (profile.profession || '').replace(/\+/g, ', ');
-
     const contactButtons = (!isBlurred && profile.userId) ? `
         <div class="profile-contact-row">
             ${profile.allowMessages !== false ? `<a href="#" class="profile-contact-link" data-action="chat" data-username="${profile.username || profile.userId}" style="color: var(--yellow); text-decoration: none; font-size: 20px;">💬</a>` : ''}
@@ -58,7 +55,7 @@ async function renderProfileCard(profile, isBlurred = false) {
         </div>
     ` : '';
 
-    return `<div class="profile-card ${isBlurred?'blurred':''}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${displayHobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${displayProfession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
+    return `<div class="profile-card ${isBlurred?'blurred':''}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
 }
 
 export async function renderProfiles() {
