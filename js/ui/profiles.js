@@ -17,10 +17,14 @@ function ensureNavActiveStyles() {
     const style = document.createElement('style');
     style.id = 'nav-active-style';
     style.textContent = `
-        .bottom-nav-item.active {
-            padding: 8px 16px !important;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.1);
+        .nav-item.active {
+            padding: 8px 20px !important;
+            border-radius: 40px !important;
+            background: rgba(255, 255, 255, 0.15) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            margin: 0 2px;
+            transition: all 0.2s ease;
         }
     `;
     document.head.appendChild(style);
@@ -158,7 +162,7 @@ async function renderEditProfile() {
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
     showBottomNav(true);
     setupBottomNav();
-    setActiveNav('navProfiles');   // ✅ установка активного пункта (без лишнего renderProfiles)
+    setActiveNav('navProfiles');
 
     const bottomNav = document.getElementById('bottomNav');
     if(bottomNav) bottomNav.style.display = 'flex';
