@@ -64,7 +64,7 @@ function setupBottomNav() {
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
-        renderProfiles();  // внутри renderProfiles уже есть проверка на гостя
+        renderProfiles();
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
