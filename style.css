@@ -554,11 +554,28 @@ body::before {
     margin: 0 auto;
 }
 
+.bottom-nav-left {
+    display: flex;
+    gap: 4px;
+    background-color: rgba(73, 138, 176, 0.2);
+    border-radius: 50px;
+    padding: 2px;
+    flex: 1;
+    justify-content: space-evenly;
+    margin-left: 0;
+}
+
+.bottom-nav-right {
+    margin-left: 0;
+    flex-shrink: 0;
+    margin-right: 0;
+}
+
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 6px 12px;
+    padding: 6px 0;
     border-radius: 40px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
@@ -579,7 +596,7 @@ body::before {
 }
 
 .nav-more {
-    padding: 6px 12px;
+    flex: 1;
 }
 
 @media (max-width: 480px) {
@@ -1500,20 +1517,23 @@ body::before {
     animation: glow-pink 3s ease-in-out infinite;
 }
 
-/* Стили для страницы профилей */
-.profiles-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin: 0;
-    padding: 0 16px 16px 16px;
+/* -------------------- СТИЛИ ПРОФИЛЕЙ (НОВЫЕ, ЧИСТЫЕ) -------------------- */
+
+/* Две независимые колонки профилей */
+.profiles-two-columns {
+    display: flex;
+    gap: 12px;
+    padding: 0 12px 16px 12px;
 }
 
-.card-container .profiles-grid {
-    margin: 0;
-    padding: 0 16px 16px 16px;
+.profiles-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
+/* Карточка профиля */
 .profile-card {
     background-color: rgba(255,255,255,0.1);
     border-radius: 28px;
@@ -1524,7 +1544,9 @@ body::before {
     transition: transform 0.2s;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    height: auto;
+    min-height: 0;
+    width: 100%;
 }
 
 .profile-card.blurred {
@@ -1634,29 +1656,37 @@ body::before {
     text-decoration: underline;
 }
 
-.floating-edit-btn {
-    position: fixed;
-    bottom: 100px;
-    left: 0;
-    right: 0;
+/* Кнопки контактов */
+.profile-contact-row {
     display: flex;
-    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.profile-contact-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 30px;
+    padding: 8px 12px;
+    color: var(--yellow);
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-flex;
     align-items: center;
-    z-index: 1100;
-    pointer-events: none;
-    padding-right: 20px;
+    gap: 4px;
 }
 
-.floating-edit-btn .btn {
-    pointer-events: auto;
-    margin: 0;
-    width: auto;
-    padding: 12px 24px;
-    border-radius: 40px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    white-space: nowrap;
+.profile-contact-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
 }
 
+/* Центральная кнопка для гостей и создания профиля */
 .center-floating-btn {
     position: fixed;
     top: 50%;
@@ -1673,174 +1703,66 @@ body::before {
     pointer-events: auto;
     margin: 0;
     width: auto;
+    min-width: 200px;
     padding: 12px 24px;
     border-radius: 40px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     white-space: nowrap;
 }
 
-/* Стили для формы редактирования профиля */
-.edit-form {
-    padding: 16px;
-}
-
-.edit-form .form-field {
-    margin-bottom: 20px;
-}
-
-.edit-form label {
-    display: block;
-    font-size: 18px;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 8px;
-}
-
-.edit-form input, .edit-form textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    background-color: rgba(255,255,255,0.2);
-    color: #ffffff;
-    font-size: 16px;
-    font-family: inherit;
-    box-sizing: border-box;
-}
-
-.edit-form textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-.checkbox-group {
+/* Гостевая кнопка по центру экрана */
+.guest-center-btn {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
     display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-}
-
-.checkbox-group label {
-    font-size: 16px;
-    display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    gap: 6px;
-    color: #ffffff;
-    font-weight: normal;
-    cursor: pointer;
-}
-
-.checkbox-group input {
+    justify-content: center;
     width: auto;
-    margin: 0;
-    accent-color: currentColor;
+    min-width: 220px;
 }
 
-.checkbox-group input[value="дружба"]:checked {
-    accent-color: var(--yellow);
-}
-
-.checkbox-group input[value="отношения"]:checked {
-    accent-color: #FB5EB0;
-}
-
-.checkbox-group input[value="бизнес"]:checked {
-    accent-color: #5E9FC5;
-}
-
-.delete-profile-btn {
-    background: none;
-    border: none;
-    color: #ff3b30;
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: underline;
-    cursor: pointer;
-    margin-top: 20px;
+.guest-center-btn .btn {
     width: 100%;
-    text-align: center;
+    margin: 0;
 }
 
-.nav-badge {
-    position: absolute;
-    top: -8px;
-    right: 5px;
-    background-color: var(--yellow);
-    color: #000000;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 30px;
-    white-space: nowrap;
-    z-index: 2;
+/* Кнопка "Мой профиль" в правом нижнем углу */
+.profile-edit-fab {
+    position: fixed;
+    bottom: 100px;
+    right: 16px;
+    z-index: 150;
+    pointer-events: none;
 }
 
-.field-hint {
-    font-size: 14px;
-    color: rgba(255,255,255,0.7);
-    margin-top: 4px;
-}
-
-.profile-contact-row {
-    display: flex;
-    gap: 16px;
-    margin-top: 8px;
-    justify-content: flex-start;
-}
-
-/* Блоки внутри формы редактирования профиля */
-.profile-field {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 16px;
-    margin-bottom: 16px;
+.profile-edit-fab .btn {
+    pointer-events: auto;
+    width: auto;
+    min-width: 140px;
+    padding: 12px 20px;
+    border-radius: 40px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-.profile-field label {
-    display: block;
-    font-size: 16px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 8px;
-}
-
-.checkbox-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    color: #ffffff;
-}
-
-.checkbox-row span {
-    color: #ffffff;
-    font-size: 15px;
-}
-
-/* Строка контактов в карточке профиля */
-.profile-contact-row {
-    display: flex;
-    gap: 20px;
-    margin-top: 12px;
-    justify-content: flex-start;
-}
-
-.profile-contact-link {
+    margin: 0;
+    white-space: nowrap;
     transition: transform 0.2s;
-}
-.profile-contact-link:hover {
-    transform: scale(1.1);
+    font-weight: 500;
 }
 
-/* Чтобы текст в чекбоксах статусов был не жирным */
-.checkbox-group label {
-    font-weight: normal !important;
+.profile-edit-fab .btn:hover {
+    transform: scale(1.05);
 }
 
 /* Стили для формы редактирования профиля */
 .edit-form {
-    padding: 0 16px 0 16px;
+    padding: 0 16px 8px 16px;
 }
 
 .profile-field {
@@ -1859,6 +1781,162 @@ body::before {
     font-weight: 700;
     color: #ffffff;
     margin-bottom: 12px;
+}
+
+.checkbox-group {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.checkbox-group label {
+    font-size: 15px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    accent-color: var(--yellow);
+    flex-shrink: 0;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 12px 16px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.checkbox-row input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--yellow);
+    flex-shrink: 0;
+}
+
+.checkbox-row span {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: normal;
+    line-height: 1.4;
+}
+
+.field-hint {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 6px;
+}
+
+#saveProfileBtn {
+    margin-top: 24px;
+    margin-bottom: 8px;
+}
+
+.delete-profile-btn {
+    background: none;
+    border: none;
+    color: #ff3b30;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Адаптивный скейлинг для маленьких экранов */
+@media (max-width: 400px) {
+    .profile-card {
+        font-size: 0.9rem;
+    }
+    .profile-name {
+        font-size: 16px;
+    }
+    .status-tag {
+        font-size: 12px;
+        padding: 2px 8px;
+    }
+    .profile-section-title {
+        font-size: 13px;
+    }
+    .profile-section-text {
+        font-size: 13px;
+    }
+    .profile-contact-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .profiles-two-columns {
+        gap: 8px;
+        padding: 0 8px 16px 8px;
+    }
+    .profiles-column {
+        gap: 8px;
+    }
+    .profile-card {
+        padding: 8px;
+    }
+}
+/* Стили для формы редактирования профиля */
+.edit-form {
+    padding: 0 16px 8px 16px;
+}
+
+.profile-field {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.profile-field label {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 12px;
+}
+
+/* Поля ввода и textarea */
+.profile-field input[type="text"],
+.profile-field textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 16px;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.profile-field textarea {
+    resize: vertical;
+    min-height: 80px;
 }
 
 /* Чекбоксы в статусе знакомств */
@@ -1922,386 +2000,23 @@ body::before {
     margin-top: 6px;
 }
 
-/* Кнопки контактов в карточке профиля */
-.profile-contact-row {
-    display: flex;
-    gap: 20px;
-    margin-top: 12px;
-    justify-content: flex-start;
-}
-
-.profile-contact-link {
-    transition: transform 0.2s;
-    cursor: pointer;
-    display: inline-block;
-    text-decoration: none;
-}
-
-.profile-contact-link:hover {
-    transform: scale(1.1);
-}
-
-/* Убираем лишний отступ у последнего поля */
-.profile-field:last-of-type {
-    margin-bottom: 0;
-}
-
 /* Кнопка сохранения */
 #saveProfileBtn {
-    margin-top: 8px;
+    margin-top: 24px;
     margin-bottom: 8px;
 }
 
 /* Кнопка удаления */
 .delete-profile-btn {
+    background: none;
+    border: none;
+    color: #ff3b30;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: underline;
+    cursor: pointer;
     margin-top: 16px;
     margin-bottom: 8px;
-}
-
-.edit-form {
-    padding: 0 16px 8px 16px;
-}
-
-#saveProfileBtn, .delete-profile-btn {
-    margin-top: 8px;
-    margin-bottom: 4px;
-}
-
-/* Гостевая кнопка по центру */
-.center-floating-btn {
-    position: static;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-top: 16px;
-}
-
-.center-floating-btn .btn {
-    width: auto;
-    min-width: 200px;
-}
-
-.edit-form {
-    padding: 0 16px 4px 16px;
-}
-
-.profile-field:last-of-type {
-    margin-bottom: 8px;
-}
-
-/* Гостевая кнопка по центру */
-#guestViewProfilesBtn, #createProfileBtn {
-    margin: 0 auto;
-    display: block;
-    width: fit-content;
-    min-width: 200px;
-}
-
-/* Кнопка редактирования профиля */
-.floating-edit-btn {
-    position: static;
-    display: flex;
-    justify-content: center;
-    margin-top: 16px;
-}
-.floating-edit-btn .btn {
-    width: auto;
-    min-width: 200px;
-}
-
-/* Убираем лишние отступы в карточке */
-.card-container {
-    padding-bottom: 8px;
-}
-
-/* Гостевая кнопка по центру экрана */
-.guest-center-btn {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1000;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    min-width: 220px;
-}
-
-.guest-center-btn .btn {
     width: 100%;
-    margin: 0;
-}
-
-/* Убираем лишние отступы у карточки в редактировании */
-.card-container {
-    padding-top: 12px;
-    padding-bottom: 8px;
-}
-
-/* Кнопка "Мой профиль" в правом нижнем углу */
-.floating-edit-btn {
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    left: auto;
-    display: flex;
-    justify-content: flex-end;
-    z-index: 1100;
-    pointer-events: none;
-}
-
-.floating-edit-btn .btn {
-    pointer-events: auto;
-    width: auto;
-    padding: 12px 24px;
-    border-radius: 40px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-/* Увеличиваем отступ над кнопкой "Сохранить" */
-#saveProfileBtn {
-    margin-top: 24px !important;
-    margin-bottom: 8px;
-}
-
-/* Уменьшаем отступ сверху у первого блока в форме */
-.edit-form {
-    padding: 0 16px 8px 16px;
-}
-
-.edit-form .profile-field:first-of-type {
-    margin-top: 0;
-}
-
-.guest-center-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    margin-top: 16px;
-}
-.guest-center-btn .btn {
-    width: auto;
-    min-width: 200px;
-}
-
-/* Фиксированная кнопка редактирования профиля */
-.profile-edit-fab {
-    position: fixed;
-    bottom: 100px;
-    right: 16px;
-    z-index: 150;
-    pointer-events: none;
-}
-
-.profile-edit-fab .btn {
-    pointer-events: auto;
-    width: auto;
-    min-width: 140px;
-    padding: 12px 20px;
-    border-radius: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    margin: 0;
-    white-space: nowrap;
-    transition: transform 0.2s;
-}
-
-.profile-edit-fab .btn:hover {
-    transform: scale(1.05);
-}
-
-/* Карточки профиля - не растягиваться по высоте */
-.profiles-grid {
-    align-items: start;
-}
-
-.profile-card {
-    height: auto;
-    min-height: 0;
-    flex: 0 1 auto;
-}
-
-/* Фиксированная кнопка "Мой профиль" */
-.profile-edit-fab {
-    position: fixed;
-    bottom: 100px;
-    right: 16px;
-    z-index: 150;
-    pointer-events: none;
-}
-
-.profile-edit-fab .btn {
-    pointer-events: auto;
-    width: auto;
-    min-width: 140px;
-    padding: 12px 20px;
-    border-radius: 40px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    margin: 0;
-    white-space: nowrap;
-    transition: transform 0.2s;
-    font-weight: 500;
-}
-
-.profile-edit-fab .btn:hover {
-    transform: scale(1.05);
-}
-
-/* Кнопки контактов в профиле */
-.profile-contact-row {
-    display: flex;
-    gap: 12px;
-    margin-top: 16px;
-    flex-wrap: wrap;
-}
-
-.profile-contact-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 30px;
-    padding: 10px 16px;
-    color: var(--yellow);
-    font-size: 14px;
-    font-weight: 500;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    cursor: pointer;
-    transition: background 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex: 0 1 auto;
-}
-
-.profile-contact-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-/* Сетка профилей */
-.profiles-grid {
-    align-items: start;
-}
-
-.profile-card {
-    height: auto;
-    min-height: 0;
-    flex: 0 1 auto;
-}
-
-.floating-edit-btn {
-    display: none;
-}
-
-.center-floating-btn {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1100;
-    pointer-events: none;
-}
-
-.center-floating-btn .btn {
-    pointer-events: auto;
-    margin: 0;
-    width: auto;
-    min-width: 200px;
-    padding: 12px 24px;
-    border-radius: 40px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    white-space: nowrap;
-}
-
-/* Адаптивная сетка профилей */
-.profiles-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 0;
-    padding: 0 12px 16px 12px;
-    align-items: start;
-}
-
-/* Карточки не растягиваются по высоте соседей */
-.profile-card {
-    height: auto;
-    min-height: 0;
-    flex: 0 1 auto;
-    contain: layout style;
-}
-
-/* Кнопки контактов – отступ как у статусов */
-.profile-contact-row {
-    display: flex;
-    gap: 6px;
-    margin-top: 12px;
-    flex-wrap: wrap;
-}
-
-.profile-contact-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
-    border-radius: 30px;
-    padding: 8px 12px;
-    color: var(--yellow);
-    font-size: 14px;
-    font-weight: 500;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    cursor: pointer;
-    transition: background 0.2s;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-}
-
-/* Адаптивный скейлинг на маленьких экранах */
-@media (max-width: 400px) {
-    .profile-card {
-        font-size: 0.9rem;
-    }
-    .profile-name {
-        font-size: 16px;
-    }
-    .status-tag {
-        font-size: 12px;
-        padding: 2px 8px;
-    }
-    .profile-section-title {
-        font-size: 13px;
-    }
-    .profile-section-text {
-        font-size: 13px;
-    }
-    .profile-contact-btn {
-        padding: 6px 10px;
-        font-size: 13px;
-    }
-}
-
-/* Уменьшение отступов на узких экранах */
-@media (max-width: 360px) {
-    .profiles-grid {
-        gap: 8px;
-        padding: 0 8px 16px 8px;
-    }
-    .profile-card {
-        padding: 8px;
-    }
+    text-align: center;
 }
