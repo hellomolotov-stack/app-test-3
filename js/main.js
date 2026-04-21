@@ -15,6 +15,14 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
+// Функция очистки гостевых элементов (блюр, кнопки)
+function cleanupProfileOverlays() {
+    document.querySelector('.profile-blur-overlay')?.remove();
+    document.querySelector('.guest-center-btn')?.remove();
+    document.querySelector('.center-floating-btn')?.remove();
+    document.body.style.overflow = '';
+}
+
 // Реализация setupBottomNav
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
@@ -47,6 +55,7 @@ function setupBottomNav() {
 
     navHomeNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('home');
+        cleanupProfileOverlays(); // очищаем оверлеи
         renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
         log('glavnaya_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
@@ -55,6 +64,7 @@ function setupBottomNav() {
     });
     navHikesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('hikes');
+        cleanupProfileOverlays(); // очищаем оверлеи
         renderHome(); 
         setTimeout(() => document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         log('kalendar_click', state.userCard.status !== 'active', state.user);
@@ -64,7 +74,7 @@ function setupBottomNav() {
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
-        renderProfiles();  // <-- теперь для всех, включая гостей
+        renderProfiles();
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
