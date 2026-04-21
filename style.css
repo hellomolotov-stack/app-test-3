@@ -2825,28 +2825,3 @@ body::before {
         padding: 8px;
     }
 }
-/* Гибкая двухколоночная сетка для профилей */
-.profiles-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin: 0;
-    padding: 0 12px 16px 12px;
-}
-
-.profile-card {
-    width: calc(50% - 6px);
-    flex: 0 0 auto;
-    align-self: flex-start;
-}
-
-/* Для узких экранов оставляем две колонки, но уменьшаем отступы */
-@media (max-width: 400px) {
-    .profiles-grid {
-        gap: 8px;
-        padding: 0 8px 16px 8px;
-    }
-    .profile-card {
-        width: calc(50% - 4px);
-    }
-}
