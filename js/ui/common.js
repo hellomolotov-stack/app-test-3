@@ -44,9 +44,8 @@ export function updateActiveNav() {
         setActiveNav('navHome');
         return;
     }
-    const isProfilesPage = document.getElementById('profilesGrid') !== null;
-    const isEditProfilePage = document.getElementById('editProfileForm') !== null;
-    if (isProfilesPage || isEditProfilePage) {
+    const isProfilesPage = document.getElementById('profilesGrid') !== null || document.querySelector('.profiles-two-columns') !== null;
+    if (isProfilesPage) {
         setActiveNav('navProfiles');
         return;
     }
