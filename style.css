@@ -2746,3 +2746,82 @@ body::before {
         padding: 8px;
     }
 }
+/* Адаптивная шахматная сетка (masonry) */
+.profiles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 0;
+    padding: 0 12px 16px 12px;
+    align-items: start;
+    grid-auto-flow: row dense;
+}
+
+/* Карточки притягиваются к верхнему краю своей ячейки */
+.profile-card {
+    height: auto;
+    min-height: 0;
+    flex: 0 1 auto;
+    contain: layout style;
+    grid-row: span 1;
+}
+
+/* Кнопки контактов — отступ как у статусов */
+.profile-contact-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+.profile-contact-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 30px;
+    padding: 8px 12px;
+    color: var(--yellow);
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Адаптивный скейлинг для маленьких экранов */
+@media (max-width: 400px) {
+    .profile-card {
+        font-size: 0.9rem;
+    }
+    .profile-name {
+        font-size: 16px;
+    }
+    .status-tag {
+        font-size: 12px;
+        padding: 2px 8px;
+    }
+    .profile-section-title {
+        font-size: 13px;
+    }
+    .profile-section-text {
+        font-size: 13px;
+    }
+    .profile-contact-btn {
+        padding: 6px 10px;
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .profiles-grid {
+        gap: 8px;
+        padding: 0 8px 16px 8px;
+    }
+    .profile-card {
+        padding: 8px;
+    }
+}
