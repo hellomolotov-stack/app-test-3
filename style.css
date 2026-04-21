@@ -2020,3 +2020,22 @@ body::before {
     width: 100%;
     text-align: center;
 }
+
+/* Увеличиваем отступы в меню, чтобы овал не обжимал текст */
+.nav-item {
+    padding: 6px 20px !important;
+}
+
+/* Округлая кнопка "смотреть профили" */
+.guest-center-btn .btn {
+    border-radius: 40px !important;
+}
+
+/* Анимация поворота эмодзи глаз */
+.eye-emoji {
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+.eye-emoji.rotated {
+    transform: rotate(90deg);
+}
