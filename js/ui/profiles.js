@@ -59,7 +59,7 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
-    // Очищаем все специфичные элементы
+    // Удаляем все элементы, специфичные для этой страницы
     document.querySelector('.profile-edit-fab')?.remove();
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.center-floating-btn')?.remove();
@@ -76,12 +76,10 @@ export async function renderProfiles() {
     const hasMyProfile = !!myProfile;
     const placeholderCount = 6;
 
-    // Сортируем профили и рендерим все реальные карточки
     const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
 
     if (allCards.length === 0) {
-        // Заглушки, если нет ни одного профиля
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         mainDiv().innerHTML = `<div class="card-container"><div class="profiles-two-columns" id="profilesGrid">${ph}</div></div>`;
         if (!isCardHolder) {
@@ -111,7 +109,6 @@ export async function renderProfiles() {
         return;
     }
 
-    // Распределяем карточки по двум колонкам
     const leftCards = [];
     const rightCards = [];
     allCards.forEach((card, index) => {
@@ -128,7 +125,6 @@ export async function renderProfiles() {
         </div>
     `;
 
-    // Для владельцев карт с профилем — показываем всё без блюра
     if (isCardHolder && hasMyProfile) {
         const btnContainer = document.createElement('div');
         btnContainer.className = 'profile-edit-fab';
@@ -138,7 +134,7 @@ export async function renderProfiles() {
         return;
     }
 
-    // Для гостей и владельцев без профиля — накладываем блюр и центральную кнопку
+    // Блюр и центральная кнопка только для гостей и владельцев без профиля
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
@@ -147,7 +143,7 @@ export async function renderProfiles() {
     blurOverlay.style.width = '100%';
     blurOverlay.style.height = '100%';
     blurOverlay.style.pointerEvents = 'none';
-    blurOverlay.style.zIndex = '50';
+    blurOverlay.style.zIndex = '40';
     blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.1) 50%, rgba(73, 138, 176, 0.3) 100%)';
     blurOverlay.style.backdropFilter = 'blur(12px)';
     blurOverlay.style.webkitBackdropFilter = 'blur(12px)';
