@@ -107,11 +107,14 @@ export async function renderProfiles() {
 
     const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const cards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p,false)));
+
+    // Используем привычную двухколоночную сетку
     mainDiv().innerHTML = `
         <div class="card-container">
             <div class="profiles-grid" id="profilesGrid">${cards.join('')}</div>
         </div>
     `;
+
     const btnContainer = document.createElement('div');
     btnContainer.className = 'profile-edit-fab';
     btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
