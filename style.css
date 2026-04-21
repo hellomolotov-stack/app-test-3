@@ -539,7 +539,7 @@ body::before {
     left: 16px;
     right: 16px;
     display: flex;
-    justify-content: space-between;
+    justify-content: space-evenly;
     align-items: center;
     background-color: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
@@ -552,8 +552,6 @@ body::before {
     transition: opacity 0.3s;
     max-width: 600px;
     margin: 0 auto;
-    padding-left: 6px;
-    padding-right: 6px;
 }
 
 .bottom-nav-left {
@@ -577,7 +575,7 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 6px 12px;   /* фиксированный отступ, не меняется */
+    padding: 6px 0;
     border-radius: 40px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
@@ -588,7 +586,6 @@ body::before {
     flex: 1;
     text-align: center;
     margin: 0 2px;
-    box-sizing: border-box;
 }
 
 .nav-item:first-child {
@@ -599,7 +596,7 @@ body::before {
 }
 
 .nav-more {
-    padding: 6px 12px;
+    flex: 1;
 }
 
 @media (max-width: 480px) {
@@ -630,13 +627,9 @@ body::before {
 
 .nav-item.active {
     color: var(--yellow);
-    background-color: rgba(255,255,255,0.15);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    padding: 8px 20px !important;   /* широкий овал */
-    border-radius: 40px !important;
-    margin: 0 2px;
-    transition: all 0.2s ease;
+    background-color: rgba(255,255,255,0.2);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
 }
 
 .nav-icon svg {
