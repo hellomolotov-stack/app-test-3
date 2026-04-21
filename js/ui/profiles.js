@@ -11,6 +11,22 @@ let profiles = {};
 let myProfile = null;
 const userHikesCache = {};
 
+// === ВСТАВЛЯЕМ НУЖНЫЕ СТИЛИ ДЛЯ АКТИВНОГО ПУНКТА НАВИГАЦИИ (ЕСЛИ ИХ НЕТ) ===
+function ensureNavActiveStyles() {
+    if (document.getElementById('nav-active-style')) return;
+    const style = document.createElement('style');
+    style.id = 'nav-active-style';
+    style.textContent = `
+        .bottom-nav-item.active {
+            padding: 8px 16px !important;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+    `;
+    document.head.appendChild(style);
+}
+ensureNavActiveStyles();
+
 async function loadProfilesData() {
     const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
     profiles = allProfiles; myProfile = myProf;
@@ -140,9 +156,10 @@ async function renderEditProfile() {
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
-showBottomNav(true);
-setupBottomNav();
-setActiveNav('navProfiles');  
+    showBottomNav(true);
+    setupBottomNav();
+    setActiveNav('navProfiles');   // ✅ установка активного пункта (без лишнего renderProfiles)
+
     const bottomNav = document.getElementById('bottomNav');
     if(bottomNav) bottomNav.style.display = 'flex';
 
