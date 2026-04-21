@@ -64,13 +64,7 @@ function setupBottomNav() {
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
-        const allowedUsernames = ['maxmolotov', 'basokni'];
-        const isAllowed = allowedUsernames.includes(state.user?.username);
-        if (isAllowed) {
-            renderProfiles();
-        } else {
-            alert('Скоро');
-        }
+        renderProfiles();  // <-- теперь для всех, включая гостей
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
