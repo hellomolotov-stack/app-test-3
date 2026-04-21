@@ -44,6 +44,7 @@ export function updateActiveNav() {
         setActiveNav('navHome');
         return;
     }
+    // Проверяем, находимся ли мы на странице профилей (по наличию сетки профилей или двухколоночного контейнера)
     const isProfilesPage = document.getElementById('profilesGrid') !== null || document.querySelector('.profiles-two-columns') !== null;
     if (isProfilesPage) {
         setActiveNav('navProfiles');
