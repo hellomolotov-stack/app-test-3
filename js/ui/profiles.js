@@ -59,7 +59,12 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
+    // Удаляем все элементы, специфичные для этой страницы
     document.querySelector('.profile-edit-fab')?.remove();
+    document.querySelector('.profile-blur-overlay')?.remove();
+    document.querySelector('.center-floating-btn')?.remove();
+    document.querySelector('.guest-center-btn')?.remove();
+    document.body.style.overflow = '';
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
@@ -69,58 +74,107 @@ export async function renderProfiles() {
 
     const isCardHolder = state.userCard.status === 'active';
     const hasMyProfile = !!myProfile;
-    const placeholderCount = 6;
 
-    if (!isCardHolder) {
-        let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        mainDiv().innerHTML = `
-            <div class="card-container">
-                <div class="profiles-grid" id="profilesGrid">${ph}</div>
-            </div>
-            <div class="guest-center-btn">
-                <button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button>
-                <div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>
-            </div>
-        `;
+    const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
+    const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
+
+    if (allCards.length === 0) {
+        let ph = ''; for (let i=0;i<6;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
+        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-grid" id="profilesGrid">${ph}</div></div>`;
+        if (!isCardHolder) {
+            const guestBtn = document.createElement('div');
+            guestBtn.className = 'guest-center-btn';
+            guestBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
+            document.body.appendChild(guestBtn);
+            document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
+                haptic();
+                const msg = document.getElementById('guestMessage');
+                msg.style.display = 'block';
+                msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
+            });
+        } else if (!hasMyProfile) {
+            const createBtn = document.createElement('div');
+            createBtn.className = 'center-floating-btn';
+            createBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>`;
+            document.body.appendChild(createBtn);
+            document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
+        } else {
+            const btnContainer = document.createElement('div');
+            btnContainer.className = 'profile-edit-fab';
+            btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
+            document.body.appendChild(btnContainer);
+            document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
+        }
+        return;
+    }
+
+    const cardsHtml = allCards.join('');
+    mainDiv().innerHTML = `
+        <div class="card-container">
+            <div class="profiles-grid" id="profilesGrid">${cardsHtml}</div>
+        </div>
+    `;
+
+    if (isCardHolder && hasMyProfile) {
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'profile-edit-fab';
+        btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
+        document.body.appendChild(btnContainer);
+        document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
+        return;
+    }
+
+    // Блюр и кнопка для гостей и владельцев без профиля
+    const blurOverlay = document.createElement('div');
+    blurOverlay.className = 'profile-blur-overlay';
+    blurOverlay.style.position = 'fixed';
+    blurOverlay.style.top = '0';
+    blurOverlay.style.left = '0';
+    blurOverlay.style.width = '100%';
+    blurOverlay.style.height = '100%';
+    blurOverlay.style.pointerEvents = 'none';
+    blurOverlay.style.zIndex = '50';
+    // Градиент от полностью прозрачного до размытого, как у фона карточек
+    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.1) 50%, rgba(73, 138, 176, 0.3) 100%)';
+    blurOverlay.style.backdropFilter = 'blur(12px)';
+    blurOverlay.style.webkitBackdropFilter = 'blur(12px)';
+    document.body.appendChild(blurOverlay);
+
+    const centerBtn = document.createElement('div');
+    centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
+    if (isCardHolder) {
+        centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>`;
+    } else {
+        centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
+    }
+    centerBtn.style.position = 'fixed';
+    centerBtn.style.top = '50%';
+    centerBtn.style.left = '50%';
+    centerBtn.style.transform = 'translate(-50%, -50%)';
+    centerBtn.style.zIndex = '100';
+    centerBtn.style.pointerEvents = 'auto';
+    document.body.appendChild(centerBtn);
+
+    if (isCardHolder) {
+        document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
+    } else {
         document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
             haptic();
             const msg = document.getElementById('guestMessage');
             msg.style.display = 'block';
             msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
         });
-        return;
     }
 
-    if (!hasMyProfile) {
-        let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        mainDiv().innerHTML = `
-            <div class="card-container">
-                <div class="profiles-grid" id="profilesGrid">${ph}</div>
-            </div>
-            <div class="center-floating-btn">
-                <button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>
-            </div>
-        `;
-        document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
-        return;
-    }
-
-    const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
-    const cards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p,false)));
-    mainDiv().innerHTML = `
-        <div class="card-container">
-            <div class="profiles-grid" id="profilesGrid">${cards.join('')}</div>
-        </div>
-    `;
-    const btnContainer = document.createElement('div');
-    btnContainer.className = 'profile-edit-fab';
-    btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
-    document.body.appendChild(btnContainer);
-    document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
+    document.body.style.overflow = 'hidden';
 }
 
 async function renderEditProfile() {
     document.querySelector('.profile-edit-fab')?.remove();
+    document.querySelector('.profile-blur-overlay')?.remove();
+    document.querySelector('.center-floating-btn')?.remove();
+    document.querySelector('.guest-center-btn')?.remove();
+    document.body.style.overflow = '';
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
