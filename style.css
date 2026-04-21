@@ -2561,16 +2561,7 @@ body::before {
     transform: scale(1.05);
 }
 
-/* Карточки профиля - не растягиваться по высоте */
-.profiles-grid {
-    align-items: start;
-}
 
-.profile-card {
-    height: auto;
-    min-height: 0;
-    flex: 0 1 auto;
-}
 /* Фиксированная кнопка "Мой профиль" */
 .profile-edit-fab {
     position: fixed;
@@ -2633,15 +2624,7 @@ body::before {
 }
 
 /* Сетка профилей */
-.profiles-grid {
-    align-items: start;
-}
 
-.profile-card {
-    height: auto;
-    min-height: 0;
-    flex: 0 1 auto;
-}
 
 .floating-edit-btn {
     display: none;
@@ -2668,23 +2651,7 @@ body::before {
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     white-space: nowrap;
 }
-/* Адаптивная сетка профилей */
-.profiles-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 0;
-    padding: 0 12px 16px 12px;
-    align-items: start;
-}
 
-/* Карточки не растягиваются по высоте соседей */
-.profile-card {
-    height: auto;
-    min-height: 0;
-    flex: 0 1 auto;
-    contain: layout style;
-}
 
 /* Кнопки контактов – отступ как у статусов */
 .profile-contact-row {
@@ -2805,23 +2772,8 @@ body::before {
         padding: 8px;
     }
 }
-.profiles-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin: 0;
-    padding: 0 12px 16px 12px;
-    align-items: start;
-    grid-auto-flow: row dense;
-}
 
-.profile-card {
-    height: auto;
-    min-height: 0;
-    flex: 0 1 auto;
-    contain: layout style;
-    margin-bottom: 0;
-}
+
 
 /* Адаптация под маленькие экраны */
 @media (max-width: 400px) {
@@ -2845,7 +2797,7 @@ body::before {
 }
 
 /* Карточки внутри колонок растягиваются на всю ширину */
-.profiles-column .profile-card {
+.profiles-column {
     width: 100%;
     margin-bottom: 0;
 }
