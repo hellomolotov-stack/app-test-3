@@ -41,9 +41,8 @@ function handleNavClick(e) {
 }
 
 export function setActiveNav(id) {
-    // ✅ Игнорируем переключение активного пункта на страницах профилей
-    if (window.isPrivPage) return;
-
+    // ✅ НЕ блокируем установку активного пункта – пусть работает всегда при явном вызове.
+    // Блокировка автоматического переключения будет в IntersectionObserver (если он есть).
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     const target = document.getElementById(id);
     if (target) target.classList.add('active');
@@ -57,10 +56,13 @@ export function hideBack() {
     tg.BackButton.hide();
 }
 
-// Если у вас есть IntersectionObserver для автоопределения секций, добавьте его сюда с проверкой:
+// Если у вас есть IntersectionObserver для автоматического определения активной секции,
+// добавьте его здесь с проверкой window.isPrivPage.
+// Пример (раскомментируйте и адаптируйте под свой код):
 /*
 const sectionObserver = new IntersectionObserver((entries) => {
-    if (window.isPrivPage) return; // ✅ не переключаем на страницах профилей
+    // На страницах профилей не переключаем автоматически
+    if (window.isPrivPage) return;
     entries.forEach(entry => {
         if (entry.isIntersecting) {
             const id = entry.target.id;
