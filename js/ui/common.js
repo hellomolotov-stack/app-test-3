@@ -44,21 +44,28 @@ export function updateActiveNav() {
         setActiveNav('navHome');
         return;
     }
-    // Проверяем, находимся ли мы на странице профилей (по наличию сетки профилей или двухколоночного контейнера)
-    const isProfilesPage = document.getElementById('profilesGrid') !== null || document.querySelector('.profiles-two-columns') !== null;
+
+    // Страница профилей
+    const isProfilesPage = document.querySelector('.profiles-two-columns') !== null || 
+                           document.querySelector('.profiles-grid') !== null ||
+                           document.querySelector('.profile-edit-fab') !== null;
     if (isProfilesPage) {
         setActiveNav('navProfiles');
         return;
     }
+
+    // Главная / Календарь (по скроллу)
     const calendarContainer = document.getElementById('calendarContainer');
-    if (!calendarContainer) {
-        setActiveNav('navHome');
-        return;
+    if (calendarContainer) {
+        const rect = calendarContainer.getBoundingClientRect();
+        const isCalendarVisible = rect.top < window.innerHeight * 0.6 && rect.bottom > 150;
+        if (isCalendarVisible) {
+            setActiveNav('navHikes');
+            return;
+        }
     }
-    const rect = calendarContainer.getBoundingClientRect();
-    const isCalendarVisible = rect.top < window.innerHeight && rect.bottom > 0;
-    if (isCalendarVisible) setActiveNav('navHikes');
-    else setActiveNav('navHome');
+
+    setActiveNav('navHome');
 }
 
 export function showBottomNav(show = true) {
