@@ -140,7 +140,10 @@ async function renderEditProfile() {
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
-    showBottomNav(true); setupBottomNav();
+showBottomNav(true);
+setupBottomNav();
+setActiveNav('navProfiles');   // уже есть, но убедитесь, что он стоит до renderProfiles()
+renderProfiles();
     const bottomNav = document.getElementById('bottomNav');
     if(bottomNav) bottomNav.style.display = 'flex';
 
