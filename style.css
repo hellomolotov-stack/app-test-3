@@ -630,10 +630,13 @@ body::before {
 
 .nav-item.active {
     color: var(--yellow);
-    background-color: rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    /* padding остаётся таким же, как у обычного состояния */
+    background-color: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 8px 20px !important;   /* широкий овал */
+    border-radius: 40px !important;
+    margin: 0 2px;
+    transition: all 0.2s ease;
 }
 
 .nav-icon svg {
