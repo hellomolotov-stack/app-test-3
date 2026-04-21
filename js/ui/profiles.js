@@ -59,7 +59,6 @@ async function renderProfileCard(profile, isBlurred = false) {
 }
 
 export async function renderProfiles() {
-    // Удаляем все элементы, специфичные для этой страницы
     document.querySelector('.profile-edit-fab')?.remove();
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.center-floating-btn')?.remove();
@@ -85,10 +84,14 @@ export async function renderProfiles() {
         if (!isCardHolder) {
             const guestBtn = document.createElement('div');
             guestBtn.className = 'guest-center-btn';
-            guestBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
+            guestBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn"><span class="eye-emoji">👀</span> смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
             document.body.appendChild(guestBtn);
-            document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
+            document.getElementById('guestViewProfilesBtn')?.addEventListener('click', (e) => {
                 haptic();
+                const btn = e.currentTarget;
+                const eye = btn.querySelector('.eye-emoji');
+                eye.classList.add('rotated');
+                setTimeout(() => eye.classList.remove('rotated'), 300);
                 const msg = document.getElementById('guestMessage');
                 msg.style.display = 'block';
                 msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
@@ -134,7 +137,7 @@ export async function renderProfiles() {
         return;
     }
 
-    // Блюр и центральная кнопка только для гостей и владельцев без профиля
+    // Блюр и центральная кнопка (скролл разрешен)
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
@@ -154,7 +157,7 @@ export async function renderProfiles() {
     if (isCardHolder) {
         centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>`;
     } else {
-        centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
+        centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn"><span class="eye-emoji">👀</span> смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
     }
     centerBtn.style.position = 'fixed';
     centerBtn.style.top = '50%';
@@ -167,15 +170,19 @@ export async function renderProfiles() {
     if (isCardHolder) {
         document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
     } else {
-        document.getElementById('guestViewProfilesBtn')?.addEventListener('click',()=>{
+        document.getElementById('guestViewProfilesBtn')?.addEventListener('click', (e) => {
             haptic();
+            const btn = e.currentTarget;
+            const eye = btn.querySelector('.eye-emoji');
+            eye.classList.add('rotated');
+            setTimeout(() => eye.classList.remove('rotated'), 300);
             const msg = document.getElementById('guestMessage');
             msg.style.display = 'block';
             msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
         });
     }
 
-    document.body.style.overflow = 'hidden';
+    // Скролл не блокируем
 }
 
 async function renderEditProfile() {
