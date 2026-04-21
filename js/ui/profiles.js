@@ -75,7 +75,7 @@ export async function renderProfiles() {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         mainDiv().innerHTML = `
             <div class="card-container">
-                <div class="profiles-grid" id="profilesGrid">${ph}</div>
+                <div class="profiles-two-columns" id="profilesGrid">${ph}</div>
             </div>
             <div class="guest-center-btn">
                 <button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn">👀 смотреть профили</button>
@@ -95,7 +95,7 @@ export async function renderProfiles() {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         mainDiv().innerHTML = `
             <div class="card-container">
-                <div class="profiles-grid" id="profilesGrid">${ph}</div>
+                <div class="profiles-two-columns" id="profilesGrid">${ph}</div>
             </div>
             <div class="center-floating-btn">
                 <button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>
@@ -108,9 +108,23 @@ export async function renderProfiles() {
     const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const cards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p,false)));
 
+    // Распределяем карточки по двум колонкам поочерёдно
+    const leftCards = [];
+    const rightCards = [];
+    cards.forEach((card, index) => {
+        if (index % 2 === 0) {
+            leftCards.push(card);
+        } else {
+            rightCards.push(card);
+        }
+    });
+
     mainDiv().innerHTML = `
         <div class="card-container">
-            <div class="profiles-grid" id="profilesGrid">${cards.join('')}</div>
+            <div class="profiles-two-columns">
+                <div class="profiles-column">${leftCards.join('')}</div>
+                <div class="profiles-column">${rightCards.join('')}</div>
+            </div>
         </div>
     `;
 
