@@ -1,131 +1,74 @@
 // js/ui/common.js
-import { haptic, openLink } from '../utils.js';
+import { haptic, mainDiv, subtitle, tg } from '../utils.js';
 import { state } from '../state.js';
-import { log } from '../api.js';
+import { renderMainPage } from './main.js';
+import { renderCalendar } from './calendar.js';
+import { renderProfiles } from './profiles.js';
+import { renderMore } from './more.js';
 
-export let isPrivPage = false;
-export let isMenuActive = false;
-export let manualNavClick = null;
-export let manualNavTimer = null;
-export let userInteracted = false;
+let bottomNavVisible = true;
 
-export const uiActions = {
-    setupBottomNav: () => {
-        console.log('setupBottomNav called - will be overridden in main');
-    }
-};
+export function showBottomNav(show) {
+    const nav = document.getElementById('bottomNav');
+    if (nav) nav.style.display = show ? 'flex' : 'none';
+    bottomNavVisible = show;
+}
 
 export function setupBottomNav() {
-    uiActions.setupBottomNav();
+    const navMain = document.getElementById('navMain');
+    const navCalendar = document.getElementById('navCalendar');
+    const navProfiles = document.getElementById('navProfiles');
+    const navMore = document.getElementById('navMore');
+
+    [navMain, navCalendar, navProfiles, navMore].forEach(nav => {
+        if (!nav) return;
+        nav.removeEventListener('click', handleNavClick);
+        nav.addEventListener('click', handleNavClick);
+    });
 }
 
-export function setManualNav(target) {
-    if (manualNavTimer) clearTimeout(manualNavTimer);
-    manualNavClick = target;
-    manualNavTimer = setTimeout(() => { manualNavClick = null; }, 2000);
+function handleNavClick(e) {
+    const id = e.currentTarget.id;
+    haptic();
+    window.isPrivPage = false; // сбрасываем при ручном переходе
+    switch (id) {
+        case 'navMain': renderMainPage(); break;
+        case 'navCalendar': renderCalendar(); break;
+        case 'navProfiles': renderProfiles(); break;
+        case 'navMore': renderMore(); break;
+    }
+    setActiveNav(id);
 }
 
-export function setActiveNav(activeId) {
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    if (activeId) document.getElementById(activeId)?.classList.add('active');
+export function setActiveNav(id) {
+    // ✅ Игнорируем переключение активного пункта на страницах профилей
+    if (window.isPrivPage) return;
+
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    const target = document.getElementById(id);
+    if (target) target.classList.add('active');
 }
 
 export function resetNavActive() {
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-}
-
-export function updateActiveNav() {
-    if (isMenuActive) return;
-    if (manualNavClick) {
-        setActiveNav(manualNavClick === 'home' ? 'navHome' : manualNavClick === 'hikes' ? 'navHikes' : 'navProfiles');
-        return;
-    }
-    if (!userInteracted) {
-        setActiveNav('navHome');
-        return;
-    }
-    const isProfilesPage = document.getElementById('profilesGrid') !== null;
-    const isEditProfilePage = document.getElementById('editProfileForm') !== null;
-    if (isProfilesPage || isEditProfilePage) {
-        setActiveNav('navProfiles');
-        return;
-    }
-    const calendarContainer = document.getElementById('calendarContainer');
-    if (!calendarContainer) {
-        setActiveNav('navHome');
-        return;
-    }
-    const rect = calendarContainer.getBoundingClientRect();
-    const isCalendarVisible = rect.top < window.innerHeight && rect.bottom > 0;
-    if (isCalendarVisible) setActiveNav('navHikes');
-    else setActiveNav('navHome');
-}
-
-export function showBottomNav(show = true) {
-    const bottomNav = document.getElementById('bottomNav');
-    if (bottomNav) {
-        if (show) bottomNav.classList.remove('hidden');
-        else bottomNav.classList.add('hidden');
-    }
-}
-
-let loaderInterval = null, loaderMessageTimer = null;
-export function showAnimatedLoader() {
-    const loader = document.getElementById('initial-loader');
-    if (!loader) return;
-    loader.innerHTML = `
-        <div class="loader-animation">
-            <div class="loader-emoji" id="loaderEmoji">⛰️</div>
-            <div class="loader-text" id="loaderText">выбираем вершину</div>
-        </div>
-        <div class="loader-message" id="loaderMessage" style="display: none;">⚡️ для работы приложения включи три буквы</div>
-    `;
-    loader.style.display = 'flex';
-    loader.classList.remove('fade-out');
-    const steps = [
-        { emoji: '⛰️', text: 'выбираем вершину' },
-        { emoji: '🥾', text: 'завязываем шнурки' },
-        { emoji: '🗺️', text: 'прокладываем маршрут' },
-        { emoji: '✨', text: 'наполняемся красотой' }
-    ];
-    let index = 0;
-    const emojiEl = document.getElementById('loaderEmoji');
-    const textEl = document.getElementById('loaderText');
-    const messageEl = document.getElementById('loaderMessage');
-    if (!emojiEl || !textEl || !messageEl) return;
-    loaderInterval = setInterval(() => {
-        index = (index + 1) % steps.length;
-        emojiEl.textContent = steps[index].emoji;
-        textEl.textContent = steps[index].text;
-    }, 1500);
-    loaderMessageTimer = setTimeout(() => {
-        if (loader.style.display !== 'none' && !loader.classList.contains('fade-out')) {
-            messageEl.style.display = 'block';
-        }
-    }, 3000);
-}
-
-export function hideAnimatedLoader() {
-    if (loaderInterval) clearInterval(loaderInterval);
-    if (loaderMessageTimer) clearTimeout(loaderMessageTimer);
-    const loader = document.getElementById('initial-loader');
-    if (loader) {
-        loader.classList.add('fade-out');
-        setTimeout(() => { loader.style.display = 'none'; loader.innerHTML = ''; }, 300);
-    }
-}
-
-export function showBack(callback) {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) return;
-    const backButton = tg.BackButton;
-    backButton.offClick();
-    backButton.onClick(() => { haptic(); callback(); });
-    backButton.show();
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 }
 
 export function hideBack() {
-    window.Telegram?.WebApp?.BackButton?.hide();
+    tg.BackButton.hide();
 }
 
-export function setUserInteracted() { userInteracted = true; }
+// Если у вас есть IntersectionObserver для автоопределения секций, добавьте его сюда с проверкой:
+/*
+const sectionObserver = new IntersectionObserver((entries) => {
+    if (window.isPrivPage) return; // ✅ не переключаем на страницах профилей
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const id = entry.target.id;
+            if (id === 'mainSection') setActiveNav('navMain');
+            else if (id === 'calendarSection') setActiveNav('navCalendar');
+            // ...
+        }
+    });
+}, { threshold: 0.3 });
+// sectionObserver.observe(...)
+*/
