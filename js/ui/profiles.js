@@ -11,26 +11,6 @@ let profiles = {};
 let myProfile = null;
 const userHikesCache = {};
 
-// === ВСТАВЛЯЕМ НУЖНЫЕ СТИЛИ ДЛЯ АКТИВНОГО ПУНКТА НАВИГАЦИИ (ЕСЛИ ИХ НЕТ) ===
-function ensureNavActiveStyles() {
-    if (document.getElementById('nav-active-style')) return;
-    const style = document.createElement('style');
-    style.id = 'nav-active-style';
-    style.textContent = `
-        .nav-item.active {
-            padding: 8px 20px !important;
-            border-radius: 40px !important;
-            background: rgba(255, 255, 255, 0.15) !important;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            margin: 0 2px;
-            transition: all 0.2s ease;
-        }
-    `;
-    document.head.appendChild(style);
-}
-ensureNavActiveStyles();
-
 async function loadProfilesData() {
     const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
     profiles = allProfiles; myProfile = myProf;
@@ -160,10 +140,7 @@ async function renderEditProfile() {
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
-    showBottomNav(true);
-    setupBottomNav();
-    setActiveNav('navProfiles');
-
+    showBottomNav(true); setupBottomNav();
     const bottomNav = document.getElementById('bottomNav');
     if(bottomNav) bottomNav.style.display = 'flex';
 
