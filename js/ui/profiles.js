@@ -104,19 +104,69 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    const stops = [];
-    const step = 1 / colors.length;
-    for (let i = 0; i < colors.length; i++) {
-        const color1 = colors[i];
-        const color2 = colors[(i + 1) % colors.length];
-        const start = i * 100;
-        const end = ((i + 1) % colors.length) * 100;
-        stops.push(`${color1} ${start}%`);
-        stops.push(`color-mix(in srgb, ${color1}, ${color2} 50%) ${start + 30}%`);
-        stops.push(`color-mix(in srgb, ${color2}, ${color1} 50%) ${end - 30}%`);
+    const step = 360 / colors.length;
+    let gradient = 'conic-gradient(from 0deg';
+    colors.forEach((color, i) => {
+        const start = i * step;
+        const end = (i + 1) * step;
+        gradient += `, ${color} ${start}deg ${end}deg`;
+    });
+    gradient += ')';
+    return gradient;
+}
+
+function createAvatarWithGradient(imgElement, userId, size) {
+    const gradient = getAvatarGradient(userId);
+    if (!gradient) {
+        const statuses = getUserStatuses(userId);
+        const colorMap = {
+            'дружба': '#D9FD19',
+            'отношения': '#FB5EB0',
+            'бизнес': '#5E9FC5'
+        };
+        const colors = statuses.map(s => colorMap[s]).filter(c => c);
+        imgElement.style.boxShadow = colors.length === 1 
+            ? `0 0 0 2px ${colors[0]}` 
+            : '0 0 0 2px #D9FD19';
+        imgElement.style.border = 'none';
+        return imgElement;
     }
     
-    return `conic-gradient(from 0deg, ${stops.join(', ')})`;
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+        position: relative;
+        width: ${size}px;
+        height: ${size}px;
+        display: inline-block;
+        flex-shrink: 0;
+    `;
+    
+    imgElement.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        position: relative;
+        z-index: 2;
+        box-shadow: none !important;
+        border: none !important;
+    `;
+    
+    const gradientRing = document.createElement('div');
+    gradientRing.style.cssText = `
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border-radius: 50%;
+        background: ${gradient};
+        z-index: 1;
+    `;
+    
+    wrapper.appendChild(gradientRing);
+    wrapper.appendChild(imgElement);
+    return wrapper;
 }
 
 export async function renderProfiles() {
@@ -181,7 +231,7 @@ export async function renderProfiles() {
     blurOverlay.style.height = '100%';
     blurOverlay.style.pointerEvents = 'none';
     blurOverlay.style.zIndex = '40';
-    blurOverlay.style.background = 'rgba(0,0,0,0.5)'; // тёмный блюр
+    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
     blurOverlay.style.backdropFilter = 'blur(16px)';
     blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
     document.body.appendChild(blurOverlay);
