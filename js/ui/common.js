@@ -136,3 +136,10 @@ export function hideBack() {
 }
 
 export function setUserInteracted() { userInteracted = true; }
+
+// Функция для скролла страницы в начало
+export function scrollPageToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainContent = document.getElementById('mainContent');
+    if (mainContent) mainContent.scrollTop = 0;
+}
