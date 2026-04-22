@@ -137,28 +137,22 @@ let currentUnsubscribe = null;
 
 function getBorderStyleForUser(userId) {
     const profile = state.profiles[userId];
-    if (!profile) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    if (!profile) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
     const statuses = profile.friendshipStatuses || [];
-    if (statuses.length === 0) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
-    
-    if (statuses.length === 1) {
-        const s = statuses[0];
-        if (s === 'дружба') return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.4)' };
-        if (s === 'отношения') return { border: '2px solid #FB5EB0', boxShadow: '0 0 8px rgba(251, 94, 176, 0.4)' };
-        if (s === 'бизнес') return { border: '2px solid #5E9FC5', boxShadow: '0 0 8px rgba(94, 159, 197, 0.4)' };
-    }
+    if (statuses.length === 0) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
     
     const colors = [];
     if (statuses.includes('дружба')) colors.push('#D9FD19');
     if (statuses.includes('отношения')) colors.push('#FB5EB0');
     if (statuses.includes('бизнес')) colors.push('#5E9FC5');
     
-    if (colors.length >= 2) {
+    if (colors.length === 1) {
+        const c = colors[0];
+        return { border: `2px solid ${c}`, boxShadow: `0 0 8px ${c}` };
+    } else {
         const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
         return { border: '2px solid transparent', boxShadow: boxShadow };
     }
-    
-    return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
 }
 
 export function showBottomSheet(index) {
@@ -382,20 +376,40 @@ export function showBottomSheet(index) {
                         img.alt = p.name || '';
                         img.title = p.name || '';
                         img.dataset.userId = p.userId;
+                        img.style.width = '28px';
+                        img.style.height = '28px';
                         img.style.borderRadius = '50%';
-                        img.style.border = '2px solid rgba(0,0,0,0.6)';
-                        img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                        img.style.objectFit = 'cover';
                         if (hasProfile) {
                             const borderStyle = getBorderStyleForUser(p.userId);
                             img.style.border = borderStyle.border;
                             img.style.boxShadow = borderStyle.boxShadow;
+                        } else {
+                            img.style.border = '2px solid rgba(0,0,0,0.6)';
+                            img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                         }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
                             placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                            placeholder.style.width = '28px';
+                            placeholder.style.height = '28px';
                             placeholder.style.borderRadius = '50%';
-                            placeholder.style.border = hasProfile ? getBorderStyleForUser(p.userId).border : '2px solid rgba(0,0,0,0.6)';
-                            placeholder.style.boxShadow = hasProfile ? getBorderStyleForUser(p.userId).boxShadow : '0 2px 4px rgba(0,0,0,0.2)';
+                            placeholder.style.backgroundColor = '#40a7e3';
+                            placeholder.style.display = 'flex';
+                            placeholder.style.alignItems = 'center';
+                            placeholder.style.justifyContent = 'center';
+                            placeholder.style.fontWeight = 'bold';
+                            placeholder.style.fontSize = '14px';
+                            placeholder.style.color = 'white';
+                            placeholder.style.textTransform = 'uppercase';
+                            if (hasProfile) {
+                                const borderStyle = getBorderStyleForUser(p.userId);
+                                placeholder.style.border = borderStyle.border;
+                                placeholder.style.boxShadow = borderStyle.boxShadow;
+                            } else {
+                                placeholder.style.border = '2px solid rgba(0,0,0,0.6)';
+                                placeholder.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
@@ -1006,10 +1020,17 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             item.appendChild(nameSpan);
 
             const avatarEl = item.querySelector('.participant-dropdown-avatar');
-            if (avatarEl && hasProfile) {
+            if (avatarEl) {
+                avatarEl.style.width = '30px';
+                avatarEl.style.height = '30px';
                 avatarEl.style.borderRadius = '50%';
-                avatarEl.style.border = borderStyle.border;
-                avatarEl.style.boxShadow = borderStyle.boxShadow;
+                avatarEl.style.objectFit = 'cover';
+                if (hasProfile) {
+                    avatarEl.style.border = borderStyle.border;
+                    avatarEl.style.boxShadow = borderStyle.boxShadow;
+                } else {
+                    avatarEl.style.border = '2px solid rgba(255,255,255,0.3)';
+                }
             }
 
             if (hasProfile) {
