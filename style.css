@@ -2039,3 +2039,65 @@ body::before {
 .eye-emoji.rotated {
     transform: rotate(90deg);
 }
+/* -------------------- БЛОК ОБНОВЛЕНИЙ -------------------- */
+.updates-container {
+    padding-bottom: 8px;
+}
+
+.updates-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 16px 8px 16px;
+    padding-right: 4px;
+}
+
+.update-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.update-date {
+    font-weight: 700;
+    color: var(--yellow);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.update-text {
+    color: #ffffff;
+    word-break: break-word;
+}
+
+.update-text a {
+    color: var(--yellow);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.update-text a:hover {
+    opacity: 0.8;
+}
+
+/* Кастомный скроллбар для блока обновлений */
+.updates-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.updates-scroll::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+.updates-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+}
