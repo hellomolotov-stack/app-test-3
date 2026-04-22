@@ -177,8 +177,20 @@ function getAvatarStyle(userId) {
     if (colors.length === 1) {
         return { boxShadow: `0 0 0 2px ${colors[0]}`, multi: false };
     }
-    // несколько цветов — будем использовать градиент через CSS-класс
-    return { multi: true, colors };
+    
+    const steps = colors.length;
+    let gradientStr = 'conic-gradient(from 0deg';
+    colors.forEach((color, index) => {
+        const startAngle = (index * 360) / steps;
+        const endAngle = ((index + 1) * 360) / steps;
+        gradientStr += `, ${color} ${startAngle}deg ${endAngle}deg`;
+        if (index < steps - 1) {
+            gradientStr += `, ${color} ${endAngle}deg`;
+        }
+    });
+    gradientStr += ')';
+    
+    return { multi: true, gradient: gradientStr };
 }
 
 export function showBottomSheet(index) {
@@ -412,7 +424,7 @@ export function showBottomSheet(index) {
                             const style = getAvatarStyle(p.userId);
                             if (style.multi) {
                                 img.classList.add('avatar-multi-status');
-                                img.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                                img.style.setProperty('--avatar-gradient', style.gradient);
                             } else {
                                 img.style.boxShadow = style.boxShadow;
                             }
@@ -441,7 +453,7 @@ export function showBottomSheet(index) {
                                 const style = getAvatarStyle(p.userId);
                                 if (style.multi) {
                                     placeholder.classList.add('avatar-multi-status');
-                                    placeholder.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                                    placeholder.style.setProperty('--avatar-gradient', style.gradient);
                                 } else {
                                     placeholder.style.boxShadow = style.boxShadow;
                                 }
@@ -1041,7 +1053,6 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             const name = p.name || 'Участник';
             const hasProfile = !!state.profiles[p.userId];
             const style = hasProfile ? getAvatarStyle(p.userId) : null;
-            const boxShadow = (style && !style.multi) ? style.boxShadow : (hasProfile ? '' : '0 0 0 2px rgba(255,255,255,0.3)');
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
@@ -1072,7 +1083,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                 if (hasProfile) {
                     if (style.multi) {
                         avatarEl.classList.add('avatar-multi-status');
-                        avatarEl.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                        avatarEl.style.setProperty('--avatar-gradient', style.gradient);
                     } else {
                         avatarEl.style.boxShadow = style.boxShadow;
                     }
