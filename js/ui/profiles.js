@@ -104,15 +104,8 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    const step = 360 / colors.length;
-    let gradient = 'conic-gradient(from 0deg';
-    colors.forEach((color, i) => {
-        const start = i * step;
-        const end = (i + 1) * step;
-        gradient += `, ${color} ${start}deg ${end}deg`;
-    });
-    gradient += ')';
-    return gradient;
+    const gradientColors = [...colors, colors[0]];
+    return `conic-gradient(${gradientColors.join(', ')})`;
 }
 
 function createAvatarWithGradient(imgElement, userId, size) {
@@ -155,10 +148,10 @@ function createAvatarWithGradient(imgElement, userId, size) {
     const gradientRing = document.createElement('div');
     gradientRing.style.cssText = `
         position: absolute;
-        top: -3px;
-        left: -3px;
-        right: -3px;
-        bottom: -3px;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
         border-radius: 50%;
         background: ${gradient};
         z-index: 1;
@@ -337,10 +330,10 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 const gradientRing = document.createElement('div');
                 gradientRing.style.cssText = `
                     position: absolute;
-                    top: -4px;
-                    left: -4px;
-                    right: -4px;
-                    bottom: -4px;
+                    top: -2px;
+                    left: -2px;
+                    right: -2px;
+                    bottom: -2px;
                     border-radius: 50%;
                     background: ${gradient};
                     z-index: 1;
@@ -395,10 +388,10 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     const gradientRing = document.createElement('div');
                     gradientRing.style.cssText = `
                         position: absolute;
-                        top: -4px;
-                        left: -4px;
-                        right: -4px;
-                        bottom: -4px;
+                        top: -2px;
+                        left: -2px;
+                        right: -2px;
+                        bottom: -2px;
                         border-radius: 50%;
                         background: ${gradient};
                         z-index: 1;
@@ -456,10 +449,10 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 const gradientRing = document.createElement('div');
                 gradientRing.style.cssText = `
                     position: absolute;
-                    top: -4px;
-                    left: -4px;
-                    right: -4px;
-                    bottom: -4px;
+                    top: -2px;
+                    left: -2px;
+                    right: -2px;
+                    bottom: -2px;
                     border-radius: 50%;
                     background: ${gradient};
                     z-index: 1;
