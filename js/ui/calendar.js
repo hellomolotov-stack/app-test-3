@@ -171,22 +171,6 @@ function getAvatarClasses(userId) {
     return classes.join(' ');
 }
 
-function getAvatarBoxShadow(userId) {
-    const statuses = getUserStatuses(userId);
-    const colors = [];
-    if (statuses.includes('дружба')) colors.push('#D9FD19');
-    if (statuses.includes('отношения')) colors.push('#FB5EB0');
-    if (statuses.includes('бизнес')) colors.push('#5E9FC5');
-    
-    if (colors.length === 0) {
-        return '0 0 0 2px #D9FD19';
-    } else if (colors.length === 1) {
-        return `0 0 0 2px ${colors[0]}`;
-    } else {
-        return colors.map(c => `0 0 0 2px ${c}`).join(', ');
-    }
-}
-
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
