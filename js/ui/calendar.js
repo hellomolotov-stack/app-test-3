@@ -173,21 +173,15 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    // Строим плавный градиент с дополнительными остановками для мягкого перехода
-    const stops = [];
-    const step = 1 / colors.length;
-    for (let i = 0; i < colors.length; i++) {
-        const color1 = colors[i];
-        const color2 = colors[(i + 1) % colors.length];
-        // Добавляем несколько промежуточных точек между цветами
-        const start = i * 100;
-        const end = ((i + 1) % colors.length) * 100;
-        stops.push(`${color1} ${start}%`);
-        stops.push(`color-mix(in srgb, ${color1}, ${color2} 50%) ${start + 30}%`);
-        stops.push(`color-mix(in srgb, ${color2}, ${color1} 50%) ${end - 30}%`);
-    }
-    
-    return `conic-gradient(from 0deg, ${stops.join(', ')})`;
+    const step = 360 / colors.length;
+    let gradient = 'conic-gradient(from 0deg';
+    colors.forEach((color, i) => {
+        const start = i * step;
+        const end = (i + 1) * step;
+        gradient += `, ${color} ${start}deg ${end}deg`;
+    });
+    gradient += ')';
+    return gradient;
 }
 
 function createAvatarWithGradient(imgElement, userId, size) {
@@ -214,6 +208,7 @@ function createAvatarWithGradient(imgElement, userId, size) {
         height: ${size}px;
         display: inline-block;
         flex-shrink: 0;
+        margin-left: -8px;
     `;
     
     imgElement.style.cssText = `
@@ -457,7 +452,7 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    participants.forEach(p => {
+                    participants.forEach((p, idx) => {
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
                         img.src = p.photoUrl || '';
@@ -477,8 +472,7 @@ export function showBottomSheet(index) {
                             const gradient = getAvatarGradient(p.userId);
                             if (gradient) {
                                 finalElement = createAvatarWithGradient(img, p.userId, 28);
-                                // Убираем отрицательный отступ для обёрток
-                                finalElement.style.marginLeft = '0';
+                                finalElement.style.zIndex = participants.length - idx;
                             } else {
                                 const statuses = getUserStatuses(p.userId);
                                 const colorMap = {
@@ -518,7 +512,7 @@ export function showBottomSheet(index) {
                                 const gradient = getAvatarGradient(p.userId);
                                 if (gradient) {
                                     const wrappedPlaceholder = createAvatarWithGradient(placeholder, p.userId, 28);
-                                    wrappedPlaceholder.style.marginLeft = '0';
+                                    wrappedPlaceholder.style.zIndex = participants.length - idx;
                                     this.parentNode.replaceChild(wrappedPlaceholder, this);
                                     return;
                                 } else {
@@ -545,11 +539,7 @@ export function showBottomSheet(index) {
                             this.parentNode.replaceChild(placeholder, this);
                         };
                         
-                        if (finalElement !== img) {
-                            avatarsEl.appendChild(finalElement);
-                        } else {
-                            avatarsEl.appendChild(img);
-                        }
+                        avatarsEl.appendChild(finalElement);
                     });
                 }
             });
