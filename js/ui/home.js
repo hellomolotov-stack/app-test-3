@@ -9,7 +9,6 @@ import { renderCalendar } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 
-// Вспомогательные функции для домашней страницы
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -99,7 +98,6 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// Показать гостевой попап о карте
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -107,20 +105,17 @@ function showGuestPopup() {
     overlay.id = 'guestPopup';
     overlay.innerHTML = `
         <div class="modal-content">
-            <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title">карта интеллигента</div>
+            <div class="modal-title">💳 карта интеллигента</div>
             <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
             <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">узнать о привилегиях</button></div>
         </div>
     `;
     document.body.appendChild(overlay);
-    document.getElementById('closePopup')?.addEventListener('click', () => { haptic(); overlay.remove(); });
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
     document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); renderGuestPrivileges(); });
     log('guest_popup_opened', true, state.user);
 }
 
-// NEW: Блок обновлений (используется в обеих версиях)
 function renderUpdatesBlock() {
     const updates = state.updates || [];
     if (!updates.length) return '';
@@ -150,7 +145,6 @@ function renderUpdatesBlock() {
     `;
 }
 
-// Рендер гостевой домашней страницы
 function renderGuestHome() {
     subtitle().textContent = `💳 здесь будет твоя карта, ${state.user?.first_name || 'друг'}`;
     subtitle().classList.add('subtitle-guest');
@@ -188,10 +182,9 @@ function renderGuestHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
-        ${renderUpdatesBlock()} <!-- NEW: перенесено вниз -->
+        ${renderUpdatesBlock()}
     `;
 
-    // Обработчики
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', true, state.user); renderNewcomerPage(true); });
     document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); renderGuestPrivileges(); log('privilegii_click', true, state.user); });
@@ -203,14 +196,12 @@ function renderGuestHome() {
         });
     });
 
-    // Ссылка "предложить идею"
     document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
         openLink('https://t.me/hellointelligent', 'idea_click', true);
     });
 
-    // Аккордеон
     const accordionBtn = document.querySelector('#cardAccordionGuest .accordion-btn');
     const dropdown = document.querySelector('#cardAccordionGuest .dropdown-menu');
     if (accordionBtn && dropdown) {
@@ -226,7 +217,6 @@ function renderGuestHome() {
     setupBottomNav();
 }
 
-// Рендер домашней страницы для владельца карты
 function renderOwnerHome() {
     const user = state.user;
     const firstName = user?.first_name || 'друг';
@@ -258,7 +248,7 @@ function renderOwnerHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
-        ${renderUpdatesBlock()} <!-- NEW: перенесено вниз -->
+        ${renderUpdatesBlock()}
     `;
 
     document.getElementById('ownerCardImage')?.addEventListener('click', () => {
@@ -271,7 +261,6 @@ function renderOwnerHome() {
     document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'support_click', false); });
     document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', false, user); renderNewcomerPage(false); });
 
-    // Ссылка "предложить идею"
     document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
@@ -283,11 +272,8 @@ function renderOwnerHome() {
     setupBottomNav();
 }
 
-// Основная функция рендера главной страницы
 export function renderHome() {
-    // Удаляем кнопку "Мой профиль", если она осталась с предыдущих страниц
     document.querySelector('.profile-edit-fab')?.remove();
-
     hideBack();
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
