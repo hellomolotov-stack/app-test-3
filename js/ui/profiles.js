@@ -128,7 +128,7 @@ export async function renderProfiles() {
     blurOverlay.style.height = '100%';
     blurOverlay.style.pointerEvents = 'none';
     blurOverlay.style.zIndex = '40';
-    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.3) 50%, rgba(73, 138, 176, 0.5) 100%)';
+    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
     blurOverlay.style.backdropFilter = 'blur(16px)';
     blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
     document.body.appendChild(blurOverlay);
@@ -215,6 +215,11 @@ function showGuestProfilePopup() {
         e.preventDefault();
         haptic();
         overlay.remove();
+        // Удаляем все элементы страницы профилей перед переходом
+        document.querySelector('.profile-blur-overlay')?.remove();
+        document.querySelector('.center-floating-btn')?.remove();
+        document.querySelector('.guest-center-btn')?.remove();
+        document.querySelector('.profile-edit-fab')?.remove();
         renderGuestPrivileges();
         log('guest_privileges_from_profile', true, state.user);
     });
