@@ -188,7 +188,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         const borderClass = getAvatarClassesForUser(previewProfile.userId);
         const previewDiv = document.createElement('div');
         previewDiv.className = 'profile-click-preview';
-        // Инлайн-стили для гарантии ширины
+        // Инлайн-стили для гарантии ширины баннера
         previewDiv.style.width = '90%';
         previewDiv.style.maxWidth = '520px';
         previewDiv.style.margin = '0 auto 16px auto';
@@ -206,8 +206,8 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         previewDiv.innerHTML = `
             <div class="preview-avatar">
                 ${previewProfile.photoUrl ? 
-                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img ${borderClass}" style="border-radius: 50%; border-width: 2px; border-style: solid;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder ${borderClass}\\' style=\\'border-radius: 50%; border-width: 2px; border-style: solid;\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
-                    `<div class="preview-avatar-placeholder ${borderClass}" style="border-radius: 50%; border-width: 2px; border-style: solid;">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
+                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img ${borderClass}" style="border-radius: 50% !important; border-width: 2px !important; border-style: solid !important;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder ${borderClass}\\' style=\\'border-radius: 50% !important; border-width: 2px !important; border-style: solid !important;\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
+                    `<div class="preview-avatar-placeholder ${borderClass}" style="border-radius: 50% !important; border-width: 2px !important; border-style: solid !important;">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
                 }
             </div>
             <div class="preview-text">
