@@ -1936,45 +1936,71 @@ body::before {
 .eye-emoji.rotated {
     transform: rotate(90deg);
 }
-/* Многоцветная обводка через conic-gradient с маской */
-.avatar-multi-status {
-    position: relative;
-    box-shadow: none !important;
-    border: none !important;
-    background: transparent !important;
+/* -------------------- ЦВЕТНЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
+.avatar-status-border {
+    border-width: 2px !important;
+    border-style: solid !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3);
 }
-.avatar-multi-status::before {
+
+/* Один статус */
+.avatar-status-border.status-friendship {
+    border-color: var(--yellow) !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.4);
+}
+.avatar-status-border.status-romance {
+    border-color: #FB5EB0 !important;
+    box-shadow: 0 0 8px rgba(251, 94, 176, 0.4);
+}
+.avatar-status-border.status-business {
+    border-color: #5E9FC5 !important;
+    box-shadow: 0 0 8px rgba(94, 159, 197, 0.4);
+}
+
+/* Два статуса – градиенты через псевдоэлемент */
+.avatar-status-border.status-friendship.status-romance,
+.avatar-status-border.status-friendship.status-business,
+.avatar-status-border.status-romance.status-business,
+.avatar-status-border.status-friendship.status-romance.status-business {
+    position: relative;
+    border: none !important;
+    box-shadow: none !important;
+}
+.avatar-status-border.status-friendship.status-romance::after,
+.avatar-status-border.status-friendship.status-business::after,
+.avatar-status-border.status-romance.status-business::after,
+.avatar-status-border.status-friendship.status-romance.status-business::after {
     content: '';
     position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
     border-radius: 50%;
-    background: var(--avatar-gradient);
-    -webkit-mask: radial-gradient(farthest-side, transparent 0%, transparent 80%, black 80%, black 100%);
-    mask: radial-gradient(farthest-side, transparent 0%, transparent 80%, black 80%, black 100%);
-    z-index: -1;
+    border: 2px solid transparent;
+    pointer-events: none;
+    z-index: 1;
 }
-/* Чтобы псевдоэлемент не обрезался */
-.participant-avatar.avatar-multi-status,
-.participant-dropdown-avatar.avatar-multi-status,
-.preview-avatar-img.avatar-multi-status,
-.preview-avatar-placeholder.avatar-multi-status {
-    overflow: visible;
-    background: transparent !important;
+
+/* Градиенты для комбинаций статусов */
+.avatar-status-border.status-friendship.status-romance::after {
+    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0) 1;
 }
-/* Обёртка для многоцветной обводки */
-.avatar-multi-wrapper {
-    position: relative;
-    display: inline-block;
-    border-radius: 50%;
+.avatar-status-border.status-friendship.status-business::after {
+    border-image: linear-gradient(45deg, var(--yellow), #5E9FC5) 1;
 }
-.avatar-multi-bg {
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 50%;
+.avatar-status-border.status-romance.status-business::after {
+    border-image: linear-gradient(45deg, #FB5EB0, #5E9FC5) 1;
+}
+.avatar-status-border.status-friendship.status-romance.status-business::after {
+    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0, #5E9FC5) 1;
+}
+
+/* Применяем к аватаркам */
+.participant-avatar.has-profile,
+.participant-dropdown-avatar.has-profile,
+.preview-avatar-img,
+.preview-avatar-placeholder {
+    border-radius: 50% !important;
 }
