@@ -381,7 +381,7 @@ export function showBottomSheet(index) {
                         if (hasProfile) {
                             img.style.boxShadow = getAvatarBoxShadow(p.userId);
                         } else {
-                            img.style.border = '2px solid rgba(0,0,0,0.6)';
+                            img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                         }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
@@ -400,7 +400,7 @@ export function showBottomSheet(index) {
                             if (hasProfile) {
                                 placeholder.style.boxShadow = getAvatarBoxShadow(p.userId);
                             } else {
-                                placeholder.style.border = '2px solid rgba(0,0,0,0.6)';
+                                placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                             }
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
@@ -992,7 +992,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         participants.forEach(p => {
             const name = p.name || 'Участник';
             const hasProfile = !!state.profiles[p.userId];
-            const boxShadow = hasProfile ? getAvatarBoxShadow(p.userId) : null;
+            const boxShadow = hasProfile ? getAvatarBoxShadow(p.userId) : '0 0 0 2px rgba(255,255,255,0.3)';
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
@@ -1017,11 +1017,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                 avatarEl.style.height = '30px';
                 avatarEl.style.borderRadius = '50%';
                 avatarEl.style.objectFit = 'cover';
-                if (hasProfile) {
-                    avatarEl.style.boxShadow = boxShadow;
-                } else {
-                    avatarEl.style.border = '2px solid rgba(255,255,255,0.3)';
-                }
+                avatarEl.style.boxShadow = boxShadow;
             }
 
             if (hasProfile) {
