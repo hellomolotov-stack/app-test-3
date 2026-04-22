@@ -93,35 +93,13 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function getAvatarGradient(userId) {
+function getAvatarClasses(userId) {
     const statuses = getUserStatuses(userId);
-    const colorMap = {
-        'дружба': '#D9FD19',
-        'отношения': '#FB5EB0',
-        'бизнес': '#5E9FC5'
-    };
-    const colors = statuses.map(s => colorMap[s]).filter(c => c);
-    
-    if (colors.length === 0) {
-        return null;
-    }
-    if (colors.length === 1) {
-        return `0 0 0 2px ${colors[0]}`;
-    }
-    
-    const steps = colors.length;
-    let gradientStr = 'conic-gradient(';
-    colors.forEach((color, index) => {
-        const startAngle = (index * 360) / steps;
-        const endAngle = ((index + 1) * 360) / steps;
-        gradientStr += `${color} ${startAngle}deg ${endAngle}deg`;
-        if (index < steps - 1) {
-            gradientStr += `, ${color} ${endAngle}deg`;
-        }
-    });
-    gradientStr += ')';
-    
-    return gradientStr;
+    const classes = ['avatar-status-border'];
+    if (statuses.includes('дружба')) classes.push('status-friendship');
+    if (statuses.includes('отношения')) classes.push('status-romance');
+    if (statuses.includes('бизнес')) classes.push('status-business');
+    return classes.join(' ');
 }
 
 export async function renderProfiles() {
@@ -235,7 +213,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
-        const gradient = getAvatarGradient(previewProfile.userId);
+        const classes = getAvatarClasses(previewProfile.userId);
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
         banner.style.cssText = `
@@ -267,50 +245,18 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         if (previewProfile.photoUrl) {
             const img = document.createElement('img');
             img.src = previewProfile.photoUrl;
+            img.className = 'preview-avatar-img';
             img.style.cssText = `
                 width: 100% !important;
                 height: 100% !important;
                 border-radius: 50% !important;
                 object-fit: cover !important;
-                border: none !important;
             `;
-            if (gradient) {
-                if (gradient.startsWith('conic-gradient')) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'avatar-multi-wrapper';
-                    wrapper.style.cssText = `
-                        position: relative;
-                        display: inline-block;
-                        width: 56px;
-                        height: 56px;
-                        border-radius: 50%;
-                    `;
-                    const bg = document.createElement('div');
-                    bg.className = 'avatar-multi-bg';
-                    bg.style.cssText = `
-                        position: absolute;
-                        top: -4px;
-                        left: -4px;
-                        right: -4px;
-                        bottom: -4px;
-                        border-radius: 50%;
-                        background: ${gradient};
-                    `;
-                    wrapper.appendChild(bg);
-                    img.style.position = 'relative';
-                    img.style.zIndex = '1';
-                    avatarContainer.appendChild(wrapper);
-                    wrapper.appendChild(img);
-                } else {
-                    img.style.boxShadow = gradient;
-                    avatarContainer.appendChild(img);
-                }
-            } else {
-                img.style.boxShadow = '0 0 0 2px #D9FD19';
-                avatarContainer.appendChild(img);
-            }
+            img.classList.add(...classes.split(' '));
+            img.style.border = 'none';
             img.onerror = function() {
                 const placeholder = document.createElement('div');
+                placeholder.className = 'preview-avatar-placeholder';
                 placeholder.style.cssText = `
                     width: 100% !important;
                     height: 100% !important;
@@ -321,48 +267,16 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     justify-content: center !important;
                     font-size: 24px !important;
                     color: white !important;
-                    border: none !important;
                 `;
-                if (gradient) {
-                    if (gradient.startsWith('conic-gradient')) {
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'avatar-multi-wrapper';
-                        wrapper.style.cssText = `
-                            position: relative;
-                            display: inline-block;
-                            width: 56px;
-                            height: 56px;
-                            border-radius: 50%;
-                        `;
-                        const bg = document.createElement('div');
-                        bg.className = 'avatar-multi-bg';
-                        bg.style.cssText = `
-                            position: absolute;
-                            top: -4px;
-                            left: -4px;
-                            right: -4px;
-                            bottom: -4px;
-                            border-radius: 50%;
-                            background: ${gradient};
-                        `;
-                        wrapper.appendChild(bg);
-                        placeholder.style.position = 'relative';
-                        placeholder.style.zIndex = '1';
-                        avatarContainer.appendChild(wrapper);
-                        wrapper.appendChild(placeholder);
-                    } else {
-                        placeholder.style.boxShadow = gradient;
-                        avatarContainer.appendChild(placeholder);
-                    }
-                } else {
-                    placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
-                    avatarContainer.appendChild(placeholder);
-                }
+                placeholder.classList.add(...classes.split(' '));
+                placeholder.style.border = 'none';
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
             };
+            avatarContainer.appendChild(img);
         } else {
             const placeholder = document.createElement('div');
+            placeholder.className = 'preview-avatar-placeholder';
             placeholder.style.cssText = `
                 width: 100% !important;
                 height: 100% !important;
@@ -373,44 +287,11 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 justify-content: center !important;
                 font-size: 24px !important;
                 color: white !important;
-                border: none !important;
             `;
-            if (gradient) {
-                if (gradient.startsWith('conic-gradient')) {
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'avatar-multi-wrapper';
-                    wrapper.style.cssText = `
-                        position: relative;
-                        display: inline-block;
-                        width: 56px;
-                        height: 56px;
-                        border-radius: 50%;
-                    `;
-                    const bg = document.createElement('div');
-                    bg.className = 'avatar-multi-bg';
-                    bg.style.cssText = `
-                        position: absolute;
-                        top: -4px;
-                        left: -4px;
-                        right: -4px;
-                        bottom: -4px;
-                        border-radius: 50%;
-                        background: ${gradient};
-                    `;
-                    wrapper.appendChild(bg);
-                    placeholder.style.position = 'relative';
-                    placeholder.style.zIndex = '1';
-                    avatarContainer.appendChild(wrapper);
-                    wrapper.appendChild(placeholder);
-                } else {
-                    placeholder.style.boxShadow = gradient;
-                    avatarContainer.appendChild(placeholder);
-                }
-            } else {
-                placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
-                avatarContainer.appendChild(placeholder);
-            }
+            placeholder.classList.add(...classes.split(' '));
+            placeholder.style.border = 'none';
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+            avatarContainer.appendChild(placeholder);
         }
 
         const textDiv = document.createElement('div');
