@@ -140,6 +140,14 @@ export function showUnicornConfetti() {
     requestAnimationFrame(animate);
 }
 
+export function scrollToElement(element, offset = 80) {
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const targetY = rect.top + scrollTop - offset;
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
+}
+
 export const tg = window.Telegram?.WebApp;
 export const mainDiv = () => document.getElementById('mainContent');
 export const subtitle = () => document.getElementById('subtitle');
