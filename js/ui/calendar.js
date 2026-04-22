@@ -161,7 +161,6 @@ export function showBottomSheet(index) {
         currentUnsubscribe = null;
     }
 
-    // Загружаем профили, если ещё не загружены
     if (Object.keys(state.profiles).length === 0) {
         loadAllProfiles().then(profiles => {
             state.profiles = profiles;
@@ -948,7 +947,6 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     closeParticipantDropdown();
     haptic();
 
-    // Убедимся, что профили загружены
     if (Object.keys(state.profiles).length === 0) {
         try {
             const profiles = await loadAllProfiles();
