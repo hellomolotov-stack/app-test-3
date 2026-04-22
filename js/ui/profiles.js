@@ -93,6 +93,13 @@ function getUserStatuses(userId) {
     return [];
 }
 
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return { r, g, b };
+}
+
 function getAvatarGradient(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
@@ -104,69 +111,24 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    const step = 360 / colors.length;
-    let gradient = 'conic-gradient(from 0deg';
-    colors.forEach((color, i) => {
-        const start = i * step;
-        const end = (i + 1) * step;
-        gradient += `, ${color} ${start}deg ${end}deg`;
-    });
-    gradient += ')';
-    return gradient;
-}
-
-function createAvatarWithGradient(imgElement, userId, size) {
-    const gradient = getAvatarGradient(userId);
-    if (!gradient) {
-        const statuses = getUserStatuses(userId);
-        const colorMap = {
-            'дружба': '#D9FD19',
-            'отношения': '#FB5EB0',
-            'бизнес': '#5E9FC5'
-        };
-        const colors = statuses.map(s => colorMap[s]).filter(c => c);
-        imgElement.style.boxShadow = colors.length === 1 
-            ? `0 0 0 2px ${colors[0]}` 
-            : '0 0 0 2px #D9FD19';
-        imgElement.style.border = 'none';
-        return imgElement;
+    const segments = [];
+    const segmentCount = colors.length * 12;
+    for (let i = 0; i < segmentCount; i++) {
+        const pos = (i / segmentCount) * 360;
+        const colorIndex = Math.floor(i / 12) % colors.length;
+        const nextColorIndex = (colorIndex + 1) % colors.length;
+        const t = (i % 12) / 12;
+        
+        const c1 = hexToRgb(colors[colorIndex]);
+        const c2 = hexToRgb(colors[nextColorIndex]);
+        const r = Math.round(c1.r + (c2.r - c1.r) * t);
+        const g = Math.round(c1.g + (c2.g - c1.g) * t);
+        const b = Math.round(c1.b + (c2.b - c1.b) * t);
+        
+        segments.push(`rgb(${r}, ${g}, ${b}) ${pos}deg`);
     }
     
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = `
-        position: relative;
-        width: ${size}px;
-        height: ${size}px;
-        display: inline-block;
-        flex-shrink: 0;
-    `;
-    
-    imgElement.style.cssText = `
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-        position: relative;
-        z-index: 2;
-        box-shadow: none !important;
-        border: none !important;
-    `;
-    
-    const gradientRing = document.createElement('div');
-    gradientRing.style.cssText = `
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        border-radius: 50%;
-        background: ${gradient};
-        z-index: 1;
-    `;
-    
-    wrapper.appendChild(gradientRing);
-    wrapper.appendChild(imgElement);
-    return wrapper;
+    return `conic-gradient(from 0deg, ${segments.join(', ')})`;
 }
 
 export async function renderProfiles() {
@@ -329,7 +291,9 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     display: inline-block;
                 `;
                 img.style.cssText += `
-                    position: relative;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
                     z-index: 2;
                     box-shadow: none !important;
                     border: none !important;
@@ -387,7 +351,9 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                         display: inline-block;
                     `;
                     placeholder.style.cssText += `
-                        position: relative;
+                        position: absolute;
+                        top: 0;
+                        left: 0;
                         z-index: 2;
                         box-shadow: none !important;
                         border: none !important;
@@ -448,7 +414,9 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     display: inline-block;
                 `;
                 placeholder.style.cssText += `
-                    position: relative;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
                     z-index: 2;
                     box-shadow: none !important;
                     border: none !important;
