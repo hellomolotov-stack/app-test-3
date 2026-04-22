@@ -135,19 +135,18 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-// Универсальное извлечение статусов пользователя
+// Вспомогательная функция для извлечения статусов
 function getUserStatuses(userId) {
     const profile = state.profiles[userId];
     if (!profile) return [];
     const statuses = profile.friendshipStatuses;
+    console.log(`[DEBUG] getUserStatuses for ${userId}:`, statuses, typeof statuses);
     if (!statuses) return [];
     
-    // Если массив строк
     if (Array.isArray(statuses)) {
         return statuses.filter(s => typeof s === 'string');
     }
     
-    // Если объект вида { дружба: true, отношения: false, ... }
     if (typeof statuses === 'object' && !Array.isArray(statuses)) {
         const result = [];
         for (const key in statuses) {
@@ -158,7 +157,6 @@ function getUserStatuses(userId) {
         return result;
     }
     
-    // Строка с запятыми
     if (typeof statuses === 'string') {
         return statuses.split(',').map(s => s.trim());
     }
@@ -166,7 +164,7 @@ function getUserStatuses(userId) {
     return [];
 }
 
-// Генерация цветной обводки
+// Генерация цветной обводки по статусам
 function getAvatarBoxShadow(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
@@ -175,7 +173,11 @@ function getAvatarBoxShadow(userId) {
         'бизнес': '#5E9FC5'
     };
     
-    const colors = statuses.map(s => colorMap[s]).filter(c => c);
+    const colors = statuses
+        .map(s => colorMap[s])
+        .filter(c => c);
+    
+    console.log(`[DEBUG] getAvatarBoxShadow for ${userId}: statuses =`, statuses, 'colors =', colors);
     
     if (colors.length === 0) {
         return '0 0 0 2px #D9FD19';
