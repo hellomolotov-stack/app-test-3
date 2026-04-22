@@ -276,13 +276,38 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             `;
             if (gradient) {
                 if (gradient.startsWith('conic-gradient')) {
-                    img.classList.add('avatar-multi-status');
-                    img.style.setProperty('--avatar-gradient', gradient);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'avatar-multi-wrapper';
+                    wrapper.style.cssText = `
+                        position: relative;
+                        display: inline-block;
+                        width: 56px;
+                        height: 56px;
+                        border-radius: 50%;
+                    `;
+                    const bg = document.createElement('div');
+                    bg.className = 'avatar-multi-bg';
+                    bg.style.cssText = `
+                        position: absolute;
+                        top: -4px;
+                        left: -4px;
+                        right: -4px;
+                        bottom: -4px;
+                        border-radius: 50%;
+                        background: ${gradient};
+                    `;
+                    wrapper.appendChild(bg);
+                    img.style.position = 'relative';
+                    img.style.zIndex = '1';
+                    avatarContainer.appendChild(wrapper);
+                    wrapper.appendChild(img);
                 } else {
                     img.style.boxShadow = gradient;
+                    avatarContainer.appendChild(img);
                 }
             } else {
                 img.style.boxShadow = '0 0 0 2px #D9FD19';
+                avatarContainer.appendChild(img);
             }
             img.onerror = function() {
                 const placeholder = document.createElement('div');
@@ -300,18 +325,42 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 `;
                 if (gradient) {
                     if (gradient.startsWith('conic-gradient')) {
-                        placeholder.classList.add('avatar-multi-status');
-                        placeholder.style.setProperty('--avatar-gradient', gradient);
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'avatar-multi-wrapper';
+                        wrapper.style.cssText = `
+                            position: relative;
+                            display: inline-block;
+                            width: 56px;
+                            height: 56px;
+                            border-radius: 50%;
+                        `;
+                        const bg = document.createElement('div');
+                        bg.className = 'avatar-multi-bg';
+                        bg.style.cssText = `
+                            position: absolute;
+                            top: -4px;
+                            left: -4px;
+                            right: -4px;
+                            bottom: -4px;
+                            border-radius: 50%;
+                            background: ${gradient};
+                        `;
+                        wrapper.appendChild(bg);
+                        placeholder.style.position = 'relative';
+                        placeholder.style.zIndex = '1';
+                        avatarContainer.appendChild(wrapper);
+                        wrapper.appendChild(placeholder);
                     } else {
                         placeholder.style.boxShadow = gradient;
+                        avatarContainer.appendChild(placeholder);
                     }
                 } else {
                     placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
+                    avatarContainer.appendChild(placeholder);
                 }
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
             };
-            avatarContainer.appendChild(img);
         } else {
             const placeholder = document.createElement('div');
             placeholder.style.cssText = `
@@ -328,16 +377,40 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             `;
             if (gradient) {
                 if (gradient.startsWith('conic-gradient')) {
-                    placeholder.classList.add('avatar-multi-status');
-                    placeholder.style.setProperty('--avatar-gradient', gradient);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'avatar-multi-wrapper';
+                    wrapper.style.cssText = `
+                        position: relative;
+                        display: inline-block;
+                        width: 56px;
+                        height: 56px;
+                        border-radius: 50%;
+                    `;
+                    const bg = document.createElement('div');
+                    bg.className = 'avatar-multi-bg';
+                    bg.style.cssText = `
+                        position: absolute;
+                        top: -4px;
+                        left: -4px;
+                        right: -4px;
+                        bottom: -4px;
+                        border-radius: 50%;
+                        background: ${gradient};
+                    `;
+                    wrapper.appendChild(bg);
+                    placeholder.style.position = 'relative';
+                    placeholder.style.zIndex = '1';
+                    avatarContainer.appendChild(wrapper);
+                    wrapper.appendChild(placeholder);
                 } else {
                     placeholder.style.boxShadow = gradient;
+                    avatarContainer.appendChild(placeholder);
                 }
             } else {
                 placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
+                avatarContainer.appendChild(placeholder);
             }
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
-            avatarContainer.appendChild(placeholder);
         }
 
         const textDiv = document.createElement('div');
