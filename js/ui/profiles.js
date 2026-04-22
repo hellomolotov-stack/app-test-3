@@ -66,12 +66,12 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-// Функция возвращает CSS-свойства для обводки аватара
-function getBorderStyleForUser(userId) {
+// Возвращает строку box-shadow для аватара
+function getAvatarBoxShadow(userId) {
     const profile = state.profiles[userId];
-    if (!profile) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    if (!profile) return '0 0 0 2px #D9FD19';
     const statuses = profile.friendshipStatuses || [];
-    if (statuses.length === 0) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    if (statuses.length === 0) return '0 0 0 2px #D9FD19';
     
     const colors = [];
     if (statuses.includes('дружба')) colors.push('#D9FD19');
@@ -79,12 +79,9 @@ function getBorderStyleForUser(userId) {
     if (statuses.includes('бизнес')) colors.push('#5E9FC5');
     
     if (colors.length === 1) {
-        const c = colors[0];
-        return { border: `2px solid ${c}`, boxShadow: `0 0 8px ${c}` };
+        return `0 0 0 2px ${colors[0]}`;
     } else {
-        // Многоцветная обводка: несколько слоёв box-shadow без border
-        const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
-        return { border: 'none', boxShadow: boxShadow };
+        return colors.map(c => `0 0 0 2px ${c}`).join(', ');
     }
 }
 
@@ -93,6 +90,7 @@ export async function renderProfiles() {
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.center-floating-btn')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
+    document.querySelector('.profile-preview-banner')?.remove();
     document.body.style.overflow = '';
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
@@ -158,6 +156,7 @@ export async function renderProfiles() {
 }
 
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
+    // Кнопка
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
     const btnText = '📝 создать профиль';
@@ -169,10 +168,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         transform: translate(-50%, -50%) !important;
         z-index: 100 !important;
         pointer-events: auto !important;
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
     `;
     document.body.appendChild(centerBtn);
 
@@ -202,19 +197,25 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
-        const borderStyle = getBorderStyleForUser(previewProfile.userId);
-        const previewDiv = document.createElement('div');
-        previewDiv.className = 'profile-click-preview';
-        previewDiv.style.cssText = `
+        const boxShadow = getAvatarBoxShadow(previewProfile.userId);
+        const banner = document.createElement('div');
+        banner.className = 'profile-preview-banner';
+        banner.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
             width: 90% !important;
             max-width: 520px !important;
-            margin: 0 auto 16px auto !important;
-            padding: 16px !important;
+            margin-top: -100px !important;
+            z-index: 101 !important;
+            pointer-events: none !important;
             background: rgba(255, 255, 255, 0.1) !important;
             border-radius: 28px !important;
             backdrop-filter: blur(8px) !important;
             -webkit-backdrop-filter: blur(8px) !important;
             box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important;
+            padding: 16px !important;
             display: flex !important;
             flex-direction: row !important;
             align-items: center !important;
@@ -223,24 +224,20 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         `;
 
         const avatarContainer = document.createElement('div');
-        avatarContainer.className = 'preview-avatar';
         avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
 
         if (previewProfile.photoUrl) {
             const img = document.createElement('img');
             img.src = previewProfile.photoUrl;
-            img.className = 'preview-avatar-img';
             img.style.cssText = `
                 width: 100% !important;
                 height: 100% !important;
                 border-radius: 50% !important;
                 object-fit: cover !important;
-                border: ${borderStyle.border} !important;
-                box-shadow: ${borderStyle.boxShadow} !important;
+                box-shadow: ${boxShadow} !important;
             `;
             img.onerror = function() {
                 const placeholder = document.createElement('div');
-                placeholder.className = 'preview-avatar-placeholder';
                 placeholder.style.cssText = `
                     width: 100% !important;
                     height: 100% !important;
@@ -251,8 +248,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     justify-content: center !important;
                     font-size: 24px !important;
                     color: white !important;
-                    border: ${borderStyle.border} !important;
-                    box-shadow: ${borderStyle.boxShadow} !important;
+                    box-shadow: ${boxShadow} !important;
                 `;
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
@@ -260,7 +256,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             avatarContainer.appendChild(img);
         } else {
             const placeholder = document.createElement('div');
-            placeholder.className = 'preview-avatar-placeholder';
             placeholder.style.cssText = `
                 width: 100% !important;
                 height: 100% !important;
@@ -271,21 +266,19 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 justify-content: center !important;
                 font-size: 24px !important;
                 color: white !important;
-                border: ${borderStyle.border} !important;
-                box-shadow: ${borderStyle.boxShadow} !important;
+                box-shadow: ${boxShadow} !important;
             `;
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
             avatarContainer.appendChild(placeholder);
         }
 
         const textDiv = document.createElement('div');
-        textDiv.className = 'preview-text';
         textDiv.style.cssText = 'flex: 1; font-size: 14px; color: #fff; line-height: 1.4; word-break: break-word;';
-        textDiv.innerHTML = `<span class="preview-name" style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> — и другие интеллигенты уже создали свой профиль. готов опубликовать свой, чтобы вывести знакомства на новый уровень?`;
+        textDiv.innerHTML = `<span style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> — и другие интеллигенты уже создали свой профиль. готов опубликовать свой, чтобы вывести знакомства на новый уровень?`;
 
-        previewDiv.appendChild(avatarContainer);
-        previewDiv.appendChild(textDiv);
-        centerBtn.insertBefore(previewDiv, centerBtn.firstChild);
+        banner.appendChild(avatarContainer);
+        banner.appendChild(textDiv);
+        document.body.appendChild(banner);
     }
 }
 
@@ -316,6 +309,7 @@ function showGuestProfilePopup() {
         document.querySelector('.center-floating-btn')?.remove();
         document.querySelector('.guest-center-btn')?.remove();
         document.querySelector('.profile-edit-fab')?.remove();
+        document.querySelector('.profile-preview-banner')?.remove();
         renderGuestPrivileges();
         log('guest_privileges_from_profile', true, state.user);
     });
@@ -326,6 +320,7 @@ async function renderEditProfile() {
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.center-floating-btn')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
+    document.querySelector('.profile-preview-banner')?.remove();
     document.body.style.overflow = '';
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
