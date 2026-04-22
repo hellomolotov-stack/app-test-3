@@ -1952,8 +1952,8 @@ body::before {
     bottom: -4px;
     border-radius: 50%;
     background: var(--avatar-gradient);
-    -webkit-mask: radial-gradient(farthest-side, transparent 0%, transparent 85%, black 85%, black 100%);
-    mask: radial-gradient(farthest-side, transparent 0%, transparent 85%, black 85%, black 100%);
+    -webkit-mask: radial-gradient(farthest-side, transparent 0%, transparent 80%, black 80%, black 100%);
+    mask: radial-gradient(farthest-side, transparent 0%, transparent 80%, black 80%, black 100%);
     z-index: -1;
 }
 /* Чтобы псевдоэлемент не обрезался */
