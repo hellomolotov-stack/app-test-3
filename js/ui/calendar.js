@@ -173,25 +173,21 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    // Создаём плавный градиент с переходными цветами
-    const steps = colors.length;
-    let gradientStops = [];
-    const transitionWidth = 15; // градусов для плавного перехода
-    
-    for (let i = 0; i < steps; i++) {
-        const currentColor = colors[i];
-        const nextColor = colors[(i + 1) % steps];
-        
-        const startAngle = i * (360 / steps);
-        const endAngle = (i + 1) * (360 / steps);
-        
-        // Основной цвет
-        gradientStops.push(`${currentColor} ${startAngle}deg ${endAngle - transitionWidth}deg`);
-        // Переход к следующему цвету
-        gradientStops.push(`${nextColor} ${endAngle - transitionWidth/2}deg ${endAngle + transitionWidth/2}deg`);
+    // Строим плавный градиент с дополнительными остановками для мягкого перехода
+    const stops = [];
+    const step = 1 / colors.length;
+    for (let i = 0; i < colors.length; i++) {
+        const color1 = colors[i];
+        const color2 = colors[(i + 1) % colors.length];
+        // Добавляем несколько промежуточных точек между цветами
+        const start = i * 100;
+        const end = ((i + 1) % colors.length) * 100;
+        stops.push(`${color1} ${start}%`);
+        stops.push(`color-mix(in srgb, ${color1}, ${color2} 50%) ${start + 30}%`);
+        stops.push(`color-mix(in srgb, ${color2}, ${color1} 50%) ${end - 30}%`);
     }
     
-    return `conic-gradient(from 0deg, ${gradientStops.join(', ')})`;
+    return `conic-gradient(from 0deg, ${stops.join(', ')})`;
 }
 
 function createAvatarWithGradient(imgElement, userId, size) {
@@ -218,9 +214,7 @@ function createAvatarWithGradient(imgElement, userId, size) {
         height: ${size}px;
         display: inline-block;
         flex-shrink: 0;
-        margin-left: 0 !important;
     `;
-    wrapper.className = 'avatar-gradient-wrapper';
     
     imgElement.style.cssText = `
         width: 100%;
@@ -463,7 +457,7 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    participants.forEach((p, index) => {
+                    participants.forEach(p => {
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
                         img.src = p.photoUrl || '';
@@ -483,6 +477,8 @@ export function showBottomSheet(index) {
                             const gradient = getAvatarGradient(p.userId);
                             if (gradient) {
                                 finalElement = createAvatarWithGradient(img, p.userId, 28);
+                                // Убираем отрицательный отступ для обёрток
+                                finalElement.style.marginLeft = '0';
                             } else {
                                 const statuses = getUserStatuses(p.userId);
                                 const colorMap = {
@@ -522,6 +518,7 @@ export function showBottomSheet(index) {
                                 const gradient = getAvatarGradient(p.userId);
                                 if (gradient) {
                                     const wrappedPlaceholder = createAvatarWithGradient(placeholder, p.userId, 28);
+                                    wrappedPlaceholder.style.marginLeft = '0';
                                     this.parentNode.replaceChild(wrappedPlaceholder, this);
                                     return;
                                 } else {
@@ -553,15 +550,6 @@ export function showBottomSheet(index) {
                         } else {
                             avatarsEl.appendChild(img);
                         }
-                    });
-                    
-                    // Исправляем смещение в счётчике – обнуляем отрицательные margin-left для обёрток
-                    const wrappers = avatarsEl.querySelectorAll('.avatar-gradient-wrapper');
-                    wrappers.forEach((wrapper, i) => {
-                        if (i > 0) {
-                            wrapper.style.marginLeft = '-8px';
-                        }
-                        wrapper.style.zIndex = 3 - i;
                     });
                 }
             });
