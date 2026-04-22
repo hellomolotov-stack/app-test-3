@@ -135,33 +135,53 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-// ВРЕМЕННАЯ ЗАГЛУШКА – всегда синяя обводка для профиля
-// Вспомогательная функция для извлечения статусов (на случай разных форматов)
+// Универсальное извлечение статусов пользователя
 function getUserStatuses(userId) {
     const profile = state.profiles[userId];
     if (!profile) return [];
     const statuses = profile.friendshipStatuses;
     if (!statuses) return [];
-    if (Array.isArray(statuses)) return statuses;
-    if (typeof statuses === 'object') return Object.values(statuses);
+    
+    // Если массив строк
+    if (Array.isArray(statuses)) {
+        return statuses.filter(s => typeof s === 'string');
+    }
+    
+    // Если объект вида { дружба: true, отношения: false, ... }
+    if (typeof statuses === 'object' && !Array.isArray(statuses)) {
+        const result = [];
+        for (const key in statuses) {
+            if (statuses[key] === true || statuses[key] === 'да') {
+                result.push(key);
+            }
+        }
+        return result;
+    }
+    
+    // Строка с запятыми
+    if (typeof statuses === 'string') {
+        return statuses.split(',').map(s => s.trim());
+    }
+    
     return [];
 }
 
-// Основная функция получения цветной обводки по статусам
+// Генерация цветной обводки
 function getAvatarBoxShadow(userId) {
     const statuses = getUserStatuses(userId);
-    const colors = [];
-    if (statuses.includes('дружба')) colors.push('#D9FD19'); // жёлтый
-    if (statuses.includes('отношения')) colors.push('#FB5EB0'); // розовый
-    if (statuses.includes('бизнес')) colors.push('#5E9FC5');   // синий
+    const colorMap = {
+        'дружба': '#D9FD19',
+        'отношения': '#FB5EB0',
+        'бизнес': '#5E9FC5'
+    };
+    
+    const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
     if (colors.length === 0) {
-        // Если статусы не заданы, делаем просто жёлтую обводку
         return '0 0 0 2px #D9FD19';
     } else if (colors.length === 1) {
         return `0 0 0 2px ${colors[0]}`;
     } else {
-        // Несколько статусов — многослойный box-shadow
         return colors.map(c => `0 0 0 2px ${c}`).join(', ');
     }
 }
