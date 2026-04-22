@@ -178,7 +178,6 @@ function getAvatarGradient(userId) {
         return `0 0 0 2px ${colors[0]}`;
     }
     
-    // Строим строку для conic-gradient с равномерным распределением цветов
     const steps = colors.length;
     let gradientStr = 'conic-gradient(';
     colors.forEach((color, index) => {
@@ -192,6 +191,46 @@ function getAvatarGradient(userId) {
     gradientStr += ')';
     
     return gradientStr;
+}
+
+function applyAvatarStyle(element, userId) {
+    const gradient = getAvatarGradient(userId);
+    if (!gradient) {
+        element.style.boxShadow = '0 0 0 2px #D9FD19';
+        return;
+    }
+    if (!gradient.startsWith('conic-gradient')) {
+        element.style.boxShadow = gradient;
+        return;
+    }
+    // Для многоцветной обводки создаём обёртку с градиентом
+    const wrapper = document.createElement('div');
+    wrapper.className = 'avatar-multi-wrapper';
+    wrapper.style.cssText = `
+        position: relative;
+        display: inline-block;
+        width: ${element.offsetWidth}px;
+        height: ${element.offsetHeight}px;
+        border-radius: 50%;
+    `;
+    const background = document.createElement('div');
+    background.className = 'avatar-multi-bg';
+    background.style.cssText = `
+        position: absolute;
+        top: -4px;
+        left: -4px;
+        right: -4px;
+        bottom: -4px;
+        border-radius: 50%;
+        background: ${gradient};
+    `;
+    wrapper.appendChild(background);
+    element.parentNode.insertBefore(wrapper, element);
+    wrapper.appendChild(element);
+    element.style.position = 'relative';
+    element.style.zIndex = '1';
+    element.style.border = 'none';
+    element.style.boxShadow = 'none';
 }
 
 export function showBottomSheet(index) {
@@ -425,19 +464,48 @@ export function showBottomSheet(index) {
                             const gradient = getAvatarGradient(p.userId);
                             if (gradient) {
                                 if (gradient.startsWith('conic-gradient')) {
-                                    img.classList.add('avatar-multi-status');
-                                    img.style.setProperty('--avatar-gradient', gradient);
+                                    // Создаём обёртку с градиентом
+                                    const wrapper = document.createElement('div');
+                                    wrapper.className = 'avatar-multi-wrapper';
+                                    wrapper.style.cssText = `
+                                        position: relative;
+                                        display: inline-block;
+                                        width: 28px;
+                                        height: 28px;
+                                        border-radius: 50%;
+                                    `;
+                                    const bg = document.createElement('div');
+                                    bg.className = 'avatar-multi-bg';
+                                    bg.style.cssText = `
+                                        position: absolute;
+                                        top: -4px;
+                                        left: -4px;
+                                        right: -4px;
+                                        bottom: -4px;
+                                        border-radius: 50%;
+                                        background: ${gradient};
+                                    `;
+                                    wrapper.appendChild(bg);
+                                    img.style.position = 'relative';
+                                    img.style.zIndex = '1';
+                                    img.style.border = 'none';
+                                    img.style.boxShadow = 'none';
+                                    avatarsEl.appendChild(wrapper);
+                                    wrapper.appendChild(img);
                                 } else {
                                     img.style.boxShadow = gradient;
+                                    img.style.border = 'none';
+                                    avatarsEl.appendChild(img);
                                 }
-                                img.style.border = 'none';
                             } else {
                                 img.style.boxShadow = '0 0 0 2px #D9FD19';
                                 img.style.border = 'none';
+                                avatarsEl.appendChild(img);
                             }
                         } else {
                             img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                             img.style.border = 'none';
+                            avatarsEl.appendChild(img);
                         }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
@@ -459,12 +527,37 @@ export function showBottomSheet(index) {
                                 const gradient = getAvatarGradient(p.userId);
                                 if (gradient) {
                                     if (gradient.startsWith('conic-gradient')) {
-                                        placeholder.classList.add('avatar-multi-status');
-                                        placeholder.style.setProperty('--avatar-gradient', gradient);
+                                        const wrapper = document.createElement('div');
+                                        wrapper.className = 'avatar-multi-wrapper';
+                                        wrapper.style.cssText = `
+                                            position: relative;
+                                            display: inline-block;
+                                            width: 28px;
+                                            height: 28px;
+                                            border-radius: 50%;
+                                        `;
+                                        const bg = document.createElement('div');
+                                        bg.className = 'avatar-multi-bg';
+                                        bg.style.cssText = `
+                                            position: absolute;
+                                            top: -4px;
+                                            left: -4px;
+                                            right: -4px;
+                                            bottom: -4px;
+                                            border-radius: 50%;
+                                            background: ${gradient};
+                                        `;
+                                        wrapper.appendChild(bg);
+                                        placeholder.style.position = 'relative';
+                                        placeholder.style.zIndex = '1';
+                                        placeholder.style.border = 'none';
+                                        placeholder.style.boxShadow = 'none';
+                                        this.parentNode.replaceChild(wrapper, this);
+                                        wrapper.appendChild(placeholder);
                                     } else {
                                         placeholder.style.boxShadow = gradient;
+                                        placeholder.style.border = 'none';
                                     }
-                                    placeholder.style.border = 'none';
                                 } else {
                                     placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
                                     placeholder.style.border = 'none';
@@ -478,7 +571,6 @@ export function showBottomSheet(index) {
                             placeholder.dataset.userId = p.userId;
                             this.parentNode.replaceChild(placeholder, this);
                         };
-                        avatarsEl.appendChild(img);
                     });
                 }
             });
@@ -1094,8 +1186,32 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                 if (hasProfile) {
                     if (gradient) {
                         if (gradient.startsWith('conic-gradient')) {
-                            avatarEl.classList.add('avatar-multi-status');
-                            avatarEl.style.setProperty('--avatar-gradient', gradient);
+                            // Создаём обёртку
+                            const wrapper = document.createElement('div');
+                            wrapper.className = 'avatar-multi-wrapper';
+                            wrapper.style.cssText = `
+                                position: relative;
+                                display: inline-block;
+                                width: 30px;
+                                height: 30px;
+                                border-radius: 50%;
+                            `;
+                            const bg = document.createElement('div');
+                            bg.className = 'avatar-multi-bg';
+                            bg.style.cssText = `
+                                position: absolute;
+                                top: -4px;
+                                left: -4px;
+                                right: -4px;
+                                bottom: -4px;
+                                border-radius: 50%;
+                                background: ${gradient};
+                            `;
+                            wrapper.appendChild(bg);
+                            avatarEl.style.position = 'relative';
+                            avatarEl.style.zIndex = '1';
+                            avatarEl.parentNode.insertBefore(wrapper, avatarEl);
+                            wrapper.appendChild(avatarEl);
                         } else {
                             avatarEl.style.boxShadow = gradient;
                         }
