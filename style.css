@@ -1993,3 +1993,100 @@ body::before {
 .eye-emoji.rotated {
     transform: rotate(90deg);
 }
+/* Превью профиля — ширина как у карточек */
+.profile-click-preview {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto 16px auto;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    box-sizing: border-box;
+}
+
+.preview-avatar {
+    flex-shrink: 0;
+    width: 56px;
+    height: 56px;
+}
+
+.preview-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--yellow);
+    box-shadow: 0 0 10px rgba(217, 253, 25, 0.2);
+}
+
+.preview-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #40a7e3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    border: 2px solid var(--yellow);
+}
+
+.preview-text {
+    flex: 1;
+    font-size: 14px;
+    color: #fff;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.preview-name {
+    font-weight: 700;
+    color: var(--yellow);
+}
+
+/* Кнопка "создать профиль" – уменьшенная высота, как "иду" */
+.profile-action-btn {
+    padding: 12px 24px !important;
+    font-size: 16px !important;
+    white-space: nowrap;
+    border-radius: 40px !important;
+    width: auto !important;
+    min-width: 200px;
+}
+
+/* Адаптивность превью на маленьких экранах */
+@media (max-width: 480px) {
+    .profile-click-preview {
+        max-width: 320px;
+        padding: 14px;
+        gap: 12px;
+    }
+    .preview-avatar {
+        width: 48px;
+        height: 48px;
+    }
+    .preview-text {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .profile-click-preview {
+        max-width: 280px;
+        padding: 12px;
+        gap: 10px;
+        flex-direction: column;
+        text-align: center;
+    }
+    .preview-text {
+        text-align: left;
+    }
+}
