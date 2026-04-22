@@ -171,24 +171,16 @@ function getAvatarGradient(userId) {
     };
     const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
-    if (colors.length <= 1) return null; // для одного цвета используем box-shadow
+    if (colors.length <= 1) return null;
     
-    // Строим conic-gradient с равномерным распределением
-    const step = 360 / colors.length;
-    let gradient = 'conic-gradient(from 0deg';
-    colors.forEach((color, i) => {
-        const start = i * step;
-        const end = (i + 1) * step;
-        gradient += `, ${color} ${start}deg ${end}deg`;
-    });
-    gradient += ')';
-    return gradient;
+    // Добавляем первый цвет в конец для замыкания круга
+    const gradientColors = [...colors, colors[0]];
+    return `conic-gradient(${gradientColors.join(', ')})`;
 }
 
 function createAvatarWithGradient(imgElement, userId, size) {
     const gradient = getAvatarGradient(userId);
     if (!gradient) {
-        // Один статус или нет статусов – используем box-shadow
         const statuses = getUserStatuses(userId);
         const colorMap = {
             'дружба': '#D9FD19',
@@ -196,15 +188,13 @@ function createAvatarWithGradient(imgElement, userId, size) {
             'бизнес': '#5E9FC5'
         };
         const colors = statuses.map(s => colorMap[s]).filter(c => c);
-        const boxShadow = colors.length === 1 
+        imgElement.style.boxShadow = colors.length === 1 
             ? `0 0 0 2px ${colors[0]}` 
             : '0 0 0 2px #D9FD19';
-        imgElement.style.boxShadow = boxShadow;
         imgElement.style.border = 'none';
         return imgElement;
     }
     
-    // Создаём контейнер-обёртку
     const wrapper = document.createElement('div');
     wrapper.style.cssText = `
         position: relative;
@@ -214,7 +204,6 @@ function createAvatarWithGradient(imgElement, userId, size) {
         flex-shrink: 0;
     `;
     
-    // Стили для img
     imgElement.style.cssText = `
         width: 100%;
         height: 100%;
@@ -226,14 +215,13 @@ function createAvatarWithGradient(imgElement, userId, size) {
         border: none !important;
     `;
     
-    // Псевдоэлемент для градиента
     const gradientRing = document.createElement('div');
     gradientRing.style.cssText = `
         position: absolute;
-        top: -3px;
-        left: -3px;
-        right: -3px;
-        bottom: -3px;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
         border-radius: 50%;
         background: ${gradient};
         z-index: 1;
@@ -1161,7 +1149,6 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                 if (hasProfile) {
                     const gradient = getAvatarGradient(p.userId);
                     if (gradient) {
-                        // Для дропдауна оборачиваем аватар в контейнер с градиентом
                         const wrapper = document.createElement('div');
                         wrapper.style.cssText = `
                             position: relative;
@@ -1183,10 +1170,10 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                         const gradientRing = document.createElement('div');
                         gradientRing.style.cssText = `
                             position: absolute;
-                            top: -3px;
-                            left: -3px;
-                            right: -3px;
-                            bottom: -3px;
+                            top: -2px;
+                            left: -2px;
+                            right: -2px;
+                            bottom: -2px;
                             border-radius: 50%;
                             background: ${gradient};
                             z-index: 1;
