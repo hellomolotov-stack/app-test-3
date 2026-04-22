@@ -942,14 +942,13 @@ body::before {
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
     border-radius: 30px;
-    padding: 4px 12px; /* уменьшена высота, увеличена ширина */
+    padding: 4px 10px;       /* высота как раньше */
     color: #ffffff;
     z-index: 10;
     border: 1px solid rgba(255,255,255,0.2);
     box-sizing: border-box;
     cursor: pointer;
-    min-width: 80px;
-    justify-content: flex-end;
+    /* убраны min-width и box-shadow */
 }
 
 .participant-count {
@@ -1855,8 +1854,8 @@ body::before {
 
 /* -------------------- ПРЕВЬЮ ПРОФИЛЯ -------------------- */
 .profile-click-preview {
-    width: 100%;
-    max-width: 460px; /* шире для красивого размещения текста */
+    width: 90%;
+    max-width: 520px;        /* шире кнопки */
     margin: 0 auto 16px auto;
     padding: 16px;
     background: rgba(255, 255, 255, 0.1);
@@ -1869,6 +1868,12 @@ body::before {
     align-items: center;
     gap: 14px;
     box-sizing: border-box;
+}
+
+/* чтобы родительские контейнеры не ограничивали ширину */
+.guest-center-btn, .center-floating-btn {
+    width: fit-content;
+    max-width: 90%;
 }
 
 @media (max-width: 480px) {
@@ -1947,7 +1952,7 @@ body::before {
 
 /* Блюр темнее */
 .profile-blur-overlay {
-    background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.3) 50%, rgba(73, 138, 176, 0.5) 100%) !important;
+    background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
 }
