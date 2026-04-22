@@ -93,13 +93,80 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function getAvatarClasses(userId) {
+function getAvatarGradient(userId) {
     const statuses = getUserStatuses(userId);
-    const classes = ['avatar-status-border'];
-    if (statuses.includes('дружба')) classes.push('status-friendship');
-    if (statuses.includes('отношения')) classes.push('status-romance');
-    if (statuses.includes('бизнес')) classes.push('status-business');
-    return classes.join(' ');
+    const colorMap = {
+        'дружба': '#D9FD19',
+        'отношения': '#FB5EB0',
+        'бизнес': '#5E9FC5'
+    };
+    const colors = statuses.map(s => colorMap[s]).filter(c => c);
+    
+    if (colors.length <= 1) return null;
+    
+    const step = 360 / colors.length;
+    let gradient = 'conic-gradient(from 0deg';
+    colors.forEach((color, i) => {
+        const start = i * step;
+        const end = (i + 1) * step;
+        gradient += `, ${color} ${start}deg ${end}deg`;
+    });
+    gradient += ')';
+    return gradient;
+}
+
+function createAvatarWithGradient(imgElement, userId, size) {
+    const gradient = getAvatarGradient(userId);
+    if (!gradient) {
+        const statuses = getUserStatuses(userId);
+        const colorMap = {
+            'дружба': '#D9FD19',
+            'отношения': '#FB5EB0',
+            'бизнес': '#5E9FC5'
+        };
+        const colors = statuses.map(s => colorMap[s]).filter(c => c);
+        imgElement.style.boxShadow = colors.length === 1 
+            ? `0 0 0 2px ${colors[0]}` 
+            : '0 0 0 2px #D9FD19';
+        imgElement.style.border = 'none';
+        return imgElement;
+    }
+    
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+        position: relative;
+        width: ${size}px;
+        height: ${size}px;
+        display: inline-block;
+        flex-shrink: 0;
+    `;
+    
+    imgElement.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        position: relative;
+        z-index: 2;
+        box-shadow: none !important;
+        border: none !important;
+    `;
+    
+    const gradientRing = document.createElement('div');
+    gradientRing.style.cssText = `
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        border-radius: 50%;
+        background: ${gradient};
+        z-index: 1;
+    `;
+    
+    wrapper.appendChild(gradientRing);
+    wrapper.appendChild(imgElement);
+    return wrapper;
 }
 
 export async function renderProfiles() {
@@ -213,7 +280,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
-        const classes = getAvatarClasses(previewProfile.userId);
+        const gradient = getAvatarGradient(previewProfile.userId);
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
         banner.style.cssText = `
@@ -252,8 +319,50 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 border-radius: 50% !important;
                 object-fit: cover !important;
             `;
-            img.classList.add(...classes.split(' '));
-            img.style.border = 'none';
+            
+            if (gradient) {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = `
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                    display: inline-block;
+                `;
+                img.style.cssText += `
+                    position: relative;
+                    z-index: 2;
+                    box-shadow: none !important;
+                    border: none !important;
+                `;
+                const gradientRing = document.createElement('div');
+                gradientRing.style.cssText = `
+                    position: absolute;
+                    top: -4px;
+                    left: -4px;
+                    right: -4px;
+                    bottom: -4px;
+                    border-radius: 50%;
+                    background: ${gradient};
+                    z-index: 1;
+                `;
+                wrapper.appendChild(gradientRing);
+                wrapper.appendChild(img);
+                avatarContainer.appendChild(wrapper);
+            } else {
+                const statuses = getUserStatuses(previewProfile.userId);
+                const colorMap = {
+                    'дружба': '#D9FD19',
+                    'отношения': '#FB5EB0',
+                    'бизнес': '#5E9FC5'
+                };
+                const colors = statuses.map(s => colorMap[s]).filter(c => c);
+                img.style.boxShadow = colors.length === 1 
+                    ? `0 0 0 2px ${colors[0]}` 
+                    : '0 0 0 2px #D9FD19';
+                img.style.border = 'none';
+                avatarContainer.appendChild(img);
+            }
+            
             img.onerror = function() {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'preview-avatar-placeholder';
@@ -268,12 +377,53 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     font-size: 24px !important;
                     color: white !important;
                 `;
-                placeholder.classList.add(...classes.split(' '));
-                placeholder.style.border = 'none';
+                
+                if (gradient) {
+                    const wrapper = document.createElement('div');
+                    wrapper.style.cssText = `
+                        position: relative;
+                        width: 100%;
+                        height: 100%;
+                        display: inline-block;
+                    `;
+                    placeholder.style.cssText += `
+                        position: relative;
+                        z-index: 2;
+                        box-shadow: none !important;
+                        border: none !important;
+                    `;
+                    const gradientRing = document.createElement('div');
+                    gradientRing.style.cssText = `
+                        position: absolute;
+                        top: -4px;
+                        left: -4px;
+                        right: -4px;
+                        bottom: -4px;
+                        border-radius: 50%;
+                        background: ${gradient};
+                        z-index: 1;
+                    `;
+                    wrapper.appendChild(gradientRing);
+                    wrapper.appendChild(placeholder);
+                    avatarContainer.innerHTML = '';
+                    avatarContainer.appendChild(wrapper);
+                } else {
+                    const statuses = getUserStatuses(previewProfile.userId);
+                    const colorMap = {
+                        'дружба': '#D9FD19',
+                        'отношения': '#FB5EB0',
+                        'бизнес': '#5E9FC5'
+                    };
+                    const colors = statuses.map(s => colorMap[s]).filter(c => c);
+                    placeholder.style.boxShadow = colors.length === 1 
+                        ? `0 0 0 2px ${colors[0]}` 
+                        : '0 0 0 2px #D9FD19';
+                    placeholder.style.border = 'none';
+                }
+                
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
             };
-            avatarContainer.appendChild(img);
         } else {
             const placeholder = document.createElement('div');
             placeholder.className = 'preview-avatar-placeholder';
@@ -288,10 +438,50 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 font-size: 24px !important;
                 color: white !important;
             `;
-            placeholder.classList.add(...classes.split(' '));
-            placeholder.style.border = 'none';
-            placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
-            avatarContainer.appendChild(placeholder);
+            
+            if (gradient) {
+                const wrapper = document.createElement('div');
+                wrapper.style.cssText = `
+                    position: relative;
+                    width: 100%;
+                    height: 100%;
+                    display: inline-block;
+                `;
+                placeholder.style.cssText += `
+                    position: relative;
+                    z-index: 2;
+                    box-shadow: none !important;
+                    border: none !important;
+                `;
+                const gradientRing = document.createElement('div');
+                gradientRing.style.cssText = `
+                    position: absolute;
+                    top: -4px;
+                    left: -4px;
+                    right: -4px;
+                    bottom: -4px;
+                    border-radius: 50%;
+                    background: ${gradient};
+                    z-index: 1;
+                `;
+                wrapper.appendChild(gradientRing);
+                wrapper.appendChild(placeholder);
+                avatarContainer.appendChild(wrapper);
+            } else {
+                const statuses = getUserStatuses(previewProfile.userId);
+                const colorMap = {
+                    'дружба': '#D9FD19',
+                    'отношения': '#FB5EB0',
+                    'бизнес': '#5E9FC5'
+                };
+                const colors = statuses.map(s => colorMap[s]).filter(c => c);
+                placeholder.style.boxShadow = colors.length === 1 
+                    ? `0 0 0 2px ${colors[0]}` 
+                    : '0 0 0 2px #D9FD19';
+                placeholder.style.border = 'none';
+                placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+                avatarContainer.appendChild(placeholder);
+            }
         }
 
         const textDiv = document.createElement('div');
