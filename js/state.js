@@ -1,3 +1,4 @@
+// js/state.js
 // Глобальное состояние приложения
 export const state = {
     user: null,
@@ -24,7 +25,8 @@ export const state = {
         permanentCardPrice: 7500,
         permanentCardLink: ''
     },
-    hikeBookingStatus: {} // ключ - индекс в hikesList
+    hikeBookingStatus: {}, // ключ - индекс в hikesList
+    updates: [] // NEW: массив обновлений { date, update }
 };
 
 // Кэширование в localStorage
@@ -45,6 +47,7 @@ export function loadCachedState() {
             if (data.giftContent) state.giftContent = data.giftContent;
             if (data.randomPhrases) state.randomPhrases = data.randomPhrases;
             if (data.leaders) state.leaders = data.leaders;
+            if (data.updates) state.updates = data.updates; // NEW
             return true;
         }
     } catch (e) {}
@@ -63,7 +66,8 @@ export function saveCachedState() {
             passInfo: state.passInfo,
             giftContent: state.giftContent,
             randomPhrases: state.randomPhrases,
-            leaders: state.leaders
+            leaders: state.leaders,
+            updates: state.updates // NEW
         };
         localStorage.setItem('hikingAppCache', JSON.stringify(toCache));
     } catch (e) {}
