@@ -189,19 +189,6 @@ function getAvatarBoxShadow(userId) {
     }
     return layers.join(', ');
 }
-    
-    const colors = statuses.map(s => colorMap[s]).filter(c => c);
-    
-    if (colors.length === 0) {
-        return '0 0 0 2px #D9FD19';
-    } else if (colors.length === 1) {
-        return `0 0 0 2px ${colors[0]}`;
-    } else {
-        // Многослойная обводка с увеличивающимся радиусом
-        const layers = colors.map((c, i) => `0 0 0 ${2 + i * 2}px ${c}`);
-        return layers.join(', ');
-    }
-}
 
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
