@@ -66,6 +66,7 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
+// Функция возвращает CSS-свойства для обводки аватара
 function getBorderStyleForUser(userId) {
     const profile = state.profiles[userId];
     if (!profile) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
@@ -81,9 +82,9 @@ function getBorderStyleForUser(userId) {
         const c = colors[0];
         return { border: `2px solid ${c}`, boxShadow: `0 0 8px ${c}` };
     } else {
-        // Многоцветная обводка через многослойный box-shadow без утолщения
+        // Многоцветная обводка: несколько слоёв box-shadow без border
         const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
-        return { border: '2px solid transparent', boxShadow: boxShadow };
+        return { border: 'none', boxShadow: boxShadow };
     }
 }
 
