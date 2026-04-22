@@ -363,14 +363,25 @@ export function showBottomSheet(index) {
                         const hasProfile = !!state.profiles[p.userId];
                         const borderClass = hasProfile ? getAvatarClassesForUser(p.userId) : '';
                         const img = document.createElement('img');
-                        img.src = p.photoUrl || '';
-                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile ' + borderClass : '');
+img.src = p.photoUrl || '';
+img.className = 'participant-avatar' + (hasProfile ? ' has-profile ' + borderClass : '');
+if (hasProfile) {
+    img.style.borderRadius = '50%';
+    img.style.borderWidth = '2px';
+    img.style.borderStyle = 'solid';
+    // классы borderClass уже содержат цвет через CSS
+}
                         img.alt = p.name || '';
                         img.title = p.name || '';
                         img.dataset.userId = p.userId;
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
                             placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile ' + borderClass : '');
+                            if (hasProfile) {
+    placeholder.style.borderRadius = '50%';
+    placeholder.style.borderWidth = '2px';
+    placeholder.style.borderStyle = 'solid';
+}
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
