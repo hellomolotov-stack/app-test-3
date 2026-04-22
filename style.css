@@ -1964,3 +1964,17 @@ body::before {
     overflow: visible;
     background: transparent !important;
 }
+/* Обёртка для многоцветной обводки */
+.avatar-multi-wrapper {
+    position: relative;
+    display: inline-block;
+    border-radius: 50%;
+}
+.avatar-multi-bg {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+}
