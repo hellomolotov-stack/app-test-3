@@ -167,6 +167,26 @@ export async function renderProfiles() {
     centerBtn.style.pointerEvents = 'auto';
     document.body.appendChild(centerBtn);
 
+    // Превью профиля при переходе из счётчика
+    const pending = state.pendingProfileClick;
+    if (pending && (!isCardHolder || !hasMyProfile)) {
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'profile-click-preview';
+        previewDiv.innerHTML = `
+            <div class="preview-avatar">
+                ${pending.photoUrl ? 
+                    `<img src="${pending.photoUrl}" class="preview-avatar-img" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder\\'>${(pending.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
+                    `<div class="preview-avatar-placeholder">${(pending.name?.charAt(0)||'?').toUpperCase()}</div>`
+                }
+            </div>
+            <div class="preview-text">
+                <span class="preview-name">${escapeHtml(pending.name)}</span> — и другие интеллигенты уже создали свой профиль. Готов опубликовать свой, чтобы вывести знакомства на новый уровень?
+            </div>
+        `;
+        centerBtn.insertBefore(previewDiv, centerBtn.firstChild);
+        state.pendingProfileClick = null;
+    }
+
     if (isCardHolder) {
         document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
     } else {
