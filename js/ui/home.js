@@ -120,6 +120,33 @@ function showGuestPopup() {
     log('guest_popup_opened', true, state.user);
 }
 
+// NEW: Блок обновлений (используется в обеих версиях)
+function renderUpdatesBlock() {
+    const updates = state.updates || [];
+    if (!updates.length) return '';
+
+    let itemsHtml = '';
+    updates.forEach(item => {
+        const formattedDate = formatDateForDisplay(item.date);
+        let text = parseLinks(item.update, state.userCard.status !== 'active');
+        itemsHtml += `
+            <div class="update-item">
+                <span class="update-date">${formattedDate}</span>
+                <span class="update-text">${text}</span>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="card-container updates-container">
+            <h2 class="section-title">📨 обновления</h2>
+            <div class="updates-scroll">
+                ${itemsHtml}
+            </div>
+        </div>
+    `;
+}
+
 // Рендер гостевой домашней страницы
 function renderGuestHome() {
     subtitle().textContent = `💳 здесь будет твоя карта, ${state.user?.first_name || 'друг'}`;
@@ -144,6 +171,7 @@ function renderGuestHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
+        ${renderUpdatesBlock()} <!-- NEW -->
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -206,6 +234,7 @@ function renderOwnerHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
+        ${renderUpdatesBlock()} <!-- NEW -->
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
