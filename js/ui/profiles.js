@@ -66,30 +66,9 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-function getUserStatuses(userId) {
-    const profile = state.profiles[userId];
-    if (!profile) return [];
-    const statuses = profile.friendshipStatuses;
-    if (!statuses) return [];
-    if (Array.isArray(statuses)) return statuses;
-    if (typeof statuses === 'object') return Object.values(statuses);
-    return [];
-}
-
+// ВРЕМЕННАЯ ЗАГЛУШКА – всегда синяя обводка
 function getAvatarBoxShadow(userId) {
-    const statuses = getUserStatuses(userId);
-    const colors = [];
-    if (statuses.includes('дружба')) colors.push('#D9FD19');
-    if (statuses.includes('отношения')) colors.push('#FB5EB0');
-    if (statuses.includes('бизнес')) colors.push('#5E9FC5');
-    
-    if (colors.length === 0) {
-        return '0 0 0 2px #D9FD19'; // по умолчанию жёлтый
-    } else if (colors.length === 1) {
-        return `0 0 0 2px ${colors[0]}`;
-    } else {
-        return colors.map(c => `0 0 0 2px ${c}`).join(', ');
-    }
+    return '0 0 0 2px #5E9FC5';
 }
 
 export async function renderProfiles() {
@@ -241,6 +220,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 border-radius: 50% !important;
                 object-fit: cover !important;
                 box-shadow: ${boxShadow} !important;
+                border: none !important;
             `;
             img.onerror = function() {
                 const placeholder = document.createElement('div');
@@ -255,6 +235,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     font-size: 24px !important;
                     color: white !important;
                     box-shadow: ${boxShadow} !important;
+                    border: none !important;
                 `;
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
@@ -273,6 +254,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 font-size: 24px !important;
                 color: white !important;
                 box-shadow: ${boxShadow} !important;
+                border: none !important;
             `;
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
             avatarContainer.appendChild(placeholder);
