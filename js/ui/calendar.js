@@ -1219,4 +1219,28 @@ document.addEventListener('click', function(e) {
                     <div class="modal-content" style="max-width: 300px;">
                         <div class="modal-title" style="color: ${accentColor};">доступ ограничен</div>
                         <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
-                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border
+                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
+                    </div>
+                `;
+                document.body.appendChild(msg);
+                const closeBtn = msg.querySelector('.btn');
+                closeBtn.addEventListener('click', () => msg.remove());
+                setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
+                log('uchastniki_not_registered', state.userCard.status !== 'active', state.user);
+            }
+        }
+        return;
+    }
+    if (link.classList.contains('booking-detail-btn')) {
+        e.preventDefault();
+        const index = link.dataset.index;
+        if (index !== undefined) showBottomSheet(parseInt(index));
+        return;
+    }
+    if (link.classList.contains('bookings-calendar-link') || link.classList.contains('booking-go-btn')) {
+        e.preventDefault(); haptic();
+        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
+        return;
+    }
+});
