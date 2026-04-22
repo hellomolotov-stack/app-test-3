@@ -8,11 +8,13 @@ import {
     removeParticipant,
     setUserRegistrationStatus,
     subscribeToParticipantCount,
-    loadAllParticipants
+    loadAllParticipants,
+    loadAllProfiles
 } from '../firebase.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { renderHome } from './home.js';
 import { renderUserBookings } from './home.js';
+import { renderProfiles } from './profiles.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -157,6 +159,13 @@ export function showBottomSheet(index) {
     if (currentUnsubscribe) {
         currentUnsubscribe();
         currentUnsubscribe = null;
+    }
+
+    // Загружаем профили, если ещё не загружены
+    if (Object.keys(state.profiles).length === 0) {
+        loadAllProfiles().then(profiles => {
+            state.profiles = profiles;
+        }).catch(() => {});
     }
 
     function updateContent() {
@@ -341,27 +350,22 @@ export function showBottomSheet(index) {
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
                     participants.forEach(p => {
-                        if (p.photoUrl) {
-                            const img = document.createElement('img');
-                            img.src = p.photoUrl;
-                            img.className = 'participant-avatar';
-                            img.alt = p.name || '';
-                            img.title = p.name || '';
-                            img.onerror = function () {
-                                const placeholder = document.createElement('div');
-                                placeholder.className = 'participant-avatar placeholder';
-                                const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                                placeholder.textContent = initial;
-                                this.parentNode.replaceChild(placeholder, this);
-                            };
-                            avatarsEl.appendChild(img);
-                        } else {
+                        const hasProfile = !!state.profiles[p.userId];
+                        const img = document.createElement('img');
+                        img.src = p.photoUrl || '';
+                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                        img.alt = p.name || '';
+                        img.title = p.name || '';
+                        img.dataset.userId = p.userId;
+                        img.onerror = function () {
                             const placeholder = document.createElement('div');
-                            placeholder.className = 'participant-avatar placeholder';
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
-                            avatarsEl.appendChild(placeholder);
-                        }
+                            placeholder.dataset.userId = p.userId;
+                            this.parentNode.replaceChild(placeholder, this);
+                        };
+                        avatarsEl.appendChild(img);
                     });
                 }
             });
@@ -921,6 +925,16 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     closeParticipantDropdown();
     haptic();
 
+    // Убедимся, что профили загружены
+    if (Object.keys(state.profiles).length === 0) {
+        try {
+            const profiles = await loadAllProfiles();
+            state.profiles = profiles;
+        } catch (e) {
+            console.error('Failed to load profiles', e);
+        }
+    }
+
     const participants = await loadAllParticipants(hikeDate);
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
@@ -932,17 +946,43 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     } else {
         participants.forEach(p => {
             const name = p.name || 'Участник';
+            const hasProfile = !!state.profiles[p.userId];
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
+            item.dataset.userId = p.userId;
+            if (hasProfile) {
+                item.classList.add('clickable-profile');
+                item.style.cursor = 'pointer';
+            }
+
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder\'>${name.charAt(0).toUpperCase()}</div>';">`;
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
             } else {
-                item.innerHTML = `<div class="participant-dropdown-avatar placeholder">${name.charAt(0).toUpperCase()}</div>`;
+                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}">${name.charAt(0).toUpperCase()}</div>`;
             }
             const nameSpan = document.createElement('span');
             nameSpan.className = 'participant-dropdown-name';
             nameSpan.textContent = name;
             item.appendChild(nameSpan);
+
+            if (hasProfile) {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeParticipantDropdown();
+                    closeBottomSheet(); // Закрываем шторку
+                    renderProfiles();   // Переходим в раздел интеллигентов
+                    // Прокрутка к карточке пользователя будет внутри renderProfiles после рендера
+                    setTimeout(() => {
+                        const profileCard = document.querySelector(`.profile-card[data-user-id="${p.userId}"]`);
+                        if (profileCard) {
+                            profileCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            profileCard.classList.add('highlight-pulse');
+                            setTimeout(() => profileCard.classList.remove('highlight-pulse'), 2000);
+                        }
+                    }, 500);
+                });
+            }
+
             dropdown.appendChild(item);
         });
     }
@@ -1035,7 +1075,7 @@ export function showLeaderDropdown(leaderElement, leaderData) {
 
 // Делегирование событий для динамических кнопок
 document.addEventListener('click', function(e) {
-    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-link, .profile-contact-btn');
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
 
     if (link.classList.contains('profile-contact-btn')) {
