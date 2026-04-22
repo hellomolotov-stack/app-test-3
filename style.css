@@ -2107,3 +2107,110 @@ body::before {
 .participant-dropdown-avatar.placeholder.has-profile {
     border-radius: 50% !important;
 }
+/* -------------------- ЦВЕТНЫЕ КРУГЛЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
+.avatar-status-border {
+    border-width: 2px !important;
+    border-style: solid !important;
+    border-radius: 50% !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3);
+    box-sizing: border-box;
+}
+
+/* Один статус */
+.avatar-status-border.status-friendship {
+    border-color: var(--yellow) !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.4);
+}
+
+.avatar-status-border.status-romance {
+    border-color: #FB5EB0 !important;
+    box-shadow: 0 0 8px rgba(251, 94, 176, 0.4);
+}
+
+.avatar-status-border.status-business {
+    border-color: #5E9FC5 !important;
+    box-shadow: 0 0 8px rgba(94, 159, 197, 0.4);
+}
+
+/* Два статуса – градиенты */
+.avatar-status-border.status-friendship.status-romance {
+    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(251, 94, 176, 0.3);
+}
+
+.avatar-status-border.status-friendship.status-business {
+    border-image: linear-gradient(45deg, var(--yellow), #5E9FC5) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
+}
+
+.avatar-status-border.status-romance.status-business {
+    border-image: linear-gradient(45deg, #FB5EB0, #5E9FC5) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(251, 94, 176, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
+}
+
+/* Три статуса – тройной градиент */
+.avatar-status-border.status-friendship.status-romance.status-business {
+    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0, #5E9FC5) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(251, 94, 176, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
+}
+
+/* Применяем к аватаркам */
+.participant-avatar.has-profile,
+.participant-dropdown-avatar.has-profile,
+.preview-avatar-img.has-profile,
+.preview-avatar-placeholder.has-profile {
+    border-radius: 50% !important;
+}
+
+/* ШИРОКИЙ БАННЕР ПРЕВЬЮ */
+.profile-click-preview {
+    width: 90% !important;
+    max-width: 520px !important;
+    margin: 0 auto 16px auto;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 28px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    box-sizing: border-box;
+}
+
+/* Родители не ограничивают ширину */
+.guest-center-btn, .center-floating-btn {
+    width: fit-content;
+    max-width: 90%;
+}
+
+/* Адаптивность */
+@media (max-width: 480px) {
+    .profile-click-preview {
+        max-width: 400px;
+        padding: 14px;
+        gap: 12px;
+    }
+    .preview-text {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .profile-click-preview {
+        max-width: 300px;
+        padding: 12px;
+        gap: 10px;
+        flex-direction: column;
+        text-align: center;
+    }
+    .preview-text {
+        text-align: left;
+    }
+}
