@@ -66,74 +66,6 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-function getUserStatuses(userId) {
-    const profile = state.profiles[userId];
-    if (!profile) return [];
-    const statuses = profile.friendshipStatuses;
-    if (!statuses) return [];
-    
-    if (Array.isArray(statuses)) {
-        return statuses.filter(s => typeof s === 'string');
-    }
-    
-    if (typeof statuses === 'object' && !Array.isArray(statuses)) {
-        const result = [];
-        for (const key in statuses) {
-            if (statuses[key] === true || statuses[key] === 'да') {
-                result.push(key);
-            }
-        }
-        return result;
-    }
-    
-    if (typeof statuses === 'string') {
-        return statuses.split(',').map(s => s.trim());
-    }
-    
-    return [];
-}
-
-function getAvatarGradient(userId) {
-    const statuses = getUserStatuses(userId);
-    const colorMap = {
-        'дружба': '#D9FD19',
-        'отношения': '#FB5EB0',
-        'бизнес': '#5E9FC5'
-    };
-    const colors = statuses.map(s => colorMap[s]).filter(c => c);
-    
-    if (colors.length <= 1) return null;
-    
-    const steps = 36;
-    const segment = 360 / steps;
-    const gradientStops = [];
-    for (let i = 0; i < steps; i++) {
-        const angle = i * segment;
-        const progress = i / steps;
-        const index = progress * colors.length;
-        const idx1 = Math.floor(index) % colors.length;
-        const idx2 = (idx1 + 1) % colors.length;
-        const t = index - Math.floor(index);
-        
-        const c1 = colors[idx1];
-        const c2 = colors[idx2];
-        const r = parseInt(c1.slice(1,3), 16);
-        const g = parseInt(c1.slice(3,5), 16);
-        const b = parseInt(c1.slice(5,7), 16);
-        const r2 = parseInt(c2.slice(1,3), 16);
-        const g2 = parseInt(c2.slice(3,5), 16);
-        const b2 = parseInt(c2.slice(5,7), 16);
-        
-        const rAvg = Math.round(r + (r2 - r) * t);
-        const gAvg = Math.round(g + (g2 - g) * t);
-        const bAvg = Math.round(b + (b2 - b) * t);
-        
-        gradientStops.push(`rgb(${rAvg}, ${gAvg}, ${bAvg}) ${angle}deg`);
-    }
-    
-    return `conic-gradient(from 0deg, ${gradientStops.join(', ')})`;
-}
-
 export async function renderProfiles() {
     document.querySelector('.profile-edit-fab')?.remove();
     document.querySelector('.profile-blur-overlay')?.remove();
@@ -245,7 +177,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
-        const gradient = getAvatarGradient(previewProfile.userId);
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
         banner.style.cssText = `
@@ -284,52 +215,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 border-radius: 50% !important;
                 object-fit: cover !important;
             `;
-            
-            if (gradient) {
-                const wrapper = document.createElement('div');
-                wrapper.style.cssText = `
-                    position: relative;
-                    width: 100%;
-                    height: 100%;
-                    display: inline-block;
-                `;
-                img.style.cssText += `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    z-index: 2;
-                    box-shadow: none !important;
-                    border: none !important;
-                `;
-                const gradientRing = document.createElement('div');
-                gradientRing.style.cssText = `
-                    position: absolute;
-                    top: -2px;
-                    left: -2px;
-                    right: -2px;
-                    bottom: -2px;
-                    border-radius: 50%;
-                    background: ${gradient};
-                    z-index: 1;
-                `;
-                wrapper.appendChild(gradientRing);
-                wrapper.appendChild(img);
-                avatarContainer.appendChild(wrapper);
-            } else {
-                const statuses = getUserStatuses(previewProfile.userId);
-                const colorMap = {
-                    'дружба': '#D9FD19',
-                    'отношения': '#FB5EB0',
-                    'бизнес': '#5E9FC5'
-                };
-                const colors = statuses.map(s => colorMap[s]).filter(c => c);
-                img.style.boxShadow = colors.length === 1 
-                    ? `0 0 0 2px ${colors[0]}` 
-                    : '0 0 0 2px #D9FD19';
-                img.style.border = 'none';
-                avatarContainer.appendChild(img);
-            }
-            
+            // Без обводки
             img.onerror = function() {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'preview-avatar-placeholder';
@@ -344,55 +230,10 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     font-size: 24px !important;
                     color: white !important;
                 `;
-                
-                if (gradient) {
-                    const wrapper = document.createElement('div');
-                    wrapper.style.cssText = `
-                        position: relative;
-                        width: 100%;
-                        height: 100%;
-                        display: inline-block;
-                    `;
-                    placeholder.style.cssText += `
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        z-index: 2;
-                        box-shadow: none !important;
-                        border: none !important;
-                    `;
-                    const gradientRing = document.createElement('div');
-                    gradientRing.style.cssText = `
-                        position: absolute;
-                        top: -2px;
-                        left: -2px;
-                        right: -2px;
-                        bottom: -2px;
-                        border-radius: 50%;
-                        background: ${gradient};
-                        z-index: 1;
-                    `;
-                    wrapper.appendChild(gradientRing);
-                    wrapper.appendChild(placeholder);
-                    avatarContainer.innerHTML = '';
-                    avatarContainer.appendChild(wrapper);
-                } else {
-                    const statuses = getUserStatuses(previewProfile.userId);
-                    const colorMap = {
-                        'дружба': '#D9FD19',
-                        'отношения': '#FB5EB0',
-                        'бизнес': '#5E9FC5'
-                    };
-                    const colors = statuses.map(s => colorMap[s]).filter(c => c);
-                    placeholder.style.boxShadow = colors.length === 1 
-                        ? `0 0 0 2px ${colors[0]}` 
-                        : '0 0 0 2px #D9FD19';
-                    placeholder.style.border = 'none';
-                }
-                
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
             };
+            avatarContainer.appendChild(img);
         } else {
             const placeholder = document.createElement('div');
             placeholder.className = 'preview-avatar-placeholder';
@@ -407,52 +248,8 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 font-size: 24px !important;
                 color: white !important;
             `;
-            
-            if (gradient) {
-                const wrapper = document.createElement('div');
-                wrapper.style.cssText = `
-                    position: relative;
-                    width: 100%;
-                    height: 100%;
-                    display: inline-block;
-                `;
-                placeholder.style.cssText += `
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    z-index: 2;
-                    box-shadow: none !important;
-                    border: none !important;
-                `;
-                const gradientRing = document.createElement('div');
-                gradientRing.style.cssText = `
-                    position: absolute;
-                    top: -2px;
-                    left: -2px;
-                    right: -2px;
-                    bottom: -2px;
-                    border-radius: 50%;
-                    background: ${gradient};
-                    z-index: 1;
-                `;
-                wrapper.appendChild(gradientRing);
-                wrapper.appendChild(placeholder);
-                avatarContainer.appendChild(wrapper);
-            } else {
-                const statuses = getUserStatuses(previewProfile.userId);
-                const colorMap = {
-                    'дружба': '#D9FD19',
-                    'отношения': '#FB5EB0',
-                    'бизнес': '#5E9FC5'
-                };
-                const colors = statuses.map(s => colorMap[s]).filter(c => c);
-                placeholder.style.boxShadow = colors.length === 1 
-                    ? `0 0 0 2px ${colors[0]}` 
-                    : '0 0 0 2px #D9FD19';
-                placeholder.style.border = 'none';
-                placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
-                avatarContainer.appendChild(placeholder);
-            }
+            placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+            avatarContainer.appendChild(placeholder);
         }
 
         const textDiv = document.createElement('div');
