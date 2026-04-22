@@ -1960,3 +1960,31 @@ body::before {
 .preview-avatar-placeholder.avatar-multi-status {
     overflow: visible;
 }
+/* Многоцветная обводка через conic-gradient с маской */
+.avatar-multi-status {
+    position: relative;
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+}
+.avatar-multi-status::before {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    right: -4px;
+    bottom: -4px;
+    border-radius: 50%;
+    background: var(--avatar-gradient);
+    -webkit-mask: radial-gradient(farthest-side, transparent 0%, transparent 85%, black 85%, black 100%);
+    mask: radial-gradient(farthest-side, transparent 0%, transparent 85%, black 85%, black 100%);
+    z-index: -1;
+}
+/* Чтобы псевдоэлемент не обрезался */
+.participant-avatar.avatar-multi-status,
+.participant-dropdown-avatar.avatar-multi-status,
+.preview-avatar-img.avatar-multi-status,
+.preview-avatar-placeholder.avatar-multi-status {
+    overflow: visible;
+    background: transparent !important;
+}
