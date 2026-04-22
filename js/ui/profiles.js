@@ -93,7 +93,7 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function getAvatarBoxShadow(userId) {
+function getAvatarStyle(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
         'дружба': '#D9FD19',
@@ -103,22 +103,12 @@ function getAvatarBoxShadow(userId) {
     const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
     if (colors.length === 0) {
-        return '0 0 0 2px #D9FD19';
+        return { boxShadow: '0 0 0 2px #D9FD19', multi: false };
     }
     if (colors.length === 1) {
-        return `0 0 0 2px ${colors[0]}`;
+        return { boxShadow: `0 0 0 2px ${colors[0]}`, multi: false };
     }
-    
-    // Несколько цветов – создаём 12 слоёв с шагом ~0.33px, чередуя цвета
-    const layers = [];
-    const steps = 12;
-    const maxOffset = 4; // общая толщина обводки 4px
-    for (let i = 0; i < steps; i++) {
-        const offset = 2 + (i * maxOffset / steps);
-        const colorIndex = i % colors.length;
-        layers.push(`0 0 0 ${offset}px ${colors[colorIndex]}`);
-    }
-    return layers.join(', ');
+    return { multi: true, colors };
 }
 
 export async function renderProfiles() {
@@ -232,7 +222,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
-        const boxShadow = getAvatarBoxShadow(previewProfile.userId);
+        const style = getAvatarStyle(previewProfile.userId);
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
         banner.style.cssText = `
@@ -269,9 +259,14 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 height: 100% !important;
                 border-radius: 50% !important;
                 object-fit: cover !important;
-                box-shadow: ${boxShadow} !important;
                 border: none !important;
             `;
+            if (style.multi) {
+                img.classList.add('avatar-multi-status');
+                img.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+            } else {
+                img.style.boxShadow = style.boxShadow;
+            }
             img.onerror = function() {
                 const placeholder = document.createElement('div');
                 placeholder.style.cssText = `
@@ -284,9 +279,14 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     justify-content: center !important;
                     font-size: 24px !important;
                     color: white !important;
-                    box-shadow: ${boxShadow} !important;
                     border: none !important;
                 `;
+                if (style.multi) {
+                    placeholder.classList.add('avatar-multi-status');
+                    placeholder.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                } else {
+                    placeholder.style.boxShadow = style.boxShadow;
+                }
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
             };
@@ -303,9 +303,14 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 justify-content: center !important;
                 font-size: 24px !important;
                 color: white !important;
-                box-shadow: ${boxShadow} !important;
                 border: none !important;
             `;
+            if (style.multi) {
+                placeholder.classList.add('avatar-multi-status');
+                placeholder.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+            } else {
+                placeholder.style.boxShadow = style.boxShadow;
+            }
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
             avatarContainer.appendChild(placeholder);
         }
