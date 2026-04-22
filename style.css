@@ -1853,9 +1853,10 @@ body::before {
 }
 
 /* -------------------- ПРЕВЬЮ ПРОФИЛЯ -------------------- */
+/* -------------------- ПРЕВЬЮ ПРОФИЛЯ -------------------- */
 .profile-click-preview {
-    width: 90%;
-    max-width: 520px;        /* шире кнопки */
+    width: calc(100% - 32px);        /* как обычные карточки */
+    max-width: 568px;               /* ширина как у основного контейнера */
     margin: 0 auto 16px auto;
     padding: 16px;
     background: rgba(255, 255, 255, 0.1);
@@ -1870,40 +1871,12 @@ body::before {
     box-sizing: border-box;
 }
 
-/* чтобы родительские контейнеры не ограничивали ширину */
-.guest-center-btn, .center-floating-btn {
-    width: fit-content;
-    max-width: 90%;
-}
-
-@media (max-width: 480px) {
-    .profile-click-preview {
-        max-width: 360px;
-        padding: 14px;
-        gap: 12px;
-    }
-    .preview-text {
-        font-size: 13px;
-    }
-}
-
-@media (max-width: 360px) {
-    .profile-click-preview {
-        max-width: 300px;
-        padding: 12px;
-        gap: 10px;
-        flex-direction: column;
-        text-align: center;
-    }
-    .preview-text {
-        text-align: left;
-    }
-}
-
 .preview-avatar {
     flex-shrink: 0;
     width: 56px;
     height: 56px;
+    border-radius: 50%;
+    overflow: hidden;
 }
 
 .preview-avatar-img {
@@ -1928,6 +1901,20 @@ body::before {
     border: 2px solid var(--yellow);
 }
 
+/* Цветные обводки для аватара в превью */
+.preview-avatar .avatar-status-border,
+.preview-avatar-img.avatar-status-border,
+.preview-avatar-placeholder.avatar-status-border {
+    border-width: 2px !important;
+    border-style: solid !important;
+    border-radius: 50% !important;
+}
+
+.preview-avatar .status-friendship { border-color: var(--yellow) !important; }
+.preview-avatar .status-romance { border-color: #FB5EB0 !important; }
+.preview-avatar .status-business { border-color: #5E9FC5 !important; }
+/* градиенты для комбинаций можно добавить аналогично, если потребуется */
+
 .preview-text {
     flex: 1;
     font-size: 14px;
@@ -1941,13 +1928,27 @@ body::before {
     color: var(--yellow);
 }
 
-.profile-action-btn {
-    padding: 12px 24px !important;
-    font-size: 16px !important;
-    white-space: nowrap;
-    border-radius: 40px !important;
-    width: auto !important;
-    min-width: 200px;
+/* Адаптивность */
+@media (max-width: 480px) {
+    .profile-click-preview {
+        padding: 14px;
+        gap: 12px;
+    }
+    .preview-text {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .profile-click-preview {
+        padding: 12px;
+        gap: 10px;
+        flex-direction: column;
+        text-align: center;
+    }
+    .preview-text {
+        text-align: left;
+    }
 }
 
 /* Блюр темнее */
@@ -2047,9 +2048,11 @@ body::before {
     transform: rotate(90deg);
 }
 /* -------------------- ЦВЕТНЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
+/* -------------------- ЦВЕТНЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
 .avatar-status-border {
     border-width: 2px !important;
     border-style: solid !important;
+    border-radius: 50% !important;        /* ← чтобы было круглое */
     box-shadow: 0 0 8px rgba(217, 253, 25, 0.3);
 }
 
@@ -2058,12 +2061,10 @@ body::before {
     border-color: var(--yellow) !important;
     box-shadow: 0 0 8px rgba(217, 253, 25, 0.4);
 }
-
 .avatar-status-border.status-romance {
     border-color: #FB5EB0 !important;
     box-shadow: 0 0 8px rgba(251, 94, 176, 0.4);
 }
-
 .avatar-status-border.status-business {
     border-color: #5E9FC5 !important;
     box-shadow: 0 0 8px rgba(94, 159, 197, 0.4);
@@ -2073,38 +2074,36 @@ body::before {
 .avatar-status-border.status-friendship.status-romance {
     border-image: linear-gradient(45deg, var(--yellow), #FB5EB0) 1 !important;
     border-color: transparent !important;
+    border-radius: 50% !important;
     box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(251, 94, 176, 0.3);
 }
-
 .avatar-status-border.status-friendship.status-business {
     border-image: linear-gradient(45deg, var(--yellow), #5E9FC5) 1 !important;
     border-color: transparent !important;
+    border-radius: 50% !important;
     box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
 }
-
 .avatar-status-border.status-romance.status-business {
     border-image: linear-gradient(45deg, #FB5EB0, #5E9FC5) 1 !important;
     border-color: transparent !important;
+    border-radius: 50% !important;
     box-shadow: 0 0 8px rgba(251, 94, 176, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
 }
 
-/* Три статуса – тройной градиент */
+/* Три статуса */
 .avatar-status-border.status-friendship.status-romance.status-business {
     border-image: linear-gradient(45deg, var(--yellow), #FB5EB0, #5E9FC5) 1 !important;
     border-color: transparent !important;
+    border-radius: 50% !important;
     box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(251, 94, 176, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
 }
 
-/* Применяем к аватаркам в счётчике и выпадающем списке */
+/* Применяем к аватаркам */
 .participant-avatar.has-profile,
 .participant-dropdown-avatar.has-profile {
-    border-width: 2px !important;
-    border-style: solid !important;
+    border-radius: 50% !important;
 }
-
-/* Для placeholder тоже */
 .participant-avatar.placeholder.has-profile,
 .participant-dropdown-avatar.placeholder.has-profile {
-    border-width: 2px !important;
-    border-style: solid !important;
+    border-radius: 50% !important;
 }
