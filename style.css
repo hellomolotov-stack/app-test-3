@@ -2163,3 +2163,28 @@ body::before {
 .preview-avatar-placeholder.avatar-multi-status {
     overflow: visible;
 }
+/* Выравнивание главных заголовков по левому краю */
+.subtitle {
+    text-align: left !important;
+    padding-left: 16px;
+}
+
+/* Поля ввода в настройках профиля */
+.profile-field input[type="text"],
+.profile-field textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 16px;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+}
+
+.profile-field textarea {
+    resize: vertical;
+    min-height: 80px;
+}
