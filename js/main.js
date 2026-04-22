@@ -1,5 +1,5 @@
 // js/main.js
-import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from './utils.js';
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates } from './firebase.js';
 import { log } from './api.js';
@@ -55,7 +55,7 @@ function setupBottomNav() {
 
     navHomeNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('home');
-        cleanupProfileOverlays(); // очищаем оверлеи
+        cleanupProfileOverlays();
         renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
         log('glavnaya_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
@@ -64,7 +64,7 @@ function setupBottomNav() {
     });
     navHikesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('hikes');
-        cleanupProfileOverlays(); // очищаем оверлеи
+        cleanupProfileOverlays();
         renderHome(); 
         setTimeout(() => document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         log('kalendar_click', state.userCard.status !== 'active', state.user);
@@ -119,6 +119,83 @@ function setupBottomNav() {
 // Переопределяем действие в uiActions
 uiActions.setupBottomNav = setupBottomNav;
 
+// Обработка диплинков
+function handleDeepLink(startParam) {
+    if (!startParam) return;
+
+    // Хайк по дате
+    if (startParam.startsWith('hike_')) {
+        const targetDate = normalizeDate(startParam.substring(5));
+        const interval = setInterval(() => {
+            const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
+            if (targetIndex !== -1) {
+                clearInterval(interval);
+                setTimeout(() => showBottomSheet(targetIndex), 200);
+            }
+        }, 300);
+        return;
+    }
+
+    // Остальные диплинки
+    const isGuest = state.userCard.status !== 'active';
+
+    switch (startParam) {
+        case 'calendar':
+            setTimeout(() => {
+                const el = document.getElementById('calendarContainer');
+                if (el) scrollToElement(el);
+                else {
+                    // Если календарь ещё не отрендерен, ждём
+                    const check = setInterval(() => {
+                        const cal = document.getElementById('calendarContainer');
+                        if (cal) { clearInterval(check); scrollToElement(cal); }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'updates':
+            setTimeout(() => {
+                const el = document.querySelector('.updates-container');
+                if (el) scrollToElement(el);
+                else {
+                    const check = setInterval(() => {
+                        const upd = document.querySelector('.updates-container');
+                        if (upd) { clearInterval(check); scrollToElement(upd); }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'newcomer':
+            setTimeout(() => {
+                const el = document.querySelector('.btn-newcomer')?.closest('.card-container');
+                if (el) scrollToElement(el);
+                else {
+                    const check = setInterval(() => {
+                        const newcomer = document.querySelector('.btn-newcomer')?.closest('.card-container');
+                        if (newcomer) { clearInterval(check); scrollToElement(newcomer); }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'privileges':
+            if (isGuest) renderGuestPrivileges();
+            else renderPriv();
+            break;
+        case 'profiles':
+            renderProfiles();
+            break;
+        case 'pass':
+            renderPassPage(isGuest);
+            break;
+        case 'gift':
+            renderGift(isGuest);
+            break;
+        default:
+            // неизвестный диплинк – ничего не делаем
+            break;
+    }
+}
+
 // Инициализация приложения
 async function loadAppData() {
     showAnimatedLoader();
@@ -139,7 +216,7 @@ async function loadAppData() {
         const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates] = await Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
             loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
-            loadUpdates() // NEW
+            loadUpdates()
         ]);
         
         if (metrics) state.metrics = metrics;
@@ -150,7 +227,7 @@ async function loadAppData() {
         if (giftContent) state.giftContent = giftContent;
         if (randomPhrases) state.randomPhrases = randomPhrases;
         if (leaders) state.leaders = leaders;
-        if (updates) state.updates = updates; // NEW
+        if (updates) state.updates = updates;
 
         await loadRegistrationsPopup().then(data => { if (data) state.registrationsPopup = data; });
         await loadPopupConfig().then(data => { if (data) state.popupConfig = { ...state.popupConfig, ...data }; });
@@ -178,15 +255,8 @@ async function loadAppData() {
         
         const urlParams = new URLSearchParams(window.location.search);
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || urlParams.get('startapp') || urlParams.get('start');
-        if (startParam && startParam.startsWith('hike_')) {
-            const targetDate = normalizeDate(startParam.substring(5));
-            const interval = setInterval(() => {
-                const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
-                if (targetIndex !== -1) {
-                    clearInterval(interval);
-                    setTimeout(() => showBottomSheet(targetIndex), 200);
-                }
-            }, 300);
+        if (startParam) {
+            handleDeepLink(startParam);
         }
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
