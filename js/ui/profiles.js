@@ -188,11 +188,26 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         const borderClass = getAvatarClassesForUser(previewProfile.userId);
         const previewDiv = document.createElement('div');
         previewDiv.className = 'profile-click-preview';
+        // Инлайн-стили для гарантии ширины
+        previewDiv.style.width = '90%';
+        previewDiv.style.maxWidth = '520px';
+        previewDiv.style.margin = '0 auto 16px auto';
+        previewDiv.style.padding = '16px';
+        previewDiv.style.background = 'rgba(255, 255, 255, 0.1)';
+        previewDiv.style.borderRadius = '28px';
+        previewDiv.style.backdropFilter = 'blur(8px)';
+        previewDiv.style.webkitBackdropFilter = 'blur(8px)';
+        previewDiv.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,0.15)';
+        previewDiv.style.display = 'flex';
+        previewDiv.style.alignItems = 'center';
+        previewDiv.style.gap = '14px';
+        previewDiv.style.boxSizing = 'border-box';
+
         previewDiv.innerHTML = `
             <div class="preview-avatar">
                 ${previewProfile.photoUrl ? 
-                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img ${borderClass}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder ${borderClass}\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
-                    `<div class="preview-avatar-placeholder ${borderClass}">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
+                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img ${borderClass}" style="border-radius: 50%; border-width: 2px; border-style: solid;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder ${borderClass}\\' style=\\'border-radius: 50%; border-width: 2px; border-style: solid;\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
+                    `<div class="preview-avatar-placeholder ${borderClass}" style="border-radius: 50%; border-width: 2px; border-style: solid;">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
                 }
             </div>
             <div class="preview-text">
