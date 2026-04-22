@@ -56,7 +56,7 @@ export function renderCalendar(container) {
                 </div>
                 <div class="calendar-legend">
                     <span class="legend-item"><span class="legend-emoji">📷</span> – отчёт</span>
-                    <span class="legend-item"><span class="legend-emoji">🎫</span> – запись</span>
+                    <span class="legend-item"><span class="legend-emoji">🎟️</span> – запись</span>
                 </div>
             </div>
             <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
@@ -85,7 +85,7 @@ export function renderCalendar(container) {
             if (isPast && hike && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
             if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
-                innerHtml += `<span class="calendar-emoji">🎫</span>`;
+                innerHtml += `<span class="calendar-emoji">🎟️</span>`;
                 classes += ' booked-day';
             }
         }
