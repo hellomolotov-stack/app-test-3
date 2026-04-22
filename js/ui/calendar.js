@@ -135,18 +135,28 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-function getAvatarBoxShadow(userId) {
+// Универсальное извлечение статусов
+function getUserStatuses(userId) {
     const profile = state.profiles[userId];
-    if (!profile) return '0 0 0 2px #D9FD19';
-    const statuses = profile.friendshipStatuses || [];
-    if (statuses.length === 0) return '0 0 0 2px #D9FD19';
-    
+    if (!profile) return [];
+    const statuses = profile.friendshipStatuses;
+    if (!statuses) return [];
+    if (Array.isArray(statuses)) return statuses;
+    if (typeof statuses === 'object') return Object.values(statuses);
+    return [];
+}
+
+// Возвращает строку box-shadow на основе статусов
+function getAvatarBoxShadow(userId) {
+    const statuses = getUserStatuses(userId);
     const colors = [];
     if (statuses.includes('дружба')) colors.push('#D9FD19');
     if (statuses.includes('отношения')) colors.push('#FB5EB0');
     if (statuses.includes('бизнес')) colors.push('#5E9FC5');
     
-    if (colors.length === 1) {
+    if (colors.length === 0) {
+        return '0 0 0 2px rgba(0,0,0,0.6)'; // без профиля — серая обводка
+    } else if (colors.length === 1) {
         return `0 0 0 2px ${colors[0]}`;
     } else {
         return colors.map(c => `0 0 0 2px ${c}`).join(', ');
