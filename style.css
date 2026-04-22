@@ -1856,7 +1856,7 @@ body::before {
 /* -------------------- ПРЕВЬЮ ПРОФИЛЯ -------------------- */
 .profile-click-preview {
     width: 100%;
-    max-width: 400px;
+    max-width: 460px; /* шире для красивого размещения текста */
     margin: 0 auto 16px auto;
     padding: 16px;
     background: rgba(255, 255, 255, 0.1);
@@ -1869,6 +1869,30 @@ body::before {
     align-items: center;
     gap: 14px;
     box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+    .profile-click-preview {
+        max-width: 360px;
+        padding: 14px;
+        gap: 12px;
+    }
+    .preview-text {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 360px) {
+    .profile-click-preview {
+        max-width: 300px;
+        padding: 12px;
+        gap: 10px;
+        flex-direction: column;
+        text-align: center;
+    }
+    .preview-text {
+        text-align: left;
+    }
 }
 
 .preview-avatar {
