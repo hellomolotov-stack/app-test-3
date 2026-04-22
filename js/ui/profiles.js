@@ -6,6 +6,7 @@ import {
     loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations,
 } from '../firebase.js';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack } from './common.js';
+import { renderGuestPrivileges } from './privileges.js';
 
 let profiles = {};
 let myProfile = null;
@@ -58,6 +59,14 @@ async function renderProfileCard(profile, isBlurred = false) {
     return `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
 }
 
+// Функция для получения случайного профиля из загруженных
+function getRandomProfile() {
+    const profileEntries = Object.entries(profiles);
+    if (profileEntries.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * profileEntries.length);
+    return profileEntries[randomIndex][1];
+}
+
 export async function renderProfiles() {
     document.querySelector('.profile-edit-fab')?.remove();
     document.querySelector('.profile-blur-overlay')?.remove();
@@ -81,34 +90,7 @@ export async function renderProfiles() {
     if (allCards.length === 0) {
         let ph = ''; for (let i=0;i<placeholderCount;i++) ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         mainDiv().innerHTML = `<div class="card-container"><div class="profiles-two-columns" id="profilesGrid">${ph}</div></div>`;
-        if (!isCardHolder) {
-            const guestBtn = document.createElement('div');
-            guestBtn.className = 'guest-center-btn';
-            guestBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn"><span class="eye-emoji">👀</span> смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
-            document.body.appendChild(guestBtn);
-            document.getElementById('guestViewProfilesBtn')?.addEventListener('click', (e) => {
-                haptic();
-                const btn = e.currentTarget;
-                const eye = btn.querySelector('.eye-emoji');
-                eye.style.transform = 'scaleX(-1)';
-                setTimeout(() => eye.style.transform = '', 300);
-                const msg = document.getElementById('guestMessage');
-                msg.style.display = 'block';
-                msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
-            });
-        } else if (!hasMyProfile) {
-            const createBtn = document.createElement('div');
-            createBtn.className = 'center-floating-btn';
-            createBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>`;
-            document.body.appendChild(createBtn);
-            document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
-        } else {
-            const btnContainer = document.createElement('div');
-            btnContainer.className = 'profile-edit-fab';
-            btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
-            document.body.appendChild(btnContainer);
-            document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
-        }
+        showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
 
@@ -137,7 +119,7 @@ export async function renderProfiles() {
         return;
     }
 
-    // Блюр и центральная кнопка (скролл разрешен)
+    // Блюр для неавторизованных или без профиля
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
@@ -152,13 +134,14 @@ export async function renderProfiles() {
     blurOverlay.style.webkitBackdropFilter = 'blur(12px)';
     document.body.appendChild(blurOverlay);
 
+    showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+}
+
+function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    if (isCardHolder) {
-        centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="createProfileBtn">💬 создать профиль</button>`;
-    } else {
-        centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow" id="guestViewProfilesBtn"><span class="eye-emoji">👀</span> смотреть профили</button><div id="guestMessage" style="color:#fff; font-size:14px; display:none; text-align:center; margin-top:12px;"></div>`;
-    }
+    const btnText = '📝 создать профиль';
+    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
     centerBtn.style.position = 'fixed';
     centerBtn.style.top = '50%';
     centerBtn.style.left = '50%';
@@ -167,40 +150,82 @@ export async function renderProfiles() {
     centerBtn.style.pointerEvents = 'auto';
     document.body.appendChild(centerBtn);
 
-    // Превью профиля при переходе из счётчика
-    const pending = state.pendingProfileClick;
-    if (pending && (!isCardHolder || !hasMyProfile)) {
+    const actionBtn = document.getElementById('profileActionBtn');
+    if (isCardHolder) {
+        actionBtn.addEventListener('click', () => { haptic(); renderEditProfile(); });
+    } else {
+        actionBtn.addEventListener('click', () => {
+            haptic();
+            showGuestProfilePopup();
+        });
+    }
+
+    // Определяем, какой профиль показывать в превью
+    let previewProfile = null;
+    if (state.pendingProfileClick) {
+        previewProfile = state.pendingProfileClick;
+        state.pendingProfileClick = null;
+    } else {
+        // Если нет pending, берём случайный из загруженных профилей
+        const randomProf = getRandomProfile();
+        if (randomProf) {
+            previewProfile = {
+                userId: randomProf.userId,
+                name: randomProf.name,
+                photoUrl: randomProf.avatarUrl || null
+            };
+        }
+    }
+
+    if (previewProfile) {
         const previewDiv = document.createElement('div');
         previewDiv.className = 'profile-click-preview';
         previewDiv.innerHTML = `
             <div class="preview-avatar">
-                ${pending.photoUrl ? 
-                    `<img src="${pending.photoUrl}" class="preview-avatar-img" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder\\'>${(pending.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
-                    `<div class="preview-avatar-placeholder">${(pending.name?.charAt(0)||'?').toUpperCase()}</div>`
+                ${previewProfile.photoUrl ? 
+                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
+                    `<div class="preview-avatar-placeholder">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
                 }
             </div>
             <div class="preview-text">
-                <span class="preview-name">${escapeHtml(pending.name)}</span> — и другие интеллигенты уже создали свой профиль. Готов опубликовать свой, чтобы вывести знакомства на новый уровень?
+                <span class="preview-name">${escapeHtml(previewProfile.name)}</span> — и другие интеллигенты уже создали свой профиль. готов опубликовать свой, чтобы вывести знакомства на новый уровень?
             </div>
         `;
         centerBtn.insertBefore(previewDiv, centerBtn.firstChild);
-        state.pendingProfileClick = null;
     }
+}
 
-    if (isCardHolder) {
-        document.getElementById('createProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
-    } else {
-        document.getElementById('guestViewProfilesBtn')?.addEventListener('click', (e) => {
+function showGuestProfilePopup() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 340px;">
+            <button class="modal-close" id="closeGuestPopup">&times;</button>
+            <div class="modal-title" style="font-size: 18px;">💳 карта интеллигента</div>
+            <div class="modal-text" style="font-size: 14px;">
+                для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?
+            </div>
+            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">нажимай</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('closeGuestPopup').addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
             haptic();
-            const btn = e.currentTarget;
-            const eye = btn.querySelector('.eye-emoji');
-            eye.style.transform = 'scaleX(-1)';
-            setTimeout(() => eye.style.transform = '', 300);
-            const msg = document.getElementById('guestMessage');
-            msg.style.display = 'block';
-            msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
-        });
-    }
+            overlay.remove();
+        }
+    });
+    document.getElementById('goToPrivilegesBtn').addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+        renderGuestPrivileges();
+        log('guest_privileges_from_profile', true, state.user);
+    });
 }
 
 async function renderEditProfile() {
