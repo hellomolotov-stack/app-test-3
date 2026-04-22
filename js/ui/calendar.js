@@ -135,32 +135,9 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-// Универсальное извлечение статусов
-function getUserStatuses(userId) {
-    const profile = state.profiles[userId];
-    if (!profile) return [];
-    const statuses = profile.friendshipStatuses;
-    if (!statuses) return [];
-    if (Array.isArray(statuses)) return statuses;
-    if (typeof statuses === 'object') return Object.values(statuses);
-    return [];
-}
-
-// Возвращает строку box-shadow на основе статусов
+// ВРЕМЕННАЯ ЗАГЛУШКА – всегда синяя обводка для профиля
 function getAvatarBoxShadow(userId) {
-    const statuses = getUserStatuses(userId);
-    const colors = [];
-    if (statuses.includes('дружба')) colors.push('#D9FD19');
-    if (statuses.includes('отношения')) colors.push('#FB5EB0');
-    if (statuses.includes('бизнес')) colors.push('#5E9FC5');
-    
-    if (colors.length === 0) {
-        return '0 0 0 2px rgba(0,0,0,0.6)'; // без профиля — серая обводка
-    } else if (colors.length === 1) {
-        return `0 0 0 2px ${colors[0]}`;
-    } else {
-        return colors.map(c => `0 0 0 2px ${c}`).join(', ');
-    }
+    return '0 0 0 2px #5E9FC5';
 }
 
 export function showBottomSheet(index) {
@@ -384,33 +361,41 @@ export function showBottomSheet(index) {
                         img.alt = p.name || '';
                         img.title = p.name || '';
                         img.dataset.userId = p.userId;
-                        img.style.width = '28px';
-                        img.style.height = '28px';
-                        img.style.borderRadius = '50%';
-                        img.style.objectFit = 'cover';
+                        img.style.cssText = `
+                            width: 28px !important;
+                            height: 28px !important;
+                            border-radius: 50% !important;
+                            object-fit: cover !important;
+                        `;
                         if (hasProfile) {
                             img.style.boxShadow = getAvatarBoxShadow(p.userId);
+                            img.style.border = 'none';
                         } else {
                             img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
+                            img.style.border = 'none';
                         }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
                             placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
-                            placeholder.style.width = '28px';
-                            placeholder.style.height = '28px';
-                            placeholder.style.borderRadius = '50%';
-                            placeholder.style.backgroundColor = '#40a7e3';
-                            placeholder.style.display = 'flex';
-                            placeholder.style.alignItems = 'center';
-                            placeholder.style.justifyContent = 'center';
-                            placeholder.style.fontWeight = 'bold';
-                            placeholder.style.fontSize = '14px';
-                            placeholder.style.color = 'white';
-                            placeholder.style.textTransform = 'uppercase';
+                            placeholder.style.cssText = `
+                                width: 28px !important;
+                                height: 28px !important;
+                                border-radius: 50% !important;
+                                background-color: #40a7e3 !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                font-weight: bold !important;
+                                font-size: 14px !important;
+                                color: white !important;
+                                text-transform: uppercase !important;
+                            `;
                             if (hasProfile) {
                                 placeholder.style.boxShadow = getAvatarBoxShadow(p.userId);
+                                placeholder.style.border = 'none';
                             } else {
                                 placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
+                                placeholder.style.border = 'none';
                             }
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
@@ -1023,11 +1008,14 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
 
             const avatarEl = item.querySelector('.participant-dropdown-avatar');
             if (avatarEl) {
-                avatarEl.style.width = '30px';
-                avatarEl.style.height = '30px';
-                avatarEl.style.borderRadius = '50%';
-                avatarEl.style.objectFit = 'cover';
-                avatarEl.style.boxShadow = boxShadow;
+                avatarEl.style.cssText = `
+                    width: 30px !important;
+                    height: 30px !important;
+                    border-radius: 50% !important;
+                    object-fit: cover !important;
+                    box-shadow: ${boxShadow} !important;
+                    border: none !important;
+                `;
             }
 
             if (hasProfile) {
