@@ -162,7 +162,7 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function getAvatarBoxShadow(userId) {
+function getAvatarStyle(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
         'дружба': '#D9FD19',
@@ -172,22 +172,13 @@ function getAvatarBoxShadow(userId) {
     const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
     if (colors.length === 0) {
-        return '0 0 0 2px #D9FD19';
+        return { boxShadow: '0 0 0 2px #D9FD19', multi: false };
     }
     if (colors.length === 1) {
-        return `0 0 0 2px ${colors[0]}`;
+        return { boxShadow: `0 0 0 2px ${colors[0]}`, multi: false };
     }
-    
-    // Несколько цветов – создаём 12 слоёв с шагом ~0.33px, чередуя цвета
-    const layers = [];
-    const steps = 12;
-    const maxOffset = 4; // общая толщина обводки 4px
-    for (let i = 0; i < steps; i++) {
-        const offset = 2 + (i * maxOffset / steps);
-        const colorIndex = i % colors.length;
-        layers.push(`0 0 0 ${offset}px ${colors[colorIndex]}`);
-    }
-    return layers.join(', ');
+    // несколько цветов — будем использовать градиент через CSS-класс
+    return { multi: true, colors };
 }
 
 export function showBottomSheet(index) {
@@ -418,7 +409,13 @@ export function showBottomSheet(index) {
                             object-fit: cover !important;
                         `;
                         if (hasProfile) {
-                            img.style.boxShadow = getAvatarBoxShadow(p.userId);
+                            const style = getAvatarStyle(p.userId);
+                            if (style.multi) {
+                                img.classList.add('avatar-multi-status');
+                                img.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                            } else {
+                                img.style.boxShadow = style.boxShadow;
+                            }
                             img.style.border = 'none';
                         } else {
                             img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
@@ -441,7 +438,13 @@ export function showBottomSheet(index) {
                                 text-transform: uppercase !important;
                             `;
                             if (hasProfile) {
-                                placeholder.style.boxShadow = getAvatarBoxShadow(p.userId);
+                                const style = getAvatarStyle(p.userId);
+                                if (style.multi) {
+                                    placeholder.classList.add('avatar-multi-status');
+                                    placeholder.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                                } else {
+                                    placeholder.style.boxShadow = style.boxShadow;
+                                }
                                 placeholder.style.border = 'none';
                             } else {
                                 placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
@@ -1037,7 +1040,8 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         participants.forEach(p => {
             const name = p.name || 'Участник';
             const hasProfile = !!state.profiles[p.userId];
-            const boxShadow = hasProfile ? getAvatarBoxShadow(p.userId) : '0 0 0 2px rgba(255,255,255,0.3)';
+            const style = hasProfile ? getAvatarStyle(p.userId) : null;
+            const boxShadow = (style && !style.multi) ? style.boxShadow : (hasProfile ? '' : '0 0 0 2px rgba(255,255,255,0.3)');
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
@@ -1063,9 +1067,18 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                     height: 30px !important;
                     border-radius: 50% !important;
                     object-fit: cover !important;
-                    box-shadow: ${boxShadow} !important;
                     border: none !important;
                 `;
+                if (hasProfile) {
+                    if (style.multi) {
+                        avatarEl.classList.add('avatar-multi-status');
+                        avatarEl.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                    } else {
+                        avatarEl.style.boxShadow = style.boxShadow;
+                    }
+                } else {
+                    avatarEl.style.boxShadow = '0 0 0 2px rgba(255,255,255,0.3)';
+                }
             }
 
             if (hasProfile) {
