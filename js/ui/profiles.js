@@ -108,7 +108,20 @@ function getAvatarStyle(userId) {
     if (colors.length === 1) {
         return { boxShadow: `0 0 0 2px ${colors[0]}`, multi: false };
     }
-    return { multi: true, colors };
+    
+    const steps = colors.length;
+    let gradientStr = 'conic-gradient(from 0deg';
+    colors.forEach((color, index) => {
+        const startAngle = (index * 360) / steps;
+        const endAngle = ((index + 1) * 360) / steps;
+        gradientStr += `, ${color} ${startAngle}deg ${endAngle}deg`;
+        if (index < steps - 1) {
+            gradientStr += `, ${color} ${endAngle}deg`;
+        }
+    });
+    gradientStr += ')';
+    
+    return { multi: true, gradient: gradientStr };
 }
 
 export async function renderProfiles() {
@@ -263,7 +276,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             `;
             if (style.multi) {
                 img.classList.add('avatar-multi-status');
-                img.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                img.style.setProperty('--avatar-gradient', style.gradient);
             } else {
                 img.style.boxShadow = style.boxShadow;
             }
@@ -283,7 +296,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 `;
                 if (style.multi) {
                     placeholder.classList.add('avatar-multi-status');
-                    placeholder.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                    placeholder.style.setProperty('--avatar-gradient', style.gradient);
                 } else {
                     placeholder.style.boxShadow = style.boxShadow;
                 }
@@ -307,7 +320,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             `;
             if (style.multi) {
                 placeholder.classList.add('avatar-multi-status');
-                placeholder.style.setProperty('--avatar-colors', style.colors.map(c => ` ${c}`).join(','));
+                placeholder.style.setProperty('--avatar-gradient', style.gradient);
             } else {
                 placeholder.style.boxShadow = style.boxShadow;
             }
