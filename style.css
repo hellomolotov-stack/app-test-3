@@ -1952,7 +1952,7 @@ body::before {
 
 /* Блюр темнее */
 .profile-blur-overlay {
-    background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%) !important;
+    background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 70%, rgba(73, 138, 176, 0.6) 100%) !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
 }
