@@ -162,13 +162,86 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function getAvatarClasses(userId) {
+function getAvatarGradient(userId) {
     const statuses = getUserStatuses(userId);
-    const classes = ['avatar-status-border'];
-    if (statuses.includes('дружба')) classes.push('status-friendship');
-    if (statuses.includes('отношения')) classes.push('status-romance');
-    if (statuses.includes('бизнес')) classes.push('status-business');
-    return classes.join(' ');
+    const colorMap = {
+        'дружба': '#D9FD19',
+        'отношения': '#FB5EB0',
+        'бизнес': '#5E9FC5'
+    };
+    const colors = statuses.map(s => colorMap[s]).filter(c => c);
+    
+    if (colors.length <= 1) return null; // для одного цвета используем box-shadow
+    
+    // Строим conic-gradient с равномерным распределением
+    const step = 360 / colors.length;
+    let gradient = 'conic-gradient(from 0deg';
+    colors.forEach((color, i) => {
+        const start = i * step;
+        const end = (i + 1) * step;
+        gradient += `, ${color} ${start}deg ${end}deg`;
+    });
+    gradient += ')';
+    return gradient;
+}
+
+function createAvatarWithGradient(imgElement, userId, size) {
+    const gradient = getAvatarGradient(userId);
+    if (!gradient) {
+        // Один статус или нет статусов – используем box-shadow
+        const statuses = getUserStatuses(userId);
+        const colorMap = {
+            'дружба': '#D9FD19',
+            'отношения': '#FB5EB0',
+            'бизнес': '#5E9FC5'
+        };
+        const colors = statuses.map(s => colorMap[s]).filter(c => c);
+        const boxShadow = colors.length === 1 
+            ? `0 0 0 2px ${colors[0]}` 
+            : '0 0 0 2px #D9FD19';
+        imgElement.style.boxShadow = boxShadow;
+        imgElement.style.border = 'none';
+        return imgElement;
+    }
+    
+    // Создаём контейнер-обёртку
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `
+        position: relative;
+        width: ${size}px;
+        height: ${size}px;
+        display: inline-block;
+        flex-shrink: 0;
+    `;
+    
+    // Стили для img
+    imgElement.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        object-fit: cover;
+        position: relative;
+        z-index: 2;
+        box-shadow: none !important;
+        border: none !important;
+    `;
+    
+    // Псевдоэлемент для градиента
+    const gradientRing = document.createElement('div');
+    gradientRing.style.cssText = `
+        position: absolute;
+        top: -3px;
+        left: -3px;
+        right: -3px;
+        bottom: -3px;
+        border-radius: 50%;
+        background: ${gradient};
+        z-index: 1;
+    `;
+    
+    wrapper.appendChild(gradientRing);
+    wrapper.appendChild(imgElement);
+    return wrapper;
 }
 
 export function showBottomSheet(index) {
@@ -398,14 +471,30 @@ export function showBottomSheet(index) {
                             border-radius: 50% !important;
                             object-fit: cover !important;
                         `;
+                        
+                        let finalElement = img;
                         if (hasProfile) {
-                            const classes = getAvatarClasses(p.userId);
-                            img.classList.add(...classes.split(' '));
-                            img.style.border = 'none';
+                            const gradient = getAvatarGradient(p.userId);
+                            if (gradient) {
+                                finalElement = createAvatarWithGradient(img, p.userId, 28);
+                            } else {
+                                const statuses = getUserStatuses(p.userId);
+                                const colorMap = {
+                                    'дружба': '#D9FD19',
+                                    'отношения': '#FB5EB0',
+                                    'бизнес': '#5E9FC5'
+                                };
+                                const colors = statuses.map(s => colorMap[s]).filter(c => c);
+                                img.style.boxShadow = colors.length === 1 
+                                    ? `0 0 0 2px ${colors[0]}` 
+                                    : '0 0 0 2px #D9FD19';
+                                img.style.border = 'none';
+                            }
                         } else {
                             img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                             img.style.border = 'none';
                         }
+                        
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
                             placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
@@ -422,20 +511,42 @@ export function showBottomSheet(index) {
                                 color: white !important;
                                 text-transform: uppercase !important;
                             `;
+                            
                             if (hasProfile) {
-                                const classes = getAvatarClasses(p.userId);
-                                placeholder.classList.add(...classes.split(' '));
-                                placeholder.style.border = 'none';
+                                const gradient = getAvatarGradient(p.userId);
+                                if (gradient) {
+                                    const wrappedPlaceholder = createAvatarWithGradient(placeholder, p.userId, 28);
+                                    this.parentNode.replaceChild(wrappedPlaceholder, this);
+                                    return;
+                                } else {
+                                    const statuses = getUserStatuses(p.userId);
+                                    const colorMap = {
+                                        'дружба': '#D9FD19',
+                                        'отношения': '#FB5EB0',
+                                        'бизнес': '#5E9FC5'
+                                    };
+                                    const colors = statuses.map(s => colorMap[s]).filter(c => c);
+                                    placeholder.style.boxShadow = colors.length === 1 
+                                        ? `0 0 0 2px ${colors[0]}` 
+                                        : '0 0 0 2px #D9FD19';
+                                    placeholder.style.border = 'none';
+                                }
                             } else {
                                 placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                                 placeholder.style.border = 'none';
                             }
+                            
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
                             this.parentNode.replaceChild(placeholder, this);
                         };
-                        avatarsEl.appendChild(img);
+                        
+                        if (finalElement !== img) {
+                            avatarsEl.appendChild(finalElement);
+                        } else {
+                            avatarsEl.appendChild(img);
+                        }
                     });
                 }
             });
@@ -1048,8 +1159,53 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                     border: none !important;
                 `;
                 if (hasProfile) {
-                    const classes = getAvatarClasses(p.userId);
-                    avatarEl.classList.add(...classes.split(' '));
+                    const gradient = getAvatarGradient(p.userId);
+                    if (gradient) {
+                        // Для дропдауна оборачиваем аватар в контейнер с градиентом
+                        const wrapper = document.createElement('div');
+                        wrapper.style.cssText = `
+                            position: relative;
+                            width: 30px;
+                            height: 30px;
+                            display: inline-block;
+                            flex-shrink: 0;
+                        `;
+                        avatarEl.style.cssText = `
+                            width: 100%;
+                            height: 100%;
+                            border-radius: 50%;
+                            object-fit: cover;
+                            position: relative;
+                            z-index: 2;
+                            box-shadow: none !important;
+                            border: none !important;
+                        `;
+                        const gradientRing = document.createElement('div');
+                        gradientRing.style.cssText = `
+                            position: absolute;
+                            top: -3px;
+                            left: -3px;
+                            right: -3px;
+                            bottom: -3px;
+                            border-radius: 50%;
+                            background: ${gradient};
+                            z-index: 1;
+                        `;
+                        wrapper.appendChild(gradientRing);
+                        wrapper.appendChild(avatarEl.cloneNode(true));
+                        avatarEl.parentNode.replaceChild(wrapper, avatarEl);
+                    } else {
+                        const statuses = getUserStatuses(p.userId);
+                        const colorMap = {
+                            'дружба': '#D9FD19',
+                            'отношения': '#FB5EB0',
+                            'бизнес': '#5E9FC5'
+                        };
+                        const colors = statuses.map(s => colorMap[s]).filter(c => c);
+                        avatarEl.style.boxShadow = colors.length === 1 
+                            ? `0 0 0 2px ${colors[0]}` 
+                            : '0 0 0 2px #D9FD19';
+                    }
                 } else {
                     avatarEl.style.boxShadow = '0 0 0 2px rgba(255,255,255,0.3)';
                 }
