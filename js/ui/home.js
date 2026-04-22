@@ -2,7 +2,7 @@
 import { haptic, openLink, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
-import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus } from '../firebase.js';
+import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadUpdates } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack } from './common.js';
 import { renderCalendar } from './calendar.js';
@@ -150,6 +150,12 @@ function renderGuestHome() {
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
+            <h2 class="section-title">⚙️ обновления приложения</h2>
+            <div id="updatesContainer" class="updates-container">
+                <div class="loader"></div>
+            </div>
+        </div>
+        <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true">смотреть отчёты &gt;</a></div>
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
@@ -185,6 +191,7 @@ function renderGuestHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
+    renderUpdates();
     setupBottomNav();
 }
 
@@ -212,6 +219,12 @@ function renderOwnerHome() {
             <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
+            <h2 class="section-title">⚙️ обновления приложения</h2>
+            <div id="updatesContainer" class="updates-container">
+                <div class="loader"></div>
+            </div>
+        </div>
+        <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false">смотреть отчёты &gt;</a></div>
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
@@ -234,14 +247,12 @@ function renderOwnerHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
+    renderUpdates();
     setupBottomNav();
 }
 
 // Основная функция рендера главной страницы
 export function renderHome() {
-    // Удаляем кнопку "Мой профиль", если она осталась с предыдущих страниц
-    document.querySelector('.profile-edit-fab')?.remove();
-
     hideBack();
     if (window._floatingScrollHandler) {
         window.removeEventListener('scroll', window._floatingScrollHandler);
@@ -263,4 +274,24 @@ export function renderHome() {
     } else {
         renderGuestHome();
     }
+}
+
+// Рендер обновлений
+async function renderUpdates() {
+    const container = document.getElementById('updatesContainer');
+    if (!container) return;
+    const updates = await loadUpdates();
+    if (!updates || updates.length === 0) {
+        container.innerHTML = '<div style="color:#fff; padding:16px; text-align:center;">Пока нет обновлений</div>';
+        return;
+    }
+    let html = '<div class="updates-list">';
+    updates.forEach(item => {
+        const date = item.date || '';
+        let text = item.update || '';
+        text = parseLinks(text, false);
+        html += `<div class="update-item"><span class="update-date">${date}</span> <span class="update-text">${text}</span></div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
 }
