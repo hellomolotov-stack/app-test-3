@@ -90,8 +90,8 @@ export async function renderProfiles() {
                 haptic();
                 const btn = e.currentTarget;
                 const eye = btn.querySelector('.eye-emoji');
-                eye.classList.add('rotated');
-                setTimeout(() => eye.classList.remove('rotated'), 300);
+                eye.style.transform = 'scaleX(-1)';
+                setTimeout(() => eye.style.transform = '', 300);
                 const msg = document.getElementById('guestMessage');
                 msg.style.display = 'block';
                 msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
@@ -174,15 +174,13 @@ export async function renderProfiles() {
             haptic();
             const btn = e.currentTarget;
             const eye = btn.querySelector('.eye-emoji');
-            eye.classList.add('rotated');
-            setTimeout(() => eye.classList.remove('rotated'), 300);
+            eye.style.transform = 'scaleX(-1)';
+            setTimeout(() => eye.style.transform = '', 300);
             const msg = document.getElementById('guestMessage');
             msg.style.display = 'block';
             msg.textContent = 'просмотр профилей и публикация своего профиля доступна владельцам карт интеллигента';
         });
     }
-
-    // Скролл не блокируем
 }
 
 async function renderEditProfile() {
