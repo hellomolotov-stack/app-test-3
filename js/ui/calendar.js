@@ -161,7 +161,6 @@ export function showBottomSheet(index) {
         currentUnsubscribe = null;
     }
 
-    // Загружаем профили, если ещё не загружены
     if (Object.keys(state.profiles).length === 0) {
         loadAllProfiles().then(profiles => {
             state.profiles = profiles;
@@ -925,7 +924,6 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     closeParticipantDropdown();
     haptic();
 
-    // Убедимся, что профили загружены
     if (Object.keys(state.profiles).length === 0) {
         try {
             const profiles = await loadAllProfiles();
@@ -940,6 +938,10 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.className = 'participant-dropdown';
     dropdown.style.maxHeight = '250px';
     dropdown.style.overflowY = 'auto';
+    // Fix scroll
+    dropdown.addEventListener('wheel', (e) => e.stopPropagation());
+    dropdown.addEventListener('touchstart', (e) => e.stopPropagation());
+    dropdown.addEventListener('touchmove', (e) => e.stopPropagation());
 
     if (participants.length === 0) {
         dropdown.innerHTML = '<div class="participant-dropdown-item" style="justify-content:center;">Пока никого нет</div>';
@@ -969,9 +971,14 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeParticipantDropdown();
-                    closeBottomSheet(); // Закрываем шторку
-                    renderProfiles();   // Переходим в раздел интеллигентов
-                    // Прокрутка к карточке пользователя будет внутри renderProfiles после рендера
+                    closeBottomSheet();
+                    // Save pending click
+                    state.pendingProfileClick = {
+                        userId: p.userId,
+                        name: name,
+                        photoUrl: p.photoUrl || null
+                    };
+                    renderProfiles();
                     setTimeout(() => {
                         const profileCard = document.querySelector(`.profile-card[data-user-id="${p.userId}"]`);
                         if (profileCard) {
@@ -1073,7 +1080,7 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
-// Делегирование событий для динамических кнопок
+// Делегирование событий
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
