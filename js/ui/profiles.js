@@ -81,7 +81,7 @@ function getBorderStyleForUser(userId) {
         const c = colors[0];
         return { border: `2px solid ${c}`, boxShadow: `0 0 8px ${c}` };
     } else {
-        // Создаём box-shadow, имитирующий многоцветную обводку
+        // Многоцветная обводка через многослойный box-shadow без утолщения
         const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
         return { border: '2px solid transparent', boxShadow: boxShadow };
     }
@@ -168,8 +168,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         transform: translate(-50%, -50%) !important;
         z-index: 100 !important;
         pointer-events: auto !important;
-        width: 100% !important;
-        max-width: 600px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
