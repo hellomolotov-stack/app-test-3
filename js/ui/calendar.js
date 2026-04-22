@@ -135,6 +135,32 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
+function getBorderStyleForUser(userId) {
+    const profile = state.profiles[userId];
+    if (!profile) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    const statuses = profile.friendshipStatuses || [];
+    if (statuses.length === 0) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    
+    if (statuses.length === 1) {
+        const s = statuses[0];
+        if (s === 'дружба') return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.4)' };
+        if (s === 'отношения') return { border: '2px solid #FB5EB0', boxShadow: '0 0 8px rgba(251, 94, 176, 0.4)' };
+        if (s === 'бизнес') return { border: '2px solid #5E9FC5', boxShadow: '0 0 8px rgba(94, 159, 197, 0.4)' };
+    }
+    
+    const colors = [];
+    if (statuses.includes('дружба')) colors.push('#D9FD19');
+    if (statuses.includes('отношения')) colors.push('#FB5EB0');
+    if (statuses.includes('бизнес')) colors.push('#5E9FC5');
+    
+    if (colors.length >= 2) {
+        const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
+        return { border: '2px solid transparent', boxShadow: boxShadow };
+    }
+    
+    return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+}
+
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
@@ -165,17 +191,6 @@ export function showBottomSheet(index) {
         loadAllProfiles().then(profiles => {
             state.profiles = profiles;
         }).catch(() => {});
-    }
-
-    function getAvatarClassesForUser(userId) {
-        const profile = state.profiles[userId];
-        if (!profile) return '';
-        const statuses = profile.friendshipStatuses || [];
-        const classes = ['avatar-status-border'];
-        if (statuses.includes('дружба')) classes.push('status-friendship');
-        if (statuses.includes('отношения')) classes.push('status-romance');
-        if (statuses.includes('бизнес')) classes.push('status-business');
-        return classes.join(' ');
     }
 
     function updateContent() {
@@ -361,27 +376,26 @@ export function showBottomSheet(index) {
                     avatarsEl.innerHTML = '';
                     participants.forEach(p => {
                         const hasProfile = !!state.profiles[p.userId];
-                        const borderClass = hasProfile ? getAvatarClassesForUser(p.userId) : '';
                         const img = document.createElement('img');
-img.src = p.photoUrl || '';
-img.className = 'participant-avatar' + (hasProfile ? ' has-profile ' + borderClass : '');
-if (hasProfile) {
-    img.style.borderRadius = '50%';
-    img.style.borderWidth = '2px';
-    img.style.borderStyle = 'solid';
-    // классы borderClass уже содержат цвет через CSS
-}
+                        img.src = p.photoUrl || '';
+                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
                         img.alt = p.name || '';
                         img.title = p.name || '';
                         img.dataset.userId = p.userId;
+                        img.style.borderRadius = '50%';
+                        img.style.border = '2px solid rgba(0,0,0,0.6)';
+                        img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                        if (hasProfile) {
+                            const borderStyle = getBorderStyleForUser(p.userId);
+                            img.style.border = borderStyle.border;
+                            img.style.boxShadow = borderStyle.boxShadow;
+                        }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
-                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile ' + borderClass : '');
-                            if (hasProfile) {
-    placeholder.style.borderRadius = '50%';
-    placeholder.style.borderWidth = '2px';
-    placeholder.style.borderStyle = 'solid';
-}
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                            placeholder.style.borderRadius = '50%';
+                            placeholder.style.border = hasProfile ? getBorderStyleForUser(p.userId).border : '2px solid rgba(0,0,0,0.6)';
+                            placeholder.style.boxShadow = hasProfile ? getBorderStyleForUser(p.userId).boxShadow : '0 2px 4px rgba(0,0,0,0.2)';
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
@@ -938,17 +952,6 @@ export function closeParticipantDropdown() {
     }
 }
 
-function getAvatarClassesForUser(userId) {
-    const profile = state.profiles[userId];
-    if (!profile) return '';
-    const statuses = profile.friendshipStatuses || [];
-    const classes = ['avatar-status-border'];
-    if (statuses.includes('дружба')) classes.push('status-friendship');
-    if (statuses.includes('отношения')) classes.push('status-romance');
-    if (statuses.includes('бизнес')) classes.push('status-business');
-    return classes.join(' ');
-}
-
 export async function toggleParticipantDropdown(counterElement, hikeDate) {
     const existing = document.querySelector('.participant-dropdown.show');
     if (existing && currentDropdownHikeDate === hikeDate) {
@@ -983,7 +986,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         participants.forEach(p => {
             const name = p.name || 'Участник';
             const hasProfile = !!state.profiles[p.userId];
-            const borderClass = hasProfile ? getAvatarClassesForUser(p.userId) : '';
+            const borderStyle = hasProfile ? getBorderStyleForUser(p.userId) : null;
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
@@ -993,14 +996,21 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             }
 
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile ' + borderClass : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile ' + borderClass : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
             } else {
-                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile ' + borderClass : ''}">${name.charAt(0).toUpperCase()}</div>`;
+                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}">${name.charAt(0).toUpperCase()}</div>`;
             }
             const nameSpan = document.createElement('span');
             nameSpan.className = 'participant-dropdown-name';
             nameSpan.textContent = name;
             item.appendChild(nameSpan);
+
+            const avatarEl = item.querySelector('.participant-dropdown-avatar');
+            if (avatarEl && hasProfile) {
+                avatarEl.style.borderRadius = '50%';
+                avatarEl.style.border = borderStyle.border;
+                avatarEl.style.boxShadow = borderStyle.boxShadow;
+            }
 
             if (hasProfile) {
                 item.addEventListener('click', (e) => {
@@ -1209,28 +1219,4 @@ document.addEventListener('click', function(e) {
                     <div class="modal-content" style="max-width: 300px;">
                         <div class="modal-title" style="color: ${accentColor};">доступ ограничен</div>
                         <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
-                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
-                    </div>
-                `;
-                document.body.appendChild(msg);
-                const closeBtn = msg.querySelector('.btn');
-                closeBtn.addEventListener('click', () => msg.remove());
-                setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
-                log('uchastniki_not_registered', state.userCard.status !== 'active', state.user);
-            }
-        }
-        return;
-    }
-    if (link.classList.contains('booking-detail-btn')) {
-        e.preventDefault();
-        const index = link.dataset.index;
-        if (index !== undefined) showBottomSheet(parseInt(index));
-        return;
-    }
-    if (link.classList.contains('bookings-calendar-link') || link.classList.contains('booking-go-btn')) {
-        e.preventDefault(); haptic();
-        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
-        return;
-    }
-});
+                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border
