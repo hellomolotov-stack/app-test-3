@@ -135,11 +135,11 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-function getBorderStyleForUser(userId) {
+function getAvatarBoxShadow(userId) {
     const profile = state.profiles[userId];
-    if (!profile) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    if (!profile) return '0 0 0 2px #D9FD19';
     const statuses = profile.friendshipStatuses || [];
-    if (statuses.length === 0) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    if (statuses.length === 0) return '0 0 0 2px #D9FD19';
     
     const colors = [];
     if (statuses.includes('дружба')) colors.push('#D9FD19');
@@ -147,11 +147,9 @@ function getBorderStyleForUser(userId) {
     if (statuses.includes('бизнес')) colors.push('#5E9FC5');
     
     if (colors.length === 1) {
-        const c = colors[0];
-        return { border: `2px solid ${c}`, boxShadow: `0 0 8px ${c}` };
+        return `0 0 0 2px ${colors[0]}`;
     } else {
-        const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
-        return { border: 'none', boxShadow: boxShadow };
+        return colors.map(c => `0 0 0 2px ${c}`).join(', ');
     }
 }
 
@@ -381,12 +379,9 @@ export function showBottomSheet(index) {
                         img.style.borderRadius = '50%';
                         img.style.objectFit = 'cover';
                         if (hasProfile) {
-                            const borderStyle = getBorderStyleForUser(p.userId);
-                            img.style.border = borderStyle.border;
-                            img.style.boxShadow = borderStyle.boxShadow;
+                            img.style.boxShadow = getAvatarBoxShadow(p.userId);
                         } else {
                             img.style.border = '2px solid rgba(0,0,0,0.6)';
-                            img.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                         }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
@@ -403,12 +398,9 @@ export function showBottomSheet(index) {
                             placeholder.style.color = 'white';
                             placeholder.style.textTransform = 'uppercase';
                             if (hasProfile) {
-                                const borderStyle = getBorderStyleForUser(p.userId);
-                                placeholder.style.border = borderStyle.border;
-                                placeholder.style.boxShadow = borderStyle.boxShadow;
+                                placeholder.style.boxShadow = getAvatarBoxShadow(p.userId);
                             } else {
                                 placeholder.style.border = '2px solid rgba(0,0,0,0.6)';
-                                placeholder.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
                             }
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
@@ -1000,7 +992,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         participants.forEach(p => {
             const name = p.name || 'Участник';
             const hasProfile = !!state.profiles[p.userId];
-            const borderStyle = hasProfile ? getBorderStyleForUser(p.userId) : null;
+            const boxShadow = hasProfile ? getAvatarBoxShadow(p.userId) : null;
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
@@ -1026,8 +1018,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                 avatarEl.style.borderRadius = '50%';
                 avatarEl.style.objectFit = 'cover';
                 if (hasProfile) {
-                    avatarEl.style.border = borderStyle.border;
-                    avatarEl.style.boxShadow = borderStyle.boxShadow;
+                    avatarEl.style.boxShadow = boxShadow;
                 } else {
                     avatarEl.style.border = '2px solid rgba(255,255,255,0.3)';
                 }
