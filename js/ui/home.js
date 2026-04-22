@@ -139,7 +139,10 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <h2 class="section-title">📨 обновления</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
+                <h2 class="section-title" style="margin: 0;">📨 обновления</h2>
+                <a href="#" class="updates-idea-link" id="updatesIdeaLink" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">предложить идею &gt;</a>
+            </div>
             <div class="updates-scroll">
                 ${itemsHtml}
             </div>
@@ -171,7 +174,6 @@ function renderGuestHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
-        ${renderUpdatesBlock()} <!-- NEW -->
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -186,6 +188,7 @@ function renderGuestHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
+        ${renderUpdatesBlock()} <!-- NEW: перенесено вниз -->
     `;
 
     // Обработчики
@@ -198,6 +201,13 @@ function renderGuestHome() {
             const isSeason = btn.classList.contains('season-card-btn');
             openLink(isSeason ? SEASON_CARD_LINK : PERMANENT_CARD_LINK, isSeason ? 'season_card_click' : 'permanent_card_click', true);
         });
+    });
+
+    // Ссылка "предложить идею"
+    document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://t.me/hellointelligent', 'idea_click', true);
     });
 
     // Аккордеон
@@ -234,7 +244,6 @@ function renderOwnerHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
-        ${renderUpdatesBlock()} <!-- NEW -->
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -249,6 +258,7 @@ function renderOwnerHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
+        ${renderUpdatesBlock()} <!-- NEW: перенесено вниз -->
     `;
 
     document.getElementById('ownerCardImage')?.addEventListener('click', () => {
@@ -260,6 +270,13 @@ function renderOwnerHome() {
     document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('privilege_click', false, user); renderPriv(); });
     document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'support_click', false); });
     document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', false, user); renderNewcomerPage(false); });
+
+    // Ссылка "предложить идею"
+    document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://t.me/hellointelligent', 'idea_click', false);
+    });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
