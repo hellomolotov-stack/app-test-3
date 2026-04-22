@@ -2045,7 +2045,7 @@ body::before {
 }
 
 .updates-scroll {
-    max-height: 200px;
+    max-height: 220px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     margin: 0 16px 8px 16px;
@@ -2054,9 +2054,9 @@ body::before {
 
 .update-item {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    padding: 10px 12px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
     margin-bottom: 8px;
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
@@ -2069,6 +2069,7 @@ body::before {
 
 .update-date {
     font-weight: 700;
+    font-style: italic;
     color: var(--yellow);
     white-space: nowrap;
     flex-shrink: 0;
@@ -2077,6 +2078,7 @@ body::before {
 .update-text {
     color: #ffffff;
     word-break: break-word;
+    font-size: 14px;
 }
 
 .update-text a {
@@ -2100,4 +2102,115 @@ body::before {
 .updates-scroll::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.4);
     border-radius: 4px;
+}
+
+/* -------------------- АДАПТИВНОЕ НИЖНЕЕ МЕНЮ -------------------- */
+.bottom-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    background-color: rgba(73, 138, 176, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 50px;
+    padding: 4px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.2);
+    z-index: 100;
+    transition: opacity 0.3s;
+    max-width: 600px;
+    margin: 0 auto;
+    width: calc(100% - 32px);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 2px;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    color: rgba(255,255,255,0.7);
+    border: 1px solid transparent;
+    position: relative;
+    white-space: nowrap;
+    flex: 1;
+    text-align: center;
+    margin: 0 2px;
+    min-width: 0;
+}
+
+.nav-icon svg {
+    width: 24px;
+    height: 24px;
+    display: block;
+    margin-bottom: 2px;
+    stroke: currentColor;
+    fill: none;
+}
+
+.nav-label {
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.nav-badge {
+    position: absolute;
+    top: -8px;
+    right: 5px;
+    background-color: var(--yellow);
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 30px;
+    white-space: nowrap;
+    z-index: 2;
+}
+
+/* Адаптивные правки для маленьких экранов */
+@media (max-width: 480px) {
+    .nav-item {
+        padding: 6px 4px;
+    }
+    .nav-label {
+        font-size: 10px;
+    }
+    .nav-icon svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (max-width: 400px) {
+    .nav-item {
+        padding: 6px 2px;
+    }
+    .nav-label {
+        font-size: 9px;
+    }
+    .nav-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+@media (max-width: 360px) {
+    .nav-item {
+        padding: 6px 0px;
+    }
+    .nav-label {
+        font-size: 8px;
+    }
+    .nav-icon svg {
+        width: 16px;
+        height: 16px;
+    }
 }
