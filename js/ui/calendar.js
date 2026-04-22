@@ -173,9 +173,25 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    // Добавляем первый цвет в конец для замыкания круга
-    const gradientColors = [...colors, colors[0]];
-    return `conic-gradient(${gradientColors.join(', ')})`;
+    // Создаём плавный градиент с переходными цветами
+    const steps = colors.length;
+    let gradientStops = [];
+    const transitionWidth = 15; // градусов для плавного перехода
+    
+    for (let i = 0; i < steps; i++) {
+        const currentColor = colors[i];
+        const nextColor = colors[(i + 1) % steps];
+        
+        const startAngle = i * (360 / steps);
+        const endAngle = (i + 1) * (360 / steps);
+        
+        // Основной цвет
+        gradientStops.push(`${currentColor} ${startAngle}deg ${endAngle - transitionWidth}deg`);
+        // Переход к следующему цвету
+        gradientStops.push(`${nextColor} ${endAngle - transitionWidth/2}deg ${endAngle + transitionWidth/2}deg`);
+    }
+    
+    return `conic-gradient(from 0deg, ${gradientStops.join(', ')})`;
 }
 
 function createAvatarWithGradient(imgElement, userId, size) {
@@ -202,7 +218,9 @@ function createAvatarWithGradient(imgElement, userId, size) {
         height: ${size}px;
         display: inline-block;
         flex-shrink: 0;
+        margin-left: 0 !important;
     `;
+    wrapper.className = 'avatar-gradient-wrapper';
     
     imgElement.style.cssText = `
         width: 100%;
@@ -445,7 +463,7 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    participants.forEach(p => {
+                    participants.forEach((p, index) => {
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
                         img.src = p.photoUrl || '';
@@ -535,6 +553,15 @@ export function showBottomSheet(index) {
                         } else {
                             avatarsEl.appendChild(img);
                         }
+                    });
+                    
+                    // Исправляем смещение в счётчике – обнуляем отрицательные margin-left для обёрток
+                    const wrappers = avatarsEl.querySelectorAll('.avatar-gradient-wrapper');
+                    wrappers.forEach((wrapper, i) => {
+                        if (i > 0) {
+                            wrapper.style.marginLeft = '-8px';
+                        }
+                        wrapper.style.zIndex = 3 - i;
                     });
                 }
             });
