@@ -1936,30 +1936,6 @@ body::before {
 .eye-emoji.rotated {
     transform: rotate(90deg);
 }
-/* Многоцветная обводка через conic-gradient */
-.avatar-multi-status {
-    position: relative;
-    box-shadow: none !important;
-    border: none !important;
-}
-.avatar-multi-status::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 50%;
-    background: var(--avatar-gradient);
-    z-index: -1;
-}
-/* Чтобы псевдоэлемент не обрезался */
-.participant-avatar.avatar-multi-status,
-.participant-dropdown-avatar.avatar-multi-status,
-.preview-avatar-img.avatar-multi-status,
-.preview-avatar-placeholder.avatar-multi-status {
-    overflow: visible;
-}
 /* Многоцветная обводка через conic-gradient с маской */
 .avatar-multi-status {
     position: relative;
