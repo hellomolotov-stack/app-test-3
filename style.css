@@ -1936,6 +1936,44 @@ body::before {
 .eye-emoji.rotated {
     transform: rotate(90deg);
 }
+/* Блюр с блокировкой нажатий */
+.profile-blur-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    z-index: 99 !important;
+    pointer-events: all !important; /* Блокируем нажатия */
+}
+
+/* Центральная кнопка и баннер должны быть поверх блюра */
+.center-floating-btn,
+.guest-center-btn,
+.profile-preview-banner {
+    z-index: 100 !important;
+}
+
+/* Выравнивание больших заголовков по левому краю */
+.section-title {
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+    text-align: left !important;
+}
+
+/* Подсветка профиля при переходе — белая */
+@keyframes highlightPulseWhite {
+    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+    50% { box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.5); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+.profile-card.highlight-pulse {
+    animation: highlightPulseWhite 1.5s ease-in-out;
+}
+
 /* -------------------- ЦВЕТНЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
 .avatar-status-border {
     border-width: 2px !important;
@@ -1958,7 +1996,7 @@ body::before {
     box-shadow: 0 0 8px rgba(94, 159, 197, 0.4);
 }
 
-/* Два статуса – градиенты через псевдоэлемент */
+/* Два и более статуса — градиент через псевдоэлемент */
 .avatar-status-border.status-friendship.status-romance,
 .avatar-status-border.status-friendship.status-business,
 .avatar-status-border.status-romance.status-business,
@@ -1983,7 +2021,7 @@ body::before {
     z-index: 1;
 }
 
-/* Градиенты для комбинаций статусов */
+/* Градиенты для комбинаций */
 .avatar-status-border.status-friendship.status-romance::after {
     border-image: linear-gradient(45deg, var(--yellow), #FB5EB0) 1;
 }
