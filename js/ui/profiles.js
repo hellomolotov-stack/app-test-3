@@ -66,11 +66,11 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-// Универсальное извлечение статусов пользователя
 function getUserStatuses(userId) {
     const profile = state.profiles[userId];
     if (!profile) return [];
     const statuses = profile.friendshipStatuses;
+    console.log(`[DEBUG] getUserStatuses for ${userId}:`, statuses, typeof statuses);
     if (!statuses) return [];
     
     if (Array.isArray(statuses)) {
@@ -94,7 +94,6 @@ function getUserStatuses(userId) {
     return [];
 }
 
-// Генерация цветной обводки
 function getAvatarBoxShadow(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
@@ -103,7 +102,11 @@ function getAvatarBoxShadow(userId) {
         'бизнес': '#5E9FC5'
     };
     
-    const colors = statuses.map(s => colorMap[s]).filter(c => c);
+    const colors = statuses
+        .map(s => colorMap[s])
+        .filter(c => c);
+    
+    console.log(`[DEBUG] getAvatarBoxShadow for ${userId}: statuses =`, statuses, 'colors =', colors);
     
     if (colors.length === 0) {
         return '0 0 0 2px #D9FD19';
