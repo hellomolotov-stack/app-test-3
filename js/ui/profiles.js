@@ -70,7 +70,6 @@ function getUserStatuses(userId) {
     const profile = state.profiles[userId];
     if (!profile) return [];
     const statuses = profile.friendshipStatuses;
-    console.log(`[DEBUG] getUserStatuses for ${userId}:`, statuses, typeof statuses);
     if (!statuses) return [];
     
     if (Array.isArray(statuses)) {
@@ -102,18 +101,15 @@ function getAvatarBoxShadow(userId) {
         'бизнес': '#5E9FC5'
     };
     
-    const colors = statuses
-        .map(s => colorMap[s])
-        .filter(c => c);
-    
-    console.log(`[DEBUG] getAvatarBoxShadow for ${userId}: statuses =`, statuses, 'colors =', colors);
+    const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
     if (colors.length === 0) {
         return '0 0 0 2px #D9FD19';
     } else if (colors.length === 1) {
         return `0 0 0 2px ${colors[0]}`;
     } else {
-        return colors.map(c => `0 0 0 2px ${c}`).join(', ');
+        const layers = colors.map((c, i) => `0 0 0 ${2 + i * 2}px ${c}`);
+        return layers.join(', ');
     }
 }
 
