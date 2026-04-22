@@ -1950,12 +1950,13 @@ body::before {
     right: -4px;
     bottom: -4px;
     border-radius: 50%;
-    background: conic-gradient(var(--avatar-colors));
+    background: var(--avatar-gradient);
     z-index: -1;
 }
-.participant-avatar.has-profile.avatar-multi-status::before,
-.participant-dropdown-avatar.has-profile.avatar-multi-status::before,
-.preview-avatar-img.avatar-multi-status::before,
-.preview-avatar-placeholder.avatar-multi-status::before {
-    /* псевдоэлемент уже определён выше */
+/* Чтобы псевдоэлемент не обрезался */
+.participant-avatar.avatar-multi-status,
+.participant-dropdown-avatar.avatar-multi-status,
+.preview-avatar-img.avatar-multi-status,
+.preview-avatar-placeholder.avatar-multi-status {
+    overflow: visible;
 }
