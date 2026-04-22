@@ -131,7 +131,7 @@ function getAvatarBoxShadow(userId) {
         const layers = colors.map((c, i) => `0 0 0 ${2 + i * 2}px ${c}`);
         return layers.join(', ');
     }
-}
+
 
 export async function renderProfiles() {
     document.querySelector('.profile-edit-fab')?.remove();
