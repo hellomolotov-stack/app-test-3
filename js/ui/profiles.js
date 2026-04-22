@@ -66,15 +66,34 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-function getAvatarClassesForUser(userId) {
+// Функция для получения цвета обводки по статусам (для инлайн-стилей)
+function getBorderStyleForUser(userId) {
     const profile = state.profiles[userId];
-    if (!profile) return '';
+    if (!profile) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
     const statuses = profile.friendshipStatuses || [];
-    const classes = ['avatar-status-border'];
-    if (statuses.includes('дружба')) classes.push('status-friendship');
-    if (statuses.includes('отношения')) classes.push('status-romance');
-    if (statuses.includes('бизнес')) classes.push('status-business');
-    return classes.join(' ');
+    if (statuses.length === 0) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    
+    if (statuses.length === 1) {
+        const s = statuses[0];
+        if (s === 'дружба') return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.4)' };
+        if (s === 'отношения') return { border: '2px solid #FB5EB0', boxShadow: '0 0 8px rgba(251, 94, 176, 0.4)' };
+        if (s === 'бизнес') return { border: '2px solid #5E9FC5', boxShadow: '0 0 8px rgba(94, 159, 197, 0.4)' };
+    }
+    
+    // Для нескольких статусов используем градиент через border-image
+    // Поскольку border-image не всегда работает с border-radius, будем использовать box-shadow с несколькими цветами
+    const colors = [];
+    if (statuses.includes('дружба')) colors.push('#D9FD19');
+    if (statuses.includes('отношения')) colors.push('#FB5EB0');
+    if (statuses.includes('бизнес')) colors.push('#5E9FC5');
+    
+    if (colors.length >= 2) {
+        // Создаём градиентный border через псевдоэлемент? Проще сделать множественный box-shadow
+        const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
+        return { border: '2px solid transparent', boxShadow: boxShadow };
+    }
+    
+    return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
 }
 
 export async function renderProfiles() {
@@ -157,6 +176,9 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     centerBtn.style.transform = 'translate(-50%, -50%)';
     centerBtn.style.zIndex = '100';
     centerBtn.style.pointerEvents = 'auto';
+    // Убираем ограничения ширины у родителя
+    centerBtn.style.width = 'fit-content';
+    centerBtn.style.maxWidth = '90%';
     document.body.appendChild(centerBtn);
 
     const actionBtn = document.getElementById('profileActionBtn');
@@ -185,35 +207,90 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
-        const borderClass = getAvatarClassesForUser(previewProfile.userId);
+        const borderStyle = getBorderStyleForUser(previewProfile.userId);
         const previewDiv = document.createElement('div');
         previewDiv.className = 'profile-click-preview';
-        // Инлайн-стили для гарантии ширины баннера
-        previewDiv.style.width = '90%';
-        previewDiv.style.maxWidth = '520px';
-        previewDiv.style.margin = '0 auto 16px auto';
-        previewDiv.style.padding = '16px';
-        previewDiv.style.background = 'rgba(255, 255, 255, 0.1)';
-        previewDiv.style.borderRadius = '28px';
-        previewDiv.style.backdropFilter = 'blur(8px)';
-        previewDiv.style.webkitBackdropFilter = 'blur(8px)';
-        previewDiv.style.boxShadow = 'inset 0 0 0 1px rgba(255,255,255,0.15)';
-        previewDiv.style.display = 'flex';
-        previewDiv.style.alignItems = 'center';
-        previewDiv.style.gap = '14px';
-        previewDiv.style.boxSizing = 'border-box';
-
-        previewDiv.innerHTML = `
-            <div class="preview-avatar">
-                ${previewProfile.photoUrl ? 
-                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img ${borderClass}" style="border-radius: 50% !important; border-width: 2px !important; border-style: solid !important;" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder ${borderClass}\\' style=\\'border-radius: 50% !important; border-width: 2px !important; border-style: solid !important;\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
-                    `<div class="preview-avatar-placeholder ${borderClass}" style="border-radius: 50% !important; border-width: 2px !important; border-style: solid !important;">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
-                }
-            </div>
-            <div class="preview-text">
-                <span class="preview-name">${escapeHtml(previewProfile.name)}</span> — и другие интеллигенты уже создали свой профиль. готов опубликовать свой, чтобы вывести знакомства на новый уровень?
-            </div>
+        // Инлайн-стили для баннера с максимальной гарантией
+        previewDiv.style.cssText = `
+            width: 90%;
+            max-width: 520px;
+            margin: 0 auto 16px auto;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 14px;
+            box-sizing: border-box;
         `;
+
+        const avatarContainer = document.createElement('div');
+        avatarContainer.className = 'preview-avatar';
+        avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
+
+        if (previewProfile.photoUrl) {
+            const img = document.createElement('img');
+            img.src = previewProfile.photoUrl;
+            img.className = 'preview-avatar-img';
+            img.style.cssText = `
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                object-fit: cover;
+                border: ${borderStyle.border};
+                box-shadow: ${borderStyle.boxShadow};
+            `;
+            img.onerror = function() {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'preview-avatar-placeholder';
+                placeholder.style.cssText = `
+                    width: 100%;
+                    height: 100%;
+                    border-radius: 50%;
+                    background: #40a7e3;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 24px;
+                    color: white;
+                    border: ${borderStyle.border};
+                    box-shadow: ${borderStyle.boxShadow};
+                `;
+                placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+                this.parentNode.replaceChild(placeholder, this);
+            };
+            avatarContainer.appendChild(img);
+        } else {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'preview-avatar-placeholder';
+            placeholder.style.cssText = `
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                background: #40a7e3;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                color: white;
+                border: ${borderStyle.border};
+                box-shadow: ${borderStyle.boxShadow};
+            `;
+            placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+            avatarContainer.appendChild(placeholder);
+        }
+
+        const textDiv = document.createElement('div');
+        textDiv.className = 'preview-text';
+        textDiv.style.cssText = 'flex: 1; font-size: 14px; color: #fff; line-height: 1.4; word-break: break-word;';
+        textDiv.innerHTML = `<span class="preview-name" style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> — и другие интеллигенты уже создали свой профиль. готов опубликовать свой, чтобы вывести знакомства на новый уровень?`;
+
+        previewDiv.appendChild(avatarContainer);
+        previewDiv.appendChild(textDiv);
         centerBtn.insertBefore(previewDiv, centerBtn.firstChild);
     }
 }
