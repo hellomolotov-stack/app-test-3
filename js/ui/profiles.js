@@ -68,28 +68,23 @@ function getRandomProfile() {
 
 function getBorderStyleForUser(userId) {
     const profile = state.profiles[userId];
-    if (!profile) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
+    if (!profile) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
     const statuses = profile.friendshipStatuses || [];
-    if (statuses.length === 0) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
-    
-    if (statuses.length === 1) {
-        const s = statuses[0];
-        if (s === 'дружба') return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.4)' };
-        if (s === 'отношения') return { border: '2px solid #FB5EB0', boxShadow: '0 0 8px rgba(251, 94, 176, 0.4)' };
-        if (s === 'бизнес') return { border: '2px solid #5E9FC5', boxShadow: '0 0 8px rgba(94, 159, 197, 0.4)' };
-    }
+    if (statuses.length === 0) return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
     
     const colors = [];
     if (statuses.includes('дружба')) colors.push('#D9FD19');
     if (statuses.includes('отношения')) colors.push('#FB5EB0');
     if (statuses.includes('бизнес')) colors.push('#5E9FC5');
     
-    if (colors.length >= 2) {
+    if (colors.length === 1) {
+        const c = colors[0];
+        return { border: `2px solid ${c}`, boxShadow: `0 0 8px ${c}` };
+    } else {
+        // Создаём box-shadow, имитирующий многоцветную обводку
         const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
         return { border: '2px solid transparent', boxShadow: boxShadow };
     }
-    
-    return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
 }
 
 export async function renderProfiles() {
@@ -167,14 +162,18 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const btnText = '📝 создать профиль';
     centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
     centerBtn.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 100;
-        pointer-events: auto;
-        width: fit-content !important;
-        max-width: 90% !important;
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 100 !important;
+        pointer-events: auto !important;
+        width: 100% !important;
+        max-width: 600px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
     `;
     document.body.appendChild(centerBtn);
 
