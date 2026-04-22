@@ -82,18 +82,18 @@ export function showAnimatedLoader() {
     if (!loader) return;
     loader.innerHTML = `
         <div class="loader-animation">
-            <div class="loader-emoji" id="loaderEmoji">⛰️</div>
-            <div class="loader-text" id="loaderText">выбираем вершину</div>
+            <div class="loader-emoji" id="loaderEmoji">🗺️</div>
+            <div class="loader-text" id="loaderText">выбираем маршрут</div>
         </div>
         <div class="loader-message" id="loaderMessage" style="display: none;">⚡️ для работы приложения включи три буквы</div>
     `;
     loader.style.display = 'flex';
     loader.classList.remove('fade-out');
     const steps = [
-        { emoji: '⛰️', text: 'выбираем вершину' },
-        { emoji: '🥾', text: 'завязываем шнурки' },
-        { emoji: '🗺️', text: 'прокладываем маршрут' },
-        { emoji: '✨', text: 'наполняемся красотой' }
+        { emoji: '🗺️', text: 'выбираем маршрут' },
+        { emoji: '🎩', text: 'собираем интеллигентов' },
+        { emoji: '📷', text: 'заряжаем камеру' },
+        { emoji: '💫', text: 'идём на хайк' }
     ];
     let index = 0;
     const emojiEl = document.getElementById('loaderEmoji');
@@ -109,7 +109,7 @@ export function showAnimatedLoader() {
         if (loader.style.display !== 'none' && !loader.classList.contains('fade-out')) {
             messageEl.style.display = 'block';
         }
-    }, 3000);
+    }, 1000);
 }
 
 export function hideAnimatedLoader() {
