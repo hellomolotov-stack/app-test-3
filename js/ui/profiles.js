@@ -66,19 +66,26 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-// Возвращает строку box-shadow для аватара
-function getAvatarBoxShadow(userId) {
+function getUserStatuses(userId) {
     const profile = state.profiles[userId];
-    if (!profile) return '0 0 0 2px #D9FD19';
-    const statuses = profile.friendshipStatuses || [];
-    if (statuses.length === 0) return '0 0 0 2px #D9FD19';
-    
+    if (!profile) return [];
+    const statuses = profile.friendshipStatuses;
+    if (!statuses) return [];
+    if (Array.isArray(statuses)) return statuses;
+    if (typeof statuses === 'object') return Object.values(statuses);
+    return [];
+}
+
+function getAvatarBoxShadow(userId) {
+    const statuses = getUserStatuses(userId);
     const colors = [];
     if (statuses.includes('дружба')) colors.push('#D9FD19');
     if (statuses.includes('отношения')) colors.push('#FB5EB0');
     if (statuses.includes('бизнес')) colors.push('#5E9FC5');
     
-    if (colors.length === 1) {
+    if (colors.length === 0) {
+        return '0 0 0 2px #D9FD19'; // по умолчанию жёлтый
+    } else if (colors.length === 1) {
         return `0 0 0 2px ${colors[0]}`;
     } else {
         return colors.map(c => `0 0 0 2px ${c}`).join(', ');
@@ -156,7 +163,6 @@ export async function renderProfiles() {
 }
 
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
-    // Кнопка
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
     const btnText = '📝 создать профиль';
