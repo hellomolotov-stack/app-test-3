@@ -196,7 +196,7 @@ function showGuestProfilePopup() {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 340px;">
+        <div class="modal-content" style="max-width: 360px;">
             <div class="modal-title" style="font-size: 18px;">💳 карта интеллигента</div>
             <div class="modal-text" style="font-size: 14px;">
                 для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?
@@ -205,8 +205,14 @@ function showGuestProfilePopup() {
         </div>
     `;
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
-    document.getElementById('goToPrivilegesBtn').addEventListener('click', () => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+    document.getElementById('goToPrivilegesBtn').addEventListener('click', (e) => {
+        e.preventDefault();
         haptic();
         overlay.remove();
         renderGuestPrivileges();
