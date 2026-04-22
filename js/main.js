@@ -20,6 +20,7 @@ function cleanupProfileOverlays() {
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
     document.querySelector('.center-floating-btn')?.remove();
+    document.querySelector('.profile-preview-banner')?.remove();
     document.body.style.overflow = '';
 }
 
