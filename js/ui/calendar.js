@@ -135,133 +135,6 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-function getUserStatuses(userId) {
-    const profile = state.profiles[userId];
-    if (!profile) return [];
-    const statuses = profile.friendshipStatuses;
-    if (!statuses) return [];
-    
-    if (Array.isArray(statuses)) {
-        return statuses.filter(s => typeof s === 'string');
-    }
-    
-    if (typeof statuses === 'object' && !Array.isArray(statuses)) {
-        const result = [];
-        for (const key in statuses) {
-            if (statuses[key] === true || statuses[key] === 'да') {
-                result.push(key);
-            }
-        }
-        return result;
-    }
-    
-    if (typeof statuses === 'string') {
-        return statuses.split(',').map(s => s.trim());
-    }
-    
-    return [];
-}
-
-function getAvatarGradient(userId) {
-    const statuses = getUserStatuses(userId);
-    const colorMap = {
-        'дружба': '#D9FD19',
-        'отношения': '#FB5EB0',
-        'бизнес': '#5E9FC5'
-    };
-    const colors = statuses.map(s => colorMap[s]).filter(c => c);
-    
-    if (colors.length <= 1) return null;
-    
-    // Создаём плавный градиент с большим количеством шагов
-    const steps = 36; // чем больше, тем плавнее
-    const segment = 360 / steps;
-    const gradientStops = [];
-    for (let i = 0; i < steps; i++) {
-        const angle = i * segment;
-        const progress = i / steps;
-        const index = progress * colors.length;
-        const idx1 = Math.floor(index) % colors.length;
-        const idx2 = (idx1 + 1) % colors.length;
-        const t = index - Math.floor(index);
-        
-        const c1 = colors[idx1];
-        const c2 = colors[idx2];
-        const r = parseInt(c1.slice(1,3), 16);
-        const g = parseInt(c1.slice(3,5), 16);
-        const b = parseInt(c1.slice(5,7), 16);
-        const r2 = parseInt(c2.slice(1,3), 16);
-        const g2 = parseInt(c2.slice(3,5), 16);
-        const b2 = parseInt(c2.slice(5,7), 16);
-        
-        const rAvg = Math.round(r + (r2 - r) * t);
-        const gAvg = Math.round(g + (g2 - g) * t);
-        const bAvg = Math.round(b + (b2 - b) * t);
-        
-        gradientStops.push(`rgb(${rAvg}, ${gAvg}, ${bAvg}) ${angle}deg`);
-    }
-    
-    return `conic-gradient(from 0deg, ${gradientStops.join(', ')})`;
-}
-
-function createAvatarWithGradient(imgElement, userId, size) {
-    const gradient = getAvatarGradient(userId);
-    if (!gradient) {
-        const statuses = getUserStatuses(userId);
-        const colorMap = {
-            'дружба': '#D9FD19',
-            'отношения': '#FB5EB0',
-            'бизнес': '#5E9FC5'
-        };
-        const colors = statuses.map(s => colorMap[s]).filter(c => c);
-        imgElement.style.boxShadow = colors.length === 1 
-            ? `0 0 0 2px ${colors[0]}` 
-            : '0 0 0 2px #D9FD19';
-        imgElement.style.border = 'none';
-        return imgElement;
-    }
-    
-    const wrapper = document.createElement('div');
-    wrapper.style.cssText = `
-        position: relative;
-        width: ${size}px;
-        height: ${size}px;
-        display: inline-block;
-        flex-shrink: 0;
-        margin-left: -8px;
-    `;
-    
-    // Аватар точно по центру
-    imgElement.style.cssText = `
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        object-fit: cover;
-        position: absolute;
-        top: 0;
-        left: 0;
-        z-index: 2;
-        box-shadow: none !important;
-        border: none !important;
-    `;
-    
-    const gradientRing = document.createElement('div');
-    gradientRing.style.cssText = `
-        position: absolute;
-        top: -2px;
-        left: -2px;
-        right: -2px;
-        bottom: -2px;
-        border-radius: 50%;
-        background: ${gradient};
-        z-index: 1;
-    `;
-    
-    wrapper.appendChild(gradientRing);
-    wrapper.appendChild(imgElement);
-    return wrapper;
-}
-
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
@@ -475,7 +348,7 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    participants.forEach((p, idx) => {
+                    participants.forEach(p => {
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
                         img.src = p.photoUrl || '';
@@ -489,31 +362,13 @@ export function showBottomSheet(index) {
                             border-radius: 50% !important;
                             object-fit: cover !important;
                         `;
-                        
-                        let finalElement = img;
                         if (hasProfile) {
-                            const gradient = getAvatarGradient(p.userId);
-                            if (gradient) {
-                                finalElement = createAvatarWithGradient(img, p.userId, 28);
-                                finalElement.style.zIndex = participants.length - idx;
-                            } else {
-                                const statuses = getUserStatuses(p.userId);
-                                const colorMap = {
-                                    'дружба': '#D9FD19',
-                                    'отношения': '#FB5EB0',
-                                    'бизнес': '#5E9FC5'
-                                };
-                                const colors = statuses.map(s => colorMap[s]).filter(c => c);
-                                img.style.boxShadow = colors.length === 1 
-                                    ? `0 0 0 2px ${colors[0]}` 
-                                    : '0 0 0 2px #D9FD19';
-                                img.style.border = 'none';
-                            }
+                            img.style.boxShadow = '0 0 0 2px #D9FD19';
+                            img.style.border = 'none';
                         } else {
                             img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                             img.style.border = 'none';
                         }
-                        
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
                             placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
@@ -530,39 +385,19 @@ export function showBottomSheet(index) {
                                 color: white !important;
                                 text-transform: uppercase !important;
                             `;
-                            
                             if (hasProfile) {
-                                const gradient = getAvatarGradient(p.userId);
-                                if (gradient) {
-                                    const wrappedPlaceholder = createAvatarWithGradient(placeholder, p.userId, 28);
-                                    wrappedPlaceholder.style.zIndex = participants.length - idx;
-                                    this.parentNode.replaceChild(wrappedPlaceholder, this);
-                                    return;
-                                } else {
-                                    const statuses = getUserStatuses(p.userId);
-                                    const colorMap = {
-                                        'дружба': '#D9FD19',
-                                        'отношения': '#FB5EB0',
-                                        'бизнес': '#5E9FC5'
-                                    };
-                                    const colors = statuses.map(s => colorMap[s]).filter(c => c);
-                                    placeholder.style.boxShadow = colors.length === 1 
-                                        ? `0 0 0 2px ${colors[0]}` 
-                                        : '0 0 0 2px #D9FD19';
-                                    placeholder.style.border = 'none';
-                                }
+                                placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
+                                placeholder.style.border = 'none';
                             } else {
                                 placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                                 placeholder.style.border = 'none';
                             }
-                            
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
                             this.parentNode.replaceChild(placeholder, this);
                         };
-                        
-                        avatarsEl.appendChild(finalElement);
+                        avatarsEl.appendChild(img);
                     });
                 }
             });
@@ -1175,54 +1010,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                     border: none !important;
                 `;
                 if (hasProfile) {
-                    const gradient = getAvatarGradient(p.userId);
-                    if (gradient) {
-                        const wrapper = document.createElement('div');
-                        wrapper.style.cssText = `
-                            position: relative;
-                            width: 30px;
-                            height: 30px;
-                            display: inline-block;
-                            flex-shrink: 0;
-                        `;
-                        avatarEl.style.cssText = `
-                            width: 100%;
-                            height: 100%;
-                            border-radius: 50%;
-                            object-fit: cover;
-                            position: absolute;
-                            top: 0;
-                            left: 0;
-                            z-index: 2;
-                            box-shadow: none !important;
-                            border: none !important;
-                        `;
-                        const gradientRing = document.createElement('div');
-                        gradientRing.style.cssText = `
-                            position: absolute;
-                            top: -2px;
-                            left: -2px;
-                            right: -2px;
-                            bottom: -2px;
-                            border-radius: 50%;
-                            background: ${gradient};
-                            z-index: 1;
-                        `;
-                        wrapper.appendChild(gradientRing);
-                        wrapper.appendChild(avatarEl.cloneNode(true));
-                        avatarEl.parentNode.replaceChild(wrapper, avatarEl);
-                    } else {
-                        const statuses = getUserStatuses(p.userId);
-                        const colorMap = {
-                            'дружба': '#D9FD19',
-                            'отношения': '#FB5EB0',
-                            'бизнес': '#5E9FC5'
-                        };
-                        const colors = statuses.map(s => colorMap[s]).filter(c => c);
-                        avatarEl.style.boxShadow = colors.length === 1 
-                            ? `0 0 0 2px ${colors[0]}` 
-                            : '0 0 0 2px #D9FD19';
-                    }
+                    avatarEl.style.boxShadow = '0 0 0 2px #D9FD19';
                 } else {
                     avatarEl.style.boxShadow = '0 0 0 2px rgba(255,255,255,0.3)';
                 }
