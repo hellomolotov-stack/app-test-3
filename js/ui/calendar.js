@@ -162,6 +162,13 @@ function getUserStatuses(userId) {
     return [];
 }
 
+function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return { r, g, b };
+}
+
 function getAvatarGradient(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
@@ -173,15 +180,24 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    const step = 360 / colors.length;
-    let gradient = 'conic-gradient(from 0deg';
-    colors.forEach((color, i) => {
-        const start = i * step;
-        const end = (i + 1) * step;
-        gradient += `, ${color} ${start}deg ${end}deg`;
-    });
-    gradient += ')';
-    return gradient;
+    const segments = [];
+    const segmentCount = colors.length * 12;
+    for (let i = 0; i < segmentCount; i++) {
+        const pos = (i / segmentCount) * 360;
+        const colorIndex = Math.floor(i / 12) % colors.length;
+        const nextColorIndex = (colorIndex + 1) % colors.length;
+        const t = (i % 12) / 12;
+        
+        const c1 = hexToRgb(colors[colorIndex]);
+        const c2 = hexToRgb(colors[nextColorIndex]);
+        const r = Math.round(c1.r + (c2.r - c1.r) * t);
+        const g = Math.round(c1.g + (c2.g - c1.g) * t);
+        const b = Math.round(c1.b + (c2.b - c1.b) * t);
+        
+        segments.push(`rgb(${r}, ${g}, ${b}) ${pos}deg`);
+    }
+    
+    return `conic-gradient(from 0deg, ${segments.join(', ')})`;
 }
 
 function createAvatarWithGradient(imgElement, userId, size) {
@@ -216,7 +232,9 @@ function createAvatarWithGradient(imgElement, userId, size) {
         height: 100%;
         border-radius: 50%;
         object-fit: cover;
-        position: relative;
+        position: absolute;
+        top: 0;
+        left: 0;
         z-index: 2;
         box-shadow: none !important;
         border: none !important;
@@ -1167,7 +1185,9 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                             height: 100%;
                             border-radius: 50%;
                             object-fit: cover;
-                            position: relative;
+                            position: absolute;
+                            top: 0;
+                            left: 0;
                             z-index: 2;
                             box-shadow: none !important;
                             border: none !important;
