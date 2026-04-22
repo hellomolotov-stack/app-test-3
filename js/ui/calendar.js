@@ -162,7 +162,7 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function getAvatarStyle(userId) {
+function getAvatarGradient(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
         'дружба': '#D9FD19',
@@ -172,25 +172,26 @@ function getAvatarStyle(userId) {
     const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
     if (colors.length === 0) {
-        return { boxShadow: '0 0 0 2px #D9FD19', multi: false };
+        return null;
     }
     if (colors.length === 1) {
-        return { boxShadow: `0 0 0 2px ${colors[0]}`, multi: false };
+        return `0 0 0 2px ${colors[0]}`;
     }
     
+    // Строим строку для conic-gradient с равномерным распределением цветов
     const steps = colors.length;
-    let gradientStr = 'conic-gradient(from 0deg';
+    let gradientStr = 'conic-gradient(';
     colors.forEach((color, index) => {
         const startAngle = (index * 360) / steps;
         const endAngle = ((index + 1) * 360) / steps;
-        gradientStr += `, ${color} ${startAngle}deg ${endAngle}deg`;
+        gradientStr += `${color} ${startAngle}deg ${endAngle}deg`;
         if (index < steps - 1) {
             gradientStr += `, ${color} ${endAngle}deg`;
         }
     });
     gradientStr += ')';
     
-    return { multi: true, gradient: gradientStr };
+    return gradientStr;
 }
 
 export function showBottomSheet(index) {
@@ -421,14 +422,19 @@ export function showBottomSheet(index) {
                             object-fit: cover !important;
                         `;
                         if (hasProfile) {
-                            const style = getAvatarStyle(p.userId);
-                            if (style.multi) {
-                                img.classList.add('avatar-multi-status');
-                                img.style.setProperty('--avatar-gradient', style.gradient);
+                            const gradient = getAvatarGradient(p.userId);
+                            if (gradient) {
+                                if (gradient.startsWith('conic-gradient')) {
+                                    img.classList.add('avatar-multi-status');
+                                    img.style.setProperty('--avatar-gradient', gradient);
+                                } else {
+                                    img.style.boxShadow = gradient;
+                                }
+                                img.style.border = 'none';
                             } else {
-                                img.style.boxShadow = style.boxShadow;
+                                img.style.boxShadow = '0 0 0 2px #D9FD19';
+                                img.style.border = 'none';
                             }
-                            img.style.border = 'none';
                         } else {
                             img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                             img.style.border = 'none';
@@ -450,14 +456,19 @@ export function showBottomSheet(index) {
                                 text-transform: uppercase !important;
                             `;
                             if (hasProfile) {
-                                const style = getAvatarStyle(p.userId);
-                                if (style.multi) {
-                                    placeholder.classList.add('avatar-multi-status');
-                                    placeholder.style.setProperty('--avatar-gradient', style.gradient);
+                                const gradient = getAvatarGradient(p.userId);
+                                if (gradient) {
+                                    if (gradient.startsWith('conic-gradient')) {
+                                        placeholder.classList.add('avatar-multi-status');
+                                        placeholder.style.setProperty('--avatar-gradient', gradient);
+                                    } else {
+                                        placeholder.style.boxShadow = gradient;
+                                    }
+                                    placeholder.style.border = 'none';
                                 } else {
-                                    placeholder.style.boxShadow = style.boxShadow;
+                                    placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
+                                    placeholder.style.border = 'none';
                                 }
-                                placeholder.style.border = 'none';
                             } else {
                                 placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
                                 placeholder.style.border = 'none';
@@ -1052,7 +1063,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         participants.forEach(p => {
             const name = p.name || 'Участник';
             const hasProfile = !!state.profiles[p.userId];
-            const style = hasProfile ? getAvatarStyle(p.userId) : null;
+            const gradient = hasProfile ? getAvatarGradient(p.userId) : null;
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
@@ -1081,11 +1092,15 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                     border: none !important;
                 `;
                 if (hasProfile) {
-                    if (style.multi) {
-                        avatarEl.classList.add('avatar-multi-status');
-                        avatarEl.style.setProperty('--avatar-gradient', style.gradient);
+                    if (gradient) {
+                        if (gradient.startsWith('conic-gradient')) {
+                            avatarEl.classList.add('avatar-multi-status');
+                            avatarEl.style.setProperty('--avatar-gradient', gradient);
+                        } else {
+                            avatarEl.style.boxShadow = gradient;
+                        }
                     } else {
-                        avatarEl.style.boxShadow = style.boxShadow;
+                        avatarEl.style.boxShadow = '0 0 0 2px #D9FD19';
                     }
                 } else {
                     avatarEl.style.boxShadow = '0 0 0 2px rgba(255,255,255,0.3)';
