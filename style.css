@@ -2046,3 +2046,65 @@ body::before {
 .eye-emoji.rotated {
     transform: rotate(90deg);
 }
+/* -------------------- ЦВЕТНЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
+.avatar-status-border {
+    border-width: 2px !important;
+    border-style: solid !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3);
+}
+
+/* Один статус */
+.avatar-status-border.status-friendship {
+    border-color: var(--yellow) !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.4);
+}
+
+.avatar-status-border.status-romance {
+    border-color: #FB5EB0 !important;
+    box-shadow: 0 0 8px rgba(251, 94, 176, 0.4);
+}
+
+.avatar-status-border.status-business {
+    border-color: #5E9FC5 !important;
+    box-shadow: 0 0 8px rgba(94, 159, 197, 0.4);
+}
+
+/* Два статуса – градиенты */
+.avatar-status-border.status-friendship.status-romance {
+    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(251, 94, 176, 0.3);
+}
+
+.avatar-status-border.status-friendship.status-business {
+    border-image: linear-gradient(45deg, var(--yellow), #5E9FC5) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
+}
+
+.avatar-status-border.status-romance.status-business {
+    border-image: linear-gradient(45deg, #FB5EB0, #5E9FC5) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(251, 94, 176, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
+}
+
+/* Три статуса – тройной градиент */
+.avatar-status-border.status-friendship.status-romance.status-business {
+    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0, #5E9FC5) 1 !important;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3), 0 0 8px rgba(251, 94, 176, 0.3), 0 0 8px rgba(94, 159, 197, 0.3);
+}
+
+/* Применяем к аватаркам в счётчике и выпадающем списке */
+.participant-avatar.has-profile,
+.participant-dropdown-avatar.has-profile {
+    border-width: 2px !important;
+    border-style: solid !important;
+}
+
+/* Для placeholder тоже */
+.participant-avatar.placeholder.has-profile,
+.participant-dropdown-avatar.placeholder.has-profile {
+    border-width: 2px !important;
+    border-style: solid !important;
+}
