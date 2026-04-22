@@ -3,7 +3,7 @@ import { haptic, openLink, mainDiv, subtitle, parseLinks } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
-import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive } from './common.js';
+import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop } from './common.js';
 import { renderHome } from './home.js';
 
 // Страница "для новичков" (FAQ)
@@ -17,6 +17,7 @@ export function renderNewcomerPage(isGuest = false) {
     log('novichkam_page_opened', isGuest, state.user);
     showBottomNav(true);
     setupBottomNav();
+    scrollPageToTop();
 
     let faqHtml = '';
     if (state.faq && state.faq.length) {
@@ -55,6 +56,7 @@ export function renderGuestPrivileges() {
     showBack(renderHome);
     showBottomNav(true);
     setupBottomNav();
+    scrollPageToTop();
 
     let clubHtml = '';
     if (state.guestPrivileges.club && state.guestPrivileges.club.length) {
@@ -113,6 +115,7 @@ export function renderPriv() {
     showBack(renderHome);
     showBottomNav(true);
     setupBottomNav();
+    scrollPageToTop();
 
     let clubHtml = '';
     if (state.privileges.club && state.privileges.club.length) {
@@ -171,6 +174,7 @@ export function renderGift(isGuest = false) {
     showBack(renderHome);
     showBottomNav(true);
     setupBottomNav();
+    scrollPageToTop();
 
     const giftText = state.giftContent || 'Информация о подарке временно недоступна.';
     mainDiv().innerHTML = `
@@ -197,6 +201,7 @@ export function renderPassPage(isGuest = false) {
     showBack(renderHome);
     showBottomNav(true);
     setupBottomNav();
+    scrollPageToTop();
 
     const content = state.passInfo.content || 'Информация о пропуске временно недоступна.';
     const buttonLink = state.passInfo.buttonLink || '';
