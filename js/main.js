@@ -1,7 +1,7 @@
 // js/main.js
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations } from './firebase.js';
+import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates } from './firebase.js';
 import { log } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, uiActions } from './ui/common.js';
@@ -136,9 +136,10 @@ async function loadAppData() {
             });
         }
 
-        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders] = await Promise.all([
+        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates] = await Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
-            loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders()
+            loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
+            loadUpdates() // NEW
         ]);
         
         if (metrics) state.metrics = metrics;
@@ -149,6 +150,7 @@ async function loadAppData() {
         if (giftContent) state.giftContent = giftContent;
         if (randomPhrases) state.randomPhrases = randomPhrases;
         if (leaders) state.leaders = leaders;
+        if (updates) state.updates = updates; // NEW
 
         await loadRegistrationsPopup().then(data => { if (data) state.registrationsPopup = data; });
         await loadPopupConfig().then(data => { if (data) state.popupConfig = { ...state.popupConfig, ...data }; });
