@@ -59,7 +59,6 @@ async function renderProfileCard(profile, isBlurred = false) {
     return `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
 }
 
-// Функция для получения случайного профиля из загруженных
 function getRandomProfile() {
     const profileEntries = Object.entries(profiles);
     if (profileEntries.length === 0) return null;
@@ -119,7 +118,7 @@ export async function renderProfiles() {
         return;
     }
 
-    // Блюр для неавторизованных или без профиля
+    // Блюр темнее
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
@@ -129,9 +128,9 @@ export async function renderProfiles() {
     blurOverlay.style.height = '100%';
     blurOverlay.style.pointerEvents = 'none';
     blurOverlay.style.zIndex = '40';
-    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.1) 50%, rgba(73, 138, 176, 0.3) 100%)';
-    blurOverlay.style.backdropFilter = 'blur(12px)';
-    blurOverlay.style.webkitBackdropFilter = 'blur(12px)';
+    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.3) 50%, rgba(73, 138, 176, 0.5) 100%)';
+    blurOverlay.style.backdropFilter = 'blur(16px)';
+    blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
     document.body.appendChild(blurOverlay);
 
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
@@ -160,13 +159,11 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         });
     }
 
-    // Определяем, какой профиль показывать в превью
     let previewProfile = null;
     if (state.pendingProfileClick) {
         previewProfile = state.pendingProfileClick;
         state.pendingProfileClick = null;
     } else {
-        // Если нет pending, берём случайный из загруженных профилей
         const randomProf = getRandomProfile();
         if (randomProf) {
             previewProfile = {
@@ -200,26 +197,15 @@ function showGuestProfilePopup() {
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 340px;">
-            <button class="modal-close" id="closeGuestPopup">&times;</button>
             <div class="modal-title" style="font-size: 18px;">💳 карта интеллигента</div>
             <div class="modal-text" style="font-size: 14px;">
                 для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?
             </div>
-            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">нажимай</button>
+            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">да, хочу узнать</button>
         </div>
     `;
     document.body.appendChild(overlay);
-
-    document.getElementById('closeGuestPopup').addEventListener('click', () => {
-        haptic();
-        overlay.remove();
-    });
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
     document.getElementById('goToPrivilegesBtn').addEventListener('click', () => {
         haptic();
         overlay.remove();
