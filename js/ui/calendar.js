@@ -161,10 +161,22 @@ export function showBottomSheet(index) {
         currentUnsubscribe = null;
     }
 
+    // Загружаем профили, если ещё не загружены
     if (Object.keys(state.profiles).length === 0) {
         loadAllProfiles().then(profiles => {
             state.profiles = profiles;
         }).catch(() => {});
+    }
+
+    function getAvatarClassesForUser(userId) {
+        const profile = state.profiles[userId];
+        if (!profile) return '';
+        const statuses = profile.friendshipStatuses || [];
+        const classes = ['avatar-status-border'];
+        if (statuses.includes('дружба')) classes.push('status-friendship');
+        if (statuses.includes('отношения')) classes.push('status-romance');
+        if (statuses.includes('бизнес')) classes.push('status-business');
+        return classes.join(' ');
     }
 
     function updateContent() {
@@ -350,15 +362,16 @@ export function showBottomSheet(index) {
                     avatarsEl.innerHTML = '';
                     participants.forEach(p => {
                         const hasProfile = !!state.profiles[p.userId];
+                        const borderClass = hasProfile ? getAvatarClassesForUser(p.userId) : '';
                         const img = document.createElement('img');
                         img.src = p.photoUrl || '';
-                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile ' + borderClass : '');
                         img.alt = p.name || '';
                         img.title = p.name || '';
                         img.dataset.userId = p.userId;
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
-                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile ' + borderClass : '');
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
@@ -915,6 +928,17 @@ export function closeParticipantDropdown() {
     }
 }
 
+function getAvatarClassesForUser(userId) {
+    const profile = state.profiles[userId];
+    if (!profile) return '';
+    const statuses = profile.friendshipStatuses || [];
+    const classes = ['avatar-status-border'];
+    if (statuses.includes('дружба')) classes.push('status-friendship');
+    if (statuses.includes('отношения')) classes.push('status-romance');
+    if (statuses.includes('бизнес')) classes.push('status-business');
+    return classes.join(' ');
+}
+
 export async function toggleParticipantDropdown(counterElement, hikeDate) {
     const existing = document.querySelector('.participant-dropdown.show');
     if (existing && currentDropdownHikeDate === hikeDate) {
@@ -924,6 +948,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     closeParticipantDropdown();
     haptic();
 
+    // Убедимся, что профили загружены
     if (Object.keys(state.profiles).length === 0) {
         try {
             const profiles = await loadAllProfiles();
@@ -938,7 +963,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.className = 'participant-dropdown';
     dropdown.style.maxHeight = '250px';
     dropdown.style.overflowY = 'auto';
-    // Fix scroll
+
     dropdown.addEventListener('wheel', (e) => e.stopPropagation());
     dropdown.addEventListener('touchstart', (e) => e.stopPropagation());
     dropdown.addEventListener('touchmove', (e) => e.stopPropagation());
@@ -949,6 +974,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         participants.forEach(p => {
             const name = p.name || 'Участник';
             const hasProfile = !!state.profiles[p.userId];
+            const borderClass = hasProfile ? getAvatarClassesForUser(p.userId) : '';
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
@@ -958,9 +984,9 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             }
 
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile ' + borderClass : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile ' + borderClass : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
             } else {
-                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}">${name.charAt(0).toUpperCase()}</div>`;
+                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile ' + borderClass : ''}">${name.charAt(0).toUpperCase()}</div>`;
             }
             const nameSpan = document.createElement('span');
             nameSpan.className = 'participant-dropdown-name';
@@ -972,7 +998,6 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
                     e.stopPropagation();
                     closeParticipantDropdown();
                     closeBottomSheet();
-                    // Save pending click
                     state.pendingProfileClick = {
                         userId: p.userId,
                         name: name,
@@ -1080,7 +1105,7 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
-// Делегирование событий
+// Делегирование событий для динамических кнопок
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
