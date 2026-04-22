@@ -1,3 +1,4 @@
+// js/firebase.js
 import { FIREBASE_CONFIG } from './config.js';
 
 let database = null;
@@ -131,6 +132,16 @@ export async function loadPopupConfig() {
     if (!database) return null;
     const snapshot = await database.ref('popupConfig').once('value');
     return snapshot.val();
+}
+
+// NEW: Загрузка обновлений
+export async function loadUpdates() {
+    if (!database) return [];
+    const snapshot = await database.ref('updates').once('value');
+    const data = snapshot.val();
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return Object.values(data);
+    return [];
 }
 
 // Участники хайка
