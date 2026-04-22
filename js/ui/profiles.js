@@ -66,7 +66,6 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-// Функция для получения цвета обводки по статусам (для инлайн-стилей)
 function getBorderStyleForUser(userId) {
     const profile = state.profiles[userId];
     if (!profile) return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.3)' };
@@ -75,20 +74,17 @@ function getBorderStyleForUser(userId) {
     
     if (statuses.length === 1) {
         const s = statuses[0];
-        if (s === 'дружба') return { border: '2px solid var(--yellow)', boxShadow: '0 0 8px rgba(217, 253, 25, 0.4)' };
+        if (s === 'дружба') return { border: '2px solid #D9FD19', boxShadow: '0 0 8px rgba(217, 253, 25, 0.4)' };
         if (s === 'отношения') return { border: '2px solid #FB5EB0', boxShadow: '0 0 8px rgba(251, 94, 176, 0.4)' };
         if (s === 'бизнес') return { border: '2px solid #5E9FC5', boxShadow: '0 0 8px rgba(94, 159, 197, 0.4)' };
     }
     
-    // Для нескольких статусов используем градиент через border-image
-    // Поскольку border-image не всегда работает с border-radius, будем использовать box-shadow с несколькими цветами
     const colors = [];
     if (statuses.includes('дружба')) colors.push('#D9FD19');
     if (statuses.includes('отношения')) colors.push('#FB5EB0');
     if (statuses.includes('бизнес')) colors.push('#5E9FC5');
     
     if (colors.length >= 2) {
-        // Создаём градиентный border через псевдоэлемент? Проще сделать множественный box-shadow
         const boxShadow = colors.map(c => `0 0 0 2px ${c}`).join(', ');
         return { border: '2px solid transparent', boxShadow: boxShadow };
     }
@@ -170,15 +166,16 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
     const btnText = '📝 создать профиль';
     centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
-    centerBtn.style.position = 'fixed';
-    centerBtn.style.top = '50%';
-    centerBtn.style.left = '50%';
-    centerBtn.style.transform = 'translate(-50%, -50%)';
-    centerBtn.style.zIndex = '100';
-    centerBtn.style.pointerEvents = 'auto';
-    // Убираем ограничения ширины у родителя
-    centerBtn.style.width = 'fit-content';
-    centerBtn.style.maxWidth = '90%';
+    centerBtn.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        pointer-events: auto;
+        width: fit-content !important;
+        max-width: 90% !important;
+    `;
     document.body.appendChild(centerBtn);
 
     const actionBtn = document.getElementById('profileActionBtn');
@@ -210,22 +207,21 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         const borderStyle = getBorderStyleForUser(previewProfile.userId);
         const previewDiv = document.createElement('div');
         previewDiv.className = 'profile-click-preview';
-        // Инлайн-стили для баннера с максимальной гарантией
         previewDiv.style.cssText = `
-            width: 90%;
-            max-width: 520px;
-            margin: 0 auto 16px auto;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 28px;
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 14px;
-            box-sizing: border-box;
+            width: 90% !important;
+            max-width: 520px !important;
+            margin: 0 auto 16px auto !important;
+            padding: 16px !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 28px !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 14px !important;
+            box-sizing: border-box !important;
         `;
 
         const avatarContainer = document.createElement('div');
@@ -237,28 +233,28 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             img.src = previewProfile.photoUrl;
             img.className = 'preview-avatar-img';
             img.style.cssText = `
-                width: 100%;
-                height: 100%;
-                border-radius: 50%;
-                object-fit: cover;
-                border: ${borderStyle.border};
-                box-shadow: ${borderStyle.boxShadow};
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50% !important;
+                object-fit: cover !important;
+                border: ${borderStyle.border} !important;
+                box-shadow: ${borderStyle.boxShadow} !important;
             `;
             img.onerror = function() {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'preview-avatar-placeholder';
                 placeholder.style.cssText = `
-                    width: 100%;
-                    height: 100%;
-                    border-radius: 50%;
-                    background: #40a7e3;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 24px;
-                    color: white;
-                    border: ${borderStyle.border};
-                    box-shadow: ${borderStyle.boxShadow};
+                    width: 100% !important;
+                    height: 100% !important;
+                    border-radius: 50% !important;
+                    background: #40a7e3 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 24px !important;
+                    color: white !important;
+                    border: ${borderStyle.border} !important;
+                    box-shadow: ${borderStyle.boxShadow} !important;
                 `;
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
@@ -268,17 +264,17 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             const placeholder = document.createElement('div');
             placeholder.className = 'preview-avatar-placeholder';
             placeholder.style.cssText = `
-                width: 100%;
-                height: 100%;
-                border-radius: 50%;
-                background: #40a7e3;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 24px;
-                color: white;
-                border: ${borderStyle.border};
-                box-shadow: ${borderStyle.boxShadow};
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50% !important;
+                background: #40a7e3 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 24px !important;
+                color: white !important;
+                border: ${borderStyle.border} !important;
+                box-shadow: ${borderStyle.boxShadow} !important;
             `;
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
             avatarContainer.appendChild(placeholder);
