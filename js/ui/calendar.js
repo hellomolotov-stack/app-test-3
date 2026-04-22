@@ -162,13 +162,6 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function hexToRgb(hex) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return { r, g, b };
-}
-
 function getAvatarGradient(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
@@ -180,24 +173,35 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    const segments = [];
-    const segmentCount = colors.length * 12;
-    for (let i = 0; i < segmentCount; i++) {
-        const pos = (i / segmentCount) * 360;
-        const colorIndex = Math.floor(i / 12) % colors.length;
-        const nextColorIndex = (colorIndex + 1) % colors.length;
-        const t = (i % 12) / 12;
+    // Создаём плавный градиент с большим количеством шагов
+    const steps = 36; // чем больше, тем плавнее
+    const segment = 360 / steps;
+    const gradientStops = [];
+    for (let i = 0; i < steps; i++) {
+        const angle = i * segment;
+        const progress = i / steps;
+        const index = progress * colors.length;
+        const idx1 = Math.floor(index) % colors.length;
+        const idx2 = (idx1 + 1) % colors.length;
+        const t = index - Math.floor(index);
         
-        const c1 = hexToRgb(colors[colorIndex]);
-        const c2 = hexToRgb(colors[nextColorIndex]);
-        const r = Math.round(c1.r + (c2.r - c1.r) * t);
-        const g = Math.round(c1.g + (c2.g - c1.g) * t);
-        const b = Math.round(c1.b + (c2.b - c1.b) * t);
+        const c1 = colors[idx1];
+        const c2 = colors[idx2];
+        const r = parseInt(c1.slice(1,3), 16);
+        const g = parseInt(c1.slice(3,5), 16);
+        const b = parseInt(c1.slice(5,7), 16);
+        const r2 = parseInt(c2.slice(1,3), 16);
+        const g2 = parseInt(c2.slice(3,5), 16);
+        const b2 = parseInt(c2.slice(5,7), 16);
         
-        segments.push(`rgb(${r}, ${g}, ${b}) ${pos}deg`);
+        const rAvg = Math.round(r + (r2 - r) * t);
+        const gAvg = Math.round(g + (g2 - g) * t);
+        const bAvg = Math.round(b + (b2 - b) * t);
+        
+        gradientStops.push(`rgb(${rAvg}, ${gAvg}, ${bAvg}) ${angle}deg`);
     }
     
-    return `conic-gradient(from 0deg, ${segments.join(', ')})`;
+    return `conic-gradient(from 0deg, ${gradientStops.join(', ')})`;
 }
 
 function createAvatarWithGradient(imgElement, userId, size) {
@@ -227,6 +231,7 @@ function createAvatarWithGradient(imgElement, userId, size) {
         margin-left: -8px;
     `;
     
+    // Аватар точно по центру
     imgElement.style.cssText = `
         width: 100%;
         height: 100%;
