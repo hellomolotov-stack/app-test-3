@@ -93,7 +93,7 @@ function getUserStatuses(userId) {
     return [];
 }
 
-function getAvatarStyle(userId) {
+function getAvatarGradient(userId) {
     const statuses = getUserStatuses(userId);
     const colorMap = {
         'дружба': '#D9FD19',
@@ -103,25 +103,25 @@ function getAvatarStyle(userId) {
     const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
     if (colors.length === 0) {
-        return { boxShadow: '0 0 0 2px #D9FD19', multi: false };
+        return null;
     }
     if (colors.length === 1) {
-        return { boxShadow: `0 0 0 2px ${colors[0]}`, multi: false };
+        return `0 0 0 2px ${colors[0]}`;
     }
     
     const steps = colors.length;
-    let gradientStr = 'conic-gradient(from 0deg';
+    let gradientStr = 'conic-gradient(';
     colors.forEach((color, index) => {
         const startAngle = (index * 360) / steps;
         const endAngle = ((index + 1) * 360) / steps;
-        gradientStr += `, ${color} ${startAngle}deg ${endAngle}deg`;
+        gradientStr += `${color} ${startAngle}deg ${endAngle}deg`;
         if (index < steps - 1) {
             gradientStr += `, ${color} ${endAngle}deg`;
         }
     });
     gradientStr += ')';
     
-    return { multi: true, gradient: gradientStr };
+    return gradientStr;
 }
 
 export async function renderProfiles() {
@@ -235,7 +235,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
-        const style = getAvatarStyle(previewProfile.userId);
+        const gradient = getAvatarGradient(previewProfile.userId);
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
         banner.style.cssText = `
@@ -274,11 +274,15 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 object-fit: cover !important;
                 border: none !important;
             `;
-            if (style.multi) {
-                img.classList.add('avatar-multi-status');
-                img.style.setProperty('--avatar-gradient', style.gradient);
+            if (gradient) {
+                if (gradient.startsWith('conic-gradient')) {
+                    img.classList.add('avatar-multi-status');
+                    img.style.setProperty('--avatar-gradient', gradient);
+                } else {
+                    img.style.boxShadow = gradient;
+                }
             } else {
-                img.style.boxShadow = style.boxShadow;
+                img.style.boxShadow = '0 0 0 2px #D9FD19';
             }
             img.onerror = function() {
                 const placeholder = document.createElement('div');
@@ -294,11 +298,15 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     color: white !important;
                     border: none !important;
                 `;
-                if (style.multi) {
-                    placeholder.classList.add('avatar-multi-status');
-                    placeholder.style.setProperty('--avatar-gradient', style.gradient);
+                if (gradient) {
+                    if (gradient.startsWith('conic-gradient')) {
+                        placeholder.classList.add('avatar-multi-status');
+                        placeholder.style.setProperty('--avatar-gradient', gradient);
+                    } else {
+                        placeholder.style.boxShadow = gradient;
+                    }
                 } else {
-                    placeholder.style.boxShadow = style.boxShadow;
+                    placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
                 }
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
@@ -318,11 +326,15 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 color: white !important;
                 border: none !important;
             `;
-            if (style.multi) {
-                placeholder.classList.add('avatar-multi-status');
-                placeholder.style.setProperty('--avatar-gradient', style.gradient);
+            if (gradient) {
+                if (gradient.startsWith('conic-gradient')) {
+                    placeholder.classList.add('avatar-multi-status');
+                    placeholder.style.setProperty('--avatar-gradient', gradient);
+                } else {
+                    placeholder.style.boxShadow = gradient;
+                }
             } else {
-                placeholder.style.boxShadow = style.boxShadow;
+                placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
             }
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
             avatarContainer.appendChild(placeholder);
@@ -403,72 +415,141 @@ async function renderEditProfile() {
             <label>💬 личные сообщения</label>
             <div class="checkbox-row">
                 <input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}>
-                <span id="allowMessagesLabel">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телеграм'}</span>
-            </div>
-        </div>
-        <div class="profile-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
-        <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="margin-top:24px;">сохранить профиль</button>
-        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn" style="margin-top:8px;">снять с публикации</button>':''}
-    </form></div>`;
+                <span id="allowMessagesLabel">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телезапрещено писать в телеграмграм'}</'}</spanspan>
+            </>
+            </divdiv>
+        </>
+        </divdiv>
+       >
+        <div class="profile-field"><label> <div class="profile-field"><label>🔗🔗 ссылка ссылка</label</label><input><input type=" type="text"text" id=" id="customLinkcustomLinkInput"Input" placeholder=" placeholder="https://..." value="${escapehttps://..." value="${Html(currentescapeHtml(currentCustomLink)}CustomLink)}"><div class"><div class="field-hint="field-hint">ссы">ссылка налка на твой твой сайт, б сайт, блог,лог, порт портфолио или соцфолио илисеть соцсеть</div</div></div></div>
+       >
+        <button <button type="submit" class="btn btn-yellow" id type="submit" class="btn btn-yellow" id="save="saveProfileBtn" style="margin-top:ProfileBtn" style="margin-top:24px;">сохранить24px;">сохранить профиль профиль</button>
+       </button>
+        ${fresh ${fresh?'?'<button type="button<button type="button" class" class="delete="delete-profile-btn-profile-btn" id="deleteProfileBtn" id="deleteProfileBtn" style" style="margin="margin-top:8px;">с-top:8px;">снять с публинять ска публикации</button>ции</':''}
+    </formbutton>':''}
+    </form></div>></div>`;
 
-    const allowCheck = document.getElementById('allowMessagesCheck');
-    const allowLabel = document.getElementById('allowMessagesLabel');
-    allowCheck.addEventListener('change', ()=> allowLabel.textContent = allowCheck.checked ? 'разрешено писать в телеграм' : 'запрещено писать в телеграм');
+    const`;
 
-    const backHandler = ()=>{ if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
-    tg.BackButton.onClick(backHandler); tg.BackButton.show();
-    document.getElementById('profileName').placeholder = '';
-    document.getElementById('profileHobbies').placeholder = '';
-    document.getElementById('profileProfession').placeholder = '';
+    const allowCheck allowCheck = document = document.getElementById('.getElementById('allowMessagesCheckallowMessagesCheck');
+    const');
+    const allowLabel allowLabel = document = document.getElementById('.getElementById('allowMessagesallowMessagesLabelLabel');
+    allow');
+    allowCheck.addEventListenerCheck.addEventListener('change('change', (', ()=> allowLabel.text)=> allowLabel.textContent =Content = allowCheck allowCheck.checked.checked ? 'разреш ? 'разрешено пено писать висать в телеграм' телеграм' : : ' 'запрещенозапрещено писать в теле писать в телеграмграм');
 
-    document.getElementById('editProfileForm').addEventListener('submit', async (e)=>{
-        e.preventDefault(); haptic();
-        const name = document.getElementById('profileName').value.trim();
-        if(!name) { alert('Укажите имя'); return; }
-        const selected = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(cb=>cb.value);
-        const hobbies = document.getElementById('profileHobbies').value.trim();
-        const profession = document.getElementById('profileProfession').value.trim();
-        const allowMessages = document.getElementById('allowMessagesCheck').checked;
-        let customLink = document.getElementById('customLinkInput').value.trim();
-        if (customLink && !customLink.match(/^https?:\/\//i)) {
-            customLink = 'https://' + customLink;
+   ');
+
+    const back const backHandler = ()=Handler = ()=>{ if>{ if(bottomNav) bottomNav.style.display(bottomNav) bottomNav.style.display='flex='flex'; showBottomNav(true); setupBottomNav(); renderProfiles();'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
+    tg.Back };
+    tg.BackButton.onButton.onClick(Click(backHandler); tgbackHandler); tg.BackButton.BackButton.show.show();
+    document.getElementById('profileName();
+    document.getElementById('').placeholderprofileName =').placeholder '';
+    document = '';
+   .getElementById(' document.getElementById('profileHprofileHobbies').obbies').placeholder = '';
+   placeholder = '';
+    document.getElementById document.getElementById('profile('profileProfessionProfession').placeholder').placeholder = '';
+
+    document = '.getElementById';
+
+   ('edit document.getElementById('editProfileForm').addEventListener('ProfileForm').addEventListener('submit', async (submit', async (e)=>{
+        ee)=>{
+        e.preventDefault();.preventDefault(); haptic haptic();
+       ();
+        const name const name = document.getElementById('profileName').value.trim();
+        if = document.getElementById('profileName').value.trim();
+        if(!name(!name) { alert(') { alert('Укажите имяУкажите имя'); return;'); return; }
+        const }
+        const selected = selected = Array.from Array.from(document(document.querySelectorAll('..querySelectorAll('.checkbox-group input:checkbox-group input:checked')).checked')).map(cb=>cb.value);
+map(cb=>cb.value);
+        const hobbies        = document const hobbies = document.getElementById('.getElementById('profileHprofileHobbies').obbies').value.trim();
+       value.trim const profession();
+        const profession = document = document.getElementById('.getElementById('profileProfprofileProfession').ession').value.trimvalue.trim();
+       ();
+        const allow const allowMessagesMessages = document.getElementById('allow = document.getElementById('allowMessagesCheck').checkedMessagesCheck').checked;
+       ;
+        let custom let customLink =Link = document.getElementById document.getElementById('custom('customLinkInput').valueLinkInput').value.trim.trim();
+        if();
+        if (custom (customLink && !customLink && !customLink.matchLink.match(/^(/^https?:\/\//i))https?:\/\//i {
+            custom)) {
+            customLink =Link = 'https 'https://' + custom://' + customLinkLink;
         }
 
-        const data = {
-            name, friendshipStatuses: selected, hobbies, profession,
-            allowMessages, customLink,
-            username: state.user?.username || '',
-            avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null,
-            avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(),
-            userId: state.user?.id
+        const;
+        }
+
+        const data = data = {
+            {
+            name, friendshipStatus name,es: friendshipStatuses: selected, selected, hobbies, profession hobbies, profession,
+            allowMessages,
+            allow,Messages, customLink customLink,
+           ,
+            username: username: state.user state.user?.username?.username || || '',
+            avatar '',
+            avatarUrl:Url: fresh?. fresh?.avatarUrl || state.useravatarUrl || state.user?.?.photo_urlphoto_url || null,
+            || null,
+            avatarUpdatedAt: avatarUpdatedAt fresh?.: fresh?.avatarUpdatedavatarUpdatedAt || Date.nowAt || Date(),
+            userId:.now(),
+            userId: state.user state.user?.id?.id
+       
         };
-        await saveProfile(state.user?.id, data);
-        syncProfileToSheet(data, state.user).catch(console.error);
-        delete userHikesCache[state.user?.id];
-        tg.BackButton.offClick(backHandler);
-        if(bottomNav) bottomNav.style.display='flex';
-        showBottomNav(true);
-        setupBottomNav();
+        };
+        await save await saveProfile(state.user?.Profile(state.user?.id,id, data data);
+        syncProfileToSheet(data);
+        syncProfileTo, stateSheet(data, state.user).catch(.user).catch(console.errorconsole.error);
+);
+        delete userHikesCache        delete userHikesCache[state.user[state.user?.id?.id];
+       ];
+        tg.BackButton. tg.BackButton.offClickoffClick(back(backHandler);
+        ifHandler);
+        if(bottom(bottomNav)Nav) bottomNav.style.display bottomNav.style.display='flex='flex';
+        showBottomNav(true';
+        showBottom);
+       Nav(true setupBottomNav);
+        setupBottom();
+        setNavActiveNav('navProfiles');
+        renderProf();
         setActiveNav('navProfiles');
-        renderProfiles();
+        renderProfilesiles();
     });
 
-    if(document.getElementById('deleteProfileBtn')){
-        document.getElementById('deleteProfileBtn').addEventListener('click', async ()=>{
+    if(document.getElementById('delete();
+    });
+
+    if(document.getElementById('deleteProfileBtn'ProfileBtn')){
+        document)){
+        document.getElementById('.getElementById('deleteProfileBtn').addEventListenerdeleteProfileBtn').addEventListener('click('click', async (', async ()=>{
+            ha)=>{
             haptic();
-            if(confirm('Снять профиль с публикации?')){
-                await deleteProfile(state.user?.id);
-                syncProfileDeleteToSheet(state.user?.id).catch(console.error);
-                delete userHikesCache[state.user?.id];
-                tg.BackButton.offClick(backHandler);
-                if(bottomNav) bottomNav.style.display='flex';
-                showBottomNav(true);
-                setupBottomNav();
-                setActiveNav('navProfiles');
+            ifptic(confirm();
+            if(confirm('С('Снять профинять профиль сль с публика публикации?'ции?')){
+                await deleteProfile)){
+                await deleteProfile(state(state.user?..user?.idid);
+                sync);
+                syncProfileDeleteProfileDeleteToSheetToSheet(state.user?.id(state.user?.id).catch).catch(console.error(console.error);
+);
+                delete                delete userH userHikesCacheikesCache[state.user?.[state.user?.id];
+                tgid];
+                tg.BackButton.BackButton.off.offClick(Click(backHandlerbackHandler);
+               );
+                if(bottomNav if(bottomNav) bottomNav.style) bottomNav.style.display='.display='flex';
+                showflex';
+                showBottomNavBottomNav(true(true);
+                setup);
+                setupBottomNavBottomNav();
+               ();
+                set setActiveActiveNav('Nav('navProfnavProfilesiles');
+                render');
                 renderProfiles();
+           Profiles();
             }
+        }
         });
+    });
     }
+ }
 }
 
-function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' })[m]); }
+function escape}
+
+function escapeHtml(strHtml(str) {) { if(!str) if(!str) return ''; return return ''; return str.replace str.replace(/(/[&<>[&<>]/g]/g, m, m=>(=>({{ ' '&':'&amp;','&':'&amp;','<':'<':'&lt&lt;',';','>':'>':'&gt;'&gt;' } })[m]); }
+)[m]); }
