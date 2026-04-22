@@ -66,6 +66,17 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
+function getAvatarClassesForUser(userId) {
+    const profile = state.profiles[userId];
+    if (!profile) return '';
+    const statuses = profile.friendshipStatuses || [];
+    const classes = ['avatar-status-border'];
+    if (statuses.includes('дружба')) classes.push('status-friendship');
+    if (statuses.includes('отношения')) classes.push('status-romance');
+    if (statuses.includes('бизнес')) classes.push('status-business');
+    return classes.join(' ');
+}
+
 export async function renderProfiles() {
     document.querySelector('.profile-edit-fab')?.remove();
     document.querySelector('.profile-blur-overlay')?.remove();
@@ -118,7 +129,6 @@ export async function renderProfiles() {
         return;
     }
 
-    // Блюр темнее
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
@@ -175,13 +185,14 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     }
 
     if (previewProfile) {
+        const borderClass = getAvatarClassesForUser(previewProfile.userId);
         const previewDiv = document.createElement('div');
         previewDiv.className = 'profile-click-preview';
         previewDiv.innerHTML = `
             <div class="preview-avatar">
                 ${previewProfile.photoUrl ? 
-                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
-                    `<div class="preview-avatar-placeholder">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
+                    `<img src="${previewProfile.photoUrl}" class="preview-avatar-img ${borderClass}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\\'preview-avatar-placeholder ${borderClass}\\'>${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>';">` :
+                    `<div class="preview-avatar-placeholder ${borderClass}">${(previewProfile.name?.charAt(0)||'?').toUpperCase()}</div>`
                 }
             </div>
             <div class="preview-text">
@@ -215,7 +226,6 @@ function showGuestProfilePopup() {
         e.preventDefault();
         haptic();
         overlay.remove();
-        // Удаляем все элементы страницы профилей перед переходом
         document.querySelector('.profile-blur-overlay')?.remove();
         document.querySelector('.center-floating-btn')?.remove();
         document.querySelector('.guest-center-btn')?.remove();
