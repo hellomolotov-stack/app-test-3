@@ -169,6 +169,26 @@ function getAvatarBoxShadow(userId) {
         'отношения': '#FB5EB0',
         'бизнес': '#5E9FC5'
     };
+    const colors = statuses.map(s => colorMap[s]).filter(c => c);
+    
+    if (colors.length === 0) {
+        return '0 0 0 2px #D9FD19';
+    }
+    if (colors.length === 1) {
+        return `0 0 0 2px ${colors[0]}`;
+    }
+    
+    // Несколько цветов – создаём 12 слоёв с шагом ~0.33px, чередуя цвета
+    const layers = [];
+    const steps = 12;
+    const maxOffset = 4; // общая толщина обводки 4px
+    for (let i = 0; i < steps; i++) {
+        const offset = 2 + (i * maxOffset / steps);
+        const colorIndex = i % colors.length;
+        layers.push(`0 0 0 ${offset}px ${colors[colorIndex]}`);
+    }
+    return layers.join(', ');
+}
     
     const colors = statuses.map(s => colorMap[s]).filter(c => c);
     
