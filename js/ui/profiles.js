@@ -224,7 +224,7 @@ export async function renderProfiles() {
     blurOverlay.style.height = '100%';
     blurOverlay.style.pointerEvents = 'none';
     blurOverlay.style.zIndex = '40';
-    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
+    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 90%, rgba(73, 138, 176, 0.6) 100%)';
     blurOverlay.style.backdropFilter = 'blur(16px)';
     blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
     document.body.appendChild(blurOverlay);
