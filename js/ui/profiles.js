@@ -67,8 +67,34 @@ function getRandomProfile() {
 }
 
 // ВРЕМЕННАЯ ЗАГЛУШКА – всегда синяя обводка
+// Вспомогательная функция для извлечения статусов (на случай разных форматов)
+function getUserStatuses(userId) {
+    const profile = state.profiles[userId];
+    if (!profile) return [];
+    const statuses = profile.friendshipStatuses;
+    if (!statuses) return [];
+    if (Array.isArray(statuses)) return statuses;
+    if (typeof statuses === 'object') return Object.values(statuses);
+    return [];
+}
+
+// Основная функция получения цветной обводки по статусам
 function getAvatarBoxShadow(userId) {
-    return '0 0 0 2px #5E9FC5';
+    const statuses = getUserStatuses(userId);
+    const colors = [];
+    if (statuses.includes('дружба')) colors.push('#D9FD19'); // жёлтый
+    if (statuses.includes('отношения')) colors.push('#FB5EB0'); // розовый
+    if (statuses.includes('бизнес')) colors.push('#5E9FC5');   // синий
+    
+    if (colors.length === 0) {
+        // Если статусы не заданы, делаем просто жёлтую обводку
+        return '0 0 0 2px #D9FD19';
+    } else if (colors.length === 1) {
+        return `0 0 0 2px ${colors[0]}`;
+    } else {
+        // Несколько статусов — многослойный box-shadow
+        return colors.map(c => `0 0 0 2px ${c}`).join(', ');
+    }
 }
 
 export async function renderProfiles() {
