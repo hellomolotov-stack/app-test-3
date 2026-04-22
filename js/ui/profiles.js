@@ -104,22 +104,19 @@ function getAvatarGradient(userId) {
     
     if (colors.length <= 1) return null;
     
-    const steps = colors.length;
-    let gradientStops = [];
-    const transitionWidth = 15;
-    
-    for (let i = 0; i < steps; i++) {
-        const currentColor = colors[i];
-        const nextColor = colors[(i + 1) % steps];
-        
-        const startAngle = i * (360 / steps);
-        const endAngle = (i + 1) * (360 / steps);
-        
-        gradientStops.push(`${currentColor} ${startAngle}deg ${endAngle - transitionWidth}deg`);
-        gradientStops.push(`${nextColor} ${endAngle - transitionWidth/2}deg ${endAngle + transitionWidth/2}deg`);
+    const stops = [];
+    const step = 1 / colors.length;
+    for (let i = 0; i < colors.length; i++) {
+        const color1 = colors[i];
+        const color2 = colors[(i + 1) % colors.length];
+        const start = i * 100;
+        const end = ((i + 1) % colors.length) * 100;
+        stops.push(`${color1} ${start}%`);
+        stops.push(`color-mix(in srgb, ${color1}, ${color2} 50%) ${start + 30}%`);
+        stops.push(`color-mix(in srgb, ${color2}, ${color1} 50%) ${end - 30}%`);
     }
     
-    return `conic-gradient(from 0deg, ${gradientStops.join(', ')})`;
+    return `conic-gradient(from 0deg, ${stops.join(', ')})`;
 }
 
 export async function renderProfiles() {
@@ -184,7 +181,7 @@ export async function renderProfiles() {
     blurOverlay.style.height = '100%';
     blurOverlay.style.pointerEvents = 'none';
     blurOverlay.style.zIndex = '40';
-    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
+    blurOverlay.style.background = 'rgba(0,0,0,0.5)'; // тёмный блюр
     blurOverlay.style.backdropFilter = 'blur(16px)';
     blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
     document.body.appendChild(blurOverlay);
@@ -290,10 +287,10 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 const gradientRing = document.createElement('div');
                 gradientRing.style.cssText = `
                     position: absolute;
-                    top: -5px;
-                    left: -5px;
-                    right: -5px;
-                    bottom: -5px;
+                    top: -2px;
+                    left: -2px;
+                    right: -2px;
+                    bottom: -2px;
                     border-radius: 50%;
                     background: ${gradient};
                     z-index: 1;
@@ -310,8 +307,8 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 };
                 const colors = statuses.map(s => colorMap[s]).filter(c => c);
                 img.style.boxShadow = colors.length === 1 
-                    ? `0 0 0 3px ${colors[0]}` 
-                    : '0 0 0 3px #D9FD19';
+                    ? `0 0 0 2px ${colors[0]}` 
+                    : '0 0 0 2px #D9FD19';
                 img.style.border = 'none';
                 avatarContainer.appendChild(img);
             }
@@ -348,10 +345,10 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     const gradientRing = document.createElement('div');
                     gradientRing.style.cssText = `
                         position: absolute;
-                        top: -5px;
-                        left: -5px;
-                        right: -5px;
-                        bottom: -5px;
+                        top: -2px;
+                        left: -2px;
+                        right: -2px;
+                        bottom: -2px;
                         border-radius: 50%;
                         background: ${gradient};
                         z-index: 1;
@@ -369,8 +366,8 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                     };
                     const colors = statuses.map(s => colorMap[s]).filter(c => c);
                     placeholder.style.boxShadow = colors.length === 1 
-                        ? `0 0 0 3px ${colors[0]}` 
-                        : '0 0 0 3px #D9FD19';
+                        ? `0 0 0 2px ${colors[0]}` 
+                        : '0 0 0 2px #D9FD19';
                     placeholder.style.border = 'none';
                 }
                 
@@ -409,10 +406,10 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 const gradientRing = document.createElement('div');
                 gradientRing.style.cssText = `
                     position: absolute;
-                    top: -5px;
-                    left: -5px;
-                    right: -5px;
-                    bottom: -5px;
+                    top: -2px;
+                    left: -2px;
+                    right: -2px;
+                    bottom: -2px;
                     border-radius: 50%;
                     background: ${gradient};
                     z-index: 1;
@@ -429,8 +426,8 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 };
                 const colors = statuses.map(s => colorMap[s]).filter(c => c);
                 placeholder.style.boxShadow = colors.length === 1 
-                    ? `0 0 0 3px ${colors[0]}` 
-                    : '0 0 0 3px #D9FD19';
+                    ? `0 0 0 2px ${colors[0]}` 
+                    : '0 0 0 2px #D9FD19';
                 placeholder.style.border = 'none';
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 avatarContainer.appendChild(placeholder);
