@@ -1,5 +1,5 @@
 // js/main.js
-import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement } from './utils.js';
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates } from './firebase.js';
 import { log } from './api.js';
@@ -15,7 +15,7 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Функция очистки гостевых элементов (блюр, кнопки)
+// Функция очистки гостевых элементов (блюр, кнопки, баннер)
 function cleanupProfileOverlays() {
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
@@ -96,9 +96,36 @@ function setupBottomNav() {
 
     popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
     popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
-    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
-    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
-    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupGift.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        haptic(); 
+        setUserInteracted(); 
+        cleanupProfileOverlays(); 
+        renderGift(state.userCard.status !== 'active'); 
+        popup.classList.remove('show'); 
+        window.isMenuActive = false; 
+        updateActiveNav(); 
+    });
+    popupNewcomer.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        haptic(); 
+        setUserInteracted(); 
+        cleanupProfileOverlays(); 
+        renderNewcomerPage(state.userCard.status !== 'active'); 
+        popup.classList.remove('show'); 
+        window.isMenuActive = false; 
+        updateActiveNav(); 
+    });
+    popupPass.addEventListener('click', (e) => { 
+        e.preventDefault(); 
+        haptic(); 
+        setUserInteracted(); 
+        cleanupProfileOverlays(); 
+        renderPassPage(state.userCard.status !== 'active'); 
+        popup.classList.remove('show'); 
+        window.isMenuActive = false; 
+        updateActiveNav(); 
+    });
     if (popupQuestion) {
         popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'question_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
     }
@@ -144,12 +171,11 @@ function handleDeepLink(startParam) {
         case 'calendar':
             setTimeout(() => {
                 const el = document.getElementById('calendarContainer');
-                if (el) scrollToElement(el);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 else {
-                    // Если календарь ещё не отрендерен, ждём
                     const check = setInterval(() => {
                         const cal = document.getElementById('calendarContainer');
-                        if (cal) { clearInterval(check); scrollToElement(cal); }
+                        if (cal) { clearInterval(check); cal.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
                     }, 100);
                 }
             }, 300);
@@ -157,11 +183,11 @@ function handleDeepLink(startParam) {
         case 'updates':
             setTimeout(() => {
                 const el = document.querySelector('.updates-container');
-                if (el) scrollToElement(el);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 else {
                     const check = setInterval(() => {
                         const upd = document.querySelector('.updates-container');
-                        if (upd) { clearInterval(check); scrollToElement(upd); }
+                        if (upd) { clearInterval(check); upd.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
                     }, 100);
                 }
             }, 300);
@@ -169,11 +195,11 @@ function handleDeepLink(startParam) {
         case 'newcomer':
             setTimeout(() => {
                 const el = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                if (el) scrollToElement(el);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 else {
                     const check = setInterval(() => {
                         const newcomer = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                        if (newcomer) { clearInterval(check); scrollToElement(newcomer); }
+                        if (newcomer) { clearInterval(check); newcomer.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
                     }, 100);
                 }
             }, 300);
