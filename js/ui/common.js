@@ -137,11 +137,9 @@ export function hideBack() {
 
 export function setUserInteracted() { userInteracted = true; }
 
-// Очистка оверлеев профиля (используется при переходе из меню)
-export function cleanupProfileOverlays() {
-    document.querySelector('.profile-blur-overlay')?.remove();
-    document.querySelector('.guest-center-btn')?.remove();
-    document.querySelector('.center-floating-btn')?.remove();
-    document.querySelector('.profile-preview-banner')?.remove();
-    document.body.style.overflow = '';
+// Функция для скролла страницы в начало
+export function scrollPageToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainContent = document.getElementById('mainContent');
+    if (mainContent) mainContent.scrollTop = 0;
 }
