@@ -148,10 +148,6 @@ export function scrollToElement(element, offset = 80) {
     window.scrollTo({ top: targetY, behavior: 'smooth' });
 }
 
-export function scrollPageToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
 export const tg = window.Telegram?.WebApp;
 export const mainDiv = () => document.getElementById('mainContent');
 export const subtitle = () => document.getElementById('subtitle');
