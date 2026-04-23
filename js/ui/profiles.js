@@ -152,6 +152,14 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     document.body.appendChild(centerBtn);
 
     const actionBtn = document.getElementById('profileActionBtn');
+    actionBtn.style.cssText = `
+        padding: 12px 24px !important;
+        font-size: 16px !important;
+        white-space: nowrap;
+        border-radius: 40px !important;
+        width: auto !important;
+        min-width: 200px;
+    `;
     if (isCardHolder) {
         actionBtn.addEventListener('click', () => { haptic(); renderEditProfile(); });
     } else {
