@@ -1,5 +1,5 @@
 // js/main.js
-import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollPageToTop } from './utils.js';
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates } from './firebase.js';
 import { log } from './api.js';
@@ -48,7 +48,8 @@ function setupBottomNav() {
     navHomeNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('home');
         cleanupProfileOverlays();
-        renderHome(); scrollPageToTop();
+        renderHome(); 
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         log('glavnaya_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
