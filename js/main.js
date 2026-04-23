@@ -1,10 +1,10 @@
 // js/main.js
-import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg } from './utils.js';
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollPageToTop } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates } from './firebase.js';
 import { log } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
-import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, uiActions } from './ui/common.js';
+import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, uiActions, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
@@ -14,15 +14,6 @@ import { showBottomSheet, closeParticipantDropdown, closeLeaderDropdown, showLea
 window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
-
-// Функция очистки гостевых элементов (блюр, кнопки, баннер)
-function cleanupProfileOverlays() {
-    document.querySelector('.profile-blur-overlay')?.remove();
-    document.querySelector('.guest-center-btn')?.remove();
-    document.querySelector('.center-floating-btn')?.remove();
-    document.querySelector('.profile-preview-banner')?.remove();
-    document.body.style.overflow = '';
-}
 
 // Реализация setupBottomNav
 function setupBottomNav() {
@@ -57,7 +48,7 @@ function setupBottomNav() {
     navHomeNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('home');
         cleanupProfileOverlays();
-        renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
+        renderHome(); scrollPageToTop();
         log('glavnaya_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
@@ -96,36 +87,9 @@ function setupBottomNav() {
 
     popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
     popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
-    popupGift.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        haptic(); 
-        setUserInteracted(); 
-        cleanupProfileOverlays(); 
-        renderGift(state.userCard.status !== 'active'); 
-        popup.classList.remove('show'); 
-        window.isMenuActive = false; 
-        updateActiveNav(); 
-    });
-    popupNewcomer.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        haptic(); 
-        setUserInteracted(); 
-        cleanupProfileOverlays(); 
-        renderNewcomerPage(state.userCard.status !== 'active'); 
-        popup.classList.remove('show'); 
-        window.isMenuActive = false; 
-        updateActiveNav(); 
-    });
-    popupPass.addEventListener('click', (e) => { 
-        e.preventDefault(); 
-        haptic(); 
-        setUserInteracted(); 
-        cleanupProfileOverlays(); 
-        renderPassPage(state.userCard.status !== 'active'); 
-        popup.classList.remove('show'); 
-        window.isMenuActive = false; 
-        updateActiveNav(); 
-    });
+    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); cleanupProfileOverlays(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); cleanupProfileOverlays(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); cleanupProfileOverlays(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
     if (popupQuestion) {
         popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'question_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
     }
@@ -151,7 +115,6 @@ uiActions.setupBottomNav = setupBottomNav;
 function handleDeepLink(startParam) {
     if (!startParam) return;
 
-    // Хайк по дате
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
         const interval = setInterval(() => {
@@ -164,7 +127,6 @@ function handleDeepLink(startParam) {
         return;
     }
 
-    // Остальные диплинки
     const isGuest = state.userCard.status !== 'active';
 
     switch (startParam) {
@@ -218,7 +180,6 @@ function handleDeepLink(startParam) {
             renderGift(isGuest);
             break;
         default:
-            // неизвестный диплинк – ничего не делаем
             break;
     }
 }
