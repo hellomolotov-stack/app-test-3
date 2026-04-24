@@ -1,11 +1,13 @@
 // js/ui/profiles.js
+// (замените весь файл на этот код)
+
 import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay } from '../utils.js';
 import { state } from '../state.js';
 import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
     loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations,
 } from '../firebase.js';
-import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack } from './common.js';
+import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
 
 let profiles = {};
@@ -66,13 +68,18 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-export async function renderProfiles() {
-    document.querySelector('.profile-edit-fab')?.remove();
+// Вспомогательная функция очистки временных элементов (аналогична cleanupProfileOverlays в main.js)
+function cleanupProfileOverlays() {
     document.querySelector('.profile-blur-overlay')?.remove();
-    document.querySelector('.center-floating-btn')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
+    document.querySelector('.center-floating-btn')?.remove();
     document.querySelector('.profile-preview-banner')?.remove();
+    document.querySelector('.profile-edit-fab')?.remove();
     document.body.style.overflow = '';
+}
+
+export async function renderProfiles() {
+    cleanupProfileOverlays(); // очищаем перед рендером
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
@@ -223,7 +230,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
                 border-radius: 50% !important;
                 object-fit: cover !important;
             `;
-            // Без обводки
             img.onerror = function() {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'preview-avatar-placeholder';
@@ -293,23 +299,14 @@ function showGuestProfilePopup() {
         e.preventDefault();
         haptic();
         overlay.remove();
-        document.querySelector('.profile-blur-overlay')?.remove();
-        document.querySelector('.center-floating-btn')?.remove();
-        document.querySelector('.guest-center-btn')?.remove();
-        document.querySelector('.profile-edit-fab')?.remove();
-        document.querySelector('.profile-preview-banner')?.remove();
+        cleanupProfileOverlays(); // очищаем перед переходом
         renderGuestPrivileges();
         log('guest_privileges_from_profile', true, state.user);
     });
 }
 
 async function renderEditProfile() {
-    document.querySelector('.profile-edit-fab')?.remove();
-    document.querySelector('.profile-blur-overlay')?.remove();
-    document.querySelector('.center-floating-btn')?.remove();
-    document.querySelector('.guest-center-btn')?.remove();
-    document.querySelector('.profile-preview-banner')?.remove();
-    document.body.style.overflow = '';
+    cleanupProfileOverlays(); // очищаем перед рендером формы
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
@@ -382,6 +379,7 @@ async function renderEditProfile() {
         showBottomNav(true);
         setupBottomNav();
         setActiveNav('navProfiles');
+        cleanupProfileOverlays(); // очищаем перед повторным рендером списка
         renderProfiles();
     });
 
@@ -397,6 +395,7 @@ async function renderEditProfile() {
                 showBottomNav(true);
                 setupBottomNav();
                 setActiveNav('navProfiles');
+                cleanupProfileOverlays(); // очищаем перед повторным рендером
                 renderProfiles();
             }
         });
