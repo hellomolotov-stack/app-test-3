@@ -1,5 +1,4 @@
 // js/state.js
-// Глобальное состояние приложения
 export const state = {
     user: null,
     userCard: { status: 'loading', hikes: 0, cardUrl: '' },
@@ -27,7 +26,8 @@ export const state = {
     },
     hikeBookingStatus: {},
     updates: [],
-    pendingProfileClick: null, // { userId, name, photoUrl }
+    mastermindSummaries: [],   // <-- новое поле
+    pendingProfileClick: null,
 };
 
 export function loadCachedState() {
@@ -48,6 +48,7 @@ export function loadCachedState() {
             if (data.randomPhrases) state.randomPhrases = data.randomPhrases;
             if (data.leaders) state.leaders = data.leaders;
             if (data.updates) state.updates = data.updates;
+            if (data.mastermindSummaries) state.mastermindSummaries = data.mastermindSummaries; // <-- новое
             return true;
         }
     } catch (e) {}
@@ -68,6 +69,7 @@ export function saveCachedState() {
             randomPhrases: state.randomPhrases,
             leaders: state.leaders,
             updates: state.updates,
+            mastermindSummaries: state.mastermindSummaries, // <-- новое
         };
         localStorage.setItem('hikingAppCache', JSON.stringify(toCache));
     } catch (e) {}
