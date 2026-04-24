@@ -4,7 +4,7 @@ import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
-import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack } from './common.js';
+import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
@@ -42,10 +42,7 @@ export function renderUserBookings(container) {
         container.style.display = 'block';
         container.innerHTML = `
             <div class="card-container" id="userBookingsCard">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                    <h2 class="section-title" style="margin: 0;">🎫 мои записи</h2>
-                    <a href="#" class="bookings-calendar-link" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">открыть календарь &gt;</a>
-                </div>
+                <h2 class="section-title">🎫 мои записи</h2>
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                     <div style="flex: 1; margin-right: 16px;">
                         <span style="color: #ffffff;">${mainPart}<em style="font-style: italic;">${italicPart}</em></span>
@@ -61,10 +58,7 @@ export function renderUserBookings(container) {
     const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
     let html = `
         <div class="card-container" id="userBookingsCard">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                <h2 class="section-title" style="margin: 0;">🎫 мои записи</h2>
-                <a href="#" class="bookings-calendar-link" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">открыть календарь &gt;</a>
-            </div>
+            <h2 class="section-title">🎫 мои записи</h2>
     `;
     bookings.forEach(booking => {
         const isWoman = booking.woman === 'yes';
@@ -134,18 +128,17 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                <h2 class="section-title" style="margin: 0;">📨 обновления</h2>
+            <h2 class="section-title">📨 обновления</h2>
+            <div style="display: flex; justify-content: flex-end; align-items: center; margin: 0 16px 8px 16px;">
                 <a href="#" class="updates-idea-link" id="updatesIdeaLink" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">предложить идею &gt;</a>
             </div>
-            <div class="updates-scroll">
-                ${itemsHtml}
-            </div>
+            <div class="updates-scroll">${itemsHtml}</div>
         </div>
     `;
 }
 
 function renderGuestHome() {
+    cleanupProfileOverlays();
     subtitle().textContent = `💳 здесь будет твоя карта, ${state.user?.first_name || 'друг'}`;
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
@@ -218,6 +211,7 @@ function renderGuestHome() {
 }
 
 function renderOwnerHome() {
+    cleanupProfileOverlays();
     const user = state.user;
     const firstName = user?.first_name || 'друг';
     subtitle().textContent = `💳 твоя карта, ${firstName}`;
