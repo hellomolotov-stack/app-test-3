@@ -1,6 +1,4 @@
 // js/ui/common.js
-// (замените весь файл на этот код)
-
 import { haptic, openLink } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
@@ -137,9 +135,18 @@ export function hideBack() {
 
 export function setUserInteracted() { userInteracted = true; }
 
-// Экспортируем функцию прокрутки страницы в начало
 export function scrollPageToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     const mainContent = document.getElementById('mainContent');
     if (mainContent) mainContent.scrollTop = 0;
+}
+
+// Очистка всех временных элементов (блюр, кнопки профиля и т.д.)
+export function cleanupProfileOverlays() {
+    document.querySelector('.profile-blur-overlay')?.remove();
+    document.querySelector('.guest-center-btn')?.remove();
+    document.querySelector('.center-floating-btn')?.remove();
+    document.querySelector('.profile-preview-banner')?.remove();
+    document.querySelector('.profile-edit-fab')?.remove();
+    document.body.style.overflow = '';
 }
