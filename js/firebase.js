@@ -144,6 +144,16 @@ export async function loadUpdates() {
     return [];
 }
 
+// NEW: Загрузка саммари мастермайнда
+export async function loadMastermindSummaries() {
+    if (!database) return [];
+    const snapshot = await database.ref('mastermindSummaries').once('value');
+    const data = snapshot.val();
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return Object.values(data);
+    return [];
+}
+
 // Участники хайка
 export function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
