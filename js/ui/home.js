@@ -92,7 +92,6 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// Новый блок «саммари»
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     let innerHtml = '';
@@ -134,7 +133,7 @@ function renderMastermindSummaries() {
         <div class="card-container" id="mastermindSummariesCard">
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
                 <h2 class="section-title" style="margin: 0;">🧠 саммари</h2>
-                <a href="https://t.me/yaltahiking/303" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/303" data-guest="false" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">что такое мастермайнд &gt;</a>
+                <a href="https://t.me/yaltahiking/303" class="dynamic-link" data-url="https://t.me/yaltahiking/303" data-guest="false" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">что такое мастермайнд &gt;</a>
             </div>
             ${innerHtml}
         </div>
@@ -159,7 +158,6 @@ function showGuestPopup() {
     log('guest_popup_opened', true, state.user);
 }
 
-// Блок «обновления» с кнопкой на той же строке
 function renderUpdatesBlock() {
     const updates = state.updates || [];
     if (!updates.length) return '';
@@ -211,8 +209,8 @@ function renderGuestHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
@@ -279,8 +277,8 @@ function renderOwnerHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
