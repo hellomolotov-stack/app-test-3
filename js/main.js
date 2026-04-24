@@ -1,23 +1,20 @@
 // js/main.js
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates } from './firebase.js';
+import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries } from './firebase.js';
 import { log } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
-import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
+import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, closeParticipantDropdown, closeLeaderDropdown, showLeaderDropdown, toggleParticipantDropdown } from './ui/calendar.js';
+import { showBottomSheet } from './ui/calendar.js';
 
 // Глобальные переменные UI
 window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Функция очистки гостевых элементов (блюр, кнопки) – уже импортирована из common.js
-
-// Реализация setupBottomNav
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -111,17 +108,11 @@ function setupBottomNav() {
     updateActiveNav();
 }
 
-// Переопределяем действие в uiActions
+import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
-// Импортируем uiActions для setupBottomNav
-import { uiActions } from './ui/common.js';
-
-// Обработка диплинков
 function handleDeepLink(startParam) {
     if (!startParam) return;
-
-    // Хайк по дате
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
         const interval = setInterval(() => {
@@ -133,17 +124,13 @@ function handleDeepLink(startParam) {
         }, 300);
         return;
     }
-
-    // Остальные диплинки
     const isGuest = state.userCard.status !== 'active';
-
     switch (startParam) {
         case 'calendar':
             setTimeout(() => {
                 const el = document.getElementById('calendarContainer');
                 if (el) scrollToElement(el);
                 else {
-                    // Если календарь ещё не отрендерен, ждём
                     const check = setInterval(() => {
                         const cal = document.getElementById('calendarContainer');
                         if (cal) { clearInterval(check); scrollToElement(cal); }
@@ -188,13 +175,9 @@ function handleDeepLink(startParam) {
         case 'gift':
             renderGift(isGuest);
             break;
-        default:
-            // неизвестный диплинк – ничего не делаем
-            break;
     }
 }
 
-// Инициализация приложения
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -211,10 +194,10 @@ async function loadAppData() {
             });
         }
 
-        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates] = await Promise.all([
+        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates, mastermindSummaries] = await Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
             loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
-            loadUpdates()
+            loadUpdates(), loadMastermindSummaries()
         ]);
         
         if (metrics) state.metrics = metrics;
@@ -226,6 +209,7 @@ async function loadAppData() {
         if (randomPhrases) state.randomPhrases = randomPhrases;
         if (leaders) state.leaders = leaders;
         if (updates) state.updates = updates;
+        if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
 
         await loadRegistrationsPopup().then(data => { if (data) state.registrationsPopup = data; });
         await loadPopupConfig().then(data => { if (data) state.popupConfig = { ...state.popupConfig, ...data }; });
@@ -264,7 +248,6 @@ async function loadAppData() {
     }
 }
 
-// Запуск
 window.addEventListener('load', () => {
     state.user = tg?.initDataUnsafe?.user;
     loadAppData();
