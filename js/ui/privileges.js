@@ -1,15 +1,13 @@
 // js/ui/privileges.js
-// (замените весь файл на этот код)
-
 import { haptic, openLink, mainDiv, subtitle, parseLinks } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
-import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop } from './common.js';
+import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop, cleanupProfileOverlays } from './common.js';
 import { renderHome } from './home.js';
 
-// Страница "для новичков" (FAQ)
 export function renderNewcomerPage(isGuest = false) {
+    cleanupProfileOverlays();
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
@@ -49,8 +47,8 @@ export function renderNewcomerPage(isGuest = false) {
     });
 }
 
-// Привилегии гостя (ознакомительная)
 export function renderGuestPrivileges() {
+    cleanupProfileOverlays();
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
@@ -108,8 +106,8 @@ export function renderGuestPrivileges() {
     `;
 }
 
-// Привилегии владельца карты
 export function renderPriv() {
+    cleanupProfileOverlays();
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
@@ -167,8 +165,8 @@ export function renderPriv() {
     `;
 }
 
-// Страница "подарить карту"
 export function renderGift(isGuest = false) {
+    cleanupProfileOverlays();
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
@@ -194,8 +192,8 @@ export function renderGift(isGuest = false) {
     setupAccordion('giftAccordion', isGuest);
 }
 
-// Страница "пропуск в заповедник"
 export function renderPassPage(isGuest = false) {
+    cleanupProfileOverlays();
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
@@ -223,7 +221,6 @@ export function renderPassPage(isGuest = false) {
     }
 }
 
-// Вспомогательная функция для аккордеона
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
     if (!container) return;
