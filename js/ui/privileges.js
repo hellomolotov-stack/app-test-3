@@ -1,4 +1,6 @@
 // js/ui/privileges.js
+// (замените весь файл на этот код)
+
 import { haptic, openLink, mainDiv, subtitle, parseLinks } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
