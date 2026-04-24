@@ -982,33 +982,29 @@ body::before {
     height: 28px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(0, 0, 0, 0.6);
+    border: none;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6);
     margin-left: -8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.participant-avatar:first-child {
-    margin-left: 0;
-    z-index: 3;
-}
-
-.participant-avatar:nth-child(2) {
-    z-index: 2;
-}
-
-.participant-avatar:nth-child(3) {
-    z-index: 1;
-}
-
-.participant-avatar.placeholder {
     background-color: #40a7e3;
-    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     font-size: 14px;
+    color: white;
+}
+
+/* Жёлтое свечение для аватаров с профилем */
+.participant-avatar.profile-glow {
+    box-shadow: 0 0 12px 4px rgba(217, 253, 25, 0.45);
+    border: none;
+}
+
+.participant-avatar.placeholder {
+    background-color: #40a7e3;
+    color: white;
     text-transform: uppercase;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6);
 }
 
 .participant-dropdown {
@@ -1057,17 +1053,26 @@ body::before {
     height: 30px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid rgba(255,255,255,0.3);
-}
-
-.participant-dropdown-avatar.placeholder {
+    border: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
     background-color: #40a7e3;
-    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     font-size: 14px;
+    color: white;
+}
+
+.participant-dropdown-avatar.profile-glow {
+    box-shadow: 0 0 12px 4px rgba(217, 253, 25, 0.45);
+    border: none;
+}
+
+.participant-dropdown-avatar.placeholder {
+    background-color: #40a7e3;
+    color: white;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
 
 .participant-dropdown-name {
@@ -1975,216 +1980,4 @@ body::before {
 }
 
 /* -------------------- ЦВЕТНЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
-.avatar-status-border {
-    border-width: 2px !important;
-    border-style: solid !important;
-    border-radius: 50% !important;
-    box-shadow: 0 0 8px rgba(217, 253, 25, 0.3);
-}
-
-/* Один статус */
-.avatar-status-border.status-friendship {
-    border-color: var(--yellow) !important;
-    box-shadow: 0 0 8px rgba(217, 253, 25, 0.4);
-}
-.avatar-status-border.status-romance {
-    border-color: #FB5EB0 !important;
-    box-shadow: 0 0 8px rgba(251, 94, 176, 0.4);
-}
-.avatar-status-border.status-business {
-    border-color: #5E9FC5 !important;
-    box-shadow: 0 0 8px rgba(94, 159, 197, 0.4);
-}
-
-/* Два и более статуса — градиент через псевдоэлемент */
-.avatar-status-border.status-friendship.status-romance,
-.avatar-status-border.status-friendship.status-business,
-.avatar-status-border.status-romance.status-business,
-.avatar-status-border.status-friendship.status-romance.status-business {
-    position: relative;
-    border: none !important;
-    box-shadow: none !important;
-}
-.avatar-status-border.status-friendship.status-romance::after,
-.avatar-status-border.status-friendship.status-business::after,
-.avatar-status-border.status-romance.status-business::after,
-.avatar-status-border.status-friendship.status-romance.status-business::after {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    pointer-events: none;
-    z-index: 1;
-}
-
-/* Градиенты для комбинаций */
-.avatar-status-border.status-friendship.status-romance::after {
-    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0) 1;
-}
-.avatar-status-border.status-friendship.status-business::after {
-    border-image: linear-gradient(45deg, var(--yellow), #5E9FC5) 1;
-}
-.avatar-status-border.status-romance.status-business::after {
-    border-image: linear-gradient(45deg, #FB5EB0, #5E9FC5) 1;
-}
-.avatar-status-border.status-friendship.status-romance.status-business::after {
-    border-image: linear-gradient(45deg, var(--yellow), #FB5EB0, #5E9FC5) 1;
-}
-
-/* Применяем к аватаркам */
-.participant-avatar.has-profile,
-.participant-dropdown-avatar.has-profile,
-.preview-avatar-img,
-.preview-avatar-placeholder {
-    border-radius: 50% !important;
-}
-/* Многоцветная обводка через conic-gradient с плавным переходом */
-.avatar-multi-status {
-    position: relative;
-    box-shadow: none !important;
-    border: none !important;
-    background: transparent !important;
-}
-.avatar-multi-status::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: 50%;
-    background: var(--avatar-gradient);
-    -webkit-mask: radial-gradient(farthest-side, transparent 0%, transparent 80%, black 80%, black 100%);
-    mask: radial-gradient(farthest-side, transparent 0%, transparent 80%, black 80%, black 100%);
-    z-index: 1;
-}
-/* Чтобы псевдоэлемент не обрезался */
-.participant-avatar.avatar-multi-status,
-.participant-dropdown-avatar.avatar-multi-status,
-.preview-avatar-img.avatar-multi-status,
-.preview-avatar-placeholder.avatar-multi-status {
-    overflow: visible;
-    background: transparent !important;
-}
-/* Поля ввода в настройках профиля */
-.profile-field input[type="text"],
-.profile-field textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    font-size: 16px;
-    font-family: inherit;
-    box-sizing: border-box;
-    outline: none;
-}
-
-.profile-field textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-/* Выравнивание главных заголовков по левому краю с отступом как у внутренних заголовков */
-.subtitle {
-    text-align: left !important;
-    padding-left: 16px;
-}
-
-.section-title {
-    text-align: left;
-    padding-left: 0;
-}
-
-/* Поля ввода в настройках профиля */
-.profile-field input[type="text"],
-.profile-field textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    font-size: 16px;
-    font-family: inherit;
-    box-sizing: border-box;
-    outline: none;
-}
-
-.profile-field textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-/* Поля ввода в настройках профиля */
-.profile-field input[type="text"],
-.profile-field textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    font-size: 16px;
-    font-family: inherit;
-    box-sizing: border-box;
-    outline: none;
-}
-
-.profile-field textarea {
-    resize: vertical;
-    min-height: 80px;
-}
-
-/* Многоцветная обводка через conic-gradient */
-.avatar-multi-status {
-    position: relative;
-    box-shadow: none !important;
-    border: none !important;
-}
-.avatar-multi-status::before {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 50%;
-    background: var(--avatar-gradient);
-    z-index: -1;
-}
-.participant-avatar.avatar-multi-status,
-.participant-dropdown-avatar.avatar-multi-status,
-.preview-avatar-img.avatar-multi-status,
-.preview-avatar-placeholder.avatar-multi-status {
-    overflow: visible;
-}
-/* Выравнивание главных заголовков по левому краю */
-.subtitle {
-    text-align: left !important;
-    padding-left: 16px;
-}
-
-/* Поля ввода в настройках профиля */
-.profile-field input[type="text"],
-.profile-field textarea {
-    width: 100%;
-    padding: 12px;
-    border-radius: 12px;
-    border: none;
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-    font-size: 16px;
-    font-family: inherit;
-    box-sizing: border-box;
-    outline: none;
-}
-
-.profile-field textarea {
-    resize: vertical;
-    min-height: 80px;
-}
+/* Уже не используются, оставлены для совместимости, но обводка задана выше */
