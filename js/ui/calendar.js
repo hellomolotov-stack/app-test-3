@@ -1,4 +1,6 @@
 // js/ui/calendar.js
+// (замените весь файл на этот код)
+
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -13,7 +15,7 @@ import {
 } from '../firebase.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { renderHome } from './home.js';
-import { renderUserBookings } from './home.js';
+import { renderUserBookmarks } from './home.js'; // предполагаем, что функция экспортируется
 import { renderProfiles } from './profiles.js';
 
 let currentCalendarYear = new Date().getFullYear();
@@ -336,6 +338,13 @@ export function showBottomSheet(index) {
             <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
         `;
 
+        // Навешиваем обработчики для ссылок внутри bottom sheet, предотвращая всплытие
+        contentWrapper.querySelectorAll('.dynamic-link, .leader-name').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.stopPropagation(); // чтобы не сработал случайный клик по кнопке "пригласить друга"
+            });
+        });
+
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
                 const countEl = document.getElementById('participantCountValue');
@@ -362,12 +371,11 @@ export function showBottomSheet(index) {
                             border-radius: 50% !important;
                             object-fit: cover !important;
                         `;
+                        // Единая толщина обводки через box-shadow
                         if (hasProfile) {
                             img.style.boxShadow = '0 0 0 2px #D9FD19';
-                            img.style.border = 'none';
                         } else {
                             img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
-                            img.style.border = 'none';
                         }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
@@ -387,10 +395,8 @@ export function showBottomSheet(index) {
                             `;
                             if (hasProfile) {
                                 placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
-                                placeholder.style.border = 'none';
                             } else {
                                 placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
-                                placeholder.style.border = 'none';
                             }
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
@@ -657,7 +663,7 @@ function updateFloatingSheetButtons() {
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
                         updateFloatingSheetButtons();
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        renderUserBookmarks(document.getElementById('userBookmarksContainer'));
                         const calendarContainer = document.getElementById('calendarContainer');
                         if (calendarContainer) renderCalendar(calendarContainer);
                     })
@@ -671,7 +677,7 @@ function updateFloatingSheetButtons() {
                         delete state.hikeBookingStatus[sheetCurrentIndex];
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        renderUserBookmarks(document.getElementById('userBookmarksContainer'));
                         const calendarContainer = document.getElementById('calendarContainer');
                         if (calendarContainer) renderCalendar(calendarContainer);
                     })
@@ -774,7 +780,7 @@ function updateFloatingSheetButtons() {
                     .then(() => {
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
                         updateFloatingSheetButtons();
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        renderUserBookmarks(document.getElementById('userBookmarksContainer'));
                         const calendarContainer = document.getElementById('calendarContainer');
                         if (calendarContainer) renderCalendar(calendarContainer);
                     })
@@ -848,7 +854,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
                 if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
                 if (state.userCard.status !== 'active') saveBookingStatusToLocal();
                 updateFloatingSheetButtons();
-                renderUserBookings(document.getElementById('userBookingsContainer'));
+                renderUserBookmarks(document.getElementById('userBookmarksContainer'));
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer) renderCalendar(calendarContainer);
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
@@ -1128,7 +1134,7 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
-// Делегирование событий для динамических кнопок
+// Глобальный делегат событий
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
