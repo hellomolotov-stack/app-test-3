@@ -92,7 +92,7 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// Новый блок саммари мастермайнда
+// Новый блок «саммари»
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     let innerHtml = '';
@@ -100,7 +100,7 @@ function renderMastermindSummaries() {
         innerHtml = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1;">
-                    <span style="color: #ffffff;">Пока нет записей мастермайнда</span>
+                    <span style="color: #ffffff;">скоро здесь появится первая запись</span>
                 </div>
             </div>
         `;
@@ -133,7 +133,7 @@ function renderMastermindSummaries() {
     return `
         <div class="card-container" id="mastermindSummariesCard">
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                <h2 class="section-title" style="margin: 0;">📄 саммари мастермайнда</h2>
+                <h2 class="section-title" style="margin: 0;">🧠 саммари</h2>
                 <a href="https://t.me/yaltahiking/303" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/303" data-guest="false" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">что такое мастермайнд &gt;</a>
             </div>
             ${innerHtml}
@@ -159,6 +159,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true, state.user);
 }
 
+// Блок «обновления» с кнопкой на той же строке
 function renderUpdatesBlock() {
     const updates = state.updates || [];
     if (!updates.length) return '';
@@ -177,8 +178,8 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <h2 class="section-title">📨 обновления</h2>
-            <div style="display: flex; justify-content: flex-end; align-items: center; margin: 0 16px 8px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
+                <h2 class="section-title" style="margin: 0;">📨 обновления</h2>
                 <a href="#" class="updates-idea-link" id="updatesIdeaLink" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">предложить идею &gt;</a>
             </div>
             <div class="updates-scroll">${itemsHtml}</div>
