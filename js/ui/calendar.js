@@ -337,8 +337,6 @@ export function showBottomSheet(index) {
             <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
         `;
 
-        // Больше не добавляем обработчики к ссылкам – глобальный делегат всё сделает
-
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
                 const countEl = document.getElementById('participantCountValue');
@@ -355,7 +353,7 @@ export function showBottomSheet(index) {
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
                         img.src = p.photoUrl || '';
-                        img.className = 'participant-avatar' + (hasProfile ? ' profile-glow' : '');
+                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
                         img.alt = p.name || '';
                         img.title = p.name || '';
                         img.dataset.userId = p.userId;
@@ -367,7 +365,7 @@ export function showBottomSheet(index) {
                         `;
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
-                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' profile-glow' : '');
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
                             placeholder.style.cssText = `
                                 width: 28px !important;
                                 height: 28px !important;
@@ -980,9 +978,9 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             }
 
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' profile-glow' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' profile-glow' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
             } else {
-                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' profile-glow' : ''}">${name.charAt(0).toUpperCase()}</div>`;
+                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}">${name.charAt(0).toUpperCase()}</div>`;
             }
             const nameSpan = document.createElement('span');
             nameSpan.className = 'participant-dropdown-name';
