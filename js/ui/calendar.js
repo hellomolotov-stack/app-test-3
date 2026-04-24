@@ -1,6 +1,4 @@
 // js/ui/calendar.js
-// (замените весь файл на этот код)
-
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -15,8 +13,9 @@ import {
 } from '../firebase.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { renderHome } from './home.js';
-import { renderUserBookings } from './home.js'; // предполагаем, что функция экспортируется
+import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
+import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -338,12 +337,7 @@ export function showBottomSheet(index) {
             <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
         `;
 
-        // Навешиваем обработчики для ссылок внутри bottom sheet, предотвращая всплытие
-        contentWrapper.querySelectorAll('.dynamic-link, .leader-name').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.stopPropagation(); // чтобы не сработал случайный клик по кнопке "пригласить друга"
-            });
-        });
+        // Больше не добавляем обработчики к ссылкам – глобальный делегат всё сделает
 
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
@@ -361,7 +355,7 @@ export function showBottomSheet(index) {
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
                         img.src = p.photoUrl || '';
-                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                        img.className = 'participant-avatar' + (hasProfile ? ' profile-glow' : '');
                         img.alt = p.name || '';
                         img.title = p.name || '';
                         img.dataset.userId = p.userId;
@@ -371,15 +365,9 @@ export function showBottomSheet(index) {
                             border-radius: 50% !important;
                             object-fit: cover !important;
                         `;
-                        // Единая толщина обводки через box-shadow
-                        if (hasProfile) {
-                            img.style.boxShadow = '0 0 0 2px #D9FD19';
-                        } else {
-                            img.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
-                        }
                         img.onerror = function () {
                             const placeholder = document.createElement('div');
-                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' profile-glow' : '');
                             placeholder.style.cssText = `
                                 width: 28px !important;
                                 height: 28px !important;
@@ -393,11 +381,6 @@ export function showBottomSheet(index) {
                                 color: white !important;
                                 text-transform: uppercase !important;
                             `;
-                            if (hasProfile) {
-                                placeholder.style.boxShadow = '0 0 0 2px #D9FD19';
-                            } else {
-                                placeholder.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.6)';
-                            }
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
@@ -804,7 +787,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
     overlay.id = 'guestBookingPopup';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
-            <button class="modal-close" id="closePopup" style="background: rgba(255,255,255,0.2); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; line-height: 1; position: absolute; top: 16px; right: 16px; backdrop-filter: blur(4px);">&times;</button>
+            <button class="modal-close" id="closePopup">&times;</button>
             <div class="modal-title">регистрация на хайк</div>
             <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
@@ -997,30 +980,14 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             }
 
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
+                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' profile-glow' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' profile-glow' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
             } else {
-                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}">${name.charAt(0).toUpperCase()}</div>`;
+                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' profile-glow' : ''}">${name.charAt(0).toUpperCase()}</div>`;
             }
             const nameSpan = document.createElement('span');
             nameSpan.className = 'participant-dropdown-name';
             nameSpan.textContent = name;
             item.appendChild(nameSpan);
-
-            const avatarEl = item.querySelector('.participant-dropdown-avatar');
-            if (avatarEl) {
-                avatarEl.style.cssText = `
-                    width: 30px !important;
-                    height: 30px !important;
-                    border-radius: 50% !important;
-                    object-fit: cover !important;
-                    border: none !important;
-                `;
-                if (hasProfile) {
-                    avatarEl.style.boxShadow = '0 0 0 2px #D9FD19';
-                } else {
-                    avatarEl.style.boxShadow = '0 0 0 2px rgba(255,255,255,0.3)';
-                }
-            }
 
             if (hasProfile) {
                 item.addEventListener('click', (e) => {
