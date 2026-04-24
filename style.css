@@ -1978,6 +1978,18 @@ body::before {
 .profile-card.highlight-pulse {
     animation: highlightPulseWhite 1.5s ease-in-out;
 }
-
+.profile-field input[type="text"],
+.profile-field textarea {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 16px;
+    font-family: inherit;
+    box-sizing: border-box;
+    outline: none;
+}
 /* -------------------- ЦВЕТНЫЕ ОБВОДКИ АВАТАРОВ -------------------- */
 /* Уже не используются, оставлены для совместимости, но обводка задана выше */
