@@ -4,7 +4,7 @@ import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, sa
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries } from './firebase.js';
 import { log } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
-import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
+import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
@@ -108,11 +108,14 @@ function setupBottomNav() {
     updateActiveNav();
 }
 
+// Инициализация в uiActions
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
+// Обработка диплинков
 function handleDeepLink(startParam) {
     if (!startParam) return;
+
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
         const interval = setInterval(() => {
@@ -124,7 +127,9 @@ function handleDeepLink(startParam) {
         }, 300);
         return;
     }
+
     const isGuest = state.userCard.status !== 'active';
+
     switch (startParam) {
         case 'calendar':
             setTimeout(() => {
@@ -175,9 +180,12 @@ function handleDeepLink(startParam) {
         case 'gift':
             renderGift(isGuest);
             break;
+        default:
+            break;
     }
 }
 
+// Инициализация приложения
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -248,6 +256,7 @@ async function loadAppData() {
     }
 }
 
+// Запуск
 window.addEventListener('load', () => {
     state.user = tg?.initDataUnsafe?.user;
     loadAppData();
