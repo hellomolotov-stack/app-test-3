@@ -790,7 +790,7 @@ body::before {
     flex: 1 1 auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 0 16px 80px 16px;  /* увеличен нижний отступ */
+    padding: 0 16px 80px 16px;
     color: #ffffff;
     min-height: 0;
     scrollbar-width: thin;
@@ -1007,8 +1007,9 @@ body::before {
     z-index: 1;
 }
 
-.participant-avatar.profile-glow {
-    box-shadow: 0 0 12px 4px rgba(217, 253, 25, 0.45);
+/* Жёлтая обводка для аватаров с профилем */
+.participant-avatar.has-profile {
+    box-shadow: 0 0 0 2px #D9FD19;
     border: none;
 }
 
@@ -1017,6 +1018,10 @@ body::before {
     color: white;
     text-transform: uppercase;
     box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+.participant-avatar.placeholder.has-profile {
+    box-shadow: 0 0 0 2px #D9FD19;
 }
 
 .participant-dropdown {
@@ -1076,8 +1081,8 @@ body::before {
     color: white;
 }
 
-.participant-dropdown-avatar.profile-glow {
-    box-shadow: 0 0 12px 4px rgba(217, 253, 25, 0.45);
+.participant-dropdown-avatar.has-profile {
+    box-shadow: 0 0 0 2px #D9FD19;
     border: none;
 }
 
@@ -1085,6 +1090,10 @@ body::before {
     background-color: #40a7e3;
     color: white;
     box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.participant-dropdown-avatar.placeholder.has-profile {
+    box-shadow: 0 0 0 2px #D9FD19;
 }
 
 .participant-dropdown-name {
