@@ -1,4 +1,6 @@
 // js/ui/common.js
+// (замените весь файл на этот код)
+
 import { haptic, openLink } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
@@ -45,7 +47,6 @@ export function updateActiveNav() {
         return;
     }
 
-    // Страница профилей
     const isProfilesPage = document.querySelector('.profiles-two-columns') !== null || 
                            document.querySelector('.profiles-grid') !== null ||
                            document.querySelector('.profile-edit-fab') !== null;
@@ -54,7 +55,6 @@ export function updateActiveNav() {
         return;
     }
 
-    // Главная / Календарь (по скроллу)
     const calendarContainer = document.getElementById('calendarContainer');
     if (calendarContainer) {
         const rect = calendarContainer.getBoundingClientRect();
@@ -137,7 +137,7 @@ export function hideBack() {
 
 export function setUserInteracted() { userInteracted = true; }
 
-// Функция для скролла страницы в начало
+// Экспортируем функцию прокрутки страницы в начало
 export function scrollPageToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     const mainContent = document.getElementById('mainContent');
