@@ -4,7 +4,7 @@ import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, sa
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates } from './firebase.js';
 import { log } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
-import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, uiActions } from './ui/common.js';
+import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setupBottomNav as commonSetupBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
@@ -15,14 +15,7 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Функция очистки гостевых элементов (блюр, кнопки)
-function cleanupProfileOverlays() {
-    document.querySelector('.profile-blur-overlay')?.remove();
-    document.querySelector('.guest-center-btn')?.remove();
-    document.querySelector('.center-floating-btn')?.remove();
-    document.querySelector('.profile-preview-banner')?.remove();
-    document.body.style.overflow = '';
-}
+// Функция очистки гостевых элементов (блюр, кнопки) – уже импортирована из common.js
 
 // Реализация setupBottomNav
 function setupBottomNav() {
@@ -75,6 +68,7 @@ function setupBottomNav() {
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
+        cleanupProfileOverlays();
         renderProfiles();
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
@@ -119,6 +113,9 @@ function setupBottomNav() {
 
 // Переопределяем действие в uiActions
 uiActions.setupBottomNav = setupBottomNav;
+
+// Импортируем uiActions для setupBottomNav
+import { uiActions } from './ui/common.js';
 
 // Обработка диплинков
 function handleDeepLink(startParam) {
