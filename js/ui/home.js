@@ -92,6 +92,55 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
+// Новый блок саммари мастермайнда
+function renderMastermindSummaries() {
+    const summaries = state.mastermindSummaries || [];
+    let innerHtml = '';
+    if (summaries.length === 0) {
+        innerHtml = `
+            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+                <div style="flex: 1;">
+                    <span style="color: #ffffff;">Пока нет записей мастермайнда</span>
+                </div>
+            </div>
+        `;
+    } else {
+        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        summaries.forEach(item => {
+            let formattedDate = '';
+            if (item.date) {
+                const parts = item.date.split('-');
+                if (parts.length === 3) {
+                    const day = parseInt(parts[2], 10);
+                    const month = parseInt(parts[1], 10) - 1;
+                    formattedDate = `${day} ${monthNames[month]}`;
+                } else {
+                    formattedDate = item.date;
+                }
+            }
+            innerHtml += `
+                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+                    <div style="flex: 1; margin-right: 16px;">
+                        <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
+                        <span style="color: #ffffff; margin-left: 8px;">${item.title || 'Без названия'}</span>
+                    </div>
+                    <a href="${item.link}" target="_blank" class="btn btn-yellow" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;">читать</a>
+                </div>
+            `;
+        });
+    }
+
+    return `
+        <div class="card-container" id="mastermindSummariesCard">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
+                <h2 class="section-title" style="margin: 0;">📄 саммари мастермайнда</h2>
+                <a href="https://t.me/yaltahiking/303" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/303" data-guest="false" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">что такое мастермайнд &gt;</a>
+            </div>
+            ${innerHtml}
+        </div>
+    `;
+}
+
 function showGuestPopup() {
     haptic();
     const overlay = document.createElement('div');
@@ -161,6 +210,7 @@ function renderGuestHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -228,6 +278,7 @@ function renderOwnerHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
