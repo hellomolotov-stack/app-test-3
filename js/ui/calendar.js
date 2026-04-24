@@ -15,7 +15,7 @@ import {
 } from '../firebase.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { renderHome } from './home.js';
-import { renderUserBookmarks } from './home.js'; // предполагаем, что функция экспортируется
+import { renderUserBookings } from './home.js'; // предполагаем, что функция экспортируется
 import { renderProfiles } from './profiles.js';
 
 let currentCalendarYear = new Date().getFullYear();
@@ -663,7 +663,7 @@ function updateFloatingSheetButtons() {
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
                         updateFloatingSheetButtons();
-                        renderUserBookmarks(document.getElementById('userBookmarksContainer'));
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
                         const calendarContainer = document.getElementById('calendarContainer');
                         if (calendarContainer) renderCalendar(calendarContainer);
                     })
@@ -677,7 +677,7 @@ function updateFloatingSheetButtons() {
                         delete state.hikeBookingStatus[sheetCurrentIndex];
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                        renderUserBookmarks(document.getElementById('userBookmarksContainer'));
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
                         const calendarContainer = document.getElementById('calendarContainer');
                         if (calendarContainer) renderCalendar(calendarContainer);
                     })
@@ -780,7 +780,7 @@ function updateFloatingSheetButtons() {
                     .then(() => {
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
                         updateFloatingSheetButtons();
-                        renderUserBookmarks(document.getElementById('userBookmarksContainer'));
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
                         const calendarContainer = document.getElementById('calendarContainer');
                         if (calendarContainer) renderCalendar(calendarContainer);
                     })
@@ -854,7 +854,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
                 if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
                 if (state.userCard.status !== 'active') saveBookingStatusToLocal();
                 updateFloatingSheetButtons();
-                renderUserBookmarks(document.getElementById('userBookmarksContainer'));
+                renderUserBookings(document.getElementById('userBookingsContainer'));
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer) renderCalendar(calendarContainer);
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
