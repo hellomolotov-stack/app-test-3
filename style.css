@@ -53,11 +53,13 @@ body::before {
     margin-bottom: 24px;
 }
 
-.subtitle {
+.subtitle, #subtitle {
     font-size: 24px;
     font-weight: 700;
     color: #ffffff;
     margin-top: 4px;
+    text-align: left !important;
+    padding-left: 16px;
 }
 
 .subtitle-guest {
@@ -788,7 +790,7 @@ body::before {
     flex: 1 1 auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 0 16px 20px 16px;
+    padding: 0 16px 80px 16px;  /* увеличен нижний отступ */
     color: #ffffff;
     min-height: 0;
     scrollbar-width: thin;
@@ -994,7 +996,6 @@ body::before {
     color: white;
 }
 
-/* Наложение аватаров: последний записавшийся сверху */
 .participant-avatar:first-child {
     margin-left: 0;
     z-index: 3;
@@ -1006,7 +1007,6 @@ body::before {
     z-index: 1;
 }
 
-/* Жёлтое свечение для аватаров с профилем */
 .participant-avatar.profile-glow {
     box-shadow: 0 0 12px 4px rgba(217, 253, 25, 0.45);
     border: none;
@@ -1838,7 +1838,6 @@ body::before {
     margin-top: 6px;
 }
 
-/* Поля ввода в настройках профиля */
 .profile-field input[type="text"],
 .profile-field textarea {
     width: 100%;
@@ -1973,8 +1972,6 @@ body::before {
 .eye-emoji.rotated {
     transform: rotate(90deg);
 }
-
-/* Блюр с блокировкой нажатий */
 .profile-blur-overlay {
     position: fixed !important;
     top: 0 !important;
@@ -1985,24 +1982,21 @@ body::before {
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     z-index: 99 !important;
-    pointer-events: all !important; /* Блокируем нажатия */
+    pointer-events: all !important;
 }
 
-/* Центральная кнопка и баннер должны быть поверх блюра */
 .center-floating-btn,
 .guest-center-btn,
 .profile-preview-banner {
     z-index: 100 !important;
 }
 
-/* Выравнивание больших заголовков по левому краю */
 .section-title {
     margin-left: 16px !important;
     margin-right: 16px !important;
     text-align: left !important;
 }
 
-/* Подсветка профиля при переходе — белая */
 @keyframes highlightPulseWhite {
     0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
     50% { box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.5); }
