@@ -1,6 +1,4 @@
 // js/ui/profiles.js
-// (замените весь файл на этот код)
-
 import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay } from '../utils.js';
 import { state } from '../state.js';
 import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
@@ -68,7 +66,7 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-// Вспомогательная функция очистки временных элементов (аналогична cleanupProfileOverlays в main.js)
+// Вспомогательная функция очистки временных элементов
 function cleanupProfileOverlays() {
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
@@ -323,9 +321,19 @@ async function renderEditProfile() {
     const currentAllowMessages = fresh?.allowMessages !== false;
     const currentCustomLink = fresh?.customLink || '';
 
+    // Цвета для чекбоксов статусов
+    const statusColors = {
+        'дружба': '#D9FD19',
+        'отношения': '#FB5EB0',
+        'бизнес': '#5E9FC5'
+    };
+    const statusesHtml = ['дружба', 'отношения', 'бизнес'].map(s => 
+        `<label><input type="checkbox" value="${s}" ${currentStatuses.includes(s) ? 'checked' : ''} style="accent-color: ${statusColors[s]}"> ${s}</label>`
+    ).join('');
+
     mainDiv().innerHTML = `<div class="card-container" style="padding-top:12px; padding-bottom:8px;"><form id="editProfileForm" class="edit-form">
         <div class="profile-field"><label>👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
-        <div class="profile-field"><label>👀 статус знакомств</label><div class="checkbox-group"><label><input type="checkbox" value="дружба" ${currentStatuses.includes('дружба')?'checked':''}> дружба</label><label><input type="checkbox" value="отношения" ${currentStatuses.includes('отношения')?'checked':''}> отношения</label><label><input type="checkbox" value="бизнес" ${currentStatuses.includes('бизнес')?'checked':''}> бизнес</label></div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
+        <div class="profile-field"><label>👀 статус знакомств</label><div class="checkbox-group">${statusesHtml}</div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
         <div class="profile-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
         <div class="profile-field"><label>💼 профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
         <div class="profile-field">
