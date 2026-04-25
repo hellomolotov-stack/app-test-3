@@ -100,7 +100,7 @@ function renderMastermindSummaries() {
         innerHtml = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1;">
-                    <span style="color: #ffffff;">скоро здесь появится первая запись мастермайнда</span>
+                    <span style="color: #ffffff;">скоро здесь появится первая запись</span>
                 </div>
             </div>
         `;
@@ -156,7 +156,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true, state.user);
 }
 
-// Блок «обновления» с кнопкой на той же строке
+// Блок «обновления» — заголовок строго по левому краю
 function renderUpdatesBlock() {
     const updates = state.updates || [];
     if (!updates.length) return '';
@@ -176,7 +176,7 @@ function renderUpdatesBlock() {
     return `
         <div class="card-container updates-container">
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                <h2 class="section-title" style="margin: 0;">📨 обновления</h2>
+                <h2 class="section-title" style="margin: 0; padding-left: 0;">📨 обновления</h2>
                 <a href="#" class="updates-idea-link" id="updatesIdeaLink" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">предложить идею &gt;</a>
             </div>
             <div class="updates-scroll">${itemsHtml}</div>
