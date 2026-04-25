@@ -100,7 +100,7 @@ function renderMastermindSummaries() {
         innerHtml = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1;">
-                    <span style="color: #ffffff;">скоро здесь появится первое саммари</span>
+                    <span style="color: #ffffff;">скоро здесь появится первая запись мастермайнда</span>
                 </div>
             </div>
         `;
@@ -133,4 +133,212 @@ function renderMastermindSummaries() {
     return `
         <div class="card-container" id="mastermindSummariesCard">
             <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h
+                <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h2>
+                <a href="https://t.me/yaltahiking/303" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/303" data-guest="false" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">что такое мастермайнд &gt;</a>
+            </div>
+            ${innerHtml}
+        </div>
+    `;
+}
+
+function showGuestPopup() {
+    haptic();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'guestPopup';
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-title">💳 карта интеллигента</div>
+            <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
+            <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">узнать о привилегиях</button></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+    document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); renderGuestPrivileges(); });
+    log('guest_popup_opened', true, state.user);
+}
+
+// Блок «обновления» с кнопкой на той же строке
+function renderUpdatesBlock() {
+    const updates = state.updates || [];
+    if (!updates.length) return '';
+
+    let itemsHtml = '';
+    updates.forEach(item => {
+        const formattedDate = formatDateForDisplay(item.date);
+        let text = parseLinks(item.update, state.userCard.status !== 'active');
+        itemsHtml += `
+            <div class="update-item">
+                <span class="update-date">${formattedDate}</span>
+                <span class="update-text">${text}</span>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="card-container updates-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
+                <h2 class="section-title" style="margin: 0;">📨 обновления</h2>
+                <a href="#" class="updates-idea-link" id="updatesIdeaLink" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">предложить идею &gt;</a>
+            </div>
+            <div class="updates-scroll">${itemsHtml}</div>
+        </div>
+    `;
+}
+
+function renderGuestHome() {
+    cleanupProfileOverlays();
+    subtitle().textContent = `💳 здесь будет твоя карта, ${state.user?.first_name || 'друг'}`;
+    subtitle().classList.add('subtitle-guest');
+    showBottomNav(true);
+    const main = mainDiv();
+    main.innerHTML = `
+        <div class="card-container">
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
+            <div id="cardAccordionGuest" class="card-accordion">
+                <button class="accordion-btn btn-yellow btn-glow">оформить карту</button>
+                <div class="dropdown-menu">
+                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px;">узнать о привилегиях 💳</a>
+                    <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
+                        <a href="${SEASON_CARD_LINK}" class="btn btn-outline season-card-btn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
+                        <a href="${PERMANENT_CARD_LINK}" class="btn btn-outline permanent-card-btn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;"><div style="flex: 1;">до конца 2026</div><div style="flex: 1;">все сезоны</div></div>
+                    <div style="display: flex; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;"><div style="flex: 1;">${state.popupConfig.seasonCardPrice} ₽</div><div style="flex: 1;">${state.popupConfig.permanentCardPrice} ₽</div></div>
+                </div>
+            </div>
+        </div>
+        <div id="userBookingsContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
+        <div class="card-container" id="calendarContainer"></div>
+        <div class="card-container">
+            <h2 class="section-title">🫖 для новичков</h2>
+            <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+        </div>
+        <div class="card-container">
+            <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true">смотреть отчёты &gt;</a></div>
+            <div class="metrics-grid">
+                <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
+                <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
+                <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
+                <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
+            </div>
+        </div>
+        ${renderUpdatesBlock()}
+    `;
+
+    document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
+    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', true, state.user); renderNewcomerPage(true); });
+    document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); renderGuestPrivileges(); log('privilegii_click', true, state.user); });
+    document.querySelectorAll('.season-card-btn, .permanent-card-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const isSeason = btn.classList.contains('season-card-btn');
+            openLink(isSeason ? SEASON_CARD_LINK : PERMANENT_CARD_LINK, isSeason ? 'season_card_click' : 'permanent_card_click', true);
+        });
+    });
+
+    document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://t.me/hellointelligent', 'idea_click', true);
+    });
+
+    const accordionBtn = document.querySelector('#cardAccordionGuest .accordion-btn');
+    const dropdown = document.querySelector('#cardAccordionGuest .dropdown-menu');
+    if (accordionBtn && dropdown) {
+        accordionBtn.addEventListener('click', (e) => {
+            haptic(); e.preventDefault();
+            log('nav_toggle', true, state.user);
+            dropdown.classList.toggle('show');
+        });
+    }
+
+    renderUserBookings(document.getElementById('userBookingsContainer'));
+    renderCalendar(document.getElementById('calendarContainer'));
+    setupBottomNav();
+}
+
+function renderOwnerHome() {
+    cleanupProfileOverlays();
+    const user = state.user;
+    const firstName = user?.first_name || 'друг';
+    subtitle().textContent = `💳 твоя карта, ${firstName}`;
+    subtitle().classList.remove('subtitle-guest');
+    showBottomNav(true);
+    const main = mainDiv();
+    main.innerHTML = `
+        <div class="card-container">
+            <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
+            <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
+                <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
+                <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
+            </div>
+        </div>
+        <div id="userBookingsContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
+        <div class="card-container" id="calendarContainer"></div>
+        <div class="card-container">
+            <h2 class="section-title">🫖 для новичков</h2>
+            <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+        </div>
+        <div class="card-container">
+            <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false">смотреть отчёты &gt;</a></div>
+            <div class="metrics-grid">
+                <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
+                <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
+                <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
+                <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
+            </div>
+        </div>
+        ${renderUpdatesBlock()}
+    `;
+
+    document.getElementById('ownerCardImage')?.addEventListener('click', () => {
+        haptic();
+        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        showConfetti();
+        log('card_click', false, user);
+    });
+    document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('privilege_click', false, user); renderPriv(); });
+    document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'support_click', false); });
+    document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', false, user); renderNewcomerPage(false); });
+
+    document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        openLink('https://t.me/hellointelligent', 'idea_click', false);
+    });
+
+    renderUserBookings(document.getElementById('userBookingsContainer'));
+    renderCalendar(document.getElementById('calendarContainer'));
+    setupBottomNav();
+}
+
+export function renderHome() {
+    document.querySelector('.profile-edit-fab')?.remove();
+    hideBack();
+    if (window._floatingScrollHandler) {
+        window.removeEventListener('scroll', window._floatingScrollHandler);
+        window._floatingScrollHandler = null;
+    }
+    const existingPopup = document.getElementById('guestPopup');
+    if (existingPopup) existingPopup.remove();
+
+    if (state.userCard.status === 'loading') {
+        mainDiv().innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
+        showBottomNav(false);
+        return;
+    }
+
+    updateMetricsUI();
+
+    if (state.userCard.status === 'active' && state.userCard.cardUrl) {
+        renderOwnerHome();
+    } else {
+        renderGuestHome();
+    }
+}
