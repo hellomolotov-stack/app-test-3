@@ -100,7 +100,7 @@ function renderMastermindSummaries() {
         innerHtml = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1;">
-                    <span style="color: #ffffff;">скоро здесь появится первая запись мастермайнда</span>
+                    <span style="color: #ffffff;">скоро здесь появится первая запись</span>
                 </div>
             </div>
         `;
