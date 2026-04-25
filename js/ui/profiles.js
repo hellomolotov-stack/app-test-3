@@ -118,7 +118,7 @@ export async function renderProfiles() {
     if (isCardHolder && hasMyProfile) {
         const btnContainer = document.createElement('div');
         btnContainer.className = 'profile-edit-fab';
-        btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">📝 мой профиль</button>`;
+        btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">🎩 мой профиль</button>`;
         document.body.appendChild(btnContainer);
         document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
         return;
@@ -144,7 +144,7 @@ export async function renderProfiles() {
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    const btnText = '📝 создать профиль';
+    const btnText = '🎩 создать профиль';
     centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
     centerBtn.style.cssText = `
         position: fixed !important;
@@ -266,7 +266,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
 
         const textDiv = document.createElement('div');
         textDiv.style.cssText = 'flex: 1; font-size: 14px; color: #fff; line-height: 1.4; word-break: break-word;';
-        textDiv.innerHTML = `<span style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> — и другие интеллигенты уже создали свой профиль. готов опубликовать свой, чтобы вывести знакомства на новый уровень?`;
+        textDiv.innerHTML = `<span style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> – и другие члены клуба уже создали профиль интеллигента. создай свой, чтобы вывести здоровые знакомства на новый уровень`;
 
         banner.appendChild(avatarContainer);
         banner.appendChild(textDiv);
@@ -307,7 +307,7 @@ async function renderEditProfile() {
     cleanupProfileOverlays(); // очищаем перед рендером формы
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `📝 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
+    subtitle().textContent = `🎩 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
     showBottomNav(true); setupBottomNav();
     const bottomNav = document.getElementById('bottomNav');
     if(bottomNav) bottomNav.style.display = 'flex';
