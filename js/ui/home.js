@@ -100,7 +100,7 @@ function renderMastermindSummaries() {
         innerHtml = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1;">
-                    <span style="color: #ffffff;">скоро здесь появится первая запись</span>
+                    <span style="color: #ffffff;">скоро здесь появится первая запись мастермайнда</span>
                 </div>
             </div>
         `;
@@ -132,10 +132,7 @@ function renderMastermindSummaries() {
 
     return `
         <div class="card-container" id="mastermindSummariesCard">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
-                <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h2>
-                <a href="https://t.me/yaltahiking/303" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/303" data-guest="false" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">что такое мастермайнд &gt;</a>
-            </div>
+            <h2 class="section-title">🧠 саммари мастермайнда</h2>
             ${innerHtml}
         </div>
     `;
