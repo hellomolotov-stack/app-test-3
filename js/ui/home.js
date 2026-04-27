@@ -92,9 +92,39 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// Новый блок «саммари мастермайнда»
+// Попап для гостей при нажатии "читать" в саммари
+function showGuestMastermindPopup() {
+    haptic();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-title">🧠 саммари мастермайнда</div>
+            <div class="modal-text" style="font-size: 14px;">
+                чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?
+            </div>
+            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">расскажите скорее</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+    document.getElementById('goToPrivilegesFromMastermindBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        overlay.remove();
+        renderGuestPrivileges();
+    });
+}
+
+// Блок «саммари мастермайнда»
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
+    const isGuest = state.userCard.status !== 'active';
     let innerHtml = '';
     if (summaries.length === 0) {
         innerHtml = `
@@ -118,13 +148,16 @@ function renderMastermindSummaries() {
                     formattedDate = item.date;
                 }
             }
+            const readBtn = isGuest 
+                ? `<button class="btn btn-yellow guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">читать</button>`
+                : `<a href="${item.link}" target="_blank" class="btn btn-yellow" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;">читать</a>`;
             innerHtml += `
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                     <div style="flex: 1; margin-right: 16px;">
                         <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
                         <span style="color: #ffffff; margin-left: 8px;">${item.title || 'Без названия'}</span>
                     </div>
-                    <a href="${item.link}" target="_blank" class="btn btn-yellow" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;">читать</a>
+                    ${readBtn}
                 </div>
             `;
         });
@@ -132,7 +165,10 @@ function renderMastermindSummaries() {
 
     return `
         <div class="card-container" id="mastermindSummariesCard">
-            <h2 class="section-title">🧠 саммари мастермайнда</h2>
+            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: flex-start;">
+                <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h2>
+                <span class="new-badge">новое</span>
+            </div>
             ${innerHtml}
         </div>
     `;
@@ -156,7 +192,7 @@ function showGuestPopup() {
     log('guest_popup_opened', true, state.user);
 }
 
-// Блок «обновления» — заголовок строго по левому краю
+// Блок «обновления» с плашкой
 function renderUpdatesBlock() {
     const updates = state.updates || [];
     if (!updates.length) return '';
@@ -175,9 +211,9 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 0 16px 16px 16px;">
+            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: flex-start; justify-content: space-between;">
                 <h2 class="section-title" style="margin: 0; padding-left: 0;">📨 обновления</h2>
-                <a href="#" class="updates-idea-link" id="updatesIdeaLink" style="font-size: 14px; color: #ffffff; opacity: 0.8; text-decoration: none; font-weight: 500;">предложить идею &gt;</a>
+                <span class="new-badge">новое</span>
             </div>
             <div class="updates-scroll">${itemsHtml}</div>
         </div>
@@ -252,6 +288,14 @@ function renderGuestHome() {
             dropdown.classList.toggle('show');
         });
     }
+
+    // Обработчик кликов на гостевых кнопках «читать» в саммари
+    document.querySelectorAll('.guest-read-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            showGuestMastermindPopup();
+        });
+    });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
