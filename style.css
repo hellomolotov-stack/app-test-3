@@ -2031,3 +2031,20 @@ body::before {
 .profile-card.highlight-pulse {
     animation: highlightPulseWhite 1.5s ease-in-out;
 }
+/* Плашка "новое" для заголовков */
+.header-with-badge {
+    position: relative;
+}
+.new-badge {
+    position: absolute;
+    top: -8px;
+    right: -5px;
+    background-color: var(--yellow);
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 30px;
+    white-space: nowrap;
+    z-index: 2;
+}
