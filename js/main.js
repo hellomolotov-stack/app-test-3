@@ -110,6 +110,7 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
+// Обработка диплинков
 function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('hike_')) {
@@ -123,10 +124,12 @@ function handleDeepLink(startParam) {
             return false;
         };
         if (!tryShow()) {
-            const interval = setInterval(() => {
-                if (tryShow()) clearInterval(interval);
-            }, 300);
-            setTimeout(() => clearInterval(interval), 5000);
+            const unsub = subscribeToHikes((newList) => {
+                state.hikesList = newList;
+                state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
+                if (tryShow()) unsub();
+            });
+            setTimeout(() => unsub(), 10000);
         }
         return;
     }
@@ -264,6 +267,7 @@ async function loadAppData() {
         
         renderHome();
 
+        // Обработка startapp при запуске
         const urlParams = new URLSearchParams(window.location.search);
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || urlParams.get('startapp') || urlParams.get('start');
         if (startParam) {
