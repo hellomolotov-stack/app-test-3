@@ -83,3 +83,15 @@ export async function syncProfileDeleteToSheet(userId) {
         console.error('Profile delete sync error:', e);
     }
 }
+
+// Новая функция: синхронизация разрешения на отправку сообщений (гость)
+export function syncGuestAllowMessages(userId, allow) {
+    if (!userId || !REGISTRATION_API_URL) return;
+    const params = new URLSearchParams({
+        action: 'syncGuestAllowMessages',
+        user_id: userId,
+        allow_messages: allow ? 'yes' : 'no'
+    });
+    fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true })
+        .catch(e => console.error('syncGuestAllowMessages error:', e));
+}
