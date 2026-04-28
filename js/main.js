@@ -14,25 +14,19 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Получаем безопасную зону сверху (системные кнопки)
+// Получаем безопасную зону сверху
 function getSafeTop() {
     if (!tg) return 0;
-    // contentSafeAreaInset.top – основной способ
-    let safeTop = tg.contentSafeAreaInset?.top || 0;
-    // Если вдруг не задан, попробуем вычислить по разнице высот
-    if (!safeTop && tg.viewportStableHeight) {
-        safeTop = window.innerHeight - tg.viewportStableHeight;
-    }
-    return safeTop;
+    return tg.contentSafeAreaInset?.top || 0;
 }
 
-// Применяем отступ для основного контента
+// Применяем увеличенный отступ, чтобы контент начинался ниже системных кнопок
 function applySafeArea() {
     const safeTop = getSafeTop();
     const app = document.querySelector('.app');
     if (app) {
-        // Делаем отступ: безопасная зона + базовый отступ 16px + дополнительный запас 20px
-        app.style.paddingTop = (safeTop + 16 + 20) + 'px';
+        // Базовый отступ 16px + безопасная зона + дополнительный запас 20px
+        app.style.paddingTop = (16 + safeTop + 20) + 'px';
     }
 }
 
@@ -132,19 +126,26 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
+// Обработка диплинков (исправлено для hike_YYYY-MM-DD)
 function handleDeepLink(startParam) {
     if (!startParam) return;
+
+    // Хайк по дате
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
+        if (!targetDate) return;
+
+        // Ждём, пока загрузится список хайков
         const interval = setInterval(() => {
             const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
             if (targetIndex !== -1) {
                 clearInterval(interval);
-                setTimeout(() => showBottomSheet(targetIndex), 200);
+                setTimeout(() => showBottomSheet(targetIndex), 300);
             }
-        }, 300);
+        }, 200);
         return;
     }
+
     const isGuest = state.userCard.status !== 'active';
     switch (startParam) {
         case 'calendar':
@@ -199,6 +200,7 @@ function handleDeepLink(startParam) {
     }
 }
 
+// Инициализация приложения
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -276,11 +278,12 @@ async function loadAppData() {
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.expand();
             window.Telegram.WebApp.onEvent('viewportChanged', applySafeArea);
-            setTimeout(applySafeArea, 50);
+            setTimeout(applySafeArea, 100);
         }
 
         renderHome();
         
+        // Обработка start_param из Telegram (кнопка пригласить друга и диплинки)
         const urlParams = new URLSearchParams(window.location.search);
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || urlParams.get('startapp') || urlParams.get('start');
         if (startParam) {
