@@ -10,6 +10,7 @@ import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, rend
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet } from './ui/calendar.js';
 
+// Глобальные переменные UI
 window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
@@ -21,13 +22,102 @@ function applySafeArea() {
     const app = document.querySelector('.app');
     if (app) {
         // Дополнительный запас, чтобы контент точно не залезал под системные кнопки
-        const extra = 30;   // можно увеличить до 30-40, если всё равно мало
+        const extra = 20;   // можно увеличить до 30-40, если всё равно мало
         app.style.paddingTop = (safeTop + extra) + 'px';
     }
 }
 
 function setupBottomNav() {
-    // ... без изменений, как в последней версии ...
+    const navHome = document.getElementById('navHome');
+    const navHikes = document.getElementById('navHikes');
+    const navProfiles = document.getElementById('navProfiles');
+    const navMore = document.getElementById('navMore');
+    const popup = document.getElementById('navPopup');
+    const popupChat = document.getElementById('popupChat');
+    const popupChannel = document.getElementById('popupChannel');
+    const popupGift = document.getElementById('popupGift');
+    const popupNewcomer = document.getElementById('popupNewcomer');
+    const popupPass = document.getElementById('popupPass');
+    const popupQuestion = document.getElementById('popupQuestion');
+
+    if (!navHome || !navHikes || !navMore || !popup) return;
+
+    const newNavHome = navHome.cloneNode(true);
+    const newNavHikes = navHikes.cloneNode(true);
+    const newNavProfiles = navProfiles.cloneNode(true);
+    const newNavMore = navMore.cloneNode(true);
+    navHome.parentNode.replaceChild(newNavHome, navHome);
+    navHikes.parentNode.replaceChild(newNavHikes, navHikes);
+    navProfiles.parentNode.replaceChild(newNavProfiles, navProfiles);
+    navMore.parentNode.replaceChild(newNavMore, navMore);
+
+    const navHomeNew = document.getElementById('navHome');
+    const navHikesNew = document.getElementById('navHikes');
+    const navProfilesNew = document.getElementById('navProfiles');
+    const navMoreNew = document.getElementById('navMore');
+
+    navHomeNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('home');
+        cleanupProfileOverlays();
+        renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
+        log('glavnaya_click', state.userCard.status !== 'active', state.user);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        window.isMenuActive = false;
+        updateActiveNav();
+    });
+    navHikesNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('hikes');
+        cleanupProfileOverlays();
+        renderHome();
+        setTimeout(() => document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        log('kalendar_click', state.userCard.status !== 'active', state.user);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        window.isMenuActive = false;
+        updateActiveNav();
+    });
+    navProfilesNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('profiles');
+        cleanupProfileOverlays();
+        renderProfiles();
+        log('profiles_click', state.userCard.status !== 'active', state.user);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        window.isMenuActive = false;
+        updateActiveNav();
+    });
+    navMoreNew.addEventListener('click', (e) => {
+        e.stopPropagation(); haptic();
+        if (popup.classList.contains('show')) {
+            popup.classList.remove('show');
+            window.isMenuActive = false;
+        } else {
+            popup.classList.add('show');
+            window.isMenuActive = true;
+        }
+        log('menu_click', state.userCard.status !== 'active', state.user);
+        updateActiveNav();
+    });
+
+    popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    if (popupQuestion) {
+        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'question_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
+            popup.classList.remove('show');
+            window.isMenuActive = false;
+            updateActiveNav();
+        }
+    });
+    window.addEventListener('scroll', () => {
+        setUserInteracted();
+        requestAnimationFrame(updateActiveNav);
+    });
+    updateActiveNav();
 }
 
 import { uiActions } from './ui/common.js';
@@ -110,6 +200,7 @@ function handleDeepLink(startParam) {
     }
 }
 
+// Инициализация приложения
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -205,6 +296,7 @@ async function loadAppData() {
     }
 }
 
+// Запуск
 window.addEventListener('load', () => {
     state.user = tg?.initDataUnsafe?.user;
     loadAppData();
