@@ -152,9 +152,15 @@ export function showBottomSheet(index) {
 
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
+
+    // Учитываем безопасную зону, чтобы слайдер не прилипал к системным кнопкам
+    const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
-    sheet.style.maxHeight = `${windowHeight * 0.9}px`;
-    sheet.style.height = `${windowHeight * 0.9}px`;
+    const maxHeight = windowHeight - safeTop - 20; // 20 – дополнительный отступ
+    sheet.style.maxHeight = `${maxHeight}px`;
+    sheet.style.height = `${maxHeight}px`;
+    overlay.style.paddingTop = safeTop + 'px';
+
     sheetCurrentIndex = index;
     const isGuest = state.userCard.status !== 'active';
     if (currentUnsubscribe) {
