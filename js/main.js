@@ -14,11 +14,16 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Получаем безопасную зону сверху (для системных кнопок)
+// Получаем безопасную зону сверху (системные кнопки)
 function getSafeTop() {
     if (!tg) return 0;
-    // contentSafeAreaInset – основной способ, в некоторых версиях можно использовать window.safeArea
-    return tg.contentSafeAreaInset?.top || 0;
+    // contentSafeAreaInset.top – основной способ
+    let safeTop = tg.contentSafeAreaInset?.top || 0;
+    // Если вдруг не задан, попробуем вычислить по разнице высот
+    if (!safeTop && tg.viewportStableHeight) {
+        safeTop = window.innerHeight - tg.viewportStableHeight;
+    }
+    return safeTop;
 }
 
 // Применяем отступ для основного контента
@@ -26,8 +31,8 @@ function applySafeArea() {
     const safeTop = getSafeTop();
     const app = document.querySelector('.app');
     if (app) {
-        // Базовый отступ 16px + безопасная зона сверху
-        app.style.paddingTop = (16 + safeTop) + 'px';
+        // Делаем отступ: безопасная зона + базовый отступ 16px + дополнительный запас 20px
+        app.style.paddingTop = (safeTop + 16 + 20) + 'px';
     }
 }
 
