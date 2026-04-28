@@ -294,10 +294,19 @@ async function loadAppData() {
         
         renderHome();
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || urlParams.get('startapp') || urlParams.get('start');
+        // Важно: сначала проверяем initData, затем URL – так надёжнее
+        let startParam = '';
+        if (tg?.initDataUnsafe?.start_param) {
+            startParam = tg.initDataUnsafe.start_param;
+        } else if (tg?.initData?.start_param) {
+            startParam = tg.initData.start_param;
+        } else {
+            const urlParams = new URLSearchParams(window.location.search);
+            startParam = urlParams.get('startapp') || urlParams.get('start') || '';
+        }
         if (startParam) {
-            handleDeepLink(startParam);
+            // Небольшая задержка, чтобы DOM точно отрендерился
+            setTimeout(() => handleDeepLink(startParam), 100);
         }
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
