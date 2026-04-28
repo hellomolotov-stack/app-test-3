@@ -43,13 +43,11 @@ body::before {
     min-height: 100vh;
     max-width: 600px;
     margin: 0 auto;
-    padding: 16px;                     /* базовый отступ */
-    padding-top: calc(16px + env(safe-area-inset-top));  /* fallback */
+    padding: 16px;               /* остальные отступы, верхний будет задан через JS */
     position: relative;
     z-index: 1;
-    transition: padding-top 0.1s;       /* плавный сдвиг */
+    /* padding-top больше не задаём через CSS */
 }
-
 .header {
     text-align: center;
     margin-bottom: 24px;
