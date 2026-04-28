@@ -1219,10 +1219,18 @@ document.addEventListener('click', function(e) {
         if (index !== undefined) showBottomSheet(parseInt(index));
         return;
     }
-    if (link.classList.contains('bookings-calendar-link') || link.classList.contains('booking-go-btn')) {
-        e.preventDefault(); haptic();
-        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
-        return;
+  if (link.classList.contains('bookings-calendar-link') || link.classList.contains('booking-go-btn')) {
+    e.preventDefault(); haptic();
+    const calendar = document.getElementById('calendarContainer');
+    if (calendar) {
+        const safeTop = tg?.contentSafeAreaInset?.top || 0;
+        const offset = safeTop + 60;
+        const rect = calendar.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetY = rect.top + scrollTop - offset;
+        window.scrollTo({ top: targetY, behavior: 'smooth' });
     }
+    log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
+    return;
+}
 });
