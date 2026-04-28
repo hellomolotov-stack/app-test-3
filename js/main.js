@@ -14,14 +14,12 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Применяем отступ под системную область (notch/статус-бар)
 function applySafeArea() {
     if (!tg) return;
     const safeTop = tg.contentSafeAreaInset?.top || 0;
     const app = document.querySelector('.app');
     if (app) {
-        // Оставляем боковые и нижний отступы через CSS, верхний задаём точно
-        app.style.paddingTop = safeTop + 'px';
+        app.style.paddingTop = (safeTop + 20) + 'px';
     }
 }
 
@@ -261,12 +259,9 @@ async function loadAppData() {
             }
         }
 
-        // РАЗВОРАЧИВАЕМ ПРИЛОЖЕНИЕ И ПРИМЕНЯЕМ ОТСТУП
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.expand();
-            // Подписка на изменение viewport для динамического отступа
             window.Telegram.WebApp.onEvent('viewportChanged', applySafeArea);
-            // Первичная установка
             setTimeout(applySafeArea, 50);
         }
 
