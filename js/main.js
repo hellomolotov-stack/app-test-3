@@ -14,45 +14,6 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// -------------------------------------------------------------
-//  УНИВЕРСАЛЬНЫЙ ОТСТУП ДЛЯ ПОЛНОЭКРАННОГО РЕЖИМА
-// -------------------------------------------------------------
-function getTopInset() {
-    // 1) Пробуем взять безопасную зону через Telegram API
-    if (tg && typeof tg.contentSafeAreaInset?.top === 'number') {
-        return tg.contentSafeAreaInset.top;
-    }
-    // 2) На смартфонах visualViewport может дать корректный отступ
-    if (window.visualViewport) {
-        return window.visualViewport.offsetTop || 0;
-    }
-    // 3) Если ничего нет – возвращаем ноль
-    return 0;
-}
-
-function applySafeArea() {
-    const topInset = getTopInset();
-    // Дополнительный запас, чтобы контент точно не залезал под системные кнопки (меняйте при необходимости)
-    const extra = 160;
-    const totalTop = topInset + extra;
-    const app = document.querySelector('.app');
-    if (app) {
-        app.style.paddingTop = totalTop + 'px';
-        // Для отладки (можно убрать в продакшене)
-        // console.log('Safe area applied:', totalTop, 'px (topInset:', topInset, ')');
-    }
-}
-
-// Сразу вешаем обработчики на изменение размеров, чтобы отступ обновлялся динамически
-window.addEventListener('resize', applySafeArea);
-window.addEventListener('orientationchange', applySafeArea);
-if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', applySafeArea);
-}
-
-// -------------------------------------------------------------
-//  НАВИГАЦИЯ (МЕНЮ)
-// -------------------------------------------------------------
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -149,9 +110,6 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
-// -------------------------------------------------------------
-//  ДИПЛИНКИ (startapp)
-// -------------------------------------------------------------
 function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('hike_')) {
@@ -226,9 +184,6 @@ function handleDeepLink(startParam) {
     }
 }
 
-// -------------------------------------------------------------
-//  ЗАГРУЗКА ПРИЛОЖЕНИЯ
-// -------------------------------------------------------------
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -302,14 +257,12 @@ async function loadAppData() {
             }
         }
 
-        // Разворачиваем приложение и применяем отступы
+        // Разворачиваем приложение
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.expand();
-            window.Telegram.WebApp.onEvent('viewportChanged', applySafeArea);
         }
         
         renderHome();
-        applySafeArea(); // <-- гарантированно применяем отступ после рендера
 
         const urlParams = new URLSearchParams(window.location.search);
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || urlParams.get('startapp') || urlParams.get('start');
