@@ -26,7 +26,108 @@ function hasHikesInMonth(year, month) {
 }
 
 export function renderCalendar(container) {
-    // ... (код без изменений) ...
+    const year = currentCalendarYear,
+        month = currentCalendarMonth;
+    const today = new Date();
+    const currentYear = today.getFullYear(),
+        currentMonth = today.getMonth(),
+        currentDate = today.getDate();
+    const monthNames = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+    const firstDay = new Date(year, month, 1).getDay();
+    let startOffset = firstDay === 0 ? 6 : firstDay - 1;
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const weekdays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
+    const hasPrevMonth = hasHikesInMonth(year, month - 1);
+    const hasNextMonth = hasHikesInMonth(year, month + 1);
+
+    let calendarHtml = `
+        <h2 class="section-title">🗓️ календарь хайков</h2>
+        <div class="calendar-item">
+            <div class="calendar-header-with-legend">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <h3 style="margin:0;">${monthNames[month]} ${year}</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="calendar-nav-arrow" id="prevMonthBtn" ${!hasPrevMonth ? 'disabled style="opacity:0.3; pointer-events:none;"' : ''}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <button class="calendar-nav-arrow" id="nextMonthBtn" ${!hasNextMonth ? 'disabled style="opacity:0.3; pointer-events:none;"' : ''}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="calendar-legend">
+                    <span class="legend-item"><span class="legend-emoji">📷</span> – отчёт</span>
+                    <span class="legend-item"><span class="legend-emoji">🎟️</span> – запись</span>
+                </div>
+            </div>
+            <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
+            <div class="calendar-grid" id="calendarGrid">
+    `;
+
+    for (let i = 0; i < startOffset; i++) calendarHtml += `<div class="calendar-day empty"></div>`;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isToday = year === currentYear && month === currentMonth && day === currentDate;
+        const hasHike = state.hikesData[dateStr] ? true : false;
+        const isPast = new Date(dateStr) < today;
+        let classes = 'calendar-day';
+        if (isToday) classes += ' today';
+        if (hasHike) {
+            classes += ' hike-day';
+            if (isPast) classes += ' past';
+        }
+        let innerHtml = `${day}`;
+        if (hasHike) {
+            const hikeIndex = state.hikesList.findIndex(h => h.date === dateStr);
+            const hike = state.hikesList[hikeIndex];
+            const isWoman = hike && hike.woman === 'yes';
+            if (isWoman) classes += ' woman-hike';
+            if (isPast && hike && hike.report_link && hike.report_link.trim() !== '')
+                innerHtml += `<span class="calendar-emoji">📷</span>`;
+            if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
+                innerHtml += `<span class="calendar-emoji">🎟️</span>`;
+                classes += ' booked-day';
+            }
+        }
+        if (hasHike) calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
+        else calendarHtml += `<div class="${classes}">${day}</div>`;
+    }
+    calendarHtml += `</div></div>`;
+    container.innerHTML = calendarHtml;
+
+    const prevBtn = document.getElementById('prevMonthBtn');
+    const nextBtn = document.getElementById('nextMonthBtn');
+    if (prevBtn)
+        prevBtn.addEventListener('click', () => {
+            if (hasPrevMonth) {
+                currentCalendarMonth--;
+                if (currentCalendarMonth < 0) {
+                    currentCalendarMonth = 11;
+                    currentCalendarYear--;
+                }
+                renderCalendar(container);
+            }
+        });
+    if (nextBtn)
+        nextBtn.addEventListener('click', () => {
+            if (hasNextMonth) {
+                currentCalendarMonth++;
+                if (currentCalendarMonth > 11) {
+                    currentCalendarMonth = 0;
+                    currentCalendarYear++;
+                }
+                renderCalendar(container);
+            }
+        });
+
+    document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
+        el.addEventListener('click', () => {
+            const date = el.dataset.date;
+            const index = state.hikesList.findIndex(h => h.date === date);
+            if (index !== -1) showBottomSheet(index);
+        });
+    });
 }
 
 let sheetCurrentIndex = 0;
@@ -52,14 +153,13 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Учитываем безопасную зону и отступы
+    // Учитываем безопасную зону, чтобы слайдер не прилипал к системным кнопкам
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
-    const availableHeight = windowHeight - safeTop - 40; // 40px резерва
-    const maxHeight = availableHeight * 0.85; // 85% от доступной высоты
+    const maxHeight = windowHeight - safeTop - 20; // 20 – дополнительный отступ
     sheet.style.maxHeight = `${maxHeight}px`;
     sheet.style.height = `${maxHeight}px`;
-    overlay.style.paddingTop = safeTop + 'px'; // чтобы слайдер не залезал под системные кнопки
+    overlay.style.paddingTop = safeTop + 'px';
 
     sheetCurrentIndex = index;
     const isGuest = state.userCard.status !== 'active';
