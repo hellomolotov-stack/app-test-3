@@ -10,19 +10,27 @@ import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, rend
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet } from './ui/calendar.js';
 
-// Глобальные переменные UI
 window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Применяем отступ под системную область (notch/статус-бар)
+// Усиленный отступ под системные кнопки
 function applySafeArea() {
     if (!tg) return;
-    const safeTop = tg.contentSafeAreaInset?.top || 0;
+
+    // Пытаемся получить безопасную зону через API Telegram
+    let safeTop = tg.contentSafeAreaInset?.top || 0;
+
+    // Если API не дал значение (равно 0), пробуем альтернативный способ через visualViewport
+    if (safeTop === 0 && window.visualViewport) {
+        safeTop = window.visualViewport.offsetTop || 0;
+    }
+
+    // Дополнительный запас, чтобы контент точно не залезал под системные кнопки
+    const extra = 60;   // Увеличьте это значение, если заголовок всё ещё под кнопками
+
     const app = document.querySelector('.app');
     if (app) {
-        // Дополнительный запас, чтобы контент точно не залезал под системные кнопки
-        const extra = 40;   // можно увеличить до 30-40, если всё равно мало
         app.style.paddingTop = (safeTop + extra) + 'px';
     }
 }
@@ -128,7 +136,6 @@ function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
-        // Ждём, пока hikesList загрузится
         const tryShow = () => {
             const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
             if (targetIndex !== -1) {
@@ -141,7 +148,6 @@ function handleDeepLink(startParam) {
             const interval = setInterval(() => {
                 if (tryShow()) clearInterval(interval);
             }, 300);
-            // Таймаут на 5 секунд
             setTimeout(() => clearInterval(interval), 5000);
         }
         return;
@@ -200,7 +206,6 @@ function handleDeepLink(startParam) {
     }
 }
 
-// Инициализация приложения
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -296,7 +301,6 @@ async function loadAppData() {
     }
 }
 
-// Запуск
 window.addEventListener('load', () => {
     state.user = tg?.initDataUnsafe?.user;
     loadAppData();
