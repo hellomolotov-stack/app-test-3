@@ -33,7 +33,7 @@ function getTopInset() {
 function applySafeArea() {
     const topInset = getTopInset();
     // Дополнительный запас, чтобы контент точно не залезал под системные кнопки (меняйте при необходимости)
-    const extra = 60;
+    const extra = 160;
     const totalTop = topInset + extra;
     const app = document.querySelector('.app');
     if (app) {
