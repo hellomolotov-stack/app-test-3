@@ -18,12 +18,17 @@ window.isMenuActive = false;
 // Применяем отступ safe area для полноэкранного режима
 function applySafeArea() {
     if (!tg) return;
-    const safeTop = tg.contentSafeAreaInset?.top || 0;
+    // Получаем актуальный отступ сверху
+    const safeTop = tg.contentSafeAreaInset?.top ?? tg.viewportStableHeight ? (window.innerHeight - tg.viewportStableHeight) : 0;
     const app = document.querySelector('.app');
     if (app) {
-        // Оставляем боковые и нижний отступы как 16px, верхний увеличиваем на safeTop
-        app.style.paddingTop = (16 + safeTop) + 'px';
+        app.style.paddingTop = (Math.max(16, safeTop) + 16) + 'px';
     }
+}
+
+// Вызываем при каждом изменении viewport
+if (window.Telegram?.WebApp) {
+    window.Telegram.WebApp.onEvent('viewportChanged', applySafeArea);
 }
 
 function setupBottomNav() {
@@ -67,7 +72,7 @@ function setupBottomNav() {
     navHikesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('hikes');
         cleanupProfileOverlays();
-        renderHome(); 
+        renderHome();
         setTimeout(() => document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
         log('kalendar_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
@@ -264,8 +269,9 @@ async function loadAppData() {
             }
         }
 
-        applySafeArea();   // <-- применяем отступы под системные кнопки
-
+        // Применяем отступ один раз при старте
+        applySafeArea();
+        
         renderHome();
         
         const urlParams = new URLSearchParams(window.location.search);
