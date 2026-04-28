@@ -801,6 +801,7 @@ body::before {
     scrollbar-width: thin;
     scrollbar-color: #555 #222;
     position: relative;
+    overscroll-behavior: contain; /* новое */
 }
 
 .bottom-sheet-content-wrapper::-webkit-scrollbar {
@@ -1907,6 +1908,7 @@ body::before {
     -webkit-overflow-scrolling: touch;
     margin: 0 16px 8px 16px;
     padding-right: 4px;
+    overscroll-behavior: contain; /* новое */
 }
 
 .update-item {
