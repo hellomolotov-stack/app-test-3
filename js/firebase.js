@@ -134,7 +134,6 @@ export async function loadPopupConfig() {
     return snapshot.val();
 }
 
-// NEW: Загрузка обновлений
 export async function loadUpdates() {
     if (!database) return [];
     const snapshot = await database.ref('updates').once('value');
@@ -144,7 +143,6 @@ export async function loadUpdates() {
     return [];
 }
 
-// NEW: Загрузка саммари мастермайнда
 export async function loadMastermindSummaries() {
     if (!database) return [];
     const snapshot = await database.ref('mastermindSummaries').once('value');
@@ -152,6 +150,18 @@ export async function loadMastermindSummaries() {
     if (Array.isArray(data)) return data;
     if (data && typeof data === 'object') return Object.values(data);
     return [];
+}
+
+// Загрузка статуса разрешения на сообщения из листа guests
+export async function loadGuestAllowMessages(userId) {
+    if (!database || !userId) return false;
+    try {
+        const snapshot = await database.ref(`guests/${userId}/allow_messages`).once('value');
+        return snapshot.val() === 'yes';
+    } catch (e) {
+        console.error('Ошибка загрузки allow_messages:', e);
+        return false;
+    }
 }
 
 // Участники хайка
