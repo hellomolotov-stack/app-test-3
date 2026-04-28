@@ -15,6 +15,17 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
+// Применяем отступ safe area для полноэкранного режима
+function applySafeArea() {
+    if (!tg) return;
+    const safeTop = tg.contentSafeAreaInset?.top || 0;
+    const app = document.querySelector('.app');
+    if (app) {
+        // Оставляем боковые и нижний отступы как 16px, верхний увеличиваем на safeTop
+        app.style.paddingTop = (16 + safeTop) + 'px';
+    }
+}
+
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -235,7 +246,7 @@ async function loadAppData() {
         log('visit', state.userCard.status !== 'active', state.user);
         saveCachedState();
 
-        // ---------- АВТОМАТИЧЕСКИЙ ЗАПРОС РАЗРЕШЕНИЯ НА СООБЩЕНИЯ ----------
+        // Автоматический запрос разрешения на сообщения
         const hasAsked = localStorage.getItem('asked_write_access');
         if (!hasAsked) {
             const allowed = await loadGuestAllowMessages(state.user?.id);
@@ -252,7 +263,8 @@ async function loadAppData() {
                 localStorage.setItem('asked_write_access', 'true');
             }
         }
-        // ----------------------------------------------------------------
+
+        applySafeArea();   // <-- применяем отступы под системные кнопки
 
         renderHome();
         
