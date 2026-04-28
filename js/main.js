@@ -22,7 +22,7 @@ function applySafeArea() {
     const app = document.querySelector('.app');
     if (app) {
         // Дополнительный запас, чтобы контент точно не залезал под системные кнопки
-        const extra = 30;   // можно увеличить до 30-40, если всё равно мало
+        const extra = 40;   // можно увеличить до 30-40, если всё равно мало
         app.style.paddingTop = (safeTop + extra) + 'px';
     }
 }
