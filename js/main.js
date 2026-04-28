@@ -10,25 +10,19 @@ import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, rend
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet } from './ui/calendar.js';
 
-// Глобальные переменные UI
 window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Применяем отступ safe area для полноэкранного режима
+// Применяем отступ под системную область (notch/статус-бар)
 function applySafeArea() {
     if (!tg) return;
-    // Получаем актуальный отступ сверху
-    const safeTop = tg.contentSafeAreaInset?.top ?? tg.viewportStableHeight ? (window.innerHeight - tg.viewportStableHeight) : 0;
+    const safeTop = tg.contentSafeAreaInset?.top || 0;
     const app = document.querySelector('.app');
     if (app) {
-        app.style.paddingTop = (Math.max(16, safeTop) + 16) + 'px';
+        // Оставляем боковые и нижний отступы через CSS, верхний задаём точно
+        app.style.paddingTop = safeTop + 'px';
     }
-}
-
-// Вызываем при каждом изменении viewport
-if (window.Telegram?.WebApp) {
-    window.Telegram.WebApp.onEvent('viewportChanged', applySafeArea);
 }
 
 function setupBottomNav() {
@@ -127,7 +121,6 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
-// Обработка диплинков
 function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('hike_')) {
@@ -195,7 +188,6 @@ function handleDeepLink(startParam) {
     }
 }
 
-// Инициализация приложения
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -269,9 +261,15 @@ async function loadAppData() {
             }
         }
 
-        // Применяем отступ один раз при старте
-        applySafeArea();
-        
+        // РАЗВОРАЧИВАЕМ ПРИЛОЖЕНИЕ И ПРИМЕНЯЕМ ОТСТУП
+        if (window.Telegram?.WebApp) {
+            window.Telegram.WebApp.expand();
+            // Подписка на изменение viewport для динамического отступа
+            window.Telegram.WebApp.onEvent('viewportChanged', applySafeArea);
+            // Первичная установка
+            setTimeout(applySafeArea, 50);
+        }
+
         renderHome();
         
         const urlParams = new URLSearchParams(window.location.search);
