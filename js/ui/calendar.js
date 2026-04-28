@@ -153,10 +153,11 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Учитываем безопасную зону, чтобы слайдер не прилипал к системным кнопкам
+    // Учитываем безопасную зону и отступы
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
-    const maxHeight = windowHeight - safeTop - 20; // 20 – дополнительный отступ
+    const availableHeight = windowHeight - safeTop - 40;
+    const maxHeight = availableHeight * 0.85; // 85% от доступной высоты
     sheet.style.maxHeight = `${maxHeight}px`;
     sheet.style.height = `${maxHeight}px`;
     overlay.style.paddingTop = safeTop + 'px';
