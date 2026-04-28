@@ -47,10 +47,10 @@ body::before {
     min-height: 100vh;
     max-width: 600px;
     margin: 0 auto;
-    padding: 30px;               /* базовый отступ, сверху будет переопределён через JS */
+    padding: 16px;               /* базовый отступ, сверху будет переопределён через JS */
     position: relative;
     z-index: 1;
-    padding-top: calc(30px + env(safe-area-inset-top));   /* fallback для поддерживаемых браузеров */
+    padding-top: calc(16px + env(safe-area-inset-top));   /* fallback для поддерживаемых браузеров */
 }
 
 .header {
