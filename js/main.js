@@ -14,6 +14,13 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
+// Функция для получения текущего отступа сверху (safe area + запас)
+function getCurrentTopOffset() {
+    if (!tg) return 76; // fallback
+    const safeTop = tg.contentSafeAreaInset?.top || 0;
+    return safeTop + 60; // 60 — дополнительный запас из CSS
+}
+
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
     const navHikes = document.getElementById('navHikes');
@@ -56,7 +63,17 @@ function setupBottomNav() {
         haptic(); setUserInteracted(); setManualNav('hikes');
         cleanupProfileOverlays();
         renderHome();
-        setTimeout(() => document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        // Скролл к календарю с учётом отступа
+        setTimeout(() => {
+            const calendar = document.getElementById('calendarContainer');
+            if (calendar) {
+                const topOffset = getCurrentTopOffset();
+                const rect = calendar.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const targetY = rect.top + scrollTop - topOffset;
+                window.scrollTo({ top: targetY, behavior: 'smooth' });
+            }
+        }, 150);
         log('kalendar_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
@@ -110,25 +127,29 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
+// Пытается открыть слайдер по дате, возвращает true, если получилось
+function tryShowHike(targetDate) {
+    const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
+    if (targetIndex !== -1) {
+        setTimeout(() => showBottomSheet(targetIndex), 200);
+        return true;
+    }
+    return false;
+}
+
 // Обработка диплинков
 function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
-        const tryShow = () => {
-            const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
-            if (targetIndex !== -1) {
-                setTimeout(() => showBottomSheet(targetIndex), 200);
-                return true;
-            }
-            return false;
-        };
-        if (!tryShow()) {
+        if (!tryShowHike(targetDate)) {
+            // Если список ещё не загружен, подпишемся на обновления
             const unsub = subscribeToHikes((newList) => {
                 state.hikesList = newList;
                 state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
-                if (tryShow()) unsub();
+                if (tryShowHike(targetDate)) unsub();
             });
+            // Таймаут на случай, если хайка с такой датой нет
             setTimeout(() => unsub(), 10000);
         }
         return;
@@ -138,11 +159,23 @@ function handleDeepLink(startParam) {
         case 'calendar':
             setTimeout(() => {
                 const el = document.getElementById('calendarContainer');
-                if (el) scrollToElement(el);
-                else {
+                if (el) {
+                    const topOffset = getCurrentTopOffset();
+                    const rect = el.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const targetY = rect.top + scrollTop - topOffset;
+                    window.scrollTo({ top: targetY, behavior: 'smooth' });
+                } else {
                     const check = setInterval(() => {
                         const cal = document.getElementById('calendarContainer');
-                        if (cal) { clearInterval(check); scrollToElement(cal); }
+                        if (cal) {
+                            clearInterval(check);
+                            const topOffset = getCurrentTopOffset();
+                            const rect = cal.getBoundingClientRect();
+                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                            const targetY = rect.top + scrollTop - topOffset;
+                            window.scrollTo({ top: targetY, behavior: 'smooth' });
+                        }
                     }, 100);
                 }
             }, 300);
@@ -150,11 +183,11 @@ function handleDeepLink(startParam) {
         case 'updates':
             setTimeout(() => {
                 const el = document.querySelector('.updates-container');
-                if (el) scrollToElement(el);
+                if (el) scrollToElement(el, getCurrentTopOffset());
                 else {
                     const check = setInterval(() => {
                         const upd = document.querySelector('.updates-container');
-                        if (upd) { clearInterval(check); scrollToElement(upd); }
+                        if (upd) { clearInterval(check); scrollToElement(upd, getCurrentTopOffset()); }
                     }, 100);
                 }
             }, 300);
@@ -162,11 +195,11 @@ function handleDeepLink(startParam) {
         case 'newcomer':
             setTimeout(() => {
                 const el = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                if (el) scrollToElement(el);
+                if (el) scrollToElement(el, getCurrentTopOffset());
                 else {
                     const check = setInterval(() => {
                         const newcomer = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                        if (newcomer) { clearInterval(check); scrollToElement(newcomer); }
+                        if (newcomer) { clearInterval(check); scrollToElement(newcomer, getCurrentTopOffset()); }
                     }, 100);
                 }
             }, 300);
@@ -260,14 +293,15 @@ async function loadAppData() {
             }
         }
 
-        // Разворачиваем приложение
+        // Разворачиваем приложение и запрещаем вертикальный свайп для закрытия
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.expand();
+            // Отключаем свайп-закрытие глобально
+            window.Telegram.WebApp.disableVerticalSwipes();
         }
         
         renderHome();
 
-        // Обработка startapp при запуске
         const urlParams = new URLSearchParams(window.location.search);
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || urlParams.get('startapp') || urlParams.get('start');
         if (startParam) {
