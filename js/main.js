@@ -14,12 +14,20 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
+// Получаем безопасную зону сверху (для системных кнопок)
+function getSafeTop() {
+    if (!tg) return 0;
+    // contentSafeAreaInset – основной способ, в некоторых версиях можно использовать window.safeArea
+    return tg.contentSafeAreaInset?.top || 0;
+}
+
+// Применяем отступ для основного контента
 function applySafeArea() {
-    if (!tg) return;
-    const safeTop = tg.contentSafeAreaInset?.top || 0;
+    const safeTop = getSafeTop();
     const app = document.querySelector('.app');
     if (app) {
-        app.style.paddingTop = (safeTop + 20) + 'px';
+        // Базовый отступ 16px + безопасная зона сверху
+        app.style.paddingTop = (16 + safeTop) + 'px';
     }
 }
 
@@ -259,6 +267,7 @@ async function loadAppData() {
             }
         }
 
+        // Разворачиваем приложение и применяем отступы
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.expand();
             window.Telegram.WebApp.onEvent('viewportChanged', applySafeArea);
