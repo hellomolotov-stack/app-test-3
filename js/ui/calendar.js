@@ -157,7 +157,7 @@ export function showBottomSheet(index) {
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
     const availableHeight = windowHeight - safeTop - 40;
-    const maxHeight = availableHeight * 0.85; // 85% от доступной высоты
+    const maxHeight = availableHeight * 0.95; // 85% от доступной высоты
     sheet.style.maxHeight = `${maxHeight}px`;
     sheet.style.height = `${maxHeight}px`;
     overlay.style.paddingTop = safeTop + 'px';
