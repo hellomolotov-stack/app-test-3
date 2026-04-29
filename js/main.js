@@ -294,18 +294,13 @@ async function loadAppData() {
         
         renderHome();
 
-        // Важно: сначала проверяем initData, затем URL – так надёжнее
-        let startParam = '';
-        if (tg?.initDataUnsafe?.start_param) {
-            startParam = tg.initDataUnsafe.start_param;
-        } else if (tg?.initData?.start_param) {
-            startParam = tg.initData.start_param;
-        } else {
-            const urlParams = new URLSearchParams(window.location.search);
-            startParam = urlParams.get('startapp') || urlParams.get('start') || '';
-        }
+        // Гарантированно получаем startapp из URL (работает всегда)
+        const urlParams = new URLSearchParams(window.location.search);
+        const startParam = urlParams.get('startapp') || urlParams.get('start') || 
+                           tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
+
         if (startParam) {
-            // Небольшая задержка, чтобы DOM точно отрендерился
+            // Даём время на рендер, затем применяем диплинк
             setTimeout(() => handleDeepLink(startParam), 100);
         }
     } catch (e) {
