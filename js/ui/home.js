@@ -96,6 +96,9 @@ export function renderUserBookings(container) {
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     const isGuest = state.userCard.status !== 'active';
+    const currentYear = new Date().getFullYear();
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+
     let innerHtml = '';
     if (summaries.length === 0) {
         innerHtml = `
@@ -106,17 +109,21 @@ function renderMastermindSummaries() {
             </div>
         `;
     } else {
-        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
         summaries.forEach(item => {
             let formattedDate = '';
             if (item.date) {
-                // Исправление даты: берём только часть до 'T' и парсим как локальную
-                const datePart = item.date.split('T')[0];
-                const parts = datePart.split('-');
+                // Поддерживаем оба формата: "2026-04-26" и "2026-04-25T21:00:00.000Z"
+                const dateStr = item.date.split('T')[0]; // берём только дату
+                const parts = dateStr.split('-');
                 if (parts.length === 3) {
                     const day = parseInt(parts[2], 10);
                     const month = parseInt(parts[1], 10) - 1;
-                    formattedDate = `${day} ${monthNames[month]}`;
+                    const year = parseInt(parts[0], 10);
+                    if (year === currentYear) {
+                        formattedDate = `${day} ${monthNames[month]}`;
+                    } else {
+                        formattedDate = `${year}.${String(month+1).padStart(2,'0')}.${String(day).padStart(2,'0')}`;
+                    }
                 } else {
                     formattedDate = item.date;
                 }
@@ -138,9 +145,9 @@ function renderMastermindSummaries() {
 
     return `
         <div class="card-container" id="mastermindSummariesCard">
-            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: flex-start;">
+            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: center;">
                 <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h2>
-                <span class="new-badge">новое</span>
+                <span class="new-badge" style="position: relative; top: -8px; margin-left: 8px;">новое</span>
             </div>
             ${innerHtml}
         </div>
@@ -184,9 +191,9 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: flex-start; justify-content: space-between;">
+            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: center;">
                 <h2 class="section-title" style="margin: 0; padding-left: 0;">📨 обновления</h2>
-                <span class="new-badge">новое</span>
+                <span class="new-badge" style="position: relative; top: -8px; margin-left: 8px;">новое</span>
             </div>
             <div class="updates-scroll">${itemsHtml}</div>
         </div>
