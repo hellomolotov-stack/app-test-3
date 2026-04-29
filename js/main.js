@@ -125,6 +125,14 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
+// Функция для добавления свечения элементу
+function highlightElement(el) {
+    if (!el) return;
+    el.style.transition = 'box-shadow 0.5s';
+    el.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
+    setTimeout(() => { el.style.boxShadow = ''; }, 2000);
+}
+
 // Обработка диплинков
 function handleDeepLink(startParam) {
     if (!startParam) return;
@@ -164,11 +172,13 @@ function handleDeepLink(startParam) {
         case 'calendar':
             setTimeout(() => {
                 const el = document.getElementById('calendarContainer');
-                if (el) scrollToElement(el, getCurrentTopOffset());
-                else {
+                if (el) {
+                    scrollToElement(el, getCurrentTopOffset());
+                    highlightElement(el);
+                } else {
                     const check = setInterval(() => {
                         const cal = document.getElementById('calendarContainer');
-                        if (cal) { clearInterval(check); scrollToElement(cal, getCurrentTopOffset()); }
+                        if (cal) { clearInterval(check); scrollToElement(cal, getCurrentTopOffset()); highlightElement(cal); }
                     }, 100);
                 }
             }, 300);
@@ -176,11 +186,13 @@ function handleDeepLink(startParam) {
         case 'updates':
             setTimeout(() => {
                 const el = document.querySelector('.updates-container');
-                if (el) scrollToElement(el, getCurrentTopOffset());
-                else {
+                if (el) {
+                    scrollToElement(el, getCurrentTopOffset());
+                    highlightElement(el);
+                } else {
                     const check = setInterval(() => {
                         const upd = document.querySelector('.updates-container');
-                        if (upd) { clearInterval(check); scrollToElement(upd, getCurrentTopOffset()); }
+                        if (upd) { clearInterval(check); scrollToElement(upd, getCurrentTopOffset()); highlightElement(upd); }
                     }, 100);
                 }
             }, 300);
@@ -190,19 +202,11 @@ function handleDeepLink(startParam) {
                 const el = document.getElementById('mastermindSummariesCard');
                 if (el) {
                     scrollToElement(el, getCurrentTopOffset());
-                    el.style.transition = 'box-shadow 0.5s';
-                    el.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
-                    setTimeout(() => { el.style.boxShadow = ''; }, 2000);
+                    highlightElement(el);
                 } else {
                     const check = setInterval(() => {
                         const card = document.getElementById('mastermindSummariesCard');
-                        if (card) {
-                            clearInterval(check);
-                            scrollToElement(card, getCurrentTopOffset());
-                            card.style.transition = 'box-shadow 0.5s';
-                            card.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
-                            setTimeout(() => { card.style.boxShadow = ''; }, 2000);
-                        }
+                        if (card) { clearInterval(check); scrollToElement(card, getCurrentTopOffset()); highlightElement(card); }
                     }, 100);
                 }
             }, 300);
@@ -210,11 +214,13 @@ function handleDeepLink(startParam) {
         case 'newcomer':
             setTimeout(() => {
                 const el = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                if (el) scrollToElement(el, getCurrentTopOffset());
-                else {
+                if (el) {
+                    scrollToElement(el, getCurrentTopOffset());
+                    highlightElement(el);
+                } else {
                     const check = setInterval(() => {
                         const newcomer = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                        if (newcomer) { clearInterval(check); scrollToElement(newcomer, getCurrentTopOffset()); }
+                        if (newcomer) { clearInterval(check); scrollToElement(newcomer, getCurrentTopOffset()); highlightElement(newcomer); }
                     }, 100);
                 }
             }, 300);
