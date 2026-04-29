@@ -1,7 +1,7 @@
 // js/api.js
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
 
-export function log(action, isGuest = false, user) {
+export function log(action, isGuest = false, user, meta = {}) {
     if (!user?.id) return;
     const finalAction = isGuest ? `${action}_guest` : action;
     const params = new URLSearchParams({
@@ -9,7 +9,8 @@ export function log(action, isGuest = false, user) {
         username: user.username || '',
         first_name: user.first_name || '',
         last_name: user.last_name || '',
-        action: finalAction
+        action: finalAction,
+        ...meta   // сюда попадут date, title и другие ключи, если их передать
     });
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
@@ -84,7 +85,6 @@ export async function syncProfileDeleteToSheet(userId) {
     }
 }
 
-// Новая функция: синхронизация разрешения на отправку сообщений (гость)
 export function syncGuestAllowMessages(userId, allow) {
     if (!userId || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams({
