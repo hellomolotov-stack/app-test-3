@@ -1,151 +1,336 @@
-// js/ui/home.js
-import { haptic, openLink, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
-import { state, saveBookingStatusToLocal } from '../state.js';
-import { log, updateRegistrationInSheet } from '../api.js';
-import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus } from '../firebase.js';
-import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
-import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar } from './calendar.js';
-import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
-import { renderProfiles } from './profiles.js';
+// js/main.js
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement } from './utils.js';
+import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
+import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadGuestAllowMessages } from './firebase.js';
+import { log, syncGuestAllowMessages } from './api.js';
+import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
+import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
+import { renderHome } from './ui/home.js';
+import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
+import { renderProfiles } from './ui/profiles.js';
+import { showBottomSheet } from './ui/calendar.js';
 
-function updateMetricsUI() {
-    const hikesEl = document.querySelector('[data-metric="hikes"]');
-    const locationsEl = document.querySelector('[data-metric="locations"]');
-    const kilometersEl = document.querySelector('[data-metric="kilometers"]');
-    const meetingsEl = document.querySelector('[data-metric="meetings"]');
-    if (hikesEl) hikesEl.textContent = state.metrics.hikes;
-    if (locationsEl) locationsEl.textContent = state.metrics.locations;
-    if (kilometersEl) kilometersEl.textContent = state.metrics.kilometers;
-    if (meetingsEl) meetingsEl.textContent = state.metrics.meetings;
+window.userInteracted = false;
+window.isPrivPage = false;
+window.isMenuActive = false;
+
+function getCurrentTopOffset() {
+    if (!tg) return 76;
+    const safeTop = tg.contentSafeAreaInset?.top || 0;
+    return safeTop + 60;
 }
 
-export function renderUserBookings(container) {
-    if (!container) return;
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const bookings = [];
-    state.hikesList.forEach((hike, index) => {
-        if (state.hikeBookingStatus[index]) {
-            const hikeDate = new Date(hike.date);
-            if (hikeDate >= today) bookings.push({ ...hike, index });
+function setupBottomNav() {
+    const navHome = document.getElementById('navHome');
+    const navHikes = document.getElementById('navHikes');
+    const navProfiles = document.getElementById('navProfiles');
+    const navMore = document.getElementById('navMore');
+    const popup = document.getElementById('navPopup');
+    const popupChat = document.getElementById('popupChat');
+    const popupChannel = document.getElementById('popupChannel');
+    const popupGift = document.getElementById('popupGift');
+    const popupNewcomer = document.getElementById('popupNewcomer');
+    const popupPass = document.getElementById('popupPass');
+    const popupQuestion = document.getElementById('popupQuestion');
+
+    if (!navHome || !navHikes || !navMore || !popup) return;
+
+    const newNavHome = navHome.cloneNode(true);
+    const newNavHikes = navHikes.cloneNode(true);
+    const newNavProfiles = navProfiles.cloneNode(true);
+    const newNavMore = navMore.cloneNode(true);
+    navHome.parentNode.replaceChild(newNavHome, navHome);
+    navHikes.parentNode.replaceChild(newNavHikes, navHikes);
+    navProfiles.parentNode.replaceChild(newNavProfiles, navProfiles);
+    navMore.parentNode.replaceChild(newNavMore, navMore);
+
+    const navHomeNew = document.getElementById('navHome');
+    const navHikesNew = document.getElementById('navHikes');
+    const navProfilesNew = document.getElementById('navProfiles');
+    const navMoreNew = document.getElementById('navMore');
+
+    navHomeNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('home');
+        cleanupProfileOverlays();
+        renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
+        log('glavnaya_click', state.userCard.status !== 'active', state.user);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        window.isMenuActive = false;
+        updateActiveNav();
+    });
+    navHikesNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('hikes');
+        cleanupProfileOverlays();
+        renderHome();
+        setTimeout(() => {
+            const calendar = document.getElementById('calendarContainer');
+            if (calendar) {
+                const topOffset = getCurrentTopOffset();
+                const rect = calendar.getBoundingClientRect();
+                const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                const targetY = rect.top + scrollTop - topOffset;
+                window.scrollTo({ top: targetY, behavior: 'smooth' });
+            }
+        }, 150);
+        log('kalendar_click', state.userCard.status !== 'active', state.user);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        window.isMenuActive = false;
+        updateActiveNav();
+    });
+    navProfilesNew.addEventListener('click', () => {
+        haptic(); setUserInteracted(); setManualNav('profiles');
+        cleanupProfileOverlays();
+        renderProfiles();
+        log('profiles_click', state.userCard.status !== 'active', state.user);
+        if (popup.classList.contains('show')) popup.classList.remove('show');
+        window.isMenuActive = false;
+        updateActiveNav();
+    });
+    navMoreNew.addEventListener('click', (e) => {
+        e.stopPropagation(); haptic();
+        if (popup.classList.contains('show')) {
+            popup.classList.remove('show');
+            window.isMenuActive = false;
+        } else {
+            popup.classList.add('show');
+            window.isMenuActive = true;
         }
+        log('menu_click', state.userCard.status !== 'active', state.user);
+        updateActiveNav();
     });
 
-    if (bookings.length === 0) {
-        const phrase = state.randomPhrases.length > 0 
-            ? state.randomPhrases[Math.floor(Math.random() * state.randomPhrases.length)] 
-            : 'смотреть 5 сезон глухаря или';
-        const phraseParts = phrase.split(' или');
-        const mainPart = phraseParts[0];
-        const italicPart = phraseParts.length > 1 ? ' или' : '';
-        container.style.display = 'block';
-        container.innerHTML = `
-            <div class="card-container" id="userBookingsCard">
-                <h2 class="section-title">🎫 мои записи</h2>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
-                    <div style="flex: 1; margin-right: 16px;">
-                        <span style="color: #ffffff;">${mainPart}<em style="font-style: italic;">${italicPart}</em></span>
-                    </div>
-                    <button class="btn btn-yellow booking-go-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">пойти на хайк</button>
-                </div>
-            </div>
-        `;
+    popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    if (popupQuestion) {
+        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'question_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
+            popup.classList.remove('show');
+            window.isMenuActive = false;
+            updateActiveNav();
+        }
+    });
+    window.addEventListener('scroll', () => {
+        setUserInteracted();
+        requestAnimationFrame(updateActiveNav);
+    });
+    updateActiveNav();
+}
+
+import { uiActions } from './ui/common.js';
+uiActions.setupBottomNav = setupBottomNav;
+
+// Обработка диплинков
+function handleDeepLink(startParam) {
+    if (!startParam) return;
+    if (startParam.startsWith('hike_')) {
+        const targetDate = normalizeDate(startParam.substring(5));
+        console.log('Deep link hike target:', targetDate);
+
+        const tryShow = () => {
+            const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
+            if (targetIndex !== -1) {
+                setTimeout(() => showBottomSheet(targetIndex), 200);
+                return true;
+            }
+            return false;
+        };
+
+        if (tryShow()) return;
+
+        const unsub = subscribeToHikes((newList) => {
+            state.hikesList = newList;
+            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
+            saveCachedState();
+            if (tryShow()) {
+                unsub();
+            }
+        });
+
+        setTimeout(() => {
+            tryShow();
+            unsub();
+        }, 10000);
         return;
     }
 
-    container.style.display = 'block';
-    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-    let html = `
-        <div class="card-container" id="userBookingsCard">
-            <h2 class="section-title">🎫 мои записи</h2>
-    `;
-    bookings.forEach(booking => {
-        const isWoman = booking.woman === 'yes';
-        const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
-        const dateParts = booking.date.split('-');
-        const day = parseInt(dateParts[2], 10);
-        const month = parseInt(dateParts[1], 10) - 1;
-        const formattedDate = `${day} ${monthNames[month]}`;
-        let title = booking.title;
-        const prefixes = ['тропа на ', 'тропа ', 'маршрут ', 'гора ', 'ущелье ', 'путь на ', 'восхождение на '];
-        let cleanedTitle = title;
-        for (let prefix of prefixes) {
-            if (cleanedTitle.toLowerCase().startsWith(prefix)) {
-                cleanedTitle = cleanedTitle.substring(prefix.length);
-                break;
+    const isGuest = state.userCard.status !== 'active';
+    switch (startParam) {
+        case 'calendar':
+            setTimeout(() => {
+                const el = document.getElementById('calendarContainer');
+                if (el) scrollToElement(el, getCurrentTopOffset());
+                else {
+                    const check = setInterval(() => {
+                        const cal = document.getElementById('calendarContainer');
+                        if (cal) { clearInterval(check); scrollToElement(cal, getCurrentTopOffset()); }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'updates':
+            setTimeout(() => {
+                const el = document.querySelector('.updates-container');
+                if (el) scrollToElement(el, getCurrentTopOffset());
+                else {
+                    const check = setInterval(() => {
+                        const upd = document.querySelector('.updates-container');
+                        if (upd) { clearInterval(check); scrollToElement(upd, getCurrentTopOffset()); }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'summary':
+            setTimeout(() => {
+                const el = document.getElementById('mastermindSummariesCard');
+                if (el) {
+                    scrollToElement(el, getCurrentTopOffset());
+                    el.style.transition = 'box-shadow 0.5s';
+                    el.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
+                    setTimeout(() => { el.style.boxShadow = ''; }, 2000);
+                } else {
+                    const check = setInterval(() => {
+                        const card = document.getElementById('mastermindSummariesCard');
+                        if (card) {
+                            clearInterval(check);
+                            scrollToElement(card, getCurrentTopOffset());
+                            card.style.transition = 'box-shadow 0.5s';
+                            card.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
+                            setTimeout(() => { card.style.boxShadow = ''; }, 2000);
+                        }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'newcomer':
+            setTimeout(() => {
+                const el = document.querySelector('.btn-newcomer')?.closest('.card-container');
+                if (el) scrollToElement(el, getCurrentTopOffset());
+                else {
+                    const check = setInterval(() => {
+                        const newcomer = document.querySelector('.btn-newcomer')?.closest('.card-container');
+                        if (newcomer) { clearInterval(check); scrollToElement(newcomer, getCurrentTopOffset()); }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'privileges':
+            if (isGuest) renderGuestPrivileges();
+            else renderPriv();
+            break;
+        case 'profiles':
+            renderProfiles();
+            break;
+        case 'pass':
+            renderPassPage(isGuest);
+            break;
+        case 'gift':
+            renderGift(isGuest);
+            break;
+    }
+}
+
+async function loadAppData() {
+    showAnimatedLoader();
+    try {
+        loadCachedState();
+        
+        initFirebase();
+        const database = getDatabase();
+        
+        if (database) {
+            subscribeToHikes((newList) => {
+                state.hikesList = newList;
+                state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
+                saveCachedState();
+            });
+        }
+
+        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates, mastermindSummaries] = await Promise.all([
+            loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
+            loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
+            loadUpdates(), loadMastermindSummaries()
+        ]);
+        
+        if (metrics) state.metrics = metrics;
+        if (faq) state.faq = faq;
+        if (privileges) state.privileges = privileges;
+        if (guestPrivileges) state.guestPrivileges = guestPrivileges;
+        if (passInfo) state.passInfo = passInfo;
+        if (giftContent) state.giftContent = giftContent;
+        if (randomPhrases) state.randomPhrases = randomPhrases;
+        if (leaders) state.leaders = leaders;
+        if (updates) state.updates = updates;
+        if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
+
+        await loadRegistrationsPopup().then(data => { if (data) state.registrationsPopup = data; });
+        await loadPopupConfig().then(data => { if (data) state.popupConfig = { ...state.popupConfig, ...data }; });
+        
+        state.popupConfig.ticketLink = ROBOKASSA_LINK;
+        state.popupConfig.seasonCardLink = SEASON_CARD_LINK;
+        state.popupConfig.permanentCardLink = PERMANENT_CARD_LINK;
+
+        const userData = await loadUserData(state.user?.id);
+        state.userCard = userData;
+
+        if (state.userCard.status === 'active') {
+            const regs = await loadUserRegistrations(state.user?.id);
+            state.hikesList.forEach((hike, index) => {
+                state.hikeBookingStatus[index] = regs[hike.date] === true;
+            });
+        } else {
+            state.hikeBookingStatus = loadBookingStatusFromLocal();
+        }
+
+        log('visit', state.userCard.status !== 'active', state.user);
+        saveCachedState();
+
+        // Запрос разрешения на уведомления
+        const hasAsked = localStorage.getItem('asked_write_access');
+        if (!hasAsked) {
+            const allowed = await loadGuestAllowMessages(state.user?.id).catch(() => false);
+            if (!allowed && tg?.requestWriteAccess) {
+                try {
+                    const granted = await tg.requestWriteAccess();
+                    if (granted) {
+                        syncGuestAllowMessages(state.user.id, true);
+                    } else {
+                        syncGuestAllowMessages(state.user.id, false);
+                    }
+                    localStorage.setItem('asked_write_access', 'true');
+                } catch (err) {
+                    console.warn('requestWriteAccess failed:', err);
+                }
+            } else {
+                localStorage.setItem('asked_write_access', 'true');
             }
         }
-        if (cleanedTitle.toLowerCase().startsWith('на ')) cleanedTitle = cleanedTitle.substring(3);
-        cleanedTitle = cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
-        html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
-                <div style="flex: 1; margin-right: 16px;">
-                    <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
-                    <span style="color: #ffffff; margin-left: 8px;">${cleanedTitle}</span>
-                </div>
-                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background-color: ${accentColor};">детали</button>
-            </div>
-        `;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
 
-// Новый блок «саммари мастермайнда»
-function renderMastermindSummaries() {
-    const summaries = state.mastermindSummaries || [];
-    const isGuest = state.userCard.status !== 'active';
-    let innerHtml = '';
-    if (summaries.length === 0) {
-        innerHtml = `
-            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
-                <div style="flex: 1;">
-                    <span style="color: #ffffff;">скоро здесь появится первая запись</span>
-                </div>
-            </div>
-        `;
-    } else {
-        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-        summaries.forEach(item => {
-            let formattedDate = '';
-            if (item.date) {
-                // item.date – строка ISO или просто дата. Убираем время и парсим как локальную дату
-                const parts = item.date.split('T')[0].split('-');
-                if (parts.length === 3) {
-                    const day = parseInt(parts[2], 10);
-                    const month = parseInt(parts[1], 10) - 1;
-                    formattedDate = `${day} ${monthNames[month]}`;
-                } else {
-                    formattedDate = item.date;
-                }
-            }
-            const readBtn = isGuest 
-                ? `<button class="btn btn-yellow guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">читать</button>`
-                : `<a href="${item.link}" target="_blank" class="btn btn-yellow" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;">читать</a>`;
-            innerHtml += `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
-                    <div style="flex: 1; margin-right: 16px;">
-                        <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
-                        <span style="color: #ffffff; margin-left: 8px;">${item.title || 'Без названия'}</span>
-                    </div>
-                    ${readBtn}
-                </div>
-            `;
-        });
+        if (tg) {
+            tg.expand();
+            if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+        }
+        
+        renderHome();
+
+        const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
+        if (startParam) {
+            setTimeout(() => handleDeepLink(startParam), 100);
+        }
+    } catch (e) {
+        console.error('Unhandled error in loadData:', e);
+        renderHome();
+    } finally {
+        hideAnimatedLoader();
     }
-
-    return `
-        <div class="card-container" id="mastermindSummariesCard">
-            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: flex-start;">
-                <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h2>
-                <span class="new-badge">новое</span>
-            </div>
-            ${innerHtml}
-        </div>
-    `;
 }
 
-// ... остальные функции (showGuestPopup, renderUpdatesBlock, renderGuestHome, renderOwnerHome, renderHome) без изменений ...
-// (полный код был приведён ранее, я опускаю дублирование, вы можете взять последний полный файл home.js)
-// Важно: в renderHome() добавить обработчик для диплинка summary не нужно – это делается в main.js
+window.addEventListener('load', () => {
+    state.user = tg?.initDataUnsafe?.user;
+    loadAppData();
+});
