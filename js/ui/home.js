@@ -92,36 +92,7 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// Попап для гостей при нажатии "читать" в саммари
-function showGuestMastermindPopup() {
-    haptic();
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title">🧠 саммари мастермайнда</div>
-            <div class="modal-text" style="font-size: 14px;">
-                чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?
-            </div>
-            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">расскажите скорее</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-    document.getElementById('goToPrivilegesFromMastermindBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        overlay.remove();
-        renderGuestPrivileges();
-    });
-}
-
-// Блок «саммари мастермайнда»
+// Новый блок «саммари мастермайнда»
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     const isGuest = state.userCard.status !== 'active';
@@ -139,7 +110,9 @@ function renderMastermindSummaries() {
         summaries.forEach(item => {
             let formattedDate = '';
             if (item.date) {
-                const parts = item.date.split('-');
+                // Исправление даты: берём только часть до 'T' и парсим как локальную
+                const datePart = item.date.split('T')[0];
+                const parts = datePart.split('-');
                 if (parts.length === 3) {
                     const day = parseInt(parts[2], 10);
                     const month = parseInt(parts[1], 10) - 1;
@@ -300,6 +273,34 @@ function renderGuestHome() {
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     setupBottomNav();
+}
+
+function showGuestMastermindPopup() {
+    haptic();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-title">🧠 саммари мастермайнда</div>
+            <div class="modal-text" style="font-size: 14px;">
+                чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?
+            </div>
+            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">расскажите скорее</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+    document.getElementById('goToPrivilegesFromMastermindBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        overlay.remove();
+        renderGuestPrivileges();
+    });
 }
 
 function renderOwnerHome() {
