@@ -92,7 +92,7 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// Новый блок «саммари мастермайнда»
+// Блок «саммари мастермайнда»
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     const isGuest = state.userCard.status !== 'active';
@@ -145,9 +145,9 @@ function renderMastermindSummaries() {
 
     return `
         <div class="card-container" id="mastermindSummariesCard">
-            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: center;">
+            <div class="header-with-badge" style="margin: 0 16px 16px 16px; position: relative;">
                 <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h2>
-                <span class="new-badge" style="position: relative; top: -8px; margin-left: 8px;">новое</span>
+                <span class="new-badge">новое</span>
             </div>
             ${innerHtml}
         </div>
@@ -191,9 +191,9 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <div class="header-with-badge" style="margin: 0 16px 16px 16px; display: flex; align-items: center;">
+            <div class="header-with-badge" style="margin: 0 16px 16px 16px; position: relative;">
                 <h2 class="section-title" style="margin: 0; padding-left: 0;">📨 обновления</h2>
-                <span class="new-badge" style="position: relative; top: -8px; margin-left: 8px;">новое</span>
+                <span class="new-badge">новое</span>
             </div>
             <div class="updates-scroll">${itemsHtml}</div>
         </div>
@@ -207,7 +207,7 @@ function renderGuestHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
-        <div class="card-container">
+        <div class="card-container" id="cardBlock">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <div id="cardAccordionGuest" class="card-accordion">
@@ -319,7 +319,7 @@ function renderOwnerHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
-        <div class="card-container">
+        <div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
             <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
