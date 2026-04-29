@@ -14,7 +14,6 @@ window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
 
-// Возвращает текущий верхний отступ (safe area + запас)
 function getCurrentTopOffset() {
     if (!tg) return 76;
     const safeTop = tg.contentSafeAreaInset?.top || 0;
@@ -126,7 +125,7 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
-// Проверяет, есть ли хайк в списке, и открывает слайдер
+// Проверяет и открывает слайдер, если хайк есть в списке
 function tryShowHike(targetDate) {
     const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
     if (targetIndex !== -1) {
@@ -141,22 +140,15 @@ function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
-        // Ждём загрузку списка, если он ещё пуст
-        const checkAndOpen = () => {
-            if (tryShowHike(targetDate)) return true;
-            if (state.hikesList.length > 0) return true; // список есть, но даты нет – хватит пытаться
-            return false;
-        };
-        if (!checkAndOpen()) {
-            let tries = 0;
-            const maxTries = 30; // 3 секунды
-            const interval = setInterval(() => {
-                tries++;
-                if (checkAndOpen() || tries >= maxTries) {
-                    clearInterval(interval);
-                }
-            }, 100);
-        }
+        // Ждём, пока хайк появится в списке (не более 3 секунд)
+        const maxTries = 30; // 30 * 100ms = 3 сек
+        let tries = 0;
+        const interval = setInterval(() => {
+            tries++;
+            if (tryShowHike(targetDate) || tries >= maxTries) {
+                clearInterval(interval);
+            }
+        }, 100);
         return;
     }
     const isGuest = state.userCard.status !== 'active';
@@ -286,7 +278,6 @@ async function loadAppData() {
             }
         }
 
-        // Полноэкранный режим и отключение свайпа для закрытия
         if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.expand();
             window.Telegram.WebApp.disableVerticalSwipes();
@@ -294,10 +285,9 @@ async function loadAppData() {
         
         renderHome();
 
-        // Восстанавливаем старую механику: start_param берём из initDataUnsafe
+        // Старый добрый способ получения start_param
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
         if (startParam) {
-            // Небольшая задержка для рендера
             setTimeout(() => handleDeepLink(startParam), 100);
         }
     } catch (e) {
