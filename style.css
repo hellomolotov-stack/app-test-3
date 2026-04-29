@@ -43,11 +43,10 @@ body::before {
     min-height: 100vh;
     max-width: 600px;
     margin: 0 auto;
-    /* padding разбит на отдельные стороны, верхний отступ управляется safe-area */
     padding-right: 16px;
     padding-bottom: 16px;
     padding-left: 16px;
-    /* Безопасная зона + дополнительный запас 60px (можно менять) */
+    /* Безопасная зона + дополнительный запас */
     padding-top: calc(env(safe-area-inset-top, 0px) + 60px);
     position: relative;
     z-index: 1;
@@ -449,6 +448,8 @@ body::before {
     font-weight: 700;
     margin: 0 16px 16px 16px;
     font-style: normal;
+    text-align: left;
+    padding-left: 0;
 }
 
 .section-title.second {
@@ -801,7 +802,7 @@ body::before {
     scrollbar-width: thin;
     scrollbar-color: #555 #222;
     position: relative;
-    overscroll-behavior: contain; /* новое */
+    overscroll-behavior: contain;
 }
 
 .bottom-sheet-content-wrapper::-webkit-scrollbar {
@@ -1579,6 +1580,16 @@ body::before {
     color: rgba(255,255,255,0.3) !important;
 }
 
+/* Анимация появления профилей для гостей */
+.profile-card.animated {
+    animation: profileFadeIn 0.4s ease-out;
+}
+
+@keyframes profileFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .profile-avatar {
     width: 100%;
     aspect-ratio: 1 / 1;
@@ -1908,7 +1919,7 @@ body::before {
     -webkit-overflow-scrolling: touch;
     margin: 0 16px 8px 16px;
     padding-right: 4px;
-    overscroll-behavior: contain; /* новое */
+    overscroll-behavior: contain;
 }
 
 .update-item {
@@ -1962,14 +1973,34 @@ body::before {
     border-radius: 4px;
 }
 
-@keyframes highlightPulse {
-    0% { box-shadow: 0 0 0 0 rgba(217, 253, 25, 0.7); }
-    50% { box-shadow: 0 0 20px 5px rgba(217, 253, 25, 0.5); }
-    100% { box-shadow: 0 0 0 0 rgba(217, 253, 25, 0); }
+/* Плашка «новое» с абсолютным позиционированием */
+.header-with-badge {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+}
+.new-badge {
+    position: absolute;
+    top: -8px;
+    right: -5px;
+    background-color: var(--yellow);
+    color: #000000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 30px;
+    white-space: nowrap;
+    z-index: 2;
 }
 
+/* Подсветка профиля при переходе — белая */
+@keyframes highlightPulseWhite {
+    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+    50% { box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.5); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
 .profile-card.highlight-pulse {
-    animation: highlightPulse 1.5s ease-in-out;
+    animation: highlightPulseWhite 1.5s ease-in-out;
 }
 
 .nav-item {
@@ -2004,48 +2035,4 @@ body::before {
 .guest-center-btn,
 .profile-preview-banner {
     z-index: 100 !important;
-}
-
-.section-title {
-    margin-left: 16px !important;
-    margin-right: 16px !important;
-    text-align: left !important;
-}
-
-@keyframes highlightPulseWhite {
-    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-    50% { box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.5); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-}
-.profile-card.highlight-pulse {
-    animation: highlightPulseWhite 1.5s ease-in-out;
-}
-/* -------------------- ПЛАШКА "НОВОЕ" -------------------- */
-.header-with-badge {
-    position: relative;
-    display: flex;                     /* чтобы заголовок и плашка были в одной строке */
-    align-items: flex-start;
-}
-.new-badge {
-    position: absolute;
-    top: -8px;
-    right: -5px;
-    background-color: var(--yellow);
-    color: #000000;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 30px;
-    white-space: nowrap;
-    z-index: 2;
-}
-
-/* Анимация для скрытых профилей (блюр) */
-.profile-card.animated {
-    animation: profileFadeIn 0.4s ease-out;
-}
-
-@keyframes profileFadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
 }
