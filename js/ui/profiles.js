@@ -66,7 +66,6 @@ function getRandomProfile() {
     return profileEntries[randomIndex][1];
 }
 
-// Вспомогательная функция очистки временных элементов
 function cleanupProfileOverlays() {
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
@@ -77,7 +76,7 @@ function cleanupProfileOverlays() {
 }
 
 export async function renderProfiles() {
-    cleanupProfileOverlays(); // очищаем перед рендером
+    cleanupProfileOverlays();
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
@@ -297,14 +296,14 @@ function showGuestProfilePopup() {
         e.preventDefault();
         haptic();
         overlay.remove();
-        cleanupProfileOverlays(); // очищаем перед переходом
+        cleanupProfileOverlays();
         renderGuestPrivileges();
         log('guest_privileges_from_profile', true, state.user);
     });
 }
 
 async function renderEditProfile() {
-    cleanupProfileOverlays(); // очищаем перед рендером формы
+    cleanupProfileOverlays();
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
@@ -321,7 +320,6 @@ async function renderEditProfile() {
     const currentAllowMessages = fresh?.allowMessages !== false;
     const currentCustomLink = fresh?.customLink || '';
 
-    // Цвета для чекбоксов статусов
     const statusColors = {
         'дружба': '#D9FD19',
         'отношения': '#FB5EB0',
@@ -387,7 +385,7 @@ async function renderEditProfile() {
         showBottomNav(true);
         setupBottomNav();
         setActiveNav('navProfiles');
-        cleanupProfileOverlays(); // очищаем перед повторным рендером списка
+        cleanupProfileOverlays();
         renderProfiles();
     });
 
@@ -403,7 +401,7 @@ async function renderEditProfile() {
                 showBottomNav(true);
                 setupBottomNav();
                 setActiveNav('navProfiles');
-                cleanupProfileOverlays(); // очищаем перед повторным рендером
+                cleanupProfileOverlays();
                 renderProfiles();
             }
         });
