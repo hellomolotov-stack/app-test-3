@@ -125,32 +125,45 @@ function setupBottomNav() {
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
-// Проверяет и открывает слайдер, если хайк есть в списке
-function tryShowHike(targetDate) {
-    const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
-    if (targetIndex !== -1) {
-        setTimeout(() => showBottomSheet(targetIndex), 200);
-        return true;
-    }
-    return false;
-}
-
-// Обработка диплинков
+// Обработка диплинков: теперь ждём появления хайка в списке через подписку
 function handleDeepLink(startParam) {
     if (!startParam) return;
+
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
-        // Ждём, пока хайк появится в списке (не более 3 секунд)
-        const maxTries = 30; // 30 * 100ms = 3 сек
-        let tries = 0;
-        const interval = setInterval(() => {
-            tries++;
-            if (tryShowHike(targetDate) || tries >= maxTries) {
-                clearInterval(interval);
+        console.log('Deep link hike target:', targetDate);
+
+        // Функция, которая пытается открыть слайдер прямо сейчас
+        const tryShow = () => {
+            const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
+            if (targetIndex !== -1) {
+                setTimeout(() => showBottomSheet(targetIndex), 200);
+                return true;
             }
-        }, 100);
+            return false;
+        };
+
+        // Если уже загружено — открываем сразу
+        if (tryShow()) return;
+
+        // Если ещё не загружено, ждём через подписку
+        const unsub = subscribeToHikes((newList) => {
+            state.hikesList = newList;
+            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
+            saveCachedState();
+            if (tryShow()) {
+                unsub();  // отписываемся, когда открыли
+            }
+        });
+
+        // Страховочный таймаут на 10 секунд
+        setTimeout(() => {
+            tryShow();
+            unsub();
+        }, 10000);
         return;
     }
+
     const isGuest = state.userCard.status !== 'active';
     switch (startParam) {
         case 'calendar':
@@ -285,9 +298,10 @@ async function loadAppData() {
         
         renderHome();
 
-        // Старый добрый способ получения start_param
+        // Получаем startapp параметр
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
         if (startParam) {
+            // Запускаем обработку с небольшой задержкой
             setTimeout(() => handleDeepLink(startParam), 100);
         }
     } catch (e) {
