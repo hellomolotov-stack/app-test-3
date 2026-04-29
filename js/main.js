@@ -133,7 +133,6 @@ function handleDeepLink(startParam) {
         const targetDate = normalizeDate(startParam.substring(5));
         console.log('Deep link hike target:', targetDate);
 
-        // Функция, которая пытается открыть слайдер прямо сейчас
         const tryShow = () => {
             const targetIndex = state.hikesList.findIndex(h => h.date === targetDate);
             if (targetIndex !== -1) {
@@ -143,20 +142,17 @@ function handleDeepLink(startParam) {
             return false;
         };
 
-        // Если уже загружено — открываем сразу
         if (tryShow()) return;
 
-        // Если ещё не загружено, ждём через подписку
         const unsub = subscribeToHikes((newList) => {
             state.hikesList = newList;
             state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
             saveCachedState();
             if (tryShow()) {
-                unsub();  // отписываемся, когда открыли
+                unsub();
             }
         });
 
-        // Страховочный таймаут на 10 секунд
         setTimeout(() => {
             tryShow();
             unsub();
@@ -273,35 +269,36 @@ async function loadAppData() {
         log('visit', state.userCard.status !== 'active', state.user);
         saveCachedState();
 
-        // Запрос разрешения на уведомления
+        // Запрос разрешения на уведомления (безопасный вызов)
         const hasAsked = localStorage.getItem('asked_write_access');
         if (!hasAsked) {
-            const allowed = await loadGuestAllowMessages(state.user?.id);
-            if (!allowed) {
-                window.Telegram.WebApp.requestWriteAccess().then((success) => {
-                    if (success) {
+            const allowed = await loadGuestAllowMessages(state.user?.id).catch(() => false);
+            if (!allowed && tg?.requestWriteAccess) {
+                try {
+                    const granted = await tg.requestWriteAccess();
+                    if (granted) {
                         syncGuestAllowMessages(state.user.id, true);
                     } else {
                         syncGuestAllowMessages(state.user.id, false);
                     }
                     localStorage.setItem('asked_write_access', 'true');
-                });
+                } catch (err) {
+                    console.warn('requestWriteAccess failed:', err);
+                }
             } else {
                 localStorage.setItem('asked_write_access', 'true');
             }
         }
 
-        if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.expand();
-            window.Telegram.WebApp.disableVerticalSwipes();
+        if (tg) {
+            tg.expand();
+            if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
         }
         
         renderHome();
 
-        // Получаем startapp параметр
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
         if (startParam) {
-            // Запускаем обработку с небольшой задержкой
             setTimeout(() => handleDeepLink(startParam), 100);
         }
     } catch (e) {
