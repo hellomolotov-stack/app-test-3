@@ -211,6 +211,35 @@ function handleDeepLink(startParam) {
                 }
             }, 300);
             break;
+        case 'card':
+            setTimeout(() => {
+                // Блок карты – первая карточка на главной
+                const el = document.querySelector('.card-container');
+                if (el) {
+                    scrollToElement(el, getCurrentTopOffset());
+                    highlightElement(el);
+                } else {
+                    const check = setInterval(() => {
+                        const card = document.querySelector('.card-container');
+                        if (card) { clearInterval(check); scrollToElement(card, getCurrentTopOffset()); highlightElement(card); }
+                    }, 100);
+                }
+            }, 300);
+            break;
+        case 'bookings':
+            setTimeout(() => {
+                const el = document.getElementById('userBookingsCard');
+                if (el) {
+                    scrollToElement(el, getCurrentTopOffset());
+                    highlightElement(el);
+                } else {
+                    const check = setInterval(() => {
+                        const bookings = document.getElementById('userBookingsCard');
+                        if (bookings) { clearInterval(check); scrollToElement(bookings, getCurrentTopOffset()); highlightElement(bookings); }
+                    }, 100);
+                }
+            }, 300);
+            break;
         case 'newcomer':
             setTimeout(() => {
                 const el = document.querySelector('.btn-newcomer')?.closest('.card-container');
