@@ -143,9 +143,9 @@ function handleDeepLink(startParam) {
         const targetDate = normalizeDate(startParam.substring(5));
         // Ждём загрузку списка, если он ещё пуст
         const checkAndOpen = () => {
-            if (tryShowHike(targetDate)) return true;          // получилось открыть
-            if (state.hikesList.length > 0) return true;       // список есть, но даты нет – хватит пытаться
-            return false;                                       // ещё ждём
+            if (tryShowHike(targetDate)) return true;
+            if (state.hikesList.length > 0) return true; // список есть, но даты нет – хватит пытаться
+            return false;
         };
         if (!checkAndOpen()) {
             let tries = 0;
@@ -294,13 +294,10 @@ async function loadAppData() {
         
         renderHome();
 
-        // Гарантированно получаем startapp из URL (работает всегда)
-        const urlParams = new URLSearchParams(window.location.search);
-        const startParam = urlParams.get('startapp') || urlParams.get('start') || 
-                           tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
-
+        // Восстанавливаем старую механику: start_param берём из initDataUnsafe
+        const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
         if (startParam) {
-            // Даём время на рендер, затем применяем диплинк
+            // Небольшая задержка для рендера
             setTimeout(() => handleDeepLink(startParam), 100);
         }
     } catch (e) {
