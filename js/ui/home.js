@@ -92,7 +92,6 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// Блок «саммари мастермайнда»
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     const isGuest = state.userCard.status !== 'active';
@@ -112,8 +111,7 @@ function renderMastermindSummaries() {
         summaries.forEach(item => {
             let formattedDate = '';
             if (item.date) {
-                // Поддерживаем оба формата: "2026-04-26" и "2026-04-25T21:00:00.000Z"
-                const dateStr = item.date.split('T')[0]; // берём только дату
+                const dateStr = item.date.split('T')[0]; // "2026-04-25"
                 const parts = dateStr.split('-');
                 if (parts.length === 3) {
                     const day = parseInt(parts[2], 10);
@@ -172,7 +170,6 @@ function showGuestPopup() {
     log('guest_popup_opened', true, state.user);
 }
 
-// Блок «обновления» с плашкой
 function renderUpdatesBlock() {
     const updates = state.updates || [];
     if (!updates.length) return '';
