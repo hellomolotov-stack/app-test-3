@@ -111,7 +111,7 @@ function renderMastermindSummaries() {
         summaries.forEach(item => {
             let formattedDate = '';
             if (item.date) {
-                const dateStr = item.date.split('T')[0]; // "2026-04-25"
+                const dateStr = item.date.split('T')[0];
                 const parts = dateStr.split('-');
                 if (parts.length === 3) {
                     const day = parseInt(parts[2], 10);
@@ -126,9 +126,9 @@ function renderMastermindSummaries() {
                     formattedDate = item.date;
                 }
             }
-            const readBtn = isGuest 
-                ? `<button class="btn btn-yellow guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">читать</button>`
-                : `<a href="${item.link}" target="_blank" class="btn btn-yellow" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;">читать</a>`;
+            const readBtn = isGuest
+                ? `<button class="btn btn-yellow guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;" data-date="${item.date}" data-title="${item.title || ''}">читать</button>`
+                : `<a href="${item.link}" target="_blank" class="btn btn-yellow mastermind-read-link" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                     <div style="flex: 1; margin-right: 16px;">
@@ -266,10 +266,13 @@ function renderGuestHome() {
         });
     }
 
-    // Обработчик кликов на гостевых кнопках «читать» в саммари
+    // Логирование для гостевых кнопок «читать»
     document.querySelectorAll('.guest-read-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
+            const date = btn.dataset.date || 'unknown';
+            const title = btn.dataset.title || 'unknown';
+            log('mastermind_read', true, state.user, { date, title });
             showGuestMastermindPopup();
         });
     });
@@ -357,6 +360,15 @@ function renderOwnerHome() {
         e.preventDefault();
         haptic();
         openLink('https://t.me/hellointelligent', 'idea_click', false);
+    });
+
+    // Логирование для владельцев карт (ссылки «читать»)
+    document.querySelectorAll('.mastermind-read-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            const date = link.dataset.date || 'unknown';
+            const title = link.dataset.title || 'unknown';
+            log('mastermind_read', false, state.user, { date, title });
+        });
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
