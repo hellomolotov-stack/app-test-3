@@ -10,7 +10,7 @@ export function log(action, isGuest = false, user, meta = {}) {
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         action: finalAction,
-        ...meta   // сюда попадут date, title и другие ключи, если их передать
+        ...meta
     });
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
