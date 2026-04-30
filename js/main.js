@@ -213,7 +213,7 @@ function handleDeepLink(startParam) {
             break;
         case 'card':
             setTimeout(() => {
-                const el = document.querySelector('.card-container'); // первая карточка
+                const el = document.querySelector('.card-container');
                 if (el) {
                     scrollToElement(el, getCurrentTopOffset());
                     highlightElement(el);
