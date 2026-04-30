@@ -1204,8 +1204,8 @@ document.addEventListener('click', function(e) {
             msg.className = 'modal-overlay';
             msg.innerHTML = `
                 <div class="modal-content" style="max-width: 300px;">
-                    <div class="modal-title" style="color: ${accentColor};">недоступно</div>
-                    <div class="modal-text">чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него</div>
+                    <div class="modal-title" style="color: ${accentColor};">нет доступа</div>
+                    <div class="modal-text">просматривать участников тебе поможет карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если сам не записан на него</div>
                     <div class="modal-buttons" style="margin-top: 20px;"><button class="btn btn-yellow" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
                 </div>
             `;
