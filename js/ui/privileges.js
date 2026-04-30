@@ -8,11 +8,15 @@ import { renderHome } from './home.js';
 
 export function renderNewcomerPage(isGuest = false) {
     cleanupProfileOverlays();
+    window.toggleShareButton && window.toggleShareButton(true);
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
     subtitle().textContent = `всё, что нужно знать`;
-    showBack(() => renderHome());
+    showBack(() => {
+        window.toggleShareButton && window.toggleShareButton(false);
+        renderHome();
+    });
     haptic();
     log('novichkam_page_opened', isGuest, state.user);
     showBottomNav(true);
@@ -32,7 +36,7 @@ export function renderNewcomerPage(isGuest = false) {
     }
 
     mainDiv().innerHTML = `
-        <div class="card-container newcomer-page" style="margin-bottom: 0;">
+        <div class="card-container newcomer-page faq-page" style="margin-bottom: 0;">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
                 <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
@@ -43,6 +47,7 @@ export function renderNewcomerPage(isGuest = false) {
     document.getElementById('goHomeStatic')?.addEventListener('click', () => {
         haptic();
         setUserInteracted();
+        window.toggleShareButton && window.toggleShareButton(false);
         renderHome();
     });
 }
