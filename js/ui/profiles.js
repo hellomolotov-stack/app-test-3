@@ -94,7 +94,7 @@ export async function renderProfiles() {
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
-            ph += `<div class="profile-card blurred animated"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
+            ph += `<div class="profile-card blurred animated" style="animation-delay: ${i * 0.05}s;"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
         mainDiv().innerHTML = `<div class="card-container"><div class="profiles-two-columns" id="profilesGrid">${ph}</div></div>`;
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
@@ -120,9 +120,13 @@ export async function renderProfiles() {
     if (isCardHolder && hasMyProfile) {
         const btnContainer = document.createElement('div');
         btnContainer.className = 'profile-edit-fab';
-        btnContainer.innerHTML = `<button class="btn btn-outline" id="editProfileBtn">🎩 мой профиль</button>`;
+        btnContainer.innerHTML = `<button class="btn btn-yellow" id="editProfileBtn" style="width: auto; margin: 0; padding: 12px 20px; border-radius: 40px; box-shadow: none; animation: none;">✍🏻 мой профиль</button>`;
         document.body.appendChild(btnContainer);
-        document.getElementById('editProfileBtn')?.addEventListener('click',()=>{ haptic(); renderEditProfile(); });
+        document.getElementById('editProfileBtn')?.addEventListener('click',()=>{
+            haptic();
+            log('edit_profile_click', false, state.user);
+            renderEditProfile();
+        });
         return;
     }
 
@@ -146,7 +150,7 @@ export async function renderProfiles() {
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    const btnText = '🎩 создать профиль';
+    const btnText = '💫 создать профиль';
     centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
     centerBtn.style.cssText = `
         position: fixed !important;
@@ -168,10 +172,15 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         min-width: 200px;
     `;
     if (isCardHolder) {
-        actionBtn.addEventListener('click', () => { haptic(); renderEditProfile(); });
+        actionBtn.addEventListener('click', () => {
+            haptic();
+            log('create_profile_click', false, state.user);
+            renderEditProfile();
+        });
     } else {
         actionBtn.addEventListener('click', () => {
             haptic();
+            log('create_profile_click', true, state.user);
             showGuestProfilePopup();
         });
     }
@@ -382,6 +391,7 @@ async function renderEditProfile() {
         };
         await saveProfile(state.user?.id, data);
         syncProfileToSheet(data, state.user).catch(console.error);
+        log('save_profile', false, state.user);
         delete userHikesCache[state.user?.id];
         tg.BackButton.offClick(backHandler);
         if(bottomNav) bottomNav.style.display='flex';
@@ -398,6 +408,7 @@ async function renderEditProfile() {
             if(confirm('Снять профиль с публикации?')){
                 await deleteProfile(state.user?.id);
                 syncProfileDeleteToSheet(state.user?.id).catch(console.error);
+                log('delete_profile', false, state.user);
                 delete userHikesCache[state.user?.id];
                 tg.BackButton.offClick(backHandler);
                 if(bottomNav) bottomNav.style.display='flex';
