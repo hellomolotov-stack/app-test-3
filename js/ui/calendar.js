@@ -1192,28 +1192,31 @@ document.addEventListener('click', function(e) {
     if (link.classList.contains('participant-counter')) {
         e.preventDefault(); e.stopPropagation();
         const hikeDate = link.dataset.hikeDate;
-        if (hikeDate) {
-            const index = state.hikesList.findIndex(h => h.date === hikeDate);
-            const hike = state.hikesList[index];
-            const isWoman = hike && hike.woman === 'yes';
-            const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
-            if (index !== -1 && state.hikeBookingStatus[index]) toggleParticipantDropdown(link, hikeDate);
-            else {
-                const msg = document.createElement('div');
-                msg.className = 'modal-overlay';
-                msg.innerHTML = `
-                    <div class="modal-content" style="max-width: 300px;">
-                        <div class="modal-title" style="color: ${accentColor};">доступ ограничен</div>
-                        <div class="modal-text">просмотр участников доступен после регистрации на хайк</div>
-                        <div class="modal-buttons" style="margin-top: 20px;"><button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
-                    </div>
-                `;
-                document.body.appendChild(msg);
-                const closeBtn = msg.querySelector('.btn');
-                closeBtn.addEventListener('click', () => msg.remove());
-                setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
-                log('uchastniki_not_registered', state.userCard.status !== 'active', state.user);
-            }
+        if (!hikeDate) return;
+        const index = state.hikesList.findIndex(h => h.date === hikeDate);
+        const hike = state.hikesList[index];
+        const isWoman = hike && hike.woman === 'yes';
+        const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
+        // НОВАЯ ЛОГИКА: проверяем наличие карты
+        if (state.userCard.status !== 'active') {
+            // Нет карты – показываем заглушку
+            const msg = document.createElement('div');
+            msg.className = 'modal-overlay';
+            msg.innerHTML = `
+                <div class="modal-content" style="max-width: 300px;">
+                    <div class="modal-title" style="color: ${accentColor};">недоступно</div>
+                    <div class="modal-text">чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него</div>
+                    <div class="modal-buttons" style="margin-top: 20px;"><button class="btn btn-yellow" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button></div>
+                </div>
+            `;
+            document.body.appendChild(msg);
+            const closeBtn = msg.querySelector('.btn');
+            closeBtn.addEventListener('click', () => msg.remove());
+            setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
+            log('uchastniki_no_card', true, state.user);
+        } else {
+            // Карта есть – можно смотреть
+            toggleParticipantDropdown(link, hikeDate);
         }
         return;
     }
