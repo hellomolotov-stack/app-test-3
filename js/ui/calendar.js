@@ -125,7 +125,10 @@ export function renderCalendar(container) {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
             const index = state.hikesList.findIndex(h => h.date === date);
-            if (index !== -1) showBottomSheet(index);
+            if (index !== -1) {
+                log('calendar_cell_click', state.userCard.status !== 'active', state.user, { date });
+                showBottomSheet(index);
+            }
         });
     });
 }
@@ -153,11 +156,11 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Учитываем безопасную зону и отступы
+    // Учитываем безопасную зону, чтобы слайдер не прилипал к системным кнопкам
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
-    const availableHeight = windowHeight - safeTop - 40;
-    const maxHeight = availableHeight * 0.95; // 85% от доступной высоты
+    const availableHeight = windowHeight - safeTop - 40; // 40px резерва
+    const maxHeight = availableHeight * 0.95; // 95% от доступной высоты
     sheet.style.maxHeight = `${maxHeight}px`;
     sheet.style.height = `${maxHeight}px`;
     overlay.style.paddingTop = safeTop + 'px';
@@ -1137,6 +1140,7 @@ document.addEventListener('click', function(e) {
         haptic();
         const hikeDate = link.dataset.hikeDate;
         if (hikeDate) {
+            log('profile_hike_click', state.userCard.status !== 'active', state.user, { hikeDate });
             const index = state.hikesList.findIndex(h => h.date === hikeDate);
             if (index !== -1) showBottomSheet(index);
         }
@@ -1216,21 +1220,22 @@ document.addEventListener('click', function(e) {
     if (link.classList.contains('booking-detail-btn')) {
         e.preventDefault();
         const index = link.dataset.index;
-        if (index !== undefined) showBottomSheet(parseInt(index));
+        if (index !== undefined) {
+            log('booking_detail_click', state.userCard.status !== 'active', state.user, { index });
+            showBottomSheet(parseInt(index));
+        }
         return;
     }
-  if (link.classList.contains('bookings-calendar-link') || link.classList.contains('booking-go-btn')) {
-    e.preventDefault(); haptic();
-    const calendar = document.getElementById('calendarContainer');
-    if (calendar) {
-        const safeTop = tg?.contentSafeAreaInset?.top || 0;
-        const offset = safeTop + 60;
-        const rect = calendar.getBoundingClientRect();
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const targetY = rect.top + scrollTop - offset;
-        window.scrollTo({ top: targetY, behavior: 'smooth' });
+    if (link.classList.contains('booking-go-btn')) {
+        e.preventDefault(); haptic();
+        log('random_phrase_click', state.userCard.status !== 'active', state.user);
+        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
     }
-    log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
-    return;
-}
+    if (link.classList.contains('bookings-calendar-link')) {
+        e.preventDefault(); haptic();
+        log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
+        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+    }
 });
