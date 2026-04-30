@@ -111,8 +111,8 @@ function renderMastermindSummaries() {
         summaries.forEach(item => {
             let formattedDate = '';
             if (item.date) {
-                const dateStr = item.date.split('T')[0];
-                const parts = dateStr.split('-');
+                const datePart = item.date.split('T')[0];
+                const parts = datePart.split('-');
                 if (parts.length === 3) {
                     const day = parseInt(parts[2], 10);
                     const month = parseInt(parts[1], 10) - 1;
@@ -126,7 +126,7 @@ function renderMastermindSummaries() {
                     formattedDate = item.date;
                 }
             }
-            const readBtn = isGuest
+            const readBtn = isGuest 
                 ? `<button class="btn btn-yellow guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;" data-date="${item.date}" data-title="${item.title || ''}">читать</button>`
                 : `<a href="${item.link}" target="_blank" class="btn btn-yellow mastermind-read-link" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
@@ -224,7 +224,7 @@ function renderGuestHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
-            <h2 class="section-title">🫖 для новичков</h2>
+            <h2 class="section-title">🗺️ как всё устроено</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
@@ -266,7 +266,6 @@ function renderGuestHome() {
         });
     }
 
-    // Логирование для гостевых кнопок «читать»
     document.querySelectorAll('.guest-read-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -331,7 +330,7 @@ function renderOwnerHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
-            <h2 class="section-title">🫖 для новичков</h2>
+            <h2 class="section-title">🗺️ как всё устроено</h2>
             <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
@@ -362,7 +361,6 @@ function renderOwnerHome() {
         openLink('https://t.me/hellointelligent', 'idea_click', false);
     });
 
-    // Логирование для владельцев карт (ссылки «читать»)
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
         link.addEventListener('click', (e) => {
             const date = link.dataset.date || 'unknown';
