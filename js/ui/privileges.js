@@ -12,7 +12,7 @@ export function renderNewcomerPage(isGuest = false) {
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
-    subtitle().textContent = `всё, что нужно знать`;
+  subtitle().textContent = `🗺️ как всё устроено`;   // <-- новый заголовок
     showBack(() => {
         window.toggleShareButton && window.toggleShareButton(false);
         renderHome();
