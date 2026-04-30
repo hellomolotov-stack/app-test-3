@@ -20,47 +20,43 @@ function getCurrentTopOffset() {
     return safeTop + 60;
 }
 
-// Создаём или обновляем плавающую кнопку «🔗 отправить другу»
-function setupShareButton() {
+// Глобальное управление кнопкой "отправить другу"
+window.toggleShareButton = function(show) {
     let shareBtn = document.getElementById('floatingShareBtn');
-
-    if (!shareBtn) {
-        shareBtn = document.createElement('button');
-        shareBtn.id = 'floatingShareBtn';
-        shareBtn.textContent = '🔗 отправить другу';
-        shareBtn.style.cssText = `
-            position: fixed;
-            bottom: 90px;
-            right: 16px;
-            max-width: calc(100% - 32px);
-            width: auto;
-            padding: 12px 20px;
-            background-color: #D9FD19;
-            color: #000000;
-            border: none;
-            border-radius: 40px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            z-index: 101;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            animation: none;
-        `;
-
-        shareBtn.addEventListener('click', () => {
-            haptic();
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/yaltahiking_bot?startapp=newcomer')}`;
-            tg?.openTelegramLink(shareUrl);
-        });
-
-        document.body.appendChild(shareBtn);
+    if (show) {
+        if (!shareBtn) {
+            shareBtn = document.createElement('button');
+            shareBtn.id = 'floatingShareBtn';
+            shareBtn.textContent = '🔗 отправить другу';
+            shareBtn.style.cssText = `
+                position: fixed;
+                bottom: 90px;
+                right: 16px;
+                max-width: calc(100% - 32px);
+                width: auto;
+                padding: 12px 20px;
+                background-color: #D9FD19;
+                color: #000000;
+                border: none;
+                border-radius: 40px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                z-index: 101;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            shareBtn.addEventListener('click', () => {
+                haptic();
+                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/yaltahiking_bot?startapp=newcomer')}`;
+                tg?.openTelegramLink(shareUrl);
+            });
+            document.body.appendChild(shareBtn);
+        }
+        shareBtn.style.display = 'block';
+    } else {
+        if (shareBtn) shareBtn.style.display = 'none';
     }
-
-    // Показываем кнопку, только если мы на главной и не на подстраницах
-    shareBtn.style.display = (!window.isPrivPage && !document.querySelector('.faq-page')) ? 'block' : 'none';
-}
+};
 
 function setupBottomNav() {
     const navHome = document.getElementById('navHome');
@@ -99,7 +95,7 @@ function setupBottomNav() {
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
         updateActiveNav();
-        setupShareButton();
+        window.toggleShareButton(false);
     });
     navHikesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('hikes');
@@ -119,7 +115,7 @@ function setupBottomNav() {
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
         updateActiveNav();
-        setupShareButton();
+        window.toggleShareButton(false);
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
@@ -129,8 +125,7 @@ function setupBottomNav() {
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
         updateActiveNav();
-        const shareBtn = document.getElementById('floatingShareBtn');
-        if (shareBtn) shareBtn.style.display = 'none';
+        window.toggleShareButton(false);
     });
     navMoreNew.addEventListener('click', (e) => {
         e.stopPropagation(); haptic();
@@ -143,16 +138,15 @@ function setupBottomNav() {
         }
         log('menu_click', state.userCard.status !== 'active', state.user);
         updateActiveNav();
-        setupShareButton();
     });
 
-    popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); setupShareButton(); });
-    popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); setupShareButton(); });
-    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
-    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
-    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); });
+    popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+    popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+    popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+    popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(true); });
+    popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     if (popupQuestion) {
-        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'question_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); setupShareButton(); });
+        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'question_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     }
 
     document.addEventListener('click', (e) => {
@@ -167,13 +161,11 @@ function setupBottomNav() {
         requestAnimationFrame(updateActiveNav);
     });
     updateActiveNav();
-    setupShareButton();
 }
 
 import { uiActions } from './ui/common.js';
 uiActions.setupBottomNav = setupBottomNav;
 
-// Функция для добавления свечения элементу
 function highlightElement(el) {
     if (!el) return;
     el.style.transition = 'box-shadow 0.5s';
@@ -181,7 +173,6 @@ function highlightElement(el) {
     setTimeout(() => { el.style.boxShadow = ''; }, 2000);
 }
 
-// Обработка диплинков
 function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('hike_')) {
@@ -399,7 +390,7 @@ async function loadAppData() {
         }
         
         renderHome();
-        setupShareButton();
+        window.toggleShareButton(false);
 
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
         if (startParam) {
