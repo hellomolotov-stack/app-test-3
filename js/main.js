@@ -1,7 +1,7 @@
 // js/main.js
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadGuestAllowMessages } from './firebase.js';
+import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadGuestAllowMessages, loadPopups } from './firebase.js';
 import { log, syncGuestAllowMessages } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
@@ -324,10 +324,10 @@ async function loadAppData() {
             });
         }
 
-        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates, mastermindSummaries] = await Promise.all([
+        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates, mastermindSummaries, popupsData] = await Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
             loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
-            loadUpdates(), loadMastermindSummaries()
+            loadUpdates(), loadMastermindSummaries(), loadPopups()
         ]);
         
         if (metrics) state.metrics = metrics;
@@ -340,6 +340,7 @@ async function loadAppData() {
         if (leaders) state.leaders = leaders;
         if (updates) state.updates = updates;
         if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
+        if (popupsData) state.popups = popupsData;
 
         await loadRegistrationsPopup().then(data => { if (data) state.registrationsPopup = data; });
         await loadPopupConfig().then(data => { if (data) state.popupConfig = { ...state.popupConfig, ...data }; });
