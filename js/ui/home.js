@@ -111,8 +111,8 @@ function renderMastermindSummaries() {
         summaries.forEach(item => {
             let formattedDate = '';
             if (item.date) {
-                const datePart = item.date.split('T')[0];
-                const parts = datePart.split('-');
+                const dateStr = item.date.split('T')[0];
+                const parts = dateStr.split('-');
                 if (parts.length === 3) {
                     const day = parseInt(parts[2], 10);
                     const month = parseInt(parts[1], 10) - 1;
@@ -126,7 +126,7 @@ function renderMastermindSummaries() {
                     formattedDate = item.date;
                 }
             }
-            const readBtn = isGuest 
+            const readBtn = isGuest
                 ? `<button class="btn btn-yellow guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;" data-date="${item.date}" data-title="${item.title || ''}">читать</button>`
                 : `<a href="${item.link}" target="_blank" class="btn btn-yellow mastermind-read-link" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
@@ -154,14 +154,19 @@ function renderMastermindSummaries() {
 
 function showGuestPopup() {
     haptic();
+    const popup = state.popups.guest_card_popup || {
+        title: '💳 карта интеллигента',
+        text: 'как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.',
+        button_text: 'узнать о привилегиях'
+    };
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'guestPopup';
     overlay.innerHTML = `
         <div class="modal-content">
-            <div class="modal-title">💳 карта интеллигента</div>
-            <div class="modal-text">как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.</div>
-            <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">узнать о привилегиях</button></div>
+            <div class="modal-title">${popup.title}</div>
+            <div class="modal-text">${popup.text}</div>
+            <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">${popup.button_text}</button></div>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -283,15 +288,18 @@ function renderGuestHome() {
 
 function showGuestMastermindPopup() {
     haptic();
+    const popup = state.popups.guest_mastermind_popup || {
+        title: '🧠 саммари мастермайнда',
+        text: 'чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?',
+        button_text: 'расскажите скорее'
+    };
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title">🧠 саммари мастермайнда</div>
-            <div class="modal-text" style="font-size: 14px;">
-                чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?
-            </div>
-            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">расскажите скорее</button>
+            <div class="modal-title">${popup.title}</div>
+            <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
+            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
         </div>
     `;
     document.body.appendChild(overlay);
