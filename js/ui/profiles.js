@@ -1,332 +1,432 @@
 // js/ui/profiles.js
-import { haptic, openLink, mainDiv, subtitle, tg, showUnicornConfetti } from '../utils.js';
+import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay } from '../utils.js';
 import { state } from '../state.js';
 import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
-import { loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, saveUserAvatar } from '../firebase.js';
-import { showBottomNav, setupBottomNav, showBack, hideBack, setUserInteracted, resetNavActive, cleanupProfileOverlays } from './common.js';
-import { renderHome } from './home.js';
+import {
+    loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations,
+} from '../firebase.js';
+import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
+import { renderGuestPrivileges } from './privileges.js';
 
-let isEditing = false;
-let currentMyProfile = null;
+let profiles = {};
+let myProfile = null;
+const userHikesCache = {};
+
+async function loadProfilesData() {
+    const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
+    profiles = allProfiles; myProfile = myProf;
+    state.profiles = profiles; state.myProfile = myProfile;
+}
+
+async function getNextHikeForUser(userId) {
+    if (!userId) return null;
+    if (userHikesCache[userId] !== undefined) return userHikesCache[userId];
+    try {
+        const registrations = await loadUserRegistrations(userId);
+        if (!registrations) return null;
+        const today = new Date(); today.setHours(0,0,0,0);
+        const future = state.hikesList.filter(h => new Date(h.date) >= today && registrations[h.date] === true);
+        if (!future.length) return null;
+        future.sort((a,b) => new Date(a.date) - new Date(b.date));
+        const next = future[0];
+        userHikesCache[userId] = next;
+        return next;
+    } catch { return null; }
+}
+
+async function renderProfileCard(profile, isBlurred = false) {
+    const avatarHtml = profile.avatarUrl
+        ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0)||'?').toUpperCase()}</div>';">`
+        : `<div class="profile-avatar-placeholder">${(profile.name?.charAt(0)||'?').toUpperCase()}</div>`;
+    const statusTags = (profile.friendshipStatuses||[]).map(s => {
+        let cls = ''; if (s==='дружба') cls='status-tag-friendship'; else if (s==='отношения') cls='status-tag-romance'; else if (s==='бизнес') cls='status-tag-business';
+        return `<span class="status-tag ${cls}">${s}</span>`;
+    }).join('');
+    let nextHikeHtml = '';
+    if (!isBlurred && profile.userId) {
+        const next = await getNextHikeForUser(profile.userId);
+        if (next) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><a href="#" class="profile-hike-link" data-hike-date="${next.date}">${formatDateForDisplay(next.date)} · ${next.title}</a>`;
+        else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
+    } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
+
+    const contactButtons = (!isBlurred && profile.userId) ? `
+        <div class="profile-contact-row">
+            ${profile.allowMessages !== false ? `<button class="profile-contact-btn" data-action="chat" data-username="${profile.username || profile.userId}">💬</button>` : ''}
+            ${profile.customLink ? `<button class="profile-contact-btn" data-action="link" data-url="${escapeHtml(profile.customLink)}">🔗</button>` : ''}
+        </div>
+    ` : '';
+
+    return `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
+}
+
+function getRandomProfile() {
+    const profileEntries = Object.entries(profiles);
+    if (profileEntries.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * profileEntries.length);
+    return profileEntries[randomIndex][1];
+}
+
+function cleanupProfileOverlays() {
+    document.querySelector('.profile-blur-overlay')?.remove();
+    document.querySelector('.guest-center-btn')?.remove();
+    document.querySelector('.center-floating-btn')?.remove();
+    document.querySelector('.profile-preview-banner')?.remove();
+    document.querySelector('.profile-edit-fab')?.remove();
+    document.body.style.overflow = '';
+}
 
 export async function renderProfiles() {
     cleanupProfileOverlays();
-    showBack(renderHome);
-    showBottomNav(true);
-    setupBottomNav();
-    resetNavActive();
-    setUserInteracted();
 
-    if (!state.profiles || Object.keys(state.profiles).length === 0) {
-        try {
-            state.profiles = await loadAllProfiles();
-        } catch (e) {
-            console.error('Failed to load profiles', e);
+    window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
+    subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
+    showBottomNav(true); setupBottomNav();
+    mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
+    await loadProfilesData();
+
+    const isCardHolder = state.userCard.status === 'active';
+    const hasMyProfile = !!myProfile;
+    const placeholderCount = 6;
+
+    const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
+    const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
+
+    if (allCards.length === 0) {
+        let ph = '';
+        for (let i = 0; i < placeholderCount; i++) {
+            ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
-    }
-
-    const isGuest = state.userCard.status !== 'active';
-    const profiles = Object.values(state.profiles).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-    // -------------------------------
-    //  ГОСТЬ – бесконечная прокрутка
-    // -------------------------------
-    if (isGuest) {
-        subtitle().textContent = '👥 интеллигенты';
-
-        if (profiles.length === 0) {
-            mainDiv().innerHTML = `
-                <div style="height: 100vh; display: flex; align-items: center; justify-content: center;">
-                    <div class="guest-center-btn">
-                        <button class="btn btn-yellow btn-glow" id="guestGoToHome">
-                            сначала нужна карта
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.getElementById('guestGoToHome').addEventListener('click', () => {
-                haptic();
-                renderHome();
-            });
-            return;
-        }
-
-        // Разделяем на две колонки (как было)
-        const col1 = [];
-        const col2 = [];
-        profiles.forEach((profile, i) => {
-            const card = buildProfileCard(profile, true);
-            if (i % 2 === 0) col1.push(card);
-            else col2.push(card);
-        });
-
-        const column1Html = col1.join('');
-        const column2Html = col2.join('');
-
-        // Дублируем для бесконечной анимации
-        const duplicated = `
-            <div class="profiles-two-columns">
-                <div class="profiles-column">${column1Html}</div>
-                <div class="profiles-column">${column2Html}</div>
-            </div>
-            <div class="profiles-two-columns">
-                <div class="profiles-column">${column1Html}</div>
-                <div class="profiles-column">${column2Html}</div>
-            </div>
-        `;
-
         mainDiv().innerHTML = `
-            <div class="profiles-scroll-wrapper" style="height: 100vh; overflow: hidden;">
-                <div class="profiles-scroll-animation">
-                    ${duplicated}
+            <div class="card-container profile-marquee">
+                <div class="profiles-two-columns">
+                    ${ph}
+                    ${ph}
                 </div>
             </div>
-            <div class="profile-blur-overlay"></div>
-            <div class="guest-center-btn">
-                <button class="btn btn-yellow btn-glow" id="guestGoToHome">
-                    хочу такую карту
-                </button>
-            </div>
         `;
-
-        document.getElementById('guestGoToHome').addEventListener('click', () => {
-            haptic();
-            renderHome();
-        });
-
-        log('profiles_guest_view', true, state.user);
+        showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
 
-    // -------------------------------
-    //  ВЛАДЕЛЕЦ КАРТЫ – полный доступ
-    // -------------------------------
-    subtitle().textContent = '👥 интеллигенты';
-    const myUserId = state.user?.id;
-
-    if (myUserId) {
-        currentMyProfile = await loadMyProfile(myUserId);
-    }
-
-    const container = document.createElement('div');
-    container.className = 'profiles-two-columns';
-
-    const col1 = document.createElement('div');
-    col1.className = 'profiles-column';
-    const col2 = document.createElement('div');
-    col2.className = 'profiles-column';
-
-    let editButtonHtml = '';
-    if (currentMyProfile) {
-        editButtonHtml = `<div class="profile-edit-fab"><button class="btn" id="editMyProfileBtn">📝 мой профиль</button></div>`;
-    } else {
-        editButtonHtml = `<div class="profile-edit-fab"><button class="btn" id="createProfileBtn">✨ создать профиль</button></div>`;
-    }
-
-    profiles.forEach((profile, i) => {
-        const card = buildProfileCard(profile, false);
-        if (i % 2 === 0) col1.innerHTML += card;
-        else col2.innerHTML += card;
+    const leftCards = [];
+    const rightCards = [];
+    allCards.forEach((card, index) => {
+        if (index % 2 === 0) leftCards.push(card);
+        else rightCards.push(card);
     });
-
-    container.appendChild(col1);
-    container.appendChild(col2);
-    mainDiv().innerHTML = '';
-    mainDiv().appendChild(container);
-    document.body.insertAdjacentHTML('beforeend', editButtonHtml);
-
-    document.querySelectorAll('.profile-contact-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            haptic();
-            const action = btn.dataset.action;
-            const username = btn.dataset.username;
-            const url = btn.dataset.url;
-            if (action === 'chat' && username) {
-                const clean = username.replace(/^@/, '');
-                openLink(`https://t.me/${clean}`, 'profile_chat_click', false);
-            } else if (action === 'link' && url) {
-                let fixedUrl = url;
-                if (!fixedUrl.match(/^https?:\/\//i)) fixedUrl = 'https://' + fixedUrl;
-                openLink(fixedUrl, 'profile_link_click', false);
-            }
-        });
-    });
-
-    const editBtn = document.getElementById('editMyProfileBtn') || document.getElementById('createProfileBtn');
-    if (editBtn) {
-        editBtn.addEventListener('click', () => {
-            haptic();
-            showProfileEditor();
-        });
-    }
-
-    if (state.pendingProfileClick) {
-        setTimeout(() => {
-            const targetId = state.pendingProfileClick.userId;
-            const targetCard = document.querySelector(`.profile-card[data-user-id="${targetId}"]`);
-            if (targetCard) {
-                targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                targetCard.classList.add('highlight-pulse');
-                setTimeout(() => targetCard.classList.remove('highlight-pulse'), 2000);
-            }
-            state.pendingProfileClick = null;
-        }, 300);
-    }
-
-    log('profiles_owner_view', false, state.user);
-}
-
-function buildProfileCard(profile, isGuest) {
-    const avatarHtml = profile.avatarUrl
-        ? `<img src="${profile.avatarUrl}" class="profile-avatar" loading="lazy" onerror="this.style.display='none'; this.parentNode.querySelector('.profile-avatar-placeholder').style.display='flex';" />`
-        : '';
-    const placeholderInitial = profile.name ? profile.name.charAt(0).toUpperCase() : '?';
-    const placeholderHtml = `<div class="profile-avatar-placeholder" style="${profile.avatarUrl ? 'display:none;' : ''}">${placeholderInitial}</div>`;
-
-    const statusTags = (profile.friendshipStatuses || []).map(s => {
-        let cls = '';
-        if (s === 'дружба') cls = 'status-tag-friendship';
-        else if (s === 'отношения') cls = 'status-tag-romance';
-        else if (s === 'бизнес') cls = 'status-tag-business';
-        return `<span class="status-tag ${cls}">${s}</span>`;
-    }).join('');
-
-    const contactButtons = [];
-    if (!isGuest && profile.username) {
-        contactButtons.push(`<button class="profile-contact-btn" data-action="chat" data-username="${profile.username}">✉️ чат</button>`);
-    }
-    if (!isGuest && profile.customLink) {
-        contactButtons.push(`<button class="profile-contact-btn" data-action="link" data-url="${profile.customLink}">🔗 ссылка</button>`);
-    }
-
-    const hikeLink = profile.lastHikeDate
-        ? `<div class="profile-hike-link" data-hike-date="${profile.lastHikeDate}">📅 последний хайк</div>`
-        : '';
-
-    return `
-        <div class="profile-card" data-user-id="${profile.userId}">
-            ${avatarHtml}
-            ${placeholderHtml}
-            <div class="profile-name-status">
-                <div class="profile-name">${profile.name || 'Без имени'}</div>
-                <div class="profile-status-tags">${statusTags}</div>
-            </div>
-            ${profile.hobbies ? `<div class="profile-section-title">увлечения</div><div class="profile-section-text">${profile.hobbies}</div>` : ''}
-            ${profile.profession ? `<div class="profile-section-title">профессия</div><div class="profile-section-text">${profile.profession}</div>` : ''}
-            ${hikeLink}
-            <div class="profile-contact-row">${contactButtons.join('')}</div>
-        </div>
-    `;
-}
-
-function showProfileEditor() {
-    isEditing = true;
-    cleanupProfileOverlays();
-    hideBack();
-
-    const profile = currentMyProfile || {};
-    const name = profile.name || '';
-    const hobbies = profile.hobbies || '';
-    const profession = profile.profession || '';
-    const allowMessages = profile.allowMessages !== false;
-    const customLink = profile.customLink || '';
-    const friendshipStatuses = profile.friendshipStatuses || [];
-
-    const check = (value) => friendshipStatuses.includes(value) ? 'checked' : '';
 
     mainDiv().innerHTML = `
-        <div class="edit-form">
-            <div class="profile-field">
-                <label>имя</label>
-                <input type="text" id="editName" value="${escapeHtml(name)}" placeholder="Как вас зовут?">
+        <div class="card-container">
+            <div class="profiles-two-columns">
+                <div class="profiles-column">${leftCards.join('')}</div>
+                <div class="profiles-column">${rightCards.join('')}</div>
             </div>
-            <div class="profile-field">
-                <label>цель знакомства</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" id="editFriend" value="дружба" ${check('дружба')}> дружба</label>
-                    <label><input type="checkbox" id="editRomance" value="отношения" ${check('отношения')}> отношения</label>
-                    <label><input type="checkbox" id="editBusiness" value="бизнес" ${check('бизнес')}> бизнес</label>
-                </div>
-            </div>
-            <div class="profile-field">
-                <label>интересы</label>
-                <textarea id="editHobbies" placeholder="Чем увлекаетесь?">${escapeHtml(hobbies)}</textarea>
-            </div>
-            <div class="profile-field">
-                <label>профессия</label>
-                <input type="text" id="editProfession" value="${escapeHtml(profession)}" placeholder="Кем работаете?">
-            </div>
-            <div class="profile-field">
-                <label>контакты</label>
-                <input type="text" id="editCustomLink" value="${escapeHtml(customLink)}" placeholder="Ссылка (сайт, соцсеть)">
-                <div class="field-hint">Укажите username, если хотите добавляться в Telegram</div>
-            </div>
-            <div class="profile-field">
-                <div class="checkbox-row">
-                    <input type="checkbox" id="editAllowMessages" ${allowMessages ? 'checked' : ''}>
-                    <span>Разрешить сообщения от участников</span>
-                </div>
-            </div>
-            <button class="btn btn-yellow" id="saveProfileBtn">сохранить</button>
-            ${profile.userId ? '<button class="delete-profile-btn" id="deleteProfileBtn">удалить профиль</button>' : ''}
         </div>
     `;
 
-    document.getElementById('saveProfileBtn').addEventListener('click', async () => {
-        haptic();
-        const newProfile = {
-            name: document.getElementById('editName').value.trim(),
-            hobbies: document.getElementById('editHobbies').value.trim(),
-            profession: document.getElementById('editProfession').value.trim(),
-            customLink: document.getElementById('editCustomLink').value.trim(),
-            allowMessages: document.getElementById('editAllowMessages').checked,
-            friendshipStatuses: [],
-            username: state.user?.username || ''
-        };
-        if (document.getElementById('editFriend').checked) newProfile.friendshipStatuses.push('дружба');
-        if (document.getElementById('editRomance').checked) newProfile.friendshipStatuses.push('отношения');
-        if (document.getElementById('editBusiness').checked) newProfile.friendshipStatuses.push('бизнес');
-
-        if (state.user?.photo_url) {
-            newProfile.avatarUrl = state.user.photo_url;
-            saveUserAvatar(state.user.id, state.user.photo_url);
-        }
-
-        try {
-            await saveProfile(state.user.id, newProfile);
-            currentMyProfile = newProfile;
-            state.myProfile = newProfile;
-            syncProfileToSheet(newProfile, state.user);
-            renderProfiles();
-        } catch (err) {
-            console.error(err);
-            alert('Не удалось сохранить профиль');
-        }
-    });
-
-    const deleteBtn = document.getElementById('deleteProfileBtn');
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', async () => {
-            if (!confirm('Удалить профиль?')) return;
+    if (isCardHolder && hasMyProfile) {
+        const btnContainer = document.createElement('div');
+        btnContainer.className = 'profile-edit-fab';
+        btnContainer.innerHTML = `<button class="btn btn-yellow" id="editProfileBtn" style="width: auto; margin: 0; padding: 12px 20px; border-radius: 40px; box-shadow: none; animation: none;">✍🏻 мой профиль</button>`;
+        document.body.appendChild(btnContainer);
+        document.getElementById('editProfileBtn')?.addEventListener('click',()=>{
             haptic();
-            try {
-                await deleteProfile(state.user.id);
-                currentMyProfile = null;
-                state.myProfile = null;
-                syncProfileDeleteToSheet(state.user.id);
-                renderProfiles();
-            } catch (err) {
-                console.error(err);
-            }
+            log('edit_profile_click', false, state.user);
+            renderEditProfile();
+        });
+        return;
+    }
+
+    const blurOverlay = document.createElement('div');
+    blurOverlay.className = 'profile-blur-overlay';
+    blurOverlay.style.position = 'fixed';
+    blurOverlay.style.top = '0';
+    blurOverlay.style.left = '0';
+    blurOverlay.style.width = '100%';
+    blurOverlay.style.height = '100%';
+    blurOverlay.style.pointerEvents = 'none';
+    blurOverlay.style.zIndex = '40';
+    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
+    blurOverlay.style.backdropFilter = 'blur(16px)';
+    blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
+    document.body.appendChild(blurOverlay);
+
+    showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+}
+
+function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
+    const centerBtn = document.createElement('div');
+    centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
+    const btnText = '💫 создать профиль';
+    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
+    centerBtn.style.cssText = `
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 100 !important;
+        pointer-events: auto !important;
+    `;
+    document.body.appendChild(centerBtn);
+
+    const actionBtn = document.getElementById('profileActionBtn');
+    actionBtn.style.cssText = `
+        padding: 12px 24px !important;
+        font-size: 16px !important;
+        white-space: nowrap;
+        border-radius: 40px !important;
+        width: auto !important;
+        min-width: 200px;
+    `;
+    if (isCardHolder) {
+        actionBtn.addEventListener('click', () => {
+            haptic();
+            log('create_profile_click', false, state.user);
+            renderEditProfile();
+        });
+    } else {
+        actionBtn.addEventListener('click', () => {
+            haptic();
+            log('create_profile_click', true, state.user);
+            showGuestProfilePopup();
         });
     }
 
-    log('profile_editor_opened', false, state.user);
+    let previewProfile = null;
+    if (state.pendingProfileClick) {
+        previewProfile = state.pendingProfileClick;
+        state.pendingProfileClick = null;
+    } else {
+        const randomProf = getRandomProfile();
+        if (randomProf) {
+            previewProfile = {
+                userId: randomProf.userId,
+                name: randomProf.name,
+                photoUrl: randomProf.avatarUrl || null
+            };
+        }
+    }
+
+    if (previewProfile) {
+        const banner = document.createElement('div');
+        banner.className = 'profile-preview-banner';
+        banner.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 90% !important;
+            max-width: 520px !important;
+            margin-top: -100px !important;
+            z-index: 101 !important;
+            pointer-events: none !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 28px !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important;
+            padding: 16px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 14px !important;
+            box-sizing: border-box !important;
+        `;
+
+        const avatarContainer = document.createElement('div');
+        avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
+
+        if (previewProfile.photoUrl) {
+            const img = document.createElement('img');
+            img.src = previewProfile.photoUrl;
+            img.className = 'preview-avatar-img';
+            img.style.cssText = `
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50% !important;
+                object-fit: cover !important;
+            `;
+            img.onerror = function() {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'preview-avatar-placeholder';
+                placeholder.style.cssText = `
+                    width: 100% !important;
+                    height: 100% !important;
+                    border-radius: 50% !important;
+                    background: #40a7e3 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 24px !important;
+                    color: white !important;
+                `;
+                placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+                this.parentNode.replaceChild(placeholder, this);
+            };
+            avatarContainer.appendChild(img);
+        } else {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'preview-avatar-placeholder';
+            placeholder.style.cssText = `
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50% !important;
+                background: #40a7e3 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 24px !important;
+                color: white !important;
+            `;
+            placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+            avatarContainer.appendChild(placeholder);
+        }
+
+        const textDiv = document.createElement('div');
+        textDiv.style.cssText = 'flex: 1; font-size: 14px; color: #fff; line-height: 1.4; word-break: break-word;';
+        textDiv.innerHTML = `<span style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> – и другие члены клуба уже создали профиль интеллигента. создай свой, чтобы вывести здоровые знакомства на новый уровень`;
+
+        banner.appendChild(avatarContainer);
+        banner.appendChild(textDiv);
+        document.body.appendChild(banner);
+    }
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function showGuestProfilePopup() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-title" style="font-size: 18px;">💳 карта интеллигента</div>
+            <div class="modal-text" style="font-size: 14px;">
+                для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?
+            </div>
+            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">да, хочу узнать</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+    document.getElementById('goToPrivilegesBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        overlay.remove();
+        cleanupProfileOverlays();
+        renderGuestPrivileges();
+        log('guest_privileges_from_profile', true, state.user);
+    });
 }
+
+async function renderEditProfile() {
+    cleanupProfileOverlays();
+
+    window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
+    subtitle().textContent = `🎩 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
+    showBottomNav(true); setupBottomNav();
+    const bottomNav = document.getElementById('bottomNav');
+    if(bottomNav) bottomNav.style.display = 'flex';
+
+    mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
+    const fresh = await loadMyProfile(state.user?.id);
+    const currentName = fresh?.name || state.user?.first_name || '';
+    const currentStatuses = fresh?.friendshipStatuses || [];
+    const currentHobbies = fresh?.hobbies || '';
+    const currentProfession = fresh?.profession || '';
+    const currentAllowMessages = fresh?.allowMessages !== false;
+    const currentCustomLink = fresh?.customLink || '';
+
+    const statusColors = {
+        'дружба': '#D9FD19',
+        'отношения': '#FB5EB0',
+        'бизнес': '#5E9FC5'
+    };
+    const statusesHtml = ['дружба', 'отношения', 'бизнес'].map(s => 
+        `<label><input type="checkbox" value="${s}" ${currentStatuses.includes(s) ? 'checked' : ''} style="accent-color: ${statusColors[s]}"> ${s}</label>`
+    ).join('');
+
+    mainDiv().innerHTML = `<div class="card-container" style="padding-top:12px; padding-bottom:8px;"><form id="editProfileForm" class="edit-form">
+        <div class="profile-field"><label>👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
+        <div class="profile-field"><label>👀 статус знакомств</label><div class="checkbox-group">${statusesHtml}</div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
+        <div class="profile-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
+        <div class="profile-field"><label>💼 профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
+        <div class="profile-field">
+            <label>💬 личные сообщения</label>
+            <div class="checkbox-row">
+                <input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}>
+                <span id="allowMessagesLabel">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телеграм'}</span>
+            </div>
+        </div>
+        <div class="profile-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
+        <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="margin-top:24px;">сохранить профиль</button>
+        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn" style="margin-top:8px;">снять с публикации</button>':''}
+    </form></div>`;
+
+    const allowCheck = document.getElementById('allowMessagesCheck');
+    const allowLabel = document.getElementById('allowMessagesLabel');
+    allowCheck.addEventListener('change', ()=> allowLabel.textContent = allowCheck.checked ? 'разрешено писать в телеграм' : 'запрещено писать в телеграм');
+
+    const backHandler = ()=>{ if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
+    tg.BackButton.onClick(backHandler); tg.BackButton.show();
+    document.getElementById('profileName').placeholder = '';
+    document.getElementById('profileHobbies').placeholder = '';
+    document.getElementById('profileProfession').placeholder = '';
+
+    document.getElementById('editProfileForm').addEventListener('submit', async (e)=>{
+        e.preventDefault(); haptic();
+        const name = document.getElementById('profileName').value.trim();
+        if(!name) { alert('Укажите имя'); return; }
+        const selected = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(cb=>cb.value);
+        const hobbies = document.getElementById('profileHobbies').value.trim();
+        const profession = document.getElementById('profileProfession').value.trim();
+        const allowMessages = document.getElementById('allowMessagesCheck').checked;
+        let customLink = document.getElementById('customLinkInput').value.trim();
+        if (customLink && !customLink.match(/^https?:\/\//i)) {
+            customLink = 'https://' + customLink;
+        }
+
+        const data = {
+            name, friendshipStatuses: selected, hobbies, profession,
+            allowMessages, customLink,
+            username: state.user?.username || '',
+            avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null,
+            avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(),
+            userId: state.user?.id
+        };
+        await saveProfile(state.user?.id, data);
+        syncProfileToSheet(data, state.user).catch(console.error);
+        log('save_profile', false, state.user);
+        delete userHikesCache[state.user?.id];
+        tg.BackButton.offClick(backHandler);
+        if(bottomNav) bottomNav.style.display='flex';
+        showBottomNav(true);
+        setupBottomNav();
+        setActiveNav('navProfiles');
+        cleanupProfileOverlays();
+        renderProfiles();
+    });
+
+    if(document.getElementById('deleteProfileBtn')){
+        document.getElementById('deleteProfileBtn').addEventListener('click', async ()=>{
+            haptic();
+            if(confirm('Снять профиль с публикации?')){
+                await deleteProfile(state.user?.id);
+                syncProfileDeleteToSheet(state.user?.id).catch(console.error);
+                log('delete_profile', false, state.user);
+                delete userHikesCache[state.user?.id];
+                tg.BackButton.offClick(backHandler);
+                if(bottomNav) bottomNav.style.display='flex';
+                showBottomNav(true);
+                setupBottomNav();
+                setActiveNav('navProfiles');
+                cleanupProfileOverlays();
+                renderProfiles();
+            }
+        });
+    }
+}
+
+function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' })[m]); }
