@@ -1,435 +1,259 @@
-// js/ui/profiles.js
-import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay } from '../utils.js';
-import { state } from '../state.js';
-import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
-import {
-    loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations,
-} from '../firebase.js';
-import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
-import { renderGuestPrivileges } from './privileges.js';
+// js/firebase.js
+import { FIREBASE_CONFIG } from './config.js';
 
-let profiles = {};
-let myProfile = null;
-const userHikesCache = {};
+let database = null;
 
-async function loadProfilesData() {
-    const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
-    profiles = allProfiles; myProfile = myProf;
-    state.profiles = profiles; state.myProfile = myProfile;
-}
-
-async function getNextHikeForUser(userId) {
-    if (!userId) return null;
-    if (userHikesCache[userId] !== undefined) return userHikesCache[userId];
+export function initFirebase() {
     try {
-        const registrations = await loadUserRegistrations(userId);
-        if (!registrations) return null;
-        const today = new Date(); today.setHours(0,0,0,0);
-        const future = state.hikesList.filter(h => new Date(h.date) >= today && registrations[h.date] === true);
-        if (!future.length) return null;
-        future.sort((a,b) => new Date(a.date) - new Date(b.date));
-        const next = future[0];
-        userHikesCache[userId] = next;
-        return next;
-    } catch { return null; }
-}
-
-async function renderProfileCard(profile, isBlurred = false) {
-    const avatarHtml = profile.avatarUrl
-        ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0)||'?').toUpperCase()}</div>';">`
-        : `<div class="profile-avatar-placeholder">${(profile.name?.charAt(0)||'?').toUpperCase()}</div>`;
-    const statusTags = (profile.friendshipStatuses||[]).map(s => {
-        let cls = ''; if (s==='дружба') cls='status-tag-friendship'; else if (s==='отношения') cls='status-tag-romance'; else if (s==='бизнес') cls='status-tag-business';
-        return `<span class="status-tag ${cls}">${s}</span>`;
-    }).join('');
-    let nextHikeHtml = '';
-    if (!isBlurred && profile.userId) {
-        const next = await getNextHikeForUser(profile.userId);
-        if (next) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><a href="#" class="profile-hike-link" data-hike-date="${next.date}">${formatDateForDisplay(next.date)} · ${next.title}</a>`;
-        else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
-    } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
-
-    const contactButtons = (!isBlurred && profile.userId) ? `
-        <div class="profile-contact-row">
-            ${profile.allowMessages !== false ? `<button class="profile-contact-btn" data-action="chat" data-username="${profile.username || profile.userId}">💬</button>` : ''}
-            ${profile.customLink ? `<button class="profile-contact-btn" data-action="link" data-url="${escapeHtml(profile.customLink)}">🔗</button>` : ''}
-        </div>
-    ` : '';
-
-    return `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
-}
-
-function getRandomProfile() {
-    const profileEntries = Object.entries(profiles);
-    if (profileEntries.length === 0) return null;
-    const randomIndex = Math.floor(Math.random() * profileEntries.length);
-    return profileEntries[randomIndex][1];
-}
-
-function cleanupProfileOverlays() {
-    document.querySelector('.profile-blur-overlay')?.remove();
-    document.querySelector('.guest-center-btn')?.remove();
-    document.querySelector('.center-floating-btn')?.remove();
-    document.querySelector('.profile-preview-banner')?.remove();
-    document.querySelector('.profile-edit-fab')?.remove();
-    document.body.style.overflow = '';
-}
-
-export async function renderProfiles() {
-    cleanupProfileOverlays();
-
-    window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
-    showBottomNav(true); setupBottomNav();
-    mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
-    await loadProfilesData();
-
-    const isCardHolder = state.userCard.status === 'active';
-    const hasMyProfile = !!myProfile;
-    const placeholderCount = 6;
-
-    const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
-    const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
-
-    if (allCards.length === 0) {
-        let ph = '';
-        for (let i = 0; i < placeholderCount; i++) {
-            ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        }
-        mainDiv().innerHTML = `
-            <div class="card-container profile-marquee">
-                <div class="profiles-two-columns">
-                    ${ph}
-                    ${ph}
-                </div>
-            </div>
-        `;
-        showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-        return;
+        firebase.initializeApp(FIREBASE_CONFIG);
+        database = firebase.database();
+        console.log('Firebase initialized');
+        return database;
+    } catch (e) {
+        console.error('Firebase initialization failed:', e);
+        return null;
     }
+}
 
-    const leftCards = [];
-    const rightCards = [];
-    allCards.forEach((card, index) => {
-        if (index % 2 === 0) leftCards.push(card);
-        else rightCards.push(card);
+export function getDatabase() {
+    return database;
+}
+
+export function subscribeToHikes(callback) {
+    if (!database) {
+        callback([]);
+        return () => {};
+    }
+    const hikesRef = database.ref('hikes');
+    const listener = hikesRef.on('value', (snapshot) => {
+        const hikes = snapshot.val() || {};
+        const list = Object.entries(hikes).map(([date, data]) => ({
+            date,
+            title: data.title || 'Хайк',
+            features: data.features || '',
+            access: data.access || '',
+            details: data.details || '',
+            image: data.image || data.image_url || '',
+            tags: data.tags || [],
+            start_time: data.start_time || '',
+            location_link: data.location_link || '',
+            telegram_link: data.telegram_link || '',
+            report_link: data.report_link || '',
+            feature_tags: data.feature_tags || [],
+            woman: data.woman || '',
+            leaders: data.leaders || []
+        })).sort((a, b) => a.date.localeCompare(b.date));
+        callback(list);
     });
-
-    mainDiv().innerHTML = `
-        <div class="card-container">
-            <div class="profiles-two-columns">
-                <div class="profiles-column">${leftCards.join('')}</div>
-                <div class="profiles-column">${rightCards.join('')}</div>
-            </div>
-        </div>
-    `;
-
-    if (isCardHolder && hasMyProfile) {
-        const btnContainer = document.createElement('div');
-        btnContainer.className = 'profile-edit-fab';
-        btnContainer.innerHTML = `<button class="btn btn-yellow" id="editProfileBtn" style="width: auto; margin: 0; padding: 12px 20px; border-radius: 40px; box-shadow: none; animation: none;">✍🏻 мой профиль</button>`;
-        document.body.appendChild(btnContainer);
-        document.getElementById('editProfileBtn')?.addEventListener('click',()=>{
-            haptic();
-            log('edit_profile_click', false, state.user);
-            renderEditProfile();
-        });
-        return;
-    }
-
-    const blurOverlay = document.createElement('div');
-    blurOverlay.className = 'profile-blur-overlay';
-    blurOverlay.style.position = 'fixed';
-    blurOverlay.style.top = '0';
-    blurOverlay.style.left = '0';
-    blurOverlay.style.width = '100%';
-    blurOverlay.style.height = '100%';
-    blurOverlay.style.pointerEvents = 'none';
-    blurOverlay.style.zIndex = '40';
-    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
-    blurOverlay.style.backdropFilter = 'blur(16px)';
-    blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
-    document.body.appendChild(blurOverlay);
-
-    showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+    return () => hikesRef.off('value', listener);
 }
 
-function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
-    const centerBtn = document.createElement('div');
-    centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    const btnText = '💫 создать профиль';
-    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
-    centerBtn.style.cssText = `
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        z-index: 100 !important;
-        pointer-events: auto !important;
-    `;
-    document.body.appendChild(centerBtn);
-
-    const actionBtn = document.getElementById('profileActionBtn');
-    actionBtn.style.cssText = `
-        padding: 12px 24px !important;
-        font-size: 16px !important;
-        white-space: nowrap;
-        border-radius: 40px !important;
-        width: auto !important;
-        min-width: 200px;
-    `;
-    if (isCardHolder) {
-        actionBtn.addEventListener('click', () => {
-            haptic();
-            log('create_profile_click', false, state.user);
-            renderEditProfile();
-        });
-    } else {
-        actionBtn.addEventListener('click', () => {
-            haptic();
-            log('create_profile_click', true, state.user);
-            showGuestProfilePopup();
-        });
-    }
-
-    let previewProfile = null;
-    if (state.pendingProfileClick) {
-        previewProfile = state.pendingProfileClick;
-        state.pendingProfileClick = null;
-    } else {
-        const randomProf = getRandomProfile();
-        if (randomProf) {
-            previewProfile = {
-                userId: randomProf.userId,
-                name: randomProf.name,
-                photoUrl: randomProf.avatarUrl || null
+export async function loadUserData(userId) {
+    if (!database || !userId) return { status: 'inactive', hikes: 0, cardUrl: '' };
+    try {
+        const snapshot = await database.ref(`members/${userId}`).once('value');
+        const data = snapshot.val();
+        if (data && data.user_id) {
+            return {
+                status: 'active',
+                hikes: data.hikes_count || 0,
+                cardUrl: data.card_image_url || ''
             };
-        }
-    }
-
-    if (previewProfile) {
-        const banner = document.createElement('div');
-        banner.className = 'profile-preview-banner';
-        banner.style.cssText = `
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 90% !important;
-            max-width: 520px !important;
-            margin-top: -100px !important;
-            z-index: 101 !important;
-            pointer-events: none !important;
-            background: rgba(255, 255, 255, 0.1) !important;
-            border-radius: 28px !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important;
-            padding: 16px !important;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 14px !important;
-            box-sizing: border-box !important;
-        `;
-
-        const avatarContainer = document.createElement('div');
-        avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
-
-        if (previewProfile.photoUrl) {
-            const img = document.createElement('img');
-            img.src = previewProfile.photoUrl;
-            img.className = 'preview-avatar-img';
-            img.style.cssText = `
-                width: 100% !important;
-                height: 100% !important;
-                border-radius: 50% !important;
-                object-fit: cover !important;
-            `;
-            img.onerror = function() {
-                const placeholder = document.createElement('div');
-                placeholder.className = 'preview-avatar-placeholder';
-                placeholder.style.cssText = `
-                    width: 100% !important;
-                    height: 100% !important;
-                    border-radius: 50% !important;
-                    background: #40a7e3 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    font-size: 24px !important;
-                    color: white !important;
-                `;
-                placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
-                this.parentNode.replaceChild(placeholder, this);
-            };
-            avatarContainer.appendChild(img);
         } else {
-            const placeholder = document.createElement('div');
-            placeholder.className = 'preview-avatar-placeholder';
-            placeholder.style.cssText = `
-                width: 100% !important;
-                height: 100% !important;
-                border-radius: 50% !important;
-                background: #40a7e3 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 24px !important;
-                color: white !important;
-            `;
-            placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
-            avatarContainer.appendChild(placeholder);
+            return { status: 'inactive', hikes: 0, cardUrl: '' };
         }
-
-        const textDiv = document.createElement('div');
-        textDiv.style.cssText = 'flex: 1; font-size: 14px; color: #fff; line-height: 1.4; word-break: break-word;';
-        textDiv.innerHTML = `<span style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> – и другие члены клуба уже создали профиль интеллигента. создай свой, чтобы вывести здоровые знакомства на новый уровень`;
-
-        banner.appendChild(avatarContainer);
-        banner.appendChild(textDiv);
-        document.body.appendChild(banner);
+    } catch (e) {
+        console.error('Error loading user data from Firebase:', e);
+        return { status: 'inactive', hikes: 0, cardUrl: '' };
     }
 }
 
-function showGuestProfilePopup() {
-    const popup = state.popups.guest_profile_popup || {
-        title: '💳 карта интеллигента',
-        text: 'для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?',
-        button_text: 'да, хочу узнать'
-    };
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title" style="font-size: 18px;">${popup.title}</div>
-            <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
-            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">${popup.button_text}</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-    document.getElementById('goToPrivilegesBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        overlay.remove();
-        cleanupProfileOverlays();
-        renderGuestPrivileges();
-        log('guest_privileges_from_profile', true, state.user);
-    });
+export async function loadMetrics() {
+    if (!database) return null;
+    const snapshot = await database.ref('metrics').once('value');
+    return snapshot.val() || { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
 }
 
-async function renderEditProfile() {
-    cleanupProfileOverlays();
+export async function loadFaq() {
+    if (!database) return [];
+    const snapshot = await database.ref('faq').once('value');
+    return snapshot.val() || [];
+}
 
-    window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `🎩 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
-    showBottomNav(true); setupBottomNav();
-    const bottomNav = document.getElementById('bottomNav');
-    if(bottomNav) bottomNav.style.display = 'flex';
+export async function loadPrivileges() {
+    if (!database) return { club: [], city: [] };
+    const snapshot = await database.ref('privileges').once('value');
+    return snapshot.val() || { club: [], city: [] };
+}
 
-    mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
-    const fresh = await loadMyProfile(state.user?.id);
-    const currentName = fresh?.name || state.user?.first_name || '';
-    const currentStatuses = fresh?.friendshipStatuses || [];
-    const currentHobbies = fresh?.hobbies || '';
-    const currentProfession = fresh?.profession || '';
-    const currentAllowMessages = fresh?.allowMessages !== false;
-    const currentCustomLink = fresh?.customLink || '';
+export async function loadGuestPrivileges() {
+    if (!database) return { club: [], city: [] };
+    const snapshot = await database.ref('guestPrivileges').once('value');
+    return snapshot.val() || { club: [], city: [] };
+}
 
-    const statusColors = {
-        'дружба': '#D9FD19',
-        'отношения': '#FB5EB0',
-        'бизнес': '#5E9FC5'
-    };
-    const statusesHtml = ['дружба', 'отношения', 'бизнес'].map(s => 
-        `<label><input type="checkbox" value="${s}" ${currentStatuses.includes(s) ? 'checked' : ''} style="accent-color: ${statusColors[s]}"> ${s}</label>`
-    ).join('');
+export async function loadPassInfo() {
+    if (!database) return { content: '', buttonLink: '' };
+    const snapshot = await database.ref('passInfo').once('value');
+    return snapshot.val() || { content: '', buttonLink: '' };
+}
 
-    mainDiv().innerHTML = `<div class="card-container" style="padding-top:12px; padding-bottom:8px;"><form id="editProfileForm" class="edit-form">
-        <div class="profile-field"><label>👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
-        <div class="profile-field"><label>👀 статус знакомств</label><div class="checkbox-group">${statusesHtml}</div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
-        <div class="profile-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
-        <div class="profile-field"><label>💼 профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
-        <div class="profile-field">
-            <label>💬 личные сообщения</label>
-            <div class="checkbox-row">
-                <input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}>
-                <span id="allowMessagesLabel">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телеграм'}</span>
-            </div>
-        </div>
-        <div class="profile-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
-        <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="margin-top:24px;">сохранить профиль</button>
-        ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn" style="margin-top:8px;">снять с публикации</button>':''}
-    </form></div>`;
+export async function loadGiftContent() {
+    if (!database) return '';
+    const snapshot = await database.ref('gift').once('value');
+    return snapshot.val()?.content || '';
+}
 
-    const allowCheck = document.getElementById('allowMessagesCheck');
-    const allowLabel = document.getElementById('allowMessagesLabel');
-    allowCheck.addEventListener('change', ()=> allowLabel.textContent = allowCheck.checked ? 'разрешено писать в телеграм' : 'запрещено писать в телеграм');
+export async function loadRandomPhrases() {
+    if (!database) return [];
+    const snapshot = await database.ref('randomPhrases').once('value');
+    const data = snapshot.val();
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return Object.values(data);
+    return [];
+}
 
-    const backHandler = ()=>{ if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
-    tg.BackButton.onClick(backHandler); tg.BackButton.show();
-    document.getElementById('profileName').placeholder = '';
-    document.getElementById('profileHobbies').placeholder = '';
-    document.getElementById('profileProfession').placeholder = '';
+export async function loadLeaders() {
+    if (!database) return {};
+    const snapshot = await database.ref('leaders').once('value');
+    return snapshot.val() || {};
+}
 
-    document.getElementById('editProfileForm').addEventListener('submit', async (e)=>{
-        e.preventDefault(); haptic();
-        const name = document.getElementById('profileName').value.trim();
-        if(!name) { alert('Укажите имя'); return; }
-        const selected = Array.from(document.querySelectorAll('.checkbox-group input:checked')).map(cb=>cb.value);
-        const hobbies = document.getElementById('profileHobbies').value.trim();
-        const profession = document.getElementById('profileProfession').value.trim();
-        const allowMessages = document.getElementById('allowMessagesCheck').checked;
-        let customLink = document.getElementById('customLinkInput').value.trim();
-        if (customLink && !customLink.match(/^https?:\/\//i)) {
-            customLink = 'https://' + customLink;
-        }
+export async function loadRegistrationsPopup() {
+    if (!database) return {};
+    const snapshot = await database.ref('registrationsPopup').once('value');
+    return snapshot.val() || {};
+}
 
-        const data = {
-            name, friendshipStatuses: selected, hobbies, profession,
-            allowMessages, customLink,
-            username: state.user?.username || '',
-            avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null,
-            avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(),
-            userId: state.user?.id
-        };
-        await saveProfile(state.user?.id, data);
-        syncProfileToSheet(data, state.user).catch(console.error);
-        log('save_profile', false, state.user);
-        delete userHikesCache[state.user?.id];
-        tg.BackButton.offClick(backHandler);
-        if(bottomNav) bottomNav.style.display='flex';
-        showBottomNav(true);
-        setupBottomNav();
-        setActiveNav('navProfiles');
-        cleanupProfileOverlays();
-        renderProfiles();
-    });
+export async function loadPopupConfig() {
+    if (!database) return null;
+    const snapshot = await database.ref('popupConfig').once('value');
+    return snapshot.val();
+}
 
-    if(document.getElementById('deleteProfileBtn')){
-        document.getElementById('deleteProfileBtn').addEventListener('click', async ()=>{
-            haptic();
-            if(confirm('Снять профиль с публикации?')){
-                await deleteProfile(state.user?.id);
-                syncProfileDeleteToSheet(state.user?.id).catch(console.error);
-                log('delete_profile', false, state.user);
-                delete userHikesCache[state.user?.id];
-                tg.BackButton.offClick(backHandler);
-                if(bottomNav) bottomNav.style.display='flex';
-                showBottomNav(true);
-                setupBottomNav();
-                setActiveNav('navProfiles');
-                cleanupProfileOverlays();
-                renderProfiles();
-            }
-        });
+export async function loadUpdates() {
+    if (!database) return [];
+    const snapshot = await database.ref('updates').once('value');
+    const data = snapshot.val();
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return Object.values(data);
+    return [];
+}
+
+export async function loadMastermindSummaries() {
+    if (!database) return [];
+    const snapshot = await database.ref('mastermindSummaries').once('value');
+    const data = snapshot.val();
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === 'object') return Object.values(data);
+    return [];
+}
+
+export async function loadPopups() {
+    if (!database) return {};
+    const snapshot = await database.ref('popups').once('value');
+    return snapshot.val() || {};
+}
+
+export async function loadGuestAllowMessages(userId) {
+    if (!database || !userId) return false;
+    try {
+        const snapshot = await database.ref(`guests/${userId}/allow_messages`).once('value');
+        return snapshot.val() === 'yes';
+    } catch (e) {
+        console.error('Ошибка загрузки allow_messages:', e);
+        return false;
     }
 }
 
-function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' })[m]); }
+export function subscribeToParticipantCount(hikeDate, callback) {
+    if (!database) {
+        callback(0, []);
+        return () => {};
+    }
+    const ref = database.ref('hikeParticipants/' + hikeDate);
+    const listener = ref.on('value', (snapshot) => {
+        const participants = snapshot.val() || {};
+        const count = Object.keys(participants).length;
+        const sorted = Object.values(participants)
+            .filter(p => p && p.timestamp)
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, 3);
+        callback(count, sorted);
+    });
+    return () => ref.off('value', listener);
+}
+
+export async function loadAllParticipants(hikeDate) {
+    if (!database) return [];
+    const snapshot = await database.ref('hikeParticipants/' + hikeDate).once('value');
+    const participants = snapshot.val() || {};
+    return Object.values(participants)
+        .filter(p => p && p.timestamp)
+        .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+export async function addParticipant(hikeDate, userId, userData) {
+    if (!database || !userId) return Promise.reject('No database or user');
+    const ref = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
+    const participantData = {
+        userId: userId,
+        name: userData.first_name || '',
+        photoUrl: userData.photo_url || null,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+    return ref.set(participantData);
+}
+
+export async function removeParticipant(hikeDate, userId) {
+    if (!database || !userId) return Promise.reject('No database or user');
+    return database.ref(`hikeParticipants/${hikeDate}/${userId}`).remove();
+}
+
+export async function setUserRegistrationStatus(userId, hikeDate, status) {
+    if (!database || !userId) return Promise.resolve();
+    return database.ref(`userRegistrations/${userId}/${hikeDate}`).set(status);
+}
+
+export async function loadUserRegistrations(userId) {
+    if (!database || !userId) return {};
+    const snapshot = await database.ref(`userRegistrations/${userId}`).once('value');
+    return snapshot.val() || {};
+}
+
+export async function loadAllProfiles() {
+    if (!database) return {};
+    const snapshot = await database.ref('userProfiles').once('value');
+    return snapshot.val() || {};
+}
+
+export async function loadMyProfile(userId) {
+    if (!database || !userId) return null;
+    const snapshot = await database.ref(`userProfiles/${userId}`).once('value');
+    return snapshot.val() || null;
+}
+
+export async function saveProfile(userId, profileData) {
+    if (!database || !userId) return Promise.reject('No user');
+    const ref = database.ref(`userProfiles/${userId}`);
+    const data = {
+        ...profileData,
+        userId: userId,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    await ref.set(data);
+    return data;
+}
+
+export async function deleteProfile(userId) {
+    if (!database || !userId) return Promise.reject('No user');
+    return database.ref(`userProfiles/${userId}`).remove();
+}
+
+export async function saveUserAvatar(userId, photoUrl) {
+    if (!database || !userId || !photoUrl) return;
+    await database.ref(`userAvatars/${userId}`).set({
+        photoUrl: photoUrl,
+        updatedAt: firebase.database.ServerValue.TIMESTAMP
+    });
+}
