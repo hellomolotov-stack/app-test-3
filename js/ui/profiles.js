@@ -91,16 +91,20 @@ export async function renderProfiles() {
     const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
 
+    const shouldAnimate = !(isCardHolder && hasMyProfile); // анимация для гостей и владельцев без профиля
+
+    // --- Пустой список ---
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
             ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
+        // Анимация даже для пустого placeholder (если нужно)
         mainDiv().innerHTML = `
-            <div class="card-container profile-marquee">
-                <div class="profiles-two-columns">
-                    ${ph}
-                    ${ph}
+            <div class="card-container" style="overflow:hidden; max-height: 100vh;">
+                <div class="profiles-scroll-animation">
+                    <div class="profiles-two-columns">${ph}${ph}</div>
+                    <div class="profiles-two-columns">${ph}${ph}</div>
                 </div>
             </div>
         `;
@@ -108,6 +112,7 @@ export async function renderProfiles() {
         return;
     }
 
+    // Разделяем на колонки
     const leftCards = [];
     const rightCards = [];
     allCards.forEach((card, index) => {
@@ -115,15 +120,27 @@ export async function renderProfiles() {
         else rightCards.push(card);
     });
 
-    mainDiv().innerHTML = `
-        <div class="card-container">
-            <div class="profiles-two-columns">
-                <div class="profiles-column">${leftCards.join('')}</div>
-                <div class="profiles-column">${rightCards.join('')}</div>
-            </div>
-        </div>
-    `;
+    const twoColumnsHtml = `<div class="profiles-two-columns">
+        <div class="profiles-column">${leftCards.join('')}</div>
+        <div class="profiles-column">${rightCards.join('')}</div>
+    </div>`;
 
+    if (shouldAnimate) {
+        // Анимированная версия
+        mainDiv().innerHTML = `
+            <div class="card-container" style="overflow:hidden; max-height: 100vh;">
+                <div class="profiles-scroll-animation">
+                    ${twoColumnsHtml}
+                    ${twoColumnsHtml}
+                </div>
+            </div>
+        `;
+    } else {
+        // Статичная версия для владельца карты с профилем
+        mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
+    }
+
+    // Обработка для владельца карты с профилем (без анимации и блюра)
     if (isCardHolder && hasMyProfile) {
         const btnContainer = document.createElement('div');
         btnContainer.className = 'profile-edit-fab';
@@ -137,6 +154,7 @@ export async function renderProfiles() {
         return;
     }
 
+    // Для всех остальных добавляем блюр и центральную кнопку
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
