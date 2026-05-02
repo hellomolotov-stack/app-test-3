@@ -476,7 +476,7 @@ export function showBottomSheet(index) {
             target.closest('.bottom-sheet-nav-arrow') ||
             target.closest('a') ||
             target.closest('.btn') ||
-            target.closest('.swipe-track') ||
+            target.closest('.swipe-track') ||  // <-- исключение для слайдера
             target.closest('.bottom-sheet-handle');
         if (isInteractive) {
             isDragging = false;
@@ -544,7 +544,7 @@ function closeBottomSheet() {
 }
 
 // ============================================================
-// НОВЫЙ СЛАЙДЕР (исправленный, с отступами и изоляцией жестов)
+// НОВЫЙ СЛАЙДЕР (изолированный, адаптивная ширина кнопки)
 // ============================================================
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const container = document.createElement('div');
@@ -572,6 +572,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         touch-action: none;
         padding: 0 12px;
         box-sizing: border-box;
+        -webkit-user-select: none;
+        pointer-events: auto;
+        z-index: 20;
     `;
 
     const hint = document.createElement('div');
@@ -589,12 +592,20 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     `;
     hint.textContent = isBooked ? '← потяни влево, для отмены' : 'потяни, чтобы записаться';
 
+    // Адаптивная ширина бегунка
+    const thumbText = isBooked ? 'ты записан' : 'иду';
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = '700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const textWidth = ctx.measureText(thumbText).width;
+    const thumbWidth = Math.max(90, textWidth + 24); // минимум 90px
+
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
     thumb.style.cssText = `
         position: absolute;
         top: 50%; transform: translateY(-50%);
-        width: 80px; height: 40px;
+        width: ${thumbWidth}px; height: 40px;
         border-radius: 40px;
         background: ${accentColor};
         display: flex; align-items: center; justify-content: center;
@@ -604,8 +615,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         transition: left 0.2s ease-out;
         z-index: 2;
         cursor: pointer;
+        white-space: nowrap;
+        overflow: hidden;
     `;
-    thumb.textContent = isBooked ? 'ты записан' : 'иду';
+    thumb.textContent = thumbText;
 
     track.appendChild(hint);
     track.appendChild(thumb);
@@ -618,13 +631,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     let completed = false;
 
     function adjustHint() {
-        const thumbWidth = thumb.offsetWidth;
         const currentLeft = parseFloat(thumb.style.left) || 0;
         const trackWidth = track.clientWidth;
+        const thumbW = thumb.offsetWidth;
         if (currentLeft < trackWidth / 2) {
-            hint.style.left = (currentLeft + thumbWidth + 12) + 'px';
+            hint.style.left = (currentLeft + thumbW + 12) + 'px';
             hint.style.right = 'auto';
-            hint.style.width = (trackWidth - currentLeft - thumbWidth - 24) + 'px';
+            hint.style.width = (trackWidth - currentLeft - thumbW - 24) + 'px';
             hint.style.justifyContent = 'flex-start';
         } else {
             hint.style.right = (trackWidth - currentLeft + 12) + 'px';
@@ -760,17 +773,19 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         e.stopPropagation();
         e.preventDefault();
         onStart(e.touches[0].clientX);
-    });
+    }, { passive: false });
+
     track.addEventListener('touchmove', (e) => {
         e.stopPropagation();
         e.preventDefault();
         onMove(e.touches[0].clientX);
-    });
+    }, { passive: false });
+
     track.addEventListener('touchend', (e) => {
         e.stopPropagation();
         e.preventDefault();
         onEnd();
-    });
+    }, { passive: false });
 
     return container;
 }
@@ -823,6 +838,7 @@ function updateFloatingSheetButtons() {
             row.appendChild(reportBtn);
         }
         container.appendChild(row);
+        container.style.pointerEvents = 'none';
         return;
     }
 
@@ -833,6 +849,8 @@ function updateFloatingSheetButtons() {
         accentColor,
     });
     container.appendChild(swipeControl);
+    // ВАЖНО: включаем pointer-events, чтобы слайдер работал
+    container.style.pointerEvents = 'auto';
 }
 
 function showGuestBookingPopup(hikeDate, hikeTitle) {
