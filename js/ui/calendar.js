@@ -472,10 +472,12 @@ export function showBottomSheet(index) {
 
     const onTouchStart = e => {
         const target = e.target;
+        // !!!!! ДОБАВЛЕНО ИСКЛЮЧЕНИЕ ДЛЯ СЛАЙДЕРА
         const isInteractive =
             target.closest('.bottom-sheet-nav-arrow') ||
             target.closest('a') ||
             target.closest('.btn') ||
+            target.closest('.swipe-track') ||  // <-- теперь слайдер не вызывает закрытие
             target.closest('.bottom-sheet-handle');
         if (isInteractive) {
             isDragging = false;
@@ -542,7 +544,7 @@ function closeBottomSheet() {
     }
 }
 
-// Слайдер
+// ------------------- НОВЫЙ СЛАЙДЕР -------------------
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const container = document.createElement('div');
     container.style.cssText = `
@@ -566,26 +568,31 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         overflow: hidden;
         user-select: none;
         touch-action: none;
+        padding: 0 8px;
+        box-sizing: border-box;
     `;
 
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
         position: absolute;
-        left: 0; top: 0; width: 100%; height: 100%;
-        display: flex; align-items: center; justify-content: center;
+        top: 0; height: 100%;
+        display: flex; align-items: center;
         font-size: 14px; font-weight: 500;
         color: rgba(255,255,255,0.7);
         pointer-events: none;
         transition: opacity 0.3s;
+        white-space: nowrap;
+        overflow: hidden;
     `;
-    hint.textContent = isBooked ? '< потяни влево, для отмены' : 'потяни, чтобы записаться';
+    // Начальный текст
+    hint.textContent = isBooked ? '← потяни влево, для отмены' : 'потяни, чтобы записаться';
 
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
     thumb.style.cssText = `
         position: absolute;
-        left: 0; top: 50%; transform: translateY(-50%);
+        top: 50%; transform: translateY(-50%);
         width: 80px; height: 40px;
         border-radius: 40px;
         background: ${accentColor};
@@ -604,50 +611,83 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     container.appendChild(track);
 
     let startX = 0;
-    let thumbLeft = 0;
-    let maxLeft = track.clientWidth - thumb.offsetWidth;
-    let isDragging = false;
+    let thumbLeft = 0;           // текущее значение left (в пикселях)
+    let maxLeft = 0;
+    let isDown = false;
     let completed = false;
 
-    if (isBooked) {
-        thumb.style.left = maxLeft + 'px';
-        thumbLeft = maxLeft;
-    } else {
-        thumb.style.left = '0px';
-        thumbLeft = 0;
+    // Функция обновления позиции подсказки
+    function adjustHint() {
+        const thumbWidth = thumb.offsetWidth;
+        const currentLeft = parseFloat(thumb.style.left) || 0;
+        const trackWidth = track.clientWidth;
+        if (currentLeft < trackWidth / 2) {
+            // бегунок слева – текст справа
+            hint.style.left = (currentLeft + thumbWidth + 12) + 'px';
+            hint.style.right = 'auto';
+            hint.style.width = (trackWidth - currentLeft - thumbWidth - 24) + 'px';
+            hint.style.justifyContent = 'flex-start';
+        } else {
+            // бегунок справа – текст слева
+            hint.style.right = (trackWidth - currentLeft + 12) + 'px';
+            hint.style.left = 'auto';
+            hint.style.width = (currentLeft - 12) + 'px';
+            hint.style.justifyContent = 'flex-end';
+        }
     }
 
+    // Инициализация позиции после рендеринга
+    function initPosition() {
+        maxLeft = track.clientWidth - thumb.offsetWidth;   // с padding всё учтено
+        if (isBooked) {
+            thumb.style.left = maxLeft + 'px';
+            thumbLeft = maxLeft;
+        } else {
+            thumb.style.left = '0px';
+            thumbLeft = 0;
+        }
+        adjustHint();
+    }
+
+    // Вызываем с задержкой, чтобы гарантировать размеры
+    setTimeout(initPosition, 10);
+
+    // Обработчики касания
     const onStart = (clientX) => {
         if (completed) return;
         startX = clientX;
-        isDragging = true;
+        isDown = true;
         thumb.style.transition = 'none';
         maxLeft = track.clientWidth - thumb.offsetWidth;
+        thumbLeft = parseFloat(thumb.style.left) || 0;
     };
 
     const onMove = (clientX) => {
-        if (!isDragging || completed) return;
+        if (!isDown || completed) return;
         const delta = clientX - startX;
         let newLeft = thumbLeft + delta;
         newLeft = Math.max(0, Math.min(newLeft, maxLeft));
         thumb.style.left = newLeft + 'px';
+        adjustHint();
 
+        // Вибрация при движении влево, если уже записан
         if (isBooked && delta < 0) {
-            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+            tg?.HapticFeedback?.impactOccurred('light');
         }
 
-        if (newLeft >= maxLeft * 0.9 && !isBooked) {
+        // Завершение регистрации
+        if (!isBooked && newLeft >= maxLeft * 0.95) {
             completed = true;
-            isDragging = false;
+            isDown = false;
             thumb.style.transition = 'left 0.2s ease-out';
             thumb.style.left = maxLeft + 'px';
             thumb.textContent = 'ты записан';
-            hint.textContent = '< потяни влево, для отмены';
-            const hapticFeedback = window.Telegram?.WebApp?.HapticFeedback;
-            if (hapticFeedback) {
-                hapticFeedback.impactOccurred('heavy');
-                setTimeout(() => hapticFeedback.impactOccurred('heavy'), 70);
-            }
+            hint.textContent = '← потяни влево, для отмены';
+            adjustHint();
+            tg?.HapticFeedback?.impactOccurred('heavy');
+            setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
+
+            // Логика записи
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
             const userId = state.user?.id;
@@ -679,43 +719,51 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     };
 
     const onEnd = () => {
-        if (!completed && isBooked) {
-            if (parseFloat(thumb.style.left) <= 10) {
-                const hikeDate = hike.date;
-                const hikeTitle = hike.title;
-                const userId = state.user?.id;
-                if (isGuest) {
-                    removeParticipant(hikeDate, userId)
-                        .then(() => {
-                            delete state.hikeBookingStatus[sheetCurrentIndex];
-                            saveBookingStatusToLocal();
-                            updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
-                            updateFloatingSheetButtons();
-                            renderUserBookings(document.getElementById('userBookingsContainer'));
-                            const cal = document.getElementById('calendarContainer');
-                            if (cal) renderCalendar(cal);
-                        });
-                } else {
-                    Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
-                        .then(() => {
-                            delete state.hikeBookingStatus[sheetCurrentIndex];
-                            updateFloatingSheetButtons();
-                            updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                            renderUserBookings(document.getElementById('userBookingsContainer'));
-                            const cal = document.getElementById('calendarContainer');
-                            if (cal) renderCalendar(cal);
-                        });
-                }
-                return;
+        if (!isDown) return;
+        isDown = false;
+        if (completed) return;
+
+        const currentLeft = parseFloat(thumb.style.left) || 0;
+        // Если был записан и бегунок сдвинут влево почти до упора – отмена записи
+        if (isBooked && currentLeft <= 10) {
+            const hikeDate = hike.date;
+            const hikeTitle = hike.title;
+            const userId = state.user?.id;
+            if (isGuest) {
+                removeParticipant(hikeDate, userId)
+                    .then(() => {
+                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        saveBookingStatusToLocal();
+                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
+                        updateFloatingSheetButtons();
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        const cal = document.getElementById('calendarContainer');
+                        if (cal) renderCalendar(cal);
+                    });
+            } else {
+                Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
+                    .then(() => {
+                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        updateFloatingSheetButtons();
+                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        const cal = document.getElementById('calendarContainer');
+                        if (cal) renderCalendar(cal);
+                    });
             }
-            thumb.style.transition = 'left 0.2s ease-out';
-            thumb.style.left = maxLeft + 'px';
-        } else if (!completed && !isBooked) {
-            thumb.style.transition = 'left 0.2s ease-out';
-            thumb.style.left = '0px';
+            return;
         }
-        isDragging = false;
-        completed = false;
+
+        // Возврат бегунка в исходное положение
+        thumb.style.transition = 'left 0.2s ease-out';
+        if (isBooked) {
+            thumb.style.left = maxLeft + 'px';
+            thumbLeft = maxLeft;
+        } else {
+            thumb.style.left = '0px';
+            thumbLeft = 0;
+        }
+        adjustHint();
     };
 
     track.addEventListener('touchstart', (e) => {
@@ -730,17 +778,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         e.preventDefault();
         onEnd();
     });
-
-    setTimeout(() => {
-        maxLeft = track.clientWidth - thumb.offsetWidth;
-        if (isBooked) {
-            thumb.style.left = maxLeft + 'px';
-            thumbLeft = maxLeft;
-        } else {
-            thumb.style.left = '0px';
-            thumbLeft = 0;
-        }
-    }, 10);
 
     return container;
 }
