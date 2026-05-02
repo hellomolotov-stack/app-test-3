@@ -94,16 +94,17 @@ export async function renderProfiles() {
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
-            ph += `<div class="profile-card blurred profile-hidden" style="animation-delay: ${i * 0.05}s;"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
+            ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
-        mainDiv().innerHTML = `<div class="card-container"><div class="profiles-two-columns" id="profilesGrid">${ph}</div></div>`;
-        // Запускаем анимацию
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                const cards = document.querySelectorAll('.profile-hidden');
-                cards.forEach(card => card.classList.add('profile-visible'));
-            });
-        });
+        // Контейнер с анимацией прокрутки
+        mainDiv().innerHTML = `
+            <div class="card-container" style="overflow: hidden; padding: 0; mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);">
+                <div class="profiles-two-columns profile-scroll-animation" id="profilesGrid">
+                    ${ph}
+                    ${ph}
+                </div>
+            </div>
+        `;
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
