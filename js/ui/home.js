@@ -2,7 +2,7 @@
 import { haptic, openLink, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
-import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus } from '../firebase.js';
+import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadMastermindSummaries } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar } from './calendar.js';
@@ -92,6 +92,81 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
+// 🔄 Загрузка актуального попапа из Firebase
+async function getPopupData(popupId, fallback) {
+    try {
+        const freshPopups = await loadPopups();
+        if (freshPopups && freshPopups[popupId]) {
+            return freshPopups[popupId];
+        }
+    } catch (e) {
+        console.warn('Не удалось загрузить свежие попапы, использую кеш');
+    }
+    return state.popups[popupId] || fallback;
+}
+
+// -------------------------------------------------
+//  ГОСТЕВЫЕ ПОПАПЫ (теперь асинхронные)
+// -------------------------------------------------
+async function showGuestPopup() {
+    haptic();
+    const popup = await getPopupData('guest_card_popup', {
+        title: '💳 карта интеллигента',
+        text: 'как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.',
+        button_text: 'узнать о привилегиях'
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'guestPopup';
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-title">${popup.title}</div>
+            <div class="modal-text">${popup.text}</div>
+            <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">${popup.button_text}</button></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+    document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); renderGuestPrivileges(); });
+    log('guest_popup_opened', true, state.user);
+}
+
+async function showGuestMastermindPopup() {
+    haptic();
+    const popup = await getPopupData('guest_mastermind_popup', {
+        title: '🧠 саммари мастермайнда',
+        text: 'чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?',
+        button_text: 'расскажите скорее'
+    });
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-title">${popup.title}</div>
+            <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
+            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
+    });
+    document.getElementById('goToPrivilegesFromMastermindBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        overlay.remove();
+        renderGuestPrivileges();
+    });
+}
+
+// -------------------------------------------------
+//  РЕНДЕРИНГ ГЛАВНОЙ
+// -------------------------------------------------
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     const isGuest = state.userCard.status !== 'active';
@@ -150,29 +225,6 @@ function renderMastermindSummaries() {
             ${innerHtml}
         </div>
     `;
-}
-
-function showGuestPopup() {
-    haptic();
-    const popup = state.popups.guest_card_popup || {
-        title: '💳 карта интеллигента',
-        text: 'как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.',
-        button_text: 'узнать о привилегиях'
-    };
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'guestPopup';
-    overlay.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-title">${popup.title}</div>
-            <div class="modal-text">${popup.text}</div>
-            <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">${popup.button_text}</button></div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
-    document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); renderGuestPrivileges(); });
-    log('guest_popup_opened', true, state.user);
 }
 
 function renderUpdatesBlock() {
@@ -255,12 +307,6 @@ function renderGuestHome() {
         });
     });
 
-    document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink('https://t.me/hellointelligent', 'idea_click', true);
-    });
-
     const accordionBtn = document.querySelector('#cardAccordionGuest .accordion-btn');
     const dropdown = document.querySelector('#cardAccordionGuest .dropdown-menu');
     if (accordionBtn && dropdown) {
@@ -274,9 +320,7 @@ function renderGuestHome() {
     document.querySelectorAll('.guest-read-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
-            const date = btn.dataset.date || 'unknown';
-            const title = btn.dataset.title || 'unknown';
-            log('mastermind_read', true, state.user, { date, title });
+            log('mastermind_read', true, state.user);
             showGuestMastermindPopup();
         });
     });
@@ -284,37 +328,6 @@ function renderGuestHome() {
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     setupBottomNav();
-}
-
-function showGuestMastermindPopup() {
-    haptic();
-    const popup = state.popups.guest_mastermind_popup || {
-        title: '🧠 саммари мастермайнда',
-        text: 'чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?',
-        button_text: 'расскажите скорее'
-    };
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title">${popup.title}</div>
-            <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
-            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-    document.getElementById('goToPrivilegesFromMastermindBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        overlay.remove();
-        renderGuestPrivileges();
-    });
 }
 
 function renderOwnerHome() {
@@ -363,17 +376,9 @@ function renderOwnerHome() {
     document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'support_click', false); });
     document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', false, user); renderNewcomerPage(false); });
 
-    document.getElementById('updatesIdeaLink')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        openLink('https://t.me/hellointelligent', 'idea_click', false);
-    });
-
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
         link.addEventListener('click', (e) => {
-            const date = link.dataset.date || 'unknown';
-            const title = link.dataset.title || 'unknown';
-            log('mastermind_read', false, state.user, { date, title });
+            log('mastermind_read', false, state.user);
         });
     });
 
