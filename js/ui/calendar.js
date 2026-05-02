@@ -156,11 +156,10 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Учитываем безопасную зону, чтобы слайдер не прилипал к системным кнопкам
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
-    const availableHeight = windowHeight - safeTop - 40; // 40px резерва
-    const maxHeight = availableHeight * 0.95; // 95% от доступной высоты
+    const availableHeight = windowHeight - safeTop - 40;
+    const maxHeight = availableHeight * 0.95;
     sheet.style.maxHeight = `${maxHeight}px`;
     sheet.style.height = `${maxHeight}px`;
     overlay.style.paddingTop = safeTop + 'px';
@@ -543,6 +542,200 @@ function closeBottomSheet() {
     }
 }
 
+// Слайдер вместо кнопок
+function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
+    const container = document.createElement('div');
+    container.style.cssText = `
+        width: 60%;
+        max-width: 300px;
+        margin: 0 auto;
+        position: relative;
+    `;
+
+    const track = document.createElement('div');
+    track.className = 'swipe-track';
+    track.style.cssText = `
+        position: relative;
+        width: 100%;
+        height: 48px;
+        border-radius: 40px;
+        background: rgba(73, 138, 176, 0.15);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.2);
+        overflow: hidden;
+        user-select: none;
+    `;
+
+    const hint = document.createElement('div');
+    hint.className = 'swipe-hint';
+    hint.style.cssText = `
+        position: absolute;
+        left: 0; top: 0; width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 500;
+        color: rgba(255,255,255,0.7);
+        pointer-events: none;
+        transition: opacity 0.3s;
+    `;
+    hint.textContent = isBooked ? 'потяни обратно, чтобы отменить' : 'потяни, чтобы записаться';
+
+    const thumb = document.createElement('div');
+    thumb.className = 'swipe-thumb';
+    thumb.style.cssText = `
+        position: absolute;
+        left: 0; top: 50%; transform: translateY(-50%);
+        width: 72px; height: 36px;
+        border-radius: 40px;
+        background: ${accentColor};
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 700;
+        color: #000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        transition: left 0.2s ease-out;
+        z-index: 2;
+        cursor: pointer;
+    `;
+    thumb.textContent = isBooked ? 'записан' : 'иду';
+
+    track.appendChild(hint);
+    track.appendChild(thumb);
+    container.appendChild(track);
+
+    let startX = 0;
+    let thumbLeft = 0;
+    const maxLeft = track.clientWidth - thumb.offsetWidth;
+    let isDragging = false;
+    let completed = false;
+
+    if (isBooked) {
+        thumb.style.left = maxLeft + 'px';
+        thumbLeft = maxLeft;
+    }
+
+    const onStart = (clientX) => {
+        if (completed) return;
+        startX = clientX;
+        isDragging = true;
+        thumb.style.transition = 'none';
+    };
+
+    const onMove = (clientX) => {
+        if (!isDragging || completed) return;
+        const delta = clientX - startX;
+        let newLeft = thumbLeft + delta;
+        if (isBooked) {
+            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+            if (delta < 0) {
+                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+            }
+        } else {
+            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
+        }
+        thumb.style.left = newLeft + 'px';
+
+        if (newLeft >= maxLeft * 0.9 && !isBooked) {
+            completed = true;
+            isDragging = false;
+            thumb.style.transition = 'left 0.2s ease-out';
+            thumb.style.left = maxLeft + 'px';
+            thumb.textContent = 'записан';
+            hint.textContent = 'потяни обратно, чтобы отменить';
+            const hapticFeedback = window.Telegram?.WebApp?.HapticFeedback;
+            if (hapticFeedback) {
+                hapticFeedback.impactOccurred('heavy');
+                setTimeout(() => hapticFeedback.impactOccurred('heavy'), 70);
+            }
+            // логика записи
+            const hikeDate = hike.date;
+            const hikeTitle = hike.title;
+            const userId = state.user?.id;
+            if (isGuest) {
+                // открываем попап покупки билета/карты
+                showGuestBookingPopup(hikeDate, hikeTitle);
+            } else {
+                // владелец карты – мгновенная запись
+                setUserRegistrationStatus(userId, hikeDate, true)
+                    .then(() => {
+                        state.hikeBookingStatus[sheetCurrentIndex] = true;
+                        return addParticipant(hikeDate, userId, {
+                            first_name: state.user?.first_name,
+                            photo_url: state.user?.photo_url,
+                        });
+                    })
+                    .then(() => {
+                        updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+                        updateFloatingSheetButtons();
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        const calendarContainer = document.getElementById('calendarContainer');
+                        if (calendarContainer) renderCalendar(calendarContainer);
+                    })
+                    .catch(error => {
+                        console.error(error);
+                        updateFloatingSheetButtons();
+                    });
+                log('idut_click', false, state.user);
+            }
+        }
+    };
+
+    const onEnd = () => {
+        if (!completed) {
+            // вернуть бегунок назад
+            thumb.style.transition = 'left 0.2s ease-out';
+            thumb.style.left = thumbLeft + 'px';
+            if (isBooked && thumbLeft < maxLeft) {
+                // отмена записи при возврате
+                if (thumbLeft <= 10) {
+                    // отменить запись
+                    const hikeDate = hike.date;
+                    const hikeTitle = hike.title;
+                    const userId = state.user?.id;
+                    if (isGuest) {
+                        removeParticipant(hikeDate, userId)
+                            .then(() => {
+                                delete state.hikeBookingStatus[sheetCurrentIndex];
+                                saveBookingStatusToLocal();
+                                updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
+                                updateFloatingSheetButtons();
+                                renderUserBookings(document.getElementById('userBookingsContainer'));
+                                const calendarContainer = document.getElementById('calendarContainer');
+                                if (calendarContainer) renderCalendar(calendarContainer);
+                            });
+                    } else {
+                        Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
+                            .then(() => {
+                                delete state.hikeBookingStatus[sheetCurrentIndex];
+                                updateFloatingSheetButtons();
+                                updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                                renderUserBookings(document.getElementById('userBookingsContainer'));
+                                const calendarContainer = document.getElementById('calendarContainer');
+                                if (calendarContainer) renderCalendar(calendarContainer);
+                            });
+                    }
+                }
+            }
+        }
+        isDragging = false;
+        completed = false;
+    };
+
+    thumb.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+        onStart(e.touches[0].clientX);
+    });
+    thumb.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        onMove(e.touches[0].clientX);
+    });
+    thumb.addEventListener('touchend', (e) => {
+        e.stopPropagation();
+        onEnd();
+    });
+
+    return container;
+}
+
 function updateFloatingSheetButtons() {
     const container = document.querySelector('.floating-sheet-buttons');
     if (!container) return;
@@ -550,12 +743,13 @@ function updateFloatingSheetButtons() {
     if (!hike) return;
 
     const isWoman = hike.woman === 'yes';
-    const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
+    const accentColor = isWoman ? '#FB5EB0' : '#D9FD19';
     const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
     const hikeDate = new Date(hike.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const isPast = hikeDate < today;
+    const isGuest = state.userCard.status !== 'active';
 
     container.innerHTML = '';
 
@@ -593,198 +787,14 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    const isGuest = state.userCard.status !== 'active';
-
-    if (state.user?.id) {
-        const popupKey = `${state.user.id}_${hike.date}`;
-        const popupData = state.registrationsPopup[popupKey];
-        if (popupData && popupData.popupText && popupData.popupLink) {
-            addPaymentPopup(container, popupData, isGuest);
-        }
-    }
-
-    if (isBooked) {
-        const inviteRow = document.createElement('div');
-        inviteRow.style.display = 'flex';
-        inviteRow.style.justifyContent = 'center';
-        inviteRow.style.width = '100%';
-        inviteRow.style.marginBottom = '3px';
-        const inviteBtn = document.createElement('a');
-        inviteBtn.href = '#';
-        inviteBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
-        if (isWoman) inviteBtn.style.backgroundColor = '#FB5EB0';
-        inviteBtn.id = 'sheetInviteBtn';
-        inviteBtn.textContent = isWoman ? 'пригласить подругу' : 'пригласить друга';
-        inviteBtn.addEventListener('click', e => {
-            e.preventDefault();
-            haptic();
-            const link = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}`;
-            tg.openTelegramLink(shareUrl);
-            log('invite_click', isGuest, state.user);
-        });
-        inviteRow.appendChild(inviteBtn);
-        container.appendChild(inviteRow);
-
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.gap = '12px';
-        row.style.justifyContent = 'center';
-        row.style.width = '100%';
-
-        const cancelBtn = document.createElement('a');
-        cancelBtn.href = '#';
-        cancelBtn.className = 'btn btn-outline';
-        cancelBtn.id = 'sheetCancelBtn';
-        cancelBtn.textContent = 'отменить';
-        cancelBtn.addEventListener('click', e => {
-            e.preventDefault();
-            if (cancelBtn.dataset.processing === 'true') return;
-            cancelBtn.dataset.processing = 'true';
-            haptic();
-
-            const userId = state.user?.id;
-            const hikeDate = hike.date;
-            const hikeTitle = hike.title;
-
-            if (isGuest) {
-                removeParticipant(hikeDate, userId)
-                    .then(() => {
-                        delete state.hikeBookingStatus[sheetCurrentIndex];
-                        saveBookingStatusToLocal();
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
-                        updateFloatingSheetButtons();
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const calendarContainer = document.getElementById('calendarContainer');
-                        if (calendarContainer) renderCalendar(calendarContainer);
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        updateFloatingSheetButtons();
-                    });
-            } else {
-                Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
-                    .then(() => {
-                        delete state.hikeBookingStatus[sheetCurrentIndex];
-                        updateFloatingSheetButtons();
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const calendarContainer = document.getElementById('calendarContainer');
-                        if (calendarContainer) renderCalendar(calendarContainer);
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        updateFloatingSheetButtons();
-                    });
-            }
-            log('cancel_click', false, state.user);
-        });
-        row.appendChild(cancelBtn);
-
-        const goBtn = document.createElement('a');
-        goBtn.href = '#';
-        goBtn.className = 'btn btn-yellow-outline';
-        goBtn.id = 'sheetGoBtn';
-        goBtn.textContent = isWoman ? 'ты записана' : 'ты записан';
-        if (isWoman) goBtn.style.color = '#FB5EB0';
-        row.appendChild(goBtn);
-        container.appendChild(row);
-    } else {
-        if (isGuest) {
-            const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.gap = '12px';
-            row.style.justifyContent = 'center';
-            row.style.width = '100%';
-
-            const questionBtn = document.createElement('a');
-            questionBtn.href = '#';
-            questionBtn.className = 'btn btn-outline';
-            questionBtn.id = 'sheetQuestionBtn';
-            questionBtn.textContent = 'задать вопрос';
-            questionBtn.addEventListener('click', e => {
-                e.preventDefault();
-                haptic();
-                openLink('https://t.me/hellointelligent', 'question_click', true);
-            });
-            row.appendChild(questionBtn);
-
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
-            if (isWoman) goBtn.style.backgroundColor = '#FB5EB0';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'иду';
-            goBtn.addEventListener('click', e => {
-                e.preventDefault();
-                if (goBtn.dataset.processing === 'true') return;
-                goBtn.dataset.processing = 'true';
-                haptic();
-                showGuestBookingPopup(hike.date, hike.title);
-                setTimeout(() => (goBtn.dataset.processing = 'false'), 1000);
-            });
-            row.appendChild(goBtn);
-            container.appendChild(row);
-        } else {
-            const row = document.createElement('div');
-            row.style.display = 'flex';
-            row.style.gap = '12px';
-            row.style.justifyContent = 'center';
-            row.style.width = '100%';
-
-            const questionBtn = document.createElement('a');
-            questionBtn.href = '#';
-            questionBtn.className = 'btn btn-outline';
-            questionBtn.id = 'sheetQuestionBtn';
-            questionBtn.textContent = 'задать вопрос';
-            questionBtn.addEventListener('click', e => {
-                e.preventDefault();
-                haptic();
-                openLink('https://t.me/hellointelligent', 'question_click', false);
-            });
-            row.appendChild(questionBtn);
-
-            const goBtn = document.createElement('a');
-            goBtn.href = '#';
-            goBtn.className = 'btn btn-yellow btn-glow' + (isWoman ? ' woman-glow' : '');
-            if (isWoman) goBtn.style.backgroundColor = '#FB5EB0';
-            goBtn.id = 'sheetGoBtn';
-            goBtn.textContent = 'иду';
-            goBtn.addEventListener('click', e => {
-                e.preventDefault();
-                if (goBtn.dataset.processing === 'true') return;
-                goBtn.dataset.processing = 'true';
-                haptic();
-
-                const userId = state.user?.id;
-                const hikeDate = hike.date;
-                const hikeTitle = hike.title;
-
-                setUserRegistrationStatus(userId, hikeDate, true)
-                    .then(() => {
-                        state.hikeBookingStatus[sheetCurrentIndex] = true;
-                        return addParticipant(hikeDate, userId, {
-                            first_name: state.user?.first_name,
-                            photo_url: state.user?.photo_url,
-                        });
-                    })
-                    .then(() => {
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
-                        updateFloatingSheetButtons();
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const calendarContainer = document.getElementById('calendarContainer');
-                        if (calendarContainer) renderCalendar(calendarContainer);
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        updateFloatingSheetButtons();
-                    });
-                log('idut_click', false, state.user);
-            });
-            row.appendChild(goBtn);
-            container.appendChild(row);
-        }
-    }
+    // Слайдер
+    const swipeControl = renderSwipeControl({
+        isBooked,
+        isGuest,
+        hike,
+        accentColor,
+    });
+    container.appendChild(swipeControl);
 }
 
 function showGuestBookingPopup(hikeDate, hikeTitle) {
@@ -888,52 +898,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
         e.target.dataset.processing = 'true';
         handlePurchase('permanent_card', config.permanentCardLink || PERMANENT_CARD_LINK);
     });
-}
-
-function addPaymentPopup(container, popupData, isGuest) {
-    const popupDiv = document.createElement('div');
-    popupDiv.className = 'payment-popup';
-    popupDiv.style.pointerEvents = 'auto';
-    popupDiv.style.zIndex = '2000';
-    let text = popupData.popupText;
-    if (!text) return;
-
-    if (!popupData.popupLink) {
-        popupDiv.textContent = text;
-        container.insertBefore(popupDiv, container.firstChild);
-        return;
-    }
-
-    const linkRegex = /\[([^\]]+)\]/g;
-    let lastIndex = 0,
-        match;
-    const fragments = [];
-    while ((match = linkRegex.exec(text)) !== null) {
-        if (match.index > lastIndex) fragments.push(document.createTextNode(text.substring(lastIndex, match.index)));
-        const link = document.createElement('span');
-        link.className = 'popup-link';
-        link.textContent = match[1];
-        link.dataset.url = popupData.popupLink;
-        link.setAttribute('role', 'link');
-        link.setAttribute('tabindex', '0');
-        link.style.cursor = 'pointer';
-        link.style.pointerEvents = 'auto';
-        link.style.color = '#D9FD19';
-        link.style.textDecoration = 'underline';
-        link.addEventListener('click', function (e) {
-            e.preventDefault();
-            e.stopPropagation();
-            haptic();
-            const url = this.dataset.url;
-            if (url && url.trim() !== '') openLink(url, 'popup_link_click', isGuest);
-        });
-        fragments.push(link);
-        lastIndex = match.index + match[0].length;
-    }
-    if (lastIndex < text.length) fragments.push(document.createTextNode(text.substring(lastIndex)));
-
-    fragments.forEach(fragment => popupDiv.appendChild(fragment));
-    container.insertBefore(popupDiv, container.firstChild);
 }
 
 let currentDropdownHikeDate = null;
@@ -1109,7 +1073,6 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
-// Глобальный делегат событий
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
@@ -1197,9 +1160,7 @@ document.addEventListener('click', function(e) {
     const hike = state.hikesList[index];
     const isWoman = hike && hike.woman === 'yes';
     const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
-    // Проверка: есть ли у пользователя карта
     if (state.userCard.status !== 'active') {
-        // Нет карты – показываем заглушку
         const msg = document.createElement('div');
         msg.className = 'modal-overlay';
         msg.innerHTML = `
@@ -1217,7 +1178,6 @@ document.addEventListener('click', function(e) {
         setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
         log('uchastniki_no_card', true, state.user);
     } else {
-        // Карта есть – можно смотреть
         toggleParticipantDropdown(link, hikeDate);
     }
     return;
