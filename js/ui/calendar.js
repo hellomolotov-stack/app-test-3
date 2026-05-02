@@ -561,7 +561,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.style.cssText = `
         position: relative;
         width: 100%;
-        height: 48px;
+        height: 56px;                          /* было 48px, стало 56px */
         border-radius: 40px;
         background: rgba(73, 138, 176, 0.15);
         backdrop-filter: blur(12px);
@@ -570,7 +570,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         overflow: hidden;
         user-select: none;
         touch-action: none;
-        padding: 0 12px;
+        padding: 0 16px;                       /* было 12px, теперь 16px */
         box-sizing: border-box;
         -webkit-user-select: none;
         pointer-events: auto;
@@ -598,7 +598,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const ctx = canvas.getContext('2d');
     ctx.font = '700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const textWidth = ctx.measureText(thumbText).width;
-    const thumbWidth = Math.max(90, textWidth + 24); // минимум 90px
+    const thumbWidth = Math.max(90, textWidth + 24);
 
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
@@ -683,6 +683,20 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         }
 
         if (!isBooked && newLeft >= maxLeft * 0.95) {
+            // Для гостя – не завершаем регистрацию, а открываем попап
+            if (isGuest) {
+                // Сбрасываем бегунок влево
+                thumb.style.transition = 'left 0.2s ease-out';
+                thumb.style.left = '0px';
+                thumbLeft = 0;
+                adjustHint();
+                isDown = false;
+                // Открываем попап покупки, после покупки слайдер обновится сам
+                showGuestBookingPopup(hike.date, hike.title);
+                return;
+            }
+
+            // Для владельца карты – мгновенная запись
             completed = true;
             isDown = false;
             thumb.style.transition = 'left 0.2s ease-out';
@@ -696,30 +710,26 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
             const userId = state.user?.id;
-            if (isGuest) {
-                showGuestBookingPopup(hikeDate, hikeTitle);
-            } else {
-                setUserRegistrationStatus(userId, hikeDate, true)
-                    .then(() => {
-                        state.hikeBookingStatus[sheetCurrentIndex] = true;
-                        return addParticipant(hikeDate, userId, {
-                            first_name: state.user?.first_name,
-                            photo_url: state.user?.photo_url,
-                        });
-                    })
-                    .then(() => {
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
-                        updateFloatingSheetButtons();
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const cal = document.getElementById('calendarContainer');
-                        if (cal) renderCalendar(cal);
-                    })
-                    .catch(error => {
-                        console.error(error);
-                        updateFloatingSheetButtons();
+            setUserRegistrationStatus(userId, hikeDate, true)
+                .then(() => {
+                    state.hikeBookingStatus[sheetCurrentIndex] = true;
+                    return addParticipant(hikeDate, userId, {
+                        first_name: state.user?.first_name,
+                        photo_url: state.user?.photo_url,
                     });
-                log('idut_click', false, state.user);
-            }
+                })
+                .then(() => {
+                    updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+                    updateFloatingSheetButtons();
+                    renderUserBookings(document.getElementById('userBookingsContainer'));
+                    const cal = document.getElementById('calendarContainer');
+                    if (cal) renderCalendar(cal);
+                })
+                .catch(error => {
+                    console.error(error);
+                    updateFloatingSheetButtons();
+                });
+            log('idut_click', false, state.user);
         }
     };
 
