@@ -2052,12 +2052,12 @@ body::before {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
 /* Анимация бесконечной прокрутки профилей */
 .profile-scroll-animation {
-    animation: scrollUp 12s linear infinite;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-around;
+    flex-direction: column;
+    animation: scrollUp 12s linear infinite;
 }
 
 @keyframes scrollUp {
