@@ -75,6 +75,51 @@ function cleanupProfileOverlays() {
     document.body.style.overflow = '';
 }
 
+// Запуск плавной бесконечной прокрутки (JS)
+function startInfiniteScroll(container) {
+    if (!container) return;
+    const speed = 0.5; // пикселей в кадре (примерно 60 кадров/с)
+    let animId;
+
+    function step() {
+        if (!container.isConnected) {
+            cancelAnimationFrame(animId);
+            return;
+        }
+        // Плавно увеличиваем scrollTop
+        container.scrollTop += speed;
+        // Когда дошли до середины (конца первого набора), мгновенно перепрыгиваем в начало,
+        // что незаметно, так как контент дублирован
+        const halfHeight = container.scrollHeight / 2;
+        if (container.scrollTop >= halfHeight) {
+            container.scrollTop = 0;
+        }
+        animId = requestAnimationFrame(step);
+    }
+
+    // При любом ручном скролле останавливаем анимацию, чтобы не конфликтовать
+    container.addEventListener('scroll', () => {
+        cancelAnimationFrame(animId);
+    }, { once: false });
+
+    // Возобновляем анимацию, когда пользователь перестаёт скроллить
+    let timeoutId;
+    container.addEventListener('scroll', () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            // Проверяем, не докрутил ли пользователь до половины, если да – перебрасываем в начало для бесшовности
+            const halfHeight = container.scrollHeight / 2;
+            if (container.scrollTop >= halfHeight) {
+                container.scrollTop = 0;
+            }
+            animId = requestAnimationFrame(step);
+        }, 2000); // возобновить через 2 секунды бездействия
+    });
+
+    // Запускаем автоматическую прокрутку
+    animId = requestAnimationFrame(step);
+}
+
 export async function renderProfiles() {
     cleanupProfileOverlays();
 
@@ -93,7 +138,7 @@ export async function renderProfiles() {
 
     const shouldAnimate = !(isCardHolder && hasMyProfile); // гости и владельцы без профиля получат анимацию
 
-    // --- Пустой список ---
+    // --- Пустой список (заглушки) ---
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
@@ -101,13 +146,15 @@ export async function renderProfiles() {
         }
         const scrollWrapperHeight = window.innerHeight - 100;
         mainDiv().innerHTML = `
-            <div class="card-container" style="overflow:hidden; position:relative; height:${scrollWrapperHeight}px;">
-                <div class="profiles-scroll-animation" style="position:absolute; left:0; right:0;">
+            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
+                <div class="profiles-scroll-animation">
                     <div class="profiles-two-columns">${ph}${ph}</div>
                     <div class="profiles-two-columns">${ph}${ph}</div>
                 </div>
             </div>
         `;
+        const container = document.querySelector('.profile-scroll-container');
+        if (container && shouldAnimate) startInfiniteScroll(container);
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
@@ -127,13 +174,15 @@ export async function renderProfiles() {
     if (shouldAnimate) {
         const scrollWrapperHeight = window.innerHeight - 100;
         mainDiv().innerHTML = `
-            <div class="card-container" style="overflow:hidden; position:relative; height:${scrollWrapperHeight}px;">
-                <div class="profiles-scroll-animation" style="position:absolute; left:0; right:0;">
+            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
+                <div class="profiles-scroll-animation">
                     ${twoColumnsHtml}
                     ${twoColumnsHtml}
                 </div>
             </div>
         `;
+        const container = document.querySelector('.profile-scroll-container');
+        if (container) startInfiniteScroll(container);
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
