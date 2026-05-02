@@ -19,7 +19,6 @@ export function getDatabase() {
     return database;
 }
 
-// Подписка на список хайков
 export function subscribeToHikes(callback) {
     if (!database) {
         callback([]);
@@ -49,7 +48,6 @@ export function subscribeToHikes(callback) {
     return () => hikesRef.off('value', listener);
 }
 
-// Загрузка данных пользователя (членство)
 export async function loadUserData(userId) {
     if (!database || !userId) return { status: 'inactive', hikes: 0, cardUrl: '' };
     try {
@@ -70,7 +68,6 @@ export async function loadUserData(userId) {
     }
 }
 
-// Загрузка метрик, FAQ, привилегий и т.д.
 export async function loadMetrics() {
     if (!database) return null;
     const snapshot = await database.ref('metrics').once('value');
@@ -152,7 +149,12 @@ export async function loadMastermindSummaries() {
     return [];
 }
 
-// Загрузка статуса разрешения на сообщения из листа guests
+export async function loadPopups() {
+    if (!database) return {};
+    const snapshot = await database.ref('popups').once('value');
+    return snapshot.val() || {};
+}
+
 export async function loadGuestAllowMessages(userId) {
     if (!database || !userId) return false;
     try {
@@ -164,7 +166,6 @@ export async function loadGuestAllowMessages(userId) {
     }
 }
 
-// Участники хайка
 export function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
         callback(0, []);
@@ -220,7 +221,6 @@ export async function loadUserRegistrations(userId) {
     return snapshot.val() || {};
 }
 
-// Профили
 export async function loadAllProfiles() {
     if (!database) return {};
     const snapshot = await database.ref('userProfiles').once('value');
