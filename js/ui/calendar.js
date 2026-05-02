@@ -873,7 +873,7 @@ function updateFloatingSheetButtons() {
     container.style.pointerEvents = 'auto';
 }
 
-function showGuestBookingPopup(hikeDate, hikeTitle) {
+function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {   // <-- добавлен третий параметр
     haptic();
     const config = state.popupConfig;
     const overlay = document.createElement('div');
@@ -908,17 +908,21 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
     `;
     document.body.appendChild(overlay);
 
+    // Закрытие без покупки
     document.getElementById('closePopup').addEventListener('click', () => {
         haptic();
         overlay.remove();
+        if (onClose) onClose();   // <-- вызываем коллбэк
     });
     overlay.addEventListener('click', e => {
         if (e.target === overlay) {
             haptic();
             overlay.remove();
+            if (onClose) onClose();   // <-- вызываем коллбэк
         }
     });
 
+    // Покупка – коллбэк НЕ вызываем, так как слайдер перерисован будет в новом статусе
     const handlePurchase = (purchaseType, link) => {
         const userId = state.user?.id;
         addParticipant(hikeDate, userId, {
@@ -937,6 +941,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle) {
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
                 openLink(link, `purchase_${purchaseType}`, true);
                 overlay.remove();
+                // onClose не вызываем
             })
             .catch(error => {
                 console.error(error);
