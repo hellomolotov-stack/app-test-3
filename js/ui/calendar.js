@@ -183,14 +183,14 @@ export function showBottomSheet(index) {
 
         const isWoman = hike.woman === 'yes';
         const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
-        const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+        const monthNamesArr = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
         let formattedDate = '';
         if (hike.date) {
             const parts = hike.date.split('-');
             if (parts.length === 3) {
                 const day = parseInt(parts[2], 10);
                 const month = parseInt(parts[1], 10) - 1;
-                formattedDate = `${day} ${monthNames[month]}`;
+                formattedDate = `${day} ${monthNamesArr[month]}`;
             } else formattedDate = hike.date;
         }
 
@@ -248,9 +248,9 @@ export function showBottomSheet(index) {
         }
 
         const hikeDate = new Date(hike.date);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const isPast = hikeDate < today;
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+        const isPast = hikeDate < todayDate;
 
         let imageHtml = '';
         if (hike.image) {
@@ -542,12 +542,12 @@ function closeBottomSheet() {
     }
 }
 
-// Слайдер вместо кнопок
+// Слайдер
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const container = document.createElement('div');
     container.style.cssText = `
-        width: 60%;
-        max-width: 300px;
+        width: 75vw;
+        max-width: 400px;
         margin: 0 auto;
         position: relative;
     `;
@@ -565,6 +565,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         border: 1px solid rgba(255,255,255,0.2);
         overflow: hidden;
         user-select: none;
+        touch-action: none;
     `;
 
     const hint = document.createElement('div');
@@ -578,14 +579,14 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         pointer-events: none;
         transition: opacity 0.3s;
     `;
-    hint.textContent = isBooked ? 'потяни обратно, чтобы отменить' : 'потяни, чтобы записаться';
+    hint.textContent = isBooked ? '< потяни влево, для отмены' : 'потяни, чтобы записаться';
 
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
     thumb.style.cssText = `
         position: absolute;
         left: 0; top: 50%; transform: translateY(-50%);
-        width: 72px; height: 36px;
+        width: 80px; height: 40px;
         border-radius: 40px;
         background: ${accentColor};
         display: flex; align-items: center; justify-content: center;
@@ -596,7 +597,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         z-index: 2;
         cursor: pointer;
     `;
-    thumb.textContent = isBooked ? 'записан' : 'иду';
+    thumb.textContent = isBooked ? 'ты записан' : 'иду';
 
     track.appendChild(hint);
     track.appendChild(thumb);
@@ -604,13 +605,16 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     let startX = 0;
     let thumbLeft = 0;
-    const maxLeft = track.clientWidth - thumb.offsetWidth;
+    let maxLeft = track.clientWidth - thumb.offsetWidth;
     let isDragging = false;
     let completed = false;
 
     if (isBooked) {
         thumb.style.left = maxLeft + 'px';
         thumbLeft = maxLeft;
+    } else {
+        thumb.style.left = '0px';
+        thumbLeft = 0;
     }
 
     const onStart = (clientX) => {
@@ -618,43 +622,38 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         startX = clientX;
         isDragging = true;
         thumb.style.transition = 'none';
+        maxLeft = track.clientWidth - thumb.offsetWidth;
     };
 
     const onMove = (clientX) => {
         if (!isDragging || completed) return;
         const delta = clientX - startX;
         let newLeft = thumbLeft + delta;
-        if (isBooked) {
-            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-            if (delta < 0) {
-                window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
-            }
-        } else {
-            newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-        }
+        newLeft = Math.max(0, Math.min(newLeft, maxLeft));
         thumb.style.left = newLeft + 'px';
+
+        if (isBooked && delta < 0) {
+            window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
+        }
 
         if (newLeft >= maxLeft * 0.9 && !isBooked) {
             completed = true;
             isDragging = false;
             thumb.style.transition = 'left 0.2s ease-out';
             thumb.style.left = maxLeft + 'px';
-            thumb.textContent = 'записан';
-            hint.textContent = 'потяни обратно, чтобы отменить';
+            thumb.textContent = 'ты записан';
+            hint.textContent = '< потяни влево, для отмены';
             const hapticFeedback = window.Telegram?.WebApp?.HapticFeedback;
             if (hapticFeedback) {
                 hapticFeedback.impactOccurred('heavy');
                 setTimeout(() => hapticFeedback.impactOccurred('heavy'), 70);
             }
-            // логика записи
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
             const userId = state.user?.id;
             if (isGuest) {
-                // открываем попап покупки билета/карты
                 showGuestBookingPopup(hikeDate, hikeTitle);
             } else {
-                // владелец карты – мгновенная запись
                 setUserRegistrationStatus(userId, hikeDate, true)
                     .then(() => {
                         state.hikeBookingStatus[sheetCurrentIndex] = true;
@@ -667,8 +666,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
                         updateFloatingSheetButtons();
                         renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const calendarContainer = document.getElementById('calendarContainer');
-                        if (calendarContainer) renderCalendar(calendarContainer);
+                        const cal = document.getElementById('calendarContainer');
+                        if (cal) renderCalendar(cal);
                     })
                     .catch(error => {
                         console.error(error);
@@ -680,58 +679,68 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     };
 
     const onEnd = () => {
-        if (!completed) {
-            // вернуть бегунок назад
-            thumb.style.transition = 'left 0.2s ease-out';
-            thumb.style.left = thumbLeft + 'px';
-            if (isBooked && thumbLeft < maxLeft) {
-                // отмена записи при возврате
-                if (thumbLeft <= 10) {
-                    // отменить запись
-                    const hikeDate = hike.date;
-                    const hikeTitle = hike.title;
-                    const userId = state.user?.id;
-                    if (isGuest) {
-                        removeParticipant(hikeDate, userId)
-                            .then(() => {
-                                delete state.hikeBookingStatus[sheetCurrentIndex];
-                                saveBookingStatusToLocal();
-                                updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
-                                updateFloatingSheetButtons();
-                                renderUserBookings(document.getElementById('userBookingsContainer'));
-                                const calendarContainer = document.getElementById('calendarContainer');
-                                if (calendarContainer) renderCalendar(calendarContainer);
-                            });
-                    } else {
-                        Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
-                            .then(() => {
-                                delete state.hikeBookingStatus[sheetCurrentIndex];
-                                updateFloatingSheetButtons();
-                                updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                                renderUserBookings(document.getElementById('userBookingsContainer'));
-                                const calendarContainer = document.getElementById('calendarContainer');
-                                if (calendarContainer) renderCalendar(calendarContainer);
-                            });
-                    }
+        if (!completed && isBooked) {
+            if (parseFloat(thumb.style.left) <= 10) {
+                const hikeDate = hike.date;
+                const hikeTitle = hike.title;
+                const userId = state.user?.id;
+                if (isGuest) {
+                    removeParticipant(hikeDate, userId)
+                        .then(() => {
+                            delete state.hikeBookingStatus[sheetCurrentIndex];
+                            saveBookingStatusToLocal();
+                            updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
+                            updateFloatingSheetButtons();
+                            renderUserBookings(document.getElementById('userBookingsContainer'));
+                            const cal = document.getElementById('calendarContainer');
+                            if (cal) renderCalendar(cal);
+                        });
+                } else {
+                    Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
+                        .then(() => {
+                            delete state.hikeBookingStatus[sheetCurrentIndex];
+                            updateFloatingSheetButtons();
+                            updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                            renderUserBookings(document.getElementById('userBookingsContainer'));
+                            const cal = document.getElementById('calendarContainer');
+                            if (cal) renderCalendar(cal);
+                        });
                 }
+                return;
             }
+            thumb.style.transition = 'left 0.2s ease-out';
+            thumb.style.left = maxLeft + 'px';
+        } else if (!completed && !isBooked) {
+            thumb.style.transition = 'left 0.2s ease-out';
+            thumb.style.left = '0px';
         }
         isDragging = false;
         completed = false;
     };
 
-    thumb.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
+    track.addEventListener('touchstart', (e) => {
+        e.preventDefault();
         onStart(e.touches[0].clientX);
     });
-    thumb.addEventListener('touchmove', (e) => {
+    track.addEventListener('touchmove', (e) => {
         e.preventDefault();
         onMove(e.touches[0].clientX);
     });
-    thumb.addEventListener('touchend', (e) => {
-        e.stopPropagation();
+    track.addEventListener('touchend', (e) => {
+        e.preventDefault();
         onEnd();
     });
+
+    setTimeout(() => {
+        maxLeft = track.clientWidth - thumb.offsetWidth;
+        if (isBooked) {
+            thumb.style.left = maxLeft + 'px';
+            thumbLeft = maxLeft;
+        } else {
+            thumb.style.left = '0px';
+            thumbLeft = 0;
+        }
+    }, 10);
 
     return container;
 }
@@ -787,7 +796,6 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Слайдер
     const swipeControl = renderSwipeControl({
         isBooked,
         isGuest,
