@@ -472,12 +472,11 @@ export function showBottomSheet(index) {
 
     const onTouchStart = e => {
         const target = e.target;
-        // !!!!! ДОБАВЛЕНО ИСКЛЮЧЕНИЕ ДЛЯ СЛАЙДЕРА
         const isInteractive =
             target.closest('.bottom-sheet-nav-arrow') ||
             target.closest('a') ||
             target.closest('.btn') ||
-            target.closest('.swipe-track') ||  // <-- теперь слайдер не вызывает закрытие
+            target.closest('.swipe-track') ||
             target.closest('.bottom-sheet-handle');
         if (isInteractive) {
             isDragging = false;
@@ -544,8 +543,9 @@ function closeBottomSheet() {
     }
 }
 
-// ------------------- НОВЫЙ СЛАЙДЕР -------------------
-// Замени функцию renderSwipeControl на эту версию
+// ============================================================
+// НОВЫЙ СЛАЙДЕР (исправленный, с отступами и изоляцией жестов)
+// ============================================================
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const container = document.createElement('div');
     container.style.cssText = `
@@ -635,7 +635,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     }
 
     function initPosition() {
-        maxLeft = track.clientWidth - thumb.offsetWidth;   // с padding всё учтено
+        maxLeft = track.clientWidth - thumb.offsetWidth;
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
@@ -756,7 +756,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         adjustHint();
     };
 
-    // Изолируем касания, чтобы не закрывался bottom sheet
     track.addEventListener('touchstart', (e) => {
         e.stopPropagation();
         e.preventDefault();
@@ -769,34 +768,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     });
     track.addEventListener('touchend', (e) => {
         e.stopPropagation();
-        e.preventDefault();
-        onEnd();
-    });
-
-    return container;
-}
-
-        // Возврат бегунка в исходное положение
-        thumb.style.transition = 'left 0.2s ease-out';
-        if (isBooked) {
-            thumb.style.left = maxLeft + 'px';
-            thumbLeft = maxLeft;
-        } else {
-            thumb.style.left = '0px';
-            thumbLeft = 0;
-        }
-        adjustHint();
-    };
-
-    track.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        onStart(e.touches[0].clientX);
-    });
-    track.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        onMove(e.touches[0].clientX);
-    });
-    track.addEventListener('touchend', (e) => {
         e.preventDefault();
         onEnd();
     });
