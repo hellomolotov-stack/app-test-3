@@ -94,7 +94,7 @@ export async function renderProfiles() {
 
     const shouldAnimate = !(isCardHolder && hasMyProfile);
 
-    // Пустой список – показываем заглушки с анимацией
+    // Пустой список – показываем заглушки
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
@@ -110,7 +110,6 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        // Баннер с аватаром
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
@@ -155,7 +154,6 @@ export async function renderProfiles() {
         return;
     }
 
-    // Блюр и центральная кнопка с баннером
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
@@ -170,19 +168,16 @@ export async function renderProfiles() {
     blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
     document.body.appendChild(blurOverlay);
 
-    // Показываем кнопку и баннер с аватаром
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
 }
 
-// Восстановленная функция с баннером
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const oldBtn = document.getElementById('profileActionBtn')?.parentElement;
     if (oldBtn) oldBtn.remove();
 
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    const btnText = '💫 создать профиль';
-    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
+    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">💫 создать профиль</button>`;
     centerBtn.style.cssText = `
         position: fixed !important;
         top: 50% !important;
@@ -216,7 +211,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         });
     }
 
-    // Добавляем баннер с аватаром
     let previewProfile = null;
     if (state.pendingProfileClick) {
         previewProfile = state.pendingProfileClick;
