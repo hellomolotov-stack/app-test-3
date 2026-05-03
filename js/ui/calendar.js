@@ -567,36 +567,24 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const trackWidth = Math.min(400, Math.max(280, 
         (isBooked ? ctx.measureText(hintTextBooked).width : ctx.measureText(hintTextUnbooked).width) + currentThumbWidth + 64));
 
-    const container = document.createElement('div');
-    container.className = 'swipe-container';
-    container.style.cssText = `
-        width: ${trackWidth}px;
-        margin: 0 auto;
-        border-radius: 40px;
-        padding: 4px;
-        background: transparent;
-        box-shadow: 0 0 30px 8px rgba(73, 138, 176, 0.2);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-    `;
-
+    // Трек с такими же стилями, как у .bottom-nav (плавающее меню)
     const track = document.createElement('div');
     track.className = 'swipe-track';
-    // Устанавливаем такой же блюр, как у плавающего меню (.bottom-nav)
     track.style.cssText = `
-        position: relative;
-        width: 100%;
+        width: ${trackWidth}px;
+        margin: 0 auto;
+        padding: 0 12px;
+        box-sizing: border-box;
         height: 56px;
         border-radius: 40px;
         background: rgba(73, 138, 176, 0.15);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(255,255,255,0.2);
+        position: relative;
         overflow: hidden;
         user-select: none;
         touch-action: none;
-        padding: 0 12px;
-        box-sizing: border-box;
         -webkit-user-select: none;
         pointer-events: auto;
         z-index: 20;
@@ -647,7 +635,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     track.appendChild(hint);
     track.appendChild(thumb);
-    container.appendChild(track);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const THUMB_MARGIN = 8;
@@ -842,7 +829,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         onEnd();
     }, { passive: false });
 
-    return container;
+    return track;
 }
 
 function updateFloatingSheetButtons() {
