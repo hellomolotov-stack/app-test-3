@@ -559,7 +559,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const minThumbWidth = 80;
     const thumbWidth = isBooked ? Math.max(minThumbWidth, thumbTextWidth + 24) : minThumbWidth;
 
-    // Ширина трека вычисляется автоматически, но не меньше 280px и не больше 400px
     const trackWidth = Math.min(400, Math.max(280, 
         (isBooked ? ctx.measureText(hintTextBooked).width : ctx.measureText(hintTextUnbooked).width) + thumbWidth + 64));
 
@@ -597,7 +596,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         z-index: 20;
     `;
 
-    // Подсказка – абсолютно позиционированный контейнер, границы которого зависят от положения бегунка
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
@@ -643,35 +641,32 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     container.appendChild(track);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const EDGE_MARGIN = 4; // отступ от внутреннего края трека
+    const EDGE_MARGIN = 8;  // отступ бегунка от внутренних краёв трека
+    const GAP = 8;          // расстояние между бегунком и текстом подсказки
 
-    // Устанавливает границы подсказки в зависимости от положения бегунка и статуса записи
     function placeHint(thumbLeftPos) {
-        const gap = 8;
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            // Не записан: подсказка справа от бегунка, прижата к правому краю
-            const availableLeft = thumbLeftPos + thumbW + gap;  // левая граница доступной области
-            const availableRight = trackW; // правая граница
-            const desiredWidth = availableRight - availableLeft;
-            hint.style.left = availableLeft + 'px';
+            // Подсказка справа от бегунка, прижата к правому краю с отступом = GAP
+            const hintLeft = thumbLeftPos + thumbW + GAP;
+            const hintRight = trackW - GAP; // отступ от правого края трека
+            const hintWidth = hintRight - hintLeft;
+            hint.style.left = hintLeft + 'px';
             hint.style.right = 'auto';
-            hint.style.width = Math.max(0, desiredWidth) + 'px';
+            hint.style.width = Math.max(0, hintWidth) + 'px';
             hint.style.justifyContent = 'flex-end';
-            hint.style.textAlign = 'right';
             hint.textContent = hintTextUnbooked;
         } else {
-            // Записан: подсказка слева от бегунка, прижата к левому краю
-            const availableRight = thumbLeftPos - gap; // правая граница доступной области
-            const availableLeft = 0;
-            const desiredWidth = availableRight - availableLeft;
-            hint.style.left = 'auto';
-            hint.style.right = (trackW - availableRight) + 'px';
-            hint.style.width = Math.max(0, desiredWidth) + 'px';
+            // Подсказка слева от бегунка, прижата к левому краю с отступом = GAP
+            const hintRight = thumbLeftPos - GAP;
+            const hintLeft = GAP;
+            const hintWidth = hintRight - hintLeft;
+            hint.style.left = hintLeft + 'px';
+            hint.style.right = 'auto';
+            hint.style.width = Math.max(0, hintWidth) + 'px';
             hint.style.justifyContent = 'flex-start';
-            hint.style.textAlign = 'left';
             hint.textContent = hintTextBooked;
         }
     }
@@ -729,7 +724,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 });
                 return;
             }
-            // владелец карты — завершаем запись
+            // владелец карты
             completed = true;
             isDown = false;
             const newWidth = Math.max(minThumbWidth, ctx.measureText('ты записан').width + 24);
@@ -740,7 +735,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.textContent = 'ты записан';
             thumb.style.fontWeight = '900';
             thumb.style.fontStyle = 'italic';
-            // Переключаем режим подсказки на «записан»
             isBooked = true;
             placeHint(maxLeft);
             tg?.HapticFeedback?.impactOccurred('heavy');
