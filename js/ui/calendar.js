@@ -545,6 +545,7 @@ function closeBottomSheet() {
 
 // Проверка тач-устройства
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     if (!isTouchDevice()) return null;
 
@@ -573,9 +574,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         border-radius: 40px;
         padding: 4px;
         background: transparent;
-        box-shadow: none;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
+        box-shadow: 0 0 30px 8px rgba(73, 138, 176, 0.2);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
     `;
 
     const track = document.createElement('div');
@@ -839,6 +840,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     return container;
 }
+
 function updateFloatingSheetButtons() {
     const container = document.querySelector('.floating-sheet-buttons');
     if (!container) return;
@@ -887,10 +889,10 @@ function updateFloatingSheetButtons() {
             row.appendChild(reportBtn);
         }
         container.appendChild(row);
+        container.style.pointerEvents = 'none';
         return;
     }
 
-    // Touch-устройство?
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
     if (swipeControl) {
         container.appendChild(swipeControl);
@@ -1025,15 +1027,21 @@ function updateFloatingSheetButtons() {
 
 function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
+    // Используем попап из state.popups, если есть, иначе fallback на popupConfig
+    const bookingPopup = (state.popups && state.popups.guest_booking_popup) || null;
     const config = state.popupConfig;
+
+    const popupText = bookingPopup ? bookingPopup.text : config.text;
+    const popupTitle = bookingPopup ? bookingPopup.title : 'регистрация на хайк';
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'guestBookingPopup';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title">регистрация на хайк</div>
-            <div class="modal-text" style="margin-bottom: 20px;">${config.text}</div>
+            <div class="modal-title">${popupTitle}</div>
+            <div class="modal-text" style="margin-bottom: 20px;">${popupText}</div>
             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
                 <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
                 <div id="cardAccordionPopup" style="width: 100%;">
@@ -1389,14 +1397,20 @@ document.addEventListener('click', function(e) {
     const isWoman = hike && hike.woman === 'yes';
     const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
     if (state.userCard.status !== 'active') {
+        // ГОСТЬ – показываем попап из таблицы
+        const popupData = (state.popups && state.popups.guest_uchastniki_popup) || {
+            title: 'недоступно',
+            text: 'чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него',
+            button_text: 'понятно'
+        };
         const msg = document.createElement('div');
         msg.className = 'modal-overlay';
         msg.innerHTML = `
             <div class="modal-content" style="max-width: 300px;">
-                <div class="modal-title" style="color: ${accentColor};">недоступно</div>
-                <div class="modal-text">чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него</div>
+                <div class="modal-title" style="color: ${accentColor};">${popupData.title}</div>
+                <div class="modal-text">${popupData.text}</div>
                 <div class="modal-buttons" style="margin-top: 20px;">
-                    <button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">понятно</button>
+                    <button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">${popupData.button_text}</button>
                 </div>
             </div>
         `;
