@@ -100,7 +100,7 @@ export async function renderProfiles() {
             ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
         const scrollWrapperHeight = window.innerHeight - 100;
-        const minContentHeight = scrollWrapperHeight * 2;          // гарантируем двойную высоту
+        const minContentHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
             <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
                 <div style="min-height: ${minContentHeight}px;">
@@ -111,7 +111,6 @@ export async function renderProfiles() {
         `;
         const container = mainDiv().querySelector('.profile-scroll-container');
         if (container && shouldAnimate) {
-            container.scrollTop = 1;            // принудительная активация скролла
             startInfiniteScroll(container);
         }
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
@@ -143,7 +142,6 @@ export async function renderProfiles() {
         `;
         const container = mainDiv().querySelector('.profile-scroll-container');
         if (container) {
-            container.scrollTop = 1;            // принудительная активация скролла
             startInfiniteScroll(container);
         }
     } else {
@@ -180,9 +178,9 @@ export async function renderProfiles() {
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
 }
 
-/* ---------- НАДЁЖНАЯ АНИМАЦИЯ ПРОКРУТКИ ---------- */
 function startInfiniteScroll(container) {
     if (!container) return;
+    console.log('startInfiniteScroll вызвана, container:', container, 'scrollHeight:', container.scrollHeight, 'clientHeight:', container.clientHeight);
     const speed = 0.5;                    // пикселей в кадре
     let animId;
 
@@ -194,7 +192,7 @@ function startInfiniteScroll(container) {
         container.scrollTop += speed;
         const halfHeight = container.scrollHeight / 2;
         if (container.scrollTop >= halfHeight) {
-            container.scrollTop = 0;      // бесшовный перескок
+            container.scrollTop = 0;
         }
         animId = requestAnimationFrame(step);
     }
@@ -213,7 +211,6 @@ function startInfiniteScroll(container) {
         clearTimeout(resumeTimer);
         resumeTimer = setTimeout(() => {
             userScrolling = false;
-            // если пользователь не крутил, возвращаемся к авто‑скроллу
             const halfHeight = container.scrollHeight / 2;
             if (container.scrollTop >= halfHeight) {
                 container.scrollTop = 0;
@@ -222,8 +219,13 @@ function startInfiniteScroll(container) {
         }, 500);
     }, { once: false });
 
-    // Запускаем анимацию сразу
-    animId = requestAnimationFrame(step);
+    // Небольшая задержка, чтобы контейнер точно отрисовался и получил размеры
+    requestAnimationFrame(() => {
+        // Принудительно сдвигаем скролл на 1px, чтобы активировать скроллбар
+        container.scrollTop = 1;
+        // Запускаем анимацию
+        animId = requestAnimationFrame(step);
+    });
 }
 
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
