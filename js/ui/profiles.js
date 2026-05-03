@@ -12,6 +12,10 @@ let profiles = {};
 let myProfile = null;
 const userHikesCache = {};
 
+// Переменные для управления анимацией
+let currentAnimationId = null;
+let animationObserver = null;
+
 async function loadProfilesData() {
     const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
     profiles = allProfiles; myProfile = myProf;
@@ -75,8 +79,83 @@ function cleanupProfileOverlays() {
     document.body.style.overflow = '';
 }
 
+// Остановка предыдущей анимации
+function stopAnimation() {
+    if (currentAnimationId) {
+        cancelAnimationFrame(currentAnimationId);
+        currentAnimationId = null;
+    }
+    if (animationObserver) {
+        animationObserver.disconnect();
+        animationObserver = null;
+    }
+}
+
+// Запуск бесконечной прокрутки с защитой от исчезновения контейнера
+function startInfiniteScroll(container) {
+    if (!container) return;
+    console.log('startInfiniteScroll вызвана, container:', container, 'scrollHeight:', container.scrollHeight, 'clientHeight:', container.clientHeight);
+    const speed = 0.5;
+
+    function step() {
+        if (!container.isConnected) {
+            // Контейнер удалён – можно попробовать подождать и перезапустить
+            cancelAnimationFrame(currentAnimationId);
+            currentAnimationId = null;
+            // Включаем наблюдение за появлением нового контейнера
+            if (!animationObserver) {
+                animationObserver = new MutationObserver(() => {
+                    const newContainer = document.querySelector('.profile-scroll-container');
+                    if (newContainer && newContainer.isConnected) {
+                        animationObserver.disconnect();
+                        animationObserver = null;
+                        startInfiniteScroll(newContainer);
+                    }
+                });
+                animationObserver.observe(document.body, { childList: true, subtree: true });
+            }
+            return;
+        }
+        container.scrollTop += speed;
+        const halfHeight = container.scrollHeight / 2;
+        if (container.scrollTop >= halfHeight) {
+            container.scrollTop = 0;
+        }
+        currentAnimationId = requestAnimationFrame(step);
+    }
+
+    // При ручном касании приостанавливаем автоскролл
+    let userScrolling = false;
+    let resumeTimer;
+    container.addEventListener('scroll', () => {
+        if (!userScrolling) {
+            userScrolling = true;
+            cancelAnimationFrame(currentAnimationId);
+            currentAnimationId = null;
+        }
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => {
+            userScrolling = false;
+            const halfHeight = container.scrollHeight / 2;
+            if (container.scrollTop >= halfHeight) {
+                container.scrollTop = 0;
+            }
+            if (!currentAnimationId) {
+                currentAnimationId = requestAnimationFrame(step);
+            }
+        }, 500);
+    }, { once: false });
+
+    // Запускаем после небольшой задержки, чтобы гарантировать отрисовку
+    requestAnimationFrame(() => {
+        container.scrollTop = 1; // активируем скролл
+        currentAnimationId = requestAnimationFrame(step);
+    });
+}
+
 export async function renderProfiles() {
     cleanupProfileOverlays();
+    stopAnimation();  // Останавливаем любую старую анимацию
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
@@ -109,11 +188,13 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        const container = mainDiv().querySelector('.profile-scroll-container');
-        if (container && shouldAnimate) {
-            startInfiniteScroll(container);
-        }
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+
+        // Задержка запуска, чтобы DOM точно построился
+        setTimeout(() => {
+            const container = mainDiv().querySelector('.profile-scroll-container');
+            if (container && shouldAnimate) startInfiniteScroll(container);
+        }, 200);
         return;
     }
 
@@ -140,10 +221,11 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        const container = mainDiv().querySelector('.profile-scroll-container');
-        if (container) {
-            startInfiniteScroll(container);
-        }
+        showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+        setTimeout(() => {
+            const container = mainDiv().querySelector('.profile-scroll-container');
+            if (container) startInfiniteScroll(container);
+        }, 200);
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
@@ -176,56 +258,6 @@ export async function renderProfiles() {
     document.body.appendChild(blurOverlay);
 
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-}
-
-function startInfiniteScroll(container) {
-    if (!container) return;
-    console.log('startInfiniteScroll вызвана, container:', container, 'scrollHeight:', container.scrollHeight, 'clientHeight:', container.clientHeight);
-    const speed = 0.5;                    // пикселей в кадре
-    let animId;
-
-    function step() {
-        if (!container.isConnected) {
-            cancelAnimationFrame(animId);
-            return;
-        }
-        container.scrollTop += speed;
-        const halfHeight = container.scrollHeight / 2;
-        if (container.scrollTop >= halfHeight) {
-            container.scrollTop = 0;
-        }
-        animId = requestAnimationFrame(step);
-    }
-
-    // При ручном касании анимация не сбрасывается, а просто продолжает работать,
-    // но чтобы не было конфликта, пользовательский скролл тут же останавливает
-    // автоматический, однако возобновляет через 500 мс.
-    let userScrolling = false;
-    let resumeTimer;
-
-    container.addEventListener('scroll', () => {
-        if (!userScrolling) {
-            userScrolling = true;
-            cancelAnimationFrame(animId);
-        }
-        clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(() => {
-            userScrolling = false;
-            const halfHeight = container.scrollHeight / 2;
-            if (container.scrollTop >= halfHeight) {
-                container.scrollTop = 0;
-            }
-            animId = requestAnimationFrame(step);
-        }, 500);
-    }, { once: false });
-
-    // Небольшая задержка, чтобы контейнер точно отрисовался и получил размеры
-    requestAnimationFrame(() => {
-        // Принудительно сдвигаем скролл на 1px, чтобы активировать скроллбар
-        container.scrollTop = 1;
-        // Запускаем анимацию
-        animId = requestAnimationFrame(step);
-    });
 }
 
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
