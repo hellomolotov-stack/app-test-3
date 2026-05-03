@@ -546,7 +546,7 @@ function closeBottomSheet() {
 // Проверка тач-устройства
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
-    if (!isTouchDevice()) return null; // на ПК не показываем
+    if (!isTouchDevice()) return null;
 
     const thumbText = isBooked ? 'ты записан' : 'иду';
     const hintText = isBooked ? '← потяни влево, для отмены' : 'потяни, чтобы записаться';
@@ -597,21 +597,18 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         z-index: 20;
     `;
 
-    // Статичная подсказка (стирается бегунком)
+    // Подсказка – абсолютно позиционирована, её left/right/width будут меняться
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
         position: absolute;
         top: 0; bottom: 0;
-        left: 12px; right: 12px;
         display: flex; align-items: center;
         font-size: 14px; font-weight: 500;
         color: rgba(255,255,255,0.7);
         pointer-events: none;
         white-space: nowrap;
         overflow: hidden;
-        text-align: left;
-        justify-content: flex-start;
         z-index: 1;
     `;
     hint.textContent = hintText;
@@ -648,6 +645,27 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const EDGE_MARGIN = 4;
 
+    // Функция размещения подсказки относительно бегунка
+    function placeHint(thumbLeftPos) {
+        const thumbW = thumb.offsetWidth;
+        const trackW = track.clientWidth;
+        const gap = 8; // отступ между бегунком и текстом
+
+        if (thumbLeftPos < trackW / 2) {
+            // бегунок слева → подсказка справа от него
+            hint.style.left = (thumbLeftPos + thumbW + gap) + 'px';
+            hint.style.right = 'auto';
+            hint.style.width = (trackW - thumbLeftPos - thumbW - gap - 12) + 'px'; // 12 = padding трека
+            hint.style.justifyContent = 'flex-start';
+        } else {
+            // бегунок справа → подсказка слева от него
+            hint.style.right = (trackW - thumbLeftPos + gap) + 'px';
+            hint.style.left = 'auto';
+            hint.style.width = (thumbLeftPos - gap - 12) + 'px';
+            hint.style.justifyContent = 'flex-end';
+        }
+    }
+
     function initPosition() {
         maxLeft = track.clientWidth - thumb.offsetWidth - EDGE_MARGIN;
         if (isBooked) {
@@ -657,6 +675,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
+        placeHint(thumbLeft);
     }
     setTimeout(initPosition, 20);
 
@@ -675,6 +694,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         let newLeft = thumbLeft + delta;
         newLeft = Math.max(EDGE_MARGIN, Math.min(newLeft, maxLeft));
         thumb.style.left = newLeft + 'px';
+        placeHint(newLeft);  // динамически обновляем положение подсказки
 
         if (isBooked && delta < 0) tg?.HapticFeedback?.impactOccurred('light');
 
@@ -683,8 +703,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 isDown = false;
                 thumb.style.transition = 'left 0.2s ease-out';
                 thumb.style.left = maxLeft + 'px';
+                placeHint(maxLeft);
                 showGuestBookingPopup(hike.date, hike.title, () => {
-                    // возврат в начало при закрытии попапа
+                    // сброс гостя
                     completed = false;
                     thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
                     thumb.style.width = minThumbWidth + 'px';
@@ -693,6 +714,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.style.fontWeight = '700';
                     thumb.style.fontStyle = 'normal';
                     hint.textContent = 'потяни, чтобы записаться';
+                    placeHint(EDGE_MARGIN);
                 });
                 return;
             }
@@ -707,9 +729,11 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.fontWeight = '900';
             thumb.style.fontStyle = 'italic';
             hint.textContent = '← потяни влево, для отмены';
+            placeHint(maxLeft);
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
+            // запись в Firebase
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
             const userId = state.user?.id;
@@ -781,6 +805,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
+        placeHint(thumbLeft);
     };
 
     track.addEventListener('touchstart', (e) => {
