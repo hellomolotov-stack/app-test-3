@@ -263,7 +263,7 @@ export async function renderProfiles() {
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    const btnText = '💫 создать профиль';
+    const btnText = '✍🏻 создать профиль';
     centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
     centerBtn.style.cssText = `
         position: fixed !important;
