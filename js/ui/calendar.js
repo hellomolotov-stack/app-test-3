@@ -561,7 +561,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     ctx.font = '700 italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const thumbTextWidth = ctx.measureText(thumbText).width;
     const minThumbWidth = 80;
-    // Внутренние отступы увеличены до 18px с каждой стороны
     const THUMB_PADDING = 18;
     let currentThumbWidth = isBooked ? Math.max(minThumbWidth, thumbTextWidth + THUMB_PADDING * 2) : minThumbWidth;
 
@@ -583,6 +582,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     const track = document.createElement('div');
     track.className = 'swipe-track';
+    // Устанавливаем такой же блюр, как у плавающего меню (.bottom-nav)
     track.style.cssText = `
         position: relative;
         width: 100%;
@@ -813,7 +813,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
         thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
         hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
-        // Возвращаем текущую ширину, а не minThumbWidth
         thumb.style.width = currentThumbWidth + 'px';
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
