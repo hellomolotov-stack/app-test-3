@@ -151,8 +151,14 @@ export async function loadMastermindSummaries() {
 
 export async function loadPopups() {
     if (!database) return {};
-    const snapshot = await database.ref('popups').once('value');
-    return snapshot.val() || {};
+    try {
+        const snapshot = await database.ref('popups').once('value');
+        console.log('Firebase popups raw:', snapshot.val());
+        return snapshot.val() || {};
+    } catch (e) {
+        console.error('Ошибка загрузки попапов из Firebase:', e);
+        return {};
+    }
 }
 
 export async function loadGuestAllowMessages(userId) {
