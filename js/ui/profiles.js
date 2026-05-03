@@ -101,22 +101,16 @@ export async function renderProfiles() {
             ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
         const scrollWrapperHeight = window.innerHeight - 100;
-        const minContentHeight = scrollWrapperHeight * 2;
+        const doubleHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
-            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
-                <div style="min-height: ${minContentHeight}px;">
+            <div class="card-container" style="overflow:hidden; height:${scrollWrapperHeight}px;">
+                <div class="profiles-scroll-animation" style="height:${doubleHeight}px;">
                     <div class="profiles-two-columns">${ph}${ph}</div>
                     <div class="profiles-two-columns">${ph}${ph}</div>
                 </div>
             </div>
         `;
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-
-        // Запуск анимации с гарантией, что контейнер уже в DOM
-        setTimeout(() => {
-            const container = mainDiv().querySelector('.profile-scroll-container');
-            if (container) startInfiniteScroll(container);
-        }, 300);
         return;
     }
 
@@ -134,20 +128,16 @@ export async function renderProfiles() {
 
     if (shouldAnimate) {
         const scrollWrapperHeight = window.innerHeight - 100;
-        const minContentHeight = scrollWrapperHeight * 2;
+        const doubleHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
-            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
-                <div style="min-height: ${minContentHeight}px;">
+            <div class="card-container" style="overflow:hidden; height:${scrollWrapperHeight}px;">
+                <div class="profiles-scroll-animation" style="height:${doubleHeight}px;">
                     ${twoColumnsHtml}
                     ${twoColumnsHtml}
                 </div>
             </div>
         `;
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-        setTimeout(() => {
-            const container = mainDiv().querySelector('.profile-scroll-container');
-            if (container) startInfiniteScroll(container);
-        }, 300);
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
@@ -180,21 +170,6 @@ export async function renderProfiles() {
     document.body.appendChild(blurOverlay);
 
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-}
-
-/* ----- ПРОСТАЯ И НАДЁЖНАЯ АНИМАЦИЯ СКРОЛЛА ----- */
-function startInfiniteScroll(container) {
-    if (!container) return;
-    const speed = 0.5;
-    function step() {
-        if (!container.isConnected) return;
-        container.scrollTop += speed;
-        const halfHeight = container.scrollHeight / 2;
-        if (container.scrollTop >= halfHeight) container.scrollTop = 0;
-        requestAnimationFrame(step);
-    }
-    container.scrollTop = 1; // активируем скролл
-    requestAnimationFrame(step);
 }
 
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
@@ -279,7 +254,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
             gap: 14px !important;
             box-sizing: border-box !important;
         `;
-        // ... (остальная часть создания баннера без изменений)
         const avatarContainer = document.createElement('div');
         avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
 
@@ -371,7 +345,6 @@ function showGuestProfilePopup() {
     });
 }
 
-/* ----- РЕДАКТОР ПРОФИЛЯ (БЕЗ ИЗМЕНЕНИЙ) ----- */
 async function renderEditProfile() {
     cleanupProfileOverlays();
 
