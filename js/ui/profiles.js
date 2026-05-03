@@ -356,15 +356,19 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
 }
 
 function showGuestProfilePopup() {
+    const popupData = (state.popups && state.popups.guest_profile_popup) || {
+        title: '💳 карта интеллигента',
+        text: 'для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?',
+        button_text: 'да, хочу узнать'
+    };
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title" style="font-size: 18px;">💳 карта интеллигента</div>
-            <div class="modal-text" style="font-size: 14px;">
-                для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?
-            </div>
-            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">да, хочу узнать</button>
+            <div class="modal-title" style="font-size: 18px;">${popupData.title}</div>
+            <div class="modal-text" style="font-size: 14px;">${popupData.text}</div>
+            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">${popupData.button_text}</button>
         </div>
     `;
     document.body.appendChild(overlay);
