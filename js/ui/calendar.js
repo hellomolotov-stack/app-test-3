@@ -545,7 +545,6 @@ function closeBottomSheet() {
 
 // Проверка тач-устройства
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     if (!isTouchDevice()) return null; // на ПК не показываем
 
@@ -598,18 +597,22 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         z-index: 20;
     `;
 
+    // Статичная подсказка (стирается бегунком)
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
         position: absolute;
         top: 0; bottom: 0;
+        left: 12px; right: 12px;
         display: flex; align-items: center;
         font-size: 14px; font-weight: 500;
         color: rgba(255,255,255,0.7);
         pointer-events: none;
         white-space: nowrap;
         overflow: hidden;
-        transition: left 0.2s, right 0.2s;
+        text-align: left;
+        justify-content: flex-start;
+        z-index: 1;
     `;
     hint.textContent = hintText;
 
@@ -645,22 +648,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const EDGE_MARGIN = 4;
 
-    function placeHint(currentLeft) {
-        const thumbW = thumb.offsetWidth;
-        const trackW = track.clientWidth;
-        if (currentLeft < trackW / 2) {
-            hint.style.left = (currentLeft + thumbW + 8) + 'px';
-            hint.style.right = 'auto';
-            hint.style.width = (trackW - currentLeft - thumbW - 20) + 'px';
-            hint.style.justifyContent = 'flex-start';
-        } else {
-            hint.style.right = (trackW - currentLeft + 8) + 'px';
-            hint.style.left = 'auto';
-            hint.style.width = (currentLeft - 20) + 'px';
-            hint.style.justifyContent = 'flex-end';
-        }
-    }
-
     function initPosition() {
         maxLeft = track.clientWidth - thumb.offsetWidth - EDGE_MARGIN;
         if (isBooked) {
@@ -670,7 +657,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
-        placeHint(isBooked ? maxLeft : EDGE_MARGIN);
     }
     setTimeout(initPosition, 20);
 
@@ -689,7 +675,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         let newLeft = thumbLeft + delta;
         newLeft = Math.max(EDGE_MARGIN, Math.min(newLeft, maxLeft));
         thumb.style.left = newLeft + 'px';
-        placeHint(newLeft);
 
         if (isBooked && delta < 0) tg?.HapticFeedback?.impactOccurred('light');
 
@@ -707,14 +692,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.textContent = 'иду';
                     thumb.style.fontWeight = '700';
                     thumb.style.fontStyle = 'normal';
-                    setTimeout(() => placeHint(EDGE_MARGIN), 300);
+                    hint.textContent = 'потяни, чтобы записаться';
                 });
                 return;
             }
             // владелец карты
             completed = true;
             isDown = false;
-            // анимация ширины
             const newWidth = Math.max(minThumbWidth, ctx.measureText('ты записан').width + 24);
             thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
             thumb.style.width = newWidth + 'px';
@@ -722,7 +706,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.textContent = 'ты записан';
             thumb.style.fontWeight = '900';
             thumb.style.fontStyle = 'italic';
-            placeHint(maxLeft);
+            hint.textContent = '← потяни влево, для отмены';
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
@@ -797,7 +781,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
-        placeHint(isBooked ? maxLeft : EDGE_MARGIN);
     };
 
     track.addEventListener('touchstart', (e) => {
