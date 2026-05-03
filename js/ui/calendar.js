@@ -634,8 +634,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const THUMB_MARGIN = 8;          // отступ ползунка от краёв трека
-    const EDGE_PADDING = 25;        // отступ текста от краёв трека
-    const GAP_BETWEEN = 2;          // расстояние между текстом и ползунком
+    const EDGE_PADDING = 30;        // отступ текста от краёв трека
+    const GAP_BETWEEN = 0;          // расстояние между текстом и ползунком
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
