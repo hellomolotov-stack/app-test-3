@@ -100,7 +100,7 @@ export async function renderProfiles() {
             ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
         const scrollWrapperHeight = window.innerHeight - 100;
-        const minContentHeight = scrollWrapperHeight * 2;
+        const minContentHeight = scrollWrapperHeight * 2;          // гарантируем двойную высоту
         mainDiv().innerHTML = `
             <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
                 <div style="min-height: ${minContentHeight}px;">
@@ -110,7 +110,10 @@ export async function renderProfiles() {
             </div>
         `;
         const container = mainDiv().querySelector('.profile-scroll-container');
-        if (container) startInfiniteScroll(container);
+        if (container && shouldAnimate) {
+            container.scrollTop = 1;            // принудительная активация скролла
+            startInfiniteScroll(container);
+        }
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
@@ -139,7 +142,10 @@ export async function renderProfiles() {
             </div>
         `;
         const container = mainDiv().querySelector('.profile-scroll-container');
-        if (container) startInfiniteScroll(container);
+        if (container) {
+            container.scrollTop = 1;            // принудительная активация скролла
+            startInfiniteScroll(container);
+        }
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
@@ -174,9 +180,10 @@ export async function renderProfiles() {
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
 }
 
+/* ---------- НАДЁЖНАЯ АНИМАЦИЯ ПРОКРУТКИ ---------- */
 function startInfiniteScroll(container) {
     if (!container) return;
-    const speed = 0.5;
+    const speed = 0.5;                    // пикселей в кадре
     let animId;
 
     function step() {
@@ -187,27 +194,35 @@ function startInfiniteScroll(container) {
         container.scrollTop += speed;
         const halfHeight = container.scrollHeight / 2;
         if (container.scrollTop >= halfHeight) {
-            container.scrollTop = 0;
+            container.scrollTop = 0;      // бесшовный перескок
         }
         animId = requestAnimationFrame(step);
     }
 
-    container.addEventListener('scroll', () => {
-        cancelAnimationFrame(animId);
-    }, { once: false });
+    // При ручном касании анимация не сбрасывается, а просто продолжает работать,
+    // но чтобы не было конфликта, пользовательский скролл тут же останавливает
+    // автоматический, однако возобновляет через 500 мс.
+    let userScrolling = false;
+    let resumeTimer;
 
-    let timeoutId;
     container.addEventListener('scroll', () => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
+        if (!userScrolling) {
+            userScrolling = true;
+            cancelAnimationFrame(animId);
+        }
+        clearTimeout(resumeTimer);
+        resumeTimer = setTimeout(() => {
+            userScrolling = false;
+            // если пользователь не крутил, возвращаемся к авто‑скроллу
             const halfHeight = container.scrollHeight / 2;
             if (container.scrollTop >= halfHeight) {
                 container.scrollTop = 0;
             }
             animId = requestAnimationFrame(step);
-        }, 2000);
-    });
+        }, 500);
+    }, { once: false });
 
+    // Запускаем анимацию сразу
     animId = requestAnimationFrame(step);
 }
 
