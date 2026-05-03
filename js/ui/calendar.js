@@ -543,7 +543,6 @@ function closeBottomSheet() {
     }
 }
 
-// Проверка тач-устройства
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
@@ -589,7 +588,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         z-index: 20;
     `;
 
-    // Статичная подсказка – всегда прижата к краю и не двигается
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
@@ -600,16 +598,22 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         color: rgba(255,255,255,0.7);
         pointer-events: none;
         white-space: nowrap;
+        overflow: hidden;
         z-index: 1;
-        transition: none;   /* никакого движения */
     `;
-    // Начальное положение зависит от статуса
+
+    const TEXT_PADDING = 12;  // одинаковый отступ текста от края и от ползунка
     if (isBooked) {
-        hint.style.left = '12px';
+        hint.style.left = TEXT_PADDING + 'px';
+        hint.style.right = 'auto';
+        hint.style.textAlign = 'left';
+        hint.textContent = hintTextBooked;
     } else {
-        hint.style.right = '12px';
+        hint.style.right = TEXT_PADDING + 'px';
+        hint.style.left = 'auto';
+        hint.style.textAlign = 'right';
+        hint.textContent = hintTextUnbooked;
     }
-    hint.textContent = isBooked ? hintTextBooked : hintTextUnbooked;
 
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
@@ -622,6 +626,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         display: flex; align-items: center; justify-content: center;
         font-size: 14px; font-weight: 700;
         color: #000;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         transition: left 0.2s ease-out, width 0.25s ease;
         z-index: 2;
         cursor: pointer;
@@ -688,7 +693,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.textContent = 'иду';
                     thumb.style.fontWeight = '700';
                     thumb.style.fontStyle = 'normal';
-                    hint.textContent = hintTextUnbooked;
                 });
                 return;
             }
@@ -704,8 +708,11 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.textContent = newText;
             thumb.style.fontWeight = '900';
             thumb.style.fontStyle = 'italic';
-            hint.textContent = hintTextBooked;
             isBooked = true;
+            hint.textContent = hintTextBooked;
+            hint.style.left = TEXT_PADDING + 'px';
+            hint.style.right = 'auto';
+            hint.style.textAlign = 'left';
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
