@@ -641,16 +641,17 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     container.appendChild(track);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const EDGE_MARGIN = 32;  // увеличенный отступ от краёв трека
-    const GAP = 8;          // расстояние между бегунком и текстом подсказки
+    const THUMB_MARGIN = 8;   // отступ ползунка от краёв трека
+    const TEXT_PADDING = 24;  // отступ текста от края трека и от ползунка
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            const hintLeft = thumbLeftPos + thumbW + GAP;
-            const hintRight = trackW - EDGE_MARGIN;
+            // Текст справа от ползунка, прижат к правому краю с отступом TEXT_PADDING
+            const hintLeft = thumbLeftPos + thumbW + TEXT_PADDING;
+            const hintRight = trackW - TEXT_PADDING;
             const hintWidth = hintRight - hintLeft;
             hint.style.left = hintLeft + 'px';
             hint.style.right = 'auto';
@@ -658,8 +659,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
-            const hintRight = thumbLeftPos - GAP;
-            const hintLeft = EDGE_MARGIN;
+            // Текст слева от ползунка, прижат к левому краю с отступом TEXT_PADDING
+            const hintRight = thumbLeftPos - TEXT_PADDING;
+            const hintLeft = TEXT_PADDING;
             const hintWidth = hintRight - hintLeft;
             hint.style.left = hintLeft + 'px';
             hint.style.right = 'auto';
@@ -670,13 +672,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     }
 
     function initPosition() {
-        maxLeft = track.clientWidth - thumb.offsetWidth - EDGE_MARGIN;
+        maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN;
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
         } else {
-            thumb.style.left = EDGE_MARGIN + 'px';
-            thumbLeft = EDGE_MARGIN;
+            thumb.style.left = THUMB_MARGIN + 'px';
+            thumbLeft = THUMB_MARGIN;
         }
         placeHint(thumbLeft);
     }
@@ -688,15 +690,15 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         isDown = true;
         thumb.style.transition = 'none';
         hint.style.transition = 'none';
-        maxLeft = track.clientWidth - thumb.offsetWidth - EDGE_MARGIN;
-        thumbLeft = parseFloat(thumb.style.left) || EDGE_MARGIN;
+        maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN;
+        thumbLeft = parseFloat(thumb.style.left) || THUMB_MARGIN;
     };
 
     const onMove = (clientX) => {
         if (!isDown || completed) return;
         const delta = clientX - startX;
         let newLeft = thumbLeft + delta;
-        newLeft = Math.max(EDGE_MARGIN, Math.min(newLeft, maxLeft));
+        newLeft = Math.max(THUMB_MARGIN, Math.min(newLeft, maxLeft));
         thumb.style.left = newLeft + 'px';
         placeHint(newLeft);
 
@@ -714,12 +716,11 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
                     hint.style.transition = 'left 0.3s ease-out, right 0.3s ease-out, width 0.3s ease-out';
                     thumb.style.width = minThumbWidth + 'px';
-                    thumb.style.left = EDGE_MARGIN + 'px';
+                    thumb.style.left = THUMB_MARGIN + 'px';
                     thumb.textContent = 'иду';
                     thumb.style.fontWeight = '700';
                     thumb.style.fontStyle = 'normal';
-                    isBooked = false; // возвращаем статус незаписанного
-                    placeHint(EDGE_MARGIN);
+                    placeHint(THUMB_MARGIN);
                 });
                 return;
             }
@@ -770,9 +771,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         isDown = false;
         if (completed) return;
 
-        const currentLeft = parseFloat(thumb.style.left) || EDGE_MARGIN;
-        if (isBooked && currentLeft <= EDGE_MARGIN + 10) {
-            // отмена записи — полный свайп влево
+        const currentLeft = parseFloat(thumb.style.left) || THUMB_MARGIN;
+        if (isBooked && currentLeft <= THUMB_MARGIN + 10) {
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
             const userId = state.user?.id;
@@ -801,16 +801,15 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             return;
         }
 
-        // Если не дотянут до левого края — возврат в исходное положение
         thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
         hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
-        // Ширина и текст остаются прежними
+        thumb.style.width = minThumbWidth + 'px';
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
         } else {
-            thumb.style.left = EDGE_MARGIN + 'px';
-            thumbLeft = EDGE_MARGIN;
+            thumb.style.left = THUMB_MARGIN + 'px';
+            thumbLeft = THUMB_MARGIN;
         }
         placeHint(thumbLeft);
     };
