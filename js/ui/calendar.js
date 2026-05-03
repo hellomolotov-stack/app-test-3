@@ -630,26 +630,32 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         transition: left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out;
     `;
 
-    // Функция для установки переливающегося стиля
-    function applyShimmer(enable) {
-        if (enable) {
-            hint.style.background = `linear-gradient(90deg, 
-                rgba(255,255,255,0.7) 0%, 
-                rgba(255,255,255,1) 20%, 
-                rgba(255,255,255,0.7) 40%, 
-                rgba(255,255,255,0.7) 100%)`;
-            hint.style.backgroundSize = '200% 100%';
-            hint.style.backgroundClip = 'text';
-            hint.style.webkitBackgroundClip = 'text';
-            hint.style.webkitTextFillColor = 'transparent';
-            hint.style.animation = `${animId} 1.5s ease-in-out infinite`;
-            hint.style.animationDelay = '3s'; // начинается через 3 секунды, затем повторяется каждые 3s после завершения
-        } else {
+    // Функция для запуска одноразовой анимации волны свечения
+    function triggerShimmerOnce() {
+        // Удаляем предыдущую анимацию, если была
+        hint.style.animation = 'none';
+        // Форсируем пересчёт стилей (reflow), чтобы анимация гарантированно перезапустилась
+        void hint.offsetWidth;
+        // Настраиваем градиент для эффекта волны
+        hint.style.background = `linear-gradient(90deg, 
+            rgba(255,255,255,0.7) 0%, 
+            rgba(255,255,255,1) 20%, 
+            rgba(255,255,255,0.7) 40%, 
+            rgba(255,255,255,0.7) 100%)`;
+        hint.style.backgroundSize = '200% 100%';
+        hint.style.backgroundClip = 'text';
+        hint.style.webkitBackgroundClip = 'text';
+        hint.style.webkitTextFillColor = 'transparent';
+        // Анимация длится 1.2 секунды
+        hint.style.animation = `${animId} 1.2s ease-in-out`;
+        // После завершения возвращаем обычный цвет
+        hint.addEventListener('animationend', function resetShimmer() {
             hint.style.background = 'none';
             hint.style.webkitTextFillColor = 'rgba(255,255,255,0.7)';
             hint.style.animation = 'none';
             hint.style.color = 'rgba(255,255,255,0.7)';
-        }
+            hint.removeEventListener('animationend', resetShimmer);
+        }, { once: true });
     }
 
     const thumb = document.createElement('div');
@@ -718,11 +724,15 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
-            applyShimmer(false); // нет перелива для записанного
         } else {
             thumb.style.left = THUMB_MARGIN + 'px';
             thumbLeft = THUMB_MARGIN;
-            applyShimmer(true); // включаем перелив для незаписанного
+            // Запускаем анимацию волны через 2 секунды после инициализации
+            setTimeout(() => {
+                if (!isBooked && !completed) { // только если всё ещё не записан
+                    triggerShimmerOnce();
+                }
+            }, 2000);
         }
         placeHint(thumbLeft);
     }
@@ -736,7 +746,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         hint.style.transition = 'none';
         maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN;
         thumbLeft = parseFloat(thumb.style.left) || THUMB_MARGIN;
-        applyShimmer(false); // при касании отключаем перелив
     };
 
     const onMove = (clientX) => {
@@ -756,7 +765,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
                 thumb.style.left = maxLeft + 'px';
                 placeHint(maxLeft);
-                applyShimmer(false);
                 showGuestBookingPopup(hike.date, hike.title, () => {
                     completed = false;
                     thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
@@ -767,7 +775,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.style.fontWeight = '700';
                     thumb.style.fontStyle = 'normal';
                     placeHint(THUMB_MARGIN);
-                    applyShimmer(true);
+                    // Запускаем волну снова после возврата в исходное состояние
+                    setTimeout(() => {
+                        if (!completed) triggerShimmerOnce();
+                    }, 2000);
                 });
                 return;
             }
@@ -785,7 +796,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.fontStyle = 'italic';
             isBooked = true;
             placeHint(maxLeft);
-            applyShimmer(false);
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
@@ -856,11 +866,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
-            applyShimmer(false);
         } else {
             thumb.style.left = THUMB_MARGIN + 'px';
             thumbLeft = THUMB_MARGIN;
-            applyShimmer(true); // возвращаем перелив, если не записан
+            // Если вернули ползунок назад, снова запускаем таймер для волны
+            setTimeout(() => {
+                if (!isBooked && !completed) triggerShimmerOnce();
+            }, 2000);
         }
         placeHint(thumbLeft);
     };
