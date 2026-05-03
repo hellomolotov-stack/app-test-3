@@ -554,7 +554,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         : 'иду';
 
     const hintTextBooked = '← потяни влево, для отмены';
-    const hintTextUnbooked = 'потяни, чтобы записаться →';
+    const hintTextUnbooked = '→ потяни, чтобы записаться';   // стрелка в начале
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -567,7 +567,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const trackWidth = Math.min(400, Math.max(280, 
         (isBooked ? ctx.measureText(hintTextBooked).width : ctx.measureText(hintTextUnbooked).width) + currentThumbWidth + 64));
 
-    // Трек с такими же стилями, как у .bottom-nav (плавающее меню)
     const track = document.createElement('div');
     track.className = 'swipe-track';
     track.style.cssText = `
@@ -638,13 +637,14 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const THUMB_MARGIN = 8;
-    const TEXT_PADDING = 24;
+    const TEXT_PADDING = 24;   // одинаковый отступ текста от края и между кнопкой и текстом
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
+            // Текст справа, расстояние между кнопкой и текстом = TEXT_PADDING
             const hintLeft = thumbLeftPos + thumbW + TEXT_PADDING;
             const hintRight = trackW - TEXT_PADDING;
             const hintWidth = hintRight - hintLeft;
@@ -654,6 +654,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
+            // Текст слева, расстояние между кнопкой и текстом = TEXT_PADDING
             const hintRight = thumbLeftPos - TEXT_PADDING;
             const hintLeft = TEXT_PADDING;
             const hintWidth = hintRight - hintLeft;
