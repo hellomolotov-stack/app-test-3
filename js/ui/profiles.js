@@ -12,10 +12,6 @@ let profiles = {};
 let myProfile = null;
 const userHikesCache = {};
 
-// Переменные для управления анимацией
-let currentAnimationId = null;
-let animationObserver = null;
-
 async function loadProfilesData() {
     const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
     profiles = allProfiles; myProfile = myProf;
@@ -76,86 +72,13 @@ function cleanupProfileOverlays() {
     document.querySelector('.center-floating-btn')?.remove();
     document.querySelector('.profile-preview-banner')?.remove();
     document.querySelector('.profile-edit-fab')?.remove();
+    // убираем лишнюю кнопку, если вдруг осталась
+    document.getElementById('profileActionBtn')?.parentElement?.remove();
     document.body.style.overflow = '';
-}
-
-// Остановка предыдущей анимации
-function stopAnimation() {
-    if (currentAnimationId) {
-        cancelAnimationFrame(currentAnimationId);
-        currentAnimationId = null;
-    }
-    if (animationObserver) {
-        animationObserver.disconnect();
-        animationObserver = null;
-    }
-}
-
-// Запуск бесконечной прокрутки с защитой от исчезновения контейнера
-function startInfiniteScroll(container) {
-    if (!container) return;
-    console.log('startInfiniteScroll вызвана, container:', container, 'scrollHeight:', container.scrollHeight, 'clientHeight:', container.clientHeight);
-    const speed = 0.5;
-
-    function step() {
-        if (!container.isConnected) {
-            // Контейнер удалён – можно попробовать подождать и перезапустить
-            cancelAnimationFrame(currentAnimationId);
-            currentAnimationId = null;
-            // Включаем наблюдение за появлением нового контейнера
-            if (!animationObserver) {
-                animationObserver = new MutationObserver(() => {
-                    const newContainer = document.querySelector('.profile-scroll-container');
-                    if (newContainer && newContainer.isConnected) {
-                        animationObserver.disconnect();
-                        animationObserver = null;
-                        startInfiniteScroll(newContainer);
-                    }
-                });
-                animationObserver.observe(document.body, { childList: true, subtree: true });
-            }
-            return;
-        }
-        container.scrollTop += speed;
-        const halfHeight = container.scrollHeight / 2;
-        if (container.scrollTop >= halfHeight) {
-            container.scrollTop = 0;
-        }
-        currentAnimationId = requestAnimationFrame(step);
-    }
-
-    // При ручном касании приостанавливаем автоскролл
-    let userScrolling = false;
-    let resumeTimer;
-    container.addEventListener('scroll', () => {
-        if (!userScrolling) {
-            userScrolling = true;
-            cancelAnimationFrame(currentAnimationId);
-            currentAnimationId = null;
-        }
-        clearTimeout(resumeTimer);
-        resumeTimer = setTimeout(() => {
-            userScrolling = false;
-            const halfHeight = container.scrollHeight / 2;
-            if (container.scrollTop >= halfHeight) {
-                container.scrollTop = 0;
-            }
-            if (!currentAnimationId) {
-                currentAnimationId = requestAnimationFrame(step);
-            }
-        }, 500);
-    }, { once: false });
-
-    // Запускаем после небольшой задержки, чтобы гарантировать отрисовку
-    requestAnimationFrame(() => {
-        container.scrollTop = 1; // активируем скролл
-        currentAnimationId = requestAnimationFrame(step);
-    });
 }
 
 export async function renderProfiles() {
     cleanupProfileOverlays();
-    stopAnimation();  // Останавливаем любую старую анимацию
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
@@ -181,20 +104,14 @@ export async function renderProfiles() {
         const scrollWrapperHeight = window.innerHeight - 100;
         const minContentHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
-            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
-                <div style="min-height: ${minContentHeight}px;">
+            <div class="card-container profile-scroll-container" style="overflow:hidden; height:${scrollWrapperHeight}px;">
+                <div class="profiles-scroll-animation" style="height: ${minContentHeight}px;">
                     <div class="profiles-two-columns">${ph}${ph}</div>
                     <div class="profiles-two-columns">${ph}${ph}</div>
                 </div>
             </div>
         `;
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-
-        // Задержка запуска, чтобы DOM точно построился
-        setTimeout(() => {
-            const container = mainDiv().querySelector('.profile-scroll-container');
-            if (container && shouldAnimate) startInfiniteScroll(container);
-        }, 200);
         return;
     }
 
@@ -214,18 +131,13 @@ export async function renderProfiles() {
         const scrollWrapperHeight = window.innerHeight - 100;
         const minContentHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
-            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
-                <div style="min-height: ${minContentHeight}px;">
+            <div class="card-container profile-scroll-container" style="overflow:hidden; height:${scrollWrapperHeight}px;">
+                <div class="profiles-scroll-animation" style="height: ${minContentHeight}px;">
                     ${twoColumnsHtml}
                     ${twoColumnsHtml}
                 </div>
             </div>
         `;
-        showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-        setTimeout(() => {
-            const container = mainDiv().querySelector('.profile-scroll-container');
-            if (container) startInfiniteScroll(container);
-        }, 200);
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
@@ -261,9 +173,13 @@ export async function renderProfiles() {
 }
 
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
+    // Удаляем ранее созданную кнопку, чтобы не было дубля
+    const existingBtn = document.getElementById('profileActionBtn')?.parentElement;
+    if (existingBtn) existingBtn.remove();
+
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    const btnText = '✍🏻 создать профиль';
+    const btnText = '💫 создать профиль';
     centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
     centerBtn.style.cssText = `
         position: fixed !important;
