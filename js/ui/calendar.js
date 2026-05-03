@@ -633,16 +633,17 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const THUMB_MARGIN = 8;       // отступ ползунка от внутренних краёв трека
-    const TEXT_PADDING = 16;      // одинаковый отступ текста от края и расстояние между текстом и ползунком
+    const THUMB_MARGIN = 8;          // отступ ползунка от краёв трека
+    const EDGE_PADDING = 20;        // отступ текста от краёв трека
+    const GAP_BETWEEN = 8;          // расстояние между текстом и ползунком
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            const availableLeft = thumbLeftPos + thumbW + TEXT_PADDING;
-            const availableRight = trackW - TEXT_PADDING;
+            const availableLeft = thumbLeftPos + thumbW + GAP_BETWEEN;
+            const availableRight = trackW - EDGE_PADDING;
             const hintWidth = Math.max(0, availableRight - availableLeft);
             hint.style.left = availableLeft + 'px';
             hint.style.right = 'auto';
@@ -650,8 +651,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
-            const availableRight = thumbLeftPos - TEXT_PADDING;
-            const availableLeft = TEXT_PADDING;
+            const availableRight = thumbLeftPos - GAP_BETWEEN;
+            const availableLeft = EDGE_PADDING;
             const hintWidth = Math.max(0, availableRight - availableLeft);
             hint.style.left = availableLeft + 'px';
             hint.style.right = 'auto';
