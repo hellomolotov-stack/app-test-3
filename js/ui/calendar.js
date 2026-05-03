@@ -594,17 +594,15 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         position: absolute;
         top: 0; bottom: 0;
         display: flex; align-items: center;
+        justify-content: center;
         font-size: 14px; font-weight: 500;
         color: rgba(255,255,255,0.7);
         pointer-events: none;
         white-space: nowrap;
         overflow: hidden;
         z-index: 1;
-        text-align: center;
     `;
-
-    const TRACK_PADDING = 12;
-    const THUMB_MARGIN = 8;
+    hint.textContent = isBooked ? hintTextBooked : hintTextUnbooked;
 
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
@@ -638,29 +636,20 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
+    const THUMB_MARGIN = 8;
 
-    function updateHintPosition() {
-        const trackW = track.clientWidth;
-        const thumbW = thumb.offsetWidth;
-        if (isBooked) {
-            const availableWidth = maxLeft;
-            hint.style.left = '0px';
-            hint.style.right = 'auto';
-            hint.style.width = availableWidth + 'px';
-            hint.style.textAlign = 'center';
-            hint.textContent = hintTextBooked;
-        } else {
-            const availableWidth = trackW - (THUMB_MARGIN + thumbW) - TRACK_PADDING;
-            hint.style.left = (THUMB_MARGIN + thumbW) + 'px';
-            hint.style.right = 'auto';
-            hint.style.width = availableWidth + 'px';
-            hint.style.textAlign = 'center';
-            hint.textContent = hintTextUnbooked;
-        }
+    // Обновляем положение подсказки: она всегда занимает ВСЮ доступную ширину и центрирована,
+    // а ползунок просто перекрывает её часть (overflow:hidden на треке)
+    function updateHint() {
+        // hint всегда заполняет всё свободное пространство трека,
+        // а текст в нём центрирован благодаря justify-content:center
+        hint.style.left = '0';
+        hint.style.right = '0';
+        hint.style.width = '100%';
     }
 
     function initPosition() {
-        maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN - TRACK_PADDING;
+        maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN;
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
@@ -668,7 +657,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = THUMB_MARGIN + 'px';
             thumbLeft = THUMB_MARGIN;
         }
-        updateHintPosition();
+        updateHint();
     }
     setTimeout(initPosition, 20);
 
@@ -677,7 +666,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         startX = clientX;
         isDown = true;
         thumb.style.transition = 'none';
-        maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN - TRACK_PADDING;
+        maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN;
         thumbLeft = parseFloat(thumb.style.left) || THUMB_MARGIN;
     };
 
@@ -704,12 +693,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.textContent = 'иду';
                     thumb.style.fontWeight = '700';
                     thumb.style.fontStyle = 'normal';
-                    isBooked = false;
-                    updateHintPosition();
                 });
                 return;
             }
-            // владелец карты
+            // владелец карты – запись
             completed = true;
             isDown = false;
             const newText = hike.woman === 'yes' ? 'ты записана' : 'ты записан';
@@ -721,8 +708,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.textContent = newText;
             thumb.style.fontWeight = '900';
             thumb.style.fontStyle = 'italic';
+            hint.textContent = hintTextBooked;
             isBooked = true;
-            updateHintPosition();
+            updateHint();
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
