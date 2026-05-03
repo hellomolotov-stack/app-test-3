@@ -553,15 +553,15 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         ? (hike.woman === 'yes' ? 'ты записана' : 'ты записан')
         : 'иду';
 
-    const hintTextBooked = '← потяни влево, для отмены';
-    const hintTextUnbooked = '→ потяни, чтобы записаться';   // стрелка в начале
+    const hintTextBooked = 'потяни влево, для отмены ←';
+    const hintTextUnbooked = '→ потяни, чтобы записаться';
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     ctx.font = '700 italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const thumbTextWidth = ctx.measureText(thumbText).width;
     const minThumbWidth = 80;
-    const THUMB_PADDING = 18;
+    const THUMB_PADDING = 18;                     // внутренние отступы кнопки
     let currentThumbWidth = isBooked ? Math.max(minThumbWidth, thumbTextWidth + THUMB_PADDING * 2) : minThumbWidth;
 
     const trackWidth = Math.min(400, Math.max(280, 
@@ -606,6 +606,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
+    // убрана box‑shadow, чтобы тень не создавала визуальный зазор
     thumb.style.cssText = `
         position: absolute;
         top: 50%; transform: translateY(-50%);
@@ -615,7 +616,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         display: flex; align-items: center; justify-content: center;
         font-size: 14px; font-weight: 700;
         color: #000;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         transition: left 0.2s ease-out, width 0.25s ease;
         z-index: 2;
         cursor: pointer;
@@ -636,15 +636,14 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const THUMB_MARGIN = 8;
-    const TEXT_PADDING = 24;   // одинаковый отступ текста от края и между кнопкой и текстом
+    const THUMB_MARGIN = 8;       // отступ ползунка от внутренних краёв трека
+    const TEXT_PADDING = 24;      // отступ текста от края трека и от ползунка
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            // Текст справа, расстояние между кнопкой и текстом = TEXT_PADDING
             const hintLeft = thumbLeftPos + thumbW + TEXT_PADDING;
             const hintRight = trackW - TEXT_PADDING;
             const hintWidth = hintRight - hintLeft;
@@ -654,7 +653,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
-            // Текст слева, расстояние между кнопкой и текстом = TEXT_PADDING
             const hintRight = thumbLeftPos - TEXT_PADDING;
             const hintLeft = TEXT_PADDING;
             const hintWidth = hintRight - hintLeft;
@@ -801,7 +799,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
         thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
         hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
-        thumb.style.width = currentThumbWidth + 'px';
+        thumb.style.width = currentThumbWidth + 'px';   // сохраняем текущую ширину
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
