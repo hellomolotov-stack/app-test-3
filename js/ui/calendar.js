@@ -476,7 +476,7 @@ export function showBottomSheet(index) {
             target.closest('.bottom-sheet-nav-arrow') ||
             target.closest('a') ||
             target.closest('.btn') ||
-            target.closest('.swipe-track') ||  // <-- исключение для слайдера
+            target.closest('.swipe-track') ||
             target.closest('.bottom-sheet-handle');
         if (isInteractive) {
             isDragging = false;
@@ -543,42 +543,40 @@ function closeBottomSheet() {
     }
 }
 
-// ============================================================
-// НОВЫЙ СЛАЙДЕР (изолированный, адаптивная ширина кнопки)
-// ============================================================
+// Проверка тач-устройства
+const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
-    // Текст и размеры
+    if (!isTouchDevice()) return null; // на ПК не показываем
+
     const thumbText = isBooked ? 'ты записан' : 'иду';
     const hintText = isBooked ? '← потяни влево, для отмены' : 'потяни, чтобы записаться';
 
-    // Вычисляем ширину текста подсказки и бегунка
+    // Измерение ширины текстов
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     ctx.font = '500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    const hintTextWidth = ctx.measureText(hintText).width;
-
-    ctx.font = '700 italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'; // жирный наклонный для бегунка
+    const hintWidth = ctx.measureText(hintText).width;
+    ctx.font = '700 italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const thumbTextWidth = ctx.measureText(thumbText).width;
-    const thumbWidth = Math.max(80, thumbTextWidth + 24);
+    const minThumbWidth = 80;
+    const thumbWidth = isBooked ? Math.max(minThumbWidth, thumbTextWidth + 24) : minThumbWidth;
 
-    // Ширина трека = ширина текста + бегунок + отступы, но не менее 280px и не более 400px
-    const trackWidth = Math.min(400, Math.max(280, hintTextWidth + thumbWidth + 40));
+    const trackWidth = Math.min(400, Math.max(280, hintWidth + thumbWidth + 48));
 
-    // === Контейнер (с блюром по краям) ===
     const container = document.createElement('div');
     container.className = 'swipe-container';
     container.style.cssText = `
         width: ${trackWidth}px;
         margin: 0 auto;
-        position: relative;
         border-radius: 40px;
         padding: 4px;
-        background: rgba(73, 138, 176, 0.05);
+        background: transparent;
+        box-shadow: 0 0 30px 8px rgba(73, 138, 176, 0.2);
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
     `;
 
-    // === Трек ===
     const track = document.createElement('div');
     track.className = 'swipe-track';
     track.style.cssText = `
@@ -600,39 +598,39 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         z-index: 20;
     `;
 
-    // === Подсказка (стирается ползунком) ===
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
         position: absolute;
-        top: 0; bottom: 0; left: 12px; right: 12px;
-        display: flex; align-items: center; justify-content: center;
+        top: 0; bottom: 0;
+        display: flex; align-items: center;
         font-size: 14px; font-weight: 500;
         color: rgba(255,255,255,0.7);
         pointer-events: none;
         white-space: nowrap;
         overflow: hidden;
+        transition: left 0.2s, right 0.2s;
     `;
     hint.textContent = hintText;
 
-    // === Бегунок (жирный курсив в правом положении) ===
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
     thumb.style.cssText = `
         position: absolute;
         top: 50%; transform: translateY(-50%);
-        width: ${thumbWidth}px; height: 40px;
+        height: 40px;
         border-radius: 40px;
         background: ${accentColor};
         display: flex; align-items: center; justify-content: center;
         font-size: 14px; font-weight: 700;
         color: #000;
         box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-        transition: left 0.2s ease-out;
+        transition: left 0.2s ease-out, width 0.25s ease;
         z-index: 2;
         cursor: pointer;
         white-space: nowrap;
         overflow: hidden;
+        width: ${thumbWidth}px;
     `;
     thumb.textContent = thumbText;
     if (isBooked) {
@@ -644,13 +642,24 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
     container.appendChild(track);
 
-    // === Логика ===
-    const EDGE_MARGIN = 4;      // отступ от краёв трека (учитывая padding)
-    let startX = 0;
-    let thumbLeft = isBooked ? (track.clientWidth - thumb.offsetWidth - EDGE_MARGIN) : EDGE_MARGIN;
-    let maxLeft = 0;
-    let isDown = false;
-    let completed = false;
+    let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
+    const EDGE_MARGIN = 4;
+
+    function placeHint(currentLeft) {
+        const thumbW = thumb.offsetWidth;
+        const trackW = track.clientWidth;
+        if (currentLeft < trackW / 2) {
+            hint.style.left = (currentLeft + thumbW + 8) + 'px';
+            hint.style.right = 'auto';
+            hint.style.width = (trackW - currentLeft - thumbW - 20) + 'px';
+            hint.style.justifyContent = 'flex-start';
+        } else {
+            hint.style.right = (trackW - currentLeft + 8) + 'px';
+            hint.style.left = 'auto';
+            hint.style.width = (currentLeft - 20) + 'px';
+            hint.style.justifyContent = 'flex-end';
+        }
+    }
 
     function initPosition() {
         maxLeft = track.clientWidth - thumb.offsetWidth - EDGE_MARGIN;
@@ -661,19 +670,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
+        placeHint(isBooked ? maxLeft : EDGE_MARGIN);
     }
     setTimeout(initPosition, 20);
-
-    // Сброс гостя после закрытия попапа
-    function resetToStart() {
-        completed = false;
-        isDown = false;
-        thumb.style.transition = 'left 0.3s ease-out';
-        thumb.style.left = EDGE_MARGIN + 'px';
-        thumbLeft = EDGE_MARGIN;
-        thumb.style.fontWeight = '700';
-        thumb.style.fontStyle = 'normal';
-    }
 
     const onStart = (clientX) => {
         if (completed) return;
@@ -690,30 +689,40 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         let newLeft = thumbLeft + delta;
         newLeft = Math.max(EDGE_MARGIN, Math.min(newLeft, maxLeft));
         thumb.style.left = newLeft + 'px';
+        placeHint(newLeft);
 
-        if (isBooked && delta < 0) {
-            tg?.HapticFeedback?.impactOccurred('light');
-        }
+        if (isBooked && delta < 0) tg?.HapticFeedback?.impactOccurred('light');
 
-        // Гость: открыть попап, бегунок остаётся справа
-        if (!isBooked && isGuest && newLeft >= maxLeft * 0.95) {
-            isDown = false;
-            thumb.style.transition = 'left 0.2s ease-out';
-            thumb.style.left = maxLeft + 'px';
-            showGuestBookingPopup(hike.date, hike.title, resetToStart);
-            return;
-        }
-
-        // Владелец: завершить запись
-        if (!isBooked && !isGuest && newLeft >= maxLeft * 0.95) {
+        if (!isBooked && newLeft >= maxLeft * 0.95) {
+            if (isGuest) {
+                isDown = false;
+                thumb.style.transition = 'left 0.2s ease-out';
+                thumb.style.left = maxLeft + 'px';
+                showGuestBookingPopup(hike.date, hike.title, () => {
+                    // возврат в начало при закрытии попапа
+                    completed = false;
+                    thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
+                    thumb.style.width = minThumbWidth + 'px';
+                    thumb.style.left = EDGE_MARGIN + 'px';
+                    thumb.textContent = 'иду';
+                    thumb.style.fontWeight = '700';
+                    thumb.style.fontStyle = 'normal';
+                    setTimeout(() => placeHint(EDGE_MARGIN), 300);
+                });
+                return;
+            }
+            // владелец карты
             completed = true;
             isDown = false;
-            thumb.style.transition = 'left 0.2s ease-out';
+            // анимация ширины
+            const newWidth = Math.max(minThumbWidth, ctx.measureText('ты записан').width + 24);
+            thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
+            thumb.style.width = newWidth + 'px';
             thumb.style.left = maxLeft + 'px';
             thumb.textContent = 'ты записан';
             thumb.style.fontWeight = '900';
             thumb.style.fontStyle = 'italic';
-            hint.textContent = '← потяни влево, для отмены';
+            placeHint(maxLeft);
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
@@ -749,8 +758,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         if (completed) return;
 
         const currentLeft = parseFloat(thumb.style.left) || EDGE_MARGIN;
-        // Отмена записи
         if (isBooked && currentLeft <= EDGE_MARGIN + 10) {
+            // отмена записи
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
             const userId = state.user?.id;
@@ -779,8 +788,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             return;
         }
 
-        // Возврат в исходное положение
-        thumb.style.transition = 'left 0.2s ease-out';
+        thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
+        thumb.style.width = minThumbWidth + 'px';
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
@@ -788,6 +797,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
+        placeHint(isBooked ? maxLeft : EDGE_MARGIN);
     };
 
     track.addEventListener('touchstart', (e) => {
@@ -859,22 +869,143 @@ function updateFloatingSheetButtons() {
             row.appendChild(reportBtn);
         }
         container.appendChild(row);
-        container.style.pointerEvents = 'none';
         return;
     }
 
-    const swipeControl = renderSwipeControl({
-        isBooked,
-        isGuest,
-        hike,
-        accentColor,
-    });
-    container.appendChild(swipeControl);
-    // ВАЖНО: включаем pointer-events, чтобы слайдер работал
+    // Touch-устройство?
+    const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
+    if (swipeControl) {
+        container.appendChild(swipeControl);
+        container.style.pointerEvents = 'auto';
+        return;
+    }
+
+    // ПК (мышь) — старые кнопки
     container.style.pointerEvents = 'auto';
+    if (isBooked) {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '12px';
+        row.style.justifyContent = 'center';
+        row.style.width = '100%';
+
+        const cancelBtn = document.createElement('a');
+        cancelBtn.href = '#';
+        cancelBtn.className = 'btn btn-outline';
+        cancelBtn.textContent = 'отменить';
+        cancelBtn.addEventListener('click', e => {
+            e.preventDefault();
+            const userId = state.user?.id;
+            const hikeDate = hike.date;
+            const hikeTitle = hike.title;
+            if (isGuest) {
+                removeParticipant(hikeDate, userId)
+                    .then(() => {
+                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        saveBookingStatusToLocal();
+                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
+                        updateFloatingSheetButtons();
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        const cal = document.getElementById('calendarContainer');
+                        if (cal) renderCalendar(cal);
+                    });
+            } else {
+                Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
+                    .then(() => {
+                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        updateFloatingSheetButtons();
+                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                        renderUserBookings(document.getElementById('userBookingsContainer'));
+                        const cal = document.getElementById('calendarContainer');
+                        if (cal) renderCalendar(cal);
+                    });
+            }
+            log('cancel_click', false, state.user);
+        });
+        row.appendChild(cancelBtn);
+
+        const goBtn = document.createElement('a');
+        goBtn.href = '#';
+        goBtn.className = 'btn btn-yellow';
+        goBtn.textContent = 'ты записан';
+        goBtn.style.pointerEvents = 'none';
+        row.appendChild(goBtn);
+        container.appendChild(row);
+        return;
+    }
+
+    if (isGuest) {
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.gap = '12px';
+        row.style.justifyContent = 'center';
+        row.style.width = '100%';
+
+        const questionBtn = document.createElement('a');
+        questionBtn.href = '#';
+        questionBtn.className = 'btn btn-outline';
+        questionBtn.textContent = 'задать вопрос';
+        questionBtn.addEventListener('click', e => {
+            e.preventDefault();
+            openLink('https://t.me/hellointelligent', 'question_click', true);
+        });
+        row.appendChild(questionBtn);
+
+        const goBtn = document.createElement('a');
+        goBtn.href = '#';
+        goBtn.className = 'btn btn-yellow btn-glow';
+        goBtn.textContent = 'иду';
+        goBtn.addEventListener('click', e => {
+            e.preventDefault();
+            showGuestBookingPopup(hike.date, hike.title);
+        });
+        row.appendChild(goBtn);
+        container.appendChild(row);
+        return;
+    }
+
+    // Владелец карты
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.gap = '12px';
+    row.style.justifyContent = 'center';
+    row.style.width = '100%';
+
+    const goBtn = document.createElement('a');
+    goBtn.href = '#';
+    goBtn.className = 'btn btn-yellow btn-glow';
+    goBtn.textContent = 'иду';
+    goBtn.addEventListener('click', e => {
+        e.preventDefault();
+        const userId = state.user?.id;
+        const hikeDate = hike.date;
+        const hikeTitle = hike.title;
+        setUserRegistrationStatus(userId, hikeDate, true)
+            .then(() => {
+                state.hikeBookingStatus[sheetCurrentIndex] = true;
+                return addParticipant(hikeDate, userId, {
+                    first_name: state.user?.first_name,
+                    photo_url: state.user?.photo_url,
+                });
+            })
+            .then(() => {
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+                updateFloatingSheetButtons();
+                renderUserBookings(document.getElementById('userBookingsContainer'));
+                const cal = document.getElementById('calendarContainer');
+                if (cal) renderCalendar(cal);
+            })
+            .catch(error => {
+                console.error(error);
+                updateFloatingSheetButtons();
+            });
+        log('idut_click', false, state.user);
+    });
+    row.appendChild(goBtn);
+    container.appendChild(row);
 }
 
-function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {   // <-- добавлен третий параметр
+function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
     const config = state.popupConfig;
     const overlay = document.createElement('div');
@@ -909,21 +1040,19 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {   // <-- доба
     `;
     document.body.appendChild(overlay);
 
-    // Закрытие без покупки
     document.getElementById('closePopup').addEventListener('click', () => {
         haptic();
         overlay.remove();
-        if (onClose) onClose();   // <-- вызываем коллбэк
+        if (onClose) onClose();
     });
     overlay.addEventListener('click', e => {
         if (e.target === overlay) {
             haptic();
             overlay.remove();
-            if (onClose) onClose();   // <-- вызываем коллбэк
+            if (onClose) onClose();
         }
     });
 
-    // Покупка – коллбэк НЕ вызываем, так как слайдер перерисован будет в новом статусе
     const handlePurchase = (purchaseType, link) => {
         const userId = state.user?.id;
         addParticipant(hikeDate, userId, {
@@ -942,7 +1071,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {   // <-- доба
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
                 openLink(link, `purchase_${purchaseType}`, true);
                 overlay.remove();
-                // onClose не вызываем
             })
             .catch(error => {
                 console.error(error);
