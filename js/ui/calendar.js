@@ -561,10 +561,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     ctx.font = '700 italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const thumbTextWidth = ctx.measureText(thumbText).width;
     const minThumbWidth = 80;
-    const THUMB_PADDING = 18;                     // внутренние отступы кнопки
+    const THUMB_PADDING = 18;
     let currentThumbWidth = isBooked ? Math.max(minThumbWidth, thumbTextWidth + THUMB_PADDING * 2) : minThumbWidth;
 
-    // Ширина трека
     const trackWidth = Math.min(400, Math.max(280, 
         (isBooked ? ctx.measureText(hintTextBooked).width : ctx.measureText(hintTextUnbooked).width) + currentThumbWidth + 64));
 
@@ -590,7 +589,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         z-index: 20;
     `;
 
-    // Статичная подсказка – не двигается при свайпе
+    // Статичная подсказка – всегда прижата к краю и не двигается
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
@@ -601,26 +600,16 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         color: rgba(255,255,255,0.7);
         pointer-events: none;
         white-space: nowrap;
-        overflow: hidden;
         z-index: 1;
+        transition: none;   /* никакого движения */
     `;
-
-    // Позиция подсказки зависит от статуса
-    const EDGE_GAP = 16;          // отступ текста от края трека
-    const BUTTON_GAP = 12;        // расстояние между ползунком и текстом
+    // Начальное положение зависит от статуса
     if (isBooked) {
-        // Текст слева, ползунок справа
-        hint.style.left = EDGE_GAP + 'px';
-        hint.style.right = `calc(100% - ${BUTTON_GAP}px - ${currentThumbWidth}px)`;
-        hint.style.textAlign = 'left';
-        hint.textContent = hintTextBooked;
+        hint.style.left = '12px';
     } else {
-        // Текст справа, ползунок слева
-        hint.style.left = `calc(${THUMB_MARGIN + currentThumbWidth + BUTTON_GAP}px)`;
-        hint.style.right = EDGE_GAP + 'px';
-        hint.style.textAlign = 'right';
-        hint.textContent = hintTextUnbooked;
+        hint.style.right = '12px';
     }
+    hint.textContent = isBooked ? hintTextBooked : hintTextUnbooked;
 
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
@@ -653,7 +642,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const THUMB_MARGIN = 8;       // отступ ползунка от краёв трека
+    const THUMB_MARGIN = 8;
 
     function initPosition() {
         maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN;
@@ -699,11 +688,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.textContent = 'иду';
                     thumb.style.fontWeight = '700';
                     thumb.style.fontStyle = 'normal';
-                    // обновить подсказку на незаписанное состояние
                     hint.textContent = hintTextUnbooked;
-                    hint.style.left = `calc(${THUMB_MARGIN + currentThumbWidth + BUTTON_GAP}px)`;
-                    hint.style.right = EDGE_GAP + 'px';
-                    hint.style.textAlign = 'right';
                 });
                 return;
             }
@@ -719,11 +704,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.textContent = newText;
             thumb.style.fontWeight = '900';
             thumb.style.fontStyle = 'italic';
-            // переключить подсказку на записанное состояние
             hint.textContent = hintTextBooked;
-            hint.style.left = EDGE_GAP + 'px';
-            hint.style.right = `calc(100% - ${BUTTON_GAP}px - ${currentThumbWidth}px)`;
-            hint.style.textAlign = 'left';
             isBooked = true;
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
