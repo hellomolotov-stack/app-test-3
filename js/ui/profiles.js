@@ -93,22 +93,24 @@ export async function renderProfiles() {
 
     const shouldAnimate = !(isCardHolder && hasMyProfile);
 
+    // Пустой список – показываем заглушки
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
             ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
         const scrollWrapperHeight = window.innerHeight - 100;
+        const minContentHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
             <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
-                <div class="profiles-scroll-animation">
+                <div style="min-height: ${minContentHeight}px;">
                     <div class="profiles-two-columns">${ph}${ph}</div>
                     <div class="profiles-two-columns">${ph}${ph}</div>
                 </div>
             </div>
         `;
         const container = mainDiv().querySelector('.profile-scroll-container');
-        if (container && shouldAnimate) startInfiniteScroll(container);
+        if (container) startInfiniteScroll(container);
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
@@ -127,9 +129,10 @@ export async function renderProfiles() {
 
     if (shouldAnimate) {
         const scrollWrapperHeight = window.innerHeight - 100;
+        const minContentHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
             <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
-                <div class="profiles-scroll-animation">
+                <div style="min-height: ${minContentHeight}px;">
                     ${twoColumnsHtml}
                     ${twoColumnsHtml}
                 </div>
