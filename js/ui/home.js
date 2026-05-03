@@ -92,32 +92,16 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// 🔄 Загрузка актуального попапа из Firebase
-async function getPopupData(popupId, fallback) {
-    try {
-        const freshPopups = await loadPopups();
-        console.log('Свежие попапы из Firebase:', freshPopups);
-        if (freshPopups && freshPopups[popupId]) {
-            console.log('Найден попап', popupId, freshPopups[popupId]);
-            return freshPopups[popupId];
-        }
-    } catch (e) {
-        console.warn('Не удалось загрузить свежие попапы, использую кеш:', e);
-    }
-    console.log('Использую запасной попап для', popupId);
-    return (state.popups && state.popups[popupId]) || fallback;
-}
-
 // -------------------------------------------------
 //  ГОСТЕВЫЕ ПОПАПЫ (асинхронные)
 // -------------------------------------------------
 async function showGuestPopup() {
     haptic();
-    const popup = await getPopupData('guest_card_popup', {
+    const popup = (state.popups && state.popups.guest_card_popup) || {
         title: '💳 карта интеллигента',
         text: 'как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.',
         button_text: 'узнать о привилегиях'
-    });
+    };
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -137,11 +121,11 @@ async function showGuestPopup() {
 
 async function showGuestMastermindPopup() {
     haptic();
-    const popup = await getPopupData('guest_mastermind_popup', {
+    const popup = (state.popups && state.popups.guest_mastermind_popup) || {
         title: '🧠 саммари мастермайнда',
         text: 'чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?',
         button_text: 'расскажите скорее'
-    });
+    };
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -413,6 +397,22 @@ export function renderHome() {
     }
 
     updateMetricsUI();
+
+    // Загружаем свежие попапы при каждом входе на главную
+    loadPopups().then(freshPopups => {
+        if (freshPopups && Object.keys(freshPopups).length) {
+            state.popups = freshPopups;
+            // обновим кэш, чтобы при следующей загрузке без интернета были актуальные
+            // saveCachedState();  // эта функция может перезаписать попапы, но мы уже обновили state, можно сохранить ниже
+        }
+    }).catch(err => {
+        console.warn('Не удалось загрузить попапы при старте:', err);
+    });
+
+    // Сохраняем кэш после возможного обновления
+    setTimeout(() => {
+        // saveCachedState(); // раскомментировать, если нужно кешировать попапы
+    }, 500);
 
     if (state.userCard.status === 'active' && state.userCard.cardUrl) {
         renderOwnerHome();
