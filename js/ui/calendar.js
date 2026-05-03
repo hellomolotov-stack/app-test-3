@@ -547,15 +547,38 @@ function closeBottomSheet() {
 // НОВЫЙ СЛАЙДЕР (изолированный, адаптивная ширина кнопки)
 // ============================================================
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
+    // Текст и размеры
+    const thumbText = isBooked ? 'ты записан' : 'иду';
+    const hintText = isBooked ? '← потяни влево, для отмены' : 'потяни, чтобы записаться';
+
+    // Вычисляем ширину текста подсказки и бегунка
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = '500 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const hintTextWidth = ctx.measureText(hintText).width;
+
+    ctx.font = '700 italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'; // жирный наклонный для бегунка
+    const thumbTextWidth = ctx.measureText(thumbText).width;
+    const thumbWidth = Math.max(80, thumbTextWidth + 24);
+
+    // Ширина трека = ширина текста + бегунок + отступы, но не менее 280px и не более 400px
+    const trackWidth = Math.min(400, Math.max(280, hintTextWidth + thumbWidth + 40));
+
+    // === Контейнер (с блюром по краям) ===
     const container = document.createElement('div');
+    container.className = 'swipe-container';
     container.style.cssText = `
-        width: 70vw;
-        min-width: 280px;
-        max-width: 400px;
+        width: ${trackWidth}px;
         margin: 0 auto;
         position: relative;
+        border-radius: 40px;
+        padding: 4px;
+        background: rgba(73, 138, 176, 0.05);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
     `;
 
+    // === Трек ===
     const track = document.createElement('div');
     track.className = 'swipe-track';
     track.style.cssText = `
@@ -570,35 +593,29 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         overflow: hidden;
         user-select: none;
         touch-action: none;
-        padding: 0 16px;
+        padding: 0 12px;
         box-sizing: border-box;
         -webkit-user-select: none;
         pointer-events: auto;
         z-index: 20;
     `;
 
+    // === Подсказка (стирается ползунком) ===
     const hint = document.createElement('div');
     hint.className = 'swipe-hint';
     hint.style.cssText = `
         position: absolute;
-        top: 0; bottom: 0;
-        display: flex; align-items: center;
+        top: 0; bottom: 0; left: 12px; right: 12px;
+        display: flex; align-items: center; justify-content: center;
         font-size: 14px; font-weight: 500;
         color: rgba(255,255,255,0.7);
         pointer-events: none;
-        transition: opacity 0.3s;
         white-space: nowrap;
         overflow: hidden;
     `;
-    hint.textContent = isBooked ? '← потяни влево, для отмены' : 'потяни, чтобы записаться';
+    hint.textContent = hintText;
 
-    const thumbText = isBooked ? 'ты записан' : 'иду';
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    ctx.font = '700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    const textWidth = ctx.measureText(thumbText).width;
-    const thumbWidth = Math.max(90, textWidth + 24);
-
+    // === Бегунок (жирный курсив в правом положении) ===
     const thumb = document.createElement('div');
     thumb.className = 'swipe-thumb';
     thumb.style.cssText = `
@@ -618,34 +635,22 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         overflow: hidden;
     `;
     thumb.textContent = thumbText;
+    if (isBooked) {
+        thumb.style.fontWeight = '900';
+        thumb.style.fontStyle = 'italic';
+    }
 
     track.appendChild(hint);
     track.appendChild(thumb);
     container.appendChild(track);
 
-    const EDGE_MARGIN = 6;   // отступ от краёв трека
+    // === Логика ===
+    const EDGE_MARGIN = 4;      // отступ от краёв трека (учитывая padding)
     let startX = 0;
-    let thumbLeft = EDGE_MARGIN;
+    let thumbLeft = isBooked ? (track.clientWidth - thumb.offsetWidth - EDGE_MARGIN) : EDGE_MARGIN;
     let maxLeft = 0;
     let isDown = false;
     let completed = false;
-
-    function adjustHint() {
-        const currentLeft = parseFloat(thumb.style.left) || EDGE_MARGIN;
-        const trackWidth = track.clientWidth;
-        const thumbW = thumb.offsetWidth;
-        if (currentLeft < trackWidth / 2) {
-            hint.style.left = (currentLeft + thumbW + 12) + 'px';
-            hint.style.right = 'auto';
-            hint.style.width = (trackWidth - currentLeft - thumbW - 24) + 'px';
-            hint.style.justifyContent = 'flex-start';
-        } else {
-            hint.style.right = (trackWidth - currentLeft + 12) + 'px';
-            hint.style.left = 'auto';
-            hint.style.width = (currentLeft - 12) + 'px';
-            hint.style.justifyContent = 'flex-end';
-        }
-    }
 
     function initPosition() {
         maxLeft = track.clientWidth - thumb.offsetWidth - EDGE_MARGIN;
@@ -656,21 +661,19 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
-        adjustHint();
     }
+    setTimeout(initPosition, 20);
 
-    // Функция сброса бегунка в начальное левое положение (для гостя после закрытия попапа)
+    // Сброс гостя после закрытия попапа
     function resetToStart() {
         completed = false;
         isDown = false;
         thumb.style.transition = 'left 0.3s ease-out';
         thumb.style.left = EDGE_MARGIN + 'px';
         thumbLeft = EDGE_MARGIN;
-        hint.textContent = 'потяни, чтобы записаться';
-        adjustHint();
+        thumb.style.fontWeight = '700';
+        thumb.style.fontStyle = 'normal';
     }
-
-    setTimeout(initPosition, 20);
 
     const onStart = (clientX) => {
         if (completed) return;
@@ -687,33 +690,30 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         let newLeft = thumbLeft + delta;
         newLeft = Math.max(EDGE_MARGIN, Math.min(newLeft, maxLeft));
         thumb.style.left = newLeft + 'px';
-        adjustHint();
 
         if (isBooked && delta < 0) {
             tg?.HapticFeedback?.impactOccurred('light');
         }
 
-        // Гость: достигнут правый край – открываем попап, бегунок остаётся на месте
+        // Гость: открыть попап, бегунок остаётся справа
         if (!isBooked && isGuest && newLeft >= maxLeft * 0.95) {
             isDown = false;
             thumb.style.transition = 'left 0.2s ease-out';
-            thumb.style.left = maxLeft + 'px';   // фиксация справа
-            adjustHint();
-
-            // Открываем попап, передаём resetToStart как onClose
+            thumb.style.left = maxLeft + 'px';
             showGuestBookingPopup(hike.date, hike.title, resetToStart);
             return;
         }
 
-        // Владелец карты: завершаем запись
+        // Владелец: завершить запись
         if (!isBooked && !isGuest && newLeft >= maxLeft * 0.95) {
             completed = true;
             isDown = false;
             thumb.style.transition = 'left 0.2s ease-out';
             thumb.style.left = maxLeft + 'px';
             thumb.textContent = 'ты записан';
+            thumb.style.fontWeight = '900';
+            thumb.style.fontStyle = 'italic';
             hint.textContent = '← потяни влево, для отмены';
-            adjustHint();
             tg?.HapticFeedback?.impactOccurred('heavy');
             setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
@@ -749,6 +749,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         if (completed) return;
 
         const currentLeft = parseFloat(thumb.style.left) || EDGE_MARGIN;
+        // Отмена записи
         if (isBooked && currentLeft <= EDGE_MARGIN + 10) {
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
@@ -778,6 +779,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             return;
         }
 
+        // Возврат в исходное положение
         thumb.style.transition = 'left 0.2s ease-out';
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
@@ -786,7 +788,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.left = EDGE_MARGIN + 'px';
             thumbLeft = EDGE_MARGIN;
         }
-        adjustHint();
     };
 
     track.addEventListener('touchstart', (e) => {
