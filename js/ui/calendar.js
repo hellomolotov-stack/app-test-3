@@ -561,10 +561,12 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     ctx.font = '700 italic 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const thumbTextWidth = ctx.measureText(thumbText).width;
     const minThumbWidth = 80;
-    const thumbWidth = isBooked ? Math.max(minThumbWidth, thumbTextWidth + 24) : minThumbWidth;
+    // Внутренние отступы увеличены до 18px с каждой стороны
+    const THUMB_PADDING = 18;
+    let currentThumbWidth = isBooked ? Math.max(minThumbWidth, thumbTextWidth + THUMB_PADDING * 2) : minThumbWidth;
 
     const trackWidth = Math.min(400, Math.max(280, 
-        (isBooked ? ctx.measureText(hintTextBooked).width : ctx.measureText(hintTextUnbooked).width) + thumbWidth + 64));
+        (isBooked ? ctx.measureText(hintTextBooked).width : ctx.measureText(hintTextUnbooked).width) + currentThumbWidth + 64));
 
     const container = document.createElement('div');
     container.className = 'swipe-container';
@@ -632,7 +634,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         cursor: pointer;
         white-space: nowrap;
         overflow: hidden;
-        width: ${thumbWidth}px;
+        width: ${currentThumbWidth}px;
     `;
     thumb.textContent = thumbText;
     if (isBooked) {
@@ -720,7 +722,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     completed = false;
                     thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
                     hint.style.transition = 'left 0.3s ease-out, right 0.3s ease-out, width 0.3s ease-out';
-                    thumb.style.width = minThumbWidth + 'px';
+                    currentThumbWidth = minThumbWidth;
+                    thumb.style.width = currentThumbWidth + 'px';
                     thumb.style.left = THUMB_MARGIN + 'px';
                     thumb.textContent = 'иду';
                     thumb.style.fontWeight = '700';
@@ -733,10 +736,11 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             completed = true;
             isDown = false;
             const newText = hike.woman === 'yes' ? 'ты записана' : 'ты записан';
-            const newWidth = Math.max(minThumbWidth, ctx.measureText(newText).width + 24);
+            const newWidth = Math.max(minThumbWidth, ctx.measureText(newText).width + THUMB_PADDING * 2);
+            currentThumbWidth = newWidth;
             thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
             hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
-            thumb.style.width = newWidth + 'px';
+            thumb.style.width = currentThumbWidth + 'px';
             thumb.style.left = maxLeft + 'px';
             thumb.textContent = newText;
             thumb.style.fontWeight = '900';
@@ -809,7 +813,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
         thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
         hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
-        thumb.style.width = minThumbWidth + 'px';
+        // Возвращаем текущую ширину, а не minThumbWidth
+        thumb.style.width = currentThumbWidth + 'px';
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
@@ -1027,7 +1032,6 @@ function updateFloatingSheetButtons() {
 
 function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
-    // Используем попап из state.popups, если есть, иначе fallback на popupConfig
     const bookingPopup = (state.popups && state.popups.guest_booking_popup) || null;
     const config = state.popupConfig;
 
@@ -1397,7 +1401,6 @@ document.addEventListener('click', function(e) {
     const isWoman = hike && hike.woman === 'yes';
     const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
     if (state.userCard.status !== 'active') {
-        // ГОСТЬ – показываем попап из таблицы
         const popupData = (state.popups && state.popups.guest_uchastniki_popup) || {
             title: 'недоступно',
             text: 'чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него',
