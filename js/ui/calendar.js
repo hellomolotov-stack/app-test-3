@@ -553,7 +553,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         ? (hike.woman === 'yes' ? 'ты записана' : 'ты записан')
         : 'иду';
 
-    const hintTextBooked = 'потяни влево, для отмены ←';
+    const hintTextBooked = '← потяни влево, для отмены';
     const hintTextUnbooked = '→ потяни, чтобы записаться';
 
     const canvas = document.createElement('canvas');
@@ -637,7 +637,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const THUMB_MARGIN = 8;       // отступ ползунка от внутренних краёв трека
-    const TEXT_PADDING = 24;      // отступ текста от края трека и от ползунка
+    const TEXT_PADDING = 12;      // одинаковый отступ текста от края и между кнопкой и текстом (уменьшено)
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
