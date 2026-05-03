@@ -75,51 +75,6 @@ function cleanupProfileOverlays() {
     document.body.style.overflow = '';
 }
 
-// Запуск плавной бесконечной прокрутки (JS)
-function startInfiniteScroll(container) {
-    if (!container) return;
-    const speed = 0.5; // пикселей в кадре (примерно 60 кадров/с)
-    let animId;
-
-    function step() {
-        if (!container.isConnected) {
-            cancelAnimationFrame(animId);
-            return;
-        }
-        // Плавно увеличиваем scrollTop
-        container.scrollTop += speed;
-        // Когда дошли до середины (конца первого набора), мгновенно перепрыгиваем в начало,
-        // что незаметно, так как контент дублирован
-        const halfHeight = container.scrollHeight / 2;
-        if (container.scrollTop >= halfHeight) {
-            container.scrollTop = 0;
-        }
-        animId = requestAnimationFrame(step);
-    }
-
-    // При любом ручном скролле останавливаем анимацию, чтобы не конфликтовать
-    container.addEventListener('scroll', () => {
-        cancelAnimationFrame(animId);
-    }, { once: false });
-
-    // Возобновляем анимацию, когда пользователь перестаёт скроллить
-    let timeoutId;
-    container.addEventListener('scroll', () => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-            // Проверяем, не докрутил ли пользователь до половины, если да – перебрасываем в начало для бесшовности
-            const halfHeight = container.scrollHeight / 2;
-            if (container.scrollTop >= halfHeight) {
-                container.scrollTop = 0;
-            }
-            animId = requestAnimationFrame(step);
-        }, 2000); // возобновить через 2 секунды бездействия
-    });
-
-    // Запускаем автоматическую прокрутку
-    animId = requestAnimationFrame(step);
-}
-
 export async function renderProfiles() {
     cleanupProfileOverlays();
 
@@ -136,9 +91,8 @@ export async function renderProfiles() {
     const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
 
-    const shouldAnimate = !(isCardHolder && hasMyProfile); // гости и владельцы без профиля получат анимацию
+    const shouldAnimate = !(isCardHolder && hasMyProfile);
 
-    // --- Пустой список (заглушки) ---
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
@@ -153,7 +107,7 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        const container = document.querySelector('.profile-scroll-container');
+        const container = mainDiv().querySelector('.profile-scroll-container');
         if (container && shouldAnimate) startInfiniteScroll(container);
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
@@ -181,7 +135,7 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        const container = document.querySelector('.profile-scroll-container');
+        const container = mainDiv().querySelector('.profile-scroll-container');
         if (container) startInfiniteScroll(container);
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
@@ -215,6 +169,43 @@ export async function renderProfiles() {
     document.body.appendChild(blurOverlay);
 
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+}
+
+function startInfiniteScroll(container) {
+    if (!container) return;
+    const speed = 0.5;
+    let animId;
+
+    function step() {
+        if (!container.isConnected) {
+            cancelAnimationFrame(animId);
+            return;
+        }
+        container.scrollTop += speed;
+        const halfHeight = container.scrollHeight / 2;
+        if (container.scrollTop >= halfHeight) {
+            container.scrollTop = 0;
+        }
+        animId = requestAnimationFrame(step);
+    }
+
+    container.addEventListener('scroll', () => {
+        cancelAnimationFrame(animId);
+    }, { once: false });
+
+    let timeoutId;
+    container.addEventListener('scroll', () => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            const halfHeight = container.scrollHeight / 2;
+            if (container.scrollTop >= halfHeight) {
+                container.scrollTop = 0;
+            }
+            animId = requestAnimationFrame(step);
+        }, 2000);
+    });
+
+    animId = requestAnimationFrame(step);
 }
 
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
