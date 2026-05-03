@@ -96,12 +96,15 @@ export function renderUserBookings(container) {
 async function getPopupData(popupId, fallback) {
     try {
         const freshPopups = await loadPopups();
+        console.log('Свежие попапы из Firebase:', freshPopups);
         if (freshPopups && freshPopups[popupId]) {
+            console.log('Найден попап', popupId, freshPopups[popupId]);
             return freshPopups[popupId];
         }
     } catch (e) {
-        console.warn('Не удалось загрузить свежие попапы, использую кеш');
+        console.warn('Не удалось загрузить свежие попапы, использую кеш:', e);
     }
+    console.log('Использую запасной попап для', popupId);
     return (state.popups && state.popups[popupId]) || fallback;
 }
 
