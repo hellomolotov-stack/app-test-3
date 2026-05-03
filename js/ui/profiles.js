@@ -100,15 +100,23 @@ export async function renderProfiles() {
         for (let i = 0; i < placeholderCount; i++) {
             ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
+        const scrollWrapperHeight = window.innerHeight - 100;
+        const minContentHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
-            <div class="card-container" style="overflow:hidden; height:${window.innerHeight - 100}px;">
-                <div class="profiles-scroll-animation" style="height:${(window.innerHeight - 100) * 2}px;">
+            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
+                <div style="min-height: ${minContentHeight}px;">
                     <div class="profiles-two-columns">${ph}${ph}</div>
                     <div class="profiles-two-columns">${ph}${ph}</div>
                 </div>
             </div>
         `;
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+
+        // Запуск анимации с гарантией, что контейнер уже в DOM
+        setTimeout(() => {
+            const container = mainDiv().querySelector('.profile-scroll-container');
+            if (container) startInfiniteScroll(container);
+        }, 300);
         return;
     }
 
@@ -125,14 +133,21 @@ export async function renderProfiles() {
     </div>`;
 
     if (shouldAnimate) {
+        const scrollWrapperHeight = window.innerHeight - 100;
+        const minContentHeight = scrollWrapperHeight * 2;
         mainDiv().innerHTML = `
-            <div class="card-container" style="overflow:hidden; height:${window.innerHeight - 100}px;">
-                <div class="profiles-scroll-animation" style="height:${(window.innerHeight - 100) * 2}px;">
+            <div class="card-container profile-scroll-container" style="overflow-y: scroll; height:${scrollWrapperHeight}px; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;">
+                <div style="min-height: ${minContentHeight}px;">
                     ${twoColumnsHtml}
                     ${twoColumnsHtml}
                 </div>
             </div>
         `;
+        showCenterButtonWithPreview(isCardHolder, hasMyProfile);
+        setTimeout(() => {
+            const container = mainDiv().querySelector('.profile-scroll-container');
+            if (container) startInfiniteScroll(container);
+        }, 300);
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
@@ -157,7 +172,7 @@ export async function renderProfiles() {
     blurOverlay.style.left = '0';
     blurOverlay.style.width = '100%';
     blurOverlay.style.height = '100%';
-    blurOverlay.style.pointerEvents = 'none';   // скролл проходит сквозь
+    blurOverlay.style.pointerEvents = 'none';
     blurOverlay.style.zIndex = '40';
     blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
     blurOverlay.style.backdropFilter = 'blur(16px)';
@@ -167,13 +182,30 @@ export async function renderProfiles() {
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
 }
 
+/* ----- ПРОСТАЯ И НАДЁЖНАЯ АНИМАЦИЯ СКРОЛЛА ----- */
+function startInfiniteScroll(container) {
+    if (!container) return;
+    const speed = 0.5;
+    function step() {
+        if (!container.isConnected) return;
+        container.scrollTop += speed;
+        const halfHeight = container.scrollHeight / 2;
+        if (container.scrollTop >= halfHeight) container.scrollTop = 0;
+        requestAnimationFrame(step);
+    }
+    container.scrollTop = 1; // активируем скролл
+    requestAnimationFrame(step);
+}
+
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
+    // Удаляем предыдущую кнопку, если была
     const oldBtn = document.getElementById('profileActionBtn')?.parentElement;
     if (oldBtn) oldBtn.remove();
 
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">💫 создать профиль</button>`;
+    const btnText = '💫 создать профиль';
+    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">${btnText}</button>`;
     centerBtn.style.cssText = `
         position: fixed !important;
         top: 50% !important;
@@ -185,16 +217,125 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     document.body.appendChild(centerBtn);
 
     const actionBtn = document.getElementById('profileActionBtn');
-    actionBtn.addEventListener('click', () => {
-        haptic();
-        if (isCardHolder) {
+    actionBtn.style.cssText = `
+        padding: 12px 24px !important;
+        font-size: 16px !important;
+        white-space: nowrap;
+        border-radius: 40px !important;
+        width: auto !important;
+        min-width: 200px;
+    `;
+    if (isCardHolder) {
+        actionBtn.addEventListener('click', () => {
+            haptic();
             log('create_profile_click', false, state.user);
             renderEditProfile();
-        } else {
+        });
+    } else {
+        actionBtn.addEventListener('click', () => {
+            haptic();
             log('create_profile_click', true, state.user);
             showGuestProfilePopup();
+        });
+    }
+
+    let previewProfile = null;
+    if (state.pendingProfileClick) {
+        previewProfile = state.pendingProfileClick;
+        state.pendingProfileClick = null;
+    } else {
+        const randomProf = getRandomProfile();
+        if (randomProf) {
+            previewProfile = {
+                userId: randomProf.userId,
+                name: randomProf.name,
+                photoUrl: randomProf.avatarUrl || null
+            };
         }
-    });
+    }
+
+    if (previewProfile) {
+        const banner = document.createElement('div');
+        banner.className = 'profile-preview-banner';
+        banner.style.cssText = `
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            width: 90% !important;
+            max-width: 520px !important;
+            margin-top: -100px !important;
+            z-index: 101 !important;
+            pointer-events: none !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-radius: 28px !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important;
+            padding: 16px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 14px !important;
+            box-sizing: border-box !important;
+        `;
+        // ... (остальная часть создания баннера без изменений)
+        const avatarContainer = document.createElement('div');
+        avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
+
+        if (previewProfile.photoUrl) {
+            const img = document.createElement('img');
+            img.src = previewProfile.photoUrl;
+            img.className = 'preview-avatar-img';
+            img.style.cssText = `
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50% !important;
+                object-fit: cover !important;
+            `;
+            img.onerror = function() {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'preview-avatar-placeholder';
+                placeholder.style.cssText = `
+                    width: 100% !important;
+                    height: 100% !important;
+                    border-radius: 50% !important;
+                    background: #40a7e3 !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 24px !important;
+                    color: white !important;
+                `;
+                placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+                this.parentNode.replaceChild(placeholder, this);
+            };
+            avatarContainer.appendChild(img);
+        } else {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'preview-avatar-placeholder';
+            placeholder.style.cssText = `
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 50% !important;
+                background: #40a7e3 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 24px !important;
+                color: white !important;
+            `;
+            placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
+            avatarContainer.appendChild(placeholder);
+        }
+
+        const textDiv = document.createElement('div');
+        textDiv.style.cssText = 'flex: 1; font-size: 14px; color: #fff; line-height: 1.4; word-break: break-word;';
+        textDiv.innerHTML = `<span style="font-weight: 700; color: var(--yellow);">${escapeHtml(previewProfile.name)}</span> – и другие члены клуба уже создали профиль интеллигента. создай свой, чтобы вывести здоровые знакомства на новый уровень`;
+        banner.appendChild(avatarContainer);
+        banner.appendChild(textDiv);
+        document.body.appendChild(banner);
+    }
 }
 
 function showGuestProfilePopup() {
@@ -215,7 +356,10 @@ function showGuestProfilePopup() {
     `;
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) { haptic(); overlay.remove(); }
+        if (e.target === overlay) {
+            haptic();
+            overlay.remove();
+        }
     });
     document.getElementById('goToPrivilegesBtn').addEventListener('click', (e) => {
         e.preventDefault();
@@ -227,13 +371,15 @@ function showGuestProfilePopup() {
     });
 }
 
+/* ----- РЕДАКТОР ПРОФИЛЯ (БЕЗ ИЗМЕНЕНИЙ) ----- */
 async function renderEditProfile() {
     cleanupProfileOverlays();
+
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `🎩 мой профиль`; hideBack();
+    subtitle().textContent = `🎩 мой профиль`; hideBack(); haptic(); log('edit_profile_opened',false,state.user);
     showBottomNav(true); setupBottomNav();
     const bottomNav = document.getElementById('bottomNav');
-    if (bottomNav) bottomNav.style.display = 'flex';
+    if(bottomNav) bottomNav.style.display = 'flex';
 
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     const fresh = await loadMyProfile(state.user?.id);
@@ -274,8 +420,8 @@ async function renderEditProfile() {
     const allowLabel = document.getElementById('allowMessagesLabel');
     allowCheck.addEventListener('change', ()=> allowLabel.textContent = allowCheck.checked ? 'разрешено писать в телеграм' : 'запрещено писать в телеграм');
 
-    tg.BackButton.onClick(() => { if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); });
-    tg.BackButton.show();
+    const backHandler = ()=>{ if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
+    tg.BackButton.onClick(backHandler); tg.BackButton.show();
     document.getElementById('profileName').placeholder = '';
     document.getElementById('profileHobbies').placeholder = '';
     document.getElementById('profileProfession').placeholder = '';
@@ -289,16 +435,27 @@ async function renderEditProfile() {
         const profession = document.getElementById('profileProfession').value.trim();
         const allowMessages = document.getElementById('allowMessagesCheck').checked;
         let customLink = document.getElementById('customLinkInput').value.trim();
-        if (customLink && !customLink.match(/^https?:\/\//i)) customLink = 'https://' + customLink;
+        if (customLink && !customLink.match(/^https?:\/\//i)) {
+            customLink = 'https://' + customLink;
+        }
 
-        const data = { name, friendshipStatuses: selected, hobbies, profession, allowMessages, customLink, username: state.user?.username || '', avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null, avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(), userId: state.user?.id };
+        const data = {
+            name, friendshipStatuses: selected, hobbies, profession,
+            allowMessages, customLink,
+            username: state.user?.username || '',
+            avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null,
+            avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(),
+            userId: state.user?.id
+        };
         await saveProfile(state.user?.id, data);
         syncProfileToSheet(data, state.user).catch(console.error);
         log('save_profile', false, state.user);
         delete userHikesCache[state.user?.id];
-        tg.BackButton.offClick();
+        tg.BackButton.offClick(backHandler);
         if(bottomNav) bottomNav.style.display='flex';
-        showBottomNav(true); setupBottomNav(); setActiveNav('navProfiles');
+        showBottomNav(true);
+        setupBottomNav();
+        setActiveNav('navProfiles');
         cleanupProfileOverlays();
         renderProfiles();
     });
@@ -311,9 +468,11 @@ async function renderEditProfile() {
                 syncProfileDeleteToSheet(state.user?.id).catch(console.error);
                 log('delete_profile', false, state.user);
                 delete userHikesCache[state.user?.id];
-                tg.BackButton.offClick();
+                tg.BackButton.offClick(backHandler);
                 if(bottomNav) bottomNav.style.display='flex';
-                showBottomNav(true); setupBottomNav(); setActiveNav('navProfiles');
+                showBottomNav(true);
+                setupBottomNav();
+                setActiveNav('navProfiles');
                 cleanupProfileOverlays();
                 renderProfiles();
             }
