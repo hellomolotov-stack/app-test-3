@@ -634,15 +634,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const THUMB_MARGIN = 8;       // отступ ползунка от внутренних краёв трека
-    const TEXT_PADDING = 12;      // отступ текста от края трека и расстояние между текстом и ползунком
+    const TEXT_PADDING = 16;      // одинаковый отступ текста от края и расстояние между текстом и ползунком
 
-    // Позиционирует подсказку так, чтобы ползунок «стирал» текст
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            // Ползунок слева → текст справа, выровнен вправо
             const availableLeft = thumbLeftPos + thumbW + TEXT_PADDING;
             const availableRight = trackW - TEXT_PADDING;
             const hintWidth = Math.max(0, availableRight - availableLeft);
@@ -652,7 +650,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
-            // Ползунок справа → текст слева, выровнен влево
             const availableRight = thumbLeftPos - TEXT_PADDING;
             const availableLeft = TEXT_PADDING;
             const hintWidth = Math.max(0, availableRight - availableLeft);
