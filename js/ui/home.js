@@ -311,7 +311,6 @@ function renderGuestHome() {
         });
     }
 
-    // Надёжное навешивание обработчиков для кнопок "читать" (гостевые)
     const readButtons = document.querySelectorAll('.guest-read-btn');
     readButtons.forEach(btn => {
         btn.removeEventListener('click', handleGuestRead);
@@ -398,21 +397,14 @@ export function renderHome() {
 
     updateMetricsUI();
 
-    // Загружаем свежие попапы при каждом входе на главную
+    // Подгружаем свежие попапы
     loadPopups().then(freshPopups => {
         if (freshPopups && Object.keys(freshPopups).length) {
             state.popups = freshPopups;
-            // обновим кэш, чтобы при следующей загрузке без интернета были актуальные
-            // saveCachedState();  // эта функция может перезаписать попапы, но мы уже обновили state, можно сохранить ниже
         }
     }).catch(err => {
         console.warn('Не удалось загрузить попапы при старте:', err);
     });
-
-    // Сохраняем кэш после возможного обновления
-    setTimeout(() => {
-        // saveCachedState(); // раскомментировать, если нужно кешировать попапы
-    }, 500);
 
     if (state.userCard.status === 'active' && state.userCard.cardUrl) {
         renderOwnerHome();
