@@ -552,7 +552,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         ? (hike.woman === 'yes' ? 'ты записана' : 'ты записан')
         : 'иду';
 
-    const hintTextBooked = '← потяни влево, для отмены';
+    const hintTextBooked = '← потяни для отмены ←';
     const hintTextUnbooked = '→ потяни, чтобы записаться';
 
     const canvas = document.createElement('canvas');
