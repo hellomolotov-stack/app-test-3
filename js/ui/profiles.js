@@ -81,7 +81,7 @@ function cleanupProfileOverlays() {
 // ------------------------------------------------------------
 function setupInfiniteScroll(container) {
     if (!container) return;
-    const speed = 0.5;                    // пикселей в кадре (60 кадров/с → 30 px/сек)
+    const speed = 0.5;
     let animId;
 
     function step() {
@@ -90,24 +90,20 @@ function setupInfiniteScroll(container) {
             return;
         }
         container.scrollTop += speed;
-        // Когда дошли до середины (дубликата), мгновенно в начало
         if (container.scrollTop >= container.scrollHeight / 2) {
             container.scrollTop = 0;
         }
         animId = requestAnimationFrame(step);
     }
 
-    // При касании пользователем останавливаем авто‑прокрутку
     container.addEventListener('touchstart', () => {
         cancelAnimationFrame(animId);
     }, { once: false });
 
-    // Через 2 секунды после последнего касания возобновляем
     let resumeTimeout;
     container.addEventListener('touchend', () => {
         clearTimeout(resumeTimeout);
         resumeTimeout = setTimeout(() => {
-            // Корректируем, если пользователь докрутил до половины
             if (container.scrollTop >= container.scrollHeight / 2) {
                 container.scrollTop = 0;
             }
@@ -115,7 +111,6 @@ function setupInfiniteScroll(container) {
         }, 2000);
     });
 
-    // Запускаем
     animId = requestAnimationFrame(step);
 }
 
@@ -153,8 +148,13 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        const container = mainDiv().querySelector('.infinite-scroll-container');
-        if (container) setupInfiniteScroll(container);
+        // Даём DOM обновиться, затем запускаем анимацию
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const container = mainDiv().querySelector('.infinite-scroll-container');
+                if (container) setupInfiniteScroll(container);
+            });
+        });
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
@@ -183,8 +183,12 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        const container = mainDiv().querySelector('.infinite-scroll-container');
-        if (container) setupInfiniteScroll(container);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                const container = mainDiv().querySelector('.infinite-scroll-container');
+                if (container) setupInfiniteScroll(container);
+            });
+        });
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
@@ -202,7 +206,6 @@ export async function renderProfiles() {
         return;
     }
 
-    // Блюр и центральная кнопка с баннером
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.position = 'fixed';
