@@ -396,6 +396,31 @@ async function loadAppData() {
         if (startParam) {
             setTimeout(() => handleDeepLink(startParam), 100);
         }
+
+        // -----------------------------
+        //  АВТОМАТИЧЕСКАЯ СМЕНА ФОНА
+        // -----------------------------
+        const nightImage = 'https://i.postimg.cc/prQCHFcb/IMG-4799.jpg';
+        
+        function updateNightBackground() {
+            const now = new Date();
+            // Получаем часы в Москве (UTC+3)
+            const mskTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Moscow"}));
+            const mskHours = mskTime.getHours();
+            
+            if (mskHours >= 22 || mskHours < 5) {
+                document.body.classList.add('night-mode');
+            } else {
+                document.body.classList.remove('night-mode');
+            }
+        }
+
+        // Запускаем сразу
+        updateNightBackground();
+
+        // Обновляем каждые 60 секунд, чтобы фон менялся без перезагрузки
+        setInterval(updateNightBackground, 60000);
+
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
         renderHome();
