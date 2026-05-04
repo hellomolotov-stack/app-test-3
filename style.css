@@ -2049,3 +2049,7 @@ body::before {
     0% { transform: translateY(0); }
     100% { transform: translateY(-50%); }
 }
+
+body.night-mode::before {
+    background-image: url('https://i.postimg.cc/prQCHFcb/IMG-4799.jpg') !important;
+}
