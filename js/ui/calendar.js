@@ -325,6 +325,29 @@ export function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
+        // ПИСЬМО МАКСА ПОСЛЕ ХАЙКА
+        let letterBannerHtml = '';
+        if (isPast && (hike.letter_text || hike.letter_link)) {
+            const letterText = hike.letter_text || '';
+            const letterLink = hike.letter_link || '';
+            const processedLetterText = parseLinks(letterText, isGuest);
+            const chatLinkHtml = letterLink
+                ? `<a href="${letterLink}" class="dynamic-link letter-chat-link" data-url="${letterLink}" data-guest="false">читать в чате</a>`
+                : '';
+            letterBannerHtml = `
+                <div class="letter-banner" id="letterBanner">
+                    <div class="letter-banner-header">
+                        <span>письмо Макса после хайка ✉️</span>
+                        <span class="arrow">▼</span>
+                    </div>
+                    <div class="letter-banner-content">
+                        ${processedLetterText}
+                        ${chatLinkHtml}
+                    </div>
+                </div>
+            `;
+        }
+
         const prevArrow = hasPrev
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
@@ -344,6 +367,7 @@ export function showBottomSheet(index) {
                 ${tagsHtml}
             </div>
             <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
+            ${letterBannerHtml}
         `;
 
         if (!isPast) {
@@ -425,6 +449,21 @@ export function showBottomSheet(index) {
                 log('slider_next', false, state.user);
             }
         });
+
+        // Обработчик раскрытия баннера письма
+        const banner = document.getElementById('letterBanner');
+        if (banner) {
+            banner.addEventListener('click', function(e) {
+                if (e.target.closest('.dynamic-link')) return;
+                haptic();
+                this.classList.toggle('expanded');
+                if (this.classList.contains('expanded')) {
+                    setTimeout(() => {
+                        contentWrapper.scrollBy({ top: 40, behavior: 'smooth' });
+                    }, 350);
+                }
+            });
+        }
     }
 
     updateContent();
@@ -543,6 +582,8 @@ function closeBottomSheet() {
     }
 }
 
+// ... (остальной код swipe control, updateFloatingSheetButtons, guestBookingPopup, participant dropdown и т.д. остаётся без изменений)
+
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
@@ -633,9 +674,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const THUMB_MARGIN = 8;          // отступ ползунка от краёв трека
-    const EDGE_PADDING = 30;        // отступ текста от краёв трека
-    const GAP_BETWEEN = 0;          // расстояние между текстом и ползунком
+    const THUMB_MARGIN = 8;
+    const EDGE_PADDING = 30;
+    const GAP_BETWEEN = 0;
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
