@@ -81,7 +81,7 @@ function cleanupProfileOverlays() {
 // ------------------------------------------------------------
 function setupInfiniteScroll(container) {
     if (!container) return;
-    const speed = 0.5;
+    const speed = 0.5;                    // пикселей в кадре
     let animId;
 
     function step() {
@@ -90,20 +90,24 @@ function setupInfiniteScroll(container) {
             return;
         }
         container.scrollTop += speed;
+        // Когда дошли до середины (дубликата), мгновенно в начало
         if (container.scrollTop >= container.scrollHeight / 2) {
             container.scrollTop = 0;
         }
         animId = requestAnimationFrame(step);
     }
 
+    // При касании пользователем останавливаем авто‑прокрутку
     container.addEventListener('touchstart', () => {
         cancelAnimationFrame(animId);
     }, { once: false });
 
+    // Через 2 секунды после последнего касания возобновляем
     let resumeTimeout;
     container.addEventListener('touchend', () => {
         clearTimeout(resumeTimeout);
         resumeTimeout = setTimeout(() => {
+            // Корректируем, если пользователь докрутил до половины
             if (container.scrollTop >= container.scrollHeight / 2) {
                 container.scrollTop = 0;
             }
@@ -111,6 +115,7 @@ function setupInfiniteScroll(container) {
         }, 2000);
     });
 
+    // Запускаем
     animId = requestAnimationFrame(step);
 }
 
@@ -118,7 +123,7 @@ export async function renderProfiles() {
     cleanupProfileOverlays();
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `🎩 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
+    subtitle().textContent = `🫆 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
     showBottomNav(true); setupBottomNav();
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     await loadProfilesData();
@@ -148,13 +153,8 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        // Даём DOM обновиться, затем запускаем анимацию
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                const container = mainDiv().querySelector('.infinite-scroll-container');
-                if (container) setupInfiniteScroll(container);
-            });
-        });
+        const container = mainDiv().querySelector('.infinite-scroll-container');
+        if (container) setupInfiniteScroll(container);
         showCenterButtonWithPreview(isCardHolder, hasMyProfile);
         return;
     }
@@ -183,12 +183,8 @@ export async function renderProfiles() {
                 </div>
             </div>
         `;
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                const container = mainDiv().querySelector('.infinite-scroll-container');
-                if (container) setupInfiniteScroll(container);
-            });
-        });
+        const container = mainDiv().querySelector('.infinite-scroll-container');
+        if (container) setupInfiniteScroll(container);
     } else {
         mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
     }
@@ -223,16 +219,13 @@ export async function renderProfiles() {
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
 }
 
-// ------------------------------------------------
-//  ЦЕНТРАЛЬНАЯ КНОПКА + БАННЕР С АВАТАРОМ
-// ------------------------------------------------
 function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const oldBtn = document.getElementById('profileActionBtn')?.parentElement;
     if (oldBtn) oldBtn.remove();
 
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    centerBtn.innerHTML = `<button class="btn btn-yellow btn-glow profile-action-btn" id="profileActionBtn">💫 создать профиль</button>`;
+    centerBtn.innerHTML = `<button class="btn btn-yellow profile-action-btn" id="profileActionBtn">🫆 создать профиль</button>`;
     centerBtn.style.cssText = `
         position: fixed !important;
         top: 50% !important;
