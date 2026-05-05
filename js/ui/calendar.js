@@ -58,7 +58,6 @@ export function renderCalendar(container) {
                 <div class="calendar-legend">
                     <span class="legend-item"><span class="legend-emoji">📷</span> – отчёт</span>
                     <span class="legend-item"><span class="legend-emoji">🎟️</span> – запись</span>
-                    <span class="legend-item"><span class="legend-emoji">✉️</span> – письмо</span>
                 </div>
             </div>
             <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
@@ -84,12 +83,8 @@ export function renderCalendar(container) {
             const hike = state.hikesList[hikeIndex];
             const isWoman = hike && hike.woman === 'yes';
             if (isWoman) classes += ' woman-hike';
-            // отчёт
             if (isPast && hike && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
-            // письмо
-            if (isPast && hike && (hike.letter_text || hike.letter_link))
-                innerHtml += `<span class="calendar-emoji-letter">✉️</span>`;
             if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
                 innerHtml += `<span class="calendar-emoji">🎟️</span>`;
                 classes += ' booked-day';
@@ -138,19 +133,21 @@ export function renderCalendar(container) {
     });
 }
 
-// ... (остальной код без изменений до функции showLetterPopup) ...
+let sheetCurrentIndex = 0;
+let sheetScrollListener = null;
+let dragStartY = 0;
+let isDragging = false;
+let currentUnsubscribe = null;
 
 function showLetterPopup(letterText, letterLink, isGuest) {
     const overlayPopup = document.createElement('div');
     overlayPopup.className = 'letter-popup';
     const processedText = parseLinks(letterText, isGuest);
-    const chatHtml = letterLink ? `<p style="margin-top: 16px;"><a href="${letterLink}" class="dynamic-link" data-url="${letterLink}" data-guest="false" style="color: var(--yellow); text-decoration: underline;">открыть письмо в чате</a></p>` : '';
+    const chatHtml = letterLink ? `<p style="margin-top: 16px;"><a href="${letterLink}" class="dynamic-link" data-url="${letterLink}" data-guest="false" style="color: var(--yellow); text-decoration: underline;">читать в чате</a></p>` : '';
     overlayPopup.innerHTML = `
         <div class="letter-popup-content">
-            <div class="letter-popup-header">
-                <div class="letter-popup-title">✉️ письмо Макса после хайка</div>
-                <button class="letter-popup-close">&times;</button>
-            </div>
+            <button class="letter-popup-close">&times;</button>
+            <div class="letter-popup-title">✉️ письмо Макса после хайка</div>
             <div class="letter-popup-text">${processedText}${chatHtml}</div>
         </div>
     `;
@@ -159,8 +156,6 @@ function showLetterPopup(letterText, letterLink, isGuest) {
     closeBtn.addEventListener('click', () => { haptic(); overlayPopup.remove(); });
     overlayPopup.addEventListener('click', (e) => { if (e.target === overlayPopup) { haptic(); overlayPopup.remove(); } });
 }
-
-// ... (далее всё без изменений)
 
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
