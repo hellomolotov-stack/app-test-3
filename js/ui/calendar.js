@@ -325,22 +325,6 @@ export function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // ---- НОВЫЙ БЛОК КНОПОК ----
-        const shareLink = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
-        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}`;
-
-        sectionsHtml += `
-            <div id="action-buttons-block" style="margin-top: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 16px;">
-                    <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
-                    <button class="btn btn-outline hike-question-btn" data-url="https://t.me/hellointelligent" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">💬 задать вопрос</button>
-                    ${isGuest ? `
-                        <button class="btn btn-outline hike-card-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">💳 оформить карту интеллигента</button>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-
         const prevArrow = hasPrev
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
@@ -468,17 +452,6 @@ export function showBottomSheet(index) {
         const clientHeight = contentWrapper.clientHeight;
         const maxScroll = scrollHeight - clientHeight;
         if (maxScroll <= 0) return;
-
-        const firstActionButton = document.querySelector('#action-buttons-block .btn');
-        if (firstActionButton) {
-            const buttonTop = firstActionButton.getBoundingClientRect().top;
-            const wrapperTop = contentWrapper.getBoundingClientRect().top;
-            if (buttonTop - wrapperTop < clientHeight) {
-                container.classList.add('hidden');
-                return;
-            }
-        }
-
         const scrollPercentage = (scrollTop / maxScroll) * 100;
         if (scrollPercentage > 95) container.classList.add('hidden');
         else container.classList.remove('hidden');
@@ -579,8 +552,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         ? (hike.woman === 'yes' ? 'ты записана' : 'ты записан')
         : 'иду';
 
-    const hintTextBooked = '← потяни влево, для отмены';
-    const hintTextUnbooked = '→ потяни, чтобы записаться';
+    const hintTextBooked = 'сдвинь для отмены ‹';
+    const hintTextUnbooked = '› сдвинь, чтобы записаться';
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -660,30 +633,30 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const THUMB_MARGIN = 8;
-    const EDGE_PADDING = 30;
-    const GAP_BETWEEN = 0;
+    const THUMB_MARGIN = 8;          // отступ ползунка от краёв трека
+    const EDGE_PADDING = 30;        // отступ текста от краёв трека
+    const GAP_BETWEEN = 0;          // расстояние между текстом и ползунком
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            const hintLeft = thumbLeftPos + thumbW + GAP_BETWEEN;
-            const hintRight = trackW - EDGE_PADDING;
-            const hintWidth = hintRight - hintLeft;
-            hint.style.left = hintLeft + 'px';
+            const availableLeft = thumbLeftPos + thumbW + GAP_BETWEEN;
+            const availableRight = trackW - EDGE_PADDING;
+            const hintWidth = Math.max(0, availableRight - availableLeft);
+            hint.style.left = availableLeft + 'px';
             hint.style.right = 'auto';
-            hint.style.width = Math.max(0, hintWidth) + 'px';
+            hint.style.width = hintWidth + 'px';
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
-            const hintRight = thumbLeftPos - GAP_BETWEEN;
-            const hintLeft = EDGE_PADDING;
-            const hintWidth = hintRight - hintLeft;
-            hint.style.left = hintLeft + 'px';
+            const availableRight = thumbLeftPos - GAP_BETWEEN;
+            const availableLeft = EDGE_PADDING;
+            const hintWidth = Math.max(0, availableRight - availableLeft);
+            hint.style.left = availableLeft + 'px';
             hint.style.right = 'auto';
-            hint.style.width = Math.max(0, hintWidth) + 'px';
+            hint.style.width = hintWidth + 'px';
             hint.style.justifyContent = 'flex-start';
             hint.textContent = hintTextBooked;
         }
@@ -1456,48 +1429,6 @@ document.addEventListener('click', function(e) {
         e.preventDefault(); haptic();
         log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
         document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-    }
-
-    // Новые кнопки в слайдере хайков
-    const shareBtn = e.target.closest('.hike-share-btn');
-    if (shareBtn) {
-        e.preventDefault();
-        const url = shareBtn.dataset.shareUrl;
-        if (url && tg?.openTelegramLink) {
-            tg.openTelegramLink(url);
-        } else if (url) {
-            window.open(url, '_blank');
-        }
-        log('hike_share_click', state.userCard.status !== 'active', state.user);
-        return;
-    }
-
-    const questionBtn = e.target.closest('.hike-question-btn');
-    if (questionBtn) {
-        e.preventDefault();
-        const url = questionBtn.dataset.url || 'https://t.me/hellointelligent';
-        openLink(url, 'hike_question_click', state.userCard.status !== 'active');
-        return;
-    }
-
-    const cardBtn = e.target.closest('.hike-card-btn');
-    if (cardBtn) {
-        e.preventDefault();
-        closeBottomSheet();
-        renderHome();
-        setTimeout(() => {
-            const cardBlock = document.getElementById('cardBlock');
-            if (cardBlock) {
-                cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                cardBlock.style.transition = 'box-shadow 0.3s';
-                cardBlock.style.boxShadow = '0 0 20px 4px rgba(255, 255, 255, 0.7)';
-                setTimeout(() => {
-                    cardBlock.style.boxShadow = '';
-                }, 2000);
-            }
-        }, 400);
-        log('hike_card_click', true, state.user);
         return;
     }
 });
