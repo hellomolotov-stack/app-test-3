@@ -41,9 +41,9 @@ export function subscribeToHikes(callback) {
             report_link: data.report_link || '',
             feature_tags: data.feature_tags || [],
             woman: data.woman || '',
-            leaders: data.leaders || []
-                letter_text: data.letter_text || '',
-    letter_link: data.letter_link || ''
+            leaders: data.leaders || [],
+            letter_text: data.letter_text || '',
+            letter_link: data.letter_link || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
         callback(list);
     });
