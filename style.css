@@ -2181,3 +2181,30 @@ body.night-mode::before {
     50% { transform: rotate(-18deg); }
     100% { transform: rotate(-22deg); }
 }
+/* Анимация покачивания конверта */
+.letter-icon-img {
+    animation: letterWobble 1.8s ease-in-out infinite;
+}
+
+@keyframes letterWobble {
+    0% { transform: rotate(-22deg); }
+    50% { transform: rotate(-18deg); }
+    100% { transform: rotate(-22deg); }
+}
+
+/* Запрет переноса текста в важных элементах */
+.section-title,
+.bottom-sheet-header-date,
+.bottom-sheet-header-title,
+.feature-tag,
+.bottom-sheet-tag,
+.metric-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Чтобы теги внутри контейнера не переносились, но сам контейнер переносится */
+.feature-tags-container, .bottom-sheet-tags {
+    flex-wrap: wrap;
+}
