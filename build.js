@@ -11,61 +11,81 @@ if (!fs.existsSync(outputDir)) {
 }
 
 function copyFile(src, dest) {
+    const destDir = path.dirname(dest);
+    if (!fs.existsSync(destDir)) {
+        fs.mkdirSync(destDir, { recursive: true });
+    }
     fs.copyFileSync(src, dest);
 }
 
-async function processDirectory(dir) {
-    const fullDir = path.join(__dirname, dir);
-    if (!fs.existsSync(fullDir)) {
-        console.warn(`⚠️  папка не найдена: ${dir}, пропускаю`);
+async function processJavaScript(srcPath, destPath) {
+    try {
+        const code = fs.readFileSync(srcPath, 'utf8');
+        const result = await minify(code, {
+            compress: true,
+            mangle: true,
+            format: {
+                comments: false,
+            },
+        });
+        fs.writeFileSync(destPath, result.code, 'utf8');
+        return true;
+    } catch (err) {
+        console.error(`✖ ошибка в ${srcPath}:`, err.message);
+        return false;
+    }
+}
+
+async function processFile(srcPath, destPath, isJs) {
+    if (isJs) {
+        const success = await processJavaScript(srcPath, destPath);
+        if (!success) {
+            copyFile(srcPath, destPath);
+            console.log(`   скопирован (fallback): ${path.relative('.', destPath)}`);
+        } else {
+            console.log(`✔ обфусцирован: ${path.relative('.', destPath)}`);
+        }
+    } else {
+        copyFile(srcPath, destPath);
+        console.log(`   копирован: ${path.relative('.', destPath)}`);
+    }
+}
+
+async function processDirectory(srcDir, outDir) {
+    if (!fs.existsSync(srcDir)) {
+        console.warn(`⚠️  папка не найдена: ${srcDir}, пропускаю`);
         return;
     }
 
-    const files = fs.readdirSync(fullDir, { withFileTypes: true });
+    const files = fs.readdirSync(srcDir, { withFileTypes: true });
     for (const file of files) {
-        const srcPath = path.join(fullDir, file.name);
-        const relativePath = path.relative(__dirname, srcPath);
-        const destPath = path.join(outputDir, relativePath);
+        const srcPath = path.join(srcDir, file.name);
+        const destPath = path.join(outDir, file.name);
 
         if (file.isDirectory()) {
-            if (!fs.existsSync(destPath)) {
-                fs.mkdirSync(destPath, { recursive: true });
-            }
-            await processDirectory(path.join(dir, file.name));
+            await processDirectory(srcPath, destPath);
         } else {
-            if (file.name.endsWith('.js')) {
-                try {
-                    const code = fs.readFileSync(srcPath, 'utf8');
-                    // Правильные опции для Terser v5
-                    const result = await minify(code, {
-                        compress: true,
-                        mangle: true,
-                        format: {
-                            comments: false,
-                        },
-                    });
-                    fs.writeFileSync(destPath, result.code, 'utf8');
-                    console.log(`✔ обфусцирован: ${relativePath}`);
-                } catch (err) {
-                    console.error(`✖ ошибка в ${relativePath}:`, err.message);
-                    // на всякий случай копируем оригинал
-                    copyFile(srcPath, destPath);
-                }
-            } else {
-                copyFile(srcPath, destPath);
-            }
+            const isJs = file.name.endsWith('.js');
+            await processFile(srcPath, destPath, isJs);
         }
     }
 }
 
 (async () => {
+    // Обрабатываем папки js и js/ui
     for (const dir of sourceDirs) {
-        await processDirectory(dir);
+        const srcDir = path.join('.', dir);
+        const outDir = path.join(outputDir, dir);
+        await processDirectory(srcDir, outDir);
     }
 
-    // Копируем статические файлы
-    copyFile('index.html', path.join(outputDir, 'index.html'));
-    copyFile('style.css', path.join(outputDir, 'style.css'));
+    // Копируем index.html и style.css в dist
+    for (const file of ['index.html', 'style.css']) {
+        if (fs.existsSync(file)) {
+            copyFile(file, path.join(outputDir, file));
+            console.log(`   копирован: ${file}`);
+        }
+    }
 
     console.log('✅ Сборка завершена. Папка dist готова к деплою.');
 })();
