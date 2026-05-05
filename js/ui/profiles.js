@@ -456,31 +456,60 @@ async function renderEditProfile() {
         const data = { name, friendshipStatuses: selected, hobbies, profession, allowMessages, customLink, username: state.user?.username || '', avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null, avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(), userId: state.user?.id };
         await saveProfile(state.user?.id, data);
         syncProfileToSheet(data, state.user).catch(console.error);
-        log('save_profile', false, state.user);
-        delete userHikesCache[state.user?.id];
-        tg.BackButton.offClick(backHandler);
-        if(bottomNav) bottomNav.style.display='flex';
-        showBottomNav(true); setupBottomNav(); setActiveNav('navProfiles');
-        cleanupProfileOverlays();
+        log('save);
+        log('save_profile', false_profile', false, state, state.user);
+        delete userHikesCache.user);
+        delete userHikesCache[state[state.user?..user?.idid];
+        tg];
+        tg.BackButton.BackButton.off.offClick(backHandler);
+        if(bottomNav) bottomClick(backHandler);
+        if(bottomNav) bottomNav.styleNav.style.display='flex';
+        showBottomNav.display='flex';
+        showBottomNav(true);(true); setupBottom setupBottomNav(); setActiveNav('Nav(); setActiveNav('navProfilesnavProfiles');
+        cleanup');
+        cleanupProfileOverProfileOverlayslays();
+        render();
         renderProfiles();
     });
 
-    if(document.getElementById('deleteProfileBtn')){
-        document.getElementById('deleteProfileBtn').addEventListener('click', async ()=>{
-            haptic();
-            if(confirm('Снять профиль с публикации?')){
+   Profiles();
+    });
+
+    if(document if(document.getElementById('deleteProfileBtn')){
+        document.getElementById('deleteProfileBtn').add.getElementById('deleteProfileBtn')){
+        document.getElementById('deleteProfileBtn').addEventListener('EventListener('click', async (click',)=>{
+            async ()=>{
+            haptic haptic();
+            if(();
+            if(confirm('confirm('Снять профиль с публиСнять профиль с публикациикации?'?')){
+                await)){
                 await deleteProfile(state.user?.id);
-                syncProfileDeleteToSheet(state.user?.id).catch(console.error);
-                log('delete_profile', false, state.user);
-                delete userHikesCache[state.user?.id];
-                tg.BackButton.offClick(backHandler);
-                if(bottomNav) bottomNav.style.display='flex';
-                showBottomNav(true); setupBottomNav(); setActiveNav('navProfiles');
-                cleanupProfileOverlays();
-                renderProfiles();
+                deleteProfile(state.user?.id);
+                syncProfileDeleteTo syncProfileDeleteToSheet(stateSheet(state.user?..user?.id).id).catch(console.error);
+                log('catch(console.error);
+                log('delete_profiledelete_profile', false', false, state.user);
+                delete userHikesCache, state.user);
+                delete userHikesCache[state[state.user?.id];
+                tg.user?.id];
+                tg.BackButton.BackButton.off.offClick(Click(backHandlerbackHandler);
+               );
+                if if(b(bottomNavottomNav) bottom) bottomNav.style.display='flexNav.style.display='flex';
+                show';
+                showBottomNavBottomNav(true);(true); setupBottom setupBottomNav();Nav(); setActive setActiveNavNav('navProfiles('navProfiles');
+                cleanup');
+                cleanupProfileOverProfileOverlayslays();
+                render();
+                renderProfilesProfiles();
+           ();
             }
+        }
         });
+    });
     }
+ }
 }
 
-function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' })[m]); }
+function escape}
+
+function escapeHtml(strHtml(str) {) { if(! if(!str)str) return '' return ''; return; return str.replace str.replace(/(/[&<>[&<>]/g, m=>(]/g, m=>({ '{ '&':'&':'&amp&amp;','<':';','<':'&lt;','&lt;','>':'>':'&gt&gt;' };' })[m]);)[m]); }
+``` }
