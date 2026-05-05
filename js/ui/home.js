@@ -92,16 +92,32 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
+// 🔄 Загрузка актуального попапа из Firebase
+async function getPopupData(popupId, fallback) {
+    try {
+        const freshPopups = await loadPopups();
+        console.log('Свежие попапы из Firebase:', freshPopups);
+        if (freshPopups && freshPopups[popupId]) {
+            console.log('Найден попап', popupId, freshPopups[popupId]);
+            return freshPopups[popupId];
+        }
+    } catch (e) {
+        console.warn('Не удалось загрузить свежие попапы, использую кеш:', e);
+    }
+    console.log('Использую запасной попап для', popupId);
+    return (state.popups && state.popups[popupId]) || fallback;
+}
+
 // -------------------------------------------------
 //  ГОСТЕВЫЕ ПОПАПЫ (асинхронные)
 // -------------------------------------------------
 async function showGuestPopup() {
     haptic();
-    const popup = (state.popups && state.popups.guest_card_popup) || {
+    const popup = await getPopupData('guest_card_popup', {
         title: '💳 карта интеллигента',
         text: 'как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.',
         button_text: 'узнать о привилегиях'
-    };
+    });
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -121,11 +137,11 @@ async function showGuestPopup() {
 
 async function showGuestMastermindPopup() {
     haptic();
-    const popup = (state.popups && state.popups.guest_mastermind_popup) || {
+    const popup = await getPopupData('guest_mastermind_popup', {
         title: '🧠 саммари мастермайнда',
         text: 'чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?',
         button_text: 'расскажите скорее'
-    };
+    });
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -205,10 +221,10 @@ function renderMastermindSummaries() {
 
     return `
         <div class="card-container" id="mastermindSummariesCard">
-            <div class="header-with-badge" style="margin: 0 16px 16px 16px; position: relative;">
-                <h2 class="section-title" style="margin: 0;">🧠 саммари мастермайнда</h2>
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;">
+                🧠 саммари мастермайнда
                 <span class="new-badge">новое</span>
-            </div>
+            </h2>
             ${innerHtml}
         </div>
     `;
@@ -232,10 +248,10 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <div class="header-with-badge" style="margin: 0 16px 16px 16px; position: relative;">
-                <h2 class="section-title" style="margin: 0; padding-left: 0;">📨 обновления</h2>
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;">
+                📨 обновления
                 <span class="new-badge">новое</span>
-            </div>
+            </h2>
             <div class="updates-scroll">${itemsHtml}</div>
         </div>
     `;
@@ -259,7 +275,7 @@ function renderGuestHome() {
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
             <div id="cardAccordionGuest" class="card-accordion">
-                <button class="accordion-btn btn-yellow btn-glow">оформить карту</button>
+                <button class="accordion-btn btn-yellow">карта интеллигента</button>
                 <div class="dropdown-menu">
                     <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px;">узнать о привилегиях 💳</a>
                     <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
@@ -276,7 +292,7 @@ function renderGuestHome() {
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🗺️ как всё устроено</h2>
-            <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+            <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">🫖 для новичков</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true">смотреть отчёты &gt;</a></div>
@@ -311,6 +327,7 @@ function renderGuestHome() {
         });
     }
 
+    // Надёжное навешивание обработчиков для кнопок "читать" (гостевые)
     const readButtons = document.querySelectorAll('.guest-read-btn');
     readButtons.forEach(btn => {
         btn.removeEventListener('click', handleGuestRead);
@@ -344,7 +361,7 @@ function renderOwnerHome() {
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🗺️ как всё устроено</h2>
-            <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+            <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">🫖 для новичков</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false">смотреть отчёты &gt;</a></div>
@@ -397,7 +414,6 @@ export function renderHome() {
 
     updateMetricsUI();
 
-    // Подгружаем свежие попапы
     loadPopups().then(freshPopups => {
         if (freshPopups && Object.keys(freshPopups).length) {
             state.popups = freshPopups;
