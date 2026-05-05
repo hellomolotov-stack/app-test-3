@@ -325,17 +325,17 @@ export function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // ---- НОВЫЙ БЛОК КНОПОК (под секцией "как добраться") ----
+        // ---- НОВЫЙ БЛОК КНОПОК (восстановлен + исправлены отступы) ----
         const shareLink = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
         const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}`;
 
         sectionsHtml += `
-            <div class="bottom-sheet-section" id="action-buttons-block">
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
-                    <button class="btn btn-outline hike-question-btn" style="padding: 16px; font-size: 14px; border-radius: 20px;" data-url="https://t.me/hellointelligent">💬 задать вопрос</button>
+            <div class="bottom-sheet-section" id="action-buttons-block" style="padding-left: 16px; padding-right: 16px; margin-top: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
+                    <button class="btn btn-outline hike-question-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;" data-url="https://t.me/hellointelligent">💬 задать вопрос</button>
                     ${isGuest ? `
-                        <button class="btn btn-outline hike-card-btn" style="padding: 16px; font-size: 14px; border-radius: 20px;">💳 оформить карту интеллигента</button>
+                        <button class="btn btn-outline hike-card-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">💳 оформить карту интеллигента</button>
                     ` : ''}
                 </div>
             </div>
@@ -664,15 +664,16 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
     const THUMB_MARGIN = 8;
-    const TEXT_PADDING = 24;
+    const EDGE_PADDING = 30;
+    const GAP_BETWEEN = 0;
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            const hintLeft = thumbLeftPos + thumbW + TEXT_PADDING;
-            const hintRight = trackW - TEXT_PADDING;
+            const hintLeft = thumbLeftPos + thumbW + GAP_BETWEEN;
+            const hintRight = trackW - EDGE_PADDING;
             const hintWidth = hintRight - hintLeft;
             hint.style.left = hintLeft + 'px';
             hint.style.right = 'auto';
@@ -680,8 +681,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
-            const hintRight = thumbLeftPos - TEXT_PADDING;
-            const hintLeft = TEXT_PADDING;
+            const hintRight = thumbLeftPos - GAP_BETWEEN;
+            const hintLeft = EDGE_PADDING;
             const hintWidth = hintRight - hintLeft;
             hint.style.left = hintLeft + 'px';
             hint.style.right = 'auto';
