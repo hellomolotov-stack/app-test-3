@@ -158,33 +158,17 @@ async function getCachedAvatar(userId, photoUrl) {
     return photoUrl;
 }
 
-// Универсальная функция анимированного показа модалки
-function showAnimatedModal(overlay) {
-    overlay.classList.add('animated');
-    const content = overlay.querySelector('.modal-content') || overlay.querySelector('.letter-popup-content');
-    if (content) content.classList.add('animated');
-    document.body.appendChild(overlay);
-    requestAnimationFrame(() => overlay.classList.add('visible'));
-
-    const closeModal = () => {
-        overlay.classList.remove('visible');
-        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-    };
-
-    const closeBtn = overlay.querySelector('.modal-close, .letter-popup-close');
-    if (closeBtn) closeBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeModal();
-    });
-    return closeModal;
-}
-
+// Простая функция показа письма (без анимации, чтобы не зависало)
 function showLetterPopup(letterText, letterLink, isGuest) {
-    const overlayPopup = document.createElement('div');
-    overlayPopup.className = 'letter-popup';
+    const overlay = document.createElement('div');
+    overlay.className = 'letter-popup';
+    
     const processedText = parseLinks(letterText, isGuest);
-    const chatHtml = letterLink ? `<p style="margin-top: 16px;"><a href="${letterLink}" class="dynamic-link" data-url="${letterLink}" data-guest="false" style="color: var(--yellow); text-decoration: underline;">открыть письмо в чате</a></p>` : '';
-    overlayPopup.innerHTML = `
+    const chatHtml = letterLink
+        ? `<p style="margin-top:16px;"><a href="${letterLink}" class="dynamic-link" data-url="${letterLink}" data-guest="false" style="color:var(--yellow);text-decoration:underline;">открыть письмо в чате</a></p>`
+        : '';
+
+    overlay.innerHTML = `
         <div class="letter-popup-content">
             <div class="letter-popup-header">
                 <div class="letter-popup-title">✉️ письмо Макса после хайка</div>
@@ -193,7 +177,30 @@ function showLetterPopup(letterText, letterLink, isGuest) {
             <div class="letter-popup-text">${processedText}${chatHtml}</div>
         </div>
     `;
-    showAnimatedModal(overlayPopup);
+
+    document.body.appendChild(overlay);
+
+    const closePopup = () => {
+        if (overlay && overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
+    };
+
+    const closeBtn = overlay.querySelector('.letter-popup-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            haptic();
+            closePopup();
+        });
+    }
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            closePopup();
+        }
+    });
 }
 
 export function showBottomSheet(index) {
@@ -1131,19 +1138,23 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             </div>
         </div>
     `;
-    showAnimatedModal(overlay);
+    document.body.appendChild(overlay);
+
+    const closePopup = () => {
+        if (overlay && overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
+    };
 
     document.getElementById('closePopup').addEventListener('click', () => {
         haptic();
-        overlay.classList.remove('visible');
-        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+        closePopup();
         if (onClose) onClose();
     });
     overlay.addEventListener('click', e => {
         if (e.target === overlay) {
             haptic();
-            overlay.classList.remove('visible');
-            overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+            closePopup();
             if (onClose) onClose();
         }
     });
@@ -1165,8 +1176,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 if (calendarContainer) renderCalendar(calendarContainer);
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
                 openLink(link, `purchase_${purchaseType}`, true);
-                overlay.classList.remove('visible');
-                overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+                closePopup();
             })
             .catch(error => {
                 console.error(error);
