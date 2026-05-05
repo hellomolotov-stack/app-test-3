@@ -325,13 +325,13 @@ export function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // ---- НОВЫЙ БЛОК КНОПОК (восстановлен + исправлены отступы) ----
+        // ---- НОВЫЙ БЛОК КНОПОК (растянут на всю ширину) ----
         const shareLink = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
         const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}`;
 
         sectionsHtml += `
-            <div class="bottom-sheet-section" id="action-buttons-block" style="padding-left: 16px; padding-right: 16px; margin-top: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="bottom-sheet-section" id="action-buttons-block" style="margin-top: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                     <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
                     <button class="btn btn-outline hike-question-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;" data-url="https://t.me/hellointelligent">💬 задать вопрос</button>
                     ${isGuest ? `
@@ -642,7 +642,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         display: flex; align-items: center; justify-content: center;
         font-size: 14px; font-weight: 700;
         color: #000;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.2);
         transition: left 0.2s ease-out, width 0.25s ease;
         z-index: 2;
         cursor: pointer;
