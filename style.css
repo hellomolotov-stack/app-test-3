@@ -2060,7 +2060,11 @@ body.night-mode::before {
     transform: scale(0.97);
 }
 #action-buttons-block {
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-    width: 100% !important;
+    padding-left: 0;
+    padding-right: 0;
+    width: 100%;
+}
+#action-buttons-block > div {
+    padding-left: 16px;
+    padding-right: 16px;
 }
