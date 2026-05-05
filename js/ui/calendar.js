@@ -144,7 +144,21 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-// Универсальная анимация появления модального окна
+// Кэш аватаров
+const avatarCache = new Map();
+const CACHE_TTL = 60 * 60 * 1000; // 1 час
+
+async function getCachedAvatar(userId, photoUrl) {
+    const now = Date.now();
+    if (avatarCache.has(userId)) {
+        const entry = avatarCache.get(userId);
+        if (now - entry.timestamp < CACHE_TTL) return entry.url;
+    }
+    avatarCache.set(userId, { url: photoUrl, timestamp: now });
+    return photoUrl;
+}
+
+// Универсальная функция анимированного показа модалки
 function showAnimatedModal(overlay) {
     overlay.classList.add('animated');
     const content = overlay.querySelector('.modal-content') || overlay.querySelector('.letter-popup-content');
@@ -189,6 +203,7 @@ export function showBottomSheet(index) {
     if (existingOverlay) existingOverlay.remove();
     const existingSheetButtons = document.querySelector('.floating-sheet-buttons');
     if (existingSheetButtons) existingSheetButtons.remove();
+    // Удаляем предыдущий конверт, если есть
     const existingLetter = document.querySelector('.letter-icon');
     if (existingLetter) existingLetter.remove();
 
@@ -221,20 +236,6 @@ export function showBottomSheet(index) {
         loadAllProfiles().then(profiles => {
             state.profiles = profiles;
         }).catch(() => {});
-    }
-
-    // Кэш аватаров на время сессии
-    const avatarCache = new Map();
-    const CACHE_DURATION = 60 * 60 * 1000; // 1 час
-
-    async function getCachedAvatarUrl(userId, photoUrl) {
-        const now = Date.now();
-        if (avatarCache.has(userId)) {
-            const entry = avatarCache.get(userId);
-            if (now - entry.timestamp < CACHE_DURATION) return entry.url;
-        }
-        avatarCache.set(userId, { url: photoUrl, timestamp: now });
-        return photoUrl;
     }
 
     function updateContent() {
@@ -408,6 +409,7 @@ export function showBottomSheet(index) {
 
         // Добавляем конверт, если есть письмо
         if (isPast && (hike.letter_text || hike.letter_link)) {
+            // Удалим старый конверт, если есть
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
 
@@ -421,6 +423,7 @@ export function showBottomSheet(index) {
             });
             sheet.appendChild(letterIcon);
         } else {
+            // Удалим конверт, если письма нет
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
         }
@@ -437,15 +440,11 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    // Предварительно получаем закэшированные URL
-                    const cachedParticipants = await Promise.all(participants.map(async p => ({
-                        ...p,
-                        cachedPhoto: await getCachedAvatarUrl(p.userId, p.photoUrl)
-                    })));
-                    cachedParticipants.forEach(p => {
+                    for (const p of participants) {
+                        const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
-                        img.src = p.cachedPhoto || '';
+                        img.src = cachedUrl || '';
                         img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
                         img.alt = p.name || '';
                         img.title = p.name || '';
@@ -478,7 +477,7 @@ export function showBottomSheet(index) {
                             this.parentNode.replaceChild(placeholder, this);
                         };
                         avatarsEl.appendChild(img);
-                    });
+                    }
                 }
             });
         }
@@ -1134,6 +1133,21 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     `;
     showAnimatedModal(overlay);
 
+    document.getElementById('closePopup').addEventListener('click', () => {
+        haptic();
+        overlay.classList.remove('visible');
+        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+        if (onClose) onClose();
+    });
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) {
+            haptic();
+            overlay.classList.remove('visible');
+            overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+            if (onClose) onClose();
+        }
+    });
+
     const handlePurchase = (purchaseType, link) => {
         const userId = state.user?.id;
         addParticipant(hikeDate, userId, {
@@ -1151,7 +1165,8 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 if (calendarContainer) renderCalendar(calendarContainer);
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
                 openLink(link, `purchase_${purchaseType}`, true);
-                closeAnimatedModal(overlay);
+                overlay.classList.remove('visible');
+                overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
             })
             .catch(error => {
                 console.error(error);
@@ -1344,7 +1359,8 @@ export function showLeaderDropdown(leaderElement, leaderData) {
             <div style="font-size: 14px;">${contactHtml}</div>
         </div>
     `;
-    showAnimatedModal(dropdown); // заменили document.body.appendChild на анимированное появление
+    document.body.appendChild(dropdown);
+    setTimeout(() => dropdown.classList.add('show'), 10);
 
     const closeBtn = dropdown.querySelector('.leader-close-btn');
     if (closeBtn)
