@@ -144,6 +144,27 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
+// Универсальная анимация появления модального окна
+function showAnimatedModal(overlay) {
+    overlay.classList.add('animated');
+    const content = overlay.querySelector('.modal-content') || overlay.querySelector('.letter-popup-content');
+    if (content) content.classList.add('animated');
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+
+    const closeModal = () => {
+        overlay.classList.remove('visible');
+        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+    };
+
+    const closeBtn = overlay.querySelector('.modal-close, .letter-popup-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+    return closeModal;
+}
+
 function showLetterPopup(letterText, letterLink, isGuest) {
     const overlayPopup = document.createElement('div');
     overlayPopup.className = 'letter-popup';
@@ -158,10 +179,7 @@ function showLetterPopup(letterText, letterLink, isGuest) {
             <div class="letter-popup-text">${processedText}${chatHtml}</div>
         </div>
     `;
-    document.body.appendChild(overlayPopup);
-    const closeBtn = overlayPopup.querySelector('.letter-popup-close');
-    closeBtn.addEventListener('click', () => { haptic(); overlayPopup.remove(); });
-    overlayPopup.addEventListener('click', (e) => { if (e.target === overlayPopup) { haptic(); overlayPopup.remove(); } });
+    showAnimatedModal(overlayPopup);
 }
 
 export function showBottomSheet(index) {
@@ -171,7 +189,6 @@ export function showBottomSheet(index) {
     if (existingOverlay) existingOverlay.remove();
     const existingSheetButtons = document.querySelector('.floating-sheet-buttons');
     if (existingSheetButtons) existingSheetButtons.remove();
-    // Удаляем предыдущий конверт, если есть
     const existingLetter = document.querySelector('.letter-icon');
     if (existingLetter) existingLetter.remove();
 
@@ -204,6 +221,20 @@ export function showBottomSheet(index) {
         loadAllProfiles().then(profiles => {
             state.profiles = profiles;
         }).catch(() => {});
+    }
+
+    // Кэш аватаров на время сессии
+    const avatarCache = new Map();
+    const CACHE_DURATION = 60 * 60 * 1000; // 1 час
+
+    async function getCachedAvatarUrl(userId, photoUrl) {
+        const now = Date.now();
+        if (avatarCache.has(userId)) {
+            const entry = avatarCache.get(userId);
+            if (now - entry.timestamp < CACHE_DURATION) return entry.url;
+        }
+        avatarCache.set(userId, { url: photoUrl, timestamp: now });
+        return photoUrl;
     }
 
     function updateContent() {
@@ -377,7 +408,6 @@ export function showBottomSheet(index) {
 
         // Добавляем конверт, если есть письмо
         if (isPast && (hike.letter_text || hike.letter_link)) {
-            // Удалим старый конверт, если есть
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
 
@@ -391,13 +421,12 @@ export function showBottomSheet(index) {
             });
             sheet.appendChild(letterIcon);
         } else {
-            // Удалим конверт, если письма нет
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
         }
 
         if (!isPast) {
-            currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+            currentUnsubscribe = subscribeToParticipantCount(hike.date, async (count, participants) => {
                 const countEl = document.getElementById('participantCountValue');
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (countEl) {
@@ -408,10 +437,15 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    participants.forEach(p => {
+                    // Предварительно получаем закэшированные URL
+                    const cachedParticipants = await Promise.all(participants.map(async p => ({
+                        ...p,
+                        cachedPhoto: await getCachedAvatarUrl(p.userId, p.photoUrl)
+                    })));
+                    cachedParticipants.forEach(p => {
                         const hasProfile = !!state.profiles[p.userId];
                         const img = document.createElement('img');
-                        img.src = p.photoUrl || '';
+                        img.src = p.cachedPhoto || '';
                         img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
                         img.alt = p.name || '';
                         img.title = p.name || '';
@@ -1098,20 +1132,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             </div>
         </div>
     `;
-    document.body.appendChild(overlay);
-
-    document.getElementById('closePopup').addEventListener('click', () => {
-        haptic();
-        overlay.remove();
-        if (onClose) onClose();
-    });
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-            if (onClose) onClose();
-        }
-    });
+    showAnimatedModal(overlay);
 
     const handlePurchase = (purchaseType, link) => {
         const userId = state.user?.id;
@@ -1130,7 +1151,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 if (calendarContainer) renderCalendar(calendarContainer);
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
                 openLink(link, `purchase_${purchaseType}`, true);
-                overlay.remove();
+                closeAnimatedModal(overlay);
             })
             .catch(error => {
                 console.error(error);
@@ -1323,8 +1344,7 @@ export function showLeaderDropdown(leaderElement, leaderData) {
             <div style="font-size: 14px;">${contactHtml}</div>
         </div>
     `;
-    document.body.appendChild(dropdown);
-    setTimeout(() => dropdown.classList.add('show'), 10);
+    showAnimatedModal(dropdown); // заменили document.body.appendChild на анимированное появление
 
     const closeBtn = dropdown.querySelector('.leader-close-btn');
     if (closeBtn)
