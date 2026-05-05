@@ -177,6 +177,24 @@ export function showBottomSheet(index) {
         }).catch(() => {});
     }
 
+    function showLetterPopup(letterText, letterLink) {
+        const overlayPopup = document.createElement('div');
+        overlayPopup.className = 'letter-popup';
+        const processedText = parseLinks(letterText, isGuest);
+        const chatHtml = letterLink ? `<p style="margin-top: 16px;"><a href="${letterLink}" class="dynamic-link" data-url="${letterLink}" data-guest="false" style="color: var(--yellow); text-decoration: underline;">читать в чате</a></p>` : '';
+        overlayPopup.innerHTML = `
+            <div class="letter-popup-content">
+                <button class="letter-popup-close">&times;</button>
+                <div class="letter-popup-title">письмо Макса после хайка ✉️</div>
+                <div class="letter-popup-text">${processedText}${chatHtml}</div>
+            </div>
+        `;
+        document.body.appendChild(overlayPopup);
+        const closeBtn = overlayPopup.querySelector('.letter-popup-close');
+        closeBtn.addEventListener('click', () => { haptic(); overlayPopup.remove(); });
+        overlayPopup.addEventListener('click', (e) => { if (e.target === overlayPopup) { haptic(); overlayPopup.remove(); } });
+    }
+
     function updateContent() {
         const hike = state.hikesList[sheetCurrentIndex];
         if (!hike) return;
@@ -251,13 +269,7 @@ export function showBottomSheet(index) {
         const todayDate = new Date();
         todayDate.setHours(0, 0, 0, 0);
         const isPast = hikeDate < todayDate;
-// Вот сюда вставьте лог:
-console.log('ПИСЬМО ОТЛАДКА:', {
-    date: hike.date,
-    isPast: isPast,
-    letter_text: hike.letter_text,
-    letter_link: hike.letter_link
-});
+
         let imageHtml = '';
         if (hike.image) {
             if (!isPast) {
@@ -331,29 +343,6 @@ console.log('ПИСЬМО ОТЛАДКА:', {
             extraInfoHtml += '</div>';
         }
 
-        // ПИСЬМО МАКСА ПОСЛЕ ХАЙКА
-        let letterBannerHtml = '';
-        if (isPast && (hike.letter_text || hike.letter_link)) {
-            const letterText = hike.letter_text || '';
-            const letterLink = hike.letter_link || '';
-            const processedLetterText = parseLinks(letterText, isGuest);
-            const chatLinkHtml = letterLink
-                ? `<a href="${letterLink}" class="dynamic-link letter-chat-link" data-url="${letterLink}" data-guest="false">читать в чате</a>`
-                : '';
-            letterBannerHtml = `
-                <div class="letter-banner" id="letterBanner">
-                    <div class="letter-banner-header">
-                        <span>письмо Макса после хайка ✉️</span>
-                        <span class="arrow">▼</span>
-                    </div>
-                    <div class="letter-banner-content">
-                        ${processedLetterText}
-                        ${chatLinkHtml}
-                    </div>
-                </div>
-            `;
-        }
-
         const prevArrow = hasPrev
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
@@ -373,8 +362,22 @@ console.log('ПИСЬМО ОТЛАДКА:', {
                 ${tagsHtml}
             </div>
             <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
-            ${letterBannerHtml}
         `;
+
+        // Добавляем конверт, если есть письмо
+        if (isPast && (hike.letter_text || hike.letter_link)) {
+            const letterIcon = document.createElement('div');
+            letterIcon.className = 'letter-icon';
+            letterIcon.innerHTML = `
+                <img src="https://i.postimg.cc/Wb9Lc15K/mail-envelop-on-transparent-background-png-png-2.webp" class="letter-icon-img" alt="письмо">
+                <div class="letter-icon-text">письмо Макса после хайка</div>
+            `;
+            letterIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showLetterPopup(hike.letter_text || '', hike.letter_link || '');
+            });
+            contentWrapper.appendChild(letterIcon);
+        }
 
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
@@ -455,21 +458,6 @@ console.log('ПИСЬМО ОТЛАДКА:', {
                 log('slider_next', false, state.user);
             }
         });
-
-        // Обработчик раскрытия баннера письма
-        const banner = document.getElementById('letterBanner');
-        if (banner) {
-            banner.addEventListener('click', function(e) {
-                if (e.target.closest('.dynamic-link')) return;
-                haptic();
-                this.classList.toggle('expanded');
-                if (this.classList.contains('expanded')) {
-                    setTimeout(() => {
-                        contentWrapper.scrollBy({ top: 40, behavior: 'smooth' });
-                    }, 350);
-                }
-            });
-        }
     }
 
     updateContent();
@@ -587,6 +575,8 @@ function closeBottomSheet() {
         setTimeout(() => overlay.remove(), 300);
     }
 }
+
+// ... (swipe control, кнопки, dropdowns) без изменений
 
 // ... (остальной код swipe control, updateFloatingSheetButtons, guestBookingPopup, participant dropdown и т.д. остаётся без изменений)
 
