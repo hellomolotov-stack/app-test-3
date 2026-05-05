@@ -235,6 +235,23 @@ export function showBottomSheet(index) {
                     <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
                 </div>
             `;
+
+            // --- НОВЫЙ БЛОК КНОПОК ---
+            const shareLink = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
+            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}`;
+
+            sectionsHtml += `
+                <div class="bottom-sheet-section" style="margin-top: 12px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                        <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="flex: 1; min-width: 120px; font-size: 14px; padding: 14px 8px; white-space: nowrap;">🔗 отправить ссылку на хайк</button>
+                        <button class="btn btn-outline hike-question-btn" style="flex: 1; min-width: 120px; font-size: 14px; padding: 14px 8px; white-space: nowrap;" data-url="https://t.me/hellointelligent">💬 задать вопрос</button>
+                        ${isGuest ? `
+                            <button class="btn btn-outline hike-card-btn" style="flex: 1; min-width: 150px; font-size: 14px; padding: 14px 8px; white-space: nowrap;">💳 оформить карту интеллигента</button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            // -------------------------------
         }
         if (hike.details && hike.details.trim() !== '') {
             let processedText = parseLinks(hike.details, isGuest);
@@ -552,8 +569,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         ? (hike.woman === 'yes' ? 'ты записана' : 'ты записан')
         : 'иду';
 
-    const hintTextBooked = 'сдвинь для отмены ‹';
-    const hintTextUnbooked = '› сдвинь, чтобы записаться';
+    const hintTextBooked = '← потяни влево, для отмены';
+    const hintTextUnbooked = '→ потяни, чтобы записаться';
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -633,30 +650,29 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(thumb);
 
     let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
-    const THUMB_MARGIN = 8;          // отступ ползунка от краёв трека
-    const EDGE_PADDING = 30;        // отступ текста от краёв трека
-    const GAP_BETWEEN = 0;          // расстояние между текстом и ползунком
+    const THUMB_MARGIN = 8;
+    const TEXT_PADDING = 12;
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
         if (!isBooked) {
-            const availableLeft = thumbLeftPos + thumbW + GAP_BETWEEN;
-            const availableRight = trackW - EDGE_PADDING;
-            const hintWidth = Math.max(0, availableRight - availableLeft);
-            hint.style.left = availableLeft + 'px';
+            const hintLeft = thumbLeftPos + thumbW + TEXT_PADDING;
+            const hintRight = trackW - TEXT_PADDING;
+            const hintWidth = hintRight - hintLeft;
+            hint.style.left = hintLeft + 'px';
             hint.style.right = 'auto';
-            hint.style.width = hintWidth + 'px';
+            hint.style.width = Math.max(0, hintWidth) + 'px';
             hint.style.justifyContent = 'flex-end';
             hint.textContent = hintTextUnbooked;
         } else {
-            const availableRight = thumbLeftPos - GAP_BETWEEN;
-            const availableLeft = EDGE_PADDING;
-            const hintWidth = Math.max(0, availableRight - availableLeft);
-            hint.style.left = availableLeft + 'px';
+            const hintRight = thumbLeftPos - TEXT_PADDING;
+            const hintLeft = TEXT_PADDING;
+            const hintWidth = hintRight - hintLeft;
+            hint.style.left = hintLeft + 'px';
             hint.style.right = 'auto';
-            hint.style.width = hintWidth + 'px';
+            hint.style.width = Math.max(0, hintWidth) + 'px';
             hint.style.justifyContent = 'flex-start';
             hint.textContent = hintTextBooked;
         }
@@ -699,13 +715,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             if (isGuest) {
                 isDown = false;
                 thumb.style.transition = 'left 0.2s ease-out';
-                hint.style.transition = 'left 0.2s ease-out, width 0.2s ease-out';
+                hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
                 thumb.style.left = maxLeft + 'px';
                 placeHint(maxLeft);
                 showGuestBookingPopup(hike.date, hike.title, () => {
                     completed = false;
                     thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
-                    hint.style.transition = 'left 0.3s ease-out, width 0.3s ease-out';
+                    hint.style.transition = 'left 0.3s ease-out, right 0.3s ease-out, width 0.3s ease-out';
                     currentThumbWidth = minThumbWidth;
                     thumb.style.width = currentThumbWidth + 'px';
                     thumb.style.left = THUMB_MARGIN + 'px';
@@ -716,14 +732,14 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 });
                 return;
             }
-            // владелец карты – запись
+            // владелец карты – завершаем запись
             completed = true;
             isDown = false;
             const newText = hike.woman === 'yes' ? 'ты записана' : 'ты записан';
             const newWidth = Math.max(minThumbWidth, ctx.measureText(newText).width + THUMB_PADDING * 2);
             currentThumbWidth = newWidth;
             thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
-            hint.style.transition = 'left 0.2s ease-out, width 0.2s ease-out';
+            hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
             thumb.style.width = currentThumbWidth + 'px';
             thumb.style.left = maxLeft + 'px';
             thumb.textContent = newText;
@@ -796,7 +812,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         }
 
         thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
-        hint.style.transition = 'left 0.2s ease-out, width 0.2s ease-out';
+        hint.style.transition = 'left 0.2s ease-out, right 0.2s ease-out, width 0.2s ease-out';
         thumb.style.width = currentThumbWidth + 'px';
         if (isBooked) {
             thumb.style.left = maxLeft + 'px';
@@ -1375,41 +1391,41 @@ document.addEventListener('click', function(e) {
         renderNewcomerPage(isGuest);
         return;
     }
-   if (link.classList.contains('participant-counter')) {
-    e.preventDefault(); e.stopPropagation();
-    const hikeDate = link.dataset.hikeDate;
-    if (!hikeDate) return;
-    const index = state.hikesList.findIndex(h => h.date === hikeDate);
-    const hike = state.hikesList[index];
-    const isWoman = hike && hike.woman === 'yes';
-    const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
-    if (state.userCard.status !== 'active') {
-        const popupData = (state.popups && state.popups.guest_uchastniki_popup) || {
-            title: 'недоступно',
-            text: 'чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него',
-            button_text: 'понятно'
-        };
-        const msg = document.createElement('div');
-        msg.className = 'modal-overlay';
-        msg.innerHTML = `
-            <div class="modal-content" style="max-width: 300px;">
-                <div class="modal-title" style="color: ${accentColor};">${popupData.title}</div>
-                <div class="modal-text">${popupData.text}</div>
-                <div class="modal-buttons" style="margin-top: 20px;">
-                    <button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">${popupData.button_text}</button>
+    if (link.classList.contains('participant-counter')) {
+        e.preventDefault(); e.stopPropagation();
+        const hikeDate = link.dataset.hikeDate;
+        if (!hikeDate) return;
+        const index = state.hikesList.findIndex(h => h.date === hikeDate);
+        const hike = state.hikesList[index];
+        const isWoman = hike && hike.woman === 'yes';
+        const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
+        if (state.userCard.status !== 'active') {
+            const popupData = (state.popups && state.popups.guest_uchastniki_popup) || {
+                title: 'недоступно',
+                text: 'чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него',
+                button_text: 'понятно'
+            };
+            const msg = document.createElement('div');
+            msg.className = 'modal-overlay';
+            msg.innerHTML = `
+                <div class="modal-content" style="max-width: 300px;">
+                    <div class="modal-title" style="color: ${accentColor};">${popupData.title}</div>
+                    <div class="modal-text">${popupData.text}</div>
+                    <div class="modal-buttons" style="margin-top: 20px;">
+                        <button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">${popupData.button_text}</button>
+                    </div>
                 </div>
-            </div>
-        `;
-        document.body.appendChild(msg);
-        const closeBtn = msg.querySelector('.btn');
-        closeBtn.addEventListener('click', () => msg.remove());
-        setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
-        log('uchastniki_no_card', true, state.user);
-    } else {
-        toggleParticipantDropdown(link, hikeDate);
+            `;
+            document.body.appendChild(msg);
+            const closeBtn = msg.querySelector('.btn');
+            closeBtn.addEventListener('click', () => msg.remove());
+            setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
+            log('uchastniki_no_card', true, state.user);
+        } else {
+            toggleParticipantDropdown(link, hikeDate);
+        }
+        return;
     }
-    return;
-}
     if (link.classList.contains('booking-detail-btn')) {
         e.preventDefault();
         const index = link.dataset.index;
@@ -1429,6 +1445,49 @@ document.addEventListener('click', function(e) {
         e.preventDefault(); haptic();
         log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
         document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+    }
+
+    // Новые кнопки в слайдере хайков
+    const shareBtn = e.target.closest('.hike-share-btn');
+    if (shareBtn) {
+        e.preventDefault();
+        const url = shareBtn.dataset.shareUrl;
+        if (url && tg?.openTelegramLink) {
+            tg.openTelegramLink(url);
+        } else if (url) {
+            window.open(url, '_blank');
+        }
+        log('hike_share_click', state.userCard.status !== 'active', state.user);
+        return;
+    }
+
+    const questionBtn = e.target.closest('.hike-question-btn');
+    if (questionBtn) {
+        e.preventDefault();
+        const url = questionBtn.dataset.url || 'https://t.me/hellointelligent';
+        openLink(url, 'hike_question_click', state.userCard.status !== 'active');
+        return;
+    }
+
+    const cardBtn = e.target.closest('.hike-card-btn');
+    if (cardBtn) {
+        e.preventDefault();
+        // Переход на главную и выделение блока карты
+        closeBottomSheet();
+        renderHome();
+        setTimeout(() => {
+            const cardBlock = document.getElementById('cardBlock');
+            if (cardBlock) {
+                cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                cardBlock.style.transition = 'box-shadow 0.3s';
+                cardBlock.style.boxShadow = '0 0 20px 4px rgba(217, 253, 25, 0.7)';
+                setTimeout(() => {
+                    cardBlock.style.boxShadow = '';
+                }, 2000);
+            }
+        }, 400);
+        log('hike_card_click', true, state.user);
         return;
     }
 });
