@@ -291,8 +291,8 @@ function renderGuestHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
         <div class="card-container">
-            <h2 class="section-title">🫖 для новичков</h2>
-            <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+            <h2 class="section-title">🗺️ как всё устроено</h2>
+            <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">🫖 для новичков</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true">смотреть отчёты &gt;</a></div>
