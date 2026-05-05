@@ -2172,3 +2172,12 @@ body.night-mode::before {
 .letter-popup-text a:hover {
     text-decoration: underline;
 }
+.letter-icon-img {
+    animation: letterWobble 1.8s ease-in-out infinite;
+}
+
+@keyframes letterWobble {
+    0% { transform: rotate(-22deg); }
+    50% { transform: rotate(-18deg); }
+    100% { transform: rotate(-22deg); }
+}
