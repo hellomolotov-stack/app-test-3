@@ -2068,3 +2068,69 @@ body.night-mode::before {
     padding-left: 16px;
     padding-right: 16px;
 }
+/* Баннер письма Макса в bottom sheet */
+.letter-banner {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 20px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15);
+    padding: 14px 16px;
+    margin: 12px 0 0 0;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    max-height: 56px;           /* свёрнутое состояние */
+    position: relative;
+    box-sizing: border-box;
+}
+
+.letter-banner.expanded {
+    max-height: 70vh;            /* раскрытое – по высоте экрана */
+    overflow-y: auto;           /* внутренняя прокрутка для длинных писем */
+    cursor: default;
+    padding-bottom: 20px;
+}
+
+.letter-banner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.3;
+    user-select: none;
+}
+
+.letter-banner-header .arrow {
+    font-size: 20px;
+    transition: transform 0.3s;
+    line-height: 1;
+    color: var(--yellow);
+}
+
+.letter-banner.expanded .letter-banner-header .arrow {
+    transform: rotate(180deg);
+}
+
+.letter-banner-content {
+    margin-top: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    white-space: pre-line;       /* сохраняем переносы строк */
+    color: rgba(255,255,255,0.9);
+    display: none;              /* скрыто по умолчанию */
+}
+
+.letter-banner.expanded .letter-banner-content {
+    display: block;
+}
+
+.letter-banner .letter-chat-link {
+    display: inline-block;
+    margin-top: 12px;
+    color: var(--yellow);
+    text-decoration: underline;
+    font-weight: 500;
+}
