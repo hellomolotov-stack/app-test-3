@@ -329,17 +329,14 @@ export function showBottomSheet(index) {
         const shareLink = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
         const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}`;
 
-        sectionsHtml += `
-           <div class="bottom-sheet-section" id="action-buttons-block" style="padding: 0 16px; margin-top: 20px;">
-                <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
-                    <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
-                    <button class="btn btn-outline hike-question-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;" data-url="https://t.me/hellointelligent">💬 задать вопрос</button>
-                    ${isGuest ? `
-                        <button class="btn btn-outline hike-card-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">💳 оформить карту интеллигента</button>
-                    ` : ''}
-                </div>
-            </div>
-        `;
+       sectionsHtml += `
+    <div class="bottom-sheet-section" id="action-buttons-block" style="padding: 0 16px; margin-top: 20px;">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn btn-outline hike-share-btn" ... style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
+            ...
+        </div>
+    </div>
+`;
 
         const prevArrow = hasPrev
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
