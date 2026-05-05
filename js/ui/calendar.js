@@ -251,7 +251,13 @@ export function showBottomSheet(index) {
         const todayDate = new Date();
         todayDate.setHours(0, 0, 0, 0);
         const isPast = hikeDate < todayDate;
-
+// Вот сюда вставьте лог:
+console.log('ПИСЬМО ОТЛАДКА:', {
+    date: hike.date,
+    isPast: isPast,
+    letter_text: hike.letter_text,
+    letter_link: hike.letter_link
+});
         let imageHtml = '';
         if (hike.image) {
             if (!isPast) {
