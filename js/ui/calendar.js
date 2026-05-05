@@ -330,7 +330,7 @@ export function showBottomSheet(index) {
         const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}`;
 
         sectionsHtml += `
-            <div class="bottom-sheet-section" id="action-buttons-block" style="margin-top: 20px;">
+           <div class="bottom-sheet-section" id="action-buttons-block" style="padding: 0 16px; margin-top: 20px;">
                 <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                     <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
                     <button class="btn btn-outline hike-question-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;" data-url="https://t.me/hellointelligent">💬 задать вопрос</button>
