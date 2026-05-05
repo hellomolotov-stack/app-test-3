@@ -325,18 +325,21 @@ export function showBottomSheet(index) {
             extraInfoHtml += '</div>';
         }
 
-        // ---- НОВЫЙ БЛОК КНОПОК (растянут на всю ширину) ----
+        // ---- НОВЫЙ БЛОК КНОПОК ----
         const shareLink = `https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`;
         const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareLink)}`;
 
-       sectionsHtml += `
-    <div class="bottom-sheet-section" id="action-buttons-block" style="padding: 0 16px; margin-top: 20px;">
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-            <button class="btn btn-outline hike-share-btn" ... style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
-            ...
-        </div>
-    </div>
-`;
+        sectionsHtml += `
+            <div id="action-buttons-block" style="margin-top: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 16px;">
+                    <button class="btn btn-outline hike-share-btn" data-share-url="${shareUrl}" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">🔗 отправить ссылку на хайк</button>
+                    <button class="btn btn-outline hike-question-btn" data-url="https://t.me/hellointelligent" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">💬 задать вопрос</button>
+                    ${isGuest ? `
+                        <button class="btn btn-outline hike-card-btn" style="width: 100%; padding: 16px; font-size: 14px; border-radius: 20px;">💳 оформить карту интеллигента</button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
 
         const prevArrow = hasPrev
             ? `<div class="bottom-sheet-nav-arrow" id="prevHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
@@ -466,12 +469,10 @@ export function showBottomSheet(index) {
         const maxScroll = scrollHeight - clientHeight;
         if (maxScroll <= 0) return;
 
-        // Проверяем, видна ли первая кнопка в блоке
         const firstActionButton = document.querySelector('#action-buttons-block .btn');
         if (firstActionButton) {
             const buttonTop = firstActionButton.getBoundingClientRect().top;
             const wrapperTop = contentWrapper.getBoundingClientRect().top;
-            // Если кнопка появилась в зоне видимости – скрываем слайдер
             if (buttonTop - wrapperTop < clientHeight) {
                 container.classList.add('hidden');
                 return;
@@ -1483,7 +1484,6 @@ document.addEventListener('click', function(e) {
     const cardBtn = e.target.closest('.hike-card-btn');
     if (cardBtn) {
         e.preventDefault();
-        // Переход на главную и выделение блока карты
         closeBottomSheet();
         renderHome();
         setTimeout(() => {
