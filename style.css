@@ -2067,6 +2067,51 @@ body.night-mode::before {
     padding-right: 16px;
 }
 
+/* АНИМАЦИЯ ПОПАПОВ В СТИЛЕ TELEGRAM */
+.modal-overlay.animated {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.modal-overlay.animated.visible {
+    opacity: 1;
+}
+.modal-content.animated,
+.letter-popup-content.animated {
+    transform: scale(0.9);
+    opacity: 0;
+    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1), opacity 0.2s ease;
+}
+.modal-overlay.animated.visible .modal-content.animated,
+.modal-overlay.animated.visible .letter-popup-content.animated {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* АНИМАЦИЯ ПОКАЧИВАНИЯ КОНВЕРТА */
+.letter-icon-img {
+    animation: letterWobble 1.8s ease-in-out infinite;
+}
+@keyframes letterWobble {
+    0% { transform: rotate(-22deg); }
+    50% { transform: rotate(-18deg); }
+    100% { transform: rotate(-22deg); }
+}
+
+/* ЗАПРЕТ ПЕРЕНОСА ТЕКСТА В ЗАГОЛОВКАХ И ТЕГАХ */
+.section-title,
+.bottom-sheet-header-date,
+.bottom-sheet-header-title,
+.feature-tag,
+.bottom-sheet-tag,
+.metric-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.feature-tags-container, .bottom-sheet-tags {
+    flex-wrap: wrap;
+}
+
 /* -------------------- КОНВЕРТ С ПИСЬМОМ -------------------- */
 .letter-icon {
     position: absolute;
@@ -2171,84 +2216,4 @@ body.night-mode::before {
 
 .letter-popup-text a:hover {
     text-decoration: underline;
-}
-.letter-icon-img {
-    animation: letterWobble 1.8s ease-in-out infinite;
-}
-
-@keyframes letterWobble {
-    0% { transform: rotate(-22deg); }
-    50% { transform: rotate(-18deg); }
-    100% { transform: rotate(-22deg); }
-}
-/* Анимация покачивания конверта */
-.letter-icon-img {
-    animation: letterWobble 1.8s ease-in-out infinite;
-}
-
-@keyframes letterWobble {
-    0% { transform: rotate(-22deg); }
-    50% { transform: rotate(-18deg); }
-    100% { transform: rotate(-22deg); }
-}
-
-/* Запрет переноса текста в важных элементах */
-.section-title,
-.bottom-sheet-header-date,
-.bottom-sheet-header-title,
-.feature-tag,
-.bottom-sheet-tag,
-.metric-label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Чтобы теги внутри контейнера не переносились, но сам контейнер переносится */
-.feature-tags-container, .bottom-sheet-tags {
-    flex-wrap: wrap;
-}
-/* АНИМАЦИЯ ПОПАПОВ В СТИЛЕ TELEGRAM */
-.modal-overlay.animated {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-.modal-overlay.animated.visible {
-    opacity: 1;
-}
-.modal-content.animated,
-.letter-popup-content.animated {
-    transform: scale(0.9);
-    opacity: 0;
-    transition: transform 0.2s cubic-bezier(0.2, 0.9, 0.4, 1), opacity 0.2s ease;
-}
-.modal-overlay.animated.visible .modal-content.animated,
-.modal-overlay.animated.visible .letter-popup-content.animated {
-    transform: scale(1);
-    opacity: 1;
-}
-
-/* АНИМАЦИЯ ПОКАЧИВАНИЯ КОНВЕРТА */
-.letter-icon-img {
-    animation: letterWobble 1.8s ease-in-out infinite;
-}
-@keyframes letterWobble {
-    0% { transform: rotate(-22deg); }
-    50% { transform: rotate(-18deg); }
-    100% { transform: rotate(-22deg); }
-}
-
-/* ЗАПРЕТ ПЕРЕНОСА ТЕКСТА В ЗАГОЛОВКАХ И ТЕГАХ */
-.section-title,
-.bottom-sheet-header-date,
-.bottom-sheet-header-title,
-.feature-tag,
-.bottom-sheet-tag,
-.metric-label {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.feature-tags-container, .bottom-sheet-tags {
-    flex-wrap: wrap;
 }
