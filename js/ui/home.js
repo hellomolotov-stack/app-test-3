@@ -9,6 +9,28 @@ import { renderCalendar } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 
+function getCurrentTopOffset() {
+    if (!tg) return 76;
+    const safeTop = tg.contentSafeAreaInset?.top || 0;
+    return safeTop + 60;
+}
+
+// Функция плавного скролла к календарю с безопасным отступом и подсветкой
+function scrollToCalendarAndHighlight() {
+    const calendar = document.getElementById('calendarContainer');
+    if (!calendar) return;
+    const offset = getCurrentTopOffset();
+    const rect = calendar.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const targetY = rect.top + scrollTop - offset;
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
+
+    // Подсветка рамкой на 2 секунды
+    calendar.style.transition = 'box-shadow 0.5s';
+    calendar.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
+    setTimeout(() => { calendar.style.boxShadow = ''; }, 2000);
+}
+
 function updateMetricsUI() {
     const hikesEl = document.querySelector('[data-metric="hikes"]');
     const locationsEl = document.querySelector('[data-metric="locations"]');
@@ -334,12 +356,20 @@ function renderGuestHome() {
         btn.addEventListener('click', handleGuestRead);
     });
 
-btn.goBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    haptic();
-    scrollToCalendarAndHighlight();
-    log('random_phrase_click', state.userCard.status !== 'active', state.user);
-});
+    renderUserBookings(document.getElementById('userBookingsContainer'));
+    renderCalendar(document.getElementById('calendarContainer'));
+
+    // ДОБАВЛЯЕМ ОБРАБОТЧИК НА КНОПКУ «ПОЙТИ НА ХАЙК» С ПЛАВНЫМ СКРОЛЛОМ
+    const goBtn = document.querySelector('.booking-go-btn');
+    if (goBtn) {
+        goBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            scrollToCalendarAndHighlight();
+            log('random_phrase_click', true, state.user);
+        });
+    }
+
     setupBottomNav();
 }
 
@@ -363,9 +393,9 @@ function renderOwnerHome() {
         <div id="userBookingsContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
-       <div class="card-container">
-    <h2 class="section-title">🫖 для новичков</h2>
-    <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+        <div class="card-container">
+            <h2 class="section-title">🫖 для новичков</h2>
+            <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false">смотреть отчёты &gt;</a></div>
@@ -397,12 +427,22 @@ function renderOwnerHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
+
+    // ДОБАВЛЯЕМ ОБРАБОТЧИК НА КНОПКУ «ПОЙТИ НА ХАЙК» С ПЛАВНЫМ СКРОЛЛОМ (ДЛЯ ВЛАДЕЛЬЦЕВ КАРТ)
+    const goBtn = document.querySelector('.booking-go-btn');
+    if (goBtn) {
+        goBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            scrollToCalendarAndHighlight();
+            log('random_phrase_click', false, state.user);
+        });
+    }
+
     setupBottomNav();
 }
 
 export function renderHome() {
-    // Удаляем плавающую кнопку «выпускайте мою карту», если она осталась с других экранов
-document.getElementById('floatingCardBtn')?.remove();
     document.querySelector('.profile-edit-fab')?.remove();
     hideBack();
     if (window._floatingScrollHandler) {
@@ -433,18 +473,4 @@ document.getElementById('floatingCardBtn')?.remove();
     } else {
         renderGuestHome();
     }
-    function scrollToCalendarAndHighlight() {
-    const calendar = document.getElementById('calendarContainer');
-    if (!calendar) return;
-    const offset = getCurrentTopOffset(); // из main.js
-    const rect = calendar.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const targetY = rect.top + scrollTop - offset;
-    window.scrollTo({ top: targetY, behavior: 'smooth' });
-
-    // Подсветка
-    calendar.style.transition = 'box-shadow 0.5s';
-    calendar.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
-    setTimeout(() => { calendar.style.boxShadow = ''; }, 2000);
-}
 }
