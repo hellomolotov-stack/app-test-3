@@ -76,49 +76,7 @@ function cleanupProfileOverlays() {
     document.body.style.overflow = '';
 }
 
-// ------------------------------------------------------------
-//  ПРОГРАММНАЯ АНИМАЦИЯ ПРОКРУТКИ (работает 100%)
-// ------------------------------------------------------------
-function setupInfiniteScroll(container) {
-    if (!container) return;
-    const speed = 0.5;                    // пикселей в кадре
-    let animId;
-
-    function step() {
-        if (!container.isConnected) {
-            cancelAnimationFrame(animId);
-            return;
-        }
-        container.scrollTop += speed;
-        // Когда дошли до середины (дубликата), мгновенно в начало
-        if (container.scrollTop >= container.scrollHeight / 2) {
-            container.scrollTop = 0;
-        }
-        animId = requestAnimationFrame(step);
-    }
-
-    // При касании пользователем останавливаем авто‑прокрутку
-    container.addEventListener('touchstart', () => {
-        cancelAnimationFrame(animId);
-    }, { once: false });
-
-    // Через 2 секунды после последнего касания возобновляем
-    let resumeTimeout;
-    container.addEventListener('touchend', () => {
-        clearTimeout(resumeTimeout);
-        resumeTimeout = setTimeout(() => {
-            // Корректируем, если пользователь докрутил до половины
-            if (container.scrollTop >= container.scrollHeight / 2) {
-                container.scrollTop = 0;
-            }
-            animId = requestAnimationFrame(step);
-        }, 2000);
-    });
-
-    // Запускаем
-    animId = requestAnimationFrame(step);
-}
-
+// --------------- ОСНОВНАЯ ФУНКЦИЯ РЕНДЕРИНГА ---------------
 export async function renderProfiles() {
     cleanupProfileOverlays();
 
@@ -137,58 +95,55 @@ export async function renderProfiles() {
 
     const shouldAnimate = !(isCardHolder && hasMyProfile);
 
-    // Пустой список – показываем заглушки
+    // Функция-помощник для создания бесконечной прокрутки
+    function wrapInfiniteScroll(content) {
+        const scrollWrapperHeight = window.innerHeight - 100;
+        return `
+            <div class="card-container infinite-scroll-container" style="height: ${scrollWrapperHeight}px;">
+                <div class="infinite-scroll-wrapper">
+                    ${content}
+                    ${content}
+                </div>
+            </div>
+        `;
+    }
+
+    let html = '';
+
     if (allCards.length === 0) {
         let ph = '';
         for (let i = 0; i < placeholderCount; i++) {
             ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
         }
-        const scrollWrapperHeight = window.innerHeight - 100;
-        const doubleHeight = scrollWrapperHeight * 2;
-        mainDiv().innerHTML = `
-            <div class="card-container infinite-scroll-container" style="overflow:hidden; height:${scrollWrapperHeight}px;">
-                <div style="min-height: ${doubleHeight}px;">
-                    <div class="profiles-two-columns">${ph}${ph}</div>
-                    <div class="profiles-two-columns">${ph}${ph}</div>
-                </div>
-            </div>
-        `;
-        const container = mainDiv().querySelector('.infinite-scroll-container');
-        if (container) setupInfiniteScroll(container);
-        showCenterButtonWithPreview(isCardHolder, hasMyProfile);
-        return;
-    }
-
-    // Реальные профили
-    const leftCards = [];
-    const rightCards = [];
-    allCards.forEach((card, index) => {
-        if (index % 2 === 0) leftCards.push(card);
-        else rightCards.push(card);
-    });
-
-    const twoColumnsHtml = `<div class="profiles-two-columns">
-        <div class="profiles-column">${leftCards.join('')}</div>
-        <div class="profiles-column">${rightCards.join('')}</div>
-    </div>`;
-
-    if (shouldAnimate) {
-        const scrollWrapperHeight = window.innerHeight - 100;
-        const doubleHeight = scrollWrapperHeight * 2;
-        mainDiv().innerHTML = `
-            <div class="card-container infinite-scroll-container" style="overflow:hidden; height:${scrollWrapperHeight}px;">
-                <div style="min-height: ${doubleHeight}px;">
-                    ${twoColumnsHtml}
-                    ${twoColumnsHtml}
-                </div>
-            </div>
-        `;
-        const container = mainDiv().querySelector('.infinite-scroll-container');
-        if (container) setupInfiniteScroll(container);
+        html = wrapInfiniteScroll(`<div class="profiles-two-columns">${ph}${ph}</div>`);
     } else {
-        mainDiv().innerHTML = `<div class="card-container">${twoColumnsHtml}</div>`;
+        const leftCards = [], rightCards = [];
+        allCards.forEach((card, i) => i % 2 === 0 ? leftCards.push(card) : rightCards.push(card));
+        const twoColumnsHtml = `<div class="profiles-two-columns"><div class="profiles-column">${leftCards.join('')}</div><div class="profiles-column">${rightCards.join('')}</div></div>`;
+        html = shouldAnimate ? wrapInfiniteScroll(twoColumnsHtml) : `<div class="card-container">${twoColumnsHtml}</div>`;
     }
 
+    mainDiv().innerHTML = html;
+
+    // Если нужна пауза при касании
+    if (shouldAnimate) {
+        const wrapper = mainDiv().querySelector('.infinite-scroll-wrapper');
+        const container = mainDiv().querySelector('.infinite-scroll-container');
+        if (wrapper && container) {
+            let resumeTimeout;
+            container.addEventListener('touchstart', () => {
+                clearTimeout(resumeTimeout);
+                wrapper.classList.add('paused');
+            });
+            container.addEventListener('touchend', () => {
+                resumeTimeout = setTimeout(() => {
+                    wrapper.classList.remove('paused');
+                }, 2000);
+            });
+        }
+    }
+
+    // Кнопка "создать профиль" и оверлей
     if (isCardHolder && hasMyProfile) {
         const btnContainer = document.createElement('div');
         btnContainer.className = 'profile-edit-fab';
@@ -202,18 +157,10 @@ export async function renderProfiles() {
         return;
     }
 
+    // для гостей/владельцев без профиля – блюр + кнопка
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
-    blurOverlay.style.position = 'fixed';
-    blurOverlay.style.top = '0';
-    blurOverlay.style.left = '0';
-    blurOverlay.style.width = '100%';
-    blurOverlay.style.height = '100%';
-    blurOverlay.style.pointerEvents = 'none';
-    blurOverlay.style.zIndex = '40';
-    blurOverlay.style.background = 'linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%)';
-    blurOverlay.style.backdropFilter = 'blur(16px)';
-    blurOverlay.style.webkitBackdropFilter = 'blur(16px)';
+    blurOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:40;background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);';
     document.body.appendChild(blurOverlay);
 
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
@@ -226,25 +173,11 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
     centerBtn.innerHTML = `<button class="btn btn-yellow profile-action-btn" id="profileActionBtn">🫆 создать профиль</button>`;
-    centerBtn.style.cssText = `
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        z-index: 100 !important;
-        pointer-events: auto !important;
-    `;
+    centerBtn.style.cssText = 'position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; z-index: 100 !important; pointer-events: auto !important;';
     document.body.appendChild(centerBtn);
 
     const actionBtn = document.getElementById('profileActionBtn');
-    actionBtn.style.cssText = `
-        padding: 12px 24px !important;
-        font-size: 16px !important;
-        white-space: nowrap;
-        border-radius: 40px !important;
-        width: auto !important;
-        min-width: 200px;
-    `;
+    actionBtn.style.cssText = 'padding: 12px 24px !important; font-size: 16px !important; white-space: nowrap; border-radius: 40px !important; width: auto !important; min-width: 200px;';
     if (isCardHolder) {
         actionBtn.addEventListener('click', () => {
             haptic();
@@ -277,56 +210,19 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     if (previewProfile) {
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
-        banner.style.cssText = `
-            position: fixed !important;
-            top: 50% !important;
-            left: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            width: 90% !important;
-            max-width: 520px !important;
-            margin-top: -100px !important;
-            z-index: 101 !important;
-            pointer-events: none !important;
-            background: rgba(255, 255, 255, 0.1) !important;
-            border-radius: 28px !important;
-            backdrop-filter: blur(8px) !important;
-            -webkit-backdrop-filter: blur(8px) !important;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important;
-            padding: 16px !important;
-            display: flex !important;
-            flex-direction: row !important;
-            align-items: center !important;
-            gap: 14px !important;
-            box-sizing: border-box !important;
-        `;
+        banner.style.cssText = 'position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%); width: 90% !important; max-width: 520px !important; margin-top: -100px !important; z-index: 101 !important; pointer-events: none !important; background: rgba(255,255,255,0.1) !important; border-radius: 28px !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important; padding: 16px !important; display: flex !important; flex-direction: row !important; align-items: center !important; gap: 14px !important; box-sizing: border-box !important;';
 
         const avatarContainer = document.createElement('div');
         avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
-
         if (previewProfile.photoUrl) {
             const img = document.createElement('img');
             img.src = previewProfile.photoUrl;
             img.className = 'preview-avatar-img';
-            img.style.cssText = `
-                width: 100% !important;
-                height: 100% !important;
-                border-radius: 50% !important;
-                object-fit: cover !important;
-            `;
+            img.style.cssText = 'width: 100% !important; height: 100% !important; border-radius: 50% !important; object-fit: cover !important;';
             img.onerror = function() {
                 const placeholder = document.createElement('div');
                 placeholder.className = 'preview-avatar-placeholder';
-                placeholder.style.cssText = `
-                    width: 100% !important;
-                    height: 100% !important;
-                    border-radius: 50% !important;
-                    background: #40a7e3 !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    font-size: 24px !important;
-                    color: white !important;
-                `;
+                placeholder.style.cssText = 'width: 100% !important; height: 100% !important; border-radius: 50% !important; background: #40a7e3 !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 24px !important; color: white !important;';
                 placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
                 this.parentNode.replaceChild(placeholder, this);
             };
@@ -334,17 +230,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
         } else {
             const placeholder = document.createElement('div');
             placeholder.className = 'preview-avatar-placeholder';
-            placeholder.style.cssText = `
-                width: 100% !important;
-                height: 100% !important;
-                border-radius: 50% !important;
-                background: #40a7e3 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 24px !important;
-                color: white !important;
-            `;
+            placeholder.style.cssText = 'width: 100% !important; height: 100% !important; border-radius: 50% !important; background: #40a7e3 !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 24px !important; color: white !important;';
             placeholder.textContent = (previewProfile.name?.charAt(0)||'?').toUpperCase();
             avatarContainer.appendChild(placeholder);
         }
