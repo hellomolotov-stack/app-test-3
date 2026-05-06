@@ -15,20 +15,21 @@ function getCurrentTopOffset() {
     return safeTop + 60;
 }
 
-// Функция плавного скролла к календарю с безопасным отступом и подсветкой
+// Плавный скролл к календарю с подсветкой (1.5 сек)
 function scrollToCalendarAndHighlight() {
     const calendar = document.getElementById('calendarContainer');
     if (!calendar) return;
+
     const offset = getCurrentTopOffset();
     const rect = calendar.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const targetY = rect.top + scrollTop - offset;
+
     window.scrollTo({ top: targetY, behavior: 'smooth' });
 
-    // Подсветка рамкой на 2 секунды
     calendar.style.transition = 'box-shadow 0.5s';
     calendar.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
-    setTimeout(() => { calendar.style.boxShadow = ''; }, 2000);
+    setTimeout(() => { calendar.style.boxShadow = ''; }, 1500);
 }
 
 function updateMetricsUI() {
