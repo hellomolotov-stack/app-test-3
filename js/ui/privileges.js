@@ -279,7 +279,7 @@ function addFloatingCardButton() {
         haptic();
         // Возвращаемся на главную
         renderHome();
-        // Через 300 мс прокручиваем к блоку с картой
+        // Через 300 мс прокручиваем к блоку с картой и раскрываем аккордеон, если он есть
         setTimeout(() => {
             const cardBlock = document.getElementById('cardBlock');
             if (cardBlock) {
@@ -290,6 +290,12 @@ function addFloatingCardButton() {
                 setTimeout(() => {
                     cardBlock.style.boxShadow = '';
                 }, 2000);
+
+                // Автоматически раскрываем аккордеон гостевой карты
+                const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
+                if (guestAccordion && !guestAccordion.classList.contains('show')) {
+                    guestAccordion.classList.add('show');
+                }
             }
         }, 300);
     });
