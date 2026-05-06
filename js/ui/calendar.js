@@ -84,8 +84,10 @@ export function renderCalendar(container) {
             const hike = state.hikesList[hikeIndex];
             const isWoman = hike && hike.woman === 'yes';
             if (isWoman) classes += ' woman-hike';
+            // отчёт
             if (isPast && hike && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
+            // письмо
             if (isPast && hike && (hike.letter_text || hike.letter_link))
                 innerHtml += `<span class="calendar-emoji-letter">✉️</span>`;
             if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
@@ -142,12 +144,31 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
+// Кэш аватаров
+const avatarCache = new Map();
+const CACHE_TTL = 60 * 60 * 1000; // 1 час
+
+async function getCachedAvatar(userId, photoUrl) {
+    const now = Date.now();
+    if (avatarCache.has(userId)) {
+        const entry = avatarCache.get(userId);
+        if (now - entry.timestamp < CACHE_TTL) return entry.url;
+    }
+    avatarCache.set(userId, { url: photoUrl, timestamp: now });
+    return photoUrl;
+}
+
+// Простая функция показа письма (без анимации, чтобы не зависало)
 function showLetterPopup(letterText, letterLink, isGuest) {
-    const overlayPopup = document.createElement('div');
-    overlayPopup.className = 'letter-popup';
+    const overlay = document.createElement('div');
+    overlay.className = 'letter-popup';
+    
     const processedText = parseLinks(letterText, isGuest);
-    const chatHtml = letterLink ? `<p style="margin-top: 16px;"><a href="${letterLink}" class="dynamic-link" data-url="${letterLink}" data-guest="false" style="color: var(--yellow); text-decoration: underline;">открыть письмо в чате</a></p>` : '';
-    overlayPopup.innerHTML = `
+    const chatHtml = letterLink
+        ? `<p style="margin-top:16px;"><a href="${letterLink}" class="dynamic-link" data-url="${letterLink}" data-guest="false" style="color:var(--yellow);text-decoration:underline;">открыть письмо в чате</a></p>`
+        : '';
+
+    overlay.innerHTML = `
         <div class="letter-popup-content">
             <div class="letter-popup-header">
                 <div class="letter-popup-title">✉️ письмо Макса после хайка</div>
@@ -156,66 +177,78 @@ function showLetterPopup(letterText, letterLink, isGuest) {
             <div class="letter-popup-text">${processedText}${chatHtml}</div>
         </div>
     `;
-    document.body.appendChild(overlayPopup);
-    const closeBtn = overlayPopup.querySelector('.letter-popup-close');
-    closeBtn.addEventListener('click', () => { haptic(); overlayPopup.remove(); });
-    overlayPopup.addEventListener('click', (e) => { if (e.target === overlayPopup) { haptic(); overlayPopup.remove(); } });
+
+    document.body.appendChild(overlay);
+
+    const closePopup = () => {
+        if (overlay && overlay.parentNode) {
+            overlay.parentNode.removeChild(overlay);
+        }
+    };
+
+    const closeBtn = overlay.querySelector('.letter-popup-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            haptic();
+            closePopup();
+        });
+    }
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            haptic();
+            closePopup();
+        }
+    });
 }
 
-// НОВЫЙ ДВУХЭТАПНЫЙ СЛАЙДЕР
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
-    const existingHalf = document.querySelector('.half-image-container');
-    if (existingHalf) existingHalf.remove();
     const existingSheetButtons = document.querySelector('.floating-sheet-buttons');
     if (existingSheetButtons) existingSheetButtons.remove();
+    // Удаляем предыдущий конверт, если есть
     const existingLetter = document.querySelector('.letter-icon');
     if (existingLetter) existingLetter.remove();
 
     document.body.style.overflow = 'hidden';
 
-    const hike = state.hikesList[index];
-    sheetCurrentIndex = index;
-    const isGuest = state.userCard.status !== 'active';
-    const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
-
-    // Контейнер с полуизображением
-    const halfContainer = document.createElement('div');
-    halfContainer.className = 'half-image-container';
-    const imageUrl = hike.half_image || hike.image || '';
-    if (imageUrl) {
-        halfContainer.innerHTML = `<img src="${imageUrl}" class="half-image" onerror="this.style.display='none'">`;
-    }
-    document.body.appendChild(halfContainer);
-    setTimeout(() => halfContainer.classList.add('visible'), 20);
-
-    // Overlay и слайдер
     const overlay = document.createElement('div');
     overlay.className = 'bottom-sheet-overlay';
     overlay.innerHTML = `<div class="bottom-sheet" id="hikeBottomSheet"><div class="bottom-sheet-handle"></div><div class="bottom-sheet-content-wrapper" id="bottomSheetContent"></div></div>`;
     document.body.appendChild(overlay);
+
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
-    const halfHeight = windowHeight * 0.5;
-    const fullHeight = windowHeight - safeTop - 40;
+    const availableHeight = windowHeight - safeTop - 40;
+    const maxHeight = availableHeight * 0.95;
+    sheet.style.maxHeight = `${maxHeight}px`;
+    sheet.style.height = `${maxHeight}px`;
+    overlay.style.paddingTop = safeTop + 'px';
 
-    sheet.style.maxHeight = `${fullHeight}px`;
-    sheet.style.height = `${halfHeight}px`;
-    sheet.style.transform = 'translateY(0)';
-    overlay.classList.add('visible');
-    sheet.classList.add('visible');
+    sheetCurrentIndex = index;
+    const isGuest = state.userCard.status !== 'active';
+    if (currentUnsubscribe) {
+        currentUnsubscribe();
+        currentUnsubscribe = null;
+    }
 
-    let mode = 'half'; // half | full
+    if (Object.keys(state.profiles).length === 0) {
+        loadAllProfiles().then(profiles => {
+            state.profiles = profiles;
+        }).catch(() => {});
+    }
 
     function updateContent() {
         const hike = state.hikesList[sheetCurrentIndex];
         if (!hike) return;
+
         const isWoman = hike.woman === 'yes';
         const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
         const monthNamesArr = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -235,30 +268,137 @@ export function showBottomSheet(index) {
         let tagsHtml = '';
         if (hike.tags && hike.tags.length > 0) {
             tagsHtml = '<div class="bottom-sheet-tags">';
-            hike.tags.forEach(tag => { tagsHtml += `<span class="bottom-sheet-tag">${tag}</span>`; });
+            hike.tags.forEach(tag => {
+                tagsHtml += `<span class="bottom-sheet-tag">${tag}</span>`;
+            });
             tagsHtml += '</div>';
         }
 
         let sectionsHtml = '';
         if (hike.features && hike.features.trim() !== '') {
-            let processedText = parseLinks(hike.features, isGuest).replace(/\n/g, '<br>');
-            sectionsHtml += `<div class="bottom-sheet-section"><div class="bottom-sheet-section-title" style="color: ${accentColor};">особенности</div><div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div></div>`;
+            let processedText = parseLinks(hike.features, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
+            let featureTagsHtml = '';
+            if (hike.feature_tags && hike.feature_tags.length > 0) {
+                featureTagsHtml = '<div class="feature-tags-container">';
+                hike.feature_tags.forEach(tag => {
+                    featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor};">${tag}</span>`;
+                });
+                featureTagsHtml += '</div>';
+            }
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">особенности</div>
+                    ${featureTagsHtml}
+                    <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
+                </div>
+            `;
         }
         if (hike.access && hike.access.trim() !== '') {
-            let processedText = parseLinks(hike.access, isGuest).replace(/\n/g, '<br>');
-            sectionsHtml += `<div class="bottom-sheet-section"><div class="bottom-sheet-section-title" style="color: ${accentColor};">как добраться</div><div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div></div>`;
+            let processedText = parseLinks(hike.access, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">как добраться</div>
+                    <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
+                </div>
+            `;
         }
         if (hike.details && hike.details.trim() !== '') {
-            let processedText = parseLinks(hike.details, isGuest).replace(/\n/g, '<br>');
-            sectionsHtml += `<div class="bottom-sheet-section"><div class="bottom-sheet-section-title" style="color: ${accentColor};">детали</div><div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div></div>`;
+            let processedText = parseLinks(hike.details, isGuest);
+            processedText = processedText.replace(/\n/g, '<br>');
+            sectionsHtml += `
+                <div class="bottom-sheet-section">
+                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">детали</div>
+                    <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
+                </div>
+            `;
         }
 
         const hikeDate = new Date(hike.date);
-        const todayDate = new Date(); todayDate.setHours(0,0,0,0);
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
         const isPast = hikeDate < todayDate;
 
-        const prevArrow = hasPrev ? `<div class="bottom-sheet-nav-arrow" id="prevHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2"/></svg></div>` : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
-        const nextArrow = hasNext ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>` : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
+        let imageHtml = '';
+        if (hike.image) {
+            if (!isPast) {
+                imageHtml = `
+                    <div class="image-container">
+                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                            <span class="participant-text" style="color: ${accentColor};">идут</span>
+                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                            <div class="participant-avatars" id="participantAvatars"></div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
+            }
+        }
+
+        let extraInfoHtml = '';
+        if (!isPast) {
+            extraInfoHtml = '<div class="hike-extra-info">';
+            if (hike.start_time) {
+                extraInfoHtml += `
+                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </span>
+                        <span><strong>начало:</strong> ${hike.start_time}</span>
+                    </div>
+                `;
+            }
+            if (hike.location_link) {
+                let locationHtml = '';
+                if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
+                    locationHtml = parseLinks(hike.location_link, isGuest);
+                } else {
+                    locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
+                }
+                extraInfoHtml += `
+                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        </span>
+                        <span><strong>точка сбора:</strong> ${locationHtml}</span>
+                    </div>
+                `;
+            }
+            if (hike.leaders && hike.leaders.length) {
+                const leaderLinks = hike.leaders.map(leaderUsername => {
+                    const leaderData = state.leaders[leaderUsername];
+                    const displayName = leaderData ? leaderData.name.split(' ')[0] : leaderUsername;
+                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}">${displayName}</a>`;
+                });
+                let leaderText = '';
+                const leaderVerb = hike.leaders.length === 1 ? 'ведёт' : 'ведут';
+                if (leaderLinks.length === 1) leaderText = leaderLinks[0];
+                else if (leaderLinks.length === 2) leaderText = `${leaderLinks[0]} <span style="color: white;">и</span> ${leaderLinks[1]}`;
+                else {
+                    const last = leaderLinks.pop();
+                    leaderText = `${leaderLinks.join(', ')} <span style="color: white;">и</span> ${last}`;
+                }
+                extraInfoHtml += `
+                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
+                        <span class="info-icon" style="color: ${accentColor};">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
+                        </span>
+                        <span><strong>${leaderVerb}:</strong> ${leaderText}</span>
+                    </div>
+                `;
+            }
+            extraInfoHtml += '</div>';
+        }
+
+        const prevArrow = hasPrev
+            ? `<div class="bottom-sheet-nav-arrow" id="prevHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 7 L9 12 L15 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
+            : '<div class="bottom-sheet-nav-arrow hidden" id="prevHike"></div>';
+        const nextArrow = hasNext
+            ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
+            : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
@@ -271,121 +411,229 @@ export function showBottomSheet(index) {
                 </div>
                 ${tagsHtml}
             </div>
-            <div>${sectionsHtml}</div>
+            <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
         `;
 
-        // Управление стрелками
+        // Добавляем конверт, если есть письмо
+        if (isPast && (hike.letter_text || hike.letter_link)) {
+            // Удалим старый конверт, если есть
+            const oldIcon = sheet.querySelector('.letter-icon');
+            if (oldIcon) oldIcon.remove();
+
+            const letterIcon = document.createElement('div');
+            letterIcon.className = 'letter-icon';
+            letterIcon.innerHTML = `<img src="https://i.postimg.cc/Wb9Lc15K/mail-envelop-on-transparent-background-png-png-2.webp" class="letter-icon-img" alt="письмо">`;
+            letterIcon.addEventListener('click', (e) => {
+                e.stopPropagation();
+                haptic();
+                showLetterPopup(hike.letter_text || '', hike.letter_link || '', isGuest);
+            });
+            sheet.appendChild(letterIcon);
+        } else {
+            // Удалим конверт, если письма нет
+            const oldIcon = sheet.querySelector('.letter-icon');
+            if (oldIcon) oldIcon.remove();
+        }
+
+        if (!isPast) {
+            currentUnsubscribe = subscribeToParticipantCount(hike.date, async (count, participants) => {
+                const countEl = document.getElementById('participantCountValue');
+                const avatarsEl = document.getElementById('participantAvatars');
+                if (countEl) {
+                    if (count === 0) {
+                        countEl.style.display = 'inline';
+                        countEl.textContent = count;
+                    } else countEl.style.display = 'none';
+                }
+                if (avatarsEl) {
+                    avatarsEl.innerHTML = '';
+                    for (const p of participants) {
+                        const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
+                        const hasProfile = !!state.profiles[p.userId];
+                        const img = document.createElement('img');
+                        img.src = cachedUrl || '';
+                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                        img.alt = p.name || '';
+                        img.title = p.name || '';
+                        img.dataset.userId = p.userId;
+                        img.style.cssText = `
+                            width: 28px !important;
+                            height: 28px !important;
+                            border-radius: 50% !important;
+                            object-fit: cover !important;
+                        `;
+                        img.onerror = function () {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                            placeholder.style.cssText = `
+                                width: 28px !important;
+                                height: 28px !important;
+                                border-radius: 50% !important;
+                                background-color: #40a7e3 !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                font-weight: bold !important;
+                                font-size: 14px !important;
+                                color: white !important;
+                                text-transform: uppercase !important;
+                            `;
+                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                            placeholder.textContent = initial;
+                            placeholder.dataset.userId = p.userId;
+                            this.parentNode.replaceChild(placeholder, this);
+                        };
+                        avatarsEl.appendChild(img);
+                    }
+                }
+            });
+        }
+
+        updateFloatingSheetButtons();
+
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
             if (sheetCurrentIndex > 0) {
+                closeParticipantDropdown();
+                closeLeaderDropdown();
                 sheetCurrentIndex--;
                 updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
+                log('slider_prev', false, state.user);
             }
         });
         document.getElementById('nextHike')?.addEventListener('click', e => {
             e.stopPropagation();
             if (sheetCurrentIndex < state.hikesList.length - 1) {
+                closeParticipantDropdown();
+                closeLeaderDropdown();
                 sheetCurrentIndex++;
                 updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
+                log('slider_next', false, state.user);
             }
         });
     }
 
     updateContent();
 
-    // Жесты
-    const sheetEl = sheet;
-    let initialY = 0, currentMode = 'half', transitioning = false;
-
-    function setMode(newMode, animate = true) {
-        if (!sheetEl || transitioning) return;
-        transitioning = true;
-        if (animate) sheetEl.style.transition = 'height 0.3s ease, transform 0.3s ease';
-        else sheetEl.style.transition = 'none';
-
-        if (newMode === 'full') {
-            sheetEl.style.height = `${fullHeight}px`;
-            sheetEl.style.transform = 'translateY(0)';
-            if (halfContainer) halfContainer.style.transform = 'translateY(-100%)';
-            updateFloatingSheetButtons();
-            // письмо/конверт добавим в full
-            const hike = state.hikesList[sheetCurrentIndex];
-            if (hike && new Date(hike.date) < new Date().setHours(0,0,0,0) && (hike.letter_text || hike.letter_link)) {
-                const oldIcon = document.querySelector('.letter-icon');
-                if (oldIcon) oldIcon.remove();
-                const letterIcon = document.createElement('div');
-                letterIcon.className = 'letter-icon';
-                letterIcon.innerHTML = `<img src="https://i.postimg.cc/Wb9Lc15K/mail-envelop-on-transparent-background-png-png-2.webp" class="letter-icon-img" alt="письмо">`;
-                letterIcon.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    showLetterPopup(hike.letter_text || '', hike.letter_link || '', isGuest);
-                });
-                document.getElementById('hikeBottomSheet').appendChild(letterIcon);
-            }
-        } else if (newMode === 'half') {
-            sheetEl.style.height = `${halfHeight}px`;
-            sheetEl.style.transform = 'translateY(0)';
-            if (halfContainer) halfContainer.style.transform = 'translateY(0)';
-            document.querySelector('.floating-sheet-buttons')?.remove();
-            document.querySelector('.letter-icon')?.remove();
-        } else if (newMode === 'closed') {
-            closeBottomSheet();
-            return;
-        }
-        currentMode = newMode;
-        setTimeout(() => { transitioning = false; }, 300);
+    function removeFloatingSheetButtons() {
+        const btn = document.querySelector('.floating-sheet-buttons');
+        if (btn) btn.remove();
     }
 
-    sheetEl.addEventListener('touchstart', (e) => {
-        initialY = e.touches[0].clientY;
-        sheetEl.style.transition = 'none';
-    }, { passive: true });
+    function createFloatingButtons() {
+        removeFloatingSheetButtons();
+        const container = document.createElement('div');
+        container.className = 'floating-sheet-buttons';
+        container.id = 'floatingSheetButtons';
+        document.body.appendChild(container);
+        updateFloatingSheetButtons();
+    }
+    createFloatingButtons();
 
-    sheetEl.addEventListener('touchmove', (e) => {
-        const deltaY = e.touches[0].clientY - initialY;
-        if (currentMode === 'half' && deltaY < -30) {
-            setMode('full');
-        } else if (currentMode === 'full' && deltaY > 50) {
-            setMode('half');
-        }
-    }, { passive: true });
+    function checkScroll() {
+        const container = document.querySelector('.floating-sheet-buttons');
+        if (!container) return;
+        const scrollTop = contentWrapper.scrollTop;
+        const scrollHeight = contentWrapper.scrollHeight;
+        const clientHeight = contentWrapper.clientHeight;
+        const maxScroll = scrollHeight - clientHeight;
+        if (maxScroll <= 0) return;
+        const scrollPercentage = (scrollTop / maxScroll) * 100;
+        if (scrollPercentage > 95) container.classList.add('hidden');
+        else container.classList.remove('hidden');
+    }
 
-    sheetEl.addEventListener('touchend', (e) => {
-        sheetEl.style.transition = 'height 0.3s ease, transform 0.3s ease';
+    if (sheetScrollListener) contentWrapper.removeEventListener('scroll', sheetScrollListener);
+    sheetScrollListener = checkScroll;
+    contentWrapper.addEventListener('scroll', sheetScrollListener);
+
+    setTimeout(() => {
+        overlay.classList.add('visible');
+        sheet.classList.add('visible');
+    }, 20);
+
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) closeBottomSheet();
     });
 
-    // Свайп вниз по наполовину открытому слайдеру – закрыть
-    overlay.addEventListener('click', (e) => {
-        if (currentMode === 'half' || currentMode === 'full') {
-            closeBottomSheet();
+    const onTouchStart = e => {
+        const target = e.target;
+        const isInteractive =
+            target.closest('.bottom-sheet-nav-arrow') ||
+            target.closest('a') ||
+            target.closest('.btn') ||
+            target.closest('.swipe-track') ||
+            target.closest('.bottom-sheet-handle');
+        if (isInteractive) {
+            isDragging = false;
+            return;
         }
-    });
+        dragStartY = e.touches[0].clientY;
+        isDragging = true;
+        sheet.classList.add('dragging');
+    };
+    const onTouchMove = e => {
+        if (!isDragging) return;
+        if (contentWrapper.scrollTop > 0) {
+            isDragging = false;
+            sheet.classList.remove('dragging');
+            return;
+        }
+        const deltaY = e.touches[0].clientY - dragStartY;
+        if (deltaY > 0) {
+            e.preventDefault();
+            sheet.style.transform = `translateY(${deltaY}px)`;
+        } else {
+            isDragging = false;
+            sheet.classList.remove('dragging');
+        }
+    };
+    const onTouchEnd = e => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.classList.remove('dragging');
+        const deltaY = e.changedTouches[0].clientY - dragStartY;
+        if (deltaY > 80) closeBottomSheet();
+        else sheet.style.transform = '';
+    };
 
-    // Инициализация кнопок только для full
-    window.updateFloatingSheetButtons = updateFloatingSheetButtons;
-    window.updateFloatingSheetButtons(); // при первом открытии не вызываем, только при переходе в full
+    sheet.addEventListener('touchstart', onTouchStart, { passive: false });
+    sheet.addEventListener('touchmove', onTouchMove, { passive: false });
+    sheet.addEventListener('touchend', onTouchEnd, { passive: false });
+    sheet.addEventListener('touchcancel', onTouchEnd, { passive: false });
+
+    log('slider_haikov_opened', false, state.user);
 }
 
 function closeBottomSheet() {
+    closeParticipantDropdown();
+    closeLeaderDropdown();
+    if (currentUnsubscribe) {
+        currentUnsubscribe();
+        currentUnsubscribe = null;
+    }
     const overlay = document.querySelector('.bottom-sheet-overlay');
-    const half = document.querySelector('.half-image-container');
-    if (overlay) overlay.classList.remove('visible');
-    if (half) half.classList.remove('visible');
-    document.body.style.overflow = '';
-    setTimeout(() => {
-        overlay?.remove();
-        half?.remove();
-        document.querySelector('.floating-sheet-buttons')?.remove();
-        document.querySelector('.letter-icon')?.remove();
-    }, 300);
+    if (overlay) {
+        overlay.classList.remove('visible');
+        const sheet = document.getElementById('hikeBottomSheet');
+        if (sheet) sheet.classList.remove('visible');
+        document.body.style.overflow = '';
+        const sheetButtons = document.querySelector('.floating-sheet-buttons');
+        if (sheetButtons) sheetButtons.remove();
+        if (sheetScrollListener) {
+            const contentWrapper = document.getElementById('bottomSheetContent');
+            if (contentWrapper) contentWrapper.removeEventListener('scroll', sheetScrollListener);
+            sheetScrollListener = null;
+        }
+        setTimeout(() => overlay.remove(), 300);
+    }
 }
 
-// Остальной код (renderSwipeControl, updateFloatingSheetButtons, showGuestBookingPopup) – без изменений
-// ... (вставьте их из предыдущего полного calendar.js)
+const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     if (!isTouchDevice()) return null;
