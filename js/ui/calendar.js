@@ -1392,7 +1392,10 @@ export function showLeaderDropdown(leaderElement, leaderData) {
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
-
+// Добавить в начало:
+if (link.dataset.processing === 'true') return;   // ← новая защита
+link.dataset.processing = 'true';
+setTimeout(() => { delete link.dataset.processing; }, 400);
     if (link.classList.contains('profile-contact-btn')) {
         e.preventDefault();
         haptic();
