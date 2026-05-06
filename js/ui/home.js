@@ -334,8 +334,12 @@ function renderGuestHome() {
         btn.addEventListener('click', handleGuestRead);
     });
 
-    renderUserBookings(document.getElementById('userBookingsContainer'));
-    renderCalendar(document.getElementById('calendarContainer'));
+btn.goBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    haptic();
+    scrollToCalendarAndHighlight();
+    log('random_phrase_click', state.userCard.status !== 'active', state.user);
+});
     setupBottomNav();
 }
 
@@ -429,4 +433,18 @@ document.getElementById('floatingCardBtn')?.remove();
     } else {
         renderGuestHome();
     }
+    function scrollToCalendarAndHighlight() {
+    const calendar = document.getElementById('calendarContainer');
+    if (!calendar) return;
+    const offset = getCurrentTopOffset(); // из main.js
+    const rect = calendar.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const targetY = rect.top + scrollTop - offset;
+    window.scrollTo({ top: targetY, behavior: 'smooth' });
+
+    // Подсветка
+    calendar.style.transition = 'box-shadow 0.5s';
+    calendar.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
+    setTimeout(() => { calendar.style.boxShadow = ''; }, 2000);
+}
 }
