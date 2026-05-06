@@ -43,8 +43,8 @@ export function subscribeToHikes(callback) {
             woman: data.woman || '',
             leaders: data.leaders || [],
             letter_text: data.letter_text || '',
-            letter_link: data.letter_link || ''
-            half_image: data.half_image || '',
+            letter_link: data.letter_link || '',
+            half_image: data.half_image || ''   // ← новое поле
         })).sort((a, b) => a.date.localeCompare(b.date));
         callback(list);
     });
