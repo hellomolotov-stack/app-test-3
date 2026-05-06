@@ -2293,9 +2293,14 @@ body.night-mode::before {
     left: 0;
     width: 100%;
     height: calc(env(safe-area-inset-top, 0px) + 80px);
-    background: linear-gradient(to bottom, rgba(73, 138, 176, 0.7) 0%, rgba(73, 138, 176, 0) 100%);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    background: linear-gradient(
+        to bottom,
+        rgba(73, 138, 176, 0.75) 0%,
+        rgba(73, 138, 176, 0.25) 60%,
+        rgba(73, 138, 176, 0) 100%
+    );
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     z-index: 50;
     pointer-events: none;
 }
