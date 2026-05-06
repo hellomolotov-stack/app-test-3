@@ -2217,3 +2217,33 @@ body.night-mode::before {
 .letter-popup-text a:hover {
     text-decoration: underline;
 }
+/* в конец файла добавить: */
+
+.infinite-scroll-container {
+    position: relative;
+    overflow: hidden;
+}
+
+.infinite-scroll-wrapper {
+    animation: scrollUp 20s linear infinite;
+    will-change: transform;
+}
+
+.infinite-scroll-wrapper.paused {
+    animation-play-state: paused;
+}
+
+@keyframes scrollUp {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-50%);
+    }
+}
+
+/* чтобы анимация при касании экрана останавливалась */
+.infinite-scroll-container:active .infinite-scroll-wrapper,
+.infinite-scroll-wrapper:active {
+    animation-play-state: paused;
+}
