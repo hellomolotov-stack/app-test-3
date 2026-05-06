@@ -2292,10 +2292,10 @@ body.night-mode::before {
     top: 0;
     left: 0;
     width: 100%;
-    height: calc(env(safe-area-inset-top, 0px) + 60px);
-    background: linear-gradient(to bottom, rgba(73, 138, 176, 0.8) 0%, rgba(73, 138, 176, 0) 100%);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    height: calc(env(safe-area-inset-top, 0px) + 80px);
+    background: linear-gradient(to bottom, rgba(73, 138, 176, 0.7) 0%, rgba(73, 138, 176, 0) 100%);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     z-index: 50;
-    pointer-events: none; /* не мешает кликам */
+    pointer-events: none;
 }
