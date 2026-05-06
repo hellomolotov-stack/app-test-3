@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node build.js"
+  "build": "node generate-config.js && node build.js"
   },
   "devDependencies": {
     "terser": "^5.31.0"
