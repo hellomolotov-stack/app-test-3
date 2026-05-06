@@ -2324,3 +2324,26 @@ body.night-mode::before {
     pointer-events: none;
     z-index: 5;
 }
+/* ПОЛУИЗОБРАЖЕНИЕ ДЛЯ НОВОГО СЛАЙДЕРА */
+.half-image-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50vh;
+    overflow: hidden;
+    background: rgba(73,138,176,0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none;
+    z-index: 999;
+}
+.half-image-container.visible {
+    display: block;
+}
+.half-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
