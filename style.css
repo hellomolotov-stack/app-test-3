@@ -2259,3 +2259,7 @@ body.night-mode::before {
 .infinite-scroll-wrapper:active {
     animation-play-state: paused;
 }
+/* Убираем анимацию свечения с аккордеона карты */
+.card-accordion .accordion-btn {
+    animation: none !important;
+}
