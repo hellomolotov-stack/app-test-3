@@ -12,7 +12,7 @@ export function renderNewcomerPage(isGuest = false) {
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
-  subtitle().textContent = `🗺️ как всё устроено`;   // <-- новый заголовок
+    subtitle().textContent = `🗺️ как всё устроено`;
     showBack(() => {
         window.toggleShareButton && window.toggleShareButton(false);
         renderHome();
@@ -54,6 +54,9 @@ export function renderNewcomerPage(isGuest = false) {
 
 export function renderGuestPrivileges() {
     cleanupProfileOverlays();
+    // Убираем плавающую кнопку, если она уже есть
+    document.getElementById('floatingCardBtn')?.remove();
+
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
@@ -109,6 +112,9 @@ export function renderGuestPrivileges() {
             ${cityHtml}
         </div>
     `;
+
+    // Добавляем плавающую кнопку «выпускайте мою карту»
+    addFloatingCardButton();
 }
 
 export function renderPriv() {
@@ -239,4 +245,54 @@ function setupAccordion(containerId, isGuest) {
             dropdown.classList.toggle('show');
         });
     }
+}
+
+// Новая функция: добавляет плавающую кнопку «выпускайте мою карту» для гостей
+function addFloatingCardButton() {
+    // Удаляем старую кнопку, если есть
+    const oldBtn = document.getElementById('floatingCardBtn');
+    if (oldBtn) oldBtn.remove();
+
+    const btn = document.createElement('button');
+    btn.id = 'floatingCardBtn';
+    btn.textContent = '🔫 выпускайте мою карту';
+    btn.style.cssText = `
+        position: fixed;
+        bottom: 90px;
+        right: 16px;
+        max-width: calc(100% - 32px);
+        width: auto;
+        padding: 12px 20px;
+        background-color: #D9FD19;
+        color: #000000;
+        border: none;
+        border-radius: 40px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        z-index: 101;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        white-space: nowrap;
+    `;
+
+    btn.addEventListener('click', () => {
+        haptic();
+        // Возвращаемся на главную
+        renderHome();
+        // Через 300 мс прокручиваем к блоку с картой
+        setTimeout(() => {
+            const cardBlock = document.getElementById('cardBlock');
+            if (cardBlock) {
+                cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Подсветка белой рамкой на 2 секунды
+                cardBlock.style.transition = 'box-shadow 0.5s';
+                cardBlock.style.boxShadow = '0 0 20px 5px white';
+                setTimeout(() => {
+                    cardBlock.style.boxShadow = '';
+                }, 2000);
+            }
+        }, 300);
+    });
+
+    document.body.appendChild(btn);
 }
