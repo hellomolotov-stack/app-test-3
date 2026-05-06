@@ -2225,8 +2225,20 @@ body.night-mode::before {
 }
 
 .infinite-scroll-wrapper {
-    animation: scrollUp 20s linear infinite;
+    animation: scrollUp 40s linear infinite;
     will-change: transform;
+}
+
+.infinite-scroll-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(to bottom, var(--bg-color, #ffffff), transparent);
+    z-index: 10;
+    pointer-events: none;
 }
 
 .infinite-scroll-wrapper.paused {
