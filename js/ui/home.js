@@ -397,6 +397,8 @@ function renderOwnerHome() {
 }
 
 export function renderHome() {
+    // Удаляем плавающую кнопку «выпускайте мою карту», если она осталась с других экранов
+document.getElementById('floatingCardBtn')?.remove();
     document.querySelector('.profile-edit-fab')?.remove();
     hideBack();
     if (window._floatingScrollHandler) {
