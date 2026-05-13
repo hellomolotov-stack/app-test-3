@@ -2438,6 +2438,27 @@ body.night-mode::before {
 .anniversary-benefits li s {
     color: rgba(255,255,255,0.5);
 }
+.anniversary-remaining {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.9);
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+.pulse-dot {
+    width: 10px;
+    height: 10px;
+    background-color: #2ecc71;
+    border-radius: 50%;
+    animation: pulse-green 1.5s ease-in-out infinite;
+}
+@keyframes pulse-green {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.8); opacity: 0.4; }
+    100% { transform: scale(1); opacity: 1; }
+}
 .anniversary-btn {
     width: 100%;
     padding: 16px;
@@ -2449,7 +2470,7 @@ body.night-mode::before {
     color: #000000;
     border: none;
     transition: opacity 0.2s;
-    margin-top: 8px;
+    margin-top: 4px;
 }
 .anniversary-btn:hover {
     opacity: 0.9;
