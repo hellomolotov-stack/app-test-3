@@ -313,10 +313,11 @@ function handleDeepLink(startParam) {
 
 // ========== ПОПАП ГОДОВЩИНЫ ==========
 function showAnniversaryPopup() {
-    // Проверяем, не показывали ли уже сегодня
     const lastShown = localStorage.getItem('anniversaryPopupShown');
     const today = new Date().toDateString();
     if (lastShown === today) return;
+
+    const isCardHolder = state.userCard.status === 'active';
 
     const overlay = document.createElement('div');
     overlay.className = 'anniversary-overlay';
@@ -325,24 +326,24 @@ function showAnniversaryPopup() {
             <button class="anniversary-close-btn">&times;</button>
             <div class="anniversary-content">
                 <div class="anniversary-title">🎉 хайкинг интеллигенции исполняется 1 год</div>
-                <div class="anniversary-text">выпускаем 10 бессрочных карт по цене сезонной</div>
+                <div class="anniversary-text">выпускаем ${isCardHolder ? 'десять' : '10'} бессрочных карт по цене сезонной</div>
                 <div class="anniversary-pricing">
                     <span class="anniversary-old-price">7 500₽</span>
                     <span class="anniversary-new-price">5 500₽</span>
                 </div>
-                <div class="anniversary-remaining">осталось 10 карт</div>
-                <button class="anniversary-btn" id="anniversaryBuyBtn">оформить карту</button>
+                <div class="anniversary-remaining">
+                    <span class="pulse-dot"></span> осталось ${isCardHolder ? 'десять' : '10'} карт
+                </div>
+                <button class="anniversary-btn" id="anniversaryBuyBtn">${isCardHolder ? 'подарить карту' : 'оформить карту'}</button>
             </div>
         </div>
     `;
     document.body.appendChild(overlay);
 
-    // Анимация появления
     requestAnimationFrame(() => {
         overlay.classList.add('visible');
     });
 
-    // Закрытие по крестику или фону
     const closePopup = () => {
         overlay.classList.remove('visible');
         overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
@@ -353,10 +354,9 @@ function showAnniversaryPopup() {
         if (e.target === overlay) closePopup();
     });
 
-    // Кнопка покупки
     document.getElementById('anniversaryBuyBtn').addEventListener('click', () => {
         haptic();
-        openLink(SEASON_CARD_LINK, 'anniversary_card_click', state.userCard.status !== 'active');
+        openLink(SEASON_CARD_LINK, isCardHolder ? 'anniversary_gift_click' : 'anniversary_card_click', !isCardHolder);
         closePopup();
     });
 }
