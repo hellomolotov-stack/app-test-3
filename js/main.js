@@ -20,7 +20,6 @@ function getCurrentTopOffset() {
     return safeTop + 60;
 }
 
-// Глобальное управление кнопкой "отправить другу"
 window.toggleShareButton = function(show) {
     let shareBtn = document.getElementById('floatingShareBtn');
     if (show) {
@@ -311,30 +310,37 @@ function handleDeepLink(startParam) {
     }
 }
 
-// ========== ПОПАП ГОДОВЩИНЫ ==========
+// ========== ПОПАП ГОДОВЩИНЫ (обновлённый) ==========
 function showAnniversaryPopup() {
-    const lastShown = localStorage.getItem('anniversaryPopupShown');
-    const today = new Date().toDateString();
-    if (lastShown === today) return;
-
-    const isCardHolder = state.userCard.status === 'active';
-
     const overlay = document.createElement('div');
     overlay.className = 'anniversary-overlay';
+
+    const isCardHolder = state.userCard.status === 'active';
+    const buttonText = isCardHolder ? 'подарить карту' : 'оформить карту';
+
     overlay.innerHTML = `
         <div class="anniversary-sheet">
             <button class="anniversary-close-btn">&times;</button>
             <div class="anniversary-content">
-                <div class="anniversary-title">🎉 хайкинг интеллигенции исполняется 1 год</div>
-                <div class="anniversary-text">выпускаем ${isCardHolder ? 'десять' : '10'} бессрочных карт по цене сезонной</div>
+                <div class="anniversary-title">🎉 26 мая хайкинг интеллигенции исполнится 1 год</div>
+                <div class="anniversary-text">в честь этого мы выпускаем десять бессрочных карт интеллигента по цене сезонной</div>
                 <div class="anniversary-pricing">
                     <span class="anniversary-old-price">7 500₽</span>
                     <span class="anniversary-new-price">5 500₽</span>
                 </div>
-                <div class="anniversary-remaining">
-                    <span class="pulse-dot"></span> осталось ${isCardHolder ? 'десять' : '10'} карт
-                </div>
-                <button class="anniversary-btn" id="anniversaryBuyBtn">${isCardHolder ? 'подарить карту' : 'оформить карту'}</button>
+                <div class="anniversary-subtitle">что даёт карта?</div>
+                <ul class="anniversary-benefits">
+                    <li>🫆 членство в клубе навсегда</li>
+                    <li>⭐️ билет на хайк <s>1 500₽</s> 0₽</li>
+                    <li>⭐️ можешь брать с собой +1 (того, кто с нами ещё не ходил)</li>
+                    <li>⭐️ твой профиль члена клуба в приложении и просмотр профилей интеллигентов</li>
+                    <li>⭐️ сможешь смотреть в счётчике идущих, кто записан на хайк</li>
+                    <li>⭐️ доступ к чтению саммари мастермайндов</li>
+                    <li>⭐️ привилегии в городе и онлайне (скидки в магазинах и заведениях)</li>
+                    <li>⭐️ подключишь интеллигентные три буквы (да, те самые) для доступа ко всем заблокированным ресурсам на максимальной скорости и без ограничений</li>
+                    <li>⭐️ доступ без ограничений ко всем новым обновлениям приложения и клуба</li>
+                </ul>
+                <button class="anniversary-btn" id="anniversaryBuyBtn">${buttonText}</button>
             </div>
         </div>
     `;
@@ -347,7 +353,6 @@ function showAnniversaryPopup() {
     const closePopup = () => {
         overlay.classList.remove('visible');
         overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
-        localStorage.setItem('anniversaryPopupShown', today);
     };
     overlay.querySelector('.anniversary-close-btn').addEventListener('click', closePopup);
     overlay.addEventListener('click', (e) => {
@@ -451,7 +456,7 @@ async function loadAppData() {
             setTimeout(() => handleDeepLink(startParam), 100);
         }
 
-        // Показываем праздничный попап
+        // Показываем праздничный попап (каждый раз при открытии)
         setTimeout(() => {
             showAnniversaryPopup();
         }, 500);
