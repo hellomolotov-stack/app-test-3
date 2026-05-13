@@ -2320,7 +2320,7 @@ body.night-mode::before {
     pointer-events: none;
     z-index: 5;
 }
-/* ПРАЗДНИЧНЫЙ ПОПАП ГОДОВЩИНЫ */
+/* ПРАЗДНИЧНЫЙ ПОПАП ГОДОВЩИНЫ (в стиле слайдера хайков) */
 .anniversary-overlay {
     position: fixed;
     top: 0; left: 0; width: 100%; height: 100%;
@@ -2340,14 +2340,17 @@ body.night-mode::before {
 .anniversary-sheet {
     width: 100%;
     max-width: 600px;
-    background-color: #D9FD19;
+    background-color: rgba(73, 138, 176, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-radius: 28px 28px 0 0;
     padding: 24px 16px 40px;
     position: relative;
-    color: #1a1a1a;
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
-    max-height: 60vh;
+    max-height: 85vh;
     overflow-y: auto;
 }
 .anniversary-overlay.visible .anniversary-sheet {
@@ -2357,7 +2360,7 @@ body.night-mode::before {
     position: absolute;
     top: 12px;
     right: 12px;
-    background: rgba(0,0,0,0.1);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     border-radius: 50%;
     width: 36px;
@@ -2365,70 +2368,75 @@ body.night-mode::before {
     font-size: 24px;
     line-height: 1;
     cursor: pointer;
-    color: #333;
+    color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     transition: background 0.2s;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
 }
 .anniversary-close-btn:hover {
-    background: rgba(0,0,0,0.2);
+    background: rgba(255, 255, 255, 0.3);
 }
 .anniversary-content {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 16px;
+    align-items: flex-start;
+    text-align: left;
+    gap: 12px;
 }
 .anniversary-title {
-    font-size: 22px;
-    font-weight: 900;      /* ← такая же жирность, как у цены */
+    font-size: 20px;
+    font-weight: 900;
     line-height: 1.3;
+    color: #ffffff;
 }
 .anniversary-text {
-    font-size: 16px;
+    font-size: 15px;
     line-height: 1.4;
-    color: #333;
+    color: rgba(255,255,255,0.9);
 }
 .anniversary-pricing {
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 900;
+    margin: 4px 0;
 }
 .anniversary-old-price {
     text-decoration: line-through;
-    color: #888;
-    font-size: 22px;
+    color: rgba(255,255,255,0.6);
+    font-size: 18px;
     font-weight: 600;
 }
 .anniversary-new-price {
-    color: #1a1a1a;
+    color: #D9FD19;
 }
-.anniversary-remaining {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #555;
-    margin-top: -4px;
+.anniversary-subtitle {
+    font-weight: 700;
+    font-size: 16px;
+    color: #D9FD19;
+    margin-top: 8px;
     margin-bottom: 4px;
 }
-.pulse-dot {
-    width: 10px;
-    height: 10px;
-    background-color: #2ecc71;
-    border-radius: 50%;
-    animation: pulse-green 1.5s ease-in-out infinite;
+.anniversary-benefits {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
-@keyframes pulse-green {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.8); opacity: 0.4; }
-    100% { transform: scale(1); opacity: 1; }
+.anniversary-benefits li {
+    font-size: 14px;
+    line-height: 1.4;
+    color: rgba(255,255,255,0.9);
+}
+.anniversary-benefits li s {
+    color: rgba(255,255,255,0.5);
 }
 .anniversary-btn {
     width: 100%;
@@ -2437,10 +2445,11 @@ body.night-mode::before {
     font-size: 18px;
     font-weight: 600;
     cursor: pointer;
-    background-color: #40a7e3;
-    color: #ffffff;
+    background-color: #D9FD19;
+    color: #000000;
     border: none;
     transition: opacity 0.2s;
+    margin-top: 8px;
 }
 .anniversary-btn:hover {
     opacity: 0.9;
