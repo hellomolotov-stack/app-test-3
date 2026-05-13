@@ -1,7 +1,7 @@
 // js/main.js
-import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement } from './utils.js';
+import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadGuestAllowMessages } from './firebase.js';
+import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadGuestAllowMessages, loadPopups } from './firebase.js';
 import { log, syncGuestAllowMessages } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
@@ -90,6 +90,7 @@ function setupBottomNav() {
     navHomeNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('home');
         cleanupProfileOverlays();
+        document.getElementById('floatingCardBtn')?.remove();
         renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
         log('glavnaya_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
@@ -100,6 +101,7 @@ function setupBottomNav() {
     navHikesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('hikes');
         cleanupProfileOverlays();
+        document.getElementById('floatingCardBtn')?.remove();
         renderHome();
         setTimeout(() => {
             const calendar = document.getElementById('calendarContainer');
@@ -120,6 +122,7 @@ function setupBottomNav() {
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
         cleanupProfileOverlays();
+        document.getElementById('floatingCardBtn')?.remove();
         renderProfiles();
         log('profiles_click', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
@@ -308,6 +311,56 @@ function handleDeepLink(startParam) {
     }
 }
 
+// ========== ПОПАП ГОДОВЩИНЫ ==========
+function showAnniversaryPopup() {
+    // Проверяем, не показывали ли уже сегодня
+    const lastShown = localStorage.getItem('anniversaryPopupShown');
+    const today = new Date().toDateString();
+    if (lastShown === today) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'anniversary-overlay';
+    overlay.innerHTML = `
+        <div class="anniversary-sheet">
+            <button class="anniversary-close-btn">&times;</button>
+            <div class="anniversary-content">
+                <div class="anniversary-title">🎉 хайкинг интеллигенции исполняется 1 год</div>
+                <div class="anniversary-text">выпускаем 10 бессрочных карт по цене сезонной</div>
+                <div class="anniversary-pricing">
+                    <span class="anniversary-old-price">7 500₽</span>
+                    <span class="anniversary-new-price">5 500₽</span>
+                </div>
+                <div class="anniversary-remaining">осталось 10 карт</div>
+                <button class="anniversary-btn" id="anniversaryBuyBtn">оформить карту</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Анимация появления
+    requestAnimationFrame(() => {
+        overlay.classList.add('visible');
+    });
+
+    // Закрытие по крестику или фону
+    const closePopup = () => {
+        overlay.classList.remove('visible');
+        overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+        localStorage.setItem('anniversaryPopupShown', today);
+    };
+    overlay.querySelector('.anniversary-close-btn').addEventListener('click', closePopup);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closePopup();
+    });
+
+    // Кнопка покупки
+    document.getElementById('anniversaryBuyBtn').addEventListener('click', () => {
+        haptic();
+        openLink(SEASON_CARD_LINK, 'anniversary_card_click', state.userCard.status !== 'active');
+        closePopup();
+    });
+}
+
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -343,6 +396,7 @@ async function loadAppData() {
 
         await loadRegistrationsPopup().then(data => { if (data) state.registrationsPopup = data; });
         await loadPopupConfig().then(data => { if (data) state.popupConfig = { ...state.popupConfig, ...data }; });
+        await loadPopups().then(data => { if (data) state.popups = data; }).catch(() => {});
         
         state.popupConfig.ticketLink = ROBOKASSA_LINK;
         state.popupConfig.seasonCardLink = SEASON_CARD_LINK;
@@ -397,17 +451,18 @@ async function loadAppData() {
             setTimeout(() => handleDeepLink(startParam), 100);
         }
 
+        // Показываем праздничный попап
+        setTimeout(() => {
+            showAnniversaryPopup();
+        }, 500);
+
         // -----------------------------
         //  АВТОМАТИЧЕСКАЯ СМЕНА ФОНА
         // -----------------------------
-        const nightImage = 'https://i.postimg.cc/prQCHFcb/IMG-4799.jpg';
-        
         function updateNightBackground() {
             const now = new Date();
-            // Получаем часы в Москве (UTC+3)
             const mskTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Moscow"}));
             const mskHours = mskTime.getHours();
-            
             if (mskHours >= 22 || mskHours < 5) {
                 document.body.classList.add('night-mode');
             } else {
@@ -415,10 +470,7 @@ async function loadAppData() {
             }
         }
 
-        // Запускаем сразу
         updateNightBackground();
-
-        // Обновляем каждые 60 секунд, чтобы фон менялся без перезагрузки
         setInterval(updateNightBackground, 60000);
 
     } catch (e) {
