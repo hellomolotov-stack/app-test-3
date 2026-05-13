@@ -2320,3 +2320,113 @@ body.night-mode::before {
     pointer-events: none;
     z-index: 5;
 }
+/* ПРАЗДНИЧНЫЙ ПОПАП ГОДОВЩИНЫ */
+.anniversary-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    z-index: 3000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.anniversary-overlay.visible {
+    opacity: 1;
+}
+.anniversary-sheet {
+    width: 100%;
+    max-width: 600px;
+    background-color: #CFFF83;
+    border-radius: 28px 28px 0 0;
+    padding: 24px 16px 40px;
+    position: relative;
+    color: #1a1a1a;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.anniversary-overlay.visible .anniversary-sheet {
+    transform: translateY(0);
+}
+.anniversary-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background 0.2s;
+}
+.anniversary-close-btn:hover {
+    background: rgba(0,0,0,0.2);
+}
+.anniversary-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+}
+.anniversary-title {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+.anniversary-text {
+    font-size: 16px;
+    line-height: 1.4;
+    color: #333;
+}
+.anniversary-pricing {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 28px;
+    font-weight: 900;
+}
+.anniversary-old-price {
+    text-decoration: line-through;
+    color: #888;
+    font-size: 22px;
+    font-weight: 600;
+}
+.anniversary-new-price {
+    color: #1a1a1a;
+}
+.anniversary-remaining {
+    font-size: 14px;
+    color: #555;
+    margin-top: -4px;
+    margin-bottom: 4px;
+}
+.anniversary-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: #40a7e3;
+    color: #ffffff;
+    border: none;
+    transition: opacity 0.2s;
+}
+.anniversary-btn:hover {
+    opacity: 0.9;
+}
