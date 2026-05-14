@@ -401,7 +401,7 @@ export function showBottomSheet(index) {
             if (!isBooked) {
                 const bookedCount = window._participantCount || 0;
                 const available = Math.max(0, MAX_TICKETS - bookedCount);
-                const progressPercent = Math.round((bookedCount / MAX_TICKETS) * 100);
+                const progressPercent = Math.round((available / MAX_TICKETS) * 100);
                 const ticketWord = getTicketWord(available);
                 availabilityBlock = `
                     <div class="availability-block" style="background: rgba(73, 138, 176, 0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);">
@@ -593,7 +593,7 @@ export function showBottomSheet(index) {
                 const bookedCount = window._participantCount || 0;
                 const MAX_TICKETS = 12;
                 const available = Math.max(0, MAX_TICKETS - bookedCount);
-                const progressPercent = Math.round((bookedCount / MAX_TICKETS) * 100);
+                const progressPercent = Math.round((available / MAX_TICKETS) * 100);
                 const ticketWord = getTicketWord(available);
                 const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
                 const div = document.createElement('div');
@@ -620,7 +620,7 @@ export function showBottomSheet(index) {
                 const bookedCount = window._participantCount || 0;
                 const MAX_TICKETS = 12;
                 const available = Math.max(0, MAX_TICKETS - bookedCount);
-                const progressPercent = Math.round((bookedCount / MAX_TICKETS) * 100);
+                const progressPercent = Math.round((available / MAX_TICKETS) * 100);
                 const ticketWord = getTicketWord(available);
                 const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
                 availBlock.innerHTML = `
