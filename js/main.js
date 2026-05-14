@@ -310,8 +310,10 @@ function handleDeepLink(startParam) {
     }
 }
 
-// ========== ПОПАП ГОДОВЩИНЫ (ФИНАЛЬНЫЙ) ==========
+// ========== ПОПАП ГОДОВЩИНЫ (один раз) ==========
 function showAnniversaryPopup() {
+    if (localStorage.getItem('anniversaryPopupShown') === 'once') return;
+
     const overlay = document.createElement('div');
     overlay.className = 'anniversary-overlay';
 
@@ -349,7 +351,6 @@ function showAnniversaryPopup() {
     `;
     document.body.appendChild(overlay);
 
-    // Конфетти сразу после вставки
     showConfetti();
 
     requestAnimationFrame(() => {
@@ -359,6 +360,7 @@ function showAnniversaryPopup() {
     const closePopup = () => {
         overlay.classList.remove('visible');
         overlay.addEventListener('transitionend', () => overlay.remove(), { once: true });
+        localStorage.setItem('anniversaryPopupShown', 'once');
     };
     overlay.querySelector('.anniversary-close-btn').addEventListener('click', closePopup);
     overlay.addEventListener('click', (e) => {
@@ -462,7 +464,7 @@ async function loadAppData() {
             setTimeout(() => handleDeepLink(startParam), 100);
         }
 
-        // Показываем праздничный попап (каждый раз при открытии)
+        // Показываем праздничный попап
         setTimeout(() => {
             showAnniversaryPopup();
         }, 500);
