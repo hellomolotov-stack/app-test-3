@@ -371,7 +371,7 @@ export function showBottomSheet(index) {
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        // ====== БЛОК ДОСТУПНОСТИ БИЛЕТОВ ======
+        // Блок доступности билетов (отображается, если не прошедший и пользователь не записан)
         const MAX_TICKETS = 12;
         let availabilityBlock = '';
         let inviteButtonHtml = '';
@@ -381,31 +381,30 @@ export function showBottomSheet(index) {
             const bookedCount = window._participantCount || 0;
             const available = Math.max(0, MAX_TICKETS - bookedCount);
             const progressPercent = Math.round((bookedCount / MAX_TICKETS) * 100);
-            const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
 
-            // Блок доступности (сейчас скрыт, если записан, или показывается шкала)
-            availabilityBlock = `
-                <div class="availability-block" style="background: rgba(73, 138, 176, 0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);">
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} билет${available === 1 ? '' : 'ов'}</span>
-                    </div>
-                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                    </div>
-                </div>
-            `;
-
-            // Кнопка приглашения (внизу, над слайдером)
-            if (isBooked) {
-                inviteButtonHtml = `
-                    <div style="padding: 0 0 8px 0;">
-                        <button class="btn" id="inviteFriendBtn" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; background: ${accentColor}; color: #000; font-weight: 600; border: none; font-size: 16px;">${inviteText}</button>
+            if (!isBooked) {
+                availabilityBlock = `
+                    <div class="availability-block" style="background: rgba(73, 138, 176, 0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);">
+                        <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                            <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} билет${available === 1 ? '' : (available >= 2 && available <= 4 ? 'а' : 'ов')}</span>
+                        </div>
+                        <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                            <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+                        </div>
                     </div>
                 `;
             }
-        } else {
-            // Прошедший хайк – ничего не показываем
+
+            // Кнопка приглашения только для записанных пользователей
+            if (isBooked) {
+                const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
+                inviteButtonHtml = `
+                    <div style="margin-top: 16px;">
+                        <button class="btn btn-outline" id="inviteFriendBtn" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px;">${inviteText}</button>
+                    </div>
+                `;
+            }
         }
 
         contentWrapper.innerHTML = `
@@ -429,11 +428,10 @@ export function showBottomSheet(index) {
             tg?.openTelegramLink(shareUrl);
         });
 
-        // Добавляем конверт, если есть письмо
+        // Конверт письма
         if (isPast && (hike.letter_text || hike.letter_link)) {
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
-
             const letterIcon = document.createElement('div');
             letterIcon.className = 'letter-icon';
             letterIcon.innerHTML = `<img src="https://i.postimg.cc/Wb9Lc15K/mail-envelop-on-transparent-background-png-png-2.webp" class="letter-icon-img" alt="письмо">`;
@@ -451,7 +449,6 @@ export function showBottomSheet(index) {
         if (!isPast) {
             currentUnsubscribe = subscribeToParticipantCount(hike.date, async (count, participants) => {
                 window._participantCount = count;
-
                 const countEl = document.getElementById('participantCountValue');
                 const avatarsEl = document.getElementById('participantAvatars');
                 if (countEl) {
@@ -502,7 +499,6 @@ export function showBottomSheet(index) {
                     }
                 }
 
-                // Обновляем блок доступности (если пользователь не записан)
                 if (!state.hikeBookingStatus[sheetCurrentIndex]) {
                     const availBlock = contentWrapper.querySelector('.availability-block');
                     if (availBlock) {
@@ -511,7 +507,7 @@ export function showBottomSheet(index) {
                         availBlock.innerHTML = `
                             <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                                 <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                                <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} билет${available === 1 ? '' : 'ов'}</span>
+                                <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} билет${available === 1 ? '' : (available >= 2 && available <= 4 ? 'а' : 'ов')}</span>
                             </div>
                             <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
                                 <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
@@ -666,7 +662,7 @@ function closeBottomSheet() {
     }
 }
 
-const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+// ... (весь остальной код renderSwipeControl, updateFloatingSheetButtons, showGuestBookingPopup, dropdowns, leader dropdown, document click handler без изменений)
 
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     if (!isTouchDevice()) return null;
