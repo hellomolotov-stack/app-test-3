@@ -84,10 +84,8 @@ export function renderCalendar(container) {
             const hike = state.hikesList[hikeIndex];
             const isWoman = hike && hike.woman === 'yes';
             if (isWoman) classes += ' woman-hike';
-            // отчёт
             if (isPast && hike && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
-            // письмо
             if (isPast && hike && (hike.letter_text || hike.letter_link))
                 innerHtml += `<span class="calendar-emoji-letter">✉️</span>`;
             if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
@@ -144,9 +142,8 @@ let dragStartY = 0;
 let isDragging = false;
 let currentUnsubscribe = null;
 
-// Кэш аватаров
 const avatarCache = new Map();
-const CACHE_TTL = 60 * 60 * 1000; // 1 час
+const CACHE_TTL = 60 * 60 * 1000;
 
 async function getCachedAvatar(userId, photoUrl) {
     const now = Date.now();
@@ -158,7 +155,6 @@ async function getCachedAvatar(userId, photoUrl) {
     return photoUrl;
 }
 
-// Простая функция показа письма (без анимации, чтобы не зависало)
 function showLetterPopup(letterText, letterLink, isGuest) {
     const overlay = document.createElement('div');
     overlay.className = 'letter-popup';
@@ -210,7 +206,6 @@ export function showBottomSheet(index) {
     if (existingOverlay) existingOverlay.remove();
     const existingSheetButtons = document.querySelector('.floating-sheet-buttons');
     if (existingSheetButtons) existingSheetButtons.remove();
-    // Удаляем предыдущий конверт, если есть
     const existingLetter = document.querySelector('.letter-icon');
     if (existingLetter) existingLetter.remove();
 
@@ -248,6 +243,12 @@ export function showBottomSheet(index) {
     function updateContent() {
         const hike = state.hikesList[sheetCurrentIndex];
         if (!hike) return;
+
+        // Сбрасываем предыдущий слушатель, чтобы не было дублей аватаров
+        if (currentUnsubscribe) {
+            currentUnsubscribe();
+            currentUnsubscribe = null;
+        }
 
         const isWoman = hike.woman === 'yes';
         const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
@@ -414,9 +415,8 @@ export function showBottomSheet(index) {
             <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
         `;
 
-        // Добавляем конверт, если есть письмо
+        // Письмо
         if (isPast && (hike.letter_text || hike.letter_link)) {
-            // Удалим старый конверт, если есть
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
 
@@ -430,7 +430,6 @@ export function showBottomSheet(index) {
             });
             sheet.appendChild(letterIcon);
         } else {
-            // Удалим конверт, если письма нет
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
         }
@@ -1392,10 +1391,10 @@ export function showLeaderDropdown(leaderElement, leaderData) {
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
-// Добавить в начало:
-if (link.dataset.processing === 'true') return;   // ← новая защита
-link.dataset.processing = 'true';
-setTimeout(() => { delete link.dataset.processing; }, 400);
+    if (link.dataset.processing === 'true') return;
+    link.dataset.processing = 'true';
+    setTimeout(() => { delete link.dataset.processing; }, 400);
+
     if (link.classList.contains('profile-contact-btn')) {
         e.preventDefault();
         haptic();
