@@ -175,7 +175,6 @@ function showLetterPopup(letterText, letterLink, isGuest) {
     overlayPopup.addEventListener('click', (e) => { if (e.target === overlayPopup) { haptic(); overlayPopup.remove(); } });
 }
 
-// Вспомогательная функция для склонения слова "билет"
 function getTicketWord(count) {
     const lastDigit = count % 10;
     const lastTwoDigits = count % 100;
@@ -225,12 +224,10 @@ export function showBottomSheet(index) {
         }).catch(() => {});
     }
 
-    // Загружаем актуальное количество участников перед отрисовкой
     const currentHike = state.hikesList[sheetCurrentIndex];
     if (currentHike && new Date(currentHike.date) >= new Date().setHours(0,0,0,0)) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
-            // Принудительно обновим блок доступности после получения данных
             refreshAvailabilityBlock();
         });
     } else {
@@ -445,7 +442,6 @@ export function showBottomSheet(index) {
             tg?.openTelegramLink(shareUrl);
         });
 
-        // Конверт письма
         if (isPast && (hike.letter_text || hike.letter_link)) {
             const oldIcon = sheet.querySelector('.letter-icon');
             if (oldIcon) oldIcon.remove();
@@ -517,7 +513,6 @@ export function showBottomSheet(index) {
                     }
                 }
 
-                // Обновляем блок доступности, если пользователь не записан
                 if (!state.hikeBookingStatus[sheetCurrentIndex]) {
                     refreshAvailabilityBlock();
                 }
@@ -532,7 +527,6 @@ export function showBottomSheet(index) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
                 sheetCurrentIndex--;
-                // Сбросим счётчик и перезагрузим
                 window._participantCount = 0;
                 loadAllParticipants(state.hikesList[sheetCurrentIndex].date).then(participants => {
                     window._participantCount = participants.length;
@@ -561,7 +555,6 @@ export function showBottomSheet(index) {
         });
     }
 
-    // Функция обновления блока доступности без перезагрузки всего слайдера
     function refreshAvailabilityBlock() {
         const hike = state.hikesList[sheetCurrentIndex];
         if (!hike) return;
@@ -573,7 +566,6 @@ export function showBottomSheet(index) {
         const inviteContainer = contentWrapper.querySelector('#inviteFriendBtn')?.parentElement;
 
         if (isBooked) {
-            // Скрываем блок доступности и показываем кнопку приглашения
             if (availBlock) availBlock.style.display = 'none';
             if (!inviteContainer) {
                 const inviteText = (hike.woman === 'yes') ? 'пригласить подругу' : 'пригласить друга';
@@ -587,7 +579,6 @@ export function showBottomSheet(index) {
                 });
             }
         } else {
-            // Показываем блок доступности и скрываем кнопку приглашения
             if (inviteContainer) inviteContainer.remove();
             if (!availBlock) {
                 const bookedCount = window._participantCount || 0;
@@ -608,7 +599,6 @@ export function showBottomSheet(index) {
                         <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
                     </div>
                 `;
-                // Вставляем перед первым элементом после bottom-sheet-header-block
                 const headerBlock = contentWrapper.querySelector('.bottom-sheet-header-block');
                 if (headerBlock) {
                     headerBlock.insertAdjacentElement('afterend', div);
@@ -616,7 +606,6 @@ export function showBottomSheet(index) {
                     contentWrapper.prepend(div);
                 }
             } else {
-                // Просто обновляем цифры в существующем блоке
                 const bookedCount = window._participantCount || 0;
                 const MAX_TICKETS = 12;
                 const available = Math.max(0, MAX_TICKETS - bookedCount);
@@ -636,9 +625,7 @@ export function showBottomSheet(index) {
         }
     }
 
-    // Вызываем после отрисовки контента и подписки
     updateContent();
-    // После того как подписка инициализируется, refreshAvailabilityBlock будет вызван в колбэке
 
     function removeFloatingSheetButtons() {
         const btn = document.querySelector('.floating-sheet-buttons');
@@ -753,8 +740,6 @@ function closeBottomSheet() {
         setTimeout(() => overlay.remove(), 300);
     }
 }
-
-// ... (остальные функции renderSwipeControl, updateFloatingSheetButtons, showGuestBookingPopup, dropdowns, leader dropdown, document click handler без изменений)
 
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -1594,41 +1579,16 @@ document.addEventListener('click', function(e) {
         renderNewcomerPage(isGuest);
         return;
     }
-   if (link.classList.contains('participant-counter')) {
-    e.preventDefault(); e.stopPropagation();
-    const hikeDate = link.dataset.hikeDate;
-    if (!hikeDate) return;
-    const index = state.hikesList.findIndex(h => h.date === hikeDate);
-    const hike = state.hikesList[index];
-    const isWoman = hike && hike.woman === 'yes';
-    const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
-    if (state.userCard.status !== 'active') {
-        const popupData = (state.popups && state.popups.guest_uchastniki_popup) || {
-            title: 'недоступно',
-            text: 'чтобы просматривать участников, нужна карта интеллигента. с ней ты сможешь видеть, кто идёт на хайк, даже если не записан на него',
-            button_text: 'понятно'
-        };
-        const msg = document.createElement('div');
-        msg.className = 'modal-overlay';
-        msg.innerHTML = `
-            <div class="modal-content" style="max-width: 300px;">
-                <div class="modal-title" style="color: ${accentColor};">${popupData.title}</div>
-                <div class="modal-text">${popupData.text}</div>
-                <div class="modal-buttons" style="margin-top: 20px;">
-                    <button class="btn" style="background-color: ${accentColor}; color: #000000; width: 100%; margin: 0; padding: 12px; border-radius: 12px; font-weight: 600; border: none; cursor: pointer;">${popupData.button_text}</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(msg);
-        const closeBtn = msg.querySelector('.btn');
-        closeBtn.addEventListener('click', () => msg.remove());
-        setTimeout(() => { msg.addEventListener('click', (e) => { if (e.target === msg) msg.remove(); }); }, 0);
-        log('uchastniki_no_card', true, state.user);
-    } else {
-        toggleParticipantDropdown(link, hikeDate);
+    if (link.classList.contains('participant-counter')) {
+        e.preventDefault(); e.stopPropagation();
+        const hikeDate = link.dataset.hikeDate;
+        if (!hikeDate) return;
+        const index = state.hikesList.findIndex(h => h.date === hikeDate);
+        if (index !== -1) {
+            toggleParticipantDropdown(link, hikeDate);
+        }
+        return;
     }
-    return;
-}
     if (link.classList.contains('booking-detail-btn')) {
         e.preventDefault();
         const index = link.dataset.index;
