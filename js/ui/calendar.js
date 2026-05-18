@@ -203,6 +203,11 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
+    // Стиль как у плавающего меню
+    sheet.style.backgroundColor = 'rgba(73, 138, 176, 0.15)';
+    sheet.style.backdropFilter = 'blur(12px)';
+    sheet.style.webkitBackdropFilter = 'blur(12px)';
+
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
     const availableHeight = windowHeight - safeTop - 40;
@@ -389,7 +394,7 @@ export function showBottomSheet(index) {
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        const MAX_TICKETS = 12;
+        const MAX_TICKETS = 15;   // <-- изменено с 12 на 15
         let availabilityBlock = '';
         let inviteButtonHtml = '';
 
@@ -580,9 +585,9 @@ export function showBottomSheet(index) {
             }
         } else {
             if (inviteContainer) inviteContainer.remove();
+            const MAX_TICKETS = 15;   // <-- изменено с 12 на 15
             if (!availBlock) {
                 const bookedCount = window._participantCount || 0;
-                const MAX_TICKETS = 12;
                 const available = Math.max(0, MAX_TICKETS - bookedCount);
                 const progressPercent = Math.round((available / MAX_TICKETS) * 100);
                 const ticketWord = getTicketWord(available);
@@ -607,7 +612,6 @@ export function showBottomSheet(index) {
                 }
             } else {
                 const bookedCount = window._participantCount || 0;
-                const MAX_TICKETS = 12;
                 const available = Math.max(0, MAX_TICKETS - bookedCount);
                 const progressPercent = Math.round((available / MAX_TICKETS) * 100);
                 const ticketWord = getTicketWord(available);
