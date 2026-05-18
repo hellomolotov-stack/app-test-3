@@ -1212,7 +1212,6 @@ function updateFloatingSheetButtons() {
     container.appendChild(row);
 }
 
-// ===== ИЗМЕНЁННАЯ ФУНКЦИЯ ПОПАПА ДЛЯ ГОСТЕЙ =====
 function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
     const bookingPopup = (state.popups && state.popups.guest_booking_popup) || null;
@@ -1231,7 +1230,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             <div class="modal-text" style="margin-bottom: 20px;">${popupText}</div>
             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
                 <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
-                <button class="btn btn-outline" id="goFirstTimeBtn" style="width: 100%; margin: 0; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; text-align: center; box-sizing: border-box; line-height: 1.2; border: 2px solid #D9FD19; background-color: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">иду впервые 👋🏻</button>
+                <button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(217,253,25,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px; border: 1px solid rgba(217,253,25,0.6);">иду впервые 👋🏻</button>
                 <div id="cardAccordionPopup" style="width: 100%;">
                     <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">купить карту интеллигента 💳</button>
                     <div id="cardOptions" style="display: none; margin-top: 12px;">
@@ -1273,36 +1272,35 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         }
     });
 
-    // Обработчик для "иду впервые 👋🏻" – моментальная регистрация
-    document.getElementById('goFirstTimeBtn').addEventListener('click', e => {
+    // Кнопка «иду впервые» — мгновенная регистрация
+    document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
 
         const userId = state.user?.id;
-        const hikeIndex = state.hikesList.findIndex(h => h.date === hikeDate);
-        
         addParticipant(hikeDate, userId, {
             first_name: state.user?.first_name,
             photo_url: state.user?.photo_url,
         })
-        .then(() => setUserRegistrationStatus(userId, hikeDate, true))
-        .then(() => {
-            if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
-            if (state.userCard.status !== 'active') saveBookingStatusToLocal();
-            updateFloatingSheetButtons();
-            renderUserBookings(document.getElementById('userBookingsContainer'));
-            const calendarContainer = document.getElementById('calendarContainer');
-            if (calendarContainer) renderCalendar(calendarContainer);
-            updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'first_time', state.user, false);
-            closePopup();
-            log('first_time_click', true, state.user);
-        })
-        .catch(error => {
-            console.error(error);
-            alert('Ошибка при регистрации. Попробуйте ещё раз.');
-            e.target.dataset.processing = '';
-        });
+            .then(() => setUserRegistrationStatus(userId, hikeDate, true))
+            .then(() => {
+                const hikeIndex = state.hikesList.findIndex(h => h.date === hikeDate);
+                if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
+                if (state.userCard.status !== 'active') saveBookingStatusToLocal();
+                updateFloatingSheetButtons();
+                renderUserBookings(document.getElementById('userBookingsContainer'));
+                const calendarContainer = document.getElementById('calendarContainer');
+                if (calendarContainer) renderCalendar(calendarContainer);
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'free_first', state.user, false);
+                closePopup();
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Ошибка при регистрации. Попробуйте ещё раз.');
+            });
+
+        log('free_first_click', true, state.user);
     });
 
     const handlePurchase = (purchaseType, link) => {
@@ -1494,314 +1492,158 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     dropdown.style.transform = 'translate(-50%, -50%)';
     dropdown.style.zIndex = '9999';
     dropdown.style.backgroundColor = 'rgba(0,0,0,0.9)';
-    dropdown.style.border = '1px solid rgba0,0,0.9)';
-    dropdown.style.border = '1px solid rgba(255,255,255(255,255,255,0.2)';
-    dropdown.style.b,0.2)';
-    dropdown.style.borderRadiusorderRadius = ' = '28px28px';
-   ';
-    dropdown.style.padding dropdown.style.padding = '20px = '20px 0 0 12px 0 12px 0';
+    dropdown.style.border = '1px solid rgba(255,255,255,0.2)';
+    dropdown.style.borderRadius = '28px';
+    dropdown.style.padding = '20px 0 12px 0';
 
-    const';
-
-    const photoUrl photoUrl = leader = leaderData.username ? `https://t.me/i/userpic/320/${Data.username ? `https://t.me/i/userpic/320/${leaderDataleaderData.username}.jpg` : null.username}.jpg` : null;
-   ;
+    const photoUrl = leaderData.username ? `https://t.me/i/userpic/320/${leaderData.username}.jpg` : null;
     const avatarHtml = photoUrl
-        const avatarHtml = photoUrl
-        ? `<img src ? `<img src="${photo="${photoUrl}" class="participant-dropdownUrl}" class="participant-dropdown-avatar" alt="${leaderData.name-avatar" alt="${leaderData.name}" onerror="}" onerror="this.style.display='this.style.display='none'; this.parentNode.innerHTML='<div classnone'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder\'>${=\'participant-dropdown-avatar placeholder\'>${leaderDataleaderData.name.charAt.name.charAt(0(0).to).toUpperCase()UpperCase()}</div}</div>';">`
-        : `<div class="participant-drop>';">`
-        : `<div class="participant-dropdown-down-avatar placeholderavatar placeholder">${">${leaderDataleaderData.name.charAt.name.charAt(0(0).to).toUpperCase()}</divUpperCase()}</div>>`;
+        ? `<img src="${photoUrl}" class="participant-dropdown-avatar" alt="${leaderData.name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder\'>${leaderData.name.charAt(0).toUpperCase()}</div>';">`
+        : `<div class="participant-dropdown-avatar placeholder">${leaderData.name.charAt(0).toUpperCase()}</div>`;
 
-    const`;
-
-    const contactHtml = leader contactHtml = leaderData.usernameData.username
-        ?
-        ? `<a href `<a href="#" data-url="="#" datahttps://-url="https://t.met.me/${leader/${leaderData.username}" data-guest="false" classData.username}" data-guest="false" class="dynamic="dynamic-link"-link" style=" style="color:color: var(-- var(--yellow);yellow); text-decoration: none;">@ text-decoration: none;">@${leader${leaderData.usernameData.username}</a>`
-        : '}</a>`
+    const contactHtml = leaderData.username
+        ? `<a href="#" data-url="https://t.me/${leaderData.username}" data-guest="false" class="dynamic-link" style="color: var(--yellow); text-decoration: none;">@${leaderData.username}</a>`
         : '';
 
-    dropdown';
-
-    dropdown.innerHTML =.innerHTML = `
-        `
-        <div style="position: <div style="position: relative; relative; padding: padding: 0 0 20px;"><button class 20px;"><button class="="leaderleader-close-close-btn"-btn" style=" style="position: absolute;position: absolute; top: -12px; right: 12px; background: top: -12px; right: 12px; background: none; none; border: border: none; color: #aaa; font-size: 28px; cursor: pointer; z-index: 10000; line-height: 1;">&times;</button></div>
-        <div style="display: flex none; color: #aaa; font-size: 28px; cursor: pointer; z-index: 10000; line-height: 1;">&times;</button></div>
-        <div style="display: flex; flex; flex-direction:-direction: column; column; gap: gap: 12 12px;px; padding: padding: 0 0 20px 16px 20px 16px;">
-            <div style=";">
-            <div style="display: flex; align-itemsdisplay:: center; gap flex; align-items: center; gap: : 12px12px;">${;">${avatarHtml}<span style="font-weight: 600;avatarHtml}<span style="font-weight: 600; color: color: white;">${leaderData.name white;">${leader}</spanData.name}</span></div></div>
-            <div>
-            <div style="font-size style="font-size: : 14px14px; color; color: rgba: rgba(255(255,255,255,0,255,255,0.9.9);">);">${leader${leaderData.bData.bio ||io || ''}</ ''}</div>
-           div>
-            <div style <div style="font-size:="font-size:  14px;">14px;">${contact${contactHtml}</Html}</divdiv>
+    dropdown.innerHTML = `
+        <div style="position: relative; padding: 0 20px;"><button class="leader-close-btn" style="position: absolute; top: -12px; right: 12px; background: none; border: none; color: #aaa; font-size: 28px; cursor: pointer; z-index: 10000; line-height: 1;">&times;</button></div>
+        <div style="display: flex; flex-direction: column; gap: 12px; padding: 0 20px 16px;">
+            <div style="display: flex; align-items: center; gap: 12px;">${avatarHtml}<span style="font-weight: 600; color: white;">${leaderData.name}</span></div>
+            <div style="font-size: 14px; color: rgba(255,255,255,0.9);">${leaderData.bio || ''}</div>
+            <div style="font-size: 14px;">${contactHtml}</div>
         </div>
-        </div>
-    `>
     `;
-   ;
-    document.body document.body.appendChild(d.appendChild(dropdownropdown);
-   );
-    setTimeout(() setTimeout(() => dropdown.classList.add => dropdown.classList.add('show('show'), '), 1010);
+    document.body.appendChild(dropdown);
+    setTimeout(() => dropdown.classList.add('show'), 10);
 
-    const);
-
-    const closeBtn closeBtn = dropdown = dropdown.querySelector('..querySelector('.leader-leader-close-btnclose-btn');
-   ');
-    if ( if (closeBtncloseBtn)
-       )
-        closeBtn closeBtn.addEventListener('.addEventListener('click',click', e => {
-            e => {
-            e.stop e.stopPropagationPropagation();
-           ();
-            closeLeader closeLeaderDropdown();
-       Dropdown();
+    const closeBtn = dropdown.querySelector('.leader-close-btn');
+    if (closeBtn)
+        closeBtn.addEventListener('click', e => {
+            e.stopPropagation();
+            closeLeaderDropdown();
         });
 
-    current });
-
-    currentLeaderDropdownLeaderDropdown = dropdown = dropdown;
-   ;
-    const close const closeHandler =Handler = e => e => {
-        {
-        if (!dropdown.contains if (!dropdown.contains(e(e.target.target) && e.target) && e.target !== leader !== leaderElement)Element) {
-            {
-            closeLeader closeLeaderDropdownDropdown();
-            document.removeEventListener();
-            document('click.removeEventListener('click', close', closeHandlerHandler);
-       );
+    currentLeaderDropdown = dropdown;
+    const closeHandler = e => {
+        if (!dropdown.contains(e.target) && e.target !== leaderElement) {
+            closeLeaderDropdown();
+            document.removeEventListener('click', closeHandler);
         }
-    }
     };
-    setTimeout };
-    setTimeout(() =>(() => document.addEventListener document.addEventListener('click('click', closeHandler),', closeHandler), 0 0);
-);
+    setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
-document.addEventListener}
+document.addEventListener('click', function(e) {
+    const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
+    if (!link) return;
+    if (link.dataset.processing === 'true') return;
+    link.dataset.processing = 'true';
+    setTimeout(() => { delete link.dataset.processing; }, 400);
 
-document.addEventListener('click('click', function', function(e)(e) {
-    {
-    const link const link = e = e.target.cl.target.closest('.osest('.dynamicdynamic-link-link, ., .nav-popupnav-pop a, .up a, .btn-newbtn-newcomer, .accordion-btn, .bottom-sheetcomer, .accordion-btn, .bottom-sheet-nav-arrow,-nav-arrow, .btn .btn, ., .participant-counter, .booking-detail-btn,participant-counter, .booking-detail-btn, .book .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .ings-calendar-link, .booking-go-btn, .leader-name, .popup-linkprofile-h, .profile-hike-linkike-link, ., .profile-contact-btnprofile-contact-btn');
-    if');
-    if (!link (!link) return;
-   ) return;
-    if (link.dat if (link.dataset.processing === 'true') returnaset.processing === 'true') return;
-   ;
-    link.dat link.dataset.proaset.processing =cessing = 'true 'true';
-   ';
-    setTimeout(() setTimeout(() => { => { delete link delete link.dataset.dataset.processing.processing; },; }, 400 400);
-
-   );
-
-    if (link.classList.contains(' if (link.classList.contains('profile-contactprofile-contact-btn'))-btn')) {
-        {
-        e.preventDefault e.preventDefault();
-       ();
-        haptic haptic();
-       ();
-        const action const action = link = link.dataset.dataset.action.action;
-        if;
-        if (action (action === ' === 'chat')chat') {
-            const username {
-            = link.dataset const username = link.dataset.username.username;
-            if;
-            if (username (username)) {
-                const {
-                const cleanUsername cleanUsername = username = username.replace(/^@.replace(/^@/, '/, '');
-               ');
-                if if (tg && (tg && tg.openTelegram tg.openTelegramLink)Link) tg.openTelegram tg.openTelegramLink(`https://Link(`t.mehttps:///${cleant.me/${cleanUsernameUsername}`);
-                else}`);
-                else openLink openLink(`https(`https://t://t.me/${.me/${cleanUsernamecleanUsername}`,}`, 'profile 'profile_chat_click_chat_click', false', false);
+    if (link.classList.contains('profile-contact-btn')) {
+        e.preventDefault();
+        haptic();
+        const action = link.dataset.action;
+        if (action === 'chat') {
+            const username = link.dataset.username;
+            if (username) {
+                const cleanUsername = username.replace(/^@/, '');
+                if (tg && tg.openTelegramLink) tg.openTelegramLink(`https://t.me/${cleanUsername}`);
+                else openLink(`https://t.me/${cleanUsername}`, 'profile_chat_click', false);
             }
-        } else);
-            }
-        } else if ( if (action ===action === 'link') 'link') {
-            let {
-            let url = url = link.dat link.dataset.urlaset.url;
-           ;
-            if ( if (url)url) {
-                if (!url.match {
-                if (!url.match(/(/^https^https?:\/\//i)) url = 'https://' + url;
+        } else if (action === 'link') {
+            let url = link.dataset.url;
+            if (url) {
+                if (!url.match(/^https?:\/\//i)) url = 'https://' + url;
                 openLink(url, 'profile_link_click', false);
             }
         }
         return;
     }
 
-    if (link.classList.contains('profile?:\/\//i)) url = 'https://' + url;
-                openLink(url, 'profile_link_click', false);
-            }
+    if (link.classList.contains('profile-hike-link')) {
+        e.preventDefault();
+        haptic();
+        const hikeDate = link.dataset.hikeDate;
+        if (hikeDate) {
+            log('profile_hike_click', state.userCard.status !== 'active', state.user, { hikeDate });
+            const index = state.hikesList.findIndex(h => h.date === hikeDate);
+            if (index !== -1) showBottomSheet(index);
         }
         return;
     }
 
-    if (link.classList.contains('profile-hike-link'))-hike-link')) {
-        {
-        e.preventDefault e.preventDefault();
-        haptic();
-        const hikeDate = link.dat();
-        haptic();
-        const hikeDate = link.dataset.haset.hikeDateikeDate;
-        if (hikeDate) {
-            log('profile_h;
-        if (hikeDate) {
-            log('profile_hikeike__click', state.userCard.status !== 'active',click', state.userCard.status !== 'active', state.user state.user, {, { hikeDate hikeDate });
-            const index });
-            const index = state = state.hikesList.findIndex(h => h.hikesList.findIndex(h => h.date === hikeDate.date === hikeDate);
-            if (index !==);
-            if (index !== -1) showBottomSheet(index -1) showBottomSheet(index);
-       );
-        }
-        return }
-        return;
-   ;
-    }
-
     if (link.classList.contains('leader-name')) {
-        e.preventDefault(); }
-
-    if (link.classList.contains('leader-name')) {
-        e.preventDefault(); e.stop e.stopPropagation();
-       Propagation();
+        e.preventDefault(); e.stopPropagation();
         const username = link.dataset.leaderUsername;
-        if (username) const username = link.dataset.leaderUsername;
         if (username) {
-            {
-            ha haptic();ptic(); closeLeader closeLeaderDropdownDropdown();
-            if (state.leaders[username])();
-            if (state.leaders[username]) showLeader showLeaderDropdown(link, state.leaders[username]);
-           Dropdown(link, state.leaders[username]);
-            else open else openLink(`https://t.me/${username}`, 'leader_clickLink(`https://t.me/${username}`, 'leader_click', state', state.userCard.userCard.status !== 'active');
-            log('leader_click', state.user.status !== 'active');
-            log('leader_click', state.userCardCard.status !== '.status !== 'active', state.user);
-       active', state.user);
+            haptic(); closeLeaderDropdown();
+            if (state.leaders[username]) showLeaderDropdown(link, state.leaders[username]);
+            else openLink(`https://t.me/${username}`, 'leader_click', state.userCard.status !== 'active');
+            log('leader_click', state.userCard.status !== 'active', state.user);
         }
-        }
-        return return;
-   ;
+        return;
     }
-    if (link.classList.contains('popup-link')) {
-        e.preventDefault(); e.stopPropagation(); haptic();
-        const url = link.dataset.url }
     if (link.classList.contains('popup-link')) {
         e.preventDefault(); e.stopPropagation(); haptic();
         const url = link.dataset.url;
-        if (;
-        if (url &&url && url.trim() !== url.trim() !== '') openLink(url, '') openLink(url, 'pop 'popup_link_click', stateup_link_click', state.userCard.userCard.status !==.status !== 'active');
-        'active');
-        return return;
+        if (url && url.trim() !== '') openLink(url, 'popup_link_click', state.userCard.status !== 'active');
+        return;
     }
-;
-    }
-    if    if (link (link.classList.contains.classList.contains('dynamic('dynamic-link'))-link')) {
-        {
+    if (link.classList.contains('dynamic-link')) {
         e.preventDefault();
         const url = link.dataset.url;
-        const isGuest e.preventDefault();
-        const url = link.dataset.url;
-        const isGuest = link = link.dat.datasetaset.guest === '.guest === 'truetrue';
-        openLink(url';
-        openLink(url, ', 'link_click', isGuestlink_click', isGuest);
-       );
-        return return;
-   ;
-    }
-    if (link }
-    if (link.closest.closest('.nav('.nav-popup-popup'))')) {
-        e {
-        e.preventDefault.preventDefault();
-        const();
-        const href = href = link.get link.getAttribute('href');
-       Attribute('href');
-        if if (href (href && href !== '# && href !== '#')') {
- {
-            if (link            if (link.id ===.id === 'pop 'popupNewupNewcomer') { const iscomer') { const isGuest = state.userGuest = state.userCard.statusCard.status !== ' !== 'active';active'; renderNewcomer renderNewcomerPage(isGuest);Page(isGuest); }
-            }
-            else if (link.id === else if (link.id === 'pop 'popupGupGift')ift') { { const const isGuest isGuest = state = state.userCard.userCard.status !==.status !== 'active 'active'; render'; renderGift(isGuestGift(isGuest);); }
-            else if ( }
-            elselink.id if (link.id === ' === 'popuppopupPass')Pass') { const { const isGuest = state isGuest.userCard = state.userCard.status !==.status !== 'active 'active'; render'; renderPassPagePassPage(isGuest(isGuest); }
-            else if (link.id === 'popupQuestion') { const isGuest = state.userCard.status !== 'active'; openLink('https://); }
-            else if (link.id === 'popupQuestion') { const isGuest = state.userCard.status !== 'active'; openLink('https://t.met.me/hell/hellointelligentointelligent', '', 'question_click', isGuestquestion_click', isGuest); }
-            else); }
-            else openLink openLink(href(href, ', 'nav_popnav_popup_up_click',click', false false);
-       );
-        }
-        return }
+        const isGuest = link.dataset.guest === 'true';
+        openLink(url, 'link_click', isGuest);
         return;
-   ;
     }
-    }
-    if ( if (link.classList.contains('btn-newcomerlink.classList.contains('btn-newcomer'))')) {
-        e {
-        e.preventDefault();.preventDefault(); haptic haptic();
-       ();
-        const is const isGuest =Guest = link.id link.id === 'newcom === 'newcomerBtnerBtnGuest';
-        renderGuestNewcom';
-        renderNewcomerPageerPage(is(isGuestGuest);
-        return);
-        return;
-   ;
-    }
-    if }
-    if (link.classList.contains (link.classList.contains('particip('participant-counterant-counter'))')) {
-        e {
-        e.preventDefault();.preventDefault(); e.stopPropagation e.stopPropagation();
-        const hike();
-        const hikeDate =Date = link.dat link.dataset.haset.hikeDate;
-       ikeDate;
-        if (!hike if (!hikeDate)Date) return return;
-        const;
-        const index = index = state.h state.hikesList.findIndexikesList.findIndex(h =>(h => h.date h.date === hike === hikeDateDate);
-        if);
-        if (index (index !== - !== -1) {
-           1) {
-            toggleParticipantDropdown(link toggleParticipantDropdown(link, hike, hikeDateDate);
+    if (link.closest('.nav-popup')) {
+        e.preventDefault();
+        const href = link.getAttribute('href');
+        if (href && href !== '#') {
+            if (link.id === 'popupNewcomer') { const isGuest = state.userCard.status !== 'active'; renderNewcomerPage(isGuest); }
+            else if (link.id === 'popupGift') { const isGuest = state.userCard.status !== 'active'; renderGift(isGuest); }
+            else if (link.id === 'popupPass') { const isGuest = state.userCard.status !== 'active'; renderPassPage(isGuest); }
+            else if (link.id === 'popupQuestion') { const isGuest = state.userCard.status !== 'active'; openLink('https://t.me/hellointelligent', 'question_click', isGuest); }
+            else openLink(href, 'nav_popup_click', false);
         }
         return;
     }
-   );
+    if (link.classList.contains('btn-newcomer')) {
+        e.preventDefault(); haptic();
+        const isGuest = link.id === 'newcomerBtnGuest';
+        renderNewcomerPage(isGuest);
+        return;
+    }
+    if (link.classList.contains('participant-counter')) {
+        e.preventDefault(); e.stopPropagation();
+        const hikeDate = link.dataset.hikeDate;
+        if (!hikeDate) return;
+        const index = state.hikesList.findIndex(h => h.date === hikeDate);
+        if (index !== -1) {
+            toggleParticipantDropdown(link, hikeDate);
         }
         return;
     }
-    if (link.classList if (link.classList.contains('.contains('booking-dbooking-detail-btnetail-btn'))')) {
-        e {
-        e.preventDefault.preventDefault();
-        const();
-        const index = link.dat index = link.dataset.index;
-       aset.index;
-        if ( if (index !==index !== undefined) undefined) {
-            {
-            log('booking_detail log('booking_detail_click_click', state', state.userCard.status !==.userCard.status !== 'active 'active', state', state.user,.user, { index { index });
-            });
-            showBottom showBottomSheet(Sheet(parseIntparseInt(index(index));
-        }
-        return));
+    if (link.classList.contains('booking-detail-btn')) {
+        e.preventDefault();
+        const index = link.dataset.index;
+        if (index !== undefined) {
+            log('booking_detail_click', state.userCard.status !== 'active', state.user, { index });
+            showBottomSheet(parseInt(index));
         }
         return;
-   ;
     }
-    if ( }
-    if (link.classListlink.classList.contains('.contains('booking-gobooking-go-btn')) {
-        e.preventDefault-btn')) {
-        e.preventDefault();(); haptic haptic();
-        log();
-        log('random_phrase('random_phrase_click_click', state', state.userCard.userCard.status !==.status !== 'active', state.user 'active', state.user);
-);
-        document        document.getElementById('.getElementById('calendarContainer')?.calendarContainer')?.scrollIntoscrollIntoView({View({ behavior: 'smooth', block: 'start' behavior: 'smooth', block: 'start' });
- });
-        return        return;
-   ;
-    }
-    }
- if (    if (link.classListlink.classList.contains('.contains('bookingsbookings-calendar-calendar-link')) {
-       -link')) {
-        e.preventDefault e.preventDefault(); haptic(); haptic();
-        log();
-        log('mo('moi_zi_zapisi_kalendar_apisi_kalendar_click',click', state.userCard.status !== ' state.userCard.status !== 'active',active', state.user state.user);
-       );
-        document document.getElementById.getElementById('calendar('calendarContainer')Container')?.scroll?.scrollIntoViewIntoView({ behavior({ behavior: ': 'smoothsmooth', block: '', block: 'start'start' });
-        return });
+    if (link.classList.contains('booking-go-btn')) {
+        e.preventDefault(); haptic();
+        log('random_phrase_click', state.userCard.status !== 'active', state.user);
+        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
-   ;
     }
-});
- }
+    if (link.classList.contains('bookings-calendar-link')) {
+        e.preventDefault(); haptic();
+        log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
+        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+    }
 });
