@@ -1272,11 +1272,15 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         }
     });
 
-    // Кнопка «иду впервые» — мгновенная регистрация
+    // Кнопка «иду впервые» — мгновенная регистрация с тактильным откликом
     document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
+
+        // Двойной тактильный отклик как при обычной регистрации
+        tg?.HapticFeedback?.impactOccurred('heavy');
+        setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
         const userId = state.user?.id;
         addParticipant(hikeDate, userId, {
