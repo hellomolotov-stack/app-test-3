@@ -203,11 +203,10 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Стиль как у плавающего меню: тёмный фон с одинаковым размытием
+    // Стиль как у плавающего меню
     sheet.style.backgroundColor = 'rgba(73, 138, 176, 0.15)';
     sheet.style.backdropFilter = 'blur(12px)';
     sheet.style.webkitBackdropFilter = 'blur(12px)';
-    sheet.style.color = '#ffffff';
 
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
@@ -978,10 +977,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         delete state.hikeBookingStatus[sheetCurrentIndex];
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
-                        // Мгновенно обновляем счётчик билетов
-                        window._participantCount = Math.max(0, (window._participantCount || 1) - 1);
-                        refreshAvailabilityBlock();
                         updateFloatingSheetButtons();
+                        refreshAvailabilityBlock(); // ← мгновенное обновление
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
@@ -990,9 +987,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
                     .then(() => {
                         delete state.hikeBookingStatus[sheetCurrentIndex];
-                        window._participantCount = Math.max(0, (window._participantCount || 1) - 1);
-                        refreshAvailabilityBlock();
                         updateFloatingSheetButtons();
+                        refreshAvailabilityBlock(); // ← мгновенное обновление
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
@@ -1118,10 +1114,8 @@ function updateFloatingSheetButtons() {
                         delete state.hikeBookingStatus[sheetCurrentIndex];
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
-                        // Мгновенно обновляем счётчик билетов
-                        window._participantCount = Math.max(0, (window._participantCount || 1) - 1);
-                        refreshAvailabilityBlock();
                         updateFloatingSheetButtons();
+                        refreshAvailabilityBlock(); // ← мгновенное обновление
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
@@ -1130,9 +1124,8 @@ function updateFloatingSheetButtons() {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
                     .then(() => {
                         delete state.hikeBookingStatus[sheetCurrentIndex];
-                        window._participantCount = Math.max(0, (window._participantCount || 1) - 1);
-                        refreshAvailabilityBlock();
                         updateFloatingSheetButtons();
+                        refreshAvailabilityBlock(); // ← мгновенное обновление
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
