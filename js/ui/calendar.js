@@ -201,6 +201,7 @@ export function showBottomSheet(index) {
     document.body.appendChild(overlay);
 
     const sheet = document.getElementById('hikeBottomSheet');
+    sheet.classList.add('blurred');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
     // Применяем размытие как у меню
