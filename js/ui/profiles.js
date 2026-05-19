@@ -76,9 +76,9 @@ function cleanupProfileOverlays() {
     document.body.style.overflow = '';
 }
 
-// --------------- ОСНОВНАЯ ФУНКЦИЯ РЕНДЕРИНГА ---------------
 export async function renderProfiles() {
     cleanupProfileOverlays();
+    document.getElementById('floatingCardBtn')?.remove();   // ← удаление кнопки
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🫆 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
@@ -95,7 +95,6 @@ export async function renderProfiles() {
 
     const shouldAnimate = !(isCardHolder && hasMyProfile);
 
-    // Функция-помощник для создания бесконечной прокрутки
     function wrapInfiniteScroll(content) {
         const scrollWrapperHeight = window.innerHeight - 100;
         return `
@@ -125,7 +124,6 @@ export async function renderProfiles() {
 
     mainDiv().innerHTML = html;
 
-    // Если нужна пауза при касании
     if (shouldAnimate) {
         const wrapper = mainDiv().querySelector('.infinite-scroll-wrapper');
         const container = mainDiv().querySelector('.infinite-scroll-container');
@@ -143,7 +141,6 @@ export async function renderProfiles() {
         }
     }
 
-    // Кнопка "создать профиль" и оверлей
     if (isCardHolder && hasMyProfile) {
         const btnContainer = document.createElement('div');
         btnContainer.className = 'profile-edit-fab';
@@ -157,7 +154,6 @@ export async function renderProfiles() {
         return;
     }
 
-    // для гостей/владельцев без профиля – блюр + кнопка
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
     blurOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:40;background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);';
@@ -248,14 +244,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
 function showGuestProfilePopup() {
     const popupData = (state.popups && state.popups.guest_profile_popup) || {
         title: '💳 карта интеллигента',
-            overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title" style="font-size: 18px;">${popupData.title}</div>
-            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" style="width:100%; border-radius:12px; margin-bottom:12px;">
-            <div class="modal-text" style="font-size: 14px;">${popupData.text}</div>
-            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">${popupData.button_text}</button>
-        </div>
-    `,
         text: 'для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?',
         button_text: 'да, хочу узнать'
     };
@@ -265,6 +253,7 @@ function showGuestProfilePopup() {
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 360px;">
             <div class="modal-title" style="font-size: 18px;">${popupData.title}</div>
+            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" style="width:100%; border-radius:12px; margin-bottom:12px;">
             <div class="modal-text" style="font-size: 14px;">${popupData.text}</div>
             <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">${popupData.button_text}</button>
         </div>
@@ -285,6 +274,7 @@ function showGuestProfilePopup() {
 
 async function renderEditProfile() {
     cleanupProfileOverlays();
+    document.getElementById('floatingCardBtn')?.remove();   // ← удаление кнопки
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
     subtitle().textContent = `🎩 мой профиль`; hideBack();
     showBottomNav(true); setupBottomNav();
