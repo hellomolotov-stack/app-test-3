@@ -1229,8 +1229,8 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             <div class="modal-title">${popupTitle}</div>
             <div class="modal-text" style="margin-bottom: 20px;">${popupText}</div>
             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет 🎟️ · ${config.ticketPrice} ₽</button>
-                <button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(217,253,25,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px; border: 1px solid rgba(217,253,25,0.6);">иду впервые 👋🏻</button>
+                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">оформить билет 🎟️ · ${config.ticketPrice} ₽</button>
+                <button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(217,253,25,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px; border: 1px solid rgba(217,253,25,0.6);">иду впервые 👋🏻</button>
                 <div id="cardAccordionPopup" style="width: 100%;">
                     <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">купить карту интеллигента 💳</button>
                     <div id="cardOptions" style="display: none; margin-top: 12px;">
@@ -1278,7 +1278,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
 
-        // Двойной тактильный отклик как при обычной регистрации
+        haptic();
         tg?.HapticFeedback?.impactOccurred('heavy');
         setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
@@ -1641,13 +1641,27 @@ document.addEventListener('click', function(e) {
     if (link.classList.contains('booking-go-btn')) {
         e.preventDefault(); haptic();
         log('random_phrase_click', state.userCard.status !== 'active', state.user);
-        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const calendar = document.getElementById('calendarContainer');
+        if (calendar) {
+            const topOffset = getCurrentTopOffset ? getCurrentTopOffset() : 76;
+            const rect = calendar.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const targetY = rect.top + scrollTop - topOffset;
+            window.scrollTo({ top: targetY, behavior: 'smooth' });
+        }
         return;
     }
     if (link.classList.contains('bookings-calendar-link')) {
         e.preventDefault(); haptic();
         log('moi_zapisi_kalendar_click', state.userCard.status !== 'active', state.user);
-        document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const calendar = document.getElementById('calendarContainer');
+        if (calendar) {
+            const topOffset = getCurrentTopOffset ? getCurrentTopOffset() : 76;
+            const rect = calendar.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const targetY = rect.top + scrollTop - topOffset;
+            window.scrollTo({ top: targetY, behavior: 'smooth' });
+        }
         return;
     }
 });
