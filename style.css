@@ -2476,8 +2476,17 @@ body.night-mode::before {
     opacity: 0.9;
 }
 /* Фон слайдера хайков как у плавающего меню */
-.bottom-sheet.blurred {
+.bottom-sheet {
     background-color: rgba(73, 138, 176, 0.15) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
+}
+
+/* Баннер карты в информационных попапах */
+.guest-card-banner {
+    width: 100%;
+    border-radius: 12px;
+    margin-top: 16px;
+    margin-bottom: 0;
+    order: 1; /* чтобы всегда был после текста */
 }
