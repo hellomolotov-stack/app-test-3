@@ -2475,3 +2475,9 @@ body.night-mode::before {
 .anniversary-btn:hover {
     opacity: 0.9;
 }
+/* Фон слайдера хайков как у плавающего меню */
+.bottom-sheet.blurred {
+    background-color: rgba(73, 138, 176, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
