@@ -273,7 +273,6 @@ function renderUpdatesBlock() {
         <div class="card-container updates-container">
             <h2 class="section-title" style="margin: 0 16px 16px 16px;">
                 📨 обновления
-                <span class="new-badge">новое</span>
             </h2>
             <div class="updates-scroll">${itemsHtml}</div>
         </div>
@@ -289,6 +288,7 @@ function handleGuestRead(e) {
 
 function renderGuestHome() {
     cleanupProfileOverlays();
+    document.getElementById('floatingCardBtn')?.remove();
     subtitle().textContent = `💳 здесь будет твоя карта, ${state.user?.first_name || 'друг'}`;
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
@@ -376,6 +376,7 @@ function renderGuestHome() {
 
 function renderOwnerHome() {
     cleanupProfileOverlays();
+    document.getElementById('floatingCardBtn')?.remove();
     const user = state.user;
     const firstName = user?.first_name || 'друг';
     subtitle().textContent = `💳 твоя карта, ${firstName}`;
