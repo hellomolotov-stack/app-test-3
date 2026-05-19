@@ -171,6 +171,7 @@ async function showGuestMastermindPopup() {
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 360px;">
             <div class="modal-title">${popup.title}</div>
+            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" style="width:100%; border-radius:12px; margin-bottom:12px;">
             <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
             <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
         </div>
@@ -275,6 +276,7 @@ function renderUpdatesBlock() {
                 📨 обновления
             </h2>
             <div class="updates-scroll">${itemsHtml}</div>
+            <div class="updates-fade"></div>
         </div>
     `;
 }
@@ -288,8 +290,8 @@ function handleGuestRead(e) {
 
 function renderGuestHome() {
     cleanupProfileOverlays();
-    document.getElementById('floatingCardBtn')?.remove();
-    subtitle().textContent = привет, ${firstName}!;
+    const firstName = state.user?.first_name || 'друг';
+    subtitle().textContent = '\u{1F44B}\u{1F3FB} привет, ' + firstName + '!';   // 👋🏻 привет, Имя!
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
@@ -350,7 +352,6 @@ function renderGuestHome() {
         });
     }
 
-    // Надёжное навешивание обработчиков для кнопок "читать" (гостевые)
     const readButtons = document.querySelectorAll('.guest-read-btn');
     readButtons.forEach(btn => {
         btn.removeEventListener('click', handleGuestRead);
@@ -360,7 +361,6 @@ function renderGuestHome() {
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
 
-    // ДОБАВЛЯЕМ ОБРАБОТЧИК НА КНОПКУ «ПОЙТИ НА ХАЙК» С ПЛАВНЫМ СКРОЛЛОМ
     const goBtn = document.querySelector('.booking-go-btn');
     if (goBtn) {
         goBtn.addEventListener('click', (e) => {
@@ -376,7 +376,6 @@ function renderGuestHome() {
 
 function renderOwnerHome() {
     cleanupProfileOverlays();
-    document.getElementById('floatingCardBtn')?.remove();
     const user = state.user;
     const firstName = user?.first_name || 'друг';
     subtitle().textContent = `💳 твоя карта, ${firstName}`;
@@ -430,7 +429,6 @@ function renderOwnerHome() {
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
 
-    // ДОБАВЛЯЕМ ОБРАБОТЧИК НА КНОПКУ «ПОЙТИ НА ХАЙК» С ПЛАВНЫМ СКРОЛЛОМ (ДЛЯ ВЛАДЕЛЬЦЕВ КАРТ)
     const goBtn = document.querySelector('.booking-go-btn');
     if (goBtn) {
         goBtn.addEventListener('click', (e) => {
