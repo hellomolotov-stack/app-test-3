@@ -2475,13 +2475,14 @@ body.night-mode::before {
 .anniversary-btn:hover {
     opacity: 0.9;
 }
-/* Фон слайдера хайков как у плавающего меню */
+/* Слайдер хайков — фон как у плавающего меню */
 .bottom-sheet {
     background-color: rgba(73, 138, 176, 0.15) !important;
     backdrop-filter: blur(12px) !important;
     -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.2);
 }
-
 /* Баннер карты в информационных попапах */
 .guest-card-banner {
     width: 100%;
