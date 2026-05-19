@@ -464,11 +464,7 @@ async function loadAppData() {
             setTimeout(() => handleDeepLink(startParam), 100);
         }
 
-        // Показываем праздничный попап
-        setTimeout(() => {
-            showAnniversaryPopup();
-        }, 500);
-
+     
         // -----------------------------
         //  АВТОМАТИЧЕСКАЯ СМЕНА ФОНА
         // -----------------------------
