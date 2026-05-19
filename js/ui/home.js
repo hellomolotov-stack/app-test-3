@@ -289,7 +289,7 @@ function handleGuestRead(e) {
 function renderGuestHome() {
     cleanupProfileOverlays();
     document.getElementById('floatingCardBtn')?.remove();
-    subtitle().textContent = `💳 здесь будет твоя карта, ${state.user?.first_name || 'друг'}`;
+    subtitle().textContent = 👋🏻 привет, ${firstName}!;
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
