@@ -149,6 +149,7 @@ async function showGuestPopup() {
         <div class="modal-content">
             <div class="modal-title">${popup.title}</div>
             <div class="modal-text">${popup.text}</div>
+            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" class="guest-card-banner" onerror="this.style.display='none'">
             <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">${popup.button_text}</button></div>
         </div>
     `;
@@ -171,8 +172,8 @@ async function showGuestMastermindPopup() {
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 360px;">
             <div class="modal-title">${popup.title}</div>
-            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" style="width:100%; border-radius:12px; margin-bottom:12px;">
             <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
+            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" class="guest-card-banner" onerror="this.style.display='none'">
             <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
         </div>
     `;
@@ -291,7 +292,8 @@ function handleGuestRead(e) {
 function renderGuestHome() {
     cleanupProfileOverlays();
     const firstName = state.user?.first_name || 'друг';
-    subtitle().textContent = '\u{1F44B}\u{1F3FB} привет, ' + firstName + '!';   // 👋🏻 привет, Имя!
+    // Используем безопасные escape-последовательности для эмодзи 👋🏻
+    subtitle().textContent = '\uD83D\uDC4B\uD83C\uDFFB привет, ' + firstName + '!';
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
@@ -366,6 +368,7 @@ function renderGuestHome() {
         goBtn.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
+            // Исправленный скролл к календарю (как при нажатии «хайкинг» в меню)
             scrollToCalendarAndHighlight();
             log('random_phrase_click', true, state.user);
         });
