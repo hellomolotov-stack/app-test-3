@@ -2487,3 +2487,41 @@ body.night-mode::before {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
     mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
 }
+/* Верхний градиент в слайдере хайков (чтобы контент не упирался в резкую линию) */
+.bottom-sheet-content-wrapper::before {
+    content: '';
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    display: block;
+    background: linear-gradient(to bottom, rgba(34, 34, 34, 0.9) 0%, transparent 100%);
+    z-index: 5;
+    pointer-events: none;
+    flex-shrink: 0;
+}
+
+/* Блок доступных билетов — тёмный фон как у счётчика идущих */
+.availability-block {
+    background: rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.2) !important;
+}
+
+/* Блок обновлений — плавные градиенты сверху и снизу */
+.updates-scroll {
+    position: relative;
+    overflow-y: auto;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
+}
+
+/* Удаляем старый псевдоэлемент, если он остался */
+.updates-scroll::after {
+    display: none;
+}
+
+/* Скрываем отдельный элемент затухания */
+.updates-fade {
+    display: none;
+}
