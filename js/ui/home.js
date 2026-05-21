@@ -15,18 +15,14 @@ function getCurrentTopOffset() {
     return safeTop + 60;
 }
 
-// Плавный скролл к календарю с подсветкой (1.5 сек)
 function scrollToCalendarAndHighlight() {
     const calendar = document.getElementById('calendarContainer');
     if (!calendar) return;
-
     const offset = getCurrentTopOffset();
     const rect = calendar.getBoundingClientRect();
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
     const targetY = rect.top + scrollTop - offset;
-
     window.scrollTo({ top: targetY, behavior: 'smooth' });
-
     calendar.style.transition = 'box-shadow 0.5s';
     calendar.style.boxShadow = '0 0 20px 5px rgba(255,255,255,0.7)';
     setTimeout(() => { calendar.style.boxShadow = ''; }, 1500);
@@ -101,11 +97,12 @@ export function renderUserBookings(container) {
         }
         if (cleanedTitle.toLowerCase().startsWith('на ')) cleanedTitle = cleanedTitle.substring(3);
         cleanedTitle = cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
+        const displayTitle = `хайк на ${cleanedTitle}`;
         html += `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1; margin-right: 16px;">
                     <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
-                    <span style="color: #ffffff; margin-left: 8px;">${cleanedTitle}</span>
+                    <span style="color: #ffffff; margin-left: 8px;">${displayTitle}</span>
                 </div>
                 <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background-color: ${accentColor};">детали</button>
             </div>
@@ -149,7 +146,7 @@ async function showGuestPopup() {
         <div class="modal-content">
             <div class="modal-title">${popup.title}</div>
             <div class="modal-text">${popup.text}</div>
-            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" class="guest-card-banner" onerror="this.style.display='none'">
+            <img src="${state.appBanners?.guest_card_banner || ''}" class="guest-card-banner" onerror="this.style.display='none'">
             <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">${popup.button_text}</button></div>
         </div>
     `;
@@ -173,7 +170,7 @@ async function showGuestMastermindPopup() {
         <div class="modal-content" style="max-width: 360px;">
             <div class="modal-title">${popup.title}</div>
             <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
-            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" class="guest-card-banner" onerror="this.style.display='none'">
+            <img src="${state.appBanners?.guest_card_banner || ''}" class="guest-card-banner" onerror="this.style.display='none'">
             <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
         </div>
     `;
@@ -277,7 +274,6 @@ function renderUpdatesBlock() {
                 📨 обновления
             </h2>
             <div class="updates-scroll">${itemsHtml}</div>
-            <div class="updates-fade"></div>
         </div>
     `;
 }
@@ -292,8 +288,7 @@ function handleGuestRead(e) {
 function renderGuestHome() {
     cleanupProfileOverlays();
     const firstName = state.user?.first_name || 'друг';
-    // Используем безопасные escape-последовательности для эмодзи 👋🏻
-    subtitle().textContent = '\uD83D\uDC4B\uD83C\uDFFB привет, ' + firstName + '!';
+    subtitle().textContent = '\u{1F44B}\u{1F3FB} привет, ' + firstName + '!';
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
@@ -368,7 +363,6 @@ function renderGuestHome() {
         goBtn.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
-            // Исправленный скролл к календарю (как при нажатии «хайкинг» в меню)
             scrollToCalendarAndHighlight();
             log('random_phrase_click', true, state.user);
         });
