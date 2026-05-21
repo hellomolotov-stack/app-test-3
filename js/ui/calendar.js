@@ -175,6 +175,34 @@ function showLetterPopup(letterText, letterLink, isGuest) {
     overlayPopup.addEventListener('click', (e) => { if (e.target === overlayPopup) { haptic(); overlayPopup.remove(); } });
 }
 
+function showReminderPopup(hikeDate, hikeTitle) {
+    haptic();
+    const popup = document.createElement('div');
+    popup.className = 'modal-overlay';
+    popup.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-close" id="closeReminderPopup" style="position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.2); border: none; color: rgba(255,255,255,0.7); font-size: 28px; cursor: pointer; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); line-height: 1;">&times;</div>
+            <div class="modal-title" style="margin-bottom: 12px;">⏰ добавить напоминание</div>
+            <div class="modal-text" style="margin-bottom: 20px;">Хочешь получить уведомление о предстоящем хайке?</div>
+            <button class="btn btn-yellow" id="addReminderBtn" style="width: 100%; margin-top: 10px;">добавить напоминание</button>
+        </div>
+    `;
+    document.body.appendChild(popup);
+
+    popup.querySelector('#closeReminderPopup').addEventListener('click', () => popup.remove());
+    popup.addEventListener('click', e => { if (e.target === popup) popup.remove(); });
+
+    popup.querySelector('#addReminderBtn').addEventListener('click', () => {
+        // Открываем Telegram-ссылку для напоминания
+        const date = new Date(hikeDate);
+        const timeStr = date.toISOString().replace(/[-:]/g, '').split('.')[0]; // формат YYYYMMDDTHHmmss
+        const text = encodeURIComponent(hikeTitle);
+        const url = `https://t.me/remind?text=${text}&time=${timeStr}`;
+        tg?.openTelegramLink(url);
+        popup.remove();
+    });
+}
+
 function getTicketWord(count) {
     const lastDigit = count % 10;
     const lastTwoDigits = count % 100;
@@ -201,11 +229,12 @@ export function showBottomSheet(index) {
     document.body.appendChild(overlay);
 
     const sheet = document.getElementById('hikeBottomSheet');
-    sheet.classList.add('blurred');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Применяем размытие как у меню
-    sheet.classList.add('blurred');
+    // Стиль как у плавающего меню
+    sheet.style.backgroundColor = 'rgba(73, 138, 176, 0.15)';
+    sheet.style.backdropFilter = 'blur(12px)';
+    sheet.style.webkitBackdropFilter = 'blur(12px)';
 
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
@@ -336,7 +365,7 @@ export function showBottomSheet(index) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
                 extraInfoHtml += `
-                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
+                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor}; cursor: pointer;" id="startTimeRow">
                         <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         </span>
@@ -399,23 +428,24 @@ export function showBottomSheet(index) {
 
         if (!isPast) {
             const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-            if (!isBooked) {
-                const bookedCount = window._participantCount || 0;
-                const available = Math.max(0, MAX_TICKETS - bookedCount);
-                const progressPercent = Math.round((available / MAX_TICKETS) * 100);
-                const ticketWord = getTicketWord(available);
-                availabilityBlock = `
-                    <div class="availability-block" style="background: rgba(73, 138, 176, 0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);">
-                        <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                            <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                            <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
-                        </div>
-                        <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                            <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                        </div>
+            const bookedCount = window._participantCount || 0;
+            const available = Math.max(0, MAX_TICKETS - bookedCount);
+            const progressPercent = Math.round((available / MAX_TICKETS) * 100);
+            const ticketWord = getTicketWord(available);
+
+            availabilityBlock = `
+                <div class="availability-block" style="background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 0 1px rgba(255,255,255,0.2); border-radius: 20px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
                     </div>
-                `;
-            } else {
+                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+
+            if (isBooked) {
                 const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
                 inviteButtonHtml = `
                     <div style="margin-top: 16px;">
@@ -557,6 +587,19 @@ export function showBottomSheet(index) {
                 log('slider_next', false, state.user);
             }
         });
+
+        // Обработчик клика по времени для напоминания
+        setTimeout(() => {
+            const startTimeRow = document.getElementById('startTimeRow');
+            if (startTimeRow) {
+                startTimeRow.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (hike.date && hike.start_time) {
+                        showReminderPopup(hike.date, hike.title);
+                    }
+                });
+            }
+        }, 100);
     }
 
     function refreshAvailabilityBlock() {
@@ -569,8 +612,48 @@ export function showBottomSheet(index) {
         const availBlock = contentWrapper.querySelector('.availability-block');
         const inviteContainer = contentWrapper.querySelector('#inviteFriendBtn')?.parentElement;
 
+        const MAX_TICKETS = 15;
+        const bookedCount = window._participantCount || 0;
+        const available = Math.max(0, MAX_TICKETS - bookedCount);
+        const progressPercent = Math.round((available / MAX_TICKETS) * 100);
+        const ticketWord = getTicketWord(available);
+        const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
+
+        // Всегда обновляем блок доступности
+        if (availBlock) {
+            availBlock.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                    <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
+                </div>
+                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+                </div>
+            `;
+        } else {
+            // Создаём блок, если его почему-то нет
+            const div = document.createElement('div');
+            div.className = 'availability-block';
+            div.style.cssText = 'background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 0 1px rgba(255,255,255,0.2); border-radius: 20px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px;';
+            div.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                    <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
+                </div>
+                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+                </div>
+            `;
+            const headerBlock = contentWrapper.querySelector('.bottom-sheet-header-block');
+            if (headerBlock) {
+                headerBlock.insertAdjacentElement('afterend', div);
+            } else {
+                contentWrapper.prepend(div);
+            }
+        }
+
+        // Управляем кнопкой приглашения
         if (isBooked) {
-            if (availBlock) availBlock.style.display = 'none';
             if (!inviteContainer) {
                 const inviteText = (hike.woman === 'yes') ? 'пригласить подругу' : 'пригласить друга';
                 const div = document.createElement('div');
@@ -584,47 +667,6 @@ export function showBottomSheet(index) {
             }
         } else {
             if (inviteContainer) inviteContainer.remove();
-            const MAX_TICKETS = 15;
-            if (!availBlock) {
-                const bookedCount = window._participantCount || 0;
-                const available = Math.max(0, MAX_TICKETS - bookedCount);
-                const progressPercent = Math.round((available / MAX_TICKETS) * 100);
-                const ticketWord = getTicketWord(available);
-                const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
-                const div = document.createElement('div');
-                div.className = 'availability-block';
-                div.style.cssText = 'background: rgba(73, 138, 176, 0.1); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 20px; padding: 12px 16px; margin: 12px 0; display: flex; align-items: center; gap: 12px; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);';
-                div.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
-                    </div>
-                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                    </div>
-                `;
-                const headerBlock = contentWrapper.querySelector('.bottom-sheet-header-block');
-                if (headerBlock) {
-                    headerBlock.insertAdjacentElement('afterend', div);
-                } else {
-                    contentWrapper.prepend(div);
-                }
-            } else {
-                const bookedCount = window._participantCount || 0;
-                const available = Math.max(0, MAX_TICKETS - bookedCount);
-                const progressPercent = Math.round((available / MAX_TICKETS) * 100);
-                const ticketWord = getTicketWord(available);
-                const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
-                availBlock.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
-                    </div>
-                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                    </div>
-                `;
-            }
         }
     }
 
@@ -980,7 +1022,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
 
-                        // Обновляем счетчик участников и блок доступности
                         loadAllParticipants(hikeDate).then(participants => {
                             window._participantCount = participants.length;
                             refreshAvailabilityBlock();
