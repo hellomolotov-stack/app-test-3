@@ -2308,18 +2308,7 @@ body.night-mode::before {
     overflow: hidden;
 }
 
-.updates-fade {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 40px;
-    background: linear-gradient(to bottom, rgba(73, 138, 176, 0) 0%, rgba(73, 138, 176, 0.7) 100%);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    pointer-events: none;
-    z-index: 5;
-}
+
 /* ПРАЗДНИЧНЫЙ ПОПАП ГОДОВЩИНЫ (в стиле слайдера хайков) */
 .anniversary-overlay {
     position: fixed;
@@ -2495,6 +2484,6 @@ body.night-mode::before {
 .updates-scroll {
     position: relative;
     overflow-y: auto;
-    -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
 }
