@@ -2504,3 +2504,15 @@ body.night-mode::before {
     -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
     mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
 }
+/* Нижний градиент по всему приложению (как у header-blur) */
+body::after {
+    content: '';
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: calc(env(safe-area-inset-bottom, 0px) + 80px);
+    background: linear-gradient(to top, rgba(73, 138, 176, 0.85) 0%, rgba(73, 138, 176, 0.1) 80%, rgba(73, 138, 176, 0) 100%);
+    z-index: 1;
+    pointer-events: none;
+}
