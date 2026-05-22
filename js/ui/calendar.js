@@ -549,27 +549,25 @@ export function showBottomSheet(index) {
         const MAX_TICKETS = 15;
         const available = Math.max(0, MAX_TICKETS - bookedCount);
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
-        const ticketWord = getTicketWord(available);
+        const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
         const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
 
         let block = floating.querySelector('.availability-floating');
         if (!block) {
             block = document.createElement('div');
             block.className = 'availability-floating';
-            // Вставляем блок перед первым элементом в контейнере
-            floating.insertBefore(block, floating.firstChild);
+            // Отступы как у кнопок внутри floating-sheet-buttons
+            block.style.margin = '0 16px';
+            block.style.width = 'calc(100% - 32px)';
+            floating.appendChild(block);
         }
-        block.style.width = '100%';
-        block.style.boxSizing = 'border-box';
         block.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                    <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
-                </div>
-                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                </div>
+            <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+            </div>
+            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px;">
+                <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
             </div>
         `;
     }
