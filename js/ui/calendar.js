@@ -25,12 +25,14 @@ function hasHikesInMonth(year, month) {
     return state.hikesList.some(hike => hike.date.startsWith(monthStr));
 }
 
+// Проверяем, является ли день будущим воскресеньем без хайка
 function isFutureSundayWithoutHike(dateStr) {
     const date = new Date(dateStr);
     const today = new Date();
     today.setHours(0,0,0,0);
-    if (date < today) return false;
-    if (date.getDay() !== 0) return false;
+    if (date < today) return false;               // уже прошло
+    if (date.getDay() !== 0) return false;        // не воскресенье
+    // Проверяем, есть ли хайк на эту дату
     return !state.hikesData[dateStr];
 }
 
@@ -226,6 +228,26 @@ function getTicketWord(count) {
     return 'билетов';
 }
 
+function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageUrl) {
+    if (!container) return;
+    const img = container.querySelector('#hikeMainImage');
+    const overlayImg = container.querySelector('#soldOutOverlay');
+    if (shouldBlur) {
+        if (img) img.style.filter = 'blur(6px)';
+        if (!overlayImg) {
+            const newOverlay = document.createElement('img');
+            newOverlay.id = 'soldOutOverlay';
+            newOverlay.src = overlayImageUrl;
+            newOverlay.style.cssText = 'position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 300px; z-index: 10; pointer-events: none;';
+            container.style.position = 'relative';
+            container.appendChild(newOverlay);
+        }
+    } else {
+        if (img) img.style.filter = '';
+        if (overlayImg) overlayImg.remove();
+    }
+}
+
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
@@ -276,6 +298,12 @@ export function showBottomSheet(index) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
             updateFloatingSheetButtons();
+            // Обновить блюр
+            const container = contentWrapper.querySelector('.image-container');
+            if (container) {
+                const isSoldOut = window._participantCount >= 15;
+                applyImageBlurAndOverlay(container, isSoldOut, currentHike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
+            }
         });
     } else {
         window._participantCount = 0;
@@ -358,25 +386,11 @@ export function showBottomSheet(index) {
 
         let imageHtml = '';
         if (hike.image) {
-            const bookedCount = window._participantCount || 0;
-            const MAX_TICKETS = 15;
-            const isSoldOut = bookedCount >= MAX_TICKETS;
-            if (!isPast && isSoldOut) {
-                imageHtml = `
-                    <div class="image-container" style="position: relative;">
-                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" style="filter: blur(6px);">
-                        <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 300px; z-index: 10; pointer-events: none;">
-                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                            <span class="participant-text" style="color: ${accentColor};">идут</span>
-                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
-                            <div class="participant-avatars" id="participantAvatars"></div>
-                        </div>
-                    </div>
-                `;
-            } else if (!isPast) {
+            imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
+            if (!isPast) {
                 imageHtml = `
                     <div class="image-container">
-                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">
                         <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
                             <span class="participant-text" style="color: ${accentColor};">идут</span>
                             <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
@@ -384,8 +398,6 @@ export function showBottomSheet(index) {
                         </div>
                     </div>
                 `;
-            } else {
-                imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
             }
         }
 
@@ -555,11 +567,21 @@ export function showBottomSheet(index) {
                     }
                 }
 
+                // Обновляем блюр
+                const imageContainer = contentWrapper.querySelector('.image-container');
+                const isSoldOut = count >= 15;
+                applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
+
                 updateFloatingSheetButtons();
             });
         }
 
         updateFloatingSheetButtons();
+
+        // При первой отрисовке применить блюр, если нужно
+        const imageContainer = contentWrapper.querySelector('.image-container');
+        const isSoldOut = (window._participantCount || 0) >= 15;
+        applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
@@ -1023,21 +1045,20 @@ function updateFloatingSheetButtons() {
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px);';
+        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px); border-radius: 28px 28px 0 0;';
 
         if (available === 0) {
             if (isGuest) {
-                // Текст из Firebase (popups/guest_soldout_message)
                 const popupText = (state.popups && state.popups.guest_soldout_message && state.popups.guest_soldout_message.text) || '';
                 let messageHtml = '';
                 if (popupText.trim()) {
                     let text = popupText.replace(/\[имя\]/gi, firstName);
                     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 600;">$1</a>');
+                    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
                     text = text.replace(/\n/g, '<br>');
                     messageHtml = text;
                 } else {
-                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 600;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
+                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
                 }
                 availBlock.innerHTML = `
                     <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4;">
