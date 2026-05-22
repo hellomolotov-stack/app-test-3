@@ -203,7 +203,6 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Фон слайдера как у меню
     sheet.style.backgroundColor = 'rgba(73, 138, 176, 0.15)';
     sheet.style.backdropFilter = 'blur(12px)';
     sheet.style.webkitBackdropFilter = 'blur(12px)';
@@ -233,7 +232,7 @@ export function showBottomSheet(index) {
     if (currentHike && new Date(currentHike.date) >= new Date().setHours(0,0,0,0)) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
-            refreshAvailabilityBlock();
+            renderAvailabilityInFloating();
         });
     } else {
         window._participantCount = 0;
@@ -394,37 +393,15 @@ export function showBottomSheet(index) {
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        const MAX_TICKETS = 15;
-        let availabilityBlock = '';
         let inviteButtonHtml = '';
-
-        if (!isPast) {
-            const bookedCount = window._participantCount || 0;
-            const available = Math.max(0, MAX_TICKETS - bookedCount);
-            const progressPercent = Math.round((available / MAX_TICKETS) * 100);
-            const ticketWord = getTicketWord(available);
-
-            availabilityBlock = `
-                <div class="availability-block" style="border-radius: 30px; padding: 8px 12px; margin: 12px 0; display: flex; align-items: center; gap: 12px; background: rgba(0, 0, 0, 0.6); box-shadow: 0 0 0 1px rgba(255,255,255,0.2);">
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
-                    </div>
-                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                    </div>
+        const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+        if (isBooked && !isPast) {
+            const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
+            inviteButtonHtml = `
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-outline" id="inviteFriendBtn" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px;">${inviteText}</button>
                 </div>
             `;
-
-            const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-            if (isBooked) {
-                const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
-                inviteButtonHtml = `
-                    <div style="margin-top: 16px;">
-                        <button class="btn btn-outline" id="inviteFriendBtn" style="width: 100%; margin: 0; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px;">${inviteText}</button>
-                    </div>
-                `;
-            }
         }
 
         contentWrapper.innerHTML = `
@@ -438,7 +415,6 @@ export function showBottomSheet(index) {
                 </div>
                 ${tagsHtml}
             </div>
-            ${availabilityBlock}
             <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
             ${inviteButtonHtml}
         `;
@@ -519,11 +495,12 @@ export function showBottomSheet(index) {
                     }
                 }
 
-                refreshAvailabilityBlock();
+                renderAvailabilityInFloating();
             });
         }
 
         updateFloatingSheetButtons();
+        renderAvailabilityInFloating();
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
@@ -559,12 +536,15 @@ export function showBottomSheet(index) {
         });
     }
 
-    function refreshAvailabilityBlock() {
+    function renderAvailabilityInFloating() {
+        const floating = document.querySelector('.floating-sheet-buttons');
+        if (!floating) return;
         const hike = state.hikesList[sheetCurrentIndex];
-        if (!hike) return;
-        const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
-        if (isPast) return;
-
+        if (!hike || new Date(hike.date) < new Date().setHours(0,0,0,0)) {
+            const oldAvail = floating.querySelector('.availability-floating');
+            if (oldAvail) oldAvail.remove();
+            return;
+        }
         const bookedCount = window._participantCount || 0;
         const MAX_TICKETS = 15;
         const available = Math.max(0, MAX_TICKETS - bookedCount);
@@ -572,18 +552,21 @@ export function showBottomSheet(index) {
         const ticketWord = getTicketWord(available);
         const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
 
-        const availBlock = contentWrapper.querySelector('.availability-block');
-        if (availBlock) {
-            availBlock.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                    <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
-                </div>
-                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                </div>
-            `;
+        let block = floating.querySelector('.availability-floating');
+        if (!block) {
+            block = document.createElement('div');
+            block.className = 'availability-floating';
+            floating.appendChild(block);
         }
+        block.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
+            </div>
+            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px;">
+                <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+            </div>
+        `;
     }
 
     updateContent();
@@ -940,7 +923,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
                         loadAllParticipants(hikeDate).then(participants => {
                             window._participantCount = participants.length;
-                            refreshAvailabilityBlock();
+                            renderAvailabilityInFloating();
                         });
                     });
             } else {
@@ -955,7 +938,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
                         loadAllParticipants(hikeDate).then(participants => {
                             window._participantCount = participants.length;
-                            refreshAvailabilityBlock();
+                            renderAvailabilityInFloating();
                         });
                     });
             }
@@ -1085,7 +1068,7 @@ function updateFloatingSheetButtons() {
 
                         loadAllParticipants(hikeDate).then(participants => {
                             window._participantCount = participants.length;
-                            refreshAvailabilityBlock();
+                            renderAvailabilityInFloating();
                         });
                     });
             } else {
@@ -1100,7 +1083,7 @@ function updateFloatingSheetButtons() {
 
                         loadAllParticipants(hikeDate).then(participants => {
                             window._participantCount = participants.length;
-                            refreshAvailabilityBlock();
+                            renderAvailabilityInFloating();
                         });
                     });
             }
@@ -1250,7 +1233,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         }
     });
 
-    // Кнопка «иду впервые» — мгновенная регистрация с тактильным откликом
     document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
