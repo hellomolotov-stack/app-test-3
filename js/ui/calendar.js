@@ -1045,7 +1045,7 @@ function updateFloatingSheetButtons() {
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px); border-radius: 28px 28px 0 0;';
+        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px); border-radius: 28px 28px 28px 28px;';
 
         if (available === 0) {
             if (isGuest) {
