@@ -232,7 +232,7 @@ export function showBottomSheet(index) {
     if (currentHike && new Date(currentHike.date) >= new Date().setHours(0,0,0,0)) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
-            renderAvailabilityInFloating();
+            updateFloatingSheetButtons();
         });
     } else {
         window._participantCount = 0;
@@ -495,12 +495,11 @@ export function showBottomSheet(index) {
                     }
                 }
 
-                renderAvailabilityInFloating();
+                updateFloatingSheetButtons();
             });
         }
 
         updateFloatingSheetButtons();
-        renderAvailabilityInFloating();
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
@@ -534,42 +533,6 @@ export function showBottomSheet(index) {
                 log('slider_next', false, state.user);
             }
         });
-    }
-
-    function renderAvailabilityInFloating() {
-        const floating = document.querySelector('.floating-sheet-buttons');
-        if (!floating) return;
-        const hike = state.hikesList[sheetCurrentIndex];
-        if (!hike || new Date(hike.date) < new Date().setHours(0,0,0,0)) {
-            const oldAvail = floating.querySelector('.availability-floating');
-            if (oldAvail) oldAvail.remove();
-            return;
-        }
-        const bookedCount = window._participantCount || 0;
-        const MAX_TICKETS = 15;
-        const available = Math.max(0, MAX_TICKETS - bookedCount);
-        const progressPercent = Math.round((available / MAX_TICKETS) * 100);
-        const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
-        const accentColor = (hike.woman === 'yes') ? '#FB5EB0' : 'var(--yellow)';
-
-        let block = floating.querySelector('.availability-floating');
-        if (!block) {
-            block = document.createElement('div');
-            block.className = 'availability-floating';
-            // Отступы как у кнопок внутри floating-sheet-buttons
-            block.style.margin = '0 16px';
-            block.style.width = 'calc(100% - 32px)';
-            floating.appendChild(block);
-        }
-        block.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-            </div>
-            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px;">
-                <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-            </div>
-        `;
     }
 
     updateContent();
@@ -923,11 +886,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            renderAvailabilityInFloating();
-                        });
                     });
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
@@ -938,11 +896,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            renderAvailabilityInFloating();
-                        });
                     });
             }
             return;
@@ -996,8 +949,41 @@ function updateFloatingSheetButtons() {
     today.setHours(0, 0, 0, 0);
     const isPast = hikeDate < today;
     const isGuest = state.userCard.status !== 'active';
+    const MAX_TICKETS = 15;
+    const bookedCount = window._participantCount || 0;
+    const available = Math.max(0, MAX_TICKETS - bookedCount);
 
     container.innerHTML = '';
+
+    // Блок шкалы билетов (над кнопками)
+    if (!isPast) {
+        const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
+        const progressPercent = Math.round((available / MAX_TICKETS) * 100);
+        const availBlock = document.createElement('div');
+        availBlock.className = 'availability-floating';
+        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px);';
+        if (available === 0) {
+            availBlock.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                    <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+                </div>
+            `;
+        } else {
+            availBlock.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+                    </div>
+                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            `;
+        }
+        container.appendChild(availBlock);
+    }
 
     if (isPast) {
         const row = document.createElement('div');
@@ -1031,6 +1017,30 @@ function updateFloatingSheetButtons() {
         }
         container.appendChild(row);
         container.style.pointerEvents = 'none';
+        return;
+    }
+
+    // Если все билеты заняты и пользователь не зарегистрирован – кнопка "следующий хайк"
+    if (!isBooked && available === 0) {
+        const nextIndex = sheetCurrentIndex < state.hikesList.length - 1 ? sheetCurrentIndex + 1 : 0;
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-yellow';
+        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 900; font-size: 16px;';
+        nextBtn.textContent = 'следующий хайк ›';
+        nextBtn.addEventListener('click', () => {
+            haptic();
+            closeParticipantDropdown();
+            closeLeaderDropdown();
+            sheetCurrentIndex = nextIndex;
+            window._participantCount = 0;
+            loadAllParticipants(state.hikesList[sheetCurrentIndex].date).then(participants => {
+                window._participantCount = participants.length;
+                updateContent();
+            });
+            contentWrapper.scrollTop = 0;
+        });
+        container.appendChild(nextBtn);
+        container.style.pointerEvents = 'auto';
         return;
     }
 
@@ -1068,11 +1078,6 @@ function updateFloatingSheetButtons() {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            renderAvailabilityInFloating();
-                        });
                     });
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
@@ -1083,11 +1088,6 @@ function updateFloatingSheetButtons() {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            renderAvailabilityInFloating();
-                        });
                     });
             }
             log('cancel_click', false, state.user);
