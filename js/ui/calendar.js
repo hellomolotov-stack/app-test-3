@@ -318,27 +318,30 @@ export function showBottomSheet(index) {
             if (!isPast) {
                 const MAX_TICKETS = 15;
                 const bookedCount = window._participantCount || 0;
-                const available = Math.max(0, MAX_TICKETS - bookedCount);
                 const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-                const showOverlay = !isBooked && available === 0;
 
-                imageHtml = `
-                    <div class="image-container">
-                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'"
-                            style="${showOverlay ? 'filter: blur(8px);' : ''}">
-                        ${showOverlay ? `
+                // Показываем размытое изображение с оверлеем, только если гость и билетов нет
+                if (!isBooked && isGuest && bookedCount >= MAX_TICKETS) {
+                    imageHtml = `
+                        <div style="position: relative; width: 100%;">
+                            <img src="${hike.image}" style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 12px; filter: blur(6px);">
                             <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="max-width: 80%; max-height: 80%; object-fit: contain;">
+                                <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="max-width: 80%; max-height: 80%; object-fit: contain;" onerror="this.style.display='none'">
                             </div>
-                        ` : `
+                        </div>
+                    `;
+                } else {
+                    imageHtml = `
+                        <div class="image-container">
+                            <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
                             <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
                                 <span class="participant-text" style="color: ${accentColor};">идут</span>
                                 <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
                                 <div class="participant-avatars" id="participantAvatars"></div>
                             </div>
-                        `}
-                    </div>
-                `;
+                        </div>
+                    `;
+                }
             } else {
                 imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
             }
@@ -458,8 +461,8 @@ export function showBottomSheet(index) {
             if (currentUnsubscribe) currentUnsubscribe();
             currentUnsubscribe = subscribeToParticipantCount(hike.date, async (count, participants) => {
                 window._participantCount = count;
-                const avatarsEl = document.getElementById('participantAvatars');
                 const countEl = document.getElementById('participantCountValue');
+                const avatarsEl = document.getElementById('participantAvatars');
                 if (countEl) {
                     if (count === 0) {
                         countEl.style.display = 'inline';
@@ -507,6 +510,7 @@ export function showBottomSheet(index) {
                         avatarsEl.appendChild(img);
                     }
                 }
+
                 updateFloatingSheetButtons();
             });
         }
@@ -968,33 +972,69 @@ function updateFloatingSheetButtons() {
     container.innerHTML = '';
 
     // Блок шкалы билетов (над кнопками)
-    if (!isPast && !(isGuest && !isBooked && available === 0)) {
+    if (!isPast) {
         const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
         availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px);';
-        if (available === 0) {
-            availBlock.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                    <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-                </div>
-            `;
-        } else {
-            availBlock.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-                    </div>
-                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                    </div>
+        
+        let availHtml = `
+            <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+            </div>
+        `;
+        
+        if (available > 0) {
+            availHtml += `
+                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px;">
+                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
                 </div>
             `;
         }
+        
+        // Для гостей при отсутствии билетов — специальное сообщение
+        if (available === 0 && isGuest && !isBooked) {
+            const firstName = state.user?.first_name || 'друг';
+            availHtml += `
+                <div style="margin-top: 8px; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.4;">
+                    мест нет, но ты хочешь пойти? с <a href="#" id="cardLinkFromAvailability" style="color: var(--yellow); text-decoration: underline;">картой интеллигента</a> для тебя нет границ, ${firstName} сможешь пойти, даже если билеты закончились
+                </div>
+            `;
+        }
+        
+        // Для владельцев карты, которые не записаны
+        if (!isGuest && !isBooked) {
+            availHtml += `
+                <div style="margin-top: 4px; font-size: 13px; color: rgba(255,255,255,0.6);">
+                    у тебя карта интеллигента, ты можешь идти даже, когда места закончились
+                </div>
+            `;
+        }
+        
+        availBlock.innerHTML = availHtml;
         container.appendChild(availBlock);
+
+        // Обработчик клика по ссылке «карта интеллигента»
+        const cardLink = availBlock.querySelector('#cardLinkFromAvailability');
+        if (cardLink) {
+            cardLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                renderHome();
+                setTimeout(() => {
+                    const cardBlock = document.getElementById('cardBlock');
+                    if (cardBlock) {
+                        cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        cardBlock.style.transition = 'box-shadow 0.5s';
+                        cardBlock.style.boxShadow = '0 0 20px 5px white';
+                        setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
+                    }
+                }, 300);
+                closeBottomSheet();
+            });
+        }
     }
 
     if (isPast) {
@@ -1033,11 +1073,11 @@ function updateFloatingSheetButtons() {
     }
 
     // Если все билеты заняты и пользователь не зарегистрирован – кнопка "следующий хайк"
-    if (!isBooked && available === 0) {
+    if (!isBooked && available === 0 && isGuest) {
         const nextIndex = sheetCurrentIndex < state.hikesList.length - 1 ? sheetCurrentIndex + 1 : 0;
         const nextBtn = document.createElement('button');
         nextBtn.className = 'btn btn-outline';
-        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 500; font-size: 16px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.2), inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);';
+        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 500; font-size: 16px;';
         nextBtn.textContent = 'следующий хайк ›';
         nextBtn.addEventListener('click', () => {
             haptic();
