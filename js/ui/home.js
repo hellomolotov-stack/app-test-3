@@ -87,7 +87,7 @@ export function renderUserBookings(container) {
         const month = parseInt(dateParts[1], 10) - 1;
         const formattedDate = `${day} ${monthNames[month]}`;
         let title = booking.title;
-        const prefixes = ['тропа на ', 'тропа ', 'маршрут ', 'гора ', 'ущелье ', 'путь на ', 'восхождение на '];
+     const prefixes = ['тропа на ', 'тропа ', 'маршрут ', 'хайк на ', 'хайк ', 'гора ', 'ущелье ', 'путь на ', 'восхождение на '];
         let cleanedTitle = title;
         for (let prefix of prefixes) {
             if (cleanedTitle.toLowerCase().startsWith(prefix)) {
