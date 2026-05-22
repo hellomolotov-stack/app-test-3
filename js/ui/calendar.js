@@ -233,6 +233,7 @@ export function showBottomSheet(index) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
             updateFloatingSheetButtons();
+            updateImageOverlay();
         });
     } else {
         window._participantCount = 0;
@@ -316,32 +317,33 @@ export function showBottomSheet(index) {
         let imageHtml = '';
         if (hike.image) {
             if (!isPast) {
-                const MAX_TICKETS = 15;
-                const bookedCount = window._participantCount || 0;
-                const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-
-                // Показываем размытое изображение с оверлеем, только если гость и билетов нет
-                if (!isBooked && isGuest && bookedCount >= MAX_TICKETS) {
-                    imageHtml = `
-                        <div style="position: relative; width: 100%;">
-                            <img src="${hike.image}" style="width: 100%; aspect-ratio: 1 / 1; object-fit: cover; border-radius: 12px; filter: blur(6px);">
-                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-                                <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="max-width: 80%; max-height: 80%; object-fit: contain;" onerror="this.style.display='none'">
-                            </div>
+                const soldOut = !state.hikeBookingStatus[sheetCurrentIndex] && (window._participantCount || 0) >= 15;
+                imageHtml = `
+                    <div class="image-container ${soldOut ? 'sold-out-container' : ''}" id="hikeImageContainer">
+                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                        ${soldOut ? `<div class="sold-out-overlay" style="
+                            position: absolute;
+                            top: 0; left: 0;
+                            width: 100%; height: 100%;
+                            backdrop-filter: blur(6px);
+                            -webkit-backdrop-filter: blur(6px);
+                            background: rgba(0,0,0,0.1);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 5;
+                            border-radius: 12px;
+                            pointer-events: none;
+                        ">
+                            <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="width: 80%; max-width: 280px; opacity: 0.9; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                        </div>` : ''}
+                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                            <span class="participant-text" style="color: ${accentColor};">идут</span>
+                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                            <div class="participant-avatars" id="participantAvatars"></div>
                         </div>
-                    `;
-                } else {
-                    imageHtml = `
-                        <div class="image-container">
-                            <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                            <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                                <span class="participant-text" style="color: ${accentColor};">идут</span>
-                                <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
-                                <div class="participant-avatars" id="participantAvatars"></div>
-                            </div>
-                        </div>
-                    `;
-                }
+                    </div>
+                `;
             } else {
                 imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
             }
@@ -512,10 +514,12 @@ export function showBottomSheet(index) {
                 }
 
                 updateFloatingSheetButtons();
+                updateImageOverlay();
             });
         }
 
         updateFloatingSheetButtons();
+        updateImageOverlay();
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
@@ -549,6 +553,42 @@ export function showBottomSheet(index) {
                 log('slider_next', false, state.user);
             }
         });
+    }
+
+    function updateImageOverlay() {
+        const hike = state.hikesList[sheetCurrentIndex];
+        if (!hike || new Date(hike.date) < new Date().setHours(0,0,0,0)) return;
+        const container = document.getElementById('hikeImageContainer');
+        if (!container) return;
+        const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+        const soldOut = !isBooked && (window._participantCount || 0) >= 15;
+        if (soldOut) {
+            container.classList.add('sold-out-container');
+            if (!container.querySelector('.sold-out-overlay')) {
+                const overlayDiv = document.createElement('div');
+                overlayDiv.className = 'sold-out-overlay';
+                overlayDiv.style.cssText = `
+                    position: absolute;
+                    top: 0; left: 0;
+                    width: 100%; height: 100%;
+                    backdrop-filter: blur(6px);
+                    -webkit-backdrop-filter: blur(6px);
+                    background: rgba(0,0,0,0.1);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 5;
+                    border-radius: 12px;
+                    pointer-events: none;
+                `;
+                overlayDiv.innerHTML = `<img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="width: 80%; max-width: 280px; opacity: 0.9; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">`;
+                container.appendChild(overlayDiv);
+            }
+        } else {
+            container.classList.remove('sold-out-container');
+            const overlay = container.querySelector('.sold-out-overlay');
+            if (overlay) overlay.remove();
+        }
     }
 
     updateContent();
@@ -902,6 +942,12 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
+
+                        loadAllParticipants(hikeDate).then(participants => {
+                            window._participantCount = participants.length;
+                            updateFloatingSheetButtons();
+                            updateImageOverlay();
+                        });
                     });
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
@@ -912,6 +958,12 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
+
+                        loadAllParticipants(hikeDate).then(participants => {
+                            window._participantCount = participants.length;
+                            updateFloatingSheetButtons();
+                            updateImageOverlay();
+                        });
                     });
             }
             return;
@@ -971,57 +1023,63 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Блок шкалы билетов (над кнопками)
+    // Блок шкалы билетов
     if (!isPast) {
-        const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
-        const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
         availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px);';
-        
-        let availHtml = `
-            <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-            </div>
-        `;
-        
-        if (available > 0) {
-            availHtml += `
-                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px;">
-                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+
+        if (available === 0) {
+            // Нет мест
+            if (!isBooked) {
+                // Гость или владелец без регистрации
+                const firstName = state.user?.first_name || 'друг';
+                if (isGuest) {
+                    availBlock.innerHTML = `
+                        <div style="font-size: 14px; line-height: 1.4; color: #ffffff; padding: 4px 0;">
+                            билеты закончились ${firstName} 👀<br>
+                            да, следующий хайк только через неделю. для таких случаев у нас есть решение: если ты очень хочешь пойти, тебе пригодится наша <span style="color: #D9FD19; cursor: pointer;" class="guest-card-link">карта интеллигента</span>. она сделает тебя членом клуба и ты сможешь записаться на любой хайк, даже если мест уже нет.
+                        </div>
+                    `;
+                } else {
+                    // Владелец карты
+                    availBlock.innerHTML = `
+                        <div style="font-size: 14px; line-height: 1.4; color: #ffffff; padding: 4px 0;">
+                            билеты закончились, но у тебя карта интеллигента, ты можешь идти даже, когда места закончились
+                        </div>
+                    `;
+                }
+            } else {
+                // Зарегистрирован
+                availBlock.innerHTML = `
+                    <div style="font-size: 14px; line-height: 1.4; color: #ffffff; padding: 4px 0;">
+                        все билеты заняты, но ты в деле!
+                    </div>
+                `;
+            }
+        } else {
+            const ticketWord = `${available} ${getTicketWord(available)}`;
+            const progressPercent = Math.round((available / MAX_TICKETS) * 100);
+            availBlock.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+                    </div>
+                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+                    </div>
                 </div>
             `;
         }
-        
-        // Для гостей при отсутствии билетов — специальное сообщение
-        if (available === 0 && isGuest && !isBooked) {
-            const firstName = state.user?.first_name || 'друг';
-            availHtml += `
-                <div style="margin-top: 8px; font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.4;">
-                    мест нет, но ты хочешь пойти? с <a href="#" id="cardLinkFromAvailability" style="color: var(--yellow); text-decoration: underline;">картой интеллигента</a> для тебя нет границ, ${firstName} сможешь пойти, даже если билеты закончились
-                </div>
-            `;
-        }
-        
-        // Для владельцев карты, которые не записаны
-        if (!isGuest && !isBooked) {
-            availHtml += `
-                <div style="margin-top: 4px; font-size: 13px; color: rgba(255,255,255,0.6);">
-                    у тебя карта интеллигента, ты можешь идти даже, когда места закончились
-                </div>
-            `;
-        }
-        
-        availBlock.innerHTML = availHtml;
         container.appendChild(availBlock);
 
-        // Обработчик клика по ссылке «карта интеллигента»
-        const cardLink = availBlock.querySelector('#cardLinkFromAvailability');
+        // Обработчик клика по «карта интеллигента» для гостей
+        const cardLink = availBlock.querySelector('.guest-card-link');
         if (cardLink) {
-            cardLink.addEventListener('click', (e) => {
-                e.preventDefault();
+            cardLink.addEventListener('click', () => {
                 haptic();
+                closeBottomSheet();
                 renderHome();
                 setTimeout(() => {
                     const cardBlock = document.getElementById('cardBlock');
@@ -1030,9 +1088,12 @@ function updateFloatingSheetButtons() {
                         cardBlock.style.transition = 'box-shadow 0.5s';
                         cardBlock.style.boxShadow = '0 0 20px 5px white';
                         setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
+                        const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
+                        if (guestAccordion && !guestAccordion.classList.contains('show')) {
+                            guestAccordion.classList.add('show');
+                        }
                     }
                 }, 300);
-                closeBottomSheet();
             });
         }
     }
@@ -1072,12 +1133,12 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Если все билеты заняты и пользователь не зарегистрирован – кнопка "следующий хайк"
-    if (!isBooked && available === 0 && isGuest) {
+    // Кнопка «следующий хайк» или слайдер регистрации
+    if (!isBooked && available === 0) {
         const nextIndex = sheetCurrentIndex < state.hikesList.length - 1 ? sheetCurrentIndex + 1 : 0;
         const nextBtn = document.createElement('button');
-        nextBtn.className = 'btn btn-outline';
-        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 500; font-size: 16px;';
+        nextBtn.className = 'btn';
+        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 900; font-size: 16px; background: rgba(73, 138, 176, 0.15); color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);';
         nextBtn.textContent = 'следующий хайк ›';
         nextBtn.addEventListener('click', () => {
             haptic();
@@ -1130,6 +1191,12 @@ function updateFloatingSheetButtons() {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
+
+                        loadAllParticipants(hikeDate).then(participants => {
+                            window._participantCount = participants.length;
+                            updateFloatingSheetButtons();
+                            updateImageOverlay();
+                        });
                     });
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
@@ -1140,6 +1207,12 @@ function updateFloatingSheetButtons() {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
+
+                        loadAllParticipants(hikeDate).then(participants => {
+                            window._participantCount = participants.length;
+                            updateFloatingSheetButtons();
+                            updateImageOverlay();
+                        });
                     });
             }
             log('cancel_click', false, state.user);
