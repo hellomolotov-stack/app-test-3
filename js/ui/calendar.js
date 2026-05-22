@@ -58,7 +58,7 @@ export function renderCalendar(container) {
                 <div class="calendar-legend">
                     <span class="legend-item"><span class="legend-emoji">📷</span> – отчёт</span>
                     <span class="legend-item"><span class="legend-emoji">🎟️</span> – запись</span>
-                    <span class="legend-item"><span class="legend-emoji">✉️</span> – письмо</span>
+                    <span class="legend-item"><span class="legend-emoji">👀</span> – готовим хайк</span>
                 </div>
             </div>
             <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
@@ -72,11 +72,18 @@ export function renderCalendar(container) {
         const isToday = year === currentYear && month === currentMonth && day === currentDate;
         const hasHike = state.hikesData[dateStr] ? true : false;
         const isPast = new Date(dateStr) < today;
+        const dateObj = new Date(year, month, day);
+        const isSunday = dateObj.getDay() === 0;
+        const isFutureSunday = isSunday && !hasHike && dateObj >= new Date();
+
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
         if (hasHike) {
             classes += ' hike-day';
             if (isPast) classes += ' past';
+        }
+        if (isFutureSunday) {
+            classes += ' upcoming-hike';
         }
         let innerHtml = `${day}`;
         if (hasHike) {
@@ -92,8 +99,10 @@ export function renderCalendar(container) {
                 innerHtml += `<span class="calendar-emoji">🎟️</span>`;
                 classes += ' booked-day';
             }
+        } else if (isFutureSunday) {
+            innerHtml += `<span class="calendar-emoji">👀</span>`;
         }
-        if (hasHike) calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
+        if (hasHike || isFutureSunday) calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
         else calendarHtml += `<div class="${classes}">${day}</div>`;
     }
     calendarHtml += `</div></div>`;
@@ -124,13 +133,28 @@ export function renderCalendar(container) {
             }
         });
 
-    document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
+    document.querySelectorAll('.calendar-day.hike-day, .calendar-day.upcoming-hike').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
             const index = state.hikesList.findIndex(h => h.date === date);
             if (index !== -1) {
                 log('calendar_cell_click', state.userCard.status !== 'active', state.user, { date });
                 showBottomSheet(index);
+            } else if (el.classList.contains('upcoming-hike')) {
+                const firstName = state.user?.first_name || 'друг';
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal-content" style="max-width: 300px;">
+                        <div class="modal-title">уже готовим хайк</div>
+                        <div class="modal-text">мы уже планируем твоё новое приключение, ${firstName}. подробности станут доступны в понедельник вечером. будешь ждать?</div>
+                        <button class="btn btn-yellow" id="closeUpcomingPopup">буду ждать</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                const closeBtn = overlay.querySelector('#closeUpcomingPopup');
+                closeBtn.addEventListener('click', () => overlay.remove());
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
             }
         });
     });
@@ -183,6 +207,11 @@ function getTicketWord(count) {
     return 'билетов';
 }
 
+function getNextIndex() {
+    const current = sheetCurrentIndex;
+    return current < state.hikesList.length - 1 ? current + 1 : 0;
+}
+
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
@@ -233,7 +262,6 @@ export function showBottomSheet(index) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
             updateFloatingSheetButtons();
-            updateImageOverlay();
         });
     } else {
         window._participantCount = 0;
@@ -317,26 +345,9 @@ export function showBottomSheet(index) {
         let imageHtml = '';
         if (hike.image) {
             if (!isPast) {
-                const soldOut = !state.hikeBookingStatus[sheetCurrentIndex] && (window._participantCount || 0) >= 15;
                 imageHtml = `
-                    <div class="image-container ${soldOut ? 'sold-out-container' : ''}" id="hikeImageContainer">
+                    <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                        ${soldOut ? `<div class="sold-out-overlay" style="
-                            position: absolute;
-                            top: 0; left: 0;
-                            width: 100%; height: 100%;
-                            backdrop-filter: blur(6px);
-                            -webkit-backdrop-filter: blur(6px);
-                            background: rgba(0,0,0,0.1);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            z-index: 5;
-                            border-radius: 12px;
-                            pointer-events: none;
-                        ">
-                            <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="width: 80%; max-width: 280px; opacity: 0.9; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-                        </div>` : ''}
                         <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
                             <span class="participant-text" style="color: ${accentColor};">идут</span>
                             <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
@@ -514,12 +525,10 @@ export function showBottomSheet(index) {
                 }
 
                 updateFloatingSheetButtons();
-                updateImageOverlay();
             });
         }
 
         updateFloatingSheetButtons();
-        updateImageOverlay();
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
@@ -553,42 +562,6 @@ export function showBottomSheet(index) {
                 log('slider_next', false, state.user);
             }
         });
-    }
-
-    function updateImageOverlay() {
-        const hike = state.hikesList[sheetCurrentIndex];
-        if (!hike || new Date(hike.date) < new Date().setHours(0,0,0,0)) return;
-        const container = document.getElementById('hikeImageContainer');
-        if (!container) return;
-        const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-        const soldOut = !isBooked && (window._participantCount || 0) >= 15;
-        if (soldOut) {
-            container.classList.add('sold-out-container');
-            if (!container.querySelector('.sold-out-overlay')) {
-                const overlayDiv = document.createElement('div');
-                overlayDiv.className = 'sold-out-overlay';
-                overlayDiv.style.cssText = `
-                    position: absolute;
-                    top: 0; left: 0;
-                    width: 100%; height: 100%;
-                    backdrop-filter: blur(6px);
-                    -webkit-backdrop-filter: blur(6px);
-                    background: rgba(0,0,0,0.1);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 5;
-                    border-radius: 12px;
-                    pointer-events: none;
-                `;
-                overlayDiv.innerHTML = `<img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="width: 80%; max-width: 280px; opacity: 0.9; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">`;
-                container.appendChild(overlayDiv);
-            }
-        } else {
-            container.classList.remove('sold-out-container');
-            const overlay = container.querySelector('.sold-out-overlay');
-            if (overlay) overlay.remove();
-        }
     }
 
     updateContent();
@@ -942,12 +915,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            updateFloatingSheetButtons();
-                            updateImageOverlay();
-                        });
                     });
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
@@ -958,12 +925,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            updateFloatingSheetButtons();
-                            updateImageOverlay();
-                        });
                     });
             }
             return;
@@ -1020,51 +981,40 @@ function updateFloatingSheetButtons() {
     const MAX_TICKETS = 15;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
+    const firstName = state.user?.first_name || 'друг';
 
     container.innerHTML = '';
 
-    // Блок шкалы билетов
-    if (!isPast) {
+    // Блок доступности билетов
+    if (!isPast && !isBooked) {
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px);';
+        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px); background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 28px; padding: 12px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2);';
 
-        if (available === 0) {
-            // Нет мест
-            if (!isBooked) {
-                // Гость или владелец без регистрации
-                const firstName = state.user?.first_name || 'друг';
-                if (isGuest) {
-                    availBlock.innerHTML = `
-                        <div style="font-size: 14px; line-height: 1.4; color: #ffffff; padding: 4px 0;">
-                            билеты закончились ${firstName} 👀<br>
-                            да, следующий хайк только через неделю. для таких случаев у нас есть решение: если ты очень хочешь пойти, тебе пригодится наша <span style="color: #D9FD19; cursor: pointer;" class="guest-card-link">карта интеллигента</span>. она сделает тебя членом клуба и ты сможешь записаться на любой хайк, даже если мест уже нет.
-                        </div>
-                    `;
-                } else {
-                    // Владелец карты
-                    availBlock.innerHTML = `
-                        <div style="font-size: 14px; line-height: 1.4; color: #ffffff; padding: 4px 0;">
-                            билеты закончились, но у тебя карта интеллигента, ты можешь идти даже, когда места закончились
-                        </div>
-                    `;
-                }
-            } else {
-                // Зарегистрирован
-                availBlock.innerHTML = `
-                    <div style="font-size: 14px; line-height: 1.4; color: #ffffff; padding: 4px 0;">
-                        все билеты заняты, но ты в деле!
-                    </div>
-                `;
-            }
+        if (available === 0 && isGuest) {
+            availBlock.innerHTML = `
+                <div style="font-size: 14px; color: #ffffff; line-height: 1.4;">
+                    да, следующий хайк только через неделю, ${firstName}. для таких случаев у нас есть решение: если ты очень хочешь пойти, тебе пригодится наша <span style="color: #D9FD19; cursor: pointer;" id="guestCardLink">карта интеллигента</span>. она сделает тебя членом клуба и ты сможешь записаться на любой хайк, даже если мест уже нет
+                </div>
+            `;
+        } else if (available === 0 && !isGuest) {
+            availBlock.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-bottom: 8px;">
+                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                    <span style="font-size: 14px; color: #ffffff;">🎟️ билеты закончились</span>
+                </div>
+                <div style="font-size: 14px; color: #ffffff; line-height: 1.4;">
+                    у тебя карта интеллигента, ты можешь идти даже, когда места закончились
+                </div>
+            `;
         } else {
-            const ticketWord = `${available} ${getTicketWord(available)}`;
+            const ticketWord = getTicketWord(available);
             const progressPercent = Math.round((available / MAX_TICKETS) * 100);
             availBlock.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                         <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
                     </div>
                     <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
                         <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
@@ -1073,29 +1023,6 @@ function updateFloatingSheetButtons() {
             `;
         }
         container.appendChild(availBlock);
-
-        // Обработчик клика по «карта интеллигента» для гостей
-        const cardLink = availBlock.querySelector('.guest-card-link');
-        if (cardLink) {
-            cardLink.addEventListener('click', () => {
-                haptic();
-                closeBottomSheet();
-                renderHome();
-                setTimeout(() => {
-                    const cardBlock = document.getElementById('cardBlock');
-                    if (cardBlock) {
-                        cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        cardBlock.style.transition = 'box-shadow 0.5s';
-                        cardBlock.style.boxShadow = '0 0 20px 5px white';
-                        setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
-                        const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
-                        if (guestAccordion && !guestAccordion.classList.contains('show')) {
-                            guestAccordion.classList.add('show');
-                        }
-                    }
-                }, 300);
-            });
-        }
     }
 
     if (isPast) {
@@ -1133,17 +1060,17 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Кнопка «следующий хайк» или слайдер регистрации
+    // Если все билеты заняты и пользователь не зарегистрирован – кнопка "следующий хайк"
     if (!isBooked && available === 0) {
-        const nextIndex = sheetCurrentIndex < state.hikesList.length - 1 ? sheetCurrentIndex + 1 : 0;
         const nextBtn = document.createElement('button');
         nextBtn.className = 'btn';
-        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 900; font-size: 16px; background: rgba(73, 138, 176, 0.15); color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);';
+        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); font-weight: 500; font-size: 16px;';
         nextBtn.textContent = 'следующий хайк ›';
         nextBtn.addEventListener('click', () => {
             haptic();
             closeParticipantDropdown();
             closeLeaderDropdown();
+            const nextIndex = getNextIndex();
             sheetCurrentIndex = nextIndex;
             window._participantCount = 0;
             loadAllParticipants(state.hikesList[sheetCurrentIndex].date).then(participants => {
@@ -1191,12 +1118,6 @@ function updateFloatingSheetButtons() {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            updateFloatingSheetButtons();
-                            updateImageOverlay();
-                        });
                     });
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
@@ -1207,12 +1128,6 @@ function updateFloatingSheetButtons() {
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
-
-                        loadAllParticipants(hikeDate).then(participants => {
-                            window._participantCount = participants.length;
-                            updateFloatingSheetButtons();
-                            updateImageOverlay();
-                        });
                     });
             }
             log('cancel_click', false, state.user);
