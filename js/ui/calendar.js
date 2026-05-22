@@ -25,14 +25,12 @@ function hasHikesInMonth(year, month) {
     return state.hikesList.some(hike => hike.date.startsWith(monthStr));
 }
 
-// Проверяем, является ли день будущим воскресеньем без хайка
 function isFutureSundayWithoutHike(dateStr) {
     const date = new Date(dateStr);
     const today = new Date();
     today.setHours(0,0,0,0);
-    if (date < today) return false;               // уже прошло
-    if (date.getDay() !== 0) return false;        // не воскресенье
-    // Проверяем, есть ли хайк на эту дату
+    if (date < today) return false;
+    if (date.getDay() !== 0) return false;
     return !state.hikesData[dateStr];
 }
 
@@ -360,35 +358,34 @@ export function showBottomSheet(index) {
 
         let imageHtml = '';
         if (hike.image) {
-            imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
-            if (!isPast) {
-                const bookedCount = window._participantCount || 0;
-                const MAX_TICKETS = 15;
-                const isSoldOut = bookedCount >= MAX_TICKETS;
-                if (isSoldOut) {
-                    imageHtml = `
-                        <div class="image-container" style="position: relative;">
-                            <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" style="filter: blur(6px);">
-                            <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 300px; z-index: 10; pointer-events: none;">
-                            <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                                <span class="participant-text" style="color: ${accentColor};">идут</span>
-                                <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
-                                <div class="participant-avatars" id="participantAvatars"></div>
-                            </div>
+            const bookedCount = window._participantCount || 0;
+            const MAX_TICKETS = 15;
+            const isSoldOut = bookedCount >= MAX_TICKETS;
+            if (!isPast && isSoldOut) {
+                imageHtml = `
+                    <div class="image-container" style="position: relative;">
+                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" style="filter: blur(6px);">
+                        <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 300px; z-index: 10; pointer-events: none;">
+                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                            <span class="participant-text" style="color: ${accentColor};">идут</span>
+                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                            <div class="participant-avatars" id="participantAvatars"></div>
                         </div>
-                    `;
-                } else {
-                    imageHtml = `
-                        <div class="image-container">
-                            <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                            <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                                <span class="participant-text" style="color: ${accentColor};">идут</span>
-                                <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
-                                <div class="participant-avatars" id="participantAvatars"></div>
-                            </div>
+                    </div>
+                `;
+            } else if (!isPast) {
+                imageHtml = `
+                    <div class="image-container">
+                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                            <span class="participant-text" style="color: ${accentColor};">идут</span>
+                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                            <div class="participant-avatars" id="participantAvatars"></div>
                         </div>
-                    `;
-                }
+                    </div>
+                `;
+            } else {
+                imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
             }
         }
 
@@ -1030,13 +1027,21 @@ function updateFloatingSheetButtons() {
 
         if (available === 0) {
             if (isGuest) {
+                // Текст из Firebase (popups/guest_soldout_message)
+                const popupText = (state.popups && state.popups.guest_soldout_message && state.popups.guest_soldout_message.text) || '';
+                let messageHtml = '';
+                if (popupText.trim()) {
+                    let text = popupText.replace(/\[имя\]/gi, firstName);
+                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 600;">$1</a>');
+                    text = text.replace(/\n/g, '<br>');
+                    messageHtml = text;
+                } else {
+                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 600;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
+                }
                 availBlock.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-bottom: 8px;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-                    </div>
                     <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4;">
-                        мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 600;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет
+                        ${messageHtml}
                     </div>
                 `;
             } else {
@@ -1065,7 +1070,6 @@ function updateFloatingSheetButtons() {
         }
         container.appendChild(availBlock);
 
-        // Обработчик для ссылки на карту
         setTimeout(() => {
             const cardLink = document.getElementById('cardLinkFromAvailability');
             if (cardLink) {
@@ -1121,7 +1125,6 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Если все билеты заняты и пользователь без карты – только блок с текстом, без кнопки "следующий хайк"
     if (!isBooked && isSoldOut && isGuest) {
         container.style.pointerEvents = 'none';
         return;
