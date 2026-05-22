@@ -168,7 +168,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
 
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
-    centerBtn.innerHTML = `<button class="btn btn-yellow profile-action-btn" id="profileActionBtn">🫆 создать профиль</button>`;
+    centerBtn.innerHTML = `<button class="btn btn-yellow profile-action-btn" id="profileActionBtn">🔒 создать профиль</button>`;
     centerBtn.style.cssText = 'position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; z-index: 100 !important; pointer-events: auto !important;';
     document.body.appendChild(centerBtn);
 
