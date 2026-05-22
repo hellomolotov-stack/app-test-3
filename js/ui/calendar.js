@@ -313,19 +313,35 @@ export function showBottomSheet(index) {
         todayDate.setHours(0, 0, 0, 0);
         const isPast = hikeDate < todayDate;
 
+        const MAX_TICKETS = 15;
+        const bookedCount = window._participantCount || 0;
+        const soldOut = !isPast && bookedCount >= MAX_TICKETS;
+        const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+        const showBlurOverlay = soldOut && !isBooked;
+
         let imageHtml = '';
         if (hike.image) {
             if (!isPast) {
-                imageHtml = `
-                    <div class="image-container">
-                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                            <span class="participant-text" style="color: ${accentColor};">идут</span>
-                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
-                            <div class="participant-avatars" id="participantAvatars"></div>
+                if (showBlurOverlay) {
+                    imageHtml = `
+                        <div style="position: relative; width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border-radius: 12px;">
+                            <img src="${hike.image}" style="width: 100%; height: 100%; object-fit: cover; filter: blur(12px);">
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3);"></div>
+                            <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 80%; max-height: 80%;">
                         </div>
-                    </div>
-                `;
+                    `;
+                } else {
+                    imageHtml = `
+                        <div class="image-container">
+                            <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                            <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                                <span class="participant-text" style="color: ${accentColor};">идут</span>
+                                <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                                <div class="participant-avatars" id="participantAvatars"></div>
+                            </div>
+                        </div>
+                    `;
+                }
             } else {
                 imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
             }
@@ -394,8 +410,7 @@ export function showBottomSheet(index) {
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
         let inviteButtonHtml = '';
-        const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-        if (isBooked && !isPast) {
+        if (isBooked && !isPast && !soldOut) {
             const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
             inviteButtonHtml = `
                 <div style="margin-top: 16px;">
@@ -952,36 +967,29 @@ function updateFloatingSheetButtons() {
     const MAX_TICKETS = 15;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
+    const soldOut = !isPast && available === 0;
 
     container.innerHTML = '';
 
-    // Блок шкалы билетов (над кнопками)
-    if (!isPast) {
-        const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
+    // Блок шкалы билетов (над кнопками) — показываем только если есть доступные билеты
+    if (!isPast && !soldOut) {
+        const ticketWord = `${available} ${getTicketWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
+        // Ширина будет подстраиваться под кнопки — задаём margin как у внутренних элементов
         availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px);';
-        if (available === 0) {
-            availBlock.innerHTML = `
+        availBlock.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                     <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
                     <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
                 </div>
-            `;
-        } else {
-            availBlock.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-                    </div>
-                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                    </div>
+                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
                 </div>
-            `;
-        }
+            </div>
+        `;
         container.appendChild(availBlock);
     }
 
@@ -1021,7 +1029,7 @@ function updateFloatingSheetButtons() {
     }
 
     // Если все билеты заняты и пользователь не зарегистрирован – кнопка "следующий хайк"
-    if (!isBooked && available === 0) {
+    if (soldOut && !isBooked) {
         const nextIndex = sheetCurrentIndex < state.hikesList.length - 1 ? sheetCurrentIndex + 1 : 0;
         const nextBtn = document.createElement('button');
         nextBtn.className = 'btn btn-yellow';
