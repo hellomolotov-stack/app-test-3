@@ -87,7 +87,7 @@ export function renderUserBookings(container) {
         const month = parseInt(dateParts[1], 10) - 1;
         const formattedDate = `${day} ${monthNames[month]}`;
         let title = booking.title;
-     const prefixes = ['тропа на ', 'тропа ', 'маршрут ', 'хайк на ', 'хайк ', 'гора ', 'ущелье ', 'путь на ', 'восхождение на '];
+        const prefixes = ['тропа на ', 'тропа ', 'маршрут ', 'хайк на ', 'хайк ', 'гора ', 'ущелье ', 'путь на ', 'восхождение на '];
         let cleanedTitle = title;
         for (let prefix of prefixes) {
             if (cleanedTitle.toLowerCase().startsWith(prefix)) {
@@ -227,7 +227,7 @@ function renderMastermindSummaries() {
                 }
             }
             const readBtn = isGuest
-                ? `<button class="btn btn-yellow guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;" data-date="${item.date}" data-title="${item.title || ''}">читать</button>`
+                ? `<button class="btn btn-outline guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">🔒</button>`
                 : `<a href="${item.link}" target="_blank" class="btn btn-yellow mastermind-read-link" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
