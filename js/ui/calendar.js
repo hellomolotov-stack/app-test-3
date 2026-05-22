@@ -556,15 +556,20 @@ export function showBottomSheet(index) {
         if (!block) {
             block = document.createElement('div');
             block.className = 'availability-floating';
-            floating.appendChild(block);
+            // Вставляем блок перед первым элементом в контейнере
+            floating.insertBefore(block, floating.firstChild);
         }
+        block.style.width = '100%';
+        block.style.boxSizing = 'border-box';
         block.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
-            </div>
-            <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden; margin-top: 6px;">
-                <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                    <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
+                </div>
+                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
+                </div>
             </div>
         `;
     }
