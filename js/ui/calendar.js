@@ -1054,11 +1054,13 @@ function updateFloatingSheetButtons() {
                 if (popupText.trim()) {
                     let text = popupText.replace(/\[имя\]/gi, firstName);
                     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
+                    // Ссылка с явным жёлтым цветом и !important
+                    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
                     text = text.replace(/\n/g, '<br>');
                     messageHtml = text;
                 } else {
-                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
+                    // Резервный текст, если в Firebase ничего нет
+                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
                 }
                 availBlock.innerHTML = `
                     <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4;">
@@ -1091,6 +1093,7 @@ function updateFloatingSheetButtons() {
         }
         container.appendChild(availBlock);
 
+        // Обработчик для ссылки на карту (если есть id="cardLinkFromAvailability")
         setTimeout(() => {
             const cardLink = document.getElementById('cardLinkFromAvailability');
             if (cardLink) {
