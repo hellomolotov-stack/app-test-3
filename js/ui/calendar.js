@@ -25,6 +25,17 @@ function hasHikesInMonth(year, month) {
     return state.hikesList.some(hike => hike.date.startsWith(monthStr));
 }
 
+// Проверяем, является ли день будущим воскресеньем без хайка
+function isFutureSundayWithoutHike(dateStr) {
+    const date = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    if (date < today) return false;               // уже прошло
+    if (date.getDay() !== 0) return false;        // не воскресенье
+    // Проверяем, есть ли хайк на эту дату
+    return !state.hikesData[dateStr];
+}
+
 export function renderCalendar(container) {
     const year = currentCalendarYear,
         month = currentCalendarMonth;
@@ -72,19 +83,17 @@ export function renderCalendar(container) {
         const isToday = year === currentYear && month === currentMonth && day === currentDate;
         const hasHike = state.hikesData[dateStr] ? true : false;
         const isPast = new Date(dateStr) < today;
-        const dateObj = new Date(year, month, day);
-        const isSunday = dateObj.getDay() === 0;
-        const isFutureSunday = isSunday && !hasHike && dateObj >= new Date();
+        const isUpcomingSunday = isFutureSundayWithoutHike(dateStr);
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
         if (hasHike) {
             classes += ' hike-day';
             if (isPast) classes += ' past';
+        } else if (isUpcomingSunday) {
+            classes += ' upcoming-sunday';
         }
-        if (isFutureSunday) {
-            classes += ' upcoming-hike';
-        }
+
         let innerHtml = `${day}`;
         if (hasHike) {
             const hikeIndex = state.hikesList.findIndex(h => h.date === dateStr);
@@ -99,11 +108,15 @@ export function renderCalendar(container) {
                 innerHtml += `<span class="calendar-emoji">🎟️</span>`;
                 classes += ' booked-day';
             }
-        } else if (isFutureSunday) {
+        } else if (isUpcomingSunday) {
             innerHtml += `<span class="calendar-emoji">👀</span>`;
         }
-        if (hasHike || isFutureSunday) calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
-        else calendarHtml += `<div class="${classes}">${day}</div>`;
+
+        if (hasHike || isUpcomingSunday) {
+            calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
+        } else {
+            calendarHtml += `<div class="${classes}">${day}</div>`;
+        }
     }
     calendarHtml += `</div></div>`;
     container.innerHTML = calendarHtml;
@@ -133,31 +146,39 @@ export function renderCalendar(container) {
             }
         });
 
-    document.querySelectorAll('.calendar-day.hike-day, .calendar-day.upcoming-hike').forEach(el => {
+    document.querySelectorAll('.calendar-day.hike-day, .calendar-day.upcoming-sunday').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
-            const index = state.hikesList.findIndex(h => h.date === date);
-            if (index !== -1) {
-                log('calendar_cell_click', state.userCard.status !== 'active', state.user, { date });
-                showBottomSheet(index);
-            } else if (el.classList.contains('upcoming-hike')) {
-                const firstName = state.user?.first_name || 'друг';
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                overlay.innerHTML = `
-                    <div class="modal-content" style="max-width: 300px;">
-                        <div class="modal-title">уже готовим хайк</div>
-                        <div class="modal-text">мы уже планируем твоё новое приключение, ${firstName}. подробности станут доступны в понедельник вечером. будешь ждать?</div>
-                        <button class="btn btn-yellow" id="closeUpcomingPopup">буду ждать</button>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-                const closeBtn = overlay.querySelector('#closeUpcomingPopup');
-                closeBtn.addEventListener('click', () => overlay.remove());
-                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+            if (el.classList.contains('upcoming-sunday')) {
+                showUpcomingPopup(date);
+            } else {
+                const index = state.hikesList.findIndex(h => h.date === date);
+                if (index !== -1) {
+                    log('calendar_cell_click', state.userCard.status !== 'active', state.user, { date });
+                    showBottomSheet(index);
+                }
             }
         });
     });
+}
+
+function showUpcomingPopup(dateStr) {
+    const firstName = state.user?.first_name || 'друг';
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-title">уже готовим хайк</div>
+            <div class="modal-text">мы уже планируем твоё новое приключение, ${firstName}. подробности станут доступны в понедельник вечером. будешь ждать?</div>
+            <button class="btn btn-yellow" id="upcomingOkBtn" style="margin-top: 16px;">буду ждать</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('upcomingOkBtn').addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
 }
 
 let sheetCurrentIndex = 0;
@@ -205,11 +226,6 @@ function getTicketWord(count) {
     if (lastDigit === 1 && lastTwoDigits !== 11) return 'билет';
     if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) return 'билета';
     return 'билетов';
-}
-
-function getNextIndex() {
-    const current = sheetCurrentIndex;
-    return current < state.hikesList.length - 1 ? current + 1 : 0;
 }
 
 export function showBottomSheet(index) {
@@ -344,19 +360,35 @@ export function showBottomSheet(index) {
 
         let imageHtml = '';
         if (hike.image) {
+            imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
             if (!isPast) {
-                imageHtml = `
-                    <div class="image-container">
-                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
-                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                            <span class="participant-text" style="color: ${accentColor};">идут</span>
-                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
-                            <div class="participant-avatars" id="participantAvatars"></div>
+                const bookedCount = window._participantCount || 0;
+                const MAX_TICKETS = 15;
+                const isSoldOut = bookedCount >= MAX_TICKETS;
+                if (isSoldOut) {
+                    imageHtml = `
+                        <div class="image-container" style="position: relative;">
+                            <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" style="filter: blur(6px);">
+                            <img src="https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80%; max-width: 300px; z-index: 10; pointer-events: none;">
+                            <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                                <span class="participant-text" style="color: ${accentColor};">идут</span>
+                                <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                                <div class="participant-avatars" id="participantAvatars"></div>
+                            </div>
                         </div>
-                    </div>
-                `;
-            } else {
-                imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
+                    `;
+                } else {
+                    imageHtml = `
+                        <div class="image-container">
+                            <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">
+                            <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                                <span class="participant-text" style="color: ${accentColor};">идут</span>
+                                <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                                <div class="participant-avatars" id="participantAvatars"></div>
+                            </div>
+                        </div>
+                    `;
+                }
             }
         }
 
@@ -444,7 +476,9 @@ export function showBottomSheet(index) {
                 </div>
                 ${tagsHtml}
             </div>
-            <div>${imageHtml}${extraInfoHtml}${sectionsHtml}</div>
+            ${imageHtml}
+            ${extraInfoHtml}
+            ${sectionsHtml}
             ${inviteButtonHtml}
         `;
 
@@ -981,40 +1015,47 @@ function updateFloatingSheetButtons() {
     const MAX_TICKETS = 15;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
+    const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
     container.innerHTML = '';
 
-    // Блок доступности билетов
+    // Блок шкалы билетов (над кнопками)
     if (!isPast && !isBooked) {
+        const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
+        const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px); background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-radius: 28px; padding: 12px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2);';
+        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px);';
 
-        if (available === 0 && isGuest) {
-            availBlock.innerHTML = `
-                <div style="font-size: 14px; color: #ffffff; line-height: 1.4;">
-                    да, следующий хайк только через неделю, ${firstName}. для таких случаев у нас есть решение: если ты очень хочешь пойти, тебе пригодится наша <span style="color: #D9FD19; cursor: pointer;" id="guestCardLink">карта интеллигента</span>. она сделает тебя членом клуба и ты сможешь записаться на любой хайк, даже если мест уже нет
-                </div>
-            `;
-        } else if (available === 0 && !isGuest) {
-            availBlock.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-bottom: 8px;">
-                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                    <span style="font-size: 14px; color: #ffffff;">🎟️ билеты закончились</span>
-                </div>
-                <div style="font-size: 14px; color: #ffffff; line-height: 1.4;">
-                    у тебя карта интеллигента, ты можешь идти даже, когда места закончились
-                </div>
-            `;
+        if (available === 0) {
+            if (isGuest) {
+                availBlock.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+                    </div>
+                    <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4;">
+                        мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19; text-decoration: none; font-weight: 600;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет
+                    </div>
+                `;
+            } else {
+                availBlock.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
+                    </div>
+                    <div style="font-size: 14px; color: rgba(255,255,255,0.9);">
+                        у тебя карта интеллигента, ты можешь идти даже, когда места закончились
+                    </div>
+                `;
+            }
         } else {
-            const ticketWord = getTicketWord(available);
-            const progressPercent = Math.round((available / MAX_TICKETS) * 100);
             availBlock.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                         <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${available} ${ticketWord}</span>
+                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
                     </div>
                     <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
                         <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
@@ -1023,6 +1064,26 @@ function updateFloatingSheetButtons() {
             `;
         }
         container.appendChild(availBlock);
+
+        // Обработчик для ссылки на карту
+        setTimeout(() => {
+            const cardLink = document.getElementById('cardLinkFromAvailability');
+            if (cardLink) {
+                cardLink.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    renderHome();
+                    setTimeout(() => {
+                        const cardBlock = document.getElementById('cardBlock');
+                        if (cardBlock) {
+                            cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            cardBlock.style.transition = 'box-shadow 0.5s';
+                            cardBlock.style.boxShadow = '0 0 20px 5px white';
+                            setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
+                        }
+                    }, 300);
+                });
+            }
+        }, 50);
     }
 
     if (isPast) {
@@ -1060,27 +1121,9 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Если все билеты заняты и пользователь не зарегистрирован – кнопка "следующий хайк"
-    if (!isBooked && available === 0) {
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'btn';
-        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); font-weight: 500; font-size: 16px;';
-        nextBtn.textContent = 'следующий хайк ›';
-        nextBtn.addEventListener('click', () => {
-            haptic();
-            closeParticipantDropdown();
-            closeLeaderDropdown();
-            const nextIndex = getNextIndex();
-            sheetCurrentIndex = nextIndex;
-            window._participantCount = 0;
-            loadAllParticipants(state.hikesList[sheetCurrentIndex].date).then(participants => {
-                window._participantCount = participants.length;
-                updateContent();
-            });
-            contentWrapper.scrollTop = 0;
-        });
-        container.appendChild(nextBtn);
-        container.style.pointerEvents = 'auto';
+    // Если все билеты заняты и пользователь без карты – только блок с текстом, без кнопки "следующий хайк"
+    if (!isBooked && isSoldOut && isGuest) {
+        container.style.pointerEvents = 'none';
         return;
     }
 
