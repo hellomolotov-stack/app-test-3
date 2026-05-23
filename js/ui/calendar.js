@@ -32,7 +32,6 @@ function isFutureSundayWithoutHike(dateStr) {
     today.setHours(0,0,0,0);
     if (date < today) return false;               // уже прошло
     if (date.getDay() !== 0) return false;        // не воскресенье
-    // Проверяем, есть ли хайк на эту дату
     return !state.hikesData[dateStr];
 }
 
@@ -164,36 +163,34 @@ export function renderCalendar(container) {
 
 async function showUpcomingPopup(dateStr) {
     const firstName = state.user?.first_name || 'друг';
-    // Загружаем контент попапа из Firebase (если есть)
-    let title = 'уже готовим хайк';
-    let text = `мы уже планируем твоё новое приключение, ${firstName}. подробности станут доступны в понедельник вечером. будешь ждать?`;
-    let buttonText = 'буду ждать';
+    let popupData = {
+        title: 'уже готовим хайк',
+        text: `мы уже планируем твоё новое приключение, ${firstName}. подробности станут доступны в понедельник вечером. будешь ждать?`,
+        button_text: 'буду ждать'
+    };
 
     try {
-        const snapshot = await getDatabase().ref('popups/upcoming_hike_popup').once('value');
-        const data = snapshot.val();
-        if (data) {
-            if (data.title) title = data.title;
-            if (data.text) {
-                let t = data.text.replace(/\[имя\]/gi, firstName);
-                t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
-                t = t.replace(/\n/g, '<br>');
-                text = t;
+        const db = getDatabase();
+        if (db) {
+            const snap = await db.ref('popups/upcoming_hike_popup').once('value');
+            const val = snap.val();
+            if (val) {
+                if (val.title) popupData.title = val.title;
+                if (val.text) popupData.text = val.text.replace(/\[имя\]/gi, firstName);
+                if (val.button_text) popupData.button_text = val.button_text;
             }
-            if (data.button_text) buttonText = data.button_text;
         }
     } catch (e) {
-        console.warn('Не удалось загрузить upcoming_hike_popup:', e);
+        console.warn('Не удалось загрузить попап upcoming_hike_popup, используется резервный текст.');
     }
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title">${title}</div>
-            <div class="modal-text">${text}</div>
-            <button class="btn btn-yellow" id="upcomingOkBtn" style="margin-top: 16px;">${buttonText}</button>
+            <div class="modal-title">${popupData.title}</div>
+            <div class="modal-text">${popupData.text}</div>
+            <button class="btn btn-yellow" id="upcomingOkBtn" style="margin-top: 16px;">${popupData.button_text}</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -321,6 +318,7 @@ export function showBottomSheet(index) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
             updateFloatingSheetButtons();
+            // Обновить блюр
             const container = contentWrapper.querySelector('.image-container');
             if (container) {
                 const isSoldOut = window._participantCount >= 15;
@@ -408,6 +406,7 @@ export function showBottomSheet(index) {
 
         let imageHtml = '';
         if (hike.image) {
+            imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
             if (!isPast) {
                 imageHtml = `
                     <div class="image-container">
@@ -419,8 +418,6 @@ export function showBottomSheet(index) {
                         </div>
                     </div>
                 `;
-            } else {
-                imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'">`;
             }
         }
 
@@ -514,10 +511,14 @@ export function showBottomSheet(index) {
             ${inviteButtonHtml}
         `;
 
-        document.getElementById('inviteFriendBtn')?.addEventListener('click', () => {
-            const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/yaltahiking_bot?startapp=newcomer')}`;
-            tg?.openTelegramLink(shareUrl);
-        });
+        // Обработчик для кнопки «пригласить друга/подругу»
+        const inviteBtn = contentWrapper.querySelector('#inviteFriendBtn');
+        if (inviteBtn) {
+            inviteBtn.addEventListener('click', () => {
+                const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(`https://t.me/yaltahiking_bot?startapp=hike_${hike.date}`)}`;
+                tg?.openTelegramLink(shareUrl);
+            });
+        }
 
         if (isPast && (hike.letter_text || hike.letter_link)) {
             const oldIcon = sheet.querySelector('.letter-icon');
@@ -590,6 +591,7 @@ export function showBottomSheet(index) {
                     }
                 }
 
+                // Обновляем блюр
                 const imageContainer = contentWrapper.querySelector('.image-container');
                 const isSoldOut = count >= 15;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
@@ -600,6 +602,7 @@ export function showBottomSheet(index) {
 
         updateFloatingSheetButtons();
 
+        // При первой отрисовке применить блюр, если нужно
         const imageContainer = contentWrapper.querySelector('.image-container');
         const isSoldOut = (window._participantCount || 0) >= 15;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
@@ -1060,26 +1063,28 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Блок шкалы билетов (над кнопками) – показывается всегда, кроме прошедших хайков
+    // Блок шкалы билетов (над кнопками) — теперь виден всем, если хайк не прошедший
     if (!isPast) {
         const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
+        // Отступы и ширина точно как у слайдера регистрации
         availBlock.style.cssText = 'margin: 0 16px 6px 16px; width: calc(100% - 32px); border-radius: 28px 28px 28px 28px;';
 
         if (available === 0) {
-            if (isGuest && !isBooked) {
-                // Текст из Google Таблицы (guest_soldout_message) или резервный
+            if (isGuest) {
                 const popupText = (state.popups && state.popups.guest_soldout_message && state.popups.guest_soldout_message.text) || '';
                 let messageHtml = '';
                 if (popupText.trim()) {
                     let text = popupText.replace(/\[имя\]/gi, firstName);
                     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    // Ссылка с явным жёлтым цветом и !important
                     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
                     text = text.replace(/\n/g, '<br>');
                     messageHtml = text;
                 } else {
+                    // Резервный текст, если в Firebase ничего нет
                     messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
                 }
                 availBlock.innerHTML = `
@@ -1088,19 +1093,17 @@ function updateFloatingSheetButtons() {
                     </div>
                 `;
             } else {
-                // Для владельцев карт или уже записанных гостей – просто показываем, что мест нет, но они могут идти
                 availBlock.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-bottom: 8px;">
                         <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
                         <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
                     </div>
                     <div style="font-size: 14px; color: rgba(255,255,255,0.9);">
-                        ${isGuest ? 'ты записан, поэтому можешь идти' : 'у тебя карта интеллигента, ты можешь идти даже, когда места закончились'}
+                        у тебя карта интеллигента, ты можешь идти даже, когда места закончились
                     </div>
                 `;
             }
         } else {
-            // Есть свободные билеты – показываем шкалу
             availBlock.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
@@ -1171,8 +1174,27 @@ function updateFloatingSheetButtons() {
         return;
     }
 
+    // Кнопка «следующий хайк» для гостей при sold-out (без карты)
     if (!isBooked && isSoldOut && isGuest) {
-        container.style.pointerEvents = 'none';
+        const nextIndex = sheetCurrentIndex < state.hikesList.length - 1 ? sheetCurrentIndex + 1 : 0;
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn btn-outline';
+        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 900; font-size: 16px;';
+        nextBtn.textContent = 'следующий хайк ›';
+        nextBtn.addEventListener('click', () => {
+            haptic();
+            closeParticipantDropdown();
+            closeLeaderDropdown();
+            sheetCurrentIndex = nextIndex;
+            window._participantCount = 0;
+            loadAllParticipants(state.hikesList[sheetCurrentIndex].date).then(participants => {
+                window._participantCount = participants.length;
+                updateContent();
+            });
+            contentWrapper.scrollTop = 0;
+        });
+        container.appendChild(nextBtn);
+        container.style.pointerEvents = 'auto';
         return;
     }
 
