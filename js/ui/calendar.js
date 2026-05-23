@@ -298,7 +298,6 @@ export function showBottomSheet(index) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
             updateFloatingSheetButtons();
-            // Обновить блюр
             const container = contentWrapper.querySelector('.image-container');
             if (container) {
                 const isSoldOut = window._participantCount >= 15;
@@ -567,7 +566,6 @@ export function showBottomSheet(index) {
                     }
                 }
 
-                // Обновляем блюр
                 const imageContainer = contentWrapper.querySelector('.image-container');
                 const isSoldOut = count >= 15;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
@@ -578,7 +576,6 @@ export function showBottomSheet(index) {
 
         updateFloatingSheetButtons();
 
-        // При первой отрисовке применить блюр, если нужно
         const imageContainer = contentWrapper.querySelector('.image-container');
         const isSoldOut = (window._participantCount || 0) >= 15;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
@@ -1054,13 +1051,11 @@ function updateFloatingSheetButtons() {
                 if (popupText.trim()) {
                     let text = popupText.replace(/\[имя\]/gi, firstName);
                     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    // Ссылка с явным жёлтым цветом и !important
                     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
                     text = text.replace(/\n/g, '<br>');
                     messageHtml = text;
                 } else {
-                    // Резервный текст, если в Firebase ничего нет
-                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
+                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" id="cardLinkFromAvailability" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
                 }
                 availBlock.innerHTML = `
                     <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4;">
@@ -1093,12 +1088,13 @@ function updateFloatingSheetButtons() {
         }
         container.appendChild(availBlock);
 
-        // Обработчик для ссылки на карту (если есть id="cardLinkFromAvailability")
+        // Привязываем обработчик клика к ссылке «карта интеллигента» (если она появилась)
         setTimeout(() => {
             const cardLink = document.getElementById('cardLinkFromAvailability');
             if (cardLink) {
                 cardLink.addEventListener('click', (e) => {
                     e.preventDefault();
+                    // Переходим на главную и прокручиваем к блоку с картой
                     renderHome();
                     setTimeout(() => {
                         const cardBlock = document.getElementById('cardBlock');
