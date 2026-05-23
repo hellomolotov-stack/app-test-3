@@ -25,14 +25,12 @@ function hasHikesInMonth(year, month) {
     return state.hikesList.some(hike => hike.date.startsWith(monthStr));
 }
 
-// Проверяем, является ли день будущим воскресеньем без хайка
 function isFutureSundayWithoutHike(dateStr) {
     const date = new Date(dateStr);
     const today = new Date();
     today.setHours(0,0,0,0);
-    if (date < today) return false;               // уже прошло
-    if (date.getDay() !== 0) return false;        // не воскресенье
-    // Проверяем, есть ли хайк на эту дату
+    if (date < today) return false;
+    if (date.getDay() !== 0) return false;
     return !state.hikesData[dateStr];
 }
 
@@ -162,15 +160,21 @@ export function renderCalendar(container) {
     });
 }
 
-function showUpcomingPopup(dateStr) {
+async function showUpcomingPopup(dateStr) {
     const firstName = state.user?.first_name || 'друг';
+    // Загружаем попап из Firebase (popup_id = 'upcoming_hike_popup')
+    const popup = (state.popups && state.popups.upcoming_hike_popup) || {
+        title: 'уже готовим хайк',
+        text: 'мы уже планируем твоё новое приключение, [имя]. подробности станут доступны в понедельник вечером. будешь ждать?',
+        button_text: 'буду ждать'
+    };
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title">уже готовим хайк</div>
-            <div class="modal-text">мы уже планируем твоё новое приключение, ${firstName}. подробности станут доступны в понедельник вечером. будешь ждать?</div>
-            <button class="btn btn-yellow" id="upcomingOkBtn" style="margin-top: 16px;">буду ждать</button>
+            <div class="modal-title">${popup.title}</div>
+            <div class="modal-text">${popup.text.replace(/\[имя\]/g, firstName)}</div>
+            <button class="btn btn-yellow" id="upcomingOkBtn" style="margin-top: 16px;">${popup.button_text}</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -1042,7 +1046,8 @@ function updateFloatingSheetButtons() {
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 16px 12px 16px; width: calc(100% - 32px); border-radius: 28px 28px 28px 28px;';
+        // Отступы как у слайдера регистрации
+        availBlock.style.cssText = 'margin: 0 16px 6px 16px; width: calc(100% - 32px); border-radius: 28px 28px 28px 28px;';
 
         if (available === 0) {
             if (isGuest) {
@@ -1055,7 +1060,7 @@ function updateFloatingSheetButtons() {
                     text = text.replace(/\n/g, '<br>');
                     messageHtml = text;
                 } else {
-                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" id="cardLinkFromAvailability" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
+                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
                 }
                 availBlock.innerHTML = `
                     <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4;">
@@ -1088,13 +1093,11 @@ function updateFloatingSheetButtons() {
         }
         container.appendChild(availBlock);
 
-        // Привязываем обработчик клика к ссылке «карта интеллигента» (если она появилась)
         setTimeout(() => {
             const cardLink = document.getElementById('cardLinkFromAvailability');
             if (cardLink) {
                 cardLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    // Переходим на главную и прокручиваем к блоку с картой
                     renderHome();
                     setTimeout(() => {
                         const cardBlock = document.getElementById('cardBlock');
