@@ -25,13 +25,12 @@ function hasHikesInMonth(year, month) {
     return state.hikesList.some(hike => hike.date.startsWith(monthStr));
 }
 
-// Проверяем, является ли день будущим воскресеньем без хайка
 function isFutureSundayWithoutHike(dateStr) {
     const date = new Date(dateStr);
     const today = new Date();
     today.setHours(0,0,0,0);
-    if (date < today) return false;               // уже прошло
-    if (date.getDay() !== 0) return false;        // не воскресенье
+    if (date < today) return false;
+    if (date.getDay() !== 0) return false;
     return !state.hikesData[dateStr];
 }
 
@@ -268,6 +267,15 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
+// Функция для закрытия слайдера перед переходом в привилегии
+function closeBottomSheetAndOpenGuestPrivileges() {
+    closeBottomSheet(); // закрываем слайдер
+    // Небольшая задержка, чтобы анимация закрытия успела завершиться
+    setTimeout(() => {
+        renderGuestPrivileges();
+    }, 150);
+}
+
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
@@ -318,7 +326,6 @@ export function showBottomSheet(index) {
         loadAllParticipants(currentHike.date).then(participants => {
             window._participantCount = participants.length;
             updateFloatingSheetButtons();
-            // Обновить блюр
             const container = contentWrapper.querySelector('.image-container');
             if (container) {
                 const isSoldOut = window._participantCount >= 15;
@@ -511,7 +518,6 @@ export function showBottomSheet(index) {
             ${inviteButtonHtml}
         `;
 
-        // Обработчик для кнопки «пригласить друга/подругу»
         const inviteBtn = contentWrapper.querySelector('#inviteFriendBtn');
         if (inviteBtn) {
             inviteBtn.addEventListener('click', () => {
@@ -591,7 +597,6 @@ export function showBottomSheet(index) {
                     }
                 }
 
-                // Обновляем блюр
                 const imageContainer = contentWrapper.querySelector('.image-container');
                 const isSoldOut = count >= 15;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
@@ -602,7 +607,6 @@ export function showBottomSheet(index) {
 
         updateFloatingSheetButtons();
 
-        // При первой отрисовке применить блюр, если нужно
         const imageContainer = contentWrapper.querySelector('.image-container');
         const isSoldOut = (window._participantCount || 0) >= 15;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
@@ -733,7 +737,7 @@ export function showBottomSheet(index) {
     log('slider_haikov_opened', false, state.user);
 }
 
-function closeBottomSheet() {
+export function closeBottomSheet() {
     closeParticipantDropdown();
     closeLeaderDropdown();
     if (currentUnsubscribe) {
@@ -1063,13 +1067,11 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Блок шкалы билетов (над кнопками) — теперь виден всем, если хайк не прошедший
     if (!isPast) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        // Отступы и ширина точно как у слайдера регистрации
         availBlock.style.cssText = 'margin: 0 16px 6px 16px; width: calc(100% - 32px); border-radius: 28px 28px 28px 28px;';
 
         if (available === 0) {
@@ -1079,12 +1081,10 @@ function updateFloatingSheetButtons() {
                 if (popupText.trim()) {
                     let text = popupText.replace(/\[имя\]/gi, firstName);
                     text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    // Ссылка с явным жёлтым цветом и !important
                     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
                     text = text.replace(/\n/g, '<br>');
                     messageHtml = text;
                 } else {
-                    // Резервный текст, если в Firebase ничего нет
                     messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
                 }
                 availBlock.innerHTML = `
@@ -1118,7 +1118,6 @@ function updateFloatingSheetButtons() {
         }
         container.appendChild(availBlock);
 
-        // Обработчик для ссылки на карту (если есть id="cardLinkFromAvailability")
         setTimeout(() => {
             const cardLink = document.getElementById('cardLinkFromAvailability');
             if (cardLink) {
@@ -1174,7 +1173,6 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Кнопка «следующий хайк» для гостей при sold-out (без карты)
     if (!isBooked && isSoldOut && isGuest) {
         const nextIndex = sheetCurrentIndex < state.hikesList.length - 1 ? sheetCurrentIndex + 1 : 0;
         const nextBtn = document.createElement('button');
@@ -1334,6 +1332,10 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
     const config = state.popupConfig;
 
+    // Запоминаем, из какого хайка открыт попап, для возврата
+    window._bookingPopupHikeDate = hikeDate;
+    window._bookingPopupHikeIndex = state.hikesList.findIndex(h => h.date === hikeDate);
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.id = 'guestBookingPopup';
@@ -1341,11 +1343,15 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <button class="modal-close" id="closePopup">&times;</button>
             <div class="modal-title">регистрация на хайк</div>
-            <div class="modal-text" style="margin-bottom: 20px;">чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента</div>
-            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-                <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">оформить карту интеллигента 🪪</button>
+            <div class="modal-text" style="margin-bottom: 12px;">чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента</div>
+            
+            <!-- Кнопка "узнать о привилегиях" наверху аккордеона -->
+            <button class="btn btn-outline" id="goToPrivilegesPopupBtn" style="width: 100%; margin: 0 0 12px 0;">узнать о привилегиях</button>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+                <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">оформить карту</button>
                 <div id="cardAccordionPopup" style="width: 100%;">
-                    <div id="cardOptions" style="display: none; margin-top: 12px;">
+                    <div id="cardOptions" style="display: none; margin-top: 8px;">
                         <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
                             <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
                             <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
@@ -1358,7 +1364,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                             <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
                             <div style="flex: 1;">${config.permanentCardPrice} ₽</div>
                         </div>
-                        <button class="btn btn-outline" id="goToPrivilegesBtn" style="width: 100%; margin: 12px 0 0 0;">узнать о привилегиях</button>
                     </div>
                 </div>
                 <button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px;">иду впервые 🎟️</button>
@@ -1371,22 +1376,32 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         if (overlay && overlay.parentNode) {
             overlay.parentNode.removeChild(overlay);
         }
+        if (onClose) onClose();
     };
 
     document.getElementById('closePopup').addEventListener('click', () => {
         haptic();
         closePopup();
-        if (onClose) onClose();
     });
     overlay.addEventListener('click', e => {
         if (e.target === overlay) {
             haptic();
             closePopup();
-            if (onClose) onClose();
         }
     });
 
-    // Кнопка «оформить карту интеллигента» показывает/скрывает аккордеон
+    // Кнопка "узнать о привилегиях" — закрываем слайдер и попап, переходим в привилегии
+    document.getElementById('goToPrivilegesPopupBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        closePopup();          // закрываем попап
+        closeBottomSheet();    // закрываем слайдер хайка
+        setTimeout(() => {
+            renderGuestPrivileges();
+        }, 150);
+    });
+
+    // Кнопка "оформить карту" показывает/скрывает аккордеон
     const buyCardBtn = document.getElementById('buyCardBtn');
     const cardOptions = document.getElementById('cardOptions');
     if (buyCardBtn && cardOptions) {
@@ -1400,15 +1415,7 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         });
     }
 
-    // Кнопка «узнать о привилегиях»
-    document.getElementById('goToPrivilegesBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        closePopup();
-        renderGuestPrivileges();
-    });
-
-    // Кнопка «иду впервые 🎟️» — мгновенная регистрация
+    // Кнопка "иду впервые 🎟️" — мгновенная регистрация
     document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
@@ -1448,7 +1455,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        // Регистрация на хайк + переход на оплату сезонной карты
         const userId = state.user?.id;
         addParticipant(hikeDate, userId, {
             first_name: state.user?.first_name,
