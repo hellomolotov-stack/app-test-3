@@ -25,13 +25,9 @@ function hasHikesInMonth(year, month) {
     return state.hikesList.some(hike => hike.date.startsWith(monthStr));
 }
 
-function isFutureSundayWithoutHike(dateStr) {
-    const date = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    if (date < today) return false;
-    if (date.getDay() !== 0) return false;
-    return !state.hikesData[dateStr];
+function isPreparingHike(hike) {
+    // Хайк считается "готовящимся", если он не отменён и у него нет заголовка (или заголовок пустой)
+    return hike && !hike.cancelled && (!hike.title || hike.title.trim() === '');
 }
 
 export function renderCalendar(container) {
@@ -79,41 +75,52 @@ export function renderCalendar(container) {
     for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const isToday = year === currentYear && month === currentMonth && day === currentDate;
-        const hasHike = state.hikesData[dateStr] ? true : false;
+        const hike = state.hikesData[dateStr];
+        const hasHike = !!hike;
         const isPast = new Date(dateStr) < today;
-        const isUpcomingSunday = isFutureSundayWithoutHike(dateStr);
+        const isPreparing = hasHike && isPreparingHike(hike);
+        const isCancelled = hasHike && hike.cancelled === true;
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
         if (hasHike) {
-            classes += ' hike-day';
-            if (isPast) classes += ' past';
-        } else if (isUpcomingSunday) {
-            classes += ' upcoming-sunday';
+            if (isPreparing) classes += ' upcoming-sunday'; // используем тот же класс, что и раньше для стилизации
+            else classes += ' hike-day';
+            if (isPast && !isPreparing) classes += ' past';
+            if (isCancelled) classes += ' cancelled-hike';
         }
 
         let innerHtml = `${day}`;
         if (hasHike) {
-            const hikeIndex = state.hikesList.findIndex(h => h.date === dateStr);
-            const hike = state.hikesList[hikeIndex];
-            const isWoman = hike && hike.woman === 'yes';
-            if (isWoman) classes += ' woman-hike';
-            if (isPast && hike && hike.report_link && hike.report_link.trim() !== '')
+            const isWoman = hike.woman === 'yes';
+            if (isWoman && !isPreparing) classes += ' woman-hike';
+            // Отчёты и письма только для прошедших полноценных хайков
+            if (isPast && !isPreparing && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
-            if (isPast && hike && (hike.letter_text || hike.letter_link))
+            if (isPast && !isPreparing && (hike.letter_text || hike.letter_link))
                 innerHtml += `<span class="calendar-emoji-letter">✉️</span>`;
-            if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
-                innerHtml += `<span class="calendar-emoji">🎟️</span>`;
-                classes += ' booked-day';
+            // Запись только для будущих полноценных хайков (не отменённых и не готовящихся)
+            if (!isPast && !isPreparing && !isCancelled) {
+                const hikeIndex = state.hikesList.findIndex(h => h.date === dateStr);
+                if (hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true) {
+                    innerHtml += `<span class="calendar-emoji">🎟️</span>`;
+                    classes += ' booked-day';
+                }
             }
-        } else if (isUpcomingSunday) {
-            innerHtml += `<span class="calendar-emoji">👀</span>`;
+            // Для готовящегося хайка ставим эмодзи глаз
+            if (isPreparing) {
+                innerHtml += `<span class="calendar-emoji">👀</span>`;
+            }
+            // Для отменённого хайка эмодзи запрета
+            if (isCancelled) {
+                innerHtml += `<span class="calendar-emoji">🚫</span>`;
+            }
         }
 
-        if (hasHike || isUpcomingSunday) {
+        if (hasHike) {
             calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
         } else {
-            calendarHtml += `<div class="${classes}">${day}</div>`;
+            calendarHtml += `<div class="calendar-day">${day}</div>`;
         }
     }
     calendarHtml += `</div></div>`;
@@ -144,10 +151,13 @@ export function renderCalendar(container) {
             }
         });
 
-    document.querySelectorAll('.calendar-day.hike-day, .calendar-day.upcoming-sunday').forEach(el => {
+    document.querySelectorAll('.calendar-day.hike-day, .calendar-day.upcoming-sunday, .calendar-day.cancelled-hike').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
-            if (el.classList.contains('upcoming-sunday')) {
+            const hike = state.hikesData[date];
+            if (!hike) return;
+            if (isPreparingHike(hike)) {
+                // Показываем попап "уже готовим хайк"
                 showUpcomingPopup(date);
             } else {
                 const index = state.hikesList.findIndex(h => h.date === date);
@@ -333,6 +343,7 @@ export function showBottomSheet(index) {
 
         const isWoman = hike.woman === 'yes';
         const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
+        const isCancelled = hike.cancelled === true;
         const monthNamesArr = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
         let formattedDate = '';
         if (hike.date) {
@@ -405,7 +416,7 @@ export function showBottomSheet(index) {
         let imageHtml = '';
         if (hike.image) {
             imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
-            if (!isPast) {
+            if (!isPast && !isCancelled) {
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">
@@ -420,7 +431,7 @@ export function showBottomSheet(index) {
         }
 
         let extraInfoHtml = '';
-        if (!isPast) {
+        if (!isPast && !isCancelled) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
                 extraInfoHtml += `
@@ -483,7 +494,7 @@ export function showBottomSheet(index) {
 
         let inviteButtonHtml = '';
         const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-        if (isBooked && !isPast) {
+        if (isBooked && !isPast && !isCancelled) {
             const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
             inviteButtonHtml = `
                 <div style="margin-top: 16px;">
@@ -534,7 +545,7 @@ export function showBottomSheet(index) {
             if (oldIcon) oldIcon.remove();
         }
 
-        if (!isPast) {
+        if (!isPast && !isCancelled) {
             if (currentUnsubscribe) currentUnsubscribe();
             currentUnsubscribe = subscribeToParticipantCount(hike.date, async (count, participants) => {
                 window._participantCount = count;
@@ -1042,6 +1053,12 @@ function updateFloatingSheetButtons() {
     const hike = state.hikesList[sheetCurrentIndex];
     if (!hike) return;
 
+    // Если хайк отменён — показываем сообщение
+    if (hike.cancelled === true) {
+        container.innerHTML = `<div class="availability-floating" style="margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;">🚫 хайк отменён</div>`;
+        return;
+    }
+
     const isWoman = hike.woman === 'yes';
     const accentColor = isWoman ? '#FB5EB0' : '#D9FD19';
     const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
@@ -1323,7 +1340,6 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
     const config = state.popupConfig;
 
-    // Получаем текст из Firebase (popups.guest_booking_popup) или fallback
     let popupText = 'чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента';
     if (state.popups && state.popups.guest_booking_popup && state.popups.guest_booking_popup.text) {
         popupText = state.popups.guest_booking_popup.text;
