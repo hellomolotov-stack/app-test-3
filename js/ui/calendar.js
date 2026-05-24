@@ -240,12 +240,12 @@ function showLetterPopup(letterText, letterLink, isGuest) {
     overlayPopup.addEventListener('click', (e) => { if (e.target === overlayPopup) { haptic(); overlayPopup.remove(); } });
 }
 
-function getTicketWord(count) {
+function getPlaceWord(count) {
     const lastDigit = count % 10;
     const lastTwoDigits = count % 100;
-    if (lastDigit === 1 && lastTwoDigits !== 11) return 'билет';
-    if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) return 'билета';
-    return 'билетов';
+    if (lastDigit === 1 && lastTwoDigits !== 11) return 'место';
+    if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 10 || lastTwoDigits >= 20)) return 'места';
+    return 'мест';
 }
 
 function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageUrl) {
@@ -1065,7 +1065,7 @@ function updateFloatingSheetButtons() {
 
     // Блок шкалы билетов (над кнопками) — теперь виден всем, если хайк не прошедший
     if (!isPast) {
-        const ticketWord = available === 0 ? 'билеты закончились' : `${available} ${getTicketWord(available)}`;
+        const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
@@ -1332,11 +1332,7 @@ function updateFloatingSheetButtons() {
 
 function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
-    const bookingPopup = (state.popups && state.popups.guest_booking_popup) || null;
     const config = state.popupConfig;
-
-    const popupText = bookingPopup ? bookingPopup.text : config.text;
-    const popupTitle = bookingPopup ? bookingPopup.title : 'регистрация на хайк';
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -1344,28 +1340,28 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title">${popupTitle}</div>
-            <div class="modal-text" style="margin-bottom: 20px;">${popupText}</div>
+            <div class="modal-title">регистрация на хайк</div>
+            <div class="modal-text" style="margin-bottom: 20px;">чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента</div>
             <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-                <button class="btn btn-yellow" id="buyTicketBtn" style="width: 100%; margin: 0;">оформить билет 🎟️ · ${config.ticketPrice} ₽</button>
-                <button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(217,253,25,0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px; border: 1px solid rgba(217,253,25,0.6);">иду впервые 👋🏻</button>
+                <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">оформить карту интеллигента 🪪</button>
                 <div id="cardAccordionPopup" style="width: 100%;">
-                    <button class="btn btn-outline" id="showCardOptionsBtn" style="width: 100%; margin: 0; box-sizing: border-box;">купить карту интеллигента 💳</button>
                     <div id="cardOptions" style="display: none; margin-top: 12px;">
                         <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
                             <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
                             <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
                         </div>
                         <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;">
-                            <div style="flex: 1;">до конца 2026</div>
-                            <div style="flex: 1;">все сезоны</div>
+                            <div style="flex: 1;">сезон 2026</div>
+                            <div style="flex: 1;">навсегда</div>
                         </div>
                         <div style="display: flex; flex-direction: row; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;">
                             <div style="flex: 1;">${config.seasonCardPrice} ₽</div>
                             <div style="flex: 1;">${config.permanentCardPrice} ₽</div>
                         </div>
+                        <button class="btn btn-outline" id="goToPrivilegesBtn" style="width: 100%; margin: 12px 0 0 0;">узнать о привилегиях</button>
                     </div>
                 </div>
+                <button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0; padding: 16px; border-radius: 12px; background: rgba(255,255,255,0.1); color: #ffffff; box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; font-size: 16px;">иду впервые 🎟️</button>
             </div>
         </div>
     `;
@@ -1390,6 +1386,29 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         }
     });
 
+    // Кнопка «оформить карту интеллигента» показывает/скрывает аккордеон
+    const buyCardBtn = document.getElementById('buyCardBtn');
+    const cardOptions = document.getElementById('cardOptions');
+    if (buyCardBtn && cardOptions) {
+        buyCardBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            if (cardOptions.style.display === 'none' || cardOptions.style.display === '')
+                cardOptions.style.display = 'block';
+            else
+                cardOptions.style.display = 'none';
+        });
+    }
+
+    // Кнопка «узнать о привилегиях»
+    document.getElementById('goToPrivilegesBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        closePopup();
+        renderGuestPrivileges();
+    });
+
+    // Кнопка «иду впервые 🎟️» — мгновенная регистрация
     document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
@@ -1424,7 +1443,12 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         log('free_first_click', true, state.user);
     });
 
-    const handlePurchase = (purchaseType, link) => {
+    // Покупка сезонной карты
+    document.getElementById('buySeasonCardBtn')?.addEventListener('click', e => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        // Регистрация на хайк + переход на оплату сезонной карты
         const userId = state.user?.id;
         addParticipant(hikeDate, userId, {
             first_name: state.user?.first_name,
@@ -1439,45 +1463,43 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 renderUserBookings(document.getElementById('userBookingsContainer'));
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer) renderCalendar(calendarContainer);
-                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', purchaseType, state.user, false);
-                openLink(link, `purchase_${purchaseType}`, true);
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'season_card', state.user, false);
+                openLink(SEASON_CARD_LINK, 'season_card_click', true);
                 closePopup();
             })
             .catch(error => {
                 console.error(error);
                 alert('Ошибка при регистрации. Попробуйте ещё раз.');
             });
-    };
+    });
 
-    document.getElementById('buyTicketBtn').addEventListener('click', e => {
+    // Покупка бессрочной карты
+    document.getElementById('buyPermanentCardBtn')?.addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
         e.target.dataset.processing = 'true';
-        handlePurchase('ticket', config.ticketLink || ROBOKASSA_LINK);
-    });
-
-    const showCardOptionsBtn = document.getElementById('showCardOptionsBtn');
-    const cardOptions = document.getElementById('cardOptions');
-    showCardOptionsBtn.addEventListener('click', e => {
-        e.preventDefault();
-        haptic();
-        if (cardOptions.style.display === 'none' || cardOptions.style.display === '')
-            cardOptions.style.display = 'block';
-        else cardOptions.style.display = 'none';
-    });
-
-    document.getElementById('buySeasonCardBtn').addEventListener('click', e => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        handlePurchase('season_card', config.seasonCardLink || SEASON_CARD_LINK);
-    });
-
-    document.getElementById('buyPermanentCardBtn').addEventListener('click', e => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        handlePurchase('permanent_card', config.permanentCardLink || PERMANENT_CARD_LINK);
+        const userId = state.user?.id;
+        addParticipant(hikeDate, userId, {
+            first_name: state.user?.first_name,
+            photo_url: state.user?.photo_url,
+        })
+            .then(() => setUserRegistrationStatus(userId, hikeDate, true))
+            .then(() => {
+                const hikeIndex = state.hikesList.findIndex(h => h.date === hikeDate);
+                if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
+                if (state.userCard.status !== 'active') saveBookingStatusToLocal();
+                updateFloatingSheetButtons();
+                renderUserBookings(document.getElementById('userBookingsContainer'));
+                const calendarContainer = document.getElementById('calendarContainer');
+                if (calendarContainer) renderCalendar(calendarContainer);
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'permanent_card', state.user, false);
+                openLink(PERMANENT_CARD_LINK, 'permanent_card_click', true);
+                closePopup();
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Ошибка при регистрации. Попробуйте ещё раз.');
+            });
     });
 }
 
