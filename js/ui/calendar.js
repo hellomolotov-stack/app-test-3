@@ -267,13 +267,6 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
-function closeBottomSheetAndOpenGuestPrivileges() {
-    closeBottomSheet();
-    setTimeout(() => {
-        renderGuestPrivileges(true);
-    }, 150);
-}
-
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
@@ -1330,6 +1323,12 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
     const config = state.popupConfig;
 
+    // Получаем текст из Firebase (popups.guest_booking_popup) или fallback
+    let popupText = 'чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента';
+    if (state.popups && state.popups.guest_booking_popup && state.popups.guest_booking_popup.text) {
+        popupText = state.popups.guest_booking_popup.text;
+    }
+
     window._bookingPopupHikeDate = hikeDate;
     window._bookingPopupHikeIndex = state.hikesList.findIndex(h => h.date === hikeDate);
 
@@ -1340,9 +1339,9 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <button class="modal-close" id="closePopup">&times;</button>
             <div class="modal-title">регистрация на хайк</div>
-            <div class="modal-text" style="margin-bottom: 16px;">чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента</div>
+            <div class="modal-text" style="margin-bottom: 16px;">${popupText}</div>
             
-            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
                 <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">оформить карту</button>
                 <div id="cardAccordionPopup" style="width: 100%;">
                     <div id="cardOptions" style="display: none; margin-top: 8px;">
