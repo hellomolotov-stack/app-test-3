@@ -267,12 +267,10 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
-// Функция для закрытия слайдера перед переходом в привилегии
 function closeBottomSheetAndOpenGuestPrivileges() {
-    closeBottomSheet(); // закрываем слайдер
-    // Небольшая задержка, чтобы анимация закрытия успела завершиться
+    closeBottomSheet();
     setTimeout(() => {
-        renderGuestPrivileges();
+        renderGuestPrivileges(true);
     }, 150);
 }
 
@@ -1067,12 +1065,14 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
+    // Блок счётчика мест — ширина такая же, как у слайдера (авто, центрируется)
     if (!isPast) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 16px 6px 16px; width: calc(100% - 32px); border-radius: 28px 28px 28px 28px;';
+        // Убираем фиксированную ширину, чтобы он был такой же, как swipe-track
+        availBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 8px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box;';
 
         if (available === 0) {
             if (isGuest) {
@@ -1088,17 +1088,17 @@ function updateFloatingSheetButtons() {
                     messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
                 }
                 availBlock.innerHTML = `
-                    <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4;">
+                    <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4; text-align: center;">
                         ${messageHtml}
                     </div>
                 `;
             } else {
                 availBlock.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
                         <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
                         <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
                     </div>
-                    <div style="font-size: 14px; color: rgba(255,255,255,0.9);">
+                    <div style="font-size: 14px; color: rgba(255,255,255,0.9); margin-top: 4px;">
                         у тебя карта интеллигента, ты можешь идти даже, когда места закончились
                     </div>
                 `;
@@ -1332,7 +1332,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     haptic();
     const config = state.popupConfig;
 
-    // Запоминаем, из какого хайка открыт попап, для возврата
     window._bookingPopupHikeDate = hikeDate;
     window._bookingPopupHikeIndex = state.hikesList.findIndex(h => h.date === hikeDate);
 
@@ -1343,15 +1342,14 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <button class="modal-close" id="closePopup">&times;</button>
             <div class="modal-title">регистрация на хайк</div>
-            <div class="modal-text" style="margin-bottom: 12px;">чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента</div>
+            <div class="modal-text" style="margin-bottom: 16px;">чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента</div>
             
-            <!-- Кнопка "узнать о привилегиях" наверху аккордеона -->
-            <button class="btn btn-outline" id="goToPrivilegesPopupBtn" style="width: 100%; margin: 0 0 12px 0;">узнать о привилегиях</button>
-
-            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
                 <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">оформить карту</button>
                 <div id="cardAccordionPopup" style="width: 100%;">
                     <div id="cardOptions" style="display: none; margin-top: 8px;">
+                        <!-- Кнопка "узнать о привилегиях" внутри аккордеона, перед кнопками карт -->
+                        <button class="btn btn-outline" id="goToPrivilegesPopupBtn" style="width: 100%; margin: 0 0 8px 0;">узнать о привилегиях</button>
                         <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
                             <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">сезонная</button>
                             <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1; margin: 0; box-sizing: border-box;">бессрочная</button>
@@ -1390,18 +1388,17 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         }
     });
 
-    // Кнопка "узнать о привилегиях" — закрываем слайдер и попап, переходим в привилегии
+    // Кнопка "узнать о привилегиях" внутри аккордеона
     document.getElementById('goToPrivilegesPopupBtn').addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
-        closePopup();          // закрываем попап
-        closeBottomSheet();    // закрываем слайдер хайка
+        closePopup();
+        closeBottomSheet();
         setTimeout(() => {
-            renderGuestPrivileges();
+            renderGuestPrivileges(true);
         }, 150);
     });
 
-    // Кнопка "оформить карту" показывает/скрывает аккордеон
     const buyCardBtn = document.getElementById('buyCardBtn');
     const cardOptions = document.getElementById('cardOptions');
     if (buyCardBtn && cardOptions) {
@@ -1415,7 +1412,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         });
     }
 
-    // Кнопка "иду впервые 🎟️" — мгновенная регистрация
     document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
@@ -1450,7 +1446,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         log('free_first_click', true, state.user);
     });
 
-    // Покупка сезонной карты
     document.getElementById('buySeasonCardBtn')?.addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
@@ -1479,7 +1474,6 @@ function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             });
     });
 
-    // Покупка бессрочной карты
     document.getElementById('buyPermanentCardBtn')?.addEventListener('click', e => {
         e.preventDefault();
         if (e.target.dataset.processing === 'true') return;
