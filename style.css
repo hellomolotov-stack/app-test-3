@@ -2529,7 +2529,7 @@ body::after {
     box-sizing: border-box;
 }
 /* Замените существующие .header-blur и body::after, а также .calendar-day.today */
-/* Верхний блюр — плавный, как в блоке обновлений */
+/* Верхний блюр — плавный, ниже заголовка */
 .header-blur {
     position: fixed;
     top: 0;
@@ -2539,27 +2539,27 @@ body::after {
     background: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    z-index: 50;
+    z-index: 10;
     pointer-events: none;
-    mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
 }
 
-/* Нижний блюр — плавный, как в блоке обновлений */
+/* Нижний блюр — над контентом, под меню */
 body::after {
     content: '';
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: calc(env(safe-area-inset-bottom, 0px) + 60px);
+    height: calc(env(safe-area-inset-bottom, 0px) + 70px);
     background: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    z-index: 0;
+    z-index: 15; /* выше контента (у контента z-index обычно 1), но ниже меню (у меню z-index 100) */
     pointer-events: none;
-    mask-image: linear-gradient(to top, black 0%, black 60%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to top, black 0%, black 60%, transparent 100%);
+    mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
 }
 
 /* Сегодняшний день — белый кружок, чёрные цифры */
