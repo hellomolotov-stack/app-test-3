@@ -2529,51 +2529,57 @@ body::after {
     box-sizing: border-box;
 }
 /* Замените существующие .header-blur и body::after, а также .calendar-day.today */
-
-/* Верхний блюр — прозрачный, только размытие */
+/* Верхний блюр — плавный градиент, мягкий переход */
 .header-blur {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: calc(env(safe-area-inset-top, 0px) + 80px);
-    background: rgba(73, 138, 176, 0.1);
+    height: calc(env(safe-area-inset-top, 0px) + 100px);
+    background: linear-gradient(to bottom, rgba(73, 138, 176, 0.25) 0%, rgba(73, 138, 176, 0) 100%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     z-index: 50;
     pointer-events: none;
 }
 
-/* Нижний блюр — прозрачный, только размытие */
+/* Нижний блюр — плавный градиент, мягкий переход */
 body::after {
     content: '';
     position: fixed;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: calc(env(safe-area-inset-bottom, 0px) + 80px);
-    background: rgba(73, 138, 176, 0.1);
+    height: calc(env(safe-area-inset-bottom, 0px) + 100px);
+    background: linear-gradient(to top, rgba(73, 138, 176, 0.25) 0%, rgba(73, 138, 176, 0) 100%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     z-index: 0;
     pointer-events: none;
 }
 
-/* Сегодняшний день — белый кружок (обводка, прозрачный фон) */
+/* Сегодняшний день — белый кружок, чёрные цифры */
 .calendar-day.today {
-    background: transparent !important;
-    color: #ffffff !important;
-    border: 2px solid #ffffff !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none !important;
     font-weight: bold;
 }
 
-/* Если сегодняшний день совпадает с днём хайка, переопределяем цвет фона (прозрачный) */
+/* Если сегодняшний день совпадает с обычным хайком (жёлтый фон) — цифры чёрные */
 .calendar-day.today.hike-day {
-    background: transparent !important;
-    color: #ffffff !important;
-    border: 2px solid #ffffff !important;
+    background: #D9FD19 !important;
+    color: #000000 !important;
 }
 
+/* Если сегодняшний день — женский хайк (розовый фон) — цифры белые для контраста */
 .calendar-day.today.woman-hike {
-    border: 2px solid #FB5EB0 !important;
+    background: #FB5EB0 !important;
+    color: #ffffff !important;
+}
+
+/* Если сегодняшний день — заготовка (👀) — белый кружок, чёрные цифры */
+.calendar-day.today.placeholder-day {
+    background: #ffffff !important;
+    color: #000000 !important;
 }
