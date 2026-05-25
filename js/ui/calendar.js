@@ -280,6 +280,9 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
+    // Убираем inline-стили, полагаемся на CSS
+    // sheet.style.backgroundColor = ...  // удалено
+    // sheet.style.backdropFilter = ...   // удалено
 
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
@@ -1038,7 +1041,6 @@ function updateFloatingSheetButtons() {
     const isPlaceholder = !hike.title || hike.title.trim() === '';
     const isCancelled = hike.cancelled === true;
 
-    // Заготовка (👀)
     if (isPlaceholder) {
         container.innerHTML = `<div class="availability-floating" style="margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;">👀 скоро появится</div>`;
         return;
@@ -1065,7 +1067,8 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    if (!isPast) {
+    // Показываем счётчик только если осталось 0-5 мест
+    if (!isPast && available <= 5) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
