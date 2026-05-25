@@ -280,9 +280,6 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    sheet.style.backgroundColor = 'rgba(73, 138, 176, 0.15)';
-    sheet.style.backdropFilter = 'blur(12px)';
-    sheet.style.webkitBackdropFilter = 'blur(12px)';
 
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
