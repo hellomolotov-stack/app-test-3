@@ -2587,3 +2587,26 @@ body::after {
     background: #ffffff !important;
     color: #000000 !important;
 }
+
+/* Усиленный блюр для слайдера хайков */
+.bottom-sheet {
+    background-color: rgba(73, 138, 176, 0.25) !important; /* чуть плотнее */
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Для контента внутри слайдера — чтобы текст был читаемым */
+.bottom-sheet-content-wrapper {
+    background: transparent;
+}
+
+/* Дополнительно: если нужно усилить блюр у плавающих кнопок внутри слайдера */
+.floating-sheet-buttons .btn,
+.floating-sheet-buttons .swipe-track,
+.availability-floating {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    background-color: rgba(73, 138, 176, 0.2);
+}
