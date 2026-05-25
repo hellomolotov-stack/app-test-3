@@ -2588,25 +2588,40 @@ body::after {
     color: #000000 !important;
 }
 
-/* Усиленный блюр для слайдера хайков */
+/* Слайдер хайков — точное копирование блюра из панелей */
 .bottom-sheet {
-    background-color: rgba(73, 138, 176, 0.25) !important; /* чуть плотнее */
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.1);
+    background-color: rgba(73, 138, 176, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
     border-top: 1px solid rgba(255, 255, 255, 0.2);
+    /* Обеспечиваем плавную прокрутку */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
 }
 
-/* Для контента внутри слайдера — чтобы текст был читаемым */
+/* Контент внутри — без дополнительных фильтров */
 .bottom-sheet-content-wrapper {
     background: transparent;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
-/* Дополнительно: если нужно усилить блюр у плавающих кнопок внутри слайдера */
+/* Убираем лишний блюр у дочерних элементов, чтобы не накладывался */
+.bottom-sheet-handle,
+.bottom-sheet-nav-arrow,
+.bottom-sheet .btn,
+.bottom-sheet .swipe-track,
+.bottom-sheet .availability-floating {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Плавающие кнопки вне слайдера — оставляем с блюром */
 .floating-sheet-buttons .btn,
 .floating-sheet-buttons .swipe-track,
-.availability-floating {
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    background-color: rgba(73, 138, 176, 0.2);
+.floating-sheet-buttons .availability-floating {
+    backdrop-filter: blur(12px);
+    background-color: rgba(73, 138, 176, 0.15);
 }
