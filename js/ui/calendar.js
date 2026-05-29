@@ -1096,7 +1096,7 @@ function updateFloatingSheetButtons() {
             } else {
                 availBlock.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">осталось:</span>
                         <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
                     </div>
                     <div style="font-size: 14px; color: rgba(255,255,255,0.9); margin-top: 4px;">
@@ -1108,7 +1108,7 @@ function updateFloatingSheetButtons() {
             availBlock.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">доступно:</span>
+                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">осталось:</span>
                         <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
                     </div>
                     <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
