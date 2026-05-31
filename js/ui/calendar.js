@@ -16,9 +16,8 @@ import { renderHome } from './home.js';
 import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
-if (dateStr === '2026-04-03') {
-    console.log('DEBUG city for', dateStr, hike?.city, typeof hike?.city);
-}
+
+
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
 
