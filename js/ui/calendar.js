@@ -17,6 +17,12 @@ import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 
+if (typeof state === 'undefined') {
+    console.error('❌ state не загружен! Импорт не сработал.');
+    // Простая заглушка для отладки
+    window.state = { hikesData: {}, hikesList: [] };
+}
+
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
 
