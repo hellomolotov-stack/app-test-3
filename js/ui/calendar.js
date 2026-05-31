@@ -76,12 +76,14 @@ export function renderCalendar(container) {
         const isFullHike = isHikeExist && hike.title && hike.title.trim() !== '';
         const isPast = isFullHike && new Date(dateStr) < today;
         const isCancelled = isFullHike && hike.cancelled === true;
+        const isCity = isFullHike && hike.city === true;
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
         if (isFullHike) {
             classes += ' hike-day';
             if (isPast) classes += ' past';
+            if (isCity) classes += ' city-day';
         } else if (isPlaceholder) {
             classes += ' placeholder-day';
         }
@@ -89,7 +91,7 @@ export function renderCalendar(container) {
         let innerHtml = `${day}`;
         if (isFullHike) {
             const isWoman = hike.woman === 'yes';
-            if (isWoman) classes += ' woman-hike';
+            if (isWoman && !isCity) classes += ' woman-hike';
             if (isPast && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
             if (isPast && (hike.letter_text || hike.letter_link))
@@ -280,10 +282,6 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    // Убираем inline-стили, полагаемся на CSS
-    // sheet.style.backgroundColor = ...  // удалено
-    // sheet.style.backdropFilter = ...   // удалено
-
     const safeTop = tg?.contentSafeAreaInset?.top || 0;
     const windowHeight = window.innerHeight;
     const availableHeight = windowHeight - safeTop - 40;
@@ -325,7 +323,15 @@ export function showBottomSheet(index) {
         if (!hike) return;
 
         const isWoman = hike.woman === 'yes';
-        const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
+        const isCity = hike.city === true;
+        let accentColor;
+        if (isCity) {
+            accentColor = '#A881EB';
+        } else if (isWoman) {
+            accentColor = '#FB5EB0';
+        } else {
+            accentColor = 'var(--yellow)';
+        }
         const isCancelled = hike.cancelled === true;
         const isPlaceholder = !hike.title || hike.title.trim() === '';
 
@@ -1052,7 +1058,15 @@ function updateFloatingSheetButtons() {
     }
 
     const isWoman = hike.woman === 'yes';
-    const accentColor = isWoman ? '#FB5EB0' : '#D9FD19';
+    const isCity = hike.city === true;
+    let accentColor;
+    if (isCity) {
+        accentColor = '#A881EB';
+    } else if (isWoman) {
+        accentColor = '#FB5EB0';
+    } else {
+        accentColor = 'var(--yellow)';
+    }
     const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
     const hikeDate = new Date(hike.date);
     const today = new Date();
@@ -1067,7 +1081,6 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Показываем счётчик только если осталось 0-5 мест
     if (!isPast && available <= 5) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
@@ -1157,7 +1170,10 @@ function updateFloatingSheetButtons() {
             const reportBtn = document.createElement('a');
             reportBtn.href = '#';
             reportBtn.className = 'btn btn-yellow';
-            if (isWoman) reportBtn.style.backgroundColor = '#FB5EB0';
+            if (isCity) reportBtn.style.backgroundColor = '#A881EB';
+            else if (isWoman) reportBtn.style.backgroundColor = '#FB5EB0';
+            else reportBtn.style.backgroundColor = 'var(--yellow)';
+            reportBtn.style.color = isCity ? '#ffffff' : '#000000';
             reportBtn.textContent = 'отчёт';
             reportBtn.addEventListener('click', e => {
                 e.preventDefault();
@@ -1251,6 +1267,8 @@ function updateFloatingSheetButtons() {
         goBtn.href = '#';
         goBtn.className = 'btn btn-yellow';
         goBtn.textContent = 'ты записан';
+        goBtn.style.backgroundColor = accentColor;
+        goBtn.style.color = accentColor === '#A881EB' ? '#ffffff' : '#000000';
         goBtn.style.pointerEvents = 'none';
         row.appendChild(goBtn);
         container.appendChild(row);
@@ -1279,6 +1297,8 @@ function updateFloatingSheetButtons() {
         goBtn.className = 'btn btn-yellow btn-glow';
         goBtn.textContent = 'иду';
         goBtn.style.fontWeight = '900';
+        goBtn.style.backgroundColor = accentColor;
+        goBtn.style.color = accentColor === '#A881EB' ? '#ffffff' : '#000000';
         goBtn.addEventListener('click', e => {
             e.preventDefault();
             showGuestBookingPopup(hike.date, hike.title);
@@ -1299,6 +1319,8 @@ function updateFloatingSheetButtons() {
     goBtn.className = 'btn btn-yellow btn-glow';
     goBtn.textContent = 'иду';
     goBtn.style.fontWeight = '900';
+    goBtn.style.backgroundColor = accentColor;
+    goBtn.style.color = accentColor === '#A881EB' ? '#ffffff' : '#000000';
     goBtn.addEventListener('click', e => {
         e.preventDefault();
         const userId = state.user?.id;
