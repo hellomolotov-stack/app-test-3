@@ -117,7 +117,7 @@ export function renderCalendar(container) {
         // ГАРАНТИРОВАННЫЙ ИНЛАЙН-СТИЛЬ ДЛЯ ГОРОДСКИХ СОБЫТИЙ
         let inlineStyle = '';
         if (isCity) {
-            inlineStyle = ' style="background: #A881EB !important; color: #ffffff !important; border-radius: 50%;"';
+            inlineStyle = ' style="background: #41B5ED !important; color: #ffffff !important; border-radius: 50%;"';
         } else if (isToday) {
             inlineStyle = ' style="background: #ffffff !important; color: #000000 !important;"';
         }
@@ -339,7 +339,7 @@ export function showBottomSheet(index) {
         const isCity = hike.city === true || hike.city === 'yes';
         let accentColor;
         if (isCity) {
-            accentColor = '#A881EB';
+            accentColor = '#41B5ED';
         } else if (isWoman) {
             accentColor = '#FB5EB0';
         } else {
@@ -1074,7 +1074,7 @@ function updateFloatingSheetButtons() {
     const isCity = hike.city === true || hike.city === 'yes';
     let accentColor;
     if (isCity) {
-        accentColor = '#A881EB';
+        accentColor = '#41B5ED';
     } else if (isWoman) {
         accentColor = '#FB5EB0';
     } else {
@@ -1183,7 +1183,7 @@ function updateFloatingSheetButtons() {
             const reportBtn = document.createElement('a');
             reportBtn.href = '#';
             reportBtn.className = 'btn btn-yellow';
-            if (isCity) reportBtn.style.backgroundColor = '#A881EB';
+            if (isCity) reportBtn.style.backgroundColor = '#41B5ED';
             else if (isWoman) reportBtn.style.backgroundColor = '#FB5EB0';
             else reportBtn.style.backgroundColor = 'var(--yellow)';
             reportBtn.style.color = isCity ? '#ffffff' : '#000000';
@@ -1281,7 +1281,7 @@ function updateFloatingSheetButtons() {
         goBtn.className = 'btn btn-yellow';
         goBtn.textContent = 'ты записан';
         goBtn.style.backgroundColor = accentColor;
-        goBtn.style.color = accentColor === '#A881EB' ? '#ffffff' : '#000000';
+        goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
         goBtn.style.pointerEvents = 'none';
         row.appendChild(goBtn);
         container.appendChild(row);
@@ -1311,7 +1311,7 @@ function updateFloatingSheetButtons() {
         goBtn.textContent = 'иду';
         goBtn.style.fontWeight = '900';
         goBtn.style.backgroundColor = accentColor;
-        goBtn.style.color = accentColor === '#A881EB' ? '#ffffff' : '#000000';
+        goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
         goBtn.addEventListener('click', e => {
             e.preventDefault();
             showGuestBookingPopup(hike.date, hike.title);
@@ -1333,7 +1333,7 @@ function updateFloatingSheetButtons() {
     goBtn.textContent = 'иду';
     goBtn.style.fontWeight = '900';
     goBtn.style.backgroundColor = accentColor;
-    goBtn.style.color = accentColor === '#A881EB' ? '#ffffff' : '#000000';
+    goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
     goBtn.addEventListener('click', e => {
         e.preventDefault();
         const userId = state.user?.id;
