@@ -17,12 +17,6 @@ import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 
-if (typeof state === 'undefined') {
-    console.error('❌ state не загружен! Импорт не сработал.');
-    // Простая заглушка для отладки
-    window.state = { hikesData: {}, hikesList: [] };
-}
-
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
 
@@ -83,7 +77,12 @@ export function renderCalendar(container) {
         const isPast = isFullHike && new Date(dateStr) < today;
         const isCancelled = isFullHike && hike.cancelled === true;
         const isWoman = isFullHike && hike.woman === 'yes';
-        const isCity = isFullHike && hike.city === true;
+        
+        // ПРИНУДИТЕЛЬНОЕ ПРЕОБРАЗОВАНИЕ city
+        let isCity = false;
+        if (isFullHike && (hike.city === true || hike.city === 'yes' || hike.city === 'true')) {
+            isCity = true;
+        }
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
@@ -91,7 +90,6 @@ export function renderCalendar(container) {
             classes += ' hike-day';
             if (isPast) classes += ' past';
             if (isWoman) classes += ' woman-hike';
-            if (isCity) classes += ' city-day';
         } else if (isPlaceholder) {
             classes += ' placeholder-day';
         }
@@ -115,8 +113,16 @@ export function renderCalendar(container) {
             innerHtml += `<span class="calendar-emoji">👀</span>`;
         }
 
+        // ГАРАНТИРОВАННЫЙ ИНЛАЙН-СТИЛЬ ДЛЯ ГОРОДСКИХ СОБЫТИЙ
+        let inlineStyle = '';
+        if (isCity) {
+            inlineStyle = ' style="background: #A881EB !important; color: #ffffff !important; border-radius: 50%;"';
+        } else if (isToday) {
+            inlineStyle = ' style="background: #ffffff !important; color: #000000 !important;"';
+        }
+
         if (isFullHike || isPlaceholder) {
-            calendarHtml += `<div class="${classes}" data-date="${dateStr}">${innerHtml}</div>`;
+            calendarHtml += `<div class="${classes}" data-date="${dateStr}"${inlineStyle}>${innerHtml}</div>`;
         } else {
             calendarHtml += `<div class="${classes}">${day}</div>`;
         }
@@ -329,7 +335,7 @@ export function showBottomSheet(index) {
         if (!hike) return;
 
         const isWoman = hike.woman === 'yes';
-        const isCity = hike.city === true;
+        const isCity = hike.city === true || hike.city === 'yes';
         let accentColor;
         if (isCity) {
             accentColor = '#A881EB';
@@ -1064,7 +1070,7 @@ function updateFloatingSheetButtons() {
     }
 
     const isWoman = hike.woman === 'yes';
-    const isCity = hike.city === true;
+    const isCity = hike.city === true || hike.city === 'yes';
     let accentColor;
     if (isCity) {
         accentColor = '#A881EB';
