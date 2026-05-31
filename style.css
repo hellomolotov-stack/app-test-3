@@ -2623,7 +2623,7 @@ body::after {
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 }
-/* Фиолетовый цвет для городских событий */
+/* Фиолетовый фон для городских событий в календаре */
 .calendar-day.city-day {
     background: #A881EB !important;
     color: #ffffff !important;
