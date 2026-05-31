@@ -2624,10 +2624,14 @@ body::after {
     -webkit-backdrop-filter: blur(12px);
 }
 /* Фиолетовый фон для городских событий в календаре */
+/* Фиолетовый фон для городских событий */
 .calendar-day.city-day {
     background: #A881EB !important;
     color: #ffffff !important;
 }
 .calendar-day.city-day.hike-day {
+    background: #A881EB !important;
+}
+.calendar-day.city-day.woman-hike {
     background: #A881EB !important;
 }
