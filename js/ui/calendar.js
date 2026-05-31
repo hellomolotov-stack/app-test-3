@@ -77,18 +77,15 @@ export function renderCalendar(container) {
         const isPast = isFullHike && new Date(dateStr) < today;
         const isCancelled = isFullHike && hike.cancelled === true;
         const isWoman = isFullHike && hike.woman === 'yes';
-        const isCity = isFullHike && hike.city === 'yes';
+        const isCity = isFullHike && hike.city === true;
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
         if (isFullHike) {
             classes += ' hike-day';
             if (isPast) classes += ' past';
-            if (isCity) {
-                classes += ' city-day';
-            } else if (isWoman) {
-                classes += ' woman-hike';
-            }
+            if (isWoman) classes += ' woman-hike';
+            if (isCity) classes += ' city-day';
         } else if (isPlaceholder) {
             classes += ' placeholder-day';
         }
@@ -326,7 +323,7 @@ export function showBottomSheet(index) {
         if (!hike) return;
 
         const isWoman = hike.woman === 'yes';
-        const isCity = hike.city === 'yes';
+        const isCity = hike.city === true;
         let accentColor;
         if (isCity) {
             accentColor = '#A881EB';
@@ -1061,7 +1058,7 @@ function updateFloatingSheetButtons() {
     }
 
     const isWoman = hike.woman === 'yes';
-    const isCity = hike.city === 'yes';
+    const isCity = hike.city === true;
     let accentColor;
     if (isCity) {
         accentColor = '#A881EB';
