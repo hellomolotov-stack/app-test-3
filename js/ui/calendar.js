@@ -76,22 +76,25 @@ export function renderCalendar(container) {
         const isFullHike = isHikeExist && hike.title && hike.title.trim() !== '';
         const isPast = isFullHike && new Date(dateStr) < today;
         const isCancelled = isFullHike && hike.cancelled === true;
-        const isCity = isFullHike && hike.city === true;
+        const isWoman = isFullHike && hike.woman === 'yes';
+        const isCity = isFullHike && hike.city === 'yes';
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
         if (isFullHike) {
             classes += ' hike-day';
             if (isPast) classes += ' past';
-            if (isCity) classes += ' city-day';
+            if (isCity) {
+                classes += ' city-day';
+            } else if (isWoman) {
+                classes += ' woman-hike';
+            }
         } else if (isPlaceholder) {
             classes += ' placeholder-day';
         }
 
         let innerHtml = `${day}`;
         if (isFullHike) {
-            const isWoman = hike.woman === 'yes';
-            if (isWoman && !isCity) classes += ' woman-hike';
             if (isPast && hike.report_link && hike.report_link.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
             if (isPast && (hike.letter_text || hike.letter_link))
@@ -323,7 +326,7 @@ export function showBottomSheet(index) {
         if (!hike) return;
 
         const isWoman = hike.woman === 'yes';
-        const isCity = hike.city === true;
+        const isCity = hike.city === 'yes';
         let accentColor;
         if (isCity) {
             accentColor = '#A881EB';
@@ -1058,7 +1061,7 @@ function updateFloatingSheetButtons() {
     }
 
     const isWoman = hike.woman === 'yes';
-    const isCity = hike.city === true;
+    const isCity = hike.city === 'yes';
     let accentColor;
     if (isCity) {
         accentColor = '#A881EB';
