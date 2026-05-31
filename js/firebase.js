@@ -29,7 +29,7 @@ export function subscribeToHikes(callback) {
         const hikes = snapshot.val() || {};
         const list = Object.entries(hikes).map(([date, data]) => ({
             date,
-            title: data.title || 'Хайк',
+            title: data.title || '',
             features: data.features || '',
             access: data.access || '',
             details: data.details || '',
@@ -44,7 +44,9 @@ export function subscribeToHikes(callback) {
             leaders: data.leaders || [],
             letter_text: data.letter_text || '',
             letter_link: data.letter_link || '',
-            half_image: data.half_image || ''   // ← новое поле
+            half_image: data.half_image || '',
+            cancelled: data.cancelled === true || data.cancelled === 'yes' || data.cancelled === '1',
+            city: data.city === 'yes'   // новое поле
         })).sort((a, b) => a.date.localeCompare(b.date));
         callback(list);
     });
