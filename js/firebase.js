@@ -40,13 +40,13 @@ export function subscribeToHikes(callback) {
             telegram_link: data.telegram_link || '',
             report_link: data.report_link || '',
             feature_tags: data.feature_tags || [],
-            woman: data.woman === 'yes' ? 'yes' : '',
-            city: data.city === 'yes' ? 'yes' : '',
+            woman: data.woman || '',
             leaders: data.leaders || [],
             letter_text: data.letter_text || '',
             letter_link: data.letter_link || '',
             half_image: data.half_image || '',
-            cancelled: data.cancelled === true || data.cancelled === 'yes' || data.cancelled === '1'
+            cancelled: data.cancelled === true || data.cancelled === 'yes' || data.cancelled === '1',
+            city: data.city === 'yes'   // точно как woman
         })).sort((a, b) => a.date.localeCompare(b.date));
         callback(list);
     });
