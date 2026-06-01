@@ -109,11 +109,11 @@ export function renderUserBookings(container) {
             displayTitle = `${eventType} ${cleanedTitle}`;
         }
         
-        // Для city-событий кнопка белая, для остальных — цвет события
+        // Для city-событий кнопка голубая с белым текстом
         let buttonColor, buttonTextColor;
         if (isCity) {
-            buttonColor = '#ffffff';
-            buttonTextColor = '#000000';
+            buttonColor = '#41B5ED';
+            buttonTextColor = '#ffffff';
         } else {
             buttonColor = accentColor;
             buttonTextColor = '#000000';
@@ -277,8 +277,8 @@ function renderGuestHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
@@ -380,8 +380,8 @@ function renderOwnerHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container" id="calendarContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
