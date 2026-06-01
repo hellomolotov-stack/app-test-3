@@ -1,4 +1,4 @@
-// js/ui/calendar.js — полный файл, часть 1
+// js/ui/calendar.js
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -268,6 +268,82 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
+async function showGuestParticipantsPopup(hikeDate) {
+    haptic();
+    let popupData = {
+        title: 'Участники события',
+        text: 'Просмотр списка участников доступен только членам клуба. Оформи карту интеллигента, чтобы видеть, кто идёт на событие, и записываться самому.'
+    };
+    if (state.popups && state.popups.guest_uchastniki_popup) {
+        popupData = state.popups.guest_uchastniki_popup;
+    }
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; padding: 20px;">
+            <button class="modal-close" id="closePopupParticipants">&times;</button>
+            <div class="modal-title">${popupData.title}</div>
+            <div class="modal-text" style="margin-bottom: 16px;">${popupData.text}</div>
+            <button class="btn btn-yellow" id="goToCardFromParticipantsBtn" style="width: 100%;">оформить карту</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const closePopup = () => overlay.remove();
+    document.getElementById('closePopupParticipants').addEventListener('click', closePopup);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closePopup(); });
+    document.getElementById('goToCardFromParticipantsBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        closePopup();
+        renderGuestPrivileges();
+    });
+}
+
+async function showCityGuestPopup(hikeDate, hikeTitle) {
+    haptic();
+    const config = state.popupConfig;
+    let popupData = { title: 'Городское событие', text: 'Чтобы участвовать в городских событиях, оформи карту интеллигента', button_text: 'оформить карту' };
+    if (state.popups && state.popups.city_guest_popup) {
+        popupData = state.popups.city_guest_popup;
+    }
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; padding: 20px;">
+            <button class="modal-close" id="closePopup">&times;</button>
+            <div class="modal-title">${popupData.title}</div>
+            <div class="modal-text" style="margin-bottom: 16px;">${popupData.text}</div>
+            <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">${popupData.button_text}</button>
+            <div id="cardAccordionPopup" style="width: 100%; margin-top: 8px; display: none;">
+                <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
+                    <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1;">сезонная</button>
+                    <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1;">бессрочная</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: rgba(255,255,255,0.7); font-size: 12px;">
+                    <div>сезон 2026</div>
+                    <div>навсегда</div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: #ffffff; font-size: 14px;">
+                    <div>${config.seasonCardPrice} ₽</div>
+                    <div>${config.permanentCardPrice} ₽</div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const closePopup = () => overlay.remove();
+    document.getElementById('closePopup').addEventListener('click', closePopup);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closePopup(); });
+    const buyBtn = document.getElementById('buyCardBtn');
+    const accordion = document.getElementById('cardAccordionPopup');
+    buyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        accordion.style.display = accordion.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('buySeasonCardBtn')?.addEventListener('click', () => openLink(SEASON_CARD_LINK, 'city_season_card_click', true));
+    document.getElementById('buyPermanentCardBtn')?.addEventListener('click', () => openLink(PERMANENT_CARD_LINK, 'city_permanent_card_click', true));
+}
+
 export function showBottomSheet(index) {
     if (!state.hikesList.length) return;
 
@@ -437,9 +513,11 @@ export function showBottomSheet(index) {
         let extraInfoHtml = '';
         if (!isPast && !isCancelled && !isPlaceholder) {
             extraInfoHtml = '<div class="hike-extra-info">';
+            // Время начала
             if (hike.start_time) {
                 if (isCity) {
                     if (!isGuest) {
+                        // владелец карты: видит время
                         extraInfoHtml += `
                             <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                                 <span class="info-icon" style="color: ${accentColor};">
@@ -449,6 +527,7 @@ export function showBottomSheet(index) {
                             </div>
                         `;
                     } else {
+                        // гость: скрыто
                         extraInfoHtml += `
                             <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                                 <span class="info-icon" style="color: ${accentColor};">
@@ -459,6 +538,7 @@ export function showBottomSheet(index) {
                         `;
                     }
                 } else {
+                    // обычный хайк: время видно всем
                     extraInfoHtml += `
                         <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                             <span class="info-icon" style="color: ${accentColor};">
@@ -469,6 +549,7 @@ export function showBottomSheet(index) {
                     `;
                 }
             }
+            // Место сбора / место встречи
             if (hike.location_link) {
                 let locationHtml = '';
                 if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
@@ -476,12 +557,13 @@ export function showBottomSheet(index) {
                 } else {
                     locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
+                const locationLabel = isCity ? 'место встречи' : 'точка сбора';
                 extraInfoHtml += `
                     <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                         </span>
-                        <span><strong>точка сбора:</strong> ${locationHtml}</span>
+                        <span><strong>${locationLabel}:</strong> ${locationHtml}</span>
                     </div>
                 `;
             }
@@ -520,6 +602,7 @@ export function showBottomSheet(index) {
 
         let inviteButtonHtml = '';
         const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+        // Кнопку «пригласить друга» не показываем для city-событий
         if (isBooked && !isPast && !isCancelled && !isPlaceholder && !isCity) {
             const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
             inviteButtonHtml = `
@@ -585,43 +668,52 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    for (const p of participants) {
-                        const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
-                        const hasProfile = !!state.profiles[p.userId];
-                        const img = document.createElement('img');
-                        img.src = cachedUrl || '';
-                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
-                        img.alt = p.name || '';
-                        img.title = p.name || '';
-                        img.dataset.userId = p.userId;
-                        img.style.cssText = `
-                            width: 28px !important;
-                            height: 28px !important;
-                            border-radius: 50% !important;
-                            object-fit: cover !important;
-                        `;
-                        img.onerror = function () {
-                            const placeholder = document.createElement('div');
-                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
-                            placeholder.style.cssText = `
+                    if (isCity && isGuest) {
+                        // для гостей не показываем аватары
+                        const placeholderDiv = document.createElement('div');
+                        placeholderDiv.className = 'participant-avatar-placeholder';
+                        placeholderDiv.style.cssText = 'width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 12px; color: white;';
+                        placeholderDiv.textContent = '?';
+                        avatarsEl.appendChild(placeholderDiv);
+                    } else {
+                        for (const p of participants) {
+                            const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
+                            const hasProfile = !!state.profiles[p.userId];
+                            const img = document.createElement('img');
+                            img.src = cachedUrl || '';
+                            img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                            img.alt = p.name || '';
+                            img.title = p.name || '';
+                            img.dataset.userId = p.userId;
+                            img.style.cssText = `
                                 width: 28px !important;
                                 height: 28px !important;
                                 border-radius: 50% !important;
-                                background-color: #40a7e3 !important;
-                                display: flex !important;
-                                align-items: center !important;
-                                justify-content: center !important;
-                                font-weight: bold !important;
-                                font-size: 14px !important;
-                                color: white !important;
-                                text-transform: uppercase !important;
+                                object-fit: cover !important;
                             `;
-                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                            placeholder.textContent = initial;
-                            placeholder.dataset.userId = p.userId;
-                            this.parentNode.replaceChild(placeholder, this);
-                        };
-                        avatarsEl.appendChild(img);
+                            img.onerror = function () {
+                                const placeholder = document.createElement('div');
+                                placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                                placeholder.style.cssText = `
+                                    width: 28px !important;
+                                    height: 28px !important;
+                                    border-radius: 50% !important;
+                                    background-color: #40a7e3 !important;
+                                    display: flex !important;
+                                    align-items: center !important;
+                                    justify-content: center !important;
+                                    font-weight: bold !important;
+                                    font-size: 14px !important;
+                                    color: white !important;
+                                    text-transform: uppercase !important;
+                                `;
+                                const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                                placeholder.textContent = initial;
+                                placeholder.dataset.userId = p.userId;
+                                this.parentNode.replaceChild(placeholder, this);
+                            };
+                            avatarsEl.appendChild(img);
+                        }
                     }
                 }
 
@@ -638,6 +730,13 @@ export function showBottomSheet(index) {
         const imageContainer = contentWrapper.querySelector('.image-container');
         const isSoldOut = (window._participantCount || 0) >= 15;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
+
+        // Обработчик клика по счётчику участников
+        const participantCounterEl = document.getElementById('participantCounter');
+        if (participantCounterEl) {
+            participantCounterEl.removeEventListener('click', participantCounterHandler);
+            participantCounterEl.addEventListener('click', participantCounterHandler);
+        }
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
@@ -674,6 +773,21 @@ export function showBottomSheet(index) {
     }
 
     updateContent();
+
+    function participantCounterHandler(e) {
+        e.stopPropagation();
+        const hike = state.hikesList[sheetCurrentIndex];
+        if (!hike) return;
+        const isCity = hike.city === true || hike.city === 'yes';
+        const isGuestUser = state.userCard.status !== 'active';
+        if (isCity && isGuestUser) {
+            // для гостя на city-событии показываем попап вместо дропдауна
+            showGuestParticipantsPopup(hike.date);
+        } else {
+            // обычное поведение: открываем дропдаун
+            toggleParticipantDropdown(e.currentTarget, hike.date);
+        }
+    }
 
     function removeFloatingSheetButtons() {
         const btn = document.querySelector('.floating-sheet-buttons');
@@ -764,6 +878,7 @@ export function showBottomSheet(index) {
 
     log('slider_haikov_opened', false, state.user);
 }
+
 export function closeBottomSheet() {
     closeParticipantDropdown();
     closeLeaderDropdown();
@@ -1072,52 +1187,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     return track;
 }
 
-async function showCityGuestPopup(hikeDate, hikeTitle) {
-    haptic();
-    const config = state.popupConfig;
-    let popupData = { title: 'Городское событие', text: 'Чтобы участвовать в городских событиях, оформи карту интеллигента', button_text: 'оформить карту' };
-    if (state.popups && state.popups.city_guest_popup) {
-        popupData = state.popups.city_guest_popup;
-    }
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 500px; padding: 20px;">
-            <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title">${popupData.title}</div>
-            <div class="modal-text" style="margin-bottom: 16px;">${popupData.text}</div>
-            <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">${popupData.button_text}</button>
-            <div id="cardAccordionPopup" style="width: 100%; margin-top: 8px; display: none;">
-                <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
-                    <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1;">сезонная</button>
-                    <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1;">бессрочная</button>
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: rgba(255,255,255,0.7); font-size: 12px;">
-                    <div>сезон 2026</div>
-                    <div>навсегда</div>
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: #ffffff; font-size: 14px;">
-                    <div>${config.seasonCardPrice} ₽</div>
-                    <div>${config.permanentCardPrice} ₽</div>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    const closePopup = () => overlay.remove();
-    document.getElementById('closePopup').addEventListener('click', closePopup);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closePopup(); });
-    const buyBtn = document.getElementById('buyCardBtn');
-    const accordion = document.getElementById('cardAccordionPopup');
-    buyBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        accordion.style.display = accordion.style.display === 'none' ? 'block' : 'none';
-    });
-    document.getElementById('buySeasonCardBtn')?.addEventListener('click', () => openLink(SEASON_CARD_LINK, 'city_season_card_click', true));
-    document.getElementById('buyPermanentCardBtn')?.addEventListener('click', () => openLink(PERMANENT_CARD_LINK, 'city_permanent_card_click', true));
-}
-
 function updateFloatingSheetButtons() {
     const container = document.querySelector('.floating-sheet-buttons');
     if (!container) return;
@@ -1129,6 +1198,7 @@ function updateFloatingSheetButtons() {
     const isCity = (hike.city === true || hike.city === 'yes');
     const isGuest = state.userCard.status !== 'active';
 
+    // Для городских событий и гостей показываем специальную кнопку
     if (isCity && isGuest && !isPlaceholder && !isCancelled) {
         container.innerHTML = '';
         const row = document.createElement('div');
@@ -1146,14 +1216,10 @@ function updateFloatingSheetButtons() {
         return;
     }
 
+    // Для городских событий, но у пользователя есть карта — показываем swipe-контрол (регистрацию)
     if (isCity && !isGuest && !isPlaceholder && !isCancelled) {
-        container.innerHTML = '';
-        const infoMsg = document.createElement('div');
-        infoMsg.className = 'availability-floating';
-        infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
-        infoMsg.textContent = 'событие доступно по карте';
-        container.appendChild(infoMsg);
-        return;
+        // используем обычную логику ниже, но с проверкой, что это city и карта есть
+        // continue to normal flow
     }
 
     if (isPlaceholder) {
@@ -1809,6 +1875,7 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
+// Обработчики событий (оставлены без изменений)
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
@@ -1892,12 +1959,18 @@ document.addEventListener('click', function(e) {
         return;
     }
     if (link.classList.contains('participant-counter')) {
+        // уже обработано выше через participantCounterHandler, но дублируем для безопасности
         e.preventDefault(); e.stopPropagation();
         const hikeDate = link.dataset.hikeDate;
         if (!hikeDate) return;
-        const index = state.hikesList.findIndex(h => h.date === hikeDate);
-        if (index !== -1) {
-            toggleParticipantDropdown(link, hikeDate);
+        const hike = state.hikesData[hikeDate];
+        const isCity = hike && (hike.city === true || hike.city === 'yes');
+        const isGuestUser = state.userCard.status !== 'active';
+        if (isCity && isGuestUser) {
+            showGuestParticipantsPopup(hikeDate);
+        } else {
+            const index = state.hikesList.findIndex(h => h.date === hikeDate);
+            if (index !== -1) toggleParticipantDropdown(link, hikeDate);
         }
         return;
     }
