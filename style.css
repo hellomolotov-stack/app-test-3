@@ -2656,3 +2656,14 @@ body::after {
     background: #41B5ED !important;
     color: #ffffff !important;
 }
+/* Легенда календаря в стиле тегов */
+.calendar-legend .bottom-sheet-tag {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
