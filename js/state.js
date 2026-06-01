@@ -5,6 +5,7 @@ export const state = {
     metrics: { hikes: '0', kilometers: '0', locations: '0', meetings: '0' },
     hikesList: [],
     hikesData: {},
+    hikesWithTitle: [],   // ← добавлено
     faq: [],
     privileges: { club: [], city: [] },
     guestPrivileges: { club: [], city: [] },
@@ -26,7 +27,7 @@ export const state = {
     },
     hikeBookingStatus: {},
     updates: [],
-    mastermindSummaries: [],   // <-- новое поле
+    mastermindSummaries: [],
     pendingProfileClick: null,
 };
 
@@ -38,6 +39,7 @@ export function loadCachedState() {
             if (data.hikesList) {
                 state.hikesList = data.hikesList;
                 state.hikesData = data.hikesData;
+                state.hikesWithTitle = (data.hikesList || []).filter(h => h.title && h.title.trim() !== '');
             }
             if (data.metrics) state.metrics = data.metrics;
             if (data.faq) state.faq = data.faq;
@@ -48,7 +50,7 @@ export function loadCachedState() {
             if (data.randomPhrases) state.randomPhrases = data.randomPhrases;
             if (data.leaders) state.leaders = data.leaders;
             if (data.updates) state.updates = data.updates;
-            if (data.mastermindSummaries) state.mastermindSummaries = data.mastermindSummaries; // <-- новое
+            if (data.mastermindSummaries) state.mastermindSummaries = data.mastermindSummaries;
             return true;
         }
     } catch (e) {}
@@ -69,7 +71,7 @@ export function saveCachedState() {
             randomPhrases: state.randomPhrases,
             leaders: state.leaders,
             updates: state.updates,
-            mastermindSummaries: state.mastermindSummaries, // <-- новое
+            mastermindSummaries: state.mastermindSummaries,
         };
         localStorage.setItem('hikingAppCache', JSON.stringify(toCache));
     } catch (e) {}
