@@ -2635,3 +2635,24 @@ body::after {
 .calendar-day.city-day.woman-hike {
     background: #41B5ED !important;
 }
+/* Стили для слайдера городских событий */
+.city-sheet a,
+.city-sheet .dynamic-link,
+.city-sheet .info-row a,
+.city-sheet .bottom-sheet-section-content a {
+    color: #41B5ED !important;
+}
+.city-sheet .bottom-sheet-section-title,
+.city-sheet .bottom-sheet-header-date,
+.city-sheet .info-icon,
+.city-sheet .participant-text,
+.city-sheet .feature-tag {
+    color: #41B5ED !important;
+}
+.city-sheet .feature-tag {
+    background: #41B5ED !important;
+}
+.city-sheet .btn-yellow {
+    background: #41B5ED !important;
+    color: #ffffff !important;
+}
