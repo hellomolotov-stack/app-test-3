@@ -58,7 +58,7 @@ export function renderCalendar(container) {
                 <div class="calendar-legend" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">📷 отчёт</span>
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🎟️ запись</span>
-                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">💫 готовим хайк</span>
+                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">⛰️ готовим хайк</span>
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🌧️ переносим дату</span>
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🏄🏻‍♂️ готовим событие</span>
                 </div>
