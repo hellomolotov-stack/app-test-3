@@ -1,4 +1,4 @@
-// js/ui/calendar.js — часть 1
+// js/ui/calendar.js — полный файл, часть 1
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -338,6 +338,13 @@ export function showBottomSheet(index) {
         } else {
             accentColor = 'var(--yellow)';
         }
+
+        if (isCity) {
+            contentWrapper.classList.add('city-sheet');
+        } else {
+            contentWrapper.classList.remove('city-sheet');
+        }
+
         const isCancelled = hike.cancelled === true;
         const isPlaceholder = !hike.title || hike.title.trim() === '';
 
@@ -431,14 +438,36 @@ export function showBottomSheet(index) {
         if (!isPast && !isCancelled && !isPlaceholder) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
-                extraInfoHtml += `
-                    <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
-                        <span class="info-icon" style="color: ${accentColor};">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        </span>
-                        <span><strong>начало:</strong> ${hike.start_time}</span>
-                    </div>
-                `;
+                if (isCity) {
+                    if (!isGuest) {
+                        extraInfoHtml += `
+                            <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
+                                <span class="info-icon" style="color: ${accentColor};">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                </span>
+                                <span><strong>начало:</strong> ${hike.start_time}</span>
+                            </div>
+                        `;
+                    } else {
+                        extraInfoHtml += `
+                            <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
+                                <span class="info-icon" style="color: ${accentColor};">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                </span>
+                                <span><strong>доступно членам клуба</strong></span>
+                            </div>
+                        `;
+                    }
+                } else {
+                    extraInfoHtml += `
+                        <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
+                            <span class="info-icon" style="color: ${accentColor};">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            </span>
+                            <span><strong>начало:</strong> ${hike.start_time}</span>
+                        </div>
+                    `;
+                }
             }
             if (hike.location_link) {
                 let locationHtml = '';
@@ -491,7 +520,7 @@ export function showBottomSheet(index) {
 
         let inviteButtonHtml = '';
         const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-        if (isBooked && !isPast && !isCancelled && !isPlaceholder) {
+        if (isBooked && !isPast && !isCancelled && !isPlaceholder && !isCity) {
             const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
             inviteButtonHtml = `
                 <div style="margin-top: 16px;">
@@ -735,9 +764,6 @@ export function showBottomSheet(index) {
 
     log('slider_haikov_opened', false, state.user);
 }
-
-// продолжение calendar.js
-
 export function closeBottomSheet() {
     closeParticipantDropdown();
     closeLeaderDropdown();
@@ -1103,7 +1129,6 @@ function updateFloatingSheetButtons() {
     const isCity = (hike.city === true || hike.city === 'yes');
     const isGuest = state.userCard.status !== 'active';
 
-    // Для городских событий и гостей показываем специальную кнопку
     if (isCity && isGuest && !isPlaceholder && !isCancelled) {
         container.innerHTML = '';
         const row = document.createElement('div');
@@ -1118,6 +1143,16 @@ function updateFloatingSheetButtons() {
         participateBtn.addEventListener('click', () => showCityGuestPopup(hike.date, hike.title));
         row.appendChild(participateBtn);
         container.appendChild(row);
+        return;
+    }
+
+    if (isCity && !isGuest && !isPlaceholder && !isCancelled) {
+        container.innerHTML = '';
+        const infoMsg = document.createElement('div');
+        infoMsg.className = 'availability-floating';
+        infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
+        infoMsg.textContent = 'событие доступно по карте';
+        container.appendChild(infoMsg);
         return;
     }
 
