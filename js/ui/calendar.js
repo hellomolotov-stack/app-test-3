@@ -56,9 +56,15 @@ export function renderCalendar(container) {
                     </div>
                 </div>
                 <div class="calendar-legend">
-                    <span class="legend-item"><span class="legend-emoji">📷</span> отчёт</span>
-                    <span class="legend-item"><span class="legend-emoji">🎟️</span> запись</span>
-                    <span class="legend-item"><span class="legend-emoji">💫</span> готовим хайк или событие</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+                        <span class="legend-item"><span class="legend-emoji">📷</span> отчёт</span>
+                        <span class="legend-item"><span class="legend-emoji">🎟️</span> запись</span>
+                        <span class="legend-item"><span class="legend-emoji">💫</span> готовим хайк</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span class="legend-item"><span class="legend-emoji">🌧️</span> переносим дату</span>
+                        <span class="legend-item"><span class="legend-emoji">🏄🏻‍♂️</span> готовим событие</span>
+                    </div>
                 </div>
             </div>
             <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
@@ -149,7 +155,7 @@ export function renderCalendar(container) {
             }
         });
 
-    // Только полноценные хайки кликабельны, placeholder-дни (💫) — нет
+    // Только полноценные хайки кликабельны, placeholder-дни — нет
     document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
@@ -249,26 +255,6 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
-// ========== ОСНОВНЫЕ ФУНКЦИИ СЛАЙДЕРА ==========
-let sheetCurrentIndex = 0;
-let sheetScrollListener = null;
-let dragStartY = 0;
-let isDragging = false;
-let currentUnsubscribe = null;
-
-const avatarCache = new Map();
-const CACHE_TTL = 60 * 60 * 1000;
-
-async function getCachedAvatar(userId, photoUrl) {
-    const now = Date.now();
-    if (avatarCache.has(userId)) {
-        const entry = avatarCache.get(userId);
-        if (now - entry.timestamp < CACHE_TTL) return entry.url;
-    }
-    avatarCache.set(userId, { url: photoUrl, timestamp: now });
-    return photoUrl;
-}
-
 // ========== ПОПАП ДЛЯ ГОСТЕЙ ПРИ НАЖАТИИ НА СЧЁТЧИК (ГОЛУБОЕ ОФОРМЛЕНИЕ, ПЕРЕХОД НА ГЛАВНУЮ) ==========
 async function showGuestParticipantsPopup(hikeDate) {
     haptic();
@@ -360,6 +346,26 @@ async function showCityGuestPopup(hikeDate, hikeTitle) {
     });
     document.getElementById('buySeasonCardBtn')?.addEventListener('click', () => openLink(SEASON_CARD_LINK, 'city_season_card_click', true));
     document.getElementById('buyPermanentCardBtn')?.addEventListener('click', () => openLink(PERMANENT_CARD_LINK, 'city_permanent_card_click', true));
+}
+
+// ========== ОСНОВНЫЕ ФУНКЦИИ СЛАЙДЕРА ==========
+let sheetCurrentIndex = 0;
+let sheetScrollListener = null;
+let dragStartY = 0;
+let isDragging = false;
+let currentUnsubscribe = null;
+
+const avatarCache = new Map();
+const CACHE_TTL = 60 * 60 * 1000;
+
+async function getCachedAvatar(userId, photoUrl) {
+    const now = Date.now();
+    if (avatarCache.has(userId)) {
+        const entry = avatarCache.get(userId);
+        if (now - entry.timestamp < CACHE_TTL) return entry.url;
+    }
+    avatarCache.set(userId, { url: photoUrl, timestamp: now });
+    return photoUrl;
 }
 
 export function showBottomSheet(index) {
@@ -684,7 +690,7 @@ export function showBottomSheet(index) {
                     if (isCity && isGuest) {
                         const placeholderDiv = document.createElement('div');
                         placeholderDiv.className = 'participant-avatar-placeholder';
-                        placeholderDiv.style.cssText = 'width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 12px; color: white;';
+                        placeholderDiv.style.cssText = 'width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 12px; color: white; box-shadow: 0 0 0 2px rgba(255,255,255,0.3);';
                         placeholderDiv.textContent = '?';
                         avatarsEl.appendChild(placeholderDiv);
                     } else {
@@ -702,7 +708,7 @@ export function showBottomSheet(index) {
                                 height: 28px !important;
                                 border-radius: 50% !important;
                                 object-fit: cover !important;
-                                box-shadow: none !important;
+                                box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
                             `;
                             img.onerror = function () {
                                 const placeholder = document.createElement('div');
@@ -719,7 +725,7 @@ export function showBottomSheet(index) {
                                     font-size: 14px !important;
                                     color: white !important;
                                     text-transform: uppercase !important;
-                                    box-shadow: none !important;
+                                    box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
                                 `;
                                 const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                                 placeholder.textContent = initial;
