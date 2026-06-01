@@ -1,4 +1,4 @@
-// js/ui/calendar.js
+// js/ui/calendar.js (полный файл с изменениями)
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -56,9 +56,9 @@ export function renderCalendar(container) {
                     </div>
                 </div>
                 <div class="calendar-legend">
-                    <span class="legend-item"><span class="legend-emoji">📷</span> – отчёт</span>
-                    <span class="legend-item"><span class="legend-emoji">🎟️</span> – запись</span>
-                    <span class="legend-item"><span class="legend-emoji">👀</span> – готовим хайк</span>
+                    <span class="legend-item"><span class="legend-emoji">📷</span></span>
+                    <span class="legend-item"><span class="legend-emoji">🎟️</span></span>
+                    <span class="legend-item"><span class="legend-emoji">👀</span> готовим хайк или событие</span>
                 </div>
             </div>
             <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
@@ -517,7 +517,6 @@ export function showBottomSheet(index) {
             if (hike.start_time) {
                 if (isCity) {
                     if (!isGuest) {
-                        // владелец карты: видит время
                         extraInfoHtml += `
                             <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                                 <span class="info-icon" style="color: ${accentColor};">
@@ -527,7 +526,6 @@ export function showBottomSheet(index) {
                             </div>
                         `;
                     } else {
-                        // гость: скрыто
                         extraInfoHtml += `
                             <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                                 <span class="info-icon" style="color: ${accentColor};">
@@ -538,7 +536,6 @@ export function showBottomSheet(index) {
                         `;
                     }
                 } else {
-                    // обычный хайк: время видно всем
                     extraInfoHtml += `
                         <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                             <span class="info-icon" style="color: ${accentColor};">
@@ -549,7 +546,7 @@ export function showBottomSheet(index) {
                     `;
                 }
             }
-            // Место сбора / место встречи
+            // Место сбора / локация
             if (hike.location_link) {
                 let locationHtml = '';
                 if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
@@ -557,7 +554,7 @@ export function showBottomSheet(index) {
                 } else {
                     locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
-                const locationLabel = isCity ? 'место встречи' : 'точка сбора';
+                const locationLabel = isCity ? 'локация' : 'точка сбора';
                 extraInfoHtml += `
                     <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
@@ -602,7 +599,6 @@ export function showBottomSheet(index) {
 
         let inviteButtonHtml = '';
         const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-        // Кнопку «пригласить друга» не показываем для city-событий
         if (isBooked && !isPast && !isCancelled && !isPlaceholder && !isCity) {
             const inviteText = isWoman ? 'пригласить подругу' : 'пригласить друга';
             inviteButtonHtml = `
@@ -669,7 +665,6 @@ export function showBottomSheet(index) {
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
                     if (isCity && isGuest) {
-                        // для гостей не показываем аватары
                         const placeholderDiv = document.createElement('div');
                         placeholderDiv.className = 'participant-avatar-placeholder';
                         placeholderDiv.style.cssText = 'width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 12px; color: white;';
@@ -781,10 +776,8 @@ export function showBottomSheet(index) {
         const isCity = hike.city === true || hike.city === 'yes';
         const isGuestUser = state.userCard.status !== 'active';
         if (isCity && isGuestUser) {
-            // для гостя на city-событии показываем попап вместо дропдауна
             showGuestParticipantsPopup(hike.date);
         } else {
-            // обычное поведение: открываем дропдаун
             toggleParticipantDropdown(e.currentTarget, hike.date);
         }
     }
@@ -1198,28 +1191,15 @@ function updateFloatingSheetButtons() {
     const isCity = (hike.city === true || hike.city === 'yes');
     const isGuest = state.userCard.status !== 'active';
 
-    // Для городских событий и гостей показываем специальную кнопку
+    // Для городских событий и гостей (без карты) показываем информационное сообщение
     if (isCity && isGuest && !isPlaceholder && !isCancelled) {
         container.innerHTML = '';
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.justifyContent = 'center';
-        row.style.width = '100%';
-        const participateBtn = document.createElement('button');
-        participateBtn.className = 'btn btn-yellow btn-glow';
-        participateBtn.textContent = 'участвовать';
-        participateBtn.style.backgroundColor = '#41B5ED';
-        participateBtn.style.color = '#ffffff';
-        participateBtn.addEventListener('click', () => showCityGuestPopup(hike.date, hike.title));
-        row.appendChild(participateBtn);
-        container.appendChild(row);
+        const infoMsg = document.createElement('div');
+        infoMsg.className = 'availability-floating';
+        infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
+        infoMsg.textContent = 'событие доступно членам клуба';
+        container.appendChild(infoMsg);
         return;
-    }
-
-    // Для городских событий, но у пользователя есть карта — показываем swipe-контрол (регистрацию)
-    if (isCity && !isGuest && !isPlaceholder && !isCancelled) {
-        // используем обычную логику ниже, но с проверкой, что это city и карта есть
-        // continue to normal flow
     }
 
     if (isPlaceholder) {
@@ -1959,7 +1939,6 @@ document.addEventListener('click', function(e) {
         return;
     }
     if (link.classList.contains('participant-counter')) {
-        // уже обработано выше через participantCounterHandler, но дублируем для безопасности
         e.preventDefault(); e.stopPropagation();
         const hikeDate = link.dataset.hikeDate;
         if (!hikeDate) return;
