@@ -1,5 +1,5 @@
 // js/ui/home.js
-import { haptic, openLink, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
+import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups } from '../firebase.js';
@@ -81,7 +81,8 @@ export function renderUserBookings(container) {
     `;
     bookings.forEach(booking => {
         const isWoman = booking.woman === 'yes';
-        const accentColor = isWoman ? '#FB5EB0' : 'var(--yellow)';
+        const isCity = booking.city === true || booking.city === 'yes';
+        const accentColor = isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)');
         const dateParts = booking.date.split('-');
         const day = parseInt(dateParts[2], 10);
         const month = parseInt(dateParts[1], 10) - 1;
@@ -97,7 +98,10 @@ export function renderUserBookings(container) {
         }
         if (cleanedTitle.toLowerCase().startsWith('на ')) cleanedTitle = cleanedTitle.substring(3);
         cleanedTitle = cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
-        const displayTitle = `хайк на ${cleanedTitle}`;
+        
+        const eventType = isCity ? 'событие на' : 'хайк на';
+        const displayTitle = `${eventType} ${cleanedTitle}`;
+        
         html += `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1; margin-right: 16px;">
@@ -112,86 +116,6 @@ export function renderUserBookings(container) {
     container.innerHTML = html;
 }
 
-// 🔄 Загрузка актуального попапа из Firebase
-async function getPopupData(popupId, fallback) {
-    try {
-        const freshPopups = await loadPopups();
-        console.log('Свежие попапы из Firebase:', freshPopups);
-        if (freshPopups && freshPopups[popupId]) {
-            console.log('Найден попап', popupId, freshPopups[popupId]);
-            return freshPopups[popupId];
-        }
-    } catch (e) {
-        console.warn('Не удалось загрузить свежие попапы, использую кеш:', e);
-    }
-    console.log('Использую запасной попап для', popupId);
-    return (state.popups && state.popups[popupId]) || fallback;
-}
-
-// -------------------------------------------------
-//  ГОСТЕВЫЕ ПОПАПЫ (асинхронные)
-// -------------------------------------------------
-async function showGuestPopup() {
-    haptic();
-    const popup = await getPopupData('guest_card_popup', {
-        title: '💳 карта интеллигента',
-        text: 'как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.',
-        button_text: 'узнать о привилегиях'
-    });
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.id = 'guestPopup';
-    overlay.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-title">${popup.title}</div>
-            <div class="modal-text">${popup.text}</div>
-            <img src="${state.appBanners?.guest_card_banner || ''}" class="guest-card-banner" onerror="this.style.display='none'">
-            <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">${popup.button_text}</button></div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
-    document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); renderGuestPrivileges(); });
-    log('guest_popup_opened', true, state.user);
-}
-
-async function showGuestMastermindPopup() {
-    haptic();
-    const popup = await getPopupData('guest_mastermind_popup', {
-        title: '🧠 саммари мастермайнда',
-        text: 'чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?',
-        button_text: 'расскажите скорее'
-    });
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title">${popup.title}</div>
-            <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
-            <img src="${state.appBanners?.guest_card_banner || ''}" class="guest-card-banner" onerror="this.style.display='none'">
-            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            haptic();
-            overlay.remove();
-        }
-    });
-    document.getElementById('goToPrivilegesFromMastermindBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        overlay.remove();
-        renderGuestPrivileges();
-    });
-}
-
-// -------------------------------------------------
-//  РЕНДЕРИНГ ГЛАВНОЙ
-// -------------------------------------------------
 function renderMastermindSummaries() {
     const summaries = state.mastermindSummaries || [];
     const isGuest = state.userCard.status !== 'active';
@@ -278,11 +202,37 @@ function renderUpdatesBlock() {
     `;
 }
 
-// Функция-обработчик для кнопок "читать" у гостей
 function handleGuestRead(e) {
     e.preventDefault();
     log('mastermind_read', true, state.user);
     showGuestMastermindPopup();
+}
+
+async function showGuestMastermindPopup() {
+    haptic();
+    const popup = (state.popups && state.popups.guest_mastermind_popup) || {
+        title: '🧠 саммари мастермайнда',
+        text: 'чтобы получить доступ к разделу саммари, тебе понадобится карта интеллигента. с ней в клубе можно всё: не нужно покупать билеты на хайкинг, можно получать скидки в городе, читать саммари, подключить наши три буквы и... короче, хочешь обо всём узнать?',
+        button_text: 'расскажите скорее'
+    };
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 360px;">
+            <div class="modal-title">${popup.title}</div>
+            <div class="modal-text" style="font-size: 14px;">${popup.text}</div>
+            <img src="${state.appBanners?.guest_card_banner || ''}" class="guest-card-banner" onerror="this.style.display='none'">
+            <button class="btn btn-yellow" id="goToPrivilegesFromMastermindBtn" style="margin-top: 16px;">${popup.button_text}</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+    document.getElementById('goToPrivilegesFromMastermindBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        overlay.remove();
+        renderGuestPrivileges();
+    });
 }
 
 function renderGuestHome() {
@@ -371,6 +321,30 @@ function renderGuestHome() {
     setupBottomNav();
 }
 
+async function showGuestPopup() {
+    haptic();
+    const popup = (state.popups && state.popups.guest_card_popup) || {
+        title: '💳 карта интеллигента',
+        text: 'как её получить? тебе нужно быть готовым к большим переменам. почему? если ты станешь частью клуба интеллигенции, твои выходные уже не будут прежними. впечатления, знакомства, юмор, свежий воздух, продуктивный отдых и привилегии в городе. это лишь малая часть того, что тебя ждёт в клубе.',
+        button_text: 'узнать о привилегиях'
+    };
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'guestPopup';
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-title">${popup.title}</div>
+            <div class="modal-text">${popup.text}</div>
+            <img src="${state.appBanners?.guest_card_banner || ''}" class="guest-card-banner" onerror="this.style.display='none'">
+            <div style="text-align: center; margin-top: 20px;"><button class="btn btn-yellow" id="popupPrivilegesBtn">${popup.button_text}</button></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+    document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); renderGuestPrivileges(); });
+    log('guest_popup_opened', true, state.user);
+}
+
 function renderOwnerHome() {
     cleanupProfileOverlays();
     const user = state.user;
@@ -418,7 +392,7 @@ function renderOwnerHome() {
     document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', false, user); renderNewcomerPage(false); });
 
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
-        link.addEventListener('click', (e) => {
+        link.addEventListener('click', () => {
             log('mastermind_read', false, state.user);
         });
     });
