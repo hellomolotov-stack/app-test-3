@@ -42,7 +42,7 @@ export function renderCalendar(container) {
     const hasNextMonth = hasHikesInMonth(year, month + 1);
 
     let calendarHtml = `
-        <h2 class="section-title">🗓️ календарь хайков</h2>
+        <h2 class="section-title">🗓️ календарь событий</h2>
         <div class="calendar-item">
             <div class="calendar-header-with-legend">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
