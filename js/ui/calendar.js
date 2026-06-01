@@ -736,6 +736,8 @@ export function showBottomSheet(index) {
     log('slider_haikov_opened', false, state.user);
 }
 
+// продолжение calendar.js
+
 export function closeBottomSheet() {
     closeParticipantDropdown();
     closeLeaderDropdown();
@@ -1044,6 +1046,52 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     return track;
 }
 
+async function showCityGuestPopup(hikeDate, hikeTitle) {
+    haptic();
+    const config = state.popupConfig;
+    let popupData = { title: 'Городское событие', text: 'Чтобы участвовать в городских событиях, оформи карту интеллигента', button_text: 'оформить карту' };
+    if (state.popups && state.popups.city_guest_popup) {
+        popupData = state.popups.city_guest_popup;
+    }
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width: 500px; padding: 20px;">
+            <button class="modal-close" id="closePopup">&times;</button>
+            <div class="modal-title">${popupData.title}</div>
+            <div class="modal-text" style="margin-bottom: 16px;">${popupData.text}</div>
+            <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">${popupData.button_text}</button>
+            <div id="cardAccordionPopup" style="width: 100%; margin-top: 8px; display: none;">
+                <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
+                    <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1;">сезонная</button>
+                    <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1;">бессрочная</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: rgba(255,255,255,0.7); font-size: 12px;">
+                    <div>сезон 2026</div>
+                    <div>навсегда</div>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: #ffffff; font-size: 14px;">
+                    <div>${config.seasonCardPrice} ₽</div>
+                    <div>${config.permanentCardPrice} ₽</div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    const closePopup = () => overlay.remove();
+    document.getElementById('closePopup').addEventListener('click', closePopup);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closePopup(); });
+    const buyBtn = document.getElementById('buyCardBtn');
+    const accordion = document.getElementById('cardAccordionPopup');
+    buyBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        accordion.style.display = accordion.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('buySeasonCardBtn')?.addEventListener('click', () => openLink(SEASON_CARD_LINK, 'city_season_card_click', true));
+    document.getElementById('buyPermanentCardBtn')?.addEventListener('click', () => openLink(PERMANENT_CARD_LINK, 'city_permanent_card_click', true));
+}
+
 function updateFloatingSheetButtons() {
     const container = document.querySelector('.floating-sheet-buttons');
     if (!container) return;
@@ -1052,6 +1100,26 @@ function updateFloatingSheetButtons() {
 
     const isPlaceholder = !hike.title || hike.title.trim() === '';
     const isCancelled = hike.cancelled === true;
+    const isCity = (hike.city === true || hike.city === 'yes');
+    const isGuest = state.userCard.status !== 'active';
+
+    // Для городских событий и гостей показываем специальную кнопку
+    if (isCity && isGuest && !isPlaceholder && !isCancelled) {
+        container.innerHTML = '';
+        const row = document.createElement('div');
+        row.style.display = 'flex';
+        row.style.justifyContent = 'center';
+        row.style.width = '100%';
+        const participateBtn = document.createElement('button');
+        participateBtn.className = 'btn btn-yellow btn-glow';
+        participateBtn.textContent = 'участвовать';
+        participateBtn.style.backgroundColor = '#41B5ED';
+        participateBtn.style.color = '#ffffff';
+        participateBtn.addEventListener('click', () => showCityGuestPopup(hike.date, hike.title));
+        row.appendChild(participateBtn);
+        container.appendChild(row);
+        return;
+    }
 
     if (isPlaceholder) {
         container.innerHTML = `<div class="availability-floating" style="margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;">👀 скоро появится</div>`;
@@ -1064,7 +1132,6 @@ function updateFloatingSheetButtons() {
     }
 
     const isWoman = hike.woman === 'yes';
-    const isCity = hike.city === true || hike.city === 'yes';
     let accentColor;
     if (isCity) {
         accentColor = '#41B5ED';
@@ -1078,7 +1145,6 @@ function updateFloatingSheetButtons() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const isPast = hikeDate < today;
-    const isGuest = state.userCard.status !== 'active';
     const MAX_TICKETS = 15;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
