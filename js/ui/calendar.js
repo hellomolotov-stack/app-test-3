@@ -1,4 +1,4 @@
-// js/ui/calendar.js
+// js/ui/calendar.js — часть 1
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -16,7 +16,6 @@ import { renderHome } from './home.js';
 import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
-
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -78,12 +77,7 @@ export function renderCalendar(container) {
         const isPast = isFullHike && new Date(dateStr) < today;
         const isCancelled = isFullHike && hike.cancelled === true;
         const isWoman = isFullHike && hike.woman === 'yes';
-        
-        // ПРИНУДИТЕЛЬНОЕ ПРЕОБРАЗОВАНИЕ city
-        let isCity = false;
-        if (isFullHike && (hike.city === true || hike.city === 'yes' || hike.city === 'true')) {
-            isCity = true;
-        }
+        const isCity = isFullHike && (hike.city === true || hike.city === 'yes' || hike.city === 'true');
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
@@ -114,7 +108,6 @@ export function renderCalendar(container) {
             innerHtml += `<span class="calendar-emoji">👀</span>`;
         }
 
-        // ГАРАНТИРОВАННЫЙ ИНЛАЙН-СТИЛЬ ДЛЯ ГОРОДСКИХ СОБЫТИЙ
         let inlineStyle = '';
         if (isCity) {
             inlineStyle = ' style="background: #41B5ED !important; color: #ffffff !important; border-radius: 50%;"';
