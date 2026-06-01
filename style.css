@@ -314,7 +314,7 @@ body::before {
     background-color: var(--yellow);
     color: #000000;
     font-weight: 600;
-    animation: glow 3s ease-in-out infinite;
+    animation: none !important; /* убираем свечение */
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     border: none;
 }
@@ -548,7 +548,7 @@ body::before {
     display: flex;
     justify-content: space-evenly;
     align-items: center;
-    background-color: rgba(73, 138, 176, 0.15);
+    background: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 50px;
@@ -567,7 +567,7 @@ body::before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px 4px;
+    padding: 6px 20px;
     border-radius: 40px;
     cursor: pointer;
     transition: background-color 0.2s, color 0.2s;
@@ -621,7 +621,7 @@ body::before {
     position: fixed;
     bottom: 100px;
     right: 20px;
-    background-color: rgba(73, 138, 176, 0.15);
+    background: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-radius: 28px;
@@ -661,71 +661,85 @@ body::before {
     background-color: rgba(255,255,255,0.1);
 }
 
-/* Адаптивные правки для маленьких экранов */
 @media (max-width: 480px) {
-    .nav-item {
-        padding: 8px 4px;
-    }
-    .nav-label {
-        font-size: 10px;
-    }
-    .nav-icon svg {
-        width: 20px;
-        height: 20px;
-    }
+    .nav-item { padding: 8px 4px; }
+    .nav-label { font-size: 10px; }
+    .nav-icon svg { width: 20px; height: 20px; }
 }
 
 @media (max-width: 400px) {
-    .nav-item {
-        padding: 8px 2px;
-    }
-    .nav-label {
-        font-size: 9px;
-    }
-    .nav-icon svg {
-        width: 18px;
-        height: 18px;
-    }
+    .nav-item { padding: 8px 2px; }
+    .nav-label { font-size: 9px; }
+    .nav-icon svg { width: 18px; height: 18px; }
 }
 
 @media (max-width: 360px) {
-    .nav-item {
-        padding: 8px 0px;
-    }
-    .nav-label {
-        font-size: 8px;
-    }
-    .nav-icon svg {
-        width: 16px;
-        height: 16px;
-    }
+    .nav-item { padding: 8px 0px; }
+    .nav-label { font-size: 8px; }
+    .nav-icon svg { width: 16px; height: 16px; }
 }
 
 @media (orientation: landscape) {
-    .bottom-nav {
-        bottom: 10px;
-        padding: 6px 4px;
-    }
-    .nav-item {
-        padding: 6px 8px;
-    }
-    .nav-icon svg {
-        width: 20px;
-        height: 20px;
-    }
-    .nav-label {
-        font-size: 10px;
-    }
-    .nav-popup {
-        bottom: 80px;
-        right: 10px;
-        border-radius: 20px;
-    }
-    .popup-item {
-        height: 48px;
-        padding: 0 16px;
-        font-size: 14px;
-    }
+    .bottom-nav { bottom: 10px; padding: 6px 4px; }
+    .nav-item { padding: 6px 8px; }
+    .nav-icon svg { width: 20px; height: 20px; }
+    .nav-label { font-size: 10px; }
+    .nav-popup { bottom: 80px; right: 10px; border-radius: 20px; }
+    .popup-item { height: 48px; padding: 0 16px; font-size: 14px; }
+}
+
+/* Слайдер хайков — единый стиль, идентичный плавающему меню */
+.bottom-sheet {
+    width: 100%;
+    max-width: 600px;
+    background: rgba(73, 138, 176, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-radius: 28px 28px 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 1001;
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+    max-height: 90vh;
+    overflow: hidden;
+    will-change: transform;
+    margin: 0 auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Контент внутри слайдера — прозрачный фон, чтобы не перекрывать блюр */
+.bottom-sheet-content-wrapper,
+.bottom-sheet-header-block,
+.bottom-sheet-section {
+    background: transparent !important;
+}
+
+/* Элементы внутри слайдера получают полупрозрачный фон без блюра */
+.bottom-sheet-handle,
+.bottom-sheet-nav-arrow,
+.bottom-sheet .btn,
+.bottom-sheet .swipe-track,
+.bottom-sheet .availability-floating,
+.bottom-sheet .participant-counter,
+.bottom-sheet .bottom-sheet-tag,
+.bottom-sheet .feature-tag {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* Плавающие кнопки вне слайдера сохраняют блюр */
+.floating-sheet-buttons .btn,
+.floating-sheet-buttons .swipe-track,
+.floating-sheet-buttons .availability-floating {
+    background: rgba(73, 138, 176, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
 }
 
 .bottom-sheet-overlay {
@@ -750,28 +764,6 @@ body::before {
 .bottom-sheet-overlay.visible {
     opacity: 1;
     visibility: visible;
-}
-
-.bottom-sheet {
-    width: 100%;
-    max-width: 600px;
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    border-radius: 28px 28px 0 0;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-    border-bottom: none;
-    z-index: 1001;
-    transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
-    max-height: 90vh;
-    overflow: hidden;
-    will-change: transform;
-    margin: 0 auto;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
 }
 
 .bottom-sheet.visible {
@@ -1405,13 +1397,13 @@ body::before {
 }
 
 .calendar-day.booked-day {
-    box-shadow: 0 0 10px #D9FD19;
-    animation: glow 3s ease-in-out infinite;
+    box-shadow: none !important;
+    animation: none !important;
 }
 
 .calendar-day.woman-hike.booked-day {
-    box-shadow: 0 0 10px #FB5EB0;
-    animation: glow-pink 3s ease-in-out infinite;
+    box-shadow: none !important;
+    animation: none !important;
 }
 
 .calendar-day.empty {
@@ -2217,53 +2209,8 @@ body.night-mode::before {
 .letter-popup-text a:hover {
     text-decoration: underline;
 }
-/* в конец файла добавить: */
 
-.infinite-scroll-container {
-    position: relative;
-    overflow: hidden;
-}
-
-.infinite-scroll-wrapper {
-    animation: scrollUp 40s linear infinite;
-    will-change: transform;
-}
-
-.infinite-scroll-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background: linear-gradient(to bottom, var(--bg-color, #ffffff), transparent);
-    z-index: 10;
-    pointer-events: none;
-}
-
-.infinite-scroll-wrapper.paused {
-    animation-play-state: paused;
-}
-
-@keyframes scrollUp {
-    0% {
-        transform: translateY(0);
-    }
-    100% {
-        transform: translateY(-50%);
-    }
-}
-
-/* чтобы анимация при касании экрана останавливалась */
-.infinite-scroll-container:active .infinite-scroll-wrapper,
-.infinite-scroll-wrapper:active {
-    animation-play-state: paused;
-}
-/* Убираем анимацию свечения с аккордеона карты */
-.card-accordion .accordion-btn {
-    animation: none !important;
-}
-/* Анимация бесконечной прокрутки профилей (гости) */
+/* АНИМАЦИЯ БЕСКОНЕЧНОЙ ПРОКРУТКИ ПРОФИЛЕЙ (ГОСТИ) */
 .infinite-scroll-container {
     position: relative;
     overflow: hidden;
@@ -2286,250 +2233,7 @@ body.night-mode::before {
     0% { transform: translateY(0); }
     100% { transform: translateY(-50%); }
 }
-/* ВЕРХНИЙ БЛЮР С ПЛАВНЫМ ПЕРЕХОДОМ */
-.header-blur {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: calc(env(safe-area-inset-top, 0px) + 80px);
-    background: linear-gradient(
-        to bottom,
-        rgba(73, 138, 176, 0.85) 0%,
-        rgba(73, 138, 176, 0.1) 80%,
-        rgba(73, 138, 176, 0) 100%
-    );
-    z-index: 50;
-    pointer-events: none;
-}
-/* Блок обновлений — фиксированный градиент снизу */
-.updates-container {
-    position: relative;
-    overflow: hidden;
-}
-
-
-/* ПРАЗДНИЧНЫЙ ПОПАП ГОДОВЩИНЫ (в стиле слайдера хайков) */
-.anniversary-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-    z-index: 3000;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-.anniversary-overlay.visible {
-    opacity: 1;
-}
-.anniversary-sheet {
-    width: 100%;
-    max-width: 600px;
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 28px 28px 0 0;
-    padding: 24px 16px 40px;
-    position: relative;
-    color: #ffffff;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-    transform: translateY(100%);
-    transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
-    max-height: 85vh;
-    overflow-y: auto;
-}
-.anniversary-overlay.visible .anniversary-sheet {
-    transform: translateY(0);
-}
-.anniversary-close-btn {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    transition: background 0.2s;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
-}
-.anniversary-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-.anniversary-content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: left;
-    gap: 12px;
-}
-.anniversary-title {
-    font-size: 20px;
-    font-weight: 900;
-    line-height: 1.3;
-    color: #ffffff;
-}
-.anniversary-text {
-    font-size: 15px;
-    line-height: 1.4;
-    color: rgba(255,255,255,0.9);
-}
-.anniversary-pricing {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 24px;
-    font-weight: 900;
-    margin: 4px 0;
-}
-.anniversary-old-price {
-    text-decoration: line-through;
-    color: rgba(255,255,255,0.6);
-    font-size: 18px;
-    font-weight: 600;
-}
-.anniversary-new-price {
-    color: #D9FD19;
-}
-.anniversary-subtitle {
-    font-weight: 700;
-    font-size: 16px;
-    color: #D9FD19;
-    margin-top: 8px;
-    margin-bottom: 4px;
-}
-.anniversary-benefits {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.anniversary-benefits li {
-    font-size: 14px;
-    line-height: 1.4;
-    color: rgba(255,255,255,0.9);
-}
-.anniversary-benefits li s {
-    color: rgba(255,255,255,0.5);
-}
-.anniversary-remaining {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: rgba(255,255,255,0.9);
-    margin-top: 4px;
-    margin-bottom: 4px;
-}
-.pulse-dot {
-    width: 10px;
-    height: 10px;
-    background-color: #2ecc71;
-    border-radius: 50%;
-    animation: pulse-green 1.5s ease-in-out infinite;
-}
-@keyframes pulse-green {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.8); opacity: 0.4; }
-    100% { transform: scale(1); opacity: 1; }
-}
-.anniversary-btn {
-    width: 100%;
-    padding: 16px;
-    border-radius: 12px;
-    font-size: 18px;
-    font-weight: 600;
-    cursor: pointer;
-    background-color: #D9FD19;
-    color: #000000;
-    border: none;
-    transition: opacity 0.2s;
-    margin-top: 4px;
-}
-.anniversary-btn:hover {
-    opacity: 0.9;
-}
-/* Слайдер хайков — фон как у плавающего меню */
-.bottom-sheet {
-    background-color: rgba(73, 138, 176, 0.15) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
-}
-/* Баннер карты в информационных попапах */
-.guest-card-banner {
-    width: 100%;
-    border-radius: 12px;
-    margin-top: 16px;
-    margin-bottom: 0;
-    order: 1; /* чтобы всегда был после текста */
-}
-/* Блок обновлений — мягкое размытие снизу (вместо голубого градиента) */
-.updates-scroll {
-    position: relative;
-    overflow-y: auto;
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 30%);
-}
-
-
-/* Тёмный блок доступных билетов (как у счётчика идущих) */
-.availability-block {
-    background: rgba(0, 0, 0, 0.6) !important;
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.2) !important;
-}
-
-/* Блок обновлений — маска остаётся прежней */
-.updates-scroll {
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%);
-}
-/* Нижний градиент под плавающим меню (такой же как верхний, только снизу) */
-body::after {
-    content: '';
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: calc(env(safe-area-inset-bottom, 0px) + 80px);
-    background: linear-gradient(to top, rgba(73, 138, 176, 0.85) 0%, rgba(73, 138, 176, 0) 100%);
-    z-index: 0;
-    pointer-events: none;
-}
-/* Убираем градиент внутри слайдера */
-.bottom-sheet-content-wrapper::before {
-    display: none !important;
-}
-
-/* Блок шкалы билетов — стиль как у плавающего меню */
-.availability-floating {
-    background: rgba(73, 138, 176, 0.15) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border-radius: 40px;
-    padding: 8px 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
-    box-sizing: border-box;
-}
-/* Замените существующие .header-blur и body::after, а также .calendar-day.today */
-/* Верхний блюр — плавный, ниже заголовка */
+/* ВЕРХНИЙ БЛЮР С ПЛАВНЫМ ПЕРЕХОДОМ (уже есть, но оставляем лучший) */
 .header-blur {
     position: fixed;
     top: 0;
@@ -2556,75 +2260,33 @@ body::after {
     background: rgba(73, 138, 176, 0.15);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    z-index: 15; /* выше контента (у контента z-index обычно 1), но ниже меню (у меню z-index 100) */
+    z-index: 15;
     pointer-events: none;
     mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
     -webkit-mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
 }
 
-/* Сегодняшний день — белый кружок, чёрные цифры */
+/* Сегодняшний день — белый кружок, чёрные цифры (уже есть, но оставляем) */
 .calendar-day.today {
     background: #ffffff !important;
     color: #000000 !important;
     border: none !important;
     font-weight: bold;
 }
-
-/* Если сегодняшний день совпадает с обычным хайком (жёлтый фон) — цифры чёрные */
 .calendar-day.today.hike-day {
     background: #D9FD19 !important;
     color: #000000 !important;
 }
-
-/* Если сегодняшний день — женский хайк (розовый фон) — цифры белые для контраста */
 .calendar-day.today.woman-hike {
     background: #FB5EB0 !important;
     color: #ffffff !important;
 }
-
-/* Если сегодняшний день — заготовка (👀) — белый кружок, чёрные цифры */
 .calendar-day.today.placeholder-day {
     background: #ffffff !important;
     color: #000000 !important;
 }
 
-/* Блюр слайдера — полное копирование стилей панелей */
-.bottom-sheet {
-    background: rgba(73, 138, 176, 0.15) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Контент внутри слайдера — без дополнительного блюра, чтобы не двоилось */
-.bottom-sheet-content-wrapper {
-    background: transparent !important;
-}
-
-/* Убедимся, что у дочерних элементов нет своего фона с блюром */
-.bottom-sheet-handle,
-.bottom-sheet-nav-arrow,
-.bottom-sheet .btn,
-.bottom-sheet .swipe-track,
-.bottom-sheet .availability-floating,
-.bottom-sheet .participant-counter {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-}
-
-/* Плавающие кнопки (снаружи) оставляем с блюром */
-.floating-sheet-buttons .btn,
-.floating-sheet-buttons .swipe-track,
-.floating-sheet-buttons .availability-floating {
-    background: rgba(73, 138, 176, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-}
-/* Фиолетовый фон для городских событий в календаре */
-/* Фиолетовый фон для городских событий */
+/* Городские события (city=yes) */
 .calendar-day.city-day {
     background: #41B5ED !important;
     color: #ffffff !important;
@@ -2635,6 +2297,19 @@ body::after {
 .calendar-day.city-day.woman-hike {
     background: #41B5ED !important;
 }
+
+/* Легенда календаря в стиле тегов */
+.calendar-legend .bottom-sheet-tag {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(4px);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
 /* Стили для слайдера городских событий */
 .city-sheet a,
 .city-sheet .dynamic-link,
@@ -2656,14 +2331,32 @@ body::after {
     background: #41B5ED !important;
     color: #ffffff !important;
 }
-/* Легенда календаря в стиле тегов */
-.calendar-legend .bottom-sheet-tag {
-    background: rgba(255, 255, 255, 0.1) !important;
-    color: #ffffff !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-    border-radius: 20px;
-    padding: 4px 12px;
-    font-size: 12px;
-    white-space: nowrap;
+
+/* Убираем лишние градиенты внутри слайдера */
+.bottom-sheet-content-wrapper::before {
+    display: none !important;
+}
+
+/* Блок шкалы билетов — стиль как у плавающего меню */
+.availability-floating {
+    background: rgba(73, 138, 176, 0.15) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-radius: 40px;
+    padding: 8px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.2);
+    box-sizing: border-box;
+}
+
+/* Тёмный блок доступных билетов (как у счётчика идущих) */
+.availability-block {
+    background: rgba(0, 0, 0, 0.6) !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.2) !important;
+}
+
+/* Плашка "новое" */
+.new-badge {
+    background-color: var(--yellow);
+    color: #000000;
 }
