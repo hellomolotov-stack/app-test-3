@@ -162,7 +162,7 @@ export function renderCalendar(container) {
     });
 }
 
-// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (showUpcomingPopup, showLetterPopup, getPlaceWord, applyImageBlurAndOverlay) ==========
+// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
 async function showUpcomingPopup(dateStr) {
     const firstName = state.user?.first_name || 'друг';
     let popupData = {
@@ -702,7 +702,7 @@ export function showBottomSheet(index) {
                                 height: 28px !important;
                                 border-radius: 50% !important;
                                 object-fit: cover !important;
-                                box-shadow: none !important;  /* убираем жёлтую обводку */
+                                box-shadow: none !important;
                             `;
                             img.onerror = function () {
                                 const placeholder = document.createElement('div');
