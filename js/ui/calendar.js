@@ -1,4 +1,4 @@
-// js/ui/calendar.js (полный файл с изменениями)
+// js/ui/calendar.js
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -56,8 +56,8 @@ export function renderCalendar(container) {
                     </div>
                 </div>
                 <div class="calendar-legend">
-                    <span class="legend-item"><span class="legend-emoji">📷</span></span>
-                    <span class="legend-item"><span class="legend-emoji">🎟️</span></span>
+                    <span class="legend-item"><span class="legend-emoji">📷</span> отчёт</span>
+                    <span class="legend-item"><span class="legend-emoji">🎟️</span> запись</span>
                     <span class="legend-item"><span class="legend-emoji">👀</span> готовим хайк или событие</span>
                 </div>
             </div>
@@ -497,11 +497,13 @@ export function showBottomSheet(index) {
         if (hike.image && !isPlaceholder) {
             imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
             if (!isPast && !isCancelled && !isPlaceholder) {
+                // Определяем текст для участников: для city — "будут", иначе "идут"
+                const participantText = isCity ? 'будут' : 'идут';
                 imageHtml = `
                     <div class="image-container">
                         <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">
                         <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                            <span class="participant-text" style="color: ${accentColor};">идут</span>
+                            <span class="participant-text" style="color: ${accentColor};">${participantText}</span>
                             <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
                             <div class="participant-avatars" id="participantAvatars"></div>
                         </div>
@@ -726,7 +728,6 @@ export function showBottomSheet(index) {
         const isSoldOut = (window._participantCount || 0) >= 15;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
-        // Обработчик клика по счётчику участников
         const participantCounterEl = document.getElementById('participantCounter');
         if (participantCounterEl) {
             participantCounterEl.removeEventListener('click', participantCounterHandler);
@@ -1197,7 +1198,7 @@ function updateFloatingSheetButtons() {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
         infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
-        infoMsg.textContent = 'событие доступно членам клуба';
+        infoMsg.textContent = 'вход по карте интеллигента';
         container.appendChild(infoMsg);
         return;
     }
