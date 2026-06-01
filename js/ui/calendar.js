@@ -58,7 +58,7 @@ export function renderCalendar(container) {
                 <div class="calendar-legend">
                     <span class="legend-item"><span class="legend-emoji">📷</span> отчёт</span>
                     <span class="legend-item"><span class="legend-emoji">🎟️</span> запись</span>
-                    <span class="legend-item"><span class="legend-emoji">👀</span> готовим хайк или событие</span>
+                    <span class="legend-item"><span class="legend-emoji">💫</span> готовим хайк или событие</span>
                 </div>
             </div>
             <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
@@ -105,7 +105,7 @@ export function renderCalendar(container) {
                 classes += ' cancelled-hike';
             }
         } else if (isPlaceholder) {
-            innerHtml += `<span class="calendar-emoji">👀</span>`;
+            innerHtml += `<span class="calendar-emoji">💫</span>`;
         }
 
         let inlineStyle = '';
@@ -149,7 +149,8 @@ export function renderCalendar(container) {
             }
         });
 
-    document.querySelectorAll('.calendar-day.hike-day, .calendar-day.placeholder-day').forEach(el => {
+    // Только полноценные хайки кликабельны, placeholder-дни (💫) — нет
+    document.querySelectorAll('.calendar-day.hike-day').forEach(el => {
         el.addEventListener('click', () => {
             const date = el.dataset.date;
             const index = state.hikesList.findIndex(h => h.date === date);
@@ -161,6 +162,7 @@ export function renderCalendar(container) {
     });
 }
 
+// ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ (showUpcomingPopup, showLetterPopup, getPlaceWord, applyImageBlurAndOverlay) ==========
 async function showUpcomingPopup(dateStr) {
     const firstName = state.user?.first_name || 'друг';
     let popupData = {
@@ -168,7 +170,6 @@ async function showUpcomingPopup(dateStr) {
         text: `мы уже планируем твоё новое приключение, ${firstName}. подробности станут доступны в понедельник вечером. будешь ждать?`,
         button_text: 'буду ждать'
     };
-
     try {
         const db = getDatabase();
         if (db) {
@@ -183,7 +184,6 @@ async function showUpcomingPopup(dateStr) {
     } catch (e) {
         console.warn('Не удалось загрузить попап upcoming_hike_popup, используется резервный текст.');
     }
-
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
@@ -199,25 +199,6 @@ async function showUpcomingPopup(dateStr) {
         overlay.remove();
     });
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
-}
-
-let sheetCurrentIndex = 0;
-let sheetScrollListener = null;
-let dragStartY = 0;
-let isDragging = false;
-let currentUnsubscribe = null;
-
-const avatarCache = new Map();
-const CACHE_TTL = 60 * 60 * 1000;
-
-async function getCachedAvatar(userId, photoUrl) {
-    const now = Date.now();
-    if (avatarCache.has(userId)) {
-        const entry = avatarCache.get(userId);
-        if (now - entry.timestamp < CACHE_TTL) return entry.url;
-    }
-    avatarCache.set(userId, { url: photoUrl, timestamp: now });
-    return photoUrl;
 }
 
 function showLetterPopup(letterText, letterLink, isGuest) {
@@ -268,6 +249,27 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
+// ========== ОСНОВНЫЕ ФУНКЦИИ СЛАЙДЕРА ==========
+let sheetCurrentIndex = 0;
+let sheetScrollListener = null;
+let dragStartY = 0;
+let isDragging = false;
+let currentUnsubscribe = null;
+
+const avatarCache = new Map();
+const CACHE_TTL = 60 * 60 * 1000;
+
+async function getCachedAvatar(userId, photoUrl) {
+    const now = Date.now();
+    if (avatarCache.has(userId)) {
+        const entry = avatarCache.get(userId);
+        if (now - entry.timestamp < CACHE_TTL) return entry.url;
+    }
+    avatarCache.set(userId, { url: photoUrl, timestamp: now });
+    return photoUrl;
+}
+
+// ========== ПОПАП ДЛЯ ГОСТЕЙ ПРИ НАЖАТИИ НА СЧЁТЧИК (ГОЛУБОЕ ОФОРМЛЕНИЕ, ПЕРЕХОД НА ГЛАВНУЮ) ==========
 async function showGuestParticipantsPopup(hikeDate) {
     haptic();
     let popupData = {
@@ -282,9 +284,9 @@ async function showGuestParticipantsPopup(hikeDate) {
     overlay.innerHTML = `
         <div class="modal-content" style="max-width: 500px; padding: 20px;">
             <button class="modal-close" id="closePopupParticipants">&times;</button>
-            <div class="modal-title">${popupData.title}</div>
+            <div class="modal-title" style="color: #41B5ED;">${popupData.title}</div>
             <div class="modal-text" style="margin-bottom: 16px;">${popupData.text}</div>
-            <button class="btn btn-yellow" id="goToCardFromParticipantsBtn" style="width: 100%;">оформить карту</button>
+            <button class="btn" id="goToCardFromParticipantsBtn" style="width: 100%; background-color: #41B5ED; color: #ffffff; border: none; padding: 12px; border-radius: 12px;">оформить карту</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -294,7 +296,23 @@ async function showGuestParticipantsPopup(hikeDate) {
     document.getElementById('goToCardFromParticipantsBtn').addEventListener('click', (e) => {
         e.preventDefault();
         closePopup();
-        renderGuestPrivileges();
+        closeBottomSheet(); // закрываем слайдер
+        // переходим на главную и подсвечиваем блок карты
+        renderHome();
+        setTimeout(() => {
+            const cardBlock = document.getElementById('cardBlock');
+            if (cardBlock) {
+                cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                cardBlock.style.transition = 'box-shadow 0.5s';
+                cardBlock.style.boxShadow = '0 0 20px 5px white';
+                setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
+                // раскрываем аккордеон карты для гостей
+                const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
+                if (guestAccordion && !guestAccordion.classList.contains('show')) {
+                    guestAccordion.classList.add('show');
+                }
+            }
+        }, 300);
     });
 }
 
@@ -497,7 +515,6 @@ export function showBottomSheet(index) {
         if (hike.image && !isPlaceholder) {
             imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
             if (!isPast && !isCancelled && !isPlaceholder) {
-                // Определяем текст для участников: для city — "будут", иначе "идут"
                 const participantText = isCity ? 'будут' : 'идут';
                 imageHtml = `
                     <div class="image-container">
@@ -515,7 +532,6 @@ export function showBottomSheet(index) {
         let extraInfoHtml = '';
         if (!isPast && !isCancelled && !isPlaceholder) {
             extraInfoHtml = '<div class="hike-extra-info">';
-            // Время начала
             if (hike.start_time) {
                 if (isCity) {
                     if (!isGuest) {
@@ -548,7 +564,6 @@ export function showBottomSheet(index) {
                     `;
                 }
             }
-            // Место сбора / локация
             if (hike.location_link) {
                 let locationHtml = '';
                 if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
@@ -687,6 +702,7 @@ export function showBottomSheet(index) {
                                 height: 28px !important;
                                 border-radius: 50% !important;
                                 object-fit: cover !important;
+                                box-shadow: none !important;  /* убираем жёлтую обводку */
                             `;
                             img.onerror = function () {
                                 const placeholder = document.createElement('div');
@@ -703,6 +719,7 @@ export function showBottomSheet(index) {
                                     font-size: 14px !important;
                                     color: white !important;
                                     text-transform: uppercase !important;
+                                    box-shadow: none !important;
                                 `;
                                 const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                                 placeholder.textContent = initial;
@@ -1204,7 +1221,7 @@ function updateFloatingSheetButtons() {
     }
 
     if (isPlaceholder) {
-        container.innerHTML = `<div class="availability-floating" style="margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;">👀 скоро появится</div>`;
+        container.innerHTML = `<div class="availability-floating" style="margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;">💫 скоро появится</div>`;
         return;
     }
 
@@ -1856,7 +1873,7 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
-// Обработчики событий (оставлены без изменений)
+// ========== ГЛОБАЛЬНЫЙ ОБРАБОТЧИК СОБЫТИЙ ==========
 document.addEventListener('click', function(e) {
     const link = e.target.closest('.dynamic-link, .nav-popup a, .btn-newcomer, .accordion-btn, .bottom-sheet-nav-arrow, .btn, .participant-counter, .booking-detail-btn, .bookings-calendar-link, .booking-go-btn, .leader-name, .popup-link, .profile-hike-link, .profile-contact-btn');
     if (!link) return;
