@@ -99,8 +99,25 @@ export function renderUserBookings(container) {
         if (cleanedTitle.toLowerCase().startsWith('на ')) cleanedTitle = cleanedTitle.substring(3);
         cleanedTitle = cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
         
-        const eventType = isCity ? 'событие на' : 'хайк на';
-        const displayTitle = `${eventType} ${cleanedTitle}`;
+        let eventType, displayTitle;
+        if (isCity) {
+            eventType = 'событие';
+            const lowerTitle = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
+            displayTitle = `${eventType} ${lowerTitle}`;
+        } else {
+            eventType = 'хайк на';
+            displayTitle = `${eventType} ${cleanedTitle}`;
+        }
+        
+        // Для city-событий кнопка белая, для остальных — цвет события
+        let buttonColor, buttonTextColor;
+        if (isCity) {
+            buttonColor = '#ffffff';
+            buttonTextColor = '#000000';
+        } else {
+            buttonColor = accentColor;
+            buttonTextColor = '#000000';
+        }
         
         html += `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
@@ -108,7 +125,7 @@ export function renderUserBookings(container) {
                     <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${displayTitle}</span>
                 </div>
-                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background-color: ${accentColor};">детали</button>
+                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background-color: ${buttonColor}; color: ${buttonTextColor};">детали</button>
             </div>
         `;
     });
