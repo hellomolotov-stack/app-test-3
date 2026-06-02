@@ -2360,3 +2360,17 @@ body::after {
     background-color: var(--yellow);
     color: #000000;
 }
+/* Кнопка поделиться событием (голубая, жирный чёрный текст) */
+.btn-share {
+    background-color: #41B5ED !important;
+    color: #000000 !important;
+    font-weight: 800 !important;
+    border-radius: 40px !important;
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+.btn-share:hover {
+    transform: scale(1.02);
+    background-color: #2a9bcf !important;
+}
