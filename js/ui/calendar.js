@@ -218,96 +218,6 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
-async function showGuestParticipantsPopup(hikeDate) {
-    haptic();
-    let popupData = {
-        title: 'Участники события',
-        text: 'Просмотр списка участников доступен только членам клуба. Оформи карту интеллигента, чтобы видеть, кто идёт на событие, и записываться самому.'
-    };
-    if (state.popups && state.popups.guest_uchastniki_popup) {
-        popupData = state.popups.guest_uchastniki_popup;
-    }
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 500px; padding: 20px;">
-            <button class="modal-close" id="closePopupParticipants">&times;</button>
-            <div class="modal-title" style="color: #41B5ED;">${popupData.title}</div>
-            <div class="modal-text" style="margin-bottom: 16px;">${popupData.text}</div>
-            <button class="btn" id="goToCardFromParticipantsBtn" style="width: 100%; background-color: #41B5ED; color: #ffffff; border: none; padding: 12px; border-radius: 12px;">оформить карту</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    const closePopup = () => overlay.remove();
-    document.getElementById('closePopupParticipants').addEventListener('click', closePopup);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closePopup(); });
-    document.getElementById('goToCardFromParticipantsBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        closePopup();
-        closeBottomSheet();
-        renderHome();
-        setTimeout(() => {
-            const cardBlock = document.getElementById('cardBlock');
-            if (cardBlock) {
-                cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                cardBlock.style.transition = 'box-shadow 0.5s';
-                cardBlock.style.boxShadow = '0 0 20px 5px white';
-                setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
-                const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
-                if (guestAccordion && !guestAccordion.classList.contains('show')) {
-                    guestAccordion.classList.add('show');
-                }
-            }
-        }, 300);
-    });
-}
-
-async function showCityGuestPopup(hikeDate, hikeTitle) {
-    haptic();
-    const config = state.popupConfig;
-    let popupData = { title: 'Городское событие', text: 'Чтобы участвовать в городских событиях, оформи карту интеллигента', button_text: 'оформить карту' };
-    if (state.popups && state.popups.city_guest_popup) {
-        popupData = state.popups.city_guest_popup;
-    }
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 500px; padding: 20px;">
-            <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-title">${popupData.title}</div>
-            <div class="modal-text" style="margin-bottom: 16px;">${popupData.text}</div>
-            <button class="btn btn-yellow" id="buyCardBtn" style="width: 100%; margin: 0;">${popupData.button_text}</button>
-            <div id="cardAccordionPopup" style="width: 100%; margin-top: 8px; display: none;">
-                <div style="display: flex; flex-direction: row; gap: 8px; width: 100%;">
-                    <button class="btn btn-outline" id="buySeasonCardBtn" style="flex: 1;">сезонная</button>
-                    <button class="btn btn-outline" id="buyPermanentCardBtn" style="flex: 1;">бессрочная</button>
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: rgba(255,255,255,0.7); font-size: 12px;">
-                    <div>сезон 2026</div>
-                    <div>навсегда</div>
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 4px; justify-content: center; color: #ffffff; font-size: 14px;">
-                    <div>${config.seasonCardPrice} ₽</div>
-                    <div>${config.permanentCardPrice} ₽</div>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    const closePopup = () => overlay.remove();
-    document.getElementById('closePopup').addEventListener('click', closePopup);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closePopup(); });
-    const buyBtn = document.getElementById('buyCardBtn');
-    const accordion = document.getElementById('cardAccordionPopup');
-    buyBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        accordion.style.display = accordion.style.display === 'none' ? 'block' : 'none';
-    });
-    document.getElementById('buySeasonCardBtn')?.addEventListener('click', () => openLink(SEASON_CARD_LINK, 'city_season_card_click', true));
-    document.getElementById('buyPermanentCardBtn')?.addEventListener('click', () => openLink(PERMANENT_CARD_LINK, 'city_permanent_card_click', true));
-}
-
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -327,9 +237,8 @@ async function getCachedAvatar(userId, photoUrl) {
     return photoUrl;
 }
 
-// +++ НОВАЯ ФУНКЦИЯ: ПОЛУЧИТЬ КОЛИЧЕСТВО ДОСТУПНЫХ КАРТ (ПОКА КОНСТАНТА 10) +++
 function getAvailableCardsCount() {
-    // TODO: в будущем можно вынести в Firebase, например state.metrics.cards_available
+    // TODO: можно вынести в Firebase или state
     return 10;
 }
 
@@ -602,22 +511,6 @@ export function showBottomSheet(index) {
             `;
         }
 
-        // +++ НОВЫЙ БЛОК: ДОСТУПНЫЕ КАРТЫ ДЛЯ ГОСТЕЙ (ТОЛЬКО ЕСЛИ НЕТ КАРТЫ И ЭТО НЕ ГОРОДСКОЕ СОБЫТИЕ) +++
-        let cardsBlockHtml = '';
-        const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
-        const currentMonthName = monthNamesGen[todayDate.getMonth()];
-        const availableCards = getAvailableCardsCount();
-        if (isGuest && !isCity && !isPlaceholder && !isPast && !isCancelled) {
-            cardsBlockHtml = `
-                <div class="availability-floating" style="margin: 20px 0 16px 0; width: 100%; border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center;">
-                    <div style="font-size: 14px; line-height: 1.4;">
-                        <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно ${availableCards} из 10 карт</strong>
-                    </div>
-                    <button id="buyCardFromEventBtn" class="btn" style="margin-top: 10px; background-color: #41B5ED; color: #ffffff; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
-                </div>
-            `;
-        }
-
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -631,36 +524,10 @@ export function showBottomSheet(index) {
             </div>
             ${imageHtml}
             ${extraInfoHtml}
-            ${cardsBlockHtml}   <!-- +++ ВСТАВЛЯЕМ НОВЫЙ БЛОК +++ -->
             ${sectionsHtml}
             ${shareButtonHtml}
             ${inviteButtonHtml}
         `;
-
-        // Обработчик кнопки «купить»
-        const buyCardBtn = contentWrapper.querySelector('#buyCardFromEventBtn');
-        if (buyCardBtn) {
-            buyCardBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                closeBottomSheet();
-                renderHome();
-                setTimeout(() => {
-                    const cardBlock = document.getElementById('cardBlock');
-                    if (cardBlock) {
-                        cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        cardBlock.style.transition = 'box-shadow 0.5s';
-                        cardBlock.style.boxShadow = '0 0 20px 5px white';
-                        setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
-                        const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
-                        if (guestAccordion && !guestAccordion.classList.contains('show')) {
-                            guestAccordion.classList.add('show');
-                        }
-                    }
-                }, 300);
-                log('buy_card_from_event_click', true, state.user);
-            });
-        }
 
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
         if (shareBtn) {
@@ -816,13 +683,8 @@ export function showBottomSheet(index) {
         e.stopPropagation();
         const hike = state.hikesWithTitle[sheetCurrentIndex];
         if (!hike) return;
-        const isCity = hike.city === true || hike.city === 'yes';
-        const isGuestUser = state.userCard.status !== 'active';
-        if (isCity && isGuestUser) {
-            showGuestParticipantsPopup(hike.date);
-        } else {
-            toggleParticipantDropdown(e.currentTarget, hike.date);
-        }
+        // Убираем проверку на городское событие и гостя — список участников открывается всем
+        toggleParticipantDropdown(e.currentTarget, hike.date);
     }
 
     function removeFloatingSheetButtons() {
@@ -1233,9 +1095,54 @@ function updateFloatingSheetButtons() {
     const isCancelled = hike.cancelled === true;
     const isCity = (hike.city === true || hike.city === 'yes');
     const isGuest = state.userCard.status !== 'active';
+    const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
 
-    if (isCity && isGuest && !isPlaceholder && !isCancelled) {
-        container.innerHTML = '';
+    // Очищаем контейнер
+    container.innerHTML = '';
+
+    // --- БЛОК С КАРТАМИ ДЛЯ ГОСТЕЙ (ВСЕГДА, КРОМЕ ОТМЕНЁННЫХ/ПРОШЕДШИХ/ПЛЕЙСХОЛДЕРОВ) ---
+    if (isGuest && !isPast && !isCancelled && !isPlaceholder) {
+        const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
+        const currentMonthName = monthNamesGen[new Date().getMonth()];
+        const availableCards = getAvailableCardsCount();
+
+        const cardsBlock = document.createElement('div');
+        cardsBlock.className = 'availability-floating';
+        cardsBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center;';
+        cardsBlock.innerHTML = `
+            <div style="font-size: 14px; line-height: 1.4;">
+                <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно ${availableCards} из 10 карт</strong>
+            </div>
+            <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #41B5ED; color: #ffffff; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
+        `;
+        const buyBtn = cardsBlock.querySelector('#buyCardFromFloatingBtn');
+        if (buyBtn) {
+            buyBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                closeBottomSheet();
+                renderHome();
+                setTimeout(() => {
+                    const cardBlock = document.getElementById('cardBlock');
+                    if (cardBlock) {
+                        cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        cardBlock.style.transition = 'box-shadow 0.5s';
+                        cardBlock.style.boxShadow = '0 0 20px 5px white';
+                        setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
+                        const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
+                        if (guestAccordion && !guestAccordion.classList.contains('show')) {
+                            guestAccordion.classList.add('show');
+                        }
+                    }
+                }, 300);
+                log('buy_card_from_floating_click', true, state.user);
+            });
+        }
+        container.appendChild(cardsBlock);
+    }
+
+    // --- ДАЛЬНЕЙШАЯ ЛОГИКА (ГОРОДСКИЕ СОБЫТИЯ, ОСТАВШИЕСЯ БИЛЕТЫ, КНОПКИ) ---
+    if (isCity && isGuest && !isPlaceholder && !isCancelled && !isPast) {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
         infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
@@ -1245,12 +1152,20 @@ function updateFloatingSheetButtons() {
     }
 
     if (isPlaceholder) {
-        container.innerHTML = `<div class="availability-floating" style="margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;">💫 скоро появится</div>`;
+        const placeholderMsg = document.createElement('div');
+        placeholderMsg.className = 'availability-floating';
+        placeholderMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
+        placeholderMsg.textContent = '💫 скоро появится';
+        container.appendChild(placeholderMsg);
         return;
     }
 
     if (isCancelled) {
-        container.innerHTML = `<div class="availability-floating" style="margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;">🚫 хайк отменён</div>`;
+        const cancelledMsg = document.createElement('div');
+        cancelledMsg.className = 'availability-floating';
+        cancelledMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
+        cancelledMsg.textContent = '🚫 хайк отменён';
+        container.appendChild(cancelledMsg);
         return;
     }
 
@@ -1264,18 +1179,13 @@ function updateFloatingSheetButtons() {
         accentColor = 'var(--yellow)';
     }
     const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-    const hikeDateObj = new Date(hike.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isPast = hikeDateObj < today;
     const MAX_TICKETS = 15;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    container.innerHTML = '';
-
+    // Блок оставшихся мест (если <=5)
     if (!isPast && available <= 5) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
