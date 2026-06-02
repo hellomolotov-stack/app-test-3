@@ -327,6 +327,12 @@ async function getCachedAvatar(userId, photoUrl) {
     return photoUrl;
 }
 
+// +++ НОВАЯ ФУНКЦИЯ: ПОЛУЧИТЬ КОЛИЧЕСТВО ДОСТУПНЫХ КАРТ (ПОКА КОНСТАНТА 10) +++
+function getAvailableCardsCount() {
+    // TODO: в будущем можно вынести в Firebase, например state.metrics.cards_available
+    return 10;
+}
+
 export function showBottomSheet(index) {
     if (!state.hikesWithTitle.length) return;
 
@@ -471,7 +477,6 @@ export function showBottomSheet(index) {
             `;
         }
 
-        // +++ КНОПКА ПОДЕЛИТЬСЯ +++
         const shareButtonHtml = `
             <div style="margin-top: 20px; margin-bottom: 16px;">
                 <button class="btn btn-share" id="shareEventBtn" style="background-color: #41B5ED; color: #000000; font-weight: 800; border-radius: 40px; padding: 12px 24px; width: auto; display: block; margin: 0 auto;">🔗 поделиться событием</button>
@@ -516,7 +521,6 @@ export function showBottomSheet(index) {
                             </div>
                         `;
                     } else {
-                        // +++ ДЛЯ ГОСТЕЙ В ГОРОДСКИХ СОБЫТИЯХ ЗАМОЧЕК +++
                         extraInfoHtml += `
                             <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                                 <span class="info-icon" style="color: ${accentColor};">
@@ -598,6 +602,22 @@ export function showBottomSheet(index) {
             `;
         }
 
+        // +++ НОВЫЙ БЛОК: ДОСТУПНЫЕ КАРТЫ ДЛЯ ГОСТЕЙ (ТОЛЬКО ЕСЛИ НЕТ КАРТЫ И ЭТО НЕ ГОРОДСКОЕ СОБЫТИЕ) +++
+        let cardsBlockHtml = '';
+        const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
+        const currentMonthName = monthNamesGen[todayDate.getMonth()];
+        const availableCards = getAvailableCardsCount();
+        if (isGuest && !isCity && !isPlaceholder && !isPast && !isCancelled) {
+            cardsBlockHtml = `
+                <div class="availability-floating" style="margin: 20px 0 16px 0; width: 100%; border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center;">
+                    <div style="font-size: 14px; line-height: 1.4;">
+                        <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно ${availableCards} из 10 карт</strong>
+                    </div>
+                    <button id="buyCardFromEventBtn" class="btn" style="margin-top: 10px; background-color: #41B5ED; color: #ffffff; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
+                </div>
+            `;
+        }
+
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
@@ -611,12 +631,37 @@ export function showBottomSheet(index) {
             </div>
             ${imageHtml}
             ${extraInfoHtml}
+            ${cardsBlockHtml}   <!-- +++ ВСТАВЛЯЕМ НОВЫЙ БЛОК +++ -->
             ${sectionsHtml}
             ${shareButtonHtml}
             ${inviteButtonHtml}
         `;
 
-        // +++ ОБРАБОТЧИК КНОПКИ ПОДЕЛИТЬСЯ +++
+        // Обработчик кнопки «купить»
+        const buyCardBtn = contentWrapper.querySelector('#buyCardFromEventBtn');
+        if (buyCardBtn) {
+            buyCardBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                haptic();
+                closeBottomSheet();
+                renderHome();
+                setTimeout(() => {
+                    const cardBlock = document.getElementById('cardBlock');
+                    if (cardBlock) {
+                        cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        cardBlock.style.transition = 'box-shadow 0.5s';
+                        cardBlock.style.boxShadow = '0 0 20px 5px white';
+                        setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
+                        const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
+                        if (guestAccordion && !guestAccordion.classList.contains('show')) {
+                            guestAccordion.classList.add('show');
+                        }
+                    }
+                }, 300);
+                log('buy_card_from_event_click', true, state.user);
+            });
+        }
+
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
@@ -671,7 +716,6 @@ export function showBottomSheet(index) {
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
-                    // +++ ПОКАЗЫВАЕМ АВАТАРЫ ДЛЯ ВСЕХ, ВКЛЮЧАЯ ГОСТЕЙ +++
                     for (const p of participants) {
                         const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
                         const hasProfile = !!state.profiles[p.userId];
