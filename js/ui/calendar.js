@@ -238,7 +238,6 @@ async function getCachedAvatar(userId, photoUrl) {
 }
 
 function getAvailableCardsCount() {
-    // TODO: можно вынести в Firebase или state
     return 10;
 }
 
@@ -386,11 +385,22 @@ export function showBottomSheet(index) {
             `;
         }
 
-        const shareButtonHtml = `
-            <div style="margin-top: 20px; margin-bottom: 16px;">
-                <button class="btn btn-share" id="shareEventBtn" style="background-color: #41B5ED; color: #000000; font-weight: 800; border-radius: 40px; padding: 12px 24px; width: auto; display: block; margin: 0 auto;">🔗 поделиться событием</button>
-            </div>
-        `;
+        // кнопка поделиться
+        let shareButtonHtml = '';
+        if (!isPlaceholder && !isCancelled) {
+            let buttonColor = '#41B5ED';
+            let buttonTextColor = '#000000';
+            let buttonText = isCity ? 'поделиться событием' : 'поделиться хайком';
+            if (!isCity) {
+                buttonColor = 'var(--yellow)';
+                buttonTextColor = '#000000';
+            }
+            shareButtonHtml = `
+                <div style="margin-top: 20px; margin-bottom: 16px;">
+                    <button class="btn btn-share" id="shareEventBtn" style="background-color: ${buttonColor}; color: ${buttonTextColor}; font-weight: 800; border-radius: 40px; padding: 12px 24px; width: auto; display: block; margin: 0 auto; border: none;">🔗 ${buttonText}</button>
+                </div>
+            `;
+        }
 
         const hikeDateObj = new Date(hike.date);
         const todayDate = new Date();
@@ -683,7 +693,7 @@ export function showBottomSheet(index) {
         e.stopPropagation();
         const hike = state.hikesWithTitle[sheetCurrentIndex];
         if (!hike) return;
-        // Убираем проверку на городское событие и гостя — список участников открывается всем
+        // всегда открываем список участников, даже для гостей
         toggleParticipantDropdown(e.currentTarget, hike.date);
     }
 
@@ -1097,11 +1107,10 @@ function updateFloatingSheetButtons() {
     const isGuest = state.userCard.status !== 'active';
     const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
 
-    // Очищаем контейнер
     container.innerHTML = '';
 
-    // --- БЛОК С КАРТАМИ ДЛЯ ГОСТЕЙ (ВСЕГДА, КРОМЕ ОТМЕНЁННЫХ/ПРОШЕДШИХ/ПЛЕЙСХОЛДЕРОВ) ---
-    if (isGuest && !isPast && !isCancelled && !isPlaceholder) {
+    // Блок доступных карт для гостей (только если нет карты и не городское событие, не отменён, не прошедший)
+    if (isGuest && !isPast && !isCancelled && !isPlaceholder && !isCity) {
         const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
         const currentMonthName = monthNamesGen[new Date().getMonth()];
         const availableCards = getAvailableCardsCount();
@@ -1111,7 +1120,8 @@ function updateFloatingSheetButtons() {
         cardsBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center;';
         cardsBlock.innerHTML = `
             <div style="font-size: 14px; line-height: 1.4;">
-                <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно ${availableCards} из 10 карт</strong>
+                <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
+                <span style="color: #ffffff; font-style: italic;"> ${availableCards} из 10 карт</span>
             </div>
             <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #41B5ED; color: #ffffff; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
         `;
@@ -1141,7 +1151,7 @@ function updateFloatingSheetButtons() {
         container.appendChild(cardsBlock);
     }
 
-    // --- ДАЛЬНЕЙШАЯ ЛОГИКА (ГОРОДСКИЕ СОБЫТИЯ, ОСТАВШИЕСЯ БИЛЕТЫ, КНОПКИ) ---
+    // Городское событие для гостей – показываем баннер "вход по карте интеллигента"
     if (isCity && isGuest && !isPlaceholder && !isCancelled && !isPast) {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
@@ -1185,7 +1195,7 @@ function updateFloatingSheetButtons() {
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    // Блок оставшихся мест (если <=5)
+    // Блок оставшихся билетов (если <=5)
     if (!isPast && available <= 5) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
