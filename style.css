@@ -2360,10 +2360,8 @@ body::after {
     background-color: var(--yellow);
     color: #000000;
 }
-/* Кнопка поделиться событием (голубая, жирный чёрный текст) */
+/* Кнопка поделиться – общие стили, цвет задаётся инлайн, но для надёжности */
 .btn-share {
-    background-color: #41B5ED !important;
-    color: #000000 !important;
     font-weight: 800 !important;
     border-radius: 40px !important;
     transition: all 0.2s ease;
@@ -2372,5 +2370,15 @@ body::after {
 }
 .btn-share:hover {
     transform: scale(1.02);
-    background-color: #2a9bcf !important;
+    opacity: 0.95;
+}
+
+/* Блок доступных карт – стили уже заданы инлайн, но можно добавить резервные */
+.availability-floating {
+    background: rgba(73, 138, 176, 0.15);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 28px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
