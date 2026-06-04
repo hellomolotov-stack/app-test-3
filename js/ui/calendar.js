@@ -693,7 +693,6 @@ export function showBottomSheet(index) {
         e.stopPropagation();
         const hike = state.hikesWithTitle[sheetCurrentIndex];
         if (!hike) return;
-        // всегда открываем список участников, даже для гостей
         toggleParticipantDropdown(e.currentTarget, hike.date);
     }
 
@@ -1107,10 +1106,11 @@ function updateFloatingSheetButtons() {
     const isGuest = state.userCard.status !== 'active';
     const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
 
+    // Очищаем контейнер
     container.innerHTML = '';
 
-    // Блок доступных карт для гостей (только если нет карты и не городское событие, не отменён, не прошедший)
-    if (isGuest && !isPast && !isCancelled && !isPlaceholder && !isCity) {
+    // --- БЛОК ДОСТУПНЫХ КАРТ ДЛЯ ГОСТЕЙ (ПОКАЗЫВАЕТСЯ ДЛЯ ЛЮБЫХ АКТИВНЫХ СОБЫТИЙ) ---
+    if (isGuest && !isPast && !isCancelled && !isPlaceholder) {
         const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
         const currentMonthName = monthNamesGen[new Date().getMonth()];
         const availableCards = getAvailableCardsCount();
@@ -1151,7 +1151,7 @@ function updateFloatingSheetButtons() {
         container.appendChild(cardsBlock);
     }
 
-    // Городское событие для гостей – показываем баннер "вход по карте интеллигента"
+    // --- ДАЛЬНЕЙШАЯ ЛОГИКА (ГОРОДСКИЕ СОБЫТИЯ, ОСТАВШИЕСЯ БИЛЕТЫ, КНОПКИ) ---
     if (isCity && isGuest && !isPlaceholder && !isCancelled && !isPast) {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
@@ -1195,7 +1195,7 @@ function updateFloatingSheetButtons() {
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    // Блок оставшихся билетов (если <=5)
+    // Блок оставшихся мест (если <=5)
     if (!isPast && available <= 5) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
