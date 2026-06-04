@@ -1,4 +1,4 @@
-// js/ui/calendar.js – финальная версия (без ошибок)
+// js/ui/calendar.js – финальная рабочая версия (аватарки для прошедших, цвета тегов и кнопки, баннер карт только для городских)
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -282,68 +282,6 @@ export function showBottomSheet(index) {
         }).catch(() => {});
     }
 
-    const currentHike = state.hikesWithTitle[sheetCurrentIndex];
-    // Подписываемся на обновления участников всегда (для прошедших тоже, чтобы показывать аватарки)
-    if (currentUnsubscribe) currentUnsubscribe();
-    currentUnsubscribe = subscribeToParticipantCount(currentHike.date, async (count, participants) => {
-        window._participantCount = count;
-        const countEl = document.getElementById('participantCountValue');
-        const avatarsEl = document.getElementById('participantAvatars');
-        if (countEl) {
-            if (count === 0) {
-                countEl.style.display = 'inline';
-                countEl.textContent = count;
-            } else countEl.style.display = 'none';
-        }
-        if (avatarsEl) {
-            avatarsEl.innerHTML = '';
-            for (const p of participants.slice(0, 3)) {
-                const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
-                const hasProfile = !!state.profiles[p.userId];
-                const img = document.createElement('img');
-                img.src = cachedUrl || '';
-                img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
-                img.alt = p.name || '';
-                img.title = p.name || '';
-                img.dataset.userId = p.userId;
-                img.style.cssText = `
-                    width: 28px !important;
-                    height: 28px !important;
-                    border-radius: 50% !important;
-                    object-fit: cover !important;
-                    box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
-                `;
-                img.onerror = function () {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
-                    placeholder.style.cssText = `
-                        width: 28px !important;
-                        height: 28px !important;
-                        border-radius: 50% !important;
-                        background-color: #40a7e3 !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        font-weight: bold !important;
-                        font-size: 14px !important;
-                        color: white !important;
-                        text-transform: uppercase !important;
-                        box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
-                    `;
-                    const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                    placeholder.textContent = initial;
-                    placeholder.dataset.userId = p.userId;
-                    this.parentNode.replaceChild(placeholder, this);
-                };
-                avatarsEl.appendChild(img);
-            }
-        }
-        const imageContainer = contentWrapper.querySelector('.image-container');
-        const isSoldOut = count >= 15;
-        applyImageBlurAndOverlay(imageContainer, isSoldOut, currentHike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
-        updateFloatingSheetButtons();
-    });
-
     function updateContent() {
         const hike = state.hikesWithTitle[sheetCurrentIndex];
         if (!hike) return;
@@ -557,7 +495,7 @@ export function showBottomSheet(index) {
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        // Кнопка "пригласить друга" – убираем полностью
+        // Кнопка "пригласить друга" – убрана
         let inviteButtonHtml = '';
 
         contentWrapper.innerHTML = `
@@ -593,27 +531,85 @@ export function showBottomSheet(index) {
             });
         }
 
-        if (isPast && (hike.letter_text || hike.letter_link)) {
-            const oldIcon = sheet.querySelector('.letter-icon');
-            if (oldIcon) oldIcon.remove();
-            const letterIcon = document.createElement('div');
-            letterIcon.className = 'letter-icon';
-            letterIcon.innerHTML = `<img src="https://i.postimg.cc/Wb9Lc15K/mail-envelop-on-transparent-background-png-png-2.webp" class="letter-icon-img" alt="письмо">`;
-            letterIcon.addEventListener('click', (e) => {
-                e.stopPropagation();
-                haptic();
-                showLetterPopup(hike.letter_text || '', hike.letter_link || '', isGuest);
-            });
-            sheet.appendChild(letterIcon);
-        } else {
-            const oldIcon = sheet.querySelector('.letter-icon');
-            if (oldIcon) oldIcon.remove();
+        // Загрузка участников для прошедших (один раз) или подписка для будущих
+        if (!isCancelled && !isPlaceholder) {
+            const participantCounterEl = contentWrapper.querySelector('#participantCounter');
+            const updateAvatars = async (participants) => {
+                const count = participants.length;
+                const countEl = contentWrapper.querySelector('#participantCountValue');
+                const avatarsEl = contentWrapper.querySelector('#participantAvatars');
+                if (countEl) {
+                    if (count === 0) {
+                        countEl.style.display = 'inline';
+                        countEl.textContent = count;
+                    } else countEl.style.display = 'none';
+                }
+                if (avatarsEl) {
+                    avatarsEl.innerHTML = '';
+                    for (const p of participants.slice(0, 3)) {
+                        const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
+                        const hasProfile = !!state.profiles[p.userId];
+                        const img = document.createElement('img');
+                        img.src = cachedUrl || '';
+                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                        img.alt = p.name || '';
+                        img.title = p.name || '';
+                        img.dataset.userId = p.userId;
+                        img.style.cssText = `
+                            width: 28px !important;
+                            height: 28px !important;
+                            border-radius: 50% !important;
+                            object-fit: cover !important;
+                            box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
+                        `;
+                        img.onerror = function () {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                            placeholder.style.cssText = `
+                                width: 28px !important;
+                                height: 28px !important;
+                                border-radius: 50% !important;
+                                background-color: #40a7e3 !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                font-weight: bold !important;
+                                font-size: 14px !important;
+                                color: white !important;
+                                text-transform: uppercase !important;
+                                box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
+                            `;
+                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                            placeholder.textContent = initial;
+                            placeholder.dataset.userId = p.userId;
+                            this.parentNode.replaceChild(placeholder, this);
+                        };
+                        avatarsEl.appendChild(img);
+                    }
+                }
+                const imageContainer = contentWrapper.querySelector('.image-container');
+                const isSoldOut = count >= 15;
+                applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
+                window._participantCount = count;
+                updateFloatingSheetButtons();
+            };
+
+            if (isPast) {
+                // прошедшие – загружаем один раз
+                loadAllParticipants(hike.date).then(updateAvatars);
+            } else {
+                // будущие – подписка
+                if (currentUnsubscribe) currentUnsubscribe();
+                currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+                    updateAvatars(participants);
+                });
+            }
         }
 
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');
-        const isSoldOut = (window._participantCount || 0) >= 15;
+        const isSoldOut = (window._participantCount || 0) >= 15 && !isPast;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
         const participantCounterEl = document.getElementById('participantCounter');
@@ -628,11 +624,7 @@ export function showBottomSheet(index) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
                 sheetCurrentIndex--;
-                window._participantCount = 0;
-                loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
-                    window._participantCount = participants.length;
-                    updateContent();
-                });
+                updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('slider_prev', false, state.user);
@@ -644,11 +636,7 @@ export function showBottomSheet(index) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
                 sheetCurrentIndex++;
-                window._participantCount = 0;
-                loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
-                    window._participantCount = participants.length;
-                    updateContent();
-                });
+                updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('slider_next', false, state.user);
@@ -1285,10 +1273,7 @@ function updateFloatingSheetButtons() {
             closeLeaderDropdown();
             sheetCurrentIndex = nextIndex;
             window._participantCount = 0;
-            loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
-                window._participantCount = participants.length;
-                updateContent();
-            });
+            updateContent();
             contentWrapper.scrollTop = 0;
         });
         container.appendChild(nextBtn);
