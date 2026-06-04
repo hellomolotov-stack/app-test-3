@@ -1,4 +1,4 @@
-// js/ui/calendar.js
+// js/ui/calendar.js – финальная версия (без ошибок)
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -283,73 +283,66 @@ export function showBottomSheet(index) {
     }
 
     const currentHike = state.hikesWithTitle[sheetCurrentIndex];
-    // Загружаем участников для всех событий (и прошлых, и будущих)
-    if (currentHike) {
-        if (currentUnsubscribe) currentUnsubscribe();
-        currentUnsubscribe = subscribeToParticipantCount(currentHike.date, async (count, participants) => {
-            window._participantCount = count;
-            window._participantsList = participants;
-            updateFloatingSheetButtons();
-            // Обновляем счётчик и аватарки в уже отрисованном слайдере
-            const countEl = document.getElementById('participantCountValue');
-            const avatarsEl = document.getElementById('participantAvatars');
-            if (countEl) {
-                if (count === 0) {
-                    countEl.style.display = 'inline';
-                    countEl.textContent = count;
-                } else countEl.style.display = 'none';
-            }
-            if (avatarsEl) {
-                avatarsEl.innerHTML = '';
-                for (const p of participants.slice(0, 3)) {
-                    const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
-                    const hasProfile = !!state.profiles[p.userId];
-                    const img = document.createElement('img');
-                    img.src = cachedUrl || '';
-                    img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
-                    img.alt = p.name || '';
-                    img.title = p.name || '';
-                    img.dataset.userId = p.userId;
-                    img.style.cssText = `
+    // Подписываемся на обновления участников всегда (для прошедших тоже, чтобы показывать аватарки)
+    if (currentUnsubscribe) currentUnsubscribe();
+    currentUnsubscribe = subscribeToParticipantCount(currentHike.date, async (count, participants) => {
+        window._participantCount = count;
+        const countEl = document.getElementById('participantCountValue');
+        const avatarsEl = document.getElementById('participantAvatars');
+        if (countEl) {
+            if (count === 0) {
+                countEl.style.display = 'inline';
+                countEl.textContent = count;
+            } else countEl.style.display = 'none';
+        }
+        if (avatarsEl) {
+            avatarsEl.innerHTML = '';
+            for (const p of participants.slice(0, 3)) {
+                const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
+                const hasProfile = !!state.profiles[p.userId];
+                const img = document.createElement('img');
+                img.src = cachedUrl || '';
+                img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                img.alt = p.name || '';
+                img.title = p.name || '';
+                img.dataset.userId = p.userId;
+                img.style.cssText = `
+                    width: 28px !important;
+                    height: 28px !important;
+                    border-radius: 50% !important;
+                    object-fit: cover !important;
+                    box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
+                `;
+                img.onerror = function () {
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                    placeholder.style.cssText = `
                         width: 28px !important;
                         height: 28px !important;
                         border-radius: 50% !important;
-                        object-fit: cover !important;
+                        background-color: #40a7e3 !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        font-weight: bold !important;
+                        font-size: 14px !important;
+                        color: white !important;
+                        text-transform: uppercase !important;
                         box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
                     `;
-                    img.onerror = function () {
-                        const placeholder = document.createElement('div');
-                        placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
-                        placeholder.style.cssText = `
-                            width: 28px !important;
-                            height: 28px !important;
-                            border-radius: 50% !important;
-                            background-color: #40a7e3 !important;
-                            display: flex !important;
-                            align-items: center !important;
-                            justify-content: center !important;
-                            font-weight: bold !important;
-                            font-size: 14px !important;
-                            color: white !important;
-                            text-transform: uppercase !important;
-                            box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
-                        `;
-                        const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                        placeholder.textContent = initial;
-                        placeholder.dataset.userId = p.userId;
-                        this.parentNode.replaceChild(placeholder, this);
-                    };
-                    avatarsEl.appendChild(img);
-                }
+                    const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                    placeholder.textContent = initial;
+                    placeholder.dataset.userId = p.userId;
+                    this.parentNode.replaceChild(placeholder, this);
+                };
+                avatarsEl.appendChild(img);
             }
-            const imageContainer = contentWrapper.querySelector('.image-container');
-            const isSoldOut = count >= 15;
-            applyImageBlurAndOverlay(imageContainer, isSoldOut, currentHike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
-        });
-    } else {
-        window._participantCount = 0;
-        window._participantsList = [];
-    }
+        }
+        const imageContainer = contentWrapper.querySelector('.image-container');
+        const isSoldOut = count >= 15;
+        applyImageBlurAndOverlay(imageContainer, isSoldOut, currentHike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
+        updateFloatingSheetButtons();
+    });
 
     function updateContent() {
         const hike = state.hikesWithTitle[sheetCurrentIndex];
@@ -406,7 +399,7 @@ export function showBottomSheet(index) {
             if (hike.feature_tags && hike.feature_tags.length > 0) {
                 featureTagsHtml = '<div class="feature-tags-container">';
                 hike.feature_tags.forEach(tag => {
-                    featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor} !important; color: #000000; font-weight: 500;">${tag}</span>`;
+                    featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor} !important;">${tag}</span>`;
                 });
                 featureTagsHtml += '</div>';
             }
@@ -439,7 +432,7 @@ export function showBottomSheet(index) {
             `;
         }
 
-        // кнопка поделиться (цветная)
+        // кнопка поделиться – жёлтая для хайков, голубая для событий
         let shareButtonHtml = '';
         if (!isPlaceholder && !isCancelled) {
             let buttonColor, buttonTextColor, buttonText;
@@ -564,7 +557,8 @@ export function showBottomSheet(index) {
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        // Кнопка "пригласить друга" убрана полностью
+        // Кнопка "пригласить друга" – убираем полностью
+        let inviteButtonHtml = '';
 
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
@@ -581,6 +575,7 @@ export function showBottomSheet(index) {
             ${extraInfoHtml}
             ${sectionsHtml}
             ${shareButtonHtml}
+            ${inviteButtonHtml}
         `;
 
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
@@ -615,59 +610,13 @@ export function showBottomSheet(index) {
             if (oldIcon) oldIcon.remove();
         }
 
-        // Принудительно обновляем аватарки из уже загруженных данных
-        const avatarsEl = contentWrapper.querySelector('#participantAvatars');
-        if (avatarsEl && window._participantsList) {
-            avatarsEl.innerHTML = '';
-            for (const p of window._participantsList.slice(0, 3)) {
-                const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
-                const hasProfile = !!state.profiles[p.userId];
-                const img = document.createElement('img');
-                img.src = cachedUrl || '';
-                img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
-                img.alt = p.name || '';
-                img.title = p.name || '';
-                img.dataset.userId = p.userId;
-                img.style.cssText = `
-                    width: 28px !important;
-                    height: 28px !important;
-                    border-radius: 50% !important;
-                    object-fit: cover !important;
-                    box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
-                `;
-                img.onerror = function () {
-                    const placeholder = document.createElement('div');
-                    placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
-                    placeholder.style.cssText = `
-                        width: 28px !important;
-                        height: 28px !important;
-                        border-radius: 50% !important;
-                        background-color: #40a7e3 !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        font-weight: bold !important;
-                        font-size: 14px !important;
-                        color: white !important;
-                        text-transform: uppercase !important;
-                        box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
-                    `;
-                    const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                    placeholder.textContent = initial;
-                    placeholder.dataset.userId = p.userId;
-                    this.parentNode.replaceChild(placeholder, this);
-                };
-                avatarsEl.appendChild(img);
-            }
-        }
-
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');
         const isSoldOut = (window._participantCount || 0) >= 15;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
-        const participantCounterEl = contentWrapper.querySelector('#participantCounter');
+        const participantCounterEl = document.getElementById('participantCounter');
         if (participantCounterEl) {
             participantCounterEl.removeEventListener('click', participantCounterHandler);
             participantCounterEl.addEventListener('click', participantCounterHandler);
@@ -680,10 +629,8 @@ export function showBottomSheet(index) {
                 closeLeaderDropdown();
                 sheetCurrentIndex--;
                 window._participantCount = 0;
-                window._participantsList = [];
                 loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
                     window._participantCount = participants.length;
-                    window._participantsList = participants;
                     updateContent();
                 });
                 contentWrapper.scrollTop = 0;
@@ -698,10 +645,8 @@ export function showBottomSheet(index) {
                 closeLeaderDropdown();
                 sheetCurrentIndex++;
                 window._participantCount = 0;
-                window._participantsList = [];
                 loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
                     window._participantCount = participants.length;
-                    window._participantsList = participants;
                     updateContent();
                 });
                 contentWrapper.scrollTop = 0;
@@ -1132,7 +1077,7 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Баннер доступных карт ТОЛЬКО для городских событий и гостей
+    // Баннер доступных карт только для городских событий и гостей
     if (isCity && isGuest && !isPast && !isCancelled && !isPlaceholder) {
         const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
         const currentMonthName = monthNamesGen[new Date().getMonth()];
@@ -1175,7 +1120,7 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Городское событие для гостей – показываем баннер "вход по карте интеллигента"
+    // Городское событие для гостей – баннер "вход по карте"
     if (isCity && isGuest && !isPlaceholder && !isCancelled && !isPast) {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
@@ -1340,10 +1285,8 @@ function updateFloatingSheetButtons() {
             closeLeaderDropdown();
             sheetCurrentIndex = nextIndex;
             window._participantCount = 0;
-            window._participantsList = [];
             loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
                 window._participantCount = participants.length;
-                window._participantsList = participants;
                 updateContent();
             });
             contentWrapper.scrollTop = 0;
