@@ -1,4 +1,4 @@
-// js/ui/calendar.js – финальная версия с работающими ссылками
+// js/ui/calendar.js – финальная стабильная версия
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -370,7 +370,6 @@ export function showBottomSheet(index) {
             `;
         }
 
-        // кнопка поделиться – жёлтая для хайков, голубая для событий
         let shareButtonHtml = '';
         if (!isPlaceholder && !isCancelled) {
             let buttonColor, buttonTextColor, buttonText;
@@ -495,7 +494,6 @@ export function showBottomSheet(index) {
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        // Кнопка "пригласить друга" – убрана
         let inviteButtonHtml = '';
 
         contentWrapper.innerHTML = `
@@ -516,7 +514,6 @@ export function showBottomSheet(index) {
             ${inviteButtonHtml}
         `;
 
-        // Обработчик кнопки поделиться
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
@@ -532,9 +529,7 @@ export function showBottomSheet(index) {
             });
         }
 
-        // Загрузка участников для прошедших (один раз) или подписка для будущих
         if (!isCancelled && !isPlaceholder) {
-            const participantCounterEl = contentWrapper.querySelector('#participantCounter');
             const updateAvatars = async (participants) => {
                 const count = participants.length;
                 const countEl = contentWrapper.querySelector('#participantCountValue');
@@ -596,10 +591,8 @@ export function showBottomSheet(index) {
             };
 
             if (isPast) {
-                // прошедшие – загружаем один раз
                 loadAllParticipants(hike.date).then(updateAvatars);
             } else {
-                // будущие – подписка
                 if (currentUnsubscribe) currentUnsubscribe();
                 currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
                     updateAvatars(participants);
@@ -1066,8 +1059,16 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Баннер доступных карт только для городских событий и гостей
+    // Баннеры для городских событий (только для гостей)
     if (isCity && isGuest && !isPast && !isCancelled && !isPlaceholder) {
+        // "вход по карте интеллигента"
+        const infoMsg = document.createElement('div');
+        infoMsg.className = 'availability-floating';
+        infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
+        infoMsg.textContent = 'вход по карте интеллигента';
+        container.appendChild(infoMsg);
+
+        // блок с доступными картами
         const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
         const currentMonthName = monthNamesGen[new Date().getMonth()];
         const availableCards = getAvailableCardsCount();
@@ -1109,12 +1110,12 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    // Городское событие для гостей – баннер "вход по карте"
-    if (isCity && isGuest && !isPlaceholder && !isCancelled && !isPast) {
+    // Городское событие для владельцев карт
+    if (isCity && !isGuest && !isPlaceholder && !isCancelled && !isPast) {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
         infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
-        infoMsg.textContent = 'вход по карте интеллигента';
+        infoMsg.textContent = 'вы можете участвовать (карта интеллигента)';
         container.appendChild(infoMsg);
         return;
     }
@@ -1234,7 +1235,8 @@ function updateFloatingSheetButtons() {
         const completedBtn = document.createElement('a');
         completedBtn.href = '#';
         completedBtn.className = 'btn btn-outline';
-        completedBtn.textContent = 'хайк завершен';
+        // Разный текст для городских событий и хайков
+        completedBtn.textContent = isCity ? 'событие завершено' : 'хайк завершен';
         completedBtn.style.pointerEvents = 'none';
         row.appendChild(completedBtn);
 
@@ -1773,7 +1775,6 @@ export function showLeaderDropdown(leaderElement, leaderData) {
 
 // ==================== ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ ССЫЛОК ====================
 document.addEventListener('click', function(e) {
-    // Обработка динамических ссылок (.dynamic-link)
     const dynamicLink = e.target.closest('.dynamic-link');
     if (dynamicLink) {
         e.preventDefault();
@@ -1782,14 +1783,6 @@ document.addEventListener('click', function(e) {
         if (url) {
             openLink(url, 'dynamic_link_click', isGuest);
         }
-        return;
-    }
-
-    // Обработка кнопки "купить карту" в слайдере (если есть)
-    const buyCardBtn = e.target.closest('#buyCardFromFloatingBtn');
-    if (buyCardBtn && buyCardBtn.id === 'buyCardFromFloatingBtn') {
-        // обработчик уже есть в коде, но на всякий случай предотвращаем двойной вызов
-        e.preventDefault();
         return;
     }
 });
