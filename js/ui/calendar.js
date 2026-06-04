@@ -423,7 +423,6 @@ export function showBottomSheet(index) {
             if (hike.feature_tags && hike.feature_tags.length > 0) {
                 featureTagsHtml = '<div class="feature-tags-container">';
                 hike.feature_tags.forEach(tag => {
-                    // +++ ВОССТАНАВЛИВАЕМ ЦВЕТ ТЕГОВ +++
                     featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor};">${tag}</span>`;
                 });
                 featureTagsHtml += '</div>';
