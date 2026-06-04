@@ -1,4 +1,4 @@
-// js/ui/calendar.js – финальная рабочая версия (аватарки для прошедших, цвета тегов и кнопки, баннер карт только для городских)
+// js/ui/calendar.js – финальная версия с работающими ссылками
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -516,6 +516,7 @@ export function showBottomSheet(index) {
             ${inviteButtonHtml}
         `;
 
+        // Обработчик кнопки поделиться
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
         if (shareBtn) {
             shareBtn.addEventListener('click', (e) => {
@@ -1769,3 +1770,26 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     };
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
+
+// ==================== ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ ССЫЛОК ====================
+document.addEventListener('click', function(e) {
+    // Обработка динамических ссылок (.dynamic-link)
+    const dynamicLink = e.target.closest('.dynamic-link');
+    if (dynamicLink) {
+        e.preventDefault();
+        const url = dynamicLink.getAttribute('data-url');
+        const isGuest = dynamicLink.getAttribute('data-guest') === 'true';
+        if (url) {
+            openLink(url, 'dynamic_link_click', isGuest);
+        }
+        return;
+    }
+
+    // Обработка кнопки "купить карту" в слайдере (если есть)
+    const buyCardBtn = e.target.closest('#buyCardFromFloatingBtn');
+    if (buyCardBtn && buyCardBtn.id === 'buyCardFromFloatingBtn') {
+        // обработчик уже есть в коде, но на всякий случай предотвращаем двойной вызов
+        e.preventDefault();
+        return;
+    }
+});
