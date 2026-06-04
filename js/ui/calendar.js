@@ -283,12 +283,19 @@ export function showBottomSheet(index) {
     }
 
     const currentHike = state.hikesWithTitle[sheetCurrentIndex];
+    // всегда подписываемся на обновление участников (в т.ч. для прошедших)
     if (currentHike) {
         if (currentUnsubscribe) currentUnsubscribe();
         currentUnsubscribe = subscribeToParticipantCount(currentHike.date, async (count, participants) => {
             window._participantCount = count;
             window._participantsList = participants;
             updateFloatingSheetButtons();
+            const container = contentWrapper.querySelector('.image-container');
+            if (container && new Date(currentHike.date) >= new Date().setHours(0,0,0,0)) {
+                const isSoldOut = count >= 15;
+                applyImageBlurAndOverlay(container, isSoldOut, currentHike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
+            }
+            // также обновляем счётчик в изображении, если есть
             const participantCounterEl = contentWrapper.querySelector('#participantCounter');
             if (participantCounterEl) {
                 const participantTextEl = participantCounterEl.querySelector('.participant-text');
@@ -449,6 +456,7 @@ export function showBottomSheet(index) {
             `;
         }
 
+        // кнопка поделиться – жёлтая для хайков, голубая для городских событий
         let shareButtonHtml = '';
         if (!isPlaceholder && !isCancelled) {
             let buttonColor, buttonTextColor, buttonText;
@@ -642,6 +650,7 @@ export function showBottomSheet(index) {
             if (oldIcon) oldIcon.remove();
         }
 
+        // Обновляем счётчик участников сразу после рендера (если уже есть подписка)
         const participantCounterEl = contentWrapper.querySelector('#participantCounter');
         if (participantCounterEl && window._participantCount !== undefined) {
             const participantTextEl = participantCounterEl.querySelector('.participant-text');
@@ -762,6 +771,7 @@ export function showBottomSheet(index) {
         e.stopPropagation();
         const hike = state.hikesWithTitle[sheetCurrentIndex];
         if (!hike) return;
+        // всегда открываем список участников
         toggleParticipantDropdown(e.currentTarget, hike.date);
     }
 
@@ -1177,6 +1187,7 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
+    // Блок доступных карт – ТОЛЬКО для городских событий (city=yes) и только для гостей
     if (isCity && isGuest && !isPast && !isCancelled && !isPlaceholder) {
         const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
         const currentMonthName = monthNamesGen[new Date().getMonth()];
@@ -1218,6 +1229,7 @@ function updateFloatingSheetButtons() {
         container.appendChild(cardsBlock);
     }
 
+    // Городское событие для гостей – показываем баннер "вход по карте интеллигента"
     if (isCity && isGuest && !isPlaceholder && !isCancelled && !isPast) {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
@@ -1261,6 +1273,7 @@ function updateFloatingSheetButtons() {
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
+    // Блок оставшихся билетов (если <=5) – только для будущих и не городских? оставляем как было
     if (!isPast && available <= 5 && !isCity) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
