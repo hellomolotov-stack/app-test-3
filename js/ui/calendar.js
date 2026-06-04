@@ -289,11 +289,6 @@ export function showBottomSheet(index) {
             window._participantCount = count;
             window._participantsList = participants;
             updateFloatingSheetButtons();
-            const container = contentWrapper.querySelector('.image-container');
-            if (container && new Date(currentHike.date) >= new Date().setHours(0,0,0,0)) {
-                const isSoldOut = count >= 15;
-                applyImageBlurAndOverlay(container, isSoldOut, currentHike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
-            }
             const participantCounterEl = contentWrapper.querySelector('#participantCounter');
             if (participantCounterEl) {
                 const participantTextEl = participantCounterEl.querySelector('.participant-text');
