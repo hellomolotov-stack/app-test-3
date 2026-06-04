@@ -283,18 +283,89 @@ export function showBottomSheet(index) {
     }
 
     const currentHike = state.hikesWithTitle[sheetCurrentIndex];
-    if (currentHike && new Date(currentHike.date) >= new Date().setHours(0,0,0,0)) {
-        loadAllParticipants(currentHike.date).then(participants => {
-            window._participantCount = participants.length;
+    // всегда подписываемся на обновление участников (в т.ч. для прошедших)
+    if (currentHike) {
+        if (currentUnsubscribe) currentUnsubscribe();
+        currentUnsubscribe = subscribeToParticipantCount(currentHike.date, async (count, participants) => {
+            window._participantCount = count;
+            window._participantsList = participants;
             updateFloatingSheetButtons();
             const container = contentWrapper.querySelector('.image-container');
-            if (container) {
-                const isSoldOut = window._participantCount >= 15;
+            if (container && new Date(currentHike.date) >= new Date().setHours(0,0,0,0)) {
+                const isSoldOut = count >= 15;
                 applyImageBlurAndOverlay(container, isSoldOut, currentHike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
+            }
+            // также обновляем счётчик в изображении, если есть
+            const participantCounterEl = contentWrapper.querySelector('#participantCounter');
+            if (participantCounterEl) {
+                const participantTextEl = participantCounterEl.querySelector('.participant-text');
+                if (participantTextEl) {
+                    const hikeDateObj = new Date(currentHike.date);
+                    const todayDate = new Date();
+                    todayDate.setHours(0,0,0,0);
+                    const isPastEvent = hikeDateObj < todayDate;
+                    if (isPastEvent) {
+                        participantTextEl.textContent = currentHike.city === true || currentHike.city === 'yes' ? 'были' : 'ходили';
+                    } else {
+                        participantTextEl.textContent = currentHike.city === true || currentHike.city === 'yes' ? 'будут' : 'идут';
+                    }
+                }
+                const countEl = participantCounterEl.querySelector('.participant-count');
+                if (countEl) {
+                    if (count === 0) {
+                        countEl.style.display = 'inline';
+                        countEl.textContent = count;
+                    } else countEl.style.display = 'none';
+                }
+                const avatarsEl = participantCounterEl.querySelector('.participant-avatars');
+                if (avatarsEl) {
+                    avatarsEl.innerHTML = '';
+                    for (const p of participants.slice(0, 3)) {
+                        const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
+                        const hasProfile = !!state.profiles[p.userId];
+                        const img = document.createElement('img');
+                        img.src = cachedUrl || '';
+                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                        img.alt = p.name || '';
+                        img.title = p.name || '';
+                        img.dataset.userId = p.userId;
+                        img.style.cssText = `
+                            width: 28px !important;
+                            height: 28px !important;
+                            border-radius: 50% !important;
+                            object-fit: cover !important;
+                            box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
+                        `;
+                        img.onerror = function () {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                            placeholder.style.cssText = `
+                                width: 28px !important;
+                                height: 28px !important;
+                                border-radius: 50% !important;
+                                background-color: #40a7e3 !important;
+                                display: flex !important;
+                                align-items: center !important;
+                                justify-content: center !important;
+                                font-weight: bold !important;
+                                font-size: 14px !important;
+                                color: white !important;
+                                text-transform: uppercase !important;
+                                box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
+                            `;
+                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                            placeholder.textContent = initial;
+                            placeholder.dataset.userId = p.userId;
+                            this.parentNode.replaceChild(placeholder, this);
+                        };
+                        avatarsEl.appendChild(img);
+                    }
+                }
             }
         });
     } else {
         window._participantCount = 0;
+        window._participantsList = [];
     }
 
     function updateContent() {
@@ -352,6 +423,7 @@ export function showBottomSheet(index) {
             if (hike.feature_tags && hike.feature_tags.length > 0) {
                 featureTagsHtml = '<div class="feature-tags-container">';
                 hike.feature_tags.forEach(tag => {
+                    // +++ ВОССТАНАВЛИВАЕМ ЦВЕТ ТЕГОВ +++
                     featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor};">${tag}</span>`;
                 });
                 featureTagsHtml += '</div>';
@@ -385,15 +457,18 @@ export function showBottomSheet(index) {
             `;
         }
 
-        // кнопка поделиться
+        // кнопка поделиться – жёлтая для хайков, голубая для городских событий
         let shareButtonHtml = '';
         if (!isPlaceholder && !isCancelled) {
-            let buttonColor = '#41B5ED';
-            let buttonTextColor = '#000000';
-            let buttonText = isCity ? 'поделиться событием' : 'поделиться хайком';
-            if (!isCity) {
+            let buttonColor, buttonTextColor, buttonText;
+            if (isCity) {
+                buttonColor = '#41B5ED';
+                buttonTextColor = '#ffffff';
+                buttonText = 'поделиться событием';
+            } else {
                 buttonColor = 'var(--yellow)';
                 buttonTextColor = '#000000';
+                buttonText = 'поделиться хайком';
             }
             shareButtonHtml = `
                 <div style="margin-top: 20px; margin-bottom: 16px;">
@@ -409,20 +484,17 @@ export function showBottomSheet(index) {
 
         let imageHtml = '';
         if (hike.image && !isPlaceholder) {
-            imageHtml = `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
-            if (!isPast && !isCancelled && !isPlaceholder) {
-                const participantText = isCity ? 'будут' : 'идут';
-                imageHtml = `
-                    <div class="image-container">
-                        <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">
-                        <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
-                            <span class="participant-text" style="color: ${accentColor};">${participantText}</span>
-                            <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
-                            <div class="participant-avatars" id="participantAvatars"></div>
-                        </div>
+            const participantText = isCity ? (isPast ? 'были' : 'будут') : (isPast ? 'ходили' : 'идут');
+            imageHtml = `
+                <div class="image-container">
+                    <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">
+                    <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
+                        <span class="participant-text" style="color: ${accentColor};">${participantText}</span>
+                        <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
+                        <div class="participant-avatars" id="participantAvatars"></div>
                     </div>
-                `;
-            }
+                </div>
+            `;
         }
 
         let extraInfoHtml = '';
@@ -579,78 +651,81 @@ export function showBottomSheet(index) {
             if (oldIcon) oldIcon.remove();
         }
 
-        if (!isPast && !isCancelled && !isPlaceholder) {
-            if (currentUnsubscribe) currentUnsubscribe();
-            currentUnsubscribe = subscribeToParticipantCount(hike.date, async (count, participants) => {
-                window._participantCount = count;
-                const countEl = document.getElementById('participantCountValue');
-                const avatarsEl = document.getElementById('participantAvatars');
-                if (countEl) {
-                    if (count === 0) {
-                        countEl.style.display = 'inline';
-                        countEl.textContent = count;
-                    } else countEl.style.display = 'none';
+        // Обновляем счётчик участников сразу после рендера (если уже есть подписка)
+        const participantCounterEl = contentWrapper.querySelector('#participantCounter');
+        if (participantCounterEl && window._participantCount !== undefined) {
+            const participantTextEl = participantCounterEl.querySelector('.participant-text');
+            if (participantTextEl) {
+                const isPastEvent = new Date(hike.date) < new Date().setHours(0,0,0,0);
+                if (isPastEvent) {
+                    participantTextEl.textContent = isCity ? 'были' : 'ходили';
+                } else {
+                    participantTextEl.textContent = isCity ? 'будут' : 'идут';
                 }
-                if (avatarsEl) {
-                    avatarsEl.innerHTML = '';
-                    for (const p of participants) {
-                        const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
-                        const hasProfile = !!state.profiles[p.userId];
-                        const img = document.createElement('img');
-                        img.src = cachedUrl || '';
-                        img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
-                        img.alt = p.name || '';
-                        img.title = p.name || '';
-                        img.dataset.userId = p.userId;
-                        img.style.cssText = `
+            }
+            const countEl = participantCounterEl.querySelector('.participant-count');
+            if (countEl) {
+                if (window._participantCount === 0) {
+                    countEl.style.display = 'inline';
+                    countEl.textContent = window._participantCount;
+                } else countEl.style.display = 'none';
+            }
+            const avatarsEl = participantCounterEl.querySelector('.participant-avatars');
+            if (avatarsEl && window._participantsList) {
+                avatarsEl.innerHTML = '';
+                for (const p of window._participantsList.slice(0, 3)) {
+                    const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
+                    const hasProfile = !!state.profiles[p.userId];
+                    const img = document.createElement('img');
+                    img.src = cachedUrl || '';
+                    img.className = 'participant-avatar' + (hasProfile ? ' has-profile' : '');
+                    img.alt = p.name || '';
+                    img.title = p.name || '';
+                    img.dataset.userId = p.userId;
+                    img.style.cssText = `
+                        width: 28px !important;
+                        height: 28px !important;
+                        border-radius: 50% !important;
+                        object-fit: cover !important;
+                        box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
+                    `;
+                    img.onerror = function () {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
+                        placeholder.style.cssText = `
                             width: 28px !important;
                             height: 28px !important;
                             border-radius: 50% !important;
-                            object-fit: cover !important;
+                            background-color: #40a7e3 !important;
+                            display: flex !important;
+                            align-items: center !important;
+                            justify-content: center !important;
+                            font-weight: bold !important;
+                            font-size: 14px !important;
+                            color: white !important;
+                            text-transform: uppercase !important;
                             box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
                         `;
-                        img.onerror = function () {
-                            const placeholder = document.createElement('div');
-                            placeholder.className = 'participant-avatar placeholder' + (hasProfile ? ' has-profile' : '');
-                            placeholder.style.cssText = `
-                                width: 28px !important;
-                                height: 28px !important;
-                                border-radius: 50% !important;
-                                background-color: #40a7e3 !important;
-                                display: flex !important;
-                                align-items: center !important;
-                                justify-content: center !important;
-                                font-weight: bold !important;
-                                font-size: 14px !important;
-                                color: white !important;
-                                text-transform: uppercase !important;
-                                box-shadow: 0 0 0 2px rgba(255,255,255,0.3) !important;
-                            `;
-                            const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                            placeholder.textContent = initial;
-                            placeholder.dataset.userId = p.userId;
-                            this.parentNode.replaceChild(placeholder, this);
-                        };
-                        avatarsEl.appendChild(img);
-                    }
+                        const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                        placeholder.textContent = initial;
+                        placeholder.dataset.userId = p.userId;
+                        this.parentNode.replaceChild(placeholder, this);
+                    };
+                    avatarsEl.appendChild(img);
                 }
-                const imageContainer = contentWrapper.querySelector('.image-container');
-                const isSoldOut = count >= 15;
-                applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
-                updateFloatingSheetButtons();
-            });
+            }
         }
 
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');
-        const isSoldOut = (window._participantCount || 0) >= 15;
+        const isSoldOut = (window._participantCount || 0) >= 15 && !isPast;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
-        const participantCounterEl = document.getElementById('participantCounter');
-        if (participantCounterEl) {
-            participantCounterEl.removeEventListener('click', participantCounterHandler);
-            participantCounterEl.addEventListener('click', participantCounterHandler);
+        const participantCounterEl2 = contentWrapper.querySelector('#participantCounter');
+        if (participantCounterEl2) {
+            participantCounterEl2.removeEventListener('click', participantCounterHandler);
+            participantCounterEl2.addEventListener('click', participantCounterHandler);
         }
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
@@ -660,8 +735,10 @@ export function showBottomSheet(index) {
                 closeLeaderDropdown();
                 sheetCurrentIndex--;
                 window._participantCount = 0;
+                window._participantsList = [];
                 loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
                     window._participantCount = participants.length;
+                    window._participantsList = participants;
                     updateContent();
                 });
                 contentWrapper.scrollTop = 0;
@@ -676,8 +753,10 @@ export function showBottomSheet(index) {
                 closeLeaderDropdown();
                 sheetCurrentIndex++;
                 window._participantCount = 0;
+                window._participantsList = [];
                 loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
                     window._participantCount = participants.length;
+                    window._participantsList = participants;
                     updateContent();
                 });
                 contentWrapper.scrollTop = 0;
@@ -693,6 +772,7 @@ export function showBottomSheet(index) {
         e.stopPropagation();
         const hike = state.hikesWithTitle[sheetCurrentIndex];
         if (!hike) return;
+        // всегда открываем список участников
         toggleParticipantDropdown(e.currentTarget, hike.date);
     }
 
@@ -1106,11 +1186,10 @@ function updateFloatingSheetButtons() {
     const isGuest = state.userCard.status !== 'active';
     const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
 
-    // Очищаем контейнер
     container.innerHTML = '';
 
-    // --- БЛОК ДОСТУПНЫХ КАРТ ДЛЯ ГОСТЕЙ (ПОКАЗЫВАЕТСЯ ДЛЯ ЛЮБЫХ АКТИВНЫХ СОБЫТИЙ) ---
-    if (isGuest && !isPast && !isCancelled && !isPlaceholder) {
+    // Блок доступных карт – ТОЛЬКО для городских событий (city=yes) и только для гостей
+    if (isCity && isGuest && !isPast && !isCancelled && !isPlaceholder) {
         const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
         const currentMonthName = monthNamesGen[new Date().getMonth()];
         const availableCards = getAvailableCardsCount();
@@ -1151,7 +1230,7 @@ function updateFloatingSheetButtons() {
         container.appendChild(cardsBlock);
     }
 
-    // --- ДАЛЬНЕЙШАЯ ЛОГИКА (ГОРОДСКИЕ СОБЫТИЯ, ОСТАВШИЕСЯ БИЛЕТЫ, КНОПКИ) ---
+    // Городское событие для гостей – показываем баннер "вход по карте интеллигента"
     if (isCity && isGuest && !isPlaceholder && !isCancelled && !isPast) {
         const infoMsg = document.createElement('div');
         infoMsg.className = 'availability-floating';
@@ -1195,8 +1274,8 @@ function updateFloatingSheetButtons() {
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    // Блок оставшихся мест (если <=5)
-    if (!isPast && available <= 5) {
+    // Блок оставшихся билетов (если <=5) – только для будущих и не городских? оставляем как было
+    if (!isPast && available <= 5 && !isCity) {
         const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
         const progressPercent = Math.round((available / MAX_TICKETS) * 100);
         const availBlock = document.createElement('div');
@@ -1277,7 +1356,7 @@ function updateFloatingSheetButtons() {
         const completedBtn = document.createElement('a');
         completedBtn.href = '#';
         completedBtn.className = 'btn btn-outline';
-        completedBtn.textContent = 'хайк завершен';
+        completedBtn.textContent = 'завершено';
         completedBtn.style.pointerEvents = 'none';
         row.appendChild(completedBtn);
 
@@ -1317,8 +1396,10 @@ function updateFloatingSheetButtons() {
             closeLeaderDropdown();
             sheetCurrentIndex = nextIndex;
             window._participantCount = 0;
+            window._participantsList = [];
             loadAllParticipants(state.hikesWithTitle[sheetCurrentIndex].date).then(participants => {
                 window._participantCount = participants.length;
+                window._participantsList = participants;
                 updateContent();
             });
             contentWrapper.scrollTop = 0;
