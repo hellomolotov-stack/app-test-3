@@ -1,4 +1,4 @@
-// js/ui/calendar.js – финальная стабильная версия
+// js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
@@ -1059,67 +1059,121 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Баннеры для городских событий (только для гостей)
-    if (isCity && isGuest && !isPast && !isCancelled && !isPlaceholder) {
-        // "вход по карте интеллигента"
-        const infoMsg = document.createElement('div');
-        infoMsg.className = 'availability-floating';
-        infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
-        infoMsg.textContent = 'вход по карте интеллигента';
-        container.appendChild(infoMsg);
+    // Городские события: для гостей – баннеры, для владельцев карт – свайп-контрол
+    if (isCity && !isPast && !isCancelled && !isPlaceholder) {
+        if (isGuest) {
+            // Баннер "вход по карте"
+            const infoMsg = document.createElement('div');
+            infoMsg.className = 'availability-floating';
+            infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
+            infoMsg.textContent = 'вход по карте интеллигента';
+            container.appendChild(infoMsg);
 
-        // блок с доступными картами
-        const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
-        const currentMonthName = monthNamesGen[new Date().getMonth()];
-        const availableCards = getAvailableCardsCount();
+            // Блок доступных карт
+            const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
+            const currentMonthName = monthNamesGen[new Date().getMonth()];
+            const availableCards = getAvailableCardsCount();
 
-        const cardsBlock = document.createElement('div');
-        cardsBlock.className = 'availability-floating';
-        cardsBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center;';
-        cardsBlock.innerHTML = `
-            <div style="font-size: 14px; line-height: 1.4;">
-                <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
-                <span style="color: #ffffff; font-style: italic;"> ${availableCards} из 10 карт</span>
-            </div>
-            <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #41B5ED; color: #ffffff; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
-        `;
-        const buyBtn = cardsBlock.querySelector('#buyCardFromFloatingBtn');
-        if (buyBtn) {
-            buyBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                haptic();
-                closeBottomSheet();
-                renderHome();
-                setTimeout(() => {
-                    const cardBlock = document.getElementById('cardBlock');
-                    if (cardBlock) {
-                        cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        cardBlock.style.transition = 'box-shadow 0.5s';
-                        cardBlock.style.boxShadow = '0 0 20px 5px white';
-                        setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
-                        const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
-                        if (guestAccordion && !guestAccordion.classList.contains('show')) {
-                            guestAccordion.classList.add('show');
+            const cardsBlock = document.createElement('div');
+            cardsBlock.className = 'availability-floating';
+            cardsBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center;';
+            cardsBlock.innerHTML = `
+                <div style="font-size: 14px; line-height: 1.4;">
+                    <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
+                    <span style="color: #ffffff; font-style: italic;"> ${availableCards} из 10 карт</span>
+                </div>
+                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #41B5ED; color: #ffffff; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
+            `;
+            const buyBtn = cardsBlock.querySelector('#buyCardFromFloatingBtn');
+            if (buyBtn) {
+                buyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    haptic();
+                    closeBottomSheet();
+                    renderHome();
+                    setTimeout(() => {
+                        const cardBlock = document.getElementById('cardBlock');
+                        if (cardBlock) {
+                            cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            cardBlock.style.transition = 'box-shadow 0.5s';
+                            cardBlock.style.boxShadow = '0 0 20px 5px white';
+                            setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
+                            const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
+                            if (guestAccordion && !guestAccordion.classList.contains('show')) {
+                                guestAccordion.classList.add('show');
+                            }
                         }
-                    }
-                }, 300);
-                log('buy_card_from_floating_click', true, state.user);
+                    }, 300);
+                    log('buy_card_from_floating_click', true, state.user);
+                });
+            }
+            container.appendChild(cardsBlock);
+            return;
+        } else {
+            // Владельцы карт – показываем интерфейс записи (свайп-контрол)
+            const isWoman = hike.woman === 'yes';
+            const accentColor = isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)');
+            const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+            const swipeControl = renderSwipeControl({ isBooked, isGuest: false, hike, accentColor });
+            if (swipeControl) {
+                container.appendChild(swipeControl);
+                container.style.pointerEvents = 'auto';
+                return;
+            }
+            // fallback: кнопка "я иду" если свайп не поддерживается
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '12px';
+            row.style.justifyContent = 'center';
+            row.style.width = '100%';
+            const goBtn = document.createElement('a');
+            goBtn.href = '#';
+            goBtn.className = 'btn btn-yellow btn-glow';
+            goBtn.textContent = isBooked ? 'ты записан' : 'я иду';
+            goBtn.style.backgroundColor = accentColor;
+            goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
+            goBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const userId = state.user?.id;
+                const hikeDate = hike.date;
+                const hikeTitle = hike.title;
+                if (isBooked) {
+                    Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
+                        .then(() => {
+                            delete state.hikeBookingStatus[sheetCurrentIndex];
+                            updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                            updateFloatingSheetButtons();
+                            renderUserBookings(document.getElementById('userBookingsContainer'));
+                            const cal = document.getElementById('calendarContainer');
+                            if (cal) renderCalendar(cal);
+                        });
+                } else {
+                    setUserRegistrationStatus(userId, hikeDate, true)
+                        .then(() => {
+                            state.hikeBookingStatus[sheetCurrentIndex] = true;
+                            return addParticipant(hikeDate, userId, {
+                                first_name: state.user?.first_name,
+                                photo_url: state.user?.photo_url,
+                            });
+                        })
+                        .then(() => {
+                            updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+                            updateFloatingSheetButtons();
+                            renderUserBookings(document.getElementById('userBookingsContainer'));
+                            const cal = document.getElementById('calendarContainer');
+                            if (cal) renderCalendar(cal);
+                        });
+                }
+                log('city_event_action', false, state.user);
             });
+            row.appendChild(goBtn);
+            container.appendChild(row);
+            container.style.pointerEvents = 'auto';
+            return;
         }
-        container.appendChild(cardsBlock);
-        return;
     }
 
-    // Городское событие для владельцев карт
-    if (isCity && !isGuest && !isPlaceholder && !isCancelled && !isPast) {
-        const infoMsg = document.createElement('div');
-        infoMsg.className = 'availability-floating';
-        infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
-        infoMsg.textContent = 'вы можете участвовать (карта интеллигента)';
-        container.appendChild(infoMsg);
-        return;
-    }
-
+    // Далее – обычные хайки (не городские)
     if (isPlaceholder) {
         const placeholderMsg = document.createElement('div');
         placeholderMsg.className = 'availability-floating';
@@ -1235,7 +1289,6 @@ function updateFloatingSheetButtons() {
         const completedBtn = document.createElement('a');
         completedBtn.href = '#';
         completedBtn.className = 'btn btn-outline';
-        // Разный текст для городских событий и хайков
         completedBtn.textContent = isCity ? 'событие завершено' : 'хайк завершен';
         completedBtn.style.pointerEvents = 'none';
         row.appendChild(completedBtn);
