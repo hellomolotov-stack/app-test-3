@@ -20,15 +20,18 @@ export function renderSuggestEvent() {
             <form id="suggestEventForm" class="edit-form">
                 <div class="profile-field">
                     <label>✍🏻 название</label>
-                    <input type="text" id="eventTitle" placeholder="например возлежание на пляже или встреча в Капри">
+                    <input type="text" id="eventTitle">
+                    <div class="field-hint">например возлежание на пляже или встреча в Капри</div>
                 </div>
                 <div class="profile-field">
                     <label>🗒️ описание</label>
-                    <textarea id="eventDescription" rows="4" placeholder="опиши ключевые детали события и почему интеллигентам стоит пойти"></textarea>
+                    <textarea id="eventDescription" rows="4"></textarea>
+                    <div class="field-hint">опиши ключевые детали события и почему интеллигентам стоит пойти</div>
                 </div>
                 <div class="profile-field">
                     <label>📆 дата и время</label>
                     <input type="datetime-local" id="eventDatetime">
+                    <div class="field-hint">укажи предполагаемую дату и время</div>
                 </div>
                 <button type="submit" class="btn btn-yellow" style="margin-top:24px;">предложить</button>
             </form>

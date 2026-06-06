@@ -42,10 +42,7 @@ export function renderCalendar(container) {
     const hasNextMonth = hasHikesInMonth(year, month + 1);
 
     let calendarHtml = `
-        <div style="display:flex; align-items:center; justify-content:space-between; margin:0 16px 16px 16px;">
-            <h2 class="section-title" style="margin:0;">🗓️ календарь событий</h2>
-            <button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button>
-        </div>
+        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь событий</h2>
         <div class="calendar-item">
             <div class="calendar-header-with-legend">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
@@ -134,7 +131,11 @@ export function renderCalendar(container) {
             calendarHtml += `<div class="${classes}">${day}</div>`;
         }
     }
-    calendarHtml += `</div></div>`;
+    calendarHtml += `</div>
+            <div style="padding: 12px 0 4px 0; text-align: center;">
+                <button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button>
+            </div>
+        </div>`;
     container.innerHTML = calendarHtml;
 
     const prevBtn = document.getElementById('prevMonthBtn');
