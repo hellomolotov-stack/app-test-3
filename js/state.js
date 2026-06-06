@@ -79,7 +79,7 @@ export function saveCachedState() {
 
 export function saveBookingStatusToLocal() {
     const statusObj = {};
-    state.hikesList.forEach((hike, index) => {
+    state.hikesWithTitle.forEach((hike, index) => {
         statusObj[hike.date] = state.hikeBookingStatus[index] || false;
     });
     localStorage.setItem('hikeBookingStatus', JSON.stringify(statusObj));
@@ -91,7 +91,7 @@ export function loadBookingStatusFromLocal() {
         try {
             const parsed = JSON.parse(saved);
             const statusMap = {};
-            state.hikesList.forEach((hike, index) => {
+            state.hikesWithTitle.forEach((hike, index) => {
                 statusMap[index] = parsed[hike.date] || false;
             });
             return statusMap;

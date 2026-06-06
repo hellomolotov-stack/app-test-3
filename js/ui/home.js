@@ -44,7 +44,7 @@ export function renderUserBookings(container) {
     const today = new Date();
     today.setHours(0,0,0,0);
     const bookings = [];
-    state.hikesList.forEach((hike, index) => {
+    state.hikesWithTitle.forEach((hike, index) => {
         if (state.hikeBookingStatus[index]) {
             const hikeDate = new Date(hike.date);
             if (hikeDate >= today) bookings.push({ ...hike, index });
