@@ -91,8 +91,6 @@ export async function syncSuggestEventToSheet(data) {
     params.append('action', 'suggestEvent');
     params.append('user_id', data.userId);
     params.append('username', data.username);
-    params.append('first_name', data.firstName);
-    params.append('last_name', data.lastName);
     params.append('event_title', data.title);
     params.append('event_description', data.description);
     params.append('event_datetime', data.datetime);

@@ -1,24 +1,8 @@
 // ─────────────────────────────────────────────────────────────────
-// Добавь этот кейс в switch-блок внутри doPost() твоего Apps Script
+// Актуальный обработчик suggestEvent для doPost() в Apps Script.
+// Убедись что в doPost() есть:
+//   if (action === 'suggestEvent') { ... handleSuggestEvent(params) ... }
 // ─────────────────────────────────────────────────────────────────
-
-//    case 'suggestEvent':
-//      handleSuggestEvent(params);
-//      break;
-
-// ─────────────────────────────────────────────────────────────────
-// Добавь эту функцию в конец файла Apps Script
-// ─────────────────────────────────────────────────────────────────
-
-// ─────────────────────────────────────────────────────────────────
-// Запусти эту функцию вручную один раз из редактора Apps Script,
-// чтобы создать лист «Предложения событий» в таблице members
-// (либо он создастся автоматически при первой подаче формы)
-// ─────────────────────────────────────────────────────────────────
-function setupSuggestEventSheet() {
-  handleSuggestEvent({});
-  Logger.log('Лист «Предложения событий» готов');
-}
 
 function handleSuggestEvent(params) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -31,8 +15,6 @@ function handleSuggestEvent(params) {
       'Дата подачи (МСК)',
       'user_id',
       'Username',
-      'Имя',
-      'Фамилия',
       'Название события',
       'Описание',
       'Предлагаемая дата/время'
@@ -41,9 +23,9 @@ function handleSuggestEvent(params) {
     sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#d9fd19');
     sheet.setFrozenRows(1);
     sheet.setColumnWidth(1, 160);
-    sheet.setColumnWidth(6, 200);
-    sheet.setColumnWidth(7, 350);
-    sheet.setColumnWidth(8, 160);
+    sheet.setColumnWidth(4, 200);
+    sheet.setColumnWidth(5, 350);
+    sheet.setColumnWidth(6, 160);
   }
 
   var mskTime = Utilities.formatDate(
@@ -54,10 +36,8 @@ function handleSuggestEvent(params) {
 
   sheet.appendRow([
     mskTime,
-    params.user_id   || '',
-    params.username  ? '@' + params.username : '',
-    params.first_name || '',
-    params.last_name  || '',
+    params.user_id  || '',
+    params.username ? '@' + params.username : '',
     params.event_title       || '',
     params.event_description || '',
     params.event_datetime    || ''

@@ -64,8 +64,6 @@ export function renderSuggestEvent() {
             datetime,
             userId: state.user?.id || '',
             username: state.user?.username || '',
-            firstName: state.user?.first_name || '',
-            lastName: state.user?.last_name || '',
         };
 
         syncSuggestEventToSheet(data).catch(console.error);
