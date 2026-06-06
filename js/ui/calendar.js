@@ -186,7 +186,8 @@ export function renderCalendar(container) {
                 overlay.innerHTML = `
                     <div class="modal-content" style="max-width:360px; text-align:center;">
                         <div style="font-size:52px; margin-bottom:16px;">🔒</div>
-                        <div class="modal-title" style="text-align:center; font-size:20px;">члены клуба могут предлагать свои события</div>
+                        <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">события в городе</div>
+                        <div class="modal-text" style="text-align:center; margin-top:8px;">члены клуба могут предлагать свои события</div>
                         <button class="btn btn-yellow" id="closeLockBtn" style="margin-top:16px;">понятно</button>
                     </div>
                 `;
