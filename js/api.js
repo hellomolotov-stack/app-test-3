@@ -85,6 +85,29 @@ export async function syncProfileDeleteToSheet(userId) {
     }
 }
 
+export async function syncSuggestEventToSheet(data) {
+    if (!REGISTRATION_API_URL) return;
+    const params = new URLSearchParams();
+    params.append('action', 'suggestEvent');
+    params.append('user_id', data.userId);
+    params.append('username', data.username);
+    params.append('first_name', data.firstName);
+    params.append('last_name', data.lastName);
+    params.append('event_title', data.title);
+    params.append('event_description', data.description);
+    params.append('event_datetime', data.datetime);
+    params.append('submitted_at', new Date().toISOString());
+    try {
+        await fetch(REGISTRATION_API_URL, {
+            method: 'POST',
+            body: params,
+            keepalive: true
+        });
+    } catch (e) {
+        console.error('syncSuggestEventToSheet error:', e);
+    }
+}
+
 export function syncGuestAllowMessages(userId, allow) {
     if (!userId || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams({

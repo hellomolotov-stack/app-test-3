@@ -1852,6 +1852,7 @@ body::before {
 }
 
 .profile-field input[type="text"],
+.profile-field input[type="datetime-local"],
 .profile-field textarea {
     width: 100%;
     padding: 12px;
@@ -1865,6 +1866,11 @@ body::before {
     outline: none;
 }
 
+.profile-field input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.7;
+}
+
 .profile-field textarea {
     resize: vertical;
     min-height: 80px;
@@ -1873,6 +1879,26 @@ body::before {
 #saveProfileBtn {
     margin-top: 24px;
     margin-bottom: 8px;
+}
+
+.btn-suggest-event {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 6px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.btn-suggest-event:active {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .delete-profile-btn {

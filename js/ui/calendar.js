@@ -16,6 +16,7 @@ import { renderHome } from './home.js';
 import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
+import { renderSuggestEvent } from './suggest-event.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -41,7 +42,10 @@ export function renderCalendar(container) {
     const hasNextMonth = hasHikesInMonth(year, month + 1);
 
     let calendarHtml = `
-        <h2 class="section-title">🗓️ календарь событий</h2>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin:0 16px 16px 16px;">
+            <h2 class="section-title" style="margin:0;">🗓️ календарь событий</h2>
+            <button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button>
+        </div>
         <div class="calendar-item">
             <div class="calendar-header-with-legend">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
@@ -168,6 +172,15 @@ export function renderCalendar(container) {
             }
         });
     });
+
+    const suggestBtn = document.getElementById('suggestEventBtn');
+    if (suggestBtn) {
+        suggestBtn.addEventListener('click', () => {
+            haptic();
+            log('suggest_event_click', state.userCard.status !== 'active', state.user);
+            renderSuggestEvent();
+        });
+    }
 }
 
 function showLetterPopup(letterText, letterLink, isGuest) {
