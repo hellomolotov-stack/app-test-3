@@ -268,7 +268,7 @@ async function getCachedAvatar(userId, photoUrl) {
 }
 
 function getAvailableCardsCount() {
-    return 10;
+    return 9;
 }
 
 export function showBottomSheet(index) {
