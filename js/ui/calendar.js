@@ -132,7 +132,7 @@ export function renderCalendar(container) {
         }
     }
     calendarHtml += `</div>
-            <div style="padding: 12px 0 4px 0; text-align: center;">
+            <div style="display: flex; justify-content: flex-end; padding: 8px 4px 4px 4px;">
                 <button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button>
             </div>
         </div>`;
@@ -179,6 +179,22 @@ export function renderCalendar(container) {
         suggestBtn.addEventListener('click', () => {
             haptic();
             log('suggest_event_click', state.userCard.status !== 'active', state.user);
+            const isGuest = state.userCard.status !== 'active';
+            if (isGuest) {
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal-content" style="max-width:360px; text-align:center;">
+                        <div style="font-size:52px; margin-bottom:16px;">🔒</div>
+                        <div class="modal-title" style="text-align:center; font-size:20px;">члены клуба могут предлагать свои события</div>
+                        <button class="btn btn-yellow" id="closeLockBtn" style="margin-top:16px;">понятно</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+                document.getElementById('closeLockBtn').addEventListener('click', () => { haptic(); overlay.remove(); });
+                return;
+            }
             renderSuggestEvent();
         });
     }
