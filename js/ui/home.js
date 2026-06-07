@@ -5,7 +5,7 @@ import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar } from './calendar.js';
+import { renderCalendar, showBottomSheet } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 
@@ -131,6 +131,14 @@ export function renderUserBookings(container) {
     });
     html += '</div>';
     container.innerHTML = html;
+
+    container.querySelectorAll('.booking-detail-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            haptic();
+            const index = parseInt(btn.dataset.index, 10);
+            showBottomSheet(index);
+        });
+    });
 }
 
 function renderMastermindSummaries() {
