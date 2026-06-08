@@ -92,6 +92,7 @@ function sendBroadcast() {
   var broadcastData = broadcastSheet.getDataRange().getValues();
   var broadcastHeaders = broadcastData.shift().map(function(h){ return String(h).trim(); });
 
+  var dateIdx     = broadcastHeaders.indexOf('date');
   var textIdx     = broadcastHeaders.indexOf('text');
   var statusIdx   = broadcastHeaders.indexOf('status');
   var sentAtIdx   = broadcastHeaders.indexOf('sent_at');
@@ -104,6 +105,8 @@ function sendBroadcast() {
     return;
   }
 
+  var now = new Date();
+
   for (var i = 0; i < broadcastData.length; i++) {
     var row = broadcastData[i];
     var status = String(row[statusIdx] || '').trim().toLowerCase();
@@ -111,6 +114,15 @@ function sendBroadcast() {
 
     var text = String(row[textIdx] || '').trim();
     if (!text) continue;
+
+    // Проверка даты: если указана и ещё не наступила — пропускаем
+    if (dateIdx !== -1 && row[dateIdx]) {
+      var sendDate = new Date(row[dateIdx]);
+      if (!isNaN(sendDate.getTime()) && sendDate > now) {
+        Logger.log('⏳ Строка ' + (i + 2) + ': отправка запланирована на ' + sendDate);
+        continue;
+      }
+    }
 
     var segment     = segmentIdx  !== -1 ? String(row[segmentIdx]  || '').trim().toLowerCase() : 'all';
     var startapp    = startappIdx !== -1 ? String(row[startappIdx] || '').trim() : '';
