@@ -30,7 +30,7 @@ export function renderSuggestEvent() {
                 </div>
                 <div class="profile-field">
                     <label>📆 дата и время</label>
-                    <input type="datetime-local" id="eventDatetime">
+                    <input type="text" id="eventDatetime" placeholder="например 15 июня в 18:00">
                     <div class="field-hint">укажи предполагаемую дату и время</div>
                 </div>
                 <button type="submit" class="btn btn-yellow" style="margin-top:24px;">предложить</button>
