@@ -417,6 +417,21 @@ async function loadAppData() {
     }
 }
 
+// Глобальное скрытие нижнего меню при появлении клавиатуры
+// Работает для всех input/textarea во всём приложении
+let _keyboardHideTimer = null;
+document.addEventListener('focusin', (e) => {
+    if (e.target.matches('input, textarea')) {
+        if (_keyboardHideTimer) { clearTimeout(_keyboardHideTimer); _keyboardHideTimer = null; }
+        showBottomNav(false);
+    }
+});
+document.addEventListener('focusout', (e) => {
+    if (e.target.matches('input, textarea')) {
+        _keyboardHideTimer = setTimeout(() => showBottomNav(true), 200);
+    }
+});
+
 window.addEventListener('load', () => {
     state.user = tg?.initDataUnsafe?.user;
     loadAppData();
