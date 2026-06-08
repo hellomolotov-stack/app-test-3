@@ -81,7 +81,7 @@ export async function renderProfiles() {
     document.getElementById('floatingCardBtn')?.remove();   // ← удаление кнопки
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `🫆 члены клуба`; hideBack(); haptic(); log('profiles_page_opened', state.userCard.status!=='active', state.user);
+    subtitle().textContent = `🫆 члены клуба`; hideBack(); haptic(); log('раздел профили', state.userCard.status!=='active', state.user);
     showBottomNav(true); setupBottomNav();
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     await loadProfilesData();
@@ -131,10 +131,10 @@ export async function renderProfiles() {
             const action = btn.dataset.action;
             if (action === 'chat') {
                 const username = btn.dataset.username;
-                if (username) openLink(`https://t.me/${username}`, 'profile_chat_click', false);
+                if (username) openLink(`https://t.me/${username}`, 'написать участнику', false);
             } else if (action === 'link') {
                 const url = btn.dataset.url;
-                if (url) openLink(url, 'profile_link_click', false);
+                if (url) openLink(url, 'ссылка участника', false);
             }
         });
     });
@@ -163,7 +163,7 @@ export async function renderProfiles() {
         document.body.appendChild(btnContainer);
         document.getElementById('editProfileBtn')?.addEventListener('click',()=>{
             haptic();
-            log('edit_profile_click', false, state.user);
+            log('редактировать профиль', false, state.user);
             renderEditProfile();
         });
         return;
@@ -192,13 +192,13 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     if (isCardHolder) {
         actionBtn.addEventListener('click', () => {
             haptic();
-            log('create_profile_click', false, state.user);
+            log('создать профиль', false, state.user);
             renderEditProfile();
         });
     } else {
         actionBtn.addEventListener('click', () => {
             haptic();
-            log('create_profile_click', true, state.user);
+            log('создать профиль', true, state.user);
             showGuestProfilePopup();
         });
     }
@@ -283,7 +283,7 @@ function showGuestProfilePopup() {
         overlay.remove();
         cleanupProfileOverlays();
         renderGuestPrivileges();
-        log('guest_privileges_from_profile', true, state.user);
+        log('привилегии из профиля', true, state.user);
     });
 }
 
@@ -355,7 +355,7 @@ async function renderEditProfile() {
         const data = { name, friendshipStatuses: selected, hobbies, profession, allowMessages, customLink, username: state.user?.username || '', avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null, avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(), userId: state.user?.id };
         await saveProfile(state.user?.id, data);
         syncProfileToSheet(data, state.user).catch(console.error);
-        log('save_profile', false, state.user);
+        log('сохранить профиль', false, state.user);
         delete userHikesCache[state.user?.id];
         tg.BackButton.offClick(backHandler);
         if(bottomNav) bottomNav.style.display='flex';
@@ -370,7 +370,7 @@ async function renderEditProfile() {
             if(confirm('Снять профиль с публикации?')){
                 await deleteProfile(state.user?.id);
                 syncProfileDeleteToSheet(state.user?.id).catch(console.error);
-                log('delete_profile', false, state.user);
+                log('удалить профиль', false, state.user);
                 delete userHikesCache[state.user?.id];
                 tg.BackButton.offClick(backHandler);
                 if(bottomNav) bottomNav.style.display='flex';

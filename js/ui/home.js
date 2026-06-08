@@ -229,7 +229,7 @@ function renderUpdatesBlock() {
 
 function handleGuestRead(e) {
     e.preventDefault();
-    log('mastermind_read', true, state.user);
+    log('мастермайнд', true, state.user);
     showGuestMastermindPopup();
 }
 
@@ -304,13 +304,13 @@ function renderGuestHome() {
     `;
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
-    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', true, state.user); renderNewcomerPage(true); });
-    document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); renderGuestPrivileges(); log('privilegii_click', true, state.user); });
+    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('новичкам', true, state.user); renderNewcomerPage(true); });
+    document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); renderGuestPrivileges(); log('привилегии', true, state.user); });
     document.querySelectorAll('.season-card-btn, .permanent-card-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const isSeason = btn.classList.contains('season-card-btn');
-            openLink(isSeason ? SEASON_CARD_LINK : PERMANENT_CARD_LINK, isSeason ? 'season_card_click' : 'permanent_card_click', true);
+            openLink(isSeason ? SEASON_CARD_LINK : PERMANENT_CARD_LINK, isSeason ? 'сезонная карта' : 'годовая карта', true);
         });
     });
 
@@ -319,7 +319,7 @@ function renderGuestHome() {
     if (accordionBtn && dropdown) {
         accordionBtn.addEventListener('click', (e) => {
             haptic(); e.preventDefault();
-            log('nav_toggle', true, state.user);
+            log('развернуть', true, state.user);
             dropdown.classList.toggle('show');
         });
     }
@@ -339,7 +339,7 @@ function renderGuestHome() {
             e.preventDefault();
             haptic();
             scrollToCalendarAndHighlight();
-            log('random_phrase_click', true, state.user);
+            log('мне повезёт', true, state.user);
         });
     }
 
@@ -367,7 +367,7 @@ async function showGuestPopup() {
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
     document.getElementById('popupPrivilegesBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); renderGuestPrivileges(); });
-    log('guest_popup_opened', true, state.user);
+    log('попап гостя', true, state.user);
 }
 
 function renderOwnerHome() {
@@ -410,15 +410,15 @@ function renderOwnerHome() {
         haptic();
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         showConfetti();
-        log('card_click', false, user);
+        log('карта', false, user);
     });
-    document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('privilege_click', false, user); renderPriv(); });
-    document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'support_click', false); });
-    document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('novichkam_click', false, user); renderNewcomerPage(false); });
+    document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('привилегии', false, user); renderPriv(); });
+    document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'поддержка', false); });
+    document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('новичкам', false, user); renderNewcomerPage(false); });
 
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
         link.addEventListener('click', () => {
-            log('mastermind_read', false, state.user);
+            log('мастермайнд', false, state.user);
         });
     });
 
@@ -431,7 +431,7 @@ function renderOwnerHome() {
             e.preventDefault();
             haptic();
             scrollToCalendarAndHighlight();
-            log('random_phrase_click', false, state.user);
+            log('мне повезёт', false, state.user);
         });
     }
 

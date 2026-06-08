@@ -168,7 +168,7 @@ export function renderCalendar(container) {
             const date = el.dataset.date;
             const index = state.hikesWithTitle.findIndex(h => h.date === date);
             if (index !== -1) {
-                log('calendar_cell_click', state.userCard.status !== 'active', state.user, { date });
+                log('выбор даты', state.userCard.status !== 'active', state.user, { date });
                 showBottomSheet(index);
             }
         });
@@ -178,7 +178,7 @@ export function renderCalendar(container) {
     if (suggestBtn) {
         suggestBtn.addEventListener('click', () => {
             haptic();
-            log('suggest_event_click', state.userCard.status !== 'active', state.user);
+            log('предложить событие', state.userCard.status !== 'active', state.user);
             const isGuest = state.userCard.status !== 'active';
             if (isGuest) {
                 const overlay = document.createElement('div');
@@ -556,7 +556,7 @@ export function showBottomSheet(index) {
                 } else {
                     window.open(shareUrl, '_blank');
                 }
-                log('share_event_click', isGuest, state.user, { hike_date: hike.date });
+                log('поделиться хайком', isGuest, state.user, { hike_date: hike.date });
             });
         }
 
@@ -652,7 +652,7 @@ export function showBottomSheet(index) {
                 updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
-                log('slider_prev', false, state.user);
+                log('предыдущий хайк', false, state.user);
             }
         });
         document.getElementById('nextHike')?.addEventListener('click', e => {
@@ -664,7 +664,7 @@ export function showBottomSheet(index) {
                 updateContent();
                 contentWrapper.scrollTop = 0;
                 haptic();
-                log('slider_next', false, state.user);
+                log('следующий хайк', false, state.user);
             }
         });
     }
@@ -765,7 +765,7 @@ export function showBottomSheet(index) {
     sheet.addEventListener('touchend', onTouchEnd, { passive: false });
     sheet.addEventListener('touchcancel', onTouchEnd, { passive: false });
 
-    log('slider_haikov_opened', false, state.user);
+    log('детали хайка', false, state.user);
 }
 
 export function closeBottomSheet() {
@@ -1003,7 +1003,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     console.error(error);
                     updateFloatingSheetButtons();
                 });
-            log('idut_click', false, state.user);
+            log('записаться', false, state.user);
         }
     };
 
@@ -1135,7 +1135,7 @@ function updateFloatingSheetButtons() {
                             }
                         }
                     }, 300);
-                    log('buy_card_from_floating_click', true, state.user);
+                    log('купить карту', true, state.user);
                 });
             }
             container.appendChild(cardsBlock);
@@ -1195,7 +1195,7 @@ function updateFloatingSheetButtons() {
                             if (cal) renderCalendar(cal);
                         });
                 }
-                log('city_event_action', false, state.user);
+                log('городское событие', false, state.user);
             });
             row.appendChild(goBtn);
             container.appendChild(row);
@@ -1338,7 +1338,7 @@ function updateFloatingSheetButtons() {
                 e.stopPropagation();
                 haptic();
                 const url = hike.report_link.trim();
-                if (url) openLink(url, 'report_click', state.userCard.status !== 'active');
+                if (url) openLink(url, 'отчёт хайка', state.userCard.status !== 'active');
                 return false;
             });
             row.appendChild(reportBtn);
@@ -1414,7 +1414,7 @@ function updateFloatingSheetButtons() {
                         if (cal) renderCalendar(cal);
                     });
             }
-            log('cancel_click', false, state.user);
+            log('отменить запись', false, state.user);
         });
         row.appendChild(cancelBtn);
 
@@ -1443,7 +1443,7 @@ function updateFloatingSheetButtons() {
         questionBtn.textContent = 'задать вопрос';
         questionBtn.addEventListener('click', e => {
             e.preventDefault();
-            openLink('https://t.me/hellointelligent', 'question_click', true);
+            openLink('https://t.me/hellointelligent', 'написать организатору', true);
         });
         row.appendChild(questionBtn);
 
@@ -1500,7 +1500,7 @@ function updateFloatingSheetButtons() {
                 console.error(error);
                 updateFloatingSheetButtons();
             });
-        log('idut_click', false, state.user);
+        log('записаться', false, state.user);
     });
     row.appendChild(goBtn);
     container.appendChild(row);
@@ -1624,7 +1624,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 alert('Ошибка при регистрации. Попробуйте ещё раз.');
             });
 
-        log('free_first_click', true, state.user);
+        log('первый хайк бесплатно', true, state.user);
     });
 
     document.getElementById('buySeasonCardBtn')?.addEventListener('click', e => {
@@ -1646,7 +1646,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer) renderCalendar(calendarContainer);
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'season_card', state.user, false);
-                openLink(SEASON_CARD_LINK, 'season_card_click', true);
+                openLink(SEASON_CARD_LINK, 'сезонная карта', true);
                 closePopup();
             })
             .catch(error => {
@@ -1674,7 +1674,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 const calendarContainer = document.getElementById('calendarContainer');
                 if (calendarContainer) renderCalendar(calendarContainer);
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'permanent_card', state.user, false);
-                openLink(PERMANENT_CARD_LINK, 'permanent_card_click', true);
+                openLink(PERMANENT_CARD_LINK, 'годовая карта', true);
                 closePopup();
             })
             .catch(error => {
@@ -1794,7 +1794,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         }
     };
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
-    log('uchastniki_click', state.userCard.status !== 'active', state.user);
+    log('участники', state.userCard.status !== 'active', state.user);
 }
 
 let currentLeaderDropdown = null;
@@ -1865,7 +1865,7 @@ document.addEventListener('click', function(e) {
         const url = dynamicLink.getAttribute('data-url');
         const isGuest = dynamicLink.getAttribute('data-guest') === 'true';
         if (url) {
-            openLink(url, 'dynamic_link_click', isGuest);
+            openLink(url, 'ссылка', isGuest);
         }
         return;
     }

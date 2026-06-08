@@ -18,7 +18,7 @@ export function renderNewcomerPage(isGuest = false) {
         renderHome();
     });
     haptic();
-    log('novichkam_page_opened', isGuest, state.user);
+    log('страница новичкам', isGuest, state.user);
     showBottomNav(true);
     setupBottomNav();
     scrollPageToTop();
@@ -39,7 +39,7 @@ export function renderNewcomerPage(isGuest = false) {
         <div class="card-container newcomer-page faq-page" style="margin-bottom: 0;">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'support_click', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'задать вопрос', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
@@ -194,8 +194,8 @@ export function renderGift(isGuest = false) {
             <div id="giftAccordion" class="card-accordion">
                 <button class="accordion-btn btn-yellow btn-glow">купить в подарок</button>
                 <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_season_click', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'gift_permanent_click', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
+                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'подарить сезонную', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
+                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'подарить бессрочную', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
                 </div>
             </div>
         </div>
@@ -227,7 +227,7 @@ export function renderPassPage(isGuest = false) {
         passButton.addEventListener('click', (e) => {
             e.preventDefault();
             haptic();
-            openLink(buttonLink, 'pass_button_click', isGuest);
+            openLink(buttonLink, 'кнопка пропуска', isGuest);
         });
     }
 }
@@ -241,7 +241,7 @@ function setupAccordion(containerId, isGuest) {
         accordionBtn.addEventListener('click', (e) => {
             haptic();
             e.preventDefault();
-            log('nav_toggle', isGuest, state.user);
+            log('развернуть', isGuest, state.user);
             dropdown.classList.toggle('show');
         });
     }

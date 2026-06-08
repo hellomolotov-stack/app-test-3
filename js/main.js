@@ -91,7 +91,7 @@ function setupBottomNav() {
         cleanupProfileOverlays();
         document.getElementById('floatingCardBtn')?.remove();
         renderHome(); window.scrollTo({ top: 0, behavior: 'smooth' });
-        log('glavnaya_click', state.userCard.status !== 'active', state.user);
+        log('главная', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
         updateActiveNav();
@@ -112,7 +112,7 @@ function setupBottomNav() {
                 window.scrollTo({ top: targetY, behavior: 'smooth' });
             }
         }, 150);
-        log('kalendar_click', state.userCard.status !== 'active', state.user);
+        log('календарь', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
         updateActiveNav();
@@ -123,7 +123,7 @@ function setupBottomNav() {
         cleanupProfileOverlays();
         document.getElementById('floatingCardBtn')?.remove();
         renderProfiles();
-        log('profiles_click', state.userCard.status !== 'active', state.user);
+        log('профили', state.userCard.status !== 'active', state.user);
         if (popup.classList.contains('show')) popup.classList.remove('show');
         window.isMenuActive = false;
         updateActiveNav();
@@ -138,17 +138,17 @@ function setupBottomNav() {
             popup.classList.add('show');
             window.isMenuActive = true;
         }
-        log('menu_click', state.userCard.status !== 'active', state.user);
+        log('меню', state.userCard.status !== 'active', state.user);
         updateActiveNav();
     });
 
-    popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'chat_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
-    popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'channel_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+    popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'чат клуба', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+    popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'канал клуба', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(true); });
     popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     if (popupQuestion) {
-        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'question_click', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+        popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'написать организатору', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     }
 
     document.addEventListener('click', (e) => {
@@ -360,7 +360,7 @@ async function loadAppData() {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
         }
 
-        log('visit', state.userCard.status !== 'active', state.user);
+        log('открыл приложение', state.userCard.status !== 'active', state.user);
         saveCachedState();
 
         const hasAsked = localStorage.getItem('asked_write_access');

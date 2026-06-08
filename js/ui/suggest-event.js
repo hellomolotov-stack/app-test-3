@@ -67,7 +67,7 @@ export function renderSuggestEvent() {
         };
 
         syncSuggestEventToSheet(data).catch(console.error);
-        log('suggest_event', state.userCard.status !== 'active', state.user);
+        log('отправил предложение события', state.userCard.status !== 'active', state.user);
 
         const overlay = document.createElement('div');
         overlay.className = 'modal-overlay';
