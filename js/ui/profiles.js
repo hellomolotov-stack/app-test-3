@@ -124,6 +124,21 @@ export async function renderProfiles() {
 
     mainDiv().innerHTML = html;
 
+    mainDiv().querySelectorAll('.profile-contact-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            haptic();
+            const action = btn.dataset.action;
+            if (action === 'chat') {
+                const username = btn.dataset.username;
+                if (username) openLink(`https://t.me/${username}`, 'profile_chat_click', false);
+            } else if (action === 'link') {
+                const url = btn.dataset.url;
+                if (url) openLink(url, 'profile_link_click', false);
+            }
+        });
+    });
+
     if (shouldAnimate) {
         const wrapper = mainDiv().querySelector('.infinite-scroll-wrapper');
         const container = mainDiv().querySelector('.infinite-scroll-container');
