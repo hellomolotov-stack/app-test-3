@@ -250,13 +250,13 @@ function handleDeepLink(startParam) {
             break;
         case 'card':
             setTimeout(() => {
-                const el = document.querySelector('.card-container');
+                const el = document.getElementById('cardBlock');
                 if (el) {
                     scrollToElement(el, getCurrentTopOffset());
                     highlightElement(el);
                 } else {
                     const check = setInterval(() => {
-                        const card = document.querySelector('.card-container');
+                        const card = document.getElementById('cardBlock');
                         if (card) { clearInterval(check); scrollToElement(card, getCurrentTopOffset()); highlightElement(card); }
                     }, 100);
                 }
