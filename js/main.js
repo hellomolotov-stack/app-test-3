@@ -303,6 +303,25 @@ function handleDeepLink(startParam) {
         case 'gift':
             renderGift(isGuest);
             break;
+        case 'suggest':
+            setTimeout(() => {
+                const tryHighlight = () => {
+                    const btn = document.getElementById('suggestEventBtn');
+                    if (btn) {
+                        scrollToElement(btn, getCurrentTopOffset());
+                        highlightElement(btn);
+                        return true;
+                    }
+                    return false;
+                };
+                if (!tryHighlight()) {
+                    const check = setInterval(() => {
+                        if (tryHighlight()) clearInterval(check);
+                    }, 100);
+                    setTimeout(() => clearInterval(check), 5000);
+                }
+            }, 300);
+            break;
     }
 }
 
