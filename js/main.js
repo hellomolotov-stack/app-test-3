@@ -306,9 +306,10 @@ function handleDeepLink(startParam) {
         case 'suggest':
             setTimeout(() => {
                 const tryHighlight = () => {
+                    const cal = document.getElementById('calendarContainer');
                     const btn = document.getElementById('suggestEventBtn');
-                    if (btn) {
-                        scrollToElement(btn, getCurrentTopOffset());
+                    if (cal && btn) {
+                        scrollToElement(cal, getCurrentTopOffset());
                         highlightElement(btn);
                         return true;
                     }
