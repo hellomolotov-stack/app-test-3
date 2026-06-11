@@ -3,6 +3,7 @@ import { haptic, openLink, mainDiv, subtitle, parseLinks } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
+import { openOnboardingChat } from './onboarding-chat.js';
 import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop, cleanupProfileOverlays } from './common.js';
 import { renderHome } from './home.js';
 
@@ -48,12 +49,7 @@ export function renderNewcomerPage(isGuest = false) {
     document.getElementById('talkToBotBtn')?.addEventListener('click', () => {
         haptic();
         log('поговорить с ботом', isGuest, state.user);
-        const tg = window.Telegram?.WebApp;
-        if (tg?.openTelegramLink) {
-            tg.openTelegramLink('https://t.me/yaltahiking_bot?start=start');
-        } else {
-            window.open('https://t.me/yaltahiking_bot?start=start', '_blank');
-        }
+        openOnboardingChat();
     });
     document.getElementById('goHomeStatic')?.addEventListener('click', () => {
         haptic();

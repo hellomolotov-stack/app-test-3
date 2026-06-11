@@ -268,7 +268,7 @@ async function getCachedAvatar(userId, photoUrl) {
     return photoUrl;
 }
 
-function getAvailableCardsCount() {
+export function getAvailableCardsCount() {
     return 9;
 }
 
