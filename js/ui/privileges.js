@@ -39,11 +39,22 @@ export function renderNewcomerPage(isGuest = false) {
         <div class="card-container newcomer-page faq-page" style="margin-bottom: 0;">
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
-                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'задать вопрос', ${isGuest}); return false;" class="btn btn-yellow" style="margin:0 16px;">задать вопрос</a>
+                <button id="talkToBotBtn" class="btn btn-yellow" style="margin:0 16px;">💬 поговорить с ботом</button>
+                <a href="https://t.me/hellointelligent" onclick="event.preventDefault(); openLink(this.href, 'задать вопрос', ${isGuest}); return false;" class="btn btn-outline" style="margin:0 16px;">задать вопрос</a>
                 <button id="goHomeStatic" class="btn btn-outline" style="width:calc(100% - 32px); margin:0 16px;">&lt; на главную</button>
             </div>
         </div>
     `;
+    document.getElementById('talkToBotBtn')?.addEventListener('click', () => {
+        haptic();
+        log('поговорить с ботом', isGuest, state.user);
+        const tg = window.Telegram?.WebApp;
+        if (tg?.openTelegramLink) {
+            tg.openTelegramLink('https://t.me/yaltahiking_bot?start=start');
+        } else {
+            window.open('https://t.me/yaltahiking_bot?start=start', '_blank');
+        }
+    });
     document.getElementById('goHomeStatic')?.addEventListener('click', () => {
         haptic();
         setUserInteracted();

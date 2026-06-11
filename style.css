@@ -1930,6 +1930,8 @@ body::before {
     margin: 0 16px 8px 16px;
     padding-right: 4px;
     overscroll-behavior: contain;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
 }
 
 .update-item {
@@ -2267,8 +2269,8 @@ body.night-mode::before {
     -webkit-backdrop-filter: blur(12px);
     z-index: 10;
     pointer-events: none;
-    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);
 }
 
 /* Нижний блюр — над контентом, под меню */
@@ -2284,8 +2286,8 @@ body::after {
     -webkit-backdrop-filter: blur(12px);
     z-index: 15;
     pointer-events: none;
-    mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to top, black 0%, black 70%, transparent 100%);
+    mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
 }
 
 /* Сегодняшний день — белый кружок, чёрные цифры (уже есть, но оставляем) */
