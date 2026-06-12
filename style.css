@@ -602,11 +602,10 @@ body::before {
     gap: 0;
     cursor: pointer;
     color: #ffffff;
-    animation: botTabPeek 3.4s ease-in-out infinite;
     transition: transform 0.2s ease, background-color 0.2s ease;
 }
 
-.bot-tab-emoji { font-size: 18px; line-height: 1; }
+.bot-tab-emoji { font-size: 17px; line-height: 1; }
 
 .bot-tab-chevron {
     font-size: 14px;
@@ -616,19 +615,12 @@ body::before {
     transition: transform 0.3s ease;
 }
 
-/* лёгкое «выглядывание» вправо — намёк что активный */
-@keyframes botTabPeek {
-    0%, 100% { transform: translateX(0); }
-    50%      { transform: translateX(5px); }
-}
-
 .bot-tab:active {
-    transform: translateX(6px) scale(0.96);
+    transform: scale(0.96);
     background-color: rgba(255, 255, 255, 0.22);
 }
 
-/* когда облачко открыто — язычок замирает, шеврон смотрит влево */
-.bot-tab-wrap.open .bot-tab { animation: none; transform: translateX(2px); }
+/* когда облачко открыто — шеврон смотрит влево */
 .bot-tab-wrap.open .bot-tab-chevron { transform: rotate(180deg); }
 
 /* облачко с фразой — вылетает из язычка вправо */
@@ -675,9 +667,31 @@ body::before {
     border-bottom-left-radius: 3px;
 }
 
-.bot-tab-bubble-text {
+.bot-tab-bubble-avatar {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(217, 253, 25, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+
+.bot-tab-bubble-body {
     flex: 1;
     min-width: 0;
+}
+
+.bot-tab-bubble-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--yellow);
+    margin-bottom: 2px;
+}
+
+.bot-tab-bubble-text {
     font-size: 13.5px;
     line-height: 1.35;
 }

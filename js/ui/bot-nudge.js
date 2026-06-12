@@ -14,7 +14,6 @@ const K_LAST_PHRASE = 'botNudge_lastPhrase';
 
 // ── фразы (ротация без повтора, стиль клуба — строчными) ─────
 const PHRASES = [
-    'есть минутка? покажу, как тут всё устроено 🏔',
     'первый раз у нас? давай познакомлю с клубом',
     'загляни — расскажу про хайки и карту за пару минут',
     'привет 👋 хочешь, проведу по клубу?',
@@ -67,12 +66,16 @@ export function mountBotTab() {
     wrap = document.createElement('div');
     wrap.className = 'bot-tab-wrap';
     wrap.innerHTML = `
-        <button class="bot-tab" aria-label="познакомиться с клубом">
-            <span class="bot-tab-emoji">🏔</span>
+        <button class="bot-tab" aria-label="помощник интеллигенции">
+            <span class="bot-tab-emoji">💬</span>
             <span class="bot-tab-chevron">›</span>
         </button>
         <div class="bot-tab-bubble">
-            <span class="bot-tab-bubble-text"></span>
+            <div class="bot-tab-bubble-avatar">💬</div>
+            <div class="bot-tab-bubble-body">
+                <div class="bot-tab-bubble-name">помощник интеллигенции</div>
+                <div class="bot-tab-bubble-text"></div>
+            </div>
             <button class="bot-tab-bubble-close" aria-label="закрыть">✕</button>
         </div>
     `;
