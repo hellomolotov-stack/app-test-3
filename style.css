@@ -562,6 +562,92 @@ body::before {
     width: calc(100% - 32px);
 }
 
+/* -------------------- ОБЛАЧКО-СПУТНИК (зов в чат с ботом) -------------------- */
+.bot-nudge {
+    position: fixed;
+    left: 12px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+    z-index: 95;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: min(82%, 340px);
+    padding: 10px 12px;
+    background: rgba(30, 40, 50, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(217, 253, 25, 0.45);
+    border-radius: 20px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+    cursor: pointer;
+    opacity: 0;
+    transform: translateX(-120%) scale(0.9);
+    transition: transform 0.45s cubic-bezier(0.18, 0.9, 0.32, 1.4), opacity 0.35s ease;
+    will-change: transform, opacity;
+}
+
+.bot-nudge.visible {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    animation: botNudgeBob 3.2s ease-in-out 0.6s infinite;
+}
+
+/* хвостик облачка — вниз-влево, как у комиксов */
+.bot-nudge::after {
+    content: '';
+    position: absolute;
+    left: 26px;
+    bottom: -8px;
+    width: 16px;
+    height: 16px;
+    background: rgba(30, 40, 50, 0.92);
+    border-right: 1px solid rgba(217, 253, 25, 0.45);
+    border-bottom: 1px solid rgba(217, 253, 25, 0.45);
+    transform: rotate(45deg);
+    border-bottom-right-radius: 4px;
+}
+
+@keyframes botNudgeBob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-4px); }
+}
+
+.bot-nudge-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(217, 253, 25, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    flex-shrink: 0;
+}
+
+.bot-nudge-text {
+    flex: 1;
+    color: #ffffff;
+    font-size: 13.5px;
+    line-height: 1.35;
+    min-width: 0;
+}
+
+.bot-nudge-close {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-start;
+}
+
 .nav-item {
     display: flex;
     flex-direction: column;

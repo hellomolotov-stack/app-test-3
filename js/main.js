@@ -9,6 +9,7 @@ import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet } from './ui/calendar.js';
+import { scheduleBotNudge } from './ui/bot-nudge.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -415,6 +416,9 @@ async function loadAppData() {
         if (startParam) {
             setTimeout(() => handleDeepLink(startParam), 100);
         }
+
+        // облачко-спутник зовёт гостей в чат с ботом (с антидокучливостью)
+        scheduleBotNudge();
 
         function updateNightBackground() {
             const now = new Date();
