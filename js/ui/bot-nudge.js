@@ -1,34 +1,18 @@
 // js/ui/bot-nudge.js
-// Облачко-спутник: вылетает снизу-слева с мотивирующим текстом и зовёт открыть
-// чат с ботом. Спроектировано так, чтобы НЕ задёргивать пользователя.
-//
-// Логика антидокучливости (все пороги — в константах ниже):
-//   • только гостям (у кого нет карты)
-//   • один раз за сессию
-//   • не чаще раза в SHOW_GAP_MS между визитами
-//   • появляется через APPEAR_DELAY_MS после входа, только если экран чист
-//   • само уезжает через AUTO_HIDE_MS, если не нажали
-//   • закрыл крестиком → молчим DISMISS_BACKOFF_MS
-//   • открыл чат хоть раз → больше никогда не показываем
+// Постоянный язычок-слайдер слева (чуть выше середины) — всегда висит для гостей.
+// В стиле iOS-26 liquid glass + акценты приложения. Лёгкая анимация «выглядывает»
+// вправо, намекая что активный. По тапу вылетает облачко с рандомной фразой,
+// по тапу на облачко открывается встроенный чат с ботом.
 
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 
-// ── настройки (подкрути при необходимости) ──────────────────
-const APPEAR_DELAY_MS    = 15000;            // через сколько после входа показать
-const AUTO_HIDE_MS       = 10000;            // сколько висит, если не трогают
-const SHOW_GAP_MS        = 6 * 60 * 60 * 1000;   // минимум между показами (6 ч)
-const DISMISS_BACKOFF_MS = 5 * 24 * 60 * 60 * 1000; // молчим после крестика (5 дней)
+const BUBBLE_AUTO_HIDE_MS = 9000;   // облачко само прячется, если не нажали
+const K_LAST_PHRASE = 'botNudge_lastPhrase';
 
-// ключи localStorage
-const K_OPENED     = 'botNudge_opened';        // открыл чат — больше не показываем
-const K_LAST_SHOWN = 'botNudge_lastShown';     // когда показывали в последний раз
-const K_BACKOFF    = 'botNudge_backoffUntil';  // молчим до этого времени
-const K_LAST_PHRASE = 'botNudge_lastPhrase';   // индекс прошлой фразы (без повторов)
-
-// ── фразы (ротация, стиль клуба — строчными) ────────────────
+// ── фразы (ротация без повтора, стиль клуба — строчными) ─────
 const PHRASES = [
     'есть минутка? покажу, как тут всё устроено 🏔',
     'первый раз у нас? давай познакомлю с клубом',
@@ -42,8 +26,8 @@ const PHRASES = [
     'горы, события, свои люди. любопытно? загляни',
 ];
 
-let shownThisSession = false;
-let nudgeEl = null;
+let wrap = null;
+let bubble = null;
 let autoHideTimer = null;
 
 function pickPhrase() {
@@ -54,84 +38,69 @@ function pickPhrase() {
     return PHRASES[idx];
 }
 
-function screenIsBusy() {
-    // не мешаем, если открыта шторка, модалка, меню или оверлей профиля
-    if (document.querySelector('.bottom-sheet-overlay')) return true;
-    if (document.querySelector('.modal-overlay')) return true;
-    if (document.querySelector('.profile-blur-overlay')) return true;
-    if (document.querySelector('.center-floating-btn, .guest-center-btn')) return true;
-    if (window.isMenuActive) return true;
-    const popup = document.querySelector('.more-popup.show, #morePopup.show');
-    if (popup) return true;
-    return false;
-}
-
-function eligible() {
-    if (shownThisSession) return false;
-    if (!state.user?.id) return false;
-    // только гостям — владельцам карты онбординг не нужен
-    if (state.userCard?.status === 'active') return false;
-    if (localStorage.getItem(K_OPENED) === '1') return false;
-
-    const now = Date.now();
-    const backoff = parseInt(localStorage.getItem(K_BACKOFF) ?? '0', 10);
-    if (now < backoff) return false;
-    const lastShown = parseInt(localStorage.getItem(K_LAST_SHOWN) ?? '0', 10);
-    if (now - lastShown < SHOW_GAP_MS) return false;
-
-    return true;
-}
-
-function removeNudge() {
+function hideBubble() {
     if (autoHideTimer) { clearTimeout(autoHideTimer); autoHideTimer = null; }
-    if (!nudgeEl) return;
-    nudgeEl.classList.remove('visible');
-    const el = nudgeEl;
-    nudgeEl = null;
-    setTimeout(() => el.remove(), 400);
+    bubble?.classList.remove('visible');
+    wrap?.classList.remove('open');
 }
 
-function render(phrase) {
-    nudgeEl = document.createElement('div');
-    nudgeEl.className = 'bot-nudge';
-    nudgeEl.innerHTML = `
-        <div class="bot-nudge-avatar">🏔</div>
-        <div class="bot-nudge-text">${phrase}</div>
-        <button class="bot-nudge-close" aria-label="закрыть">✕</button>
+function showBubble() {
+    if (!bubble) return;
+    bubble.querySelector('.bot-tab-bubble-text').textContent = pickPhrase();
+    bubble.classList.add('visible');
+    wrap.classList.add('open');
+    log('язычок раскрыт', true, state.user);
+    if (autoHideTimer) clearTimeout(autoHideTimer);
+    autoHideTimer = setTimeout(hideBubble, BUBBLE_AUTO_HIDE_MS);
+}
+
+function toggleBubble() {
+    if (bubble?.classList.contains('visible')) hideBubble();
+    else showBubble();
+}
+
+export function mountBotTab() {
+    // только гостям — владельцам карты онбординг-зов не нужен
+    if (state.userCard?.status === 'active') return;
+    if (document.querySelector('.bot-tab-wrap')) return;   // уже смонтирован
+
+    wrap = document.createElement('div');
+    wrap.className = 'bot-tab-wrap';
+    wrap.innerHTML = `
+        <button class="bot-tab" aria-label="познакомиться с клубом">
+            <span class="bot-tab-emoji">🏔</span>
+            <span class="bot-tab-chevron">›</span>
+        </button>
+        <div class="bot-tab-bubble">
+            <span class="bot-tab-bubble-text"></span>
+            <button class="bot-tab-bubble-close" aria-label="закрыть">✕</button>
+        </div>
     `;
-    document.body.appendChild(nudgeEl);
+    document.body.appendChild(wrap);
+
+    bubble = wrap.querySelector('.bot-tab-bubble');
+
+    wrap.querySelector('.bot-tab').addEventListener('click', () => { haptic(); toggleBubble(); });
 
     // тап по облачку (кроме крестика) — открываем чат
-    nudgeEl.addEventListener('click', (e) => {
-        if (e.target.closest('.bot-nudge-close')) return;
+    bubble.addEventListener('click', (e) => {
+        if (e.target.closest('.bot-tab-bubble-close')) return;
         haptic();
-        localStorage.setItem(K_OPENED, '1');   // нашёл — больше не зовём
-        log('облачко → чат с ботом', true, state.user);
-        removeNudge();
+        log('язычок → чат с ботом', true, state.user);
+        hideBubble();
         openOnboardingChat();
     });
 
-    // крестик — отступаем надолго
-    nudgeEl.querySelector('.bot-nudge-close').addEventListener('click', (e) => {
+    bubble.querySelector('.bot-tab-bubble-close').addEventListener('click', (e) => {
         e.stopPropagation();
         haptic();
-        localStorage.setItem(K_BACKOFF, String(Date.now() + DISMISS_BACKOFF_MS));
-        log('облачко закрыто', true, state.user);
-        removeNudge();
+        hideBubble();
     });
-
-    requestAnimationFrame(() => nudgeEl?.classList.add('visible'));
-    autoHideTimer = setTimeout(removeNudge, AUTO_HIDE_MS);
 }
 
-// планирует показ облачка с учётом всех правил
-export function scheduleBotNudge() {
-    setTimeout(() => {
-        if (!eligible()) return;
-        if (screenIsBusy()) return;   // экран занят — тихо пропускаем этот визит
-        shownThisSession = true;
-        localStorage.setItem(K_LAST_SHOWN, String(Date.now()));
-        log('облачко показано', true, state.user);
-        render(pickPhrase());
-    }, APPEAR_DELAY_MS);
+// убрать язычок (напр. если человек стал владельцем карты)
+export function unmountBotTab() {
+    wrap?.remove();
+    wrap = null;
+    bubble = null;
 }

@@ -320,7 +320,9 @@ async function renderNode(nodeId) {
 // открытие шторки
 // ──────────────────────────────────────────────
 export function openOnboardingChat() {
-    if (overlay) return;
+    // если ссылка зависла, но узла в DOM нет — сбрасываем, чтобы можно было открыть
+    if (overlay && document.body.contains(overlay)) return;
+    overlay = null;
     log('открыл чат с ботом', state.userCard.status !== 'active', state.user);
 
     overlay = document.createElement('div');

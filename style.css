@@ -562,77 +562,127 @@ body::before {
     width: calc(100% - 32px);
 }
 
-/* -------------------- ОБЛАЧКО-СПУТНИК (зов в чат с ботом) -------------------- */
-.bot-nudge {
+/* -------------------- ЯЗЫЧОК-СЛАЙДЕР (зов в чат с ботом, iOS-26 glass) -------------------- */
+.bot-tab-wrap {
     position: fixed;
-    left: 12px;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+    left: 0;
+    top: 42%;
+    transform: translateY(-50%);
     z-index: 95;
     display: flex;
     align-items: center;
-    gap: 10px;
-    max-width: min(82%, 340px);
+    gap: 8px;
+    pointer-events: none;   /* кликабельны только дети */
+}
+
+.bot-tab,
+.bot-tab-bubble { pointer-events: auto; }
+
+/* сам язычок — стеклянная ручка, торчит из левого края */
+.bot-tab {
+    flex-shrink: 0;
+    width: 40px;
+    height: 54px;
+    padding: 0;
+    border: none;
+    border-radius: 0 22px 22px 0;
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid rgba(255, 255, 255, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.5),
+        inset -2px 0 8px rgba(255, 255, 255, 0.08),
+        0 6px 22px rgba(0, 0, 0, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    cursor: pointer;
+    color: #ffffff;
+    animation: botTabPeek 3.4s ease-in-out infinite;
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.bot-tab-emoji { font-size: 18px; line-height: 1; }
+
+.bot-tab-chevron {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--yellow);
+    margin-left: -1px;
+    transition: transform 0.3s ease;
+}
+
+/* лёгкое «выглядывание» вправо — намёк что активный */
+@keyframes botTabPeek {
+    0%, 100% { transform: translateX(0); }
+    50%      { transform: translateX(5px); }
+}
+
+.bot-tab:active {
+    transform: translateX(6px) scale(0.96);
+    background-color: rgba(255, 255, 255, 0.22);
+}
+
+/* когда облачко открыто — язычок замирает, шеврон смотрит влево */
+.bot-tab-wrap.open .bot-tab { animation: none; transform: translateX(2px); }
+.bot-tab-wrap.open .bot-tab-chevron { transform: rotate(180deg); }
+
+/* облачко с фразой — вылетает из язычка вправо */
+.bot-tab-bubble {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: min(66vw, 250px);
     padding: 10px 12px;
     background: rgba(30, 40, 50, 0.92);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(217, 253, 25, 0.45);
-    border-radius: 20px;
+    border-radius: 18px;
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
     cursor: pointer;
+    color: #ffffff;
     opacity: 0;
-    transform: translateX(-120%) scale(0.9);
-    transition: transform 0.45s cubic-bezier(0.18, 0.9, 0.32, 1.4), opacity 0.35s ease;
-    will-change: transform, opacity;
+    transform: translateX(-14px) scale(0.9);
+    transform-origin: left center;
+    transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.18, 0.9, 0.32, 1.4);
+    pointer-events: none;
 }
 
-.bot-nudge.visible {
+.bot-tab-bubble.visible {
     opacity: 1;
     transform: translateX(0) scale(1);
-    animation: botNudgeBob 3.2s ease-in-out 0.6s infinite;
+    pointer-events: auto;
 }
 
-/* хвостик облачка — вниз-влево, как у комиксов */
-.bot-nudge::after {
+/* хвостик облачка — влево, к язычку */
+.bot-tab-bubble::before {
     content: '';
     position: absolute;
-    left: 26px;
-    bottom: -8px;
-    width: 16px;
-    height: 16px;
+    left: -7px;
+    top: 18px;
+    width: 14px;
+    height: 14px;
     background: rgba(30, 40, 50, 0.92);
-    border-right: 1px solid rgba(217, 253, 25, 0.45);
+    border-left: 1px solid rgba(217, 253, 25, 0.45);
     border-bottom: 1px solid rgba(217, 253, 25, 0.45);
     transform: rotate(45deg);
-    border-bottom-right-radius: 4px;
+    border-bottom-left-radius: 3px;
 }
 
-@keyframes botNudgeBob {
-    0%, 100% { transform: translateY(0); }
-    50%      { transform: translateY(-4px); }
-}
-
-.bot-nudge-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(217, 253, 25, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 19px;
-    flex-shrink: 0;
-}
-
-.bot-nudge-text {
+.bot-tab-bubble-text {
     flex: 1;
-    color: #ffffff;
+    min-width: 0;
     font-size: 13.5px;
     line-height: 1.35;
-    min-width: 0;
 }
 
-.bot-nudge-close {
+.bot-tab-bubble-close {
     flex-shrink: 0;
     width: 22px;
     height: 22px;
