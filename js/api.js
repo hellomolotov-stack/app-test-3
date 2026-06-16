@@ -39,6 +39,27 @@ export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseT
     }
 }
 
+// Инициализация оплаты карты через Robokassa (Apps Script).
+// Регистрация на хайк происходит на сервере (robokassaResult) ТОЛЬКО после успешной оплаты.
+// Возвращает URL платёжной страницы Robokassa.
+export async function initCardPayment(cardType, hikeDate, hikeTitle, user) {
+    if (!REGISTRATION_API_URL) throw new Error('REGISTRATION_API_URL не задан');
+    const params = new URLSearchParams({
+        action: 'initPayment',
+        card_type: cardType, // 'permanent' | 'season'
+        user_id: user?.id || '',
+        first_name: user?.first_name || '',
+        last_name: user?.last_name || '',
+        username: user?.username || '',
+        hike_date: hikeDate || '',
+        hike_title: hikeTitle || ''
+    });
+    const response = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params });
+    const data = await response.json();
+    if (data && data.status === 'ok' && data.url) return data.url;
+    throw new Error('initPayment failed: ' + JSON.stringify(data));
+}
+
 export async function syncProfileToSheet(profile, user) {
     if (!user?.id || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams();

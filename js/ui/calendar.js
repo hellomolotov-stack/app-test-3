@@ -1,7 +1,7 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
-import { log, updateRegistrationInSheet } from '../api.js';
+import { log, updateRegistrationInSheet, initCardPayment } from '../api.js';
 import {
     getDatabase,
     addParticipant,
@@ -11,7 +11,6 @@ import {
     loadAllParticipants,
     loadAllProfiles
 } from '../firebase.js';
-import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { renderHome } from './home.js';
 import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
@@ -1693,64 +1692,39 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         });
     }
 
+    // Покупка карты: НЕ регистрируем сразу. Сначала оплата через Robokassa,
+    // регистрация на хайк произойдёт на сервере (Apps Script robokassaResult) после успешной оплаты.
+    async function startCardPayment(btn, cardType, logLabel) {
+        if (btn.dataset.processing === 'true') return;
+        btn.dataset.processing = 'true';
+        haptic();
+        const originalText = btn.textContent;
+        btn.textContent = 'открываем оплату…';
+        btn.style.opacity = '0.6';
+        btn.style.pointerEvents = 'none';
+        log(logLabel, true, state.user);
+        try {
+            const url = await initCardPayment(cardType, hikeDate, hikeTitle, state.user);
+            closePopup();
+            openLink(url, null, true);
+        } catch (error) {
+            console.error('Ошибка инициализации оплаты:', error);
+            btn.textContent = originalText;
+            btn.style.opacity = '';
+            btn.style.pointerEvents = '';
+            btn.dataset.processing = 'false';
+            alert('Не удалось открыть оплату. Попробуй ещё раз.');
+        }
+    }
+
     document.getElementById('buySeasonCardBtn')?.addEventListener('click', e => {
         e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        haptic();
-        const userId = state.user?.id;
-        addParticipant(hikeDate, userId, {
-            first_name: state.user?.first_name,
-            photo_url: state.user?.photo_url,
-        })
-            .then(() => setUserRegistrationStatus(userId, hikeDate, true))
-            .then(() => {
-                const hikeIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
-                if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
-                if (state.userCard.status !== 'active') saveBookingStatusToLocal();
-                updateFloatingSheetButtons();
-                renderUserBookings(document.getElementById('userBookingsContainer'));
-                const calendarContainer = document.getElementById('calendarContainer');
-                if (calendarContainer) renderCalendar(calendarContainer);
-                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'season_card', state.user, false);
-                openLink(SEASON_CARD_LINK, 'сезонная карта', true);
-                closePopup();
-            })
-            .catch(error => {
-                console.error(error);
-                alert('Ошибка при регистрации. Попробуйте ещё раз.');
-            });
-        log('сезонная карта', true, state.user);
+        startCardPayment(e.currentTarget, 'season', 'сезонная карта');
     });
 
     document.getElementById('buyPermanentCardBtn')?.addEventListener('click', e => {
         e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        haptic();
-        const userId = state.user?.id;
-        addParticipant(hikeDate, userId, {
-            first_name: state.user?.first_name,
-            photo_url: state.user?.photo_url,
-        })
-            .then(() => setUserRegistrationStatus(userId, hikeDate, true))
-            .then(() => {
-                const hikeIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
-                if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
-                if (state.userCard.status !== 'active') saveBookingStatusToLocal();
-                updateFloatingSheetButtons();
-                renderUserBookings(document.getElementById('userBookingsContainer'));
-                const calendarContainer = document.getElementById('calendarContainer');
-                if (calendarContainer) renderCalendar(calendarContainer);
-                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'permanent_card', state.user, false);
-                openLink(PERMANENT_CARD_LINK, 'годовая карта', true);
-                closePopup();
-            })
-            .catch(error => {
-                console.error(error);
-                alert('Ошибка при регистрации. Попробуйте ещё раз.');
-            });
-        log('бессрочная карта', true, state.user);
+        startCardPayment(e.currentTarget, 'permanent', 'бессрочная карта');
     });
 }
 
