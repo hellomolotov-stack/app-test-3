@@ -1808,6 +1808,11 @@ body::before {
 }
 
 /* booking popup redesign */
+.booking-popup-overlay {
+    align-items: flex-start !important;
+    padding-top: 60px !important;
+}
+
 .booking-popup-content {
     max-height: calc(100dvh - 48px);
     overflow-y: auto;
