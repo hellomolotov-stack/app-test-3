@@ -8,8 +8,9 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet } from './ui/calendar.js';
+import { showBottomSheet, showGuestBookingPopup } from './ui/calendar.js';
 import { mountBotTab } from './ui/bot-nudge.js';
+import { openOnboardingChat } from './ui/onboarding-chat.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -47,6 +48,7 @@ window.toggleShareButton = function(show) {
             `;
             shareBtn.addEventListener('click', () => {
                 haptic();
+                log('поделиться приглашением новичка', false, state.user);
                 const shareUrl = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/yaltahiking_bot?startapp=newcomer')}`;
                 tg?.openTelegramLink(shareUrl);
             });
@@ -178,6 +180,34 @@ function highlightElement(el) {
 
 function handleDeepLink(startParam) {
     if (!startParam) return;
+    if (startParam.startsWith('card_')) {
+        const targetDate = normalizeDate(startParam.substring(5));
+        console.log('Deep link card popup target:', targetDate);
+        log('открыла попап карты по напоминанию', false, state.user, { hike_date: targetDate });
+        const tryShow = () => {
+            const hike = state.hikesWithTitle.find(h => h.date === targetDate);
+            if (hike) {
+                setTimeout(() => showGuestBookingPopup(hike.date, hike.title), 200);
+                return true;
+            }
+            return false;
+        };
+        if (tryShow()) return;
+        const unsub = subscribeToHikes((newList) => {
+            state.hikesList = newList;
+            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
+            state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
+            saveCachedState();
+            if (tryShow()) {
+                unsub();
+            }
+        });
+        setTimeout(() => {
+            tryShow();
+            unsub();
+        }, 10000);
+        return;
+    }
     if (startParam.startsWith('hike_')) {
         const targetDate = normalizeDate(startParam.substring(5));
         console.log('Deep link hike target:', targetDate);
@@ -303,6 +333,26 @@ function handleDeepLink(startParam) {
             break;
         case 'gift':
             renderGift(isGuest);
+            break;
+        case 'bot':
+            setTimeout(() => openOnboardingChat(), 600);
+            break;
+        case 'paid':
+            setTimeout(() => {
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal-content" style="max-width:340px; text-align:center;">
+                        <div style="font-size:52px; margin-bottom:16px;">🎉</div>
+                        <div class="modal-title" style="text-align:center; color: var(--yellow);">оплата прошла!</div>
+                        <div class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">мы уже выпускаем твою карту интеллигента — скоро с тобой свяжется организатор</div>
+                        <button class="btn btn-yellow" id="closePaymentSuccessBtn" style="margin-top:20px; width:100%;">отлично!</button>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                overlay.addEventListener('click', e => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+                document.getElementById('closePaymentSuccessBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); });
+            }, 800);
             break;
         case 'suggest':
             setTimeout(() => {

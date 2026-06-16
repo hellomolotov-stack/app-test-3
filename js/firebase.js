@@ -268,3 +268,44 @@ export async function saveUserAvatar(userId, photoUrl) {
         updatedAt: firebase.database.ServerValue.TIMESTAMP
     });
 }
+
+export async function sendSupportMessage(user, text) {
+    if (!database || !user?.id) return;
+    const key = Date.now().toString();
+    await database.ref(`support_messages/${user.id}/${key}`).set({
+        from: 'user',
+        text,
+        ts: Math.floor(Date.now() / 1000),
+        first_name: user.first_name || '',
+        username: user.username || '',
+        forwarded: false
+    });
+}
+
+export function subscribeToAdminReplies(userId, afterTs, callback) {
+    if (!database || !userId) return () => {};
+    const r = database.ref(`support_messages/${userId}`).orderByChild('ts').startAt(afterTs);
+    const handler = (snapshot) => {
+        const msg = snapshot.val();
+        if (msg && msg.from === 'admin') callback(msg, snapshot.key);
+    };
+    r.on('child_added', handler);
+    return () => r.off('child_added', handler);
+}
+
+export async function markSupportMessageRead(userId, msgKey) {
+    if (!database || !userId || !msgKey) return;
+    try { await database.ref(`support_messages/${userId}/${msgKey}/read_by_user`).set(true); } catch (e) {}
+}
+
+export async function loadSupportMessages(userId) {
+    if (!database || !userId) return [];
+    try {
+        const snapshot = await database.ref(`support_messages/${userId}`).orderByChild('ts').once('value');
+        const data = snapshot.val();
+        if (!data) return [];
+        return Object.entries(data)
+            .map(([key, msg]) => ({ key, ...msg }))
+            .sort((a, b) => a.ts - b.ts);
+    } catch (e) { return []; }
+}

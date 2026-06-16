@@ -12,17 +12,25 @@ import { openOnboardingChat } from './onboarding-chat.js';
 const BUBBLE_AUTO_HIDE_MS = 9000;   // облачко само прячется, если не нажали
 const K_LAST_PHRASE = 'botNudge_lastPhrase';
 
-// ── фразы (ротация без повтора, стиль клуба — строчными) ─────
-const PHRASES = [
+// ── фразы для гостей ─────
+const PHRASES_GUEST = [
     'первый раз у нас? давай познакомлю с клубом',
-    'загляни — расскажу про хайки и карту за пару минут',
+    'загляни – расскажу про хайки и карту за пару минут',
     'привет 👋 хочешь, проведу по клубу?',
     'не знаешь, с чего начать? спроси меня',
-    'первый хайк — бесплатный. рассказать подробнее?',
+    'первый хайк – бесплатный. рассказать подробнее?',
     'тут уютнее, чем кажется. показать, что внутри? 🤍',
-    'пара вопросов — и поймёшь, твоё ли это место',
-    'расскажу про клуб без воды — буквально за 2 минуты',
+    'пара вопросов – и поймёшь, твоё ли это место',
+    'расскажу про клуб без воды – буквально за 2 минуты',
     'горы, события, свои люди. любопытно? загляни',
+];
+
+// ── фразы для участников с картой ─────
+const PHRASES_MEMBER = [
+    'есть вопрос? напиши – организаторы ответят 🤍',
+    'что-то нужно? просто напиши',
+    'привет 👋 чем могу помочь?',
+    'написать организаторам – здесь',
 ];
 
 let wrap = null;
@@ -30,11 +38,12 @@ let bubble = null;
 let autoHideTimer = null;
 
 function pickPhrase() {
+    const phrases = state.userCard?.status === 'active' ? PHRASES_MEMBER : PHRASES_GUEST;
     const last = parseInt(localStorage.getItem(K_LAST_PHRASE) ?? '-1', 10);
-    let idx = Math.floor(Math.random() * PHRASES.length);
-    if (PHRASES.length > 1 && idx === last) idx = (idx + 1) % PHRASES.length;
+    let idx = Math.floor(Math.random() * phrases.length);
+    if (phrases.length > 1 && idx === last) idx = (idx + 1) % phrases.length;
     localStorage.setItem(K_LAST_PHRASE, String(idx));
-    return PHRASES[idx];
+    return phrases[idx];
 }
 
 function hideBubble() {
@@ -59,21 +68,19 @@ function toggleBubble() {
 }
 
 export function mountBotTab() {
-    // только гостям — владельцам карты онбординг-зов не нужен
-    if (state.userCard?.status === 'active') return;
     if (document.querySelector('.bot-tab-wrap')) return;   // уже смонтирован
 
     wrap = document.createElement('div');
     wrap.className = 'bot-tab-wrap';
     wrap.innerHTML = `
-        <button class="bot-tab" aria-label="помощник интеллигенции">
+        <button class="bot-tab" aria-label="интеллигентный помощник">
             <span class="bot-tab-emoji">💬</span>
             <span class="bot-tab-chevron">›</span>
         </button>
         <div class="bot-tab-bubble">
             <div class="bot-tab-bubble-avatar">💬</div>
             <div class="bot-tab-bubble-body">
-                <div class="bot-tab-bubble-name">помощник интеллигенции</div>
+                <div class="bot-tab-bubble-name">интеллигентный помощник</div>
                 <div class="bot-tab-bubble-text"></div>
             </div>
             <button class="bot-tab-bubble-close" aria-label="закрыть">✕</button>

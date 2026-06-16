@@ -284,6 +284,7 @@ function addFloatingCardButton() {
 
     btn.addEventListener('click', () => {
         haptic();
+        log('выпускайте мою карту', true, state.user);
         // Возвращаемся на главную
         renderHome();
         // Через 300 мс прокручиваем к блоку с картой и раскрываем аккордеон, если он есть

@@ -1,16 +1,18 @@
 // js/utils.js
+import { log } from './api.js';
+import { state } from './state.js';
+
 export function haptic() {
     window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
 }
 
 export function openLink(url, action, isGuest) {
     haptic();
-    if (action && window.log) window.log(action, isGuest);
+    if (action) log(action, isGuest, state.user);
     const tg = window.Telegram?.WebApp;
     if (!tg) return window.open(url, '_blank');
     if (url.startsWith('https://t.me/')) {
         tg.openTelegramLink(url);
-        setTimeout(() => tg.close(), 100);
     } else {
         tg.openLink(url);
     }

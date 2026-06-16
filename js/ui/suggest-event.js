@@ -16,7 +16,7 @@ export function renderSuggestEvent() {
     setupBottomNav();
 
     mainDiv().innerHTML = `
-        <div class="card-container" style="padding-top:12px; padding-bottom:8px;">
+        <div class="card-container">
             <form id="suggestEventForm" class="edit-form">
                 <div class="profile-field">
                     <label>✍🏻 название</label>

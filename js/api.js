@@ -106,6 +106,45 @@ export async function syncSuggestEventToSheet(data) {
     }
 }
 
+export function registerWebAppUser(user) {
+    if (!user?.id || !REGISTRATION_API_URL) return;
+    const params = new URLSearchParams({
+        action: 'registerWebAppUser',
+        user_id: user.id,
+        first_name: user.first_name || '',
+        username: user.username || ''
+    });
+    fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true })
+        .catch(() => {});
+}
+
+export async function initPayment({ userId, firstName, lastName, username, hikeDate, hikeTitle, cardType }) {
+    const params = new URLSearchParams({
+        action: 'initPayment',
+        user_id: String(userId || ''),
+        first_name: firstName || '',
+        last_name: lastName || '',
+        username: username || '',
+        hike_date: hikeDate || '',
+        hike_title: hikeTitle || '',
+        card_type: cardType
+    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    try {
+        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, signal: controller.signal });
+        clearTimeout(timer);
+        const text = await resp.text();
+        let data;
+        try { data = JSON.parse(text); } catch { throw new Error('Сервер вернул неверный ответ'); }
+        if (data.status !== 'ok') throw new Error(data.message || 'initPayment failed');
+        return data;
+    } catch (err) {
+        clearTimeout(timer);
+        throw err;
+    }
+}
+
 export function syncGuestAllowMessages(userId, allow) {
     if (!userId || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams({

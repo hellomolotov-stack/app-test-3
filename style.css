@@ -7,6 +7,22 @@
     --pale-yellow: #F0E68C;
     --green: #2ecc71;
     --red: #ff3b30;
+
+    /* iOS-26 liquid glass tokens */
+    --glass-bg:            rgba(255, 255, 255, 0.13);
+    --glass-bg-dark:       rgba(20, 30, 40, 0.68);
+    --glass-border:        rgba(255, 255, 255, 0.20);
+    --glass-blur:          blur(32px) saturate(130%);
+    --glass-blur-md:       blur(22px) saturate(120%);
+    --glass-blur-sm:       blur(16px) saturate(110%);
+    --glass-highlight:     inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    --glass-shadow:        0 8px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* Запрет масштабирования системного шрифта iOS (Accessibility → Larger Text) */
+html {
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
 }
 
 * {
@@ -96,6 +112,17 @@ body::before {
     to { transform: rotate(360deg); }
 }
 
+.btn-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+}
+
 .initial-loader {
     position: fixed;
     top: 0;
@@ -106,9 +133,9 @@ body::before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: rgba(73, 138, 176, 0.2);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     z-index: 2000;
     transition: opacity 0.3s;
 }
@@ -150,12 +177,14 @@ body::before {
 }
 
 .card-container {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 28px;
     padding: 20px 0;
     margin-bottom: 20px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-highlight), var(--glass-shadow);
 }
 
 .card-image {
@@ -188,13 +217,15 @@ body::before {
 }
 
 .extra-links {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 28px;
     padding: 15px 0;
     margin-bottom: 20px;
     margin-top: -10px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-highlight), var(--glass-shadow);
 }
 
 .btn {
@@ -219,14 +250,21 @@ body::before {
 }
 
 .btn-blue {
-    background-color: #40a7e3;
+    background: rgba(64, 167, 227, 0.28);
     color: #ffffff;
+    border: 1px solid rgba(64, 167, 227, 0.55);
+    backdrop-filter: var(--glass-blur-md);
+    -webkit-backdrop-filter: var(--glass-blur-md);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 4px 14px rgba(0,0,0,0.18);
 }
 
 .btn-outline-blue {
-    background-color: transparent;
+    background: rgba(64, 167, 227, 0.12);
     color: #40a7e3;
-    border: 2px solid #40a7e3;
+    border: 1px solid rgba(64, 167, 227, 0.45);
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);
 }
 
 .btn-yellow {
@@ -252,11 +290,12 @@ body::before {
 }
 
 .btn-outline {
-    background-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.10);
     color: #ffffff;
-    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur-md);
+    -webkit-backdrop-filter: var(--glass-blur-md);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 12px rgba(0,0,0,0.14);
 }
 
 .btn-glow {
@@ -272,11 +311,12 @@ body::before {
 }
 
 .accordion-btn {
-    background-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.10);
     color: #ffffff;
-    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur-md);
+    -webkit-backdrop-filter: var(--glass-blur-md);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 12px rgba(0,0,0,0.14);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -284,14 +324,13 @@ body::before {
     width: calc(100% - 32px);
     margin: 0 16px 12px 16px;
     padding: 16px 16px;
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.2s;
     box-sizing: border-box;
     text-align: center;
-    border: none;
 }
 
 .accordion-btn:hover {
@@ -351,20 +390,21 @@ body::before {
     width: calc(100% - 32px);
     margin: 0 16px 12px 16px;
     padding: 18px 16px;
-    background-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.10);
     color: #ffffff;
-    border-radius: 12px;
+    border-radius: 20px;
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
     transition: opacity 0.2s;
     box-sizing: border-box;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: var(--glass-blur-md);
+    -webkit-backdrop-filter: var(--glass-blur-md);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 16px rgba(0,0,0,0.16);
     position: relative;
     overflow: visible;
     height: 80px;
-    border: none;
 }
 
 .btn-newcomer:hover {
@@ -400,14 +440,15 @@ body::before {
 }
 
 .partner-item {
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
     padding: 16px;
     margin: 0 16px 12px 16px;
     color: #ffffff;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur-md);
+    -webkit-backdrop-filter: var(--glass-blur-md);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.38), 0 4px 16px rgba(0,0,0,0.14);
 }
 
 .partner-item strong {
@@ -501,15 +542,17 @@ body::before {
 }
 
 .metric-item {
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
     padding: 12px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-start;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur-md);
+    -webkit-backdrop-filter: var(--glass-blur-md);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.38), 0 4px 12px rgba(0,0,0,0.12);
     height: 80px;
     box-sizing: border-box;
 }
@@ -548,13 +591,13 @@ body::before {
     display: flex;
     justify-content: space-evenly;
     align-items: center;
-    background: rgba(73, 138, 176, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 50px;
     padding: 6px 4px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 8px 32px rgba(0,0,0,0.22);
     z-index: 100;
     transition: opacity 0.3s;
     max-width: 600px;
@@ -771,13 +814,13 @@ body::before {
     position: fixed;
     bottom: 100px;
     right: 20px;
-    background: rgba(73, 138, 176, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 28px;
     padding: 8px 0;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 8px 30px rgba(0,0,0,0.22);
     z-index: 200;
     display: none;
     flex-direction: column;
@@ -838,17 +881,17 @@ body::before {
     .popup-item { height: 48px; padding: 0 16px; font-size: 14px; }
 }
 
-/* Слайдер хайков — единый стиль, идентичный плавающему меню */
+/* Слайдер хайков — тёмное liquid glass */
 .bottom-sheet {
     width: 100%;
     max-width: 600px;
-    background: rgba(30, 40, 50, 0.75) !important;      /* плотный тёмный фон */
-    backdrop-filter: blur(24px) !important;            /* сильный блюр */
-    -webkit-backdrop-filter: blur(24px) !important;
+    background: rgba(18, 26, 36, 0.72) !important;
+    backdrop-filter: blur(36px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(180%) !important;
     border-radius: 28px 28px 0 0;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.20);
     border-bottom: none;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 -8px 40px rgba(0,0,0,0.28);
     z-index: 1001;
     transform: translateY(100%);
     transition: transform 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
@@ -984,8 +1027,8 @@ body::before {
 .chat-bubble.bot i { opacity: 0.92; }
 
 @keyframes chatBubbleIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; }
+    to   { opacity: 1; }
 }
 
 .chat-typing {
@@ -1028,8 +1071,11 @@ body::before {
     width: 100%;
     padding: 13px 16px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.09);
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
     color: #ffffff;
     font-size: 14.5px;
     font-family: inherit;
@@ -1188,10 +1234,11 @@ body::before {
 }
 
 .bottom-sheet-tag {
-    background-color: rgba(255,255,255,0.1);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.3);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.38);
     border-radius: 20px;
     padding: 6px 12px;
     font-size: 12px;
@@ -1561,13 +1608,14 @@ body::before {
 }
 
 .calendar-item {
-    background-color: rgba(255,255,255,0.1);
-    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
     padding: 16px;
     margin: 0 16px 12px 16px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: var(--glass-blur-md);
+    -webkit-backdrop-filter: var(--glass-blur-md);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.38), 0 6px 20px rgba(0,0,0,0.16);
 }
 
 .calendar-header-with-legend {
@@ -1678,6 +1726,11 @@ body::before {
     color: #000000 !important;
 }
 
+.calendar-day.city-day.past {
+    background: rgba(65, 181, 237, 0.3) !important;
+    color: #000000 !important;
+}
+
 .calendar-day.today {
     background: #ffffff !important;
     color: #000000 !important;
@@ -1757,14 +1810,15 @@ body::before {
 }
 
 .modal-content {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.11);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 28px;
     padding: 24px;
     max-width: 400px;
     width: 100%;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 20px 60px rgba(0,0,0,0.28);
     color: #ffffff;
     position: relative;
 }
@@ -1856,12 +1910,13 @@ body::before {
 }
 
 .profile-card {
-    background-color: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.09);
     border-radius: 28px;
     padding: 12px;
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.42), 0 8px 24px rgba(0,0,0,0.16);
     transition: transform 0.2s;
     display: flex;
     flex-direction: column;
@@ -1986,16 +2041,16 @@ body::before {
 }
 
 .profile-contact-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: none;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid var(--glass-border);
     border-radius: 30px;
     padding: 8px 12px;
     color: var(--yellow);
     font-size: 14px;
     font-weight: 500;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.40);
     cursor: pointer;
     transition: background 0.2s;
     display: inline-flex;
@@ -2077,13 +2132,14 @@ body::before {
 }
 
 .profile-field {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.07);
+    border-radius: 18px;
     padding: 16px;
     margin-bottom: 16px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28);
 }
 
 .profile-field label {
@@ -2179,8 +2235,8 @@ body::before {
 }
 
 .btn-suggest-event {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid var(--glass-border);
     color: #ffffff;
     font-size: 13px;
     font-weight: 600;
@@ -2190,8 +2246,9 @@ body::before {
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.38);
 }
 
 .btn-suggest-event:active {
@@ -2220,6 +2277,143 @@ body::before {
 }
 
 /* -------------------- БЛОК ОБНОВЛЕНИЙ -------------------- */
+/* ── погода ─────────────────────────────────────── */
+.weather-zone-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0 20px 8px 20px;
+    letter-spacing: 0.02em;
+}
+
+.weather-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 20px 16px 20px;
+}
+
+.weather-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.weather-city-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: background 0.2s;
+}
+
+.weather-city-btn:active {
+    background: rgba(255,255,255,0.25);
+}
+
+.weather-days {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 0 16px 4px 16px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.weather-days::-webkit-scrollbar {
+    display: none;
+}
+
+.weather-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    min-width: 48px;
+    padding: 10px 6px;
+    border-radius: 18px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    flex-shrink: 0;
+}
+
+.weather-day--today {
+    background: rgba(255,255,255,0.22);
+    border-color: rgba(255,255,255,0.35);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.weather-day-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    text-transform: lowercase;
+}
+
+.weather-day--today .weather-day-name {
+    color: #ffffff;
+    font-weight: 700;
+}
+
+.weather-day-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.weather-day-temp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+}
+
+.weather-temp-max {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.weather-temp-min {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+}
+
+.weather-skeleton,
+.weather-error {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    padding: 12px 4px;
+}
+
+.city-picker-btn {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 0 16px 10px 16px;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    font-size: 16px;
+    color: #ffffff;
+    cursor: pointer;
+    text-align: left;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: background 0.15s;
+}
+
+.city-picker-btn:active {
+    background: rgba(255,255,255,0.22);
+}
+
+/* ── конец погоды ───────────────────────────────── */
+
 .updates-container {
     padding-bottom: 8px;
 }
@@ -2241,11 +2435,12 @@ body::before {
     gap: 4px;
     padding: 12px;
     margin-bottom: 8px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.30);
     font-size: 14px;
     line-height: 1.4;
 }
@@ -2469,16 +2664,17 @@ body.night-mode::before {
 }
 
 .letter-popup-content {
-    background-color: rgba(73, 138, 176, 0.1);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.11);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 28px;
     padding: 24px;
     max-width: 500px;
     width: 100%;
     max-height: calc(100vh - env(safe-area-inset-top, 0px) - 100px);
     overflow-y: auto;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.2);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 20px 60px rgba(0,0,0,0.28);
     color: #ffffff;
     position: relative;
 }
@@ -2558,16 +2754,16 @@ body.night-mode::before {
     0% { transform: translateY(0); }
     100% { transform: translateY(-50%); }
 }
-/* ВЕРХНИЙ БЛЮР С ПЛАВНЫМ ПЕРЕХОДОМ (уже есть, но оставляем лучший) */
+/* ВЕРХНИЙ БЛЮР С ПЛАВНЫМ ПЕРЕХОДОМ */
 .header-blur {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: calc(env(safe-area-inset-top, 0px) + 60px);
-    background: rgba(73, 138, 176, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     z-index: 10;
     pointer-events: none;
     mask-image: linear-gradient(to bottom, black 0%, black 40%, transparent 100%);
@@ -2582,9 +2778,9 @@ body::after {
     left: 0;
     width: 100%;
     height: calc(env(safe-area-inset-bottom, 0px) + 70px);
-    background: rgba(73, 138, 176, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     z-index: 15;
     pointer-events: none;
     mask-image: linear-gradient(to top, black 0%, black 40%, transparent 100%);
@@ -2625,10 +2821,12 @@ body::after {
 
 /* Легенда календаря в стиле тегов */
 .calendar-legend .bottom-sheet-tag {
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.09) !important;
     color: #ffffff !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
+    border: 1px solid var(--glass-border) !important;
+    backdrop-filter: var(--glass-blur-sm);
+    -webkit-backdrop-filter: var(--glass-blur-sm);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.32) !important;
     border-radius: 20px;
     padding: 4px 12px;
     font-size: 12px;
@@ -2662,15 +2860,15 @@ body::after {
     display: none !important;
 }
 
-/* Блок шкалы билетов — стиль как у плавающего меню */
+/* Блок шкалы билетов — liquid glass */
 .availability-floating {
-    background: rgba(73, 138, 176, 0.15) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    backdrop-filter: var(--glass-blur) !important;
+    -webkit-backdrop-filter: var(--glass-blur) !important;
     border-radius: 40px;
     padding: 8px 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid var(--glass-border) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 20px rgba(0,0,0,0.18) !important;
     box-sizing: border-box;
 }
 
@@ -2698,12 +2896,117 @@ body::after {
     opacity: 0.95;
 }
 
-/* Блок доступных карт – стили уже заданы инлайн, но можно добавить резервные */
+/* ── Sticky CTA для гостей ───────────────────────── */
+.sticky-hike-cta {
+    position: fixed;
+    bottom: 96px;
+    left: 16px;
+    right: 16px;
+    z-index: 99;
+    max-width: 568px;
+    margin: 0 auto;
+    pointer-events: auto;
+    animation: stickyCtaIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes stickyCtaIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+}
+
+.sticky-hike-btn {
+    width: 100%;
+    margin: 0;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.32), 0 1px 0 rgba(255,255,255,0.6) inset;
+    font-size: 15px;
+}
+
+/* ── FAQ в попапе записи ─────────────────────────── */
+.booking-faq {
+    margin-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding-top: 10px;
+}
+
+.booking-faq-toggle {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    text-align: left;
+}
+
+.booking-faq-chevron {
+    display: inline-block;
+    transition: transform 0.2s;
+    font-style: normal;
+}
+
+.booking-faq-items {
+    display: none;
+    margin-top: 10px;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.booking-faq-items.open {
+    display: flex;
+}
+
+.booking-faq-item {
+    background: rgba(255,255,255,0.06);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.booking-faq-q {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.85);
+    font-size: 14px;
+    cursor: pointer;
+    padding: 10px 14px;
+    width: 100%;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.3;
+}
+
+.booking-faq-arrow {
+    display: inline-block;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.booking-faq-a {
+    display: none;
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 0 14px 10px 14px;
+}
+
+.booking-faq-a.open {
+    display: block;
+}
+
+/* Блок доступных карт – резервные стили */
 .availability-floating {
-    background: rgba(73, 138, 176, 0.15);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-radius: 28px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--glass-border);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 20px rgba(0,0,0,0.18);
 }

@@ -89,7 +89,7 @@ export function showAnimatedLoader() {
     loader.classList.remove('fade-out');
     const steps = [
         { emoji: '🗺️', text: 'выбираем маршрут' },
-        { emoji: '🎩', text: 'собираем интеллигентов' },
+        { emoji: '🫆', text: 'собираем интеллигентов' },
         { emoji: '📷', text: 'заряжаем камеру' },
         { emoji: '💫', text: 'идём на хайк' }
     ];
@@ -148,5 +148,6 @@ export function cleanupProfileOverlays() {
     document.querySelector('.center-floating-btn')?.remove();
     document.querySelector('.profile-preview-banner')?.remove();
     document.querySelector('.profile-edit-fab')?.remove();
+    document.getElementById('stickyHikeCta')?.remove();
     document.body.style.overflow = '';
 }

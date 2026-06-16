@@ -1,1 +1,6 @@
 js/config.js
+.vercel
+
+node_modules/
+dist/
+.claude/

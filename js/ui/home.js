@@ -8,6 +8,39 @@ import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, c
 import { renderCalendar, showBottomSheet } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
+import { renderWeatherBlock, initWeatherBlock } from './weather.js';
+
+export function removeStickyHikeCta() {
+    document.getElementById('stickyHikeCta')?.remove();
+}
+
+function mountStickyHikeCta() {
+    removeStickyHikeCta();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let nextHikeIndex = -1;
+    for (let i = 0; i < (state.hikesWithTitle || []).length; i++) {
+        const h = state.hikesWithTitle[i];
+        const d = new Date(h.date);
+        if (d >= today && !h.cancelled && h.city !== true && h.city !== 'yes') {
+            nextHikeIndex = i;
+            break;
+        }
+    }
+    if (nextHikeIndex === -1) return;
+    const hike = state.hikesWithTitle[nextHikeIndex];
+    const dateStr = formatDateForDisplay(hike.date);
+    const cta = document.createElement('div');
+    cta.id = 'stickyHikeCta';
+    cta.className = 'sticky-hike-cta';
+    cta.innerHTML = `<button class="btn btn-yellow sticky-hike-btn" id="stickyHikeBtn">записаться на хайк · ${dateStr}</button>`;
+    document.body.appendChild(cta);
+    document.getElementById('stickyHikeBtn').addEventListener('click', () => {
+        haptic();
+        log('sticky cta', true, state.user);
+        showBottomSheet(nextHikeIndex);
+    });
+}
 
 function getCurrentTopOffset() {
     if (!tg) return 76;
@@ -135,6 +168,7 @@ export function renderUserBookings(container) {
     container.querySelectorAll('.booking-detail-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             haptic();
+            log('детали бронирования из главной', false, state.user);
             const index = parseInt(btn.dataset.index, 10);
             showBottomSheet(index);
         });
@@ -300,6 +334,7 @@ function renderGuestHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
+        ${renderWeatherBlock()}
         ${renderUpdatesBlock()}
     `;
 
@@ -332,6 +367,8 @@ function renderGuestHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
+    initWeatherBlock();
+    mountStickyHikeCta();
 
     const goBtn = document.querySelector('.booking-go-btn');
     if (goBtn) {
@@ -403,6 +440,7 @@ function renderOwnerHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
+        ${renderWeatherBlock()}
         ${renderUpdatesBlock()}
     `;
 
@@ -424,6 +462,7 @@ function renderOwnerHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
+    initWeatherBlock();
 
     const goBtn = document.querySelector('.booking-go-btn');
     if (goBtn) {
