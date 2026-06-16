@@ -1807,6 +1807,84 @@ body::before {
     width: 100%;
 }
 
+/* booking popup redesign */
+.booking-popup-content {
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 28px;
+}
+
+.booking-popup-hint {
+    font-size: 12px;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    margin-bottom: 14px;
+    letter-spacing: 0.02em;
+}
+
+.booking-popup-economy {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.booking-card-option {
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255,255,255,0.04);
+}
+
+.booking-card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.booking-card-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+.booking-popup-faq-label {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    text-align: center;
+    margin: 20px 0 10px;
+    letter-spacing: 0.03em;
+}
+
+.booking-popup-faq-item {
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 0;
+}
+
+.booking-popup-faq-q {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.4;
+}
+
+.booking-popup-faq-a {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
+    margin-top: 6px;
+    display: none;
+}
+
+.booking-popup-faq-a.open {
+    display: block;
+}
+
 .payment-popup {
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
