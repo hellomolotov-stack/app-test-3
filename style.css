@@ -1815,19 +1815,81 @@ body::before {
     padding-bottom: 28px;
 }
 
-.booking-popup-hint {
-    font-size: 12px;
-    color: rgba(255,255,255,0.45);
-    text-align: center;
+/* popup text typography */
+.bpu-text {
+    margin: 8px 0 20px;
+    padding-right: 20px;
+}
+
+.bpu-line {
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 4px;
+}
+
+.bpu-line em {
+    font-style: italic;
+    color: rgba(255,255,255,0.55);
+}
+
+.bpu-accent {
+    color: var(--yellow);
+    font-weight: 700;
+    font-size: 15px;
+    margin-top: 2px;
+}
+
+.bpu-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 12px 0;
+}
+
+/* scarcity block */
+.booking-popup-scarcity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.booking-popup-scarcity-num {
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--yellow);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.booking-popup-scarcity-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.5;
+}
+
+.booking-popup-scarcity-text strong {
+    color: #ffffff;
+}
+
+/* what is card */
+.booking-popup-what-is-card {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
     margin-bottom: 14px;
-    letter-spacing: 0.02em;
+    padding: 0 2px;
 }
 
 .booking-popup-economy {
     font-size: 13px;
-    color: rgba(255,255,255,0.7);
+    color: rgba(255,255,255,0.5);
     line-height: 1.5;
     margin-bottom: 16px;
+    font-style: italic;
 }
 
 .booking-card-option {
@@ -1851,12 +1913,23 @@ body::before {
     margin-bottom: 14px;
 }
 
-.booking-popup-faq-label {
-    font-size: 12px;
-    color: rgba(255,255,255,0.4);
-    text-align: center;
-    margin: 20px 0 10px;
-    letter-spacing: 0.03em;
+/* FAQ toggle */
+.booking-popup-faq-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    user-select: none;
+    margin: 20px 0 0;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.faq-toggle-arrow {
+    font-size: 14px;
+    color: rgba(255,255,255,0.3);
 }
 
 .booking-popup-faq-item {

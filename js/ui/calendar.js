@@ -1520,22 +1520,43 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         return new Date(hike.date) < today && state.hikeBookingStatus[idx];
     });
 
-    const popupText = isReturning
-        ? 'ты был на первом хайке – теперь ты знаешь формат, людей и то, что ждёт впереди. на следующие хайки разовые билеты не продаём. намеренно. клуб не для всех. мы за тихое качество, вместо шумного количества. если почувствуешь, что это твоё окружение – вступай в клуб. здесь не туристы. личности'
-        : 'разовые билеты не продаём. намеренно. клуб не для всех. мы за тихое качество, вместо шумного количества. приходи знакомиться с форматом и людьми свободно. если почувствуешь, что это твоё окружение – вступай в клуб. здесь не туристы. личности';
+    const popupTextHtml = isReturning ? `
+        <div class="bpu-text">
+            <div class="bpu-line">ты уже был на первом хайке.</div>
+            <div class="bpu-line">теперь ты знаешь формат, людей и то, что ждёт впереди.</div>
+            <div class="bpu-divider"></div>
+            <div class="bpu-line">на следующие хайки разовые билеты не продаём. <em>намеренно.</em></div>
+            <div class="bpu-line bpu-accent">здесь не туристы. личности.</div>
+        </div>
+    ` : `
+        <div class="bpu-text">
+            <div class="bpu-line">разовые билеты не продаём. <em>намеренно.</em></div>
+            <div class="bpu-line bpu-accent">клуб не для всех.</div>
+            <div class="bpu-line">мы за тихое качество, вместо шумного количества.</div>
+            <div class="bpu-divider"></div>
+            <div class="bpu-line">первый хайк — свободно. приходи знакомиться с форматом и людьми.</div>
+            <div class="bpu-line">если почувствуешь, что это твоё окружение — вступай.</div>
+            <div class="bpu-line bpu-accent">здесь не туристы. личности.</div>
+        </div>
+    `;
 
-    let faqHtml = '';
+    let faqItemsHtml = '';
     if (state.faq && state.faq.length) {
-        faqHtml = `<div class="booking-popup-faq-label">частые вопросы</div>`;
         state.faq.forEach((item, i) => {
-            faqHtml += `
-                <div class="booking-popup-faq-item" id="bpfaq-${i}">
+            faqItemsHtml += `
+                <div class="booking-popup-faq-item">
                     <div class="booking-popup-faq-q" data-idx="${i}">${item.q}</div>
                     <div class="booking-popup-faq-a" id="bpfaq-a-${i}">${item.a}</div>
                 </div>
             `;
         });
     }
+    const faqHtml = faqItemsHtml ? `
+        <div class="booking-popup-faq-toggle" id="faqToggle">
+            <span>частые вопросы</span><span class="faq-toggle-arrow">↓</span>
+        </div>
+        <div id="faqBody" style="display:none;">${faqItemsHtml}</div>
+    ` : '';
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -1543,16 +1564,27 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     overlay.innerHTML = `
         <div class="modal-content booking-popup-content">
             <button class="modal-close" id="closePopup">&times;</button>
-            <div class="modal-text" style="margin-top: 8px; padding-right: 20px;">${popupText}</div>
+            ${popupTextHtml}
 
-            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+            <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
                 ${!isReturning ? `<button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0;">я впервые 🎟️</button>` : ''}
                 <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">вступить в клуб</button>
             </div>
 
             <div id="clubJoinAccordion" style="display: none; margin-top: 20px;">
-                <div class="booking-popup-hint">раз в месяц — 10 новых карт</div>
-                <div class="booking-popup-economy">один хайк без карты — 1500₽.<br>карта окупается на пятом. дальше — просто ходишь.</div>
+                <div class="booking-popup-scarcity">
+                    <div class="booking-popup-scarcity-num">10</div>
+                    <div class="booking-popup-scarcity-text">
+                        <strong>карт в месяц — не больше.</strong><br>
+                        клуб растёт медленно и осознанно. только те, кто точно хочет быть здесь.
+                    </div>
+                </div>
+
+                <div class="booking-popup-what-is-card">
+                    карта интеллигента — это и есть членство в клубе. именная, с твоим числом хайков. с ней ты просто ходишь — без покупки билетов каждый раз.
+                </div>
+
+                <div class="booking-popup-economy">один хайк без карты — 1500₽. карта окупается на пятом. дальше — просто ходишь.</div>
 
                 <div class="booking-card-option">
                     <div class="booking-card-name">бессрочная — ${config.permanentCardPrice} ₽</div>
@@ -1603,15 +1635,25 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         log('вступить в клуб', true, state.user);
     });
 
-    // FAQ toggle
+    // FAQ section toggle
     overlay.addEventListener('click', e => {
+        const toggle = e.target.closest('#faqToggle');
+        if (toggle) {
+            const body = document.getElementById('faqBody');
+            const arrow = toggle.querySelector('.faq-toggle-arrow');
+            if (body) {
+                const isOpen = body.style.display !== 'none';
+                body.style.display = isOpen ? 'none' : 'block';
+                if (arrow) arrow.textContent = isOpen ? '↓' : '↑';
+            }
+            return;
+        }
+        // FAQ item toggle
         const q = e.target.closest('.booking-popup-faq-q');
         if (!q) return;
         const idx = q.dataset.idx;
         const answer = document.getElementById(`bpfaq-a-${idx}`);
-        if (answer) {
-            answer.classList.toggle('open');
-        }
+        if (answer) answer.classList.toggle('open');
     });
 
     if (!isReturning) {
