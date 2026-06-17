@@ -2,10 +2,10 @@
 import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
-import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups } from '../firebase.js';
+import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar, showBottomSheet } from './calendar.js';
+import { renderCalendar, showBottomSheet, showGuestBookingPopup } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -301,31 +301,64 @@ function renderGuestHome() {
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
-    main.innerHTML = `
+
+    // ближайший предстоящий хайк (не city, не cancelled)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let nextHikeIndex = -1;
+    for (let i = 0; i < (state.hikesWithTitle || []).length; i++) {
+        const h = state.hikesWithTitle[i];
+        if (new Date(h.date) >= today && !h.cancelled && h.city !== true && h.city !== 'yes') {
+            nextHikeIndex = i;
+            break;
+        }
+    }
+    const nextHike = nextHikeIndex !== -1 ? state.hikesWithTitle[nextHikeIndex] : null;
+    const formattedNextDate = nextHike ? formatDateForDisplay(nextHike.date) : '';
+    const membersText = state.popupConfig?.membersText || '20+';
+
+    const heroHtml = nextHike ? `
+        <div class="card-container guest-hero-card" id="cardBlock">
+            <div class="guest-hero-image-wrap">
+                ${nextHike.image
+                    ? `<img src="${nextHike.image}" class="guest-hero-image" alt="${nextHike.title}" onerror="this.style.display='none'">`
+                    : ''}
+                <div class="guest-hero-overlay"></div>
+                <div class="guest-hero-info">
+                    <div class="guest-hero-date">${formattedNextDate}</div>
+                    <div class="guest-hero-title">${nextHike.title}</div>
+                </div>
+            </div>
+            <div class="guest-hero-actions">
+                <button class="btn btn-yellow guest-hero-btn" id="guestHeroRegBtn">записаться на хайк</button>
+            </div>
+        </div>
+    ` : `
         <div class="card-container" id="cardBlock">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
-            <div id="cardAccordionGuest" class="card-accordion">
-                <button class="accordion-btn btn-yellow">карта интеллигента</button>
-                <div class="dropdown-menu">
-                    <a href="#" class="btn btn-outline" id="guestPrivilegesBtn" style="margin-bottom: 8px;">узнать о привилегиях 💳</a>
-                    <div style="display: flex; gap: 8px; width: 100%; flex-wrap: nowrap;">
-                        <a href="${SEASON_CARD_LINK}" class="btn btn-outline season-card-btn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">сезонная</a>
-                        <a href="${PERMANENT_CARD_LINK}" class="btn btn-outline permanent-card-btn" style="flex: 1; margin: 0; padding: 16px 0; box-sizing: border-box; text-align: center; white-space: nowrap;">бессрочная</a>
-                    </div>
-                    <div style="display: flex; gap: 8px; margin-top: 8px; width: 100%; text-align: center; color: rgba(255,255,255,0.7); font-size: 12px;"><div style="flex: 1;">до конца 2026</div><div style="flex: 1;">все сезоны</div></div>
-                    <div style="display: flex; gap: 8px; margin-top: 4px; width: 100%; text-align: center; color: #ffffff; font-size: 14px;"><div style="flex: 1;">${state.popupConfig.seasonCardPrice} ₽</div><div style="flex: 1;">${state.popupConfig.permanentCardPrice} ₽</div></div>
-                </div>
-            </div>
         </div>
+    `;
+
+    main.innerHTML = `
+        ${heroHtml}
         <div id="userBookingsContainer"></div>
-        <div class="card-container" id="calendarContainer"></div>
-        ${renderWeatherBlock()}
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
+        <div class="card-container guest-club-card" id="guestClubBlock">
+            <div class="guest-club-proof">
+                <div class="guest-club-avatars" id="guestClubAvatars"></div>
+                <div class="guest-club-members"><strong>${membersText} человек</strong> уже в клубе</div>
+            </div>
+            <div class="guest-club-actions">
+                <button class="btn btn-outline" id="guestPrivilegesBtn">узнать о привилегиях 💳</button>
+                <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
+            </div>
+        </div>
+        <div class="card-container" id="calendarContainer"></div>
+        ${renderWeatherBlock()}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true">смотреть отчёты &gt;</a></div>
             <div class="metrics-grid">
@@ -335,29 +368,59 @@ function renderGuestHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderUpdatesBlock()}
     `;
 
-    document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
-    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('новичкам', true, state.user); renderNewcomerPage(true); });
-    document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); renderGuestPrivileges(); log('привилегии', true, state.user); });
-    document.querySelectorAll('.season-card-btn, .permanent-card-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const isSeason = btn.classList.contains('season-card-btn');
-            openLink(isSeason ? SEASON_CARD_LINK : PERMANENT_CARD_LINK, isSeason ? 'сезонная карта' : 'годовая карта', true);
+    // hero: кнопка "записаться"
+    if (nextHike) {
+        document.getElementById('guestHeroRegBtn')?.addEventListener('click', () => {
+            haptic();
+            log('hero записаться', true, state.user);
+            showGuestBookingPopup(nextHike.date, nextHike.title);
         });
+    } else {
+        document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
+    }
+
+    // новичкам
+    document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
+        haptic(); setUserInteracted();
+        log('новичкам', true, state.user);
+        renderNewcomerPage(true);
     });
 
-    const accordionBtn = document.querySelector('#cardAccordionGuest .accordion-btn');
-    const dropdown = document.querySelector('#cardAccordionGuest .dropdown-menu');
-    if (accordionBtn && dropdown) {
-        accordionBtn.addEventListener('click', (e) => {
-            haptic(); e.preventDefault();
-            log('развернуть', true, state.user);
-            dropdown.classList.toggle('show');
-        });
-    }
+    // клуб-блок
+    document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => {
+        e.preventDefault(); haptic();
+        log('привилегии из главной', true, state.user);
+        renderGuestPrivileges();
+    });
+    document.getElementById('guestJoinClubBtn')?.addEventListener('click', (e) => {
+        e.preventDefault(); haptic();
+        log('вступить в клуб из главной', true, state.user);
+        if (nextHike) {
+            showGuestBookingPopup(nextHike.date, nextHike.title);
+        } else {
+            renderGuestPrivileges();
+        }
+    });
+
+    // аватарки членов клуба (лениво)
+    loadAllProfiles().then(profiles => {
+        state.profiles = profiles;
+        const arr = Object.values(profiles || {}).filter(p => p && (p.avatarUrl || p.photoUrl));
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        const el = document.getElementById('guestClubAvatars');
+        if (el) {
+            el.innerHTML = arr.slice(0, 4).map(p =>
+                `<img src="${p.avatarUrl || p.photoUrl}" class="guest-club-avatar" onerror="this.remove()">`
+            ).join('');
+        }
+    }).catch(() => {});
 
     const readButtons = document.querySelectorAll('.guest-read-btn');
     readButtons.forEach(btn => {
