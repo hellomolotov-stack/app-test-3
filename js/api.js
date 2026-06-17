@@ -145,6 +145,21 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
     }
 }
 
+export function sendBookingNotification(hikeDate, hikeTitle, user) {
+    if (!user?.id || !REGISTRATION_API_URL) return;
+    const params = new URLSearchParams({
+        action: 'sendBookingNotification',
+        user_id: String(user.id),
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        username: user.username || '',
+        hike_date: hikeDate || '',
+        hike_title: hikeTitle || ''
+    });
+    fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true })
+        .catch(e => console.error('sendBookingNotification error:', e));
+}
+
 export function syncGuestAllowMessages(userId, allow) {
     if (!userId || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams({

@@ -1,7 +1,7 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
-import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg } from '../utils.js';
+import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
-import { log, updateRegistrationInSheet, initPayment } from '../api.js';
+import { log, updateRegistrationInSheet, initPayment, sendBookingNotification } from '../api.js';
 import {
     getDatabase,
     addParticipant,
@@ -1011,10 +1011,12 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 })
                 .then(() => {
                     updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+                    sendBookingNotification(hikeDate, hikeTitle, state.user);
                     updateFloatingSheetButtons();
                     renderUserBookings(document.getElementById('userBookingsContainer'));
                     const cal = document.getElementById('calendarContainer');
                     if (cal) renderCalendar(cal);
+                    showRegistrationSuccess(hikeDate, hikeTitle);
                 })
                 .catch(error => {
                     console.error(error);
@@ -1206,10 +1208,12 @@ function updateFloatingSheetButtons() {
                         })
                         .then(() => {
                             updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+                            sendBookingNotification(hikeDate, hikeTitle, state.user);
                             updateFloatingSheetButtons();
                             renderUserBookings(document.getElementById('userBookingsContainer'));
                             const cal = document.getElementById('calendarContainer');
                             if (cal) renderCalendar(cal);
+                            showRegistrationSuccess(hikeDate, hikeTitle);
                         });
                 }
                 log('городское событие', false, state.user);
@@ -1509,10 +1513,12 @@ function updateFloatingSheetButtons() {
             })
             .then(() => {
                 updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+                sendBookingNotification(hikeDate, hikeTitle, state.user);
                 updateFloatingSheetButtons();
                 renderUserBookings(document.getElementById('userBookingsContainer'));
                 const cal = document.getElementById('calendarContainer');
                 if (cal) renderCalendar(cal);
+                showRegistrationSuccess(hikeDate, hikeTitle);
             })
             .catch(error => {
                 console.error(error);
@@ -1785,7 +1791,9 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                     const calendarContainer = document.getElementById('calendarContainer');
                     if (calendarContainer) renderCalendar(calendarContainer);
                     updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'free_first', state.user, false);
+                    sendBookingNotification(hikeDate, hikeTitle, state.user);
                     closePopup();
+                    showRegistrationSuccess(hikeDate, hikeTitle);
                 })
                 .catch(error => {
                     console.error(error);
@@ -1814,6 +1822,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             });
             stopSpinner();
             closePopup();
+            localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
             openLink(url, 'оплата сезонной карты', true);
         } catch (err) {
             stopSpinner();
@@ -1842,6 +1851,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             });
             stopSpinner();
             closePopup();
+            localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
             openLink(url, 'оплата бессрочной карты', true);
         } catch (err) {
             stopSpinner();
@@ -2025,6 +2035,100 @@ export function showLeaderDropdown(leaderElement, leaderData) {
         }
     };
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
+}
+
+// ==================== ЭКРАН ПОСЛЕ РЕГИСТРАЦИИ ====================
+export function showRegistrationSuccess(hikeDate, hikeTitle) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isReturning = state.hikesWithTitle.some((hike, idx) =>
+        new Date(hike.date) < today && state.hikeBookingStatus[idx]
+    );
+    const hasCard = state.userCard.status === 'active';
+    const isExperienced = isReturning || hasCard;
+    const formattedDate = formatDateForDisplay(hikeDate);
+
+    const chatText = isExperienced
+        ? 'напомним – там обычно договариваются о такси и отвечают на вопросы'
+        : 'там договариваются о совместном такси и задают вопросы про маршрут';
+    const chatBtn = isExperienced ? 'открыть чат' : 'вступить в чат';
+    const packText = isExperienced
+        ? 'на всякий случай – вода, перекус, удобная обувь'
+        : 'вода 1.5л, перекус, удобная обувь с закрытым носком, солнцезащитный крем, головной убор';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay reg-success-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content reg-success-content">
+            <div class="reg-success-emoji">🎉</div>
+            <div class="reg-success-title">ты в деле!</div>
+            <div class="reg-success-subtitle" id="regSuccessSubtitle">«${hikeTitle}» – ${formattedDate}</div>
+            <div class="reg-success-cards">
+                <div class="reg-success-card">
+                    <div class="reg-success-card-icon">💬</div>
+                    <div class="reg-success-card-text">${chatText}</div>
+                    <button class="reg-success-card-btn" id="regChatBtn">${chatBtn}</button>
+                </div>
+                <div class="reg-success-card">
+                    <div class="reg-success-card-icon">🎒</div>
+                    <div class="reg-success-card-text" id="regPackText">${packText}</div>
+                    <button class="reg-success-card-btn" id="regPackBtn">показать список</button>
+                </div>
+                <div class="reg-success-card">
+                    <div class="reg-success-card-icon">🌤</div>
+                    <div class="reg-success-card-text">погода на дату хайка</div>
+                    <button class="reg-success-card-btn" id="regWeatherBtn">открыть</button>
+                </div>
+            </div>
+            <button class="btn btn-outline reg-success-close-btn" id="regSuccessCloseBtn">закрыть</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    showConfetti();
+    haptic();
+    tg?.HapticFeedback?.notificationOccurred?.('success');
+
+    loadAllParticipants(hikeDate).then(pts => {
+        const el = document.getElementById('regSuccessSubtitle');
+        if (el && pts.length > 0) {
+            el.textContent = `ты ${pts.length}-й участник хайка «${hikeTitle}» – ${formattedDate}`;
+        }
+    }).catch(() => {});
+
+    document.getElementById('regChatBtn')?.addEventListener('click', () => {
+        haptic();
+        openLink('https://t.me/yaltahikingchat', 'чат хайка из успешной регистрации', false);
+    });
+
+    let packExpanded = false;
+    document.getElementById('regPackBtn')?.addEventListener('click', () => {
+        haptic();
+        if (packExpanded) return;
+        packExpanded = true;
+        const textEl = document.getElementById('regPackText');
+        const btn = document.getElementById('regPackBtn');
+        if (textEl) textEl.innerHTML = `<div class="reg-packlist">
+            <div>✅ вода 1.5л</div>
+            <div>✅ перекус</div>
+            <div>✅ удобная обувь с закрытым носком</div>
+            <div>✅ солнцезащитный крем</div>
+            <div>✅ головной убор</div>
+        </div>`;
+        if (btn) btn.style.display = 'none';
+    });
+
+    document.getElementById('regWeatherBtn')?.addEventListener('click', () => {
+        haptic();
+        openLink('https://yandex.ru/pogoda/yalta', 'погода из успешной регистрации', false);
+    });
+
+    document.getElementById('regSuccessCloseBtn')?.addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+    });
+    overlay.addEventListener('click', e => {
+        if (e.target === overlay) { haptic(); overlay.remove(); }
+    });
 }
 
 // ==================== ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ ССЫЛОК ====================

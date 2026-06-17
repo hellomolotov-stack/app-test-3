@@ -8,7 +8,7 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup } from './ui/calendar.js';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
@@ -287,19 +287,31 @@ function handleDeepLink(startParam) {
             break;
         case 'paid':
             setTimeout(() => {
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay';
-                overlay.innerHTML = `
-                    <div class="modal-content" style="max-width:340px; text-align:center;">
-                        <div style="font-size:52px; margin-bottom:16px;">🎉</div>
-                        <div class="modal-title" style="text-align:center; color: var(--yellow);">оплата прошла!</div>
-                        <div class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">мы уже выпускаем твою карту интеллигента — скоро с тобой свяжется организатор</div>
-                        <button class="btn btn-yellow" id="closePaymentSuccessBtn" style="margin-top:20px; width:100%;">отлично!</button>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-                overlay.addEventListener('click', e => { if (e.target === overlay) { haptic(); overlay.remove(); } });
-                document.getElementById('closePaymentSuccessBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); });
+                let celebData = null;
+                try {
+                    const pending = localStorage.getItem('pending_reg_celebration');
+                    if (pending) {
+                        celebData = JSON.parse(pending);
+                        localStorage.removeItem('pending_reg_celebration');
+                    }
+                } catch {}
+                if (celebData?.hikeDate) {
+                    showRegistrationSuccess(celebData.hikeDate, celebData.hikeTitle);
+                } else {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'modal-overlay';
+                    overlay.innerHTML = `
+                        <div class="modal-content" style="max-width:340px; text-align:center;">
+                            <div style="font-size:52px; margin-bottom:16px;">🎉</div>
+                            <div class="modal-title" style="text-align:center; color: var(--yellow);">оплата прошла!</div>
+                            <div class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">мы уже выпускаем твою карту интеллигента – скоро с тобой свяжется организатор</div>
+                            <button class="btn btn-yellow" id="closePaymentSuccessBtn" style="margin-top:20px; width:100%;">отлично!</button>
+                        </div>
+                    `;
+                    document.body.appendChild(overlay);
+                    overlay.addEventListener('click', e => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+                    document.getElementById('closePaymentSuccessBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); });
+                }
             }, 800);
             break;
         case 'suggest':

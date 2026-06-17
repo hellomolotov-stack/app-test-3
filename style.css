@@ -3240,3 +3240,85 @@ body::after {
     border: 1px solid var(--glass-border);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.45), 0 4px 20px rgba(0,0,0,0.18);
 }
+
+/* ==================== экран после регистрации ==================== */
+.reg-success-overlay {
+    align-items: center;
+    padding: 24px 16px;
+}
+.reg-success-content {
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    padding: 28px 20px 20px;
+}
+.reg-success-emoji {
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+.reg-success-title {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--yellow);
+    margin-bottom: 6px;
+}
+.reg-success-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.75);
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+.reg-success-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+    text-align: left;
+}
+.reg-success-card {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 14px 16px;
+}
+.reg-success-card-icon {
+    font-size: 20px;
+    margin-bottom: 6px;
+    line-height: 1;
+}
+.reg-success-card-text {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.45;
+    margin-bottom: 10px;
+}
+.reg-success-card-btn {
+    width: 100%;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 20px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    font-family: inherit;
+    transition: background 0.15s;
+}
+.reg-success-card-btn:active {
+    background: rgba(255, 255, 255, 0.22);
+}
+.reg-success-close-btn {
+    width: 100%;
+    margin: 0;
+}
+.reg-packlist {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+}
