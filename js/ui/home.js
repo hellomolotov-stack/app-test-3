@@ -5,7 +5,7 @@ import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet } from './calendar.js';
+import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, mountHikePreviewCard } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -295,7 +295,10 @@ async function showGuestMastermindPopup() {
     });
 }
 
+let _hikePreviewUnsub = null;
+
 function renderGuestHome() {
+    if (_hikePreviewUnsub) { _hikePreviewUnsub(); _hikePreviewUnsub = null; }
     cleanupProfileOverlays();
     const firstName = state.user?.first_name || 'друг';
     subtitle().textContent = '\u{1F44B}\u{1F3FB} привет, ' + firstName + '!';
@@ -305,37 +308,18 @@ function renderGuestHome() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const upcomingHikes = (state.hikesWithTitle || [])
-        .filter(h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today)
-        .slice(0, 5);
-    const nextHike = upcomingHikes[0] || null;
+    const nextHike = (state.hikesWithTitle || []).find(
+        h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today
+    ) || null;
 
-    const sliderHtml = upcomingHikes.length ? `
-        <div class="hike-slider" id="hikeSlider">
-            ${upcomingHikes.map(h => `
-                <div class="hike-slide" data-date="${h.date}" data-title="${(h.title || '').replace(/"/g, '&quot;')}">
-                    <div class="hike-slide-image-wrap">
-                        ${h.image ? `<img src="${h.image}" class="hike-slide-img" alt="" onerror="this.style.display='none'">` : ''}
-                        <div class="hike-slide-overlay"></div>
-                        <div class="hike-slide-info">
-                            <div class="hike-slide-date">${formatDateForDisplay(h.date)}</div>
-                            <div class="hike-slide-title">${h.title}</div>
-                        </div>
-                    </div>
-                    <div class="hike-slide-footer">
-                        <button class="btn btn-yellow hike-slide-reg-btn">записаться на хайк</button>
-                    </div>
-                </div>
-            `).join('')}
-        </div>
-    ` : `
-        <div class="card-container" id="cardBlock">
-            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-        </div>
-    `;
+    const previewHtml = nextHike
+        ? `<div class="card-container hike-preview-card" id="hikePreviewCard"></div>`
+        : `<div class="card-container" id="cardBlock">
+               <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+           </div>`;
 
     main.innerHTML = `
-        ${sliderHtml}
+        ${previewHtml}
         <div id="userBookingsContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -356,15 +340,13 @@ function renderGuestHome() {
         ${renderUpdatesBlock()}
     `;
 
-    // слайдер хайков
-    document.getElementById('hikeSlider')?.addEventListener('click', e => {
-        const btn = e.target.closest('.hike-slide-reg-btn');
-        if (!btn) return;
-        const slide = btn.closest('.hike-slide');
-        haptic();
-        log('hero записаться', true, state.user);
-        showGuestBookingPopup(slide.dataset.date, slide.dataset.title);
-    });
+    // превью хайка — монтируем живую карточку
+    if (nextHike) {
+        _hikePreviewUnsub = mountHikePreviewCard('hikePreviewCard', nextHike, () => {
+            log('hero записаться', true, state.user);
+            showHikePickerSheet();
+        });
+    }
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
 
     // новичкам

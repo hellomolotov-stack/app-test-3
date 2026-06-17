@@ -2183,6 +2183,82 @@ export function showHikePickerSheet() {
     });
 }
 
+// ==================== ПРЕВЬЮ ХАЙКА НА ГЛАВНОЙ (гостевой экран) ====================
+export function mountHikePreviewCard(containerId, hike, onRegisterClick) {
+    const container = document.getElementById(containerId);
+    if (!container || !hike) return null;
+
+    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    let formattedDate = '';
+    if (hike.date) {
+        const parts = hike.date.split('-');
+        if (parts.length === 3) {
+            formattedDate = `${parseInt(parts[2], 10)} ${monthNames[parseInt(parts[1], 10) - 1]}`;
+        }
+    }
+
+    let tagsHtml = '';
+    if (hike.tags && hike.tags.length) {
+        tagsHtml = '<div class="bottom-sheet-tags preview-tags">' +
+            hike.tags.map(t => `<span class="bottom-sheet-tag">${t}</span>`).join('') +
+            '</div>';
+    }
+
+    container.innerHTML = `
+        <div class="hike-preview-header">
+            <div class="hike-preview-date">${formattedDate}</div>
+            <div class="hike-preview-title">${hike.title}</div>
+        </div>
+        ${tagsHtml}
+        ${hike.image ? `
+        <div class="image-container hike-preview-img-wrap">
+            <img src="${hike.image}" class="bottom-sheet-image hike-preview-img" loading="lazy" onerror="this.style.display='none'">
+            <div class="participant-counter" id="hikePreviewCounter" style="color: var(--yellow);">
+                <span class="participant-text" style="color: var(--yellow);">идут</span>
+                <span class="participant-count" id="hikePreviewCountVal" style="color: var(--yellow); display: none;">0</span>
+                <div class="participant-avatars" id="hikePreviewAvatars"></div>
+            </div>
+        </div>
+        ` : ''}
+        <div class="hike-preview-footer">
+            <button class="btn btn-yellow hike-preview-reg-btn">записаться на хайк</button>
+        </div>
+    `;
+
+    container.querySelector('.hike-preview-reg-btn')?.addEventListener('click', () => {
+        haptic();
+        if (onRegisterClick) onRegisterClick();
+    });
+
+    const updateAvatars = async (participants) => {
+        const countEl = container.querySelector('#hikePreviewCountVal');
+        const avatarsEl = container.querySelector('#hikePreviewAvatars');
+        if (countEl) {
+            countEl.style.display = participants.length === 0 ? 'inline' : 'none';
+            countEl.textContent = participants.length;
+        }
+        if (avatarsEl) {
+            avatarsEl.innerHTML = '';
+            for (const p of participants.slice(0, 3)) {
+                const cachedUrl = await getCachedAvatar(p.userId, p.photoUrl);
+                const img = document.createElement('img');
+                img.src = cachedUrl || '';
+                img.className = 'participant-avatar';
+                img.alt = p.name || '';
+                img.style.cssText = 'width:28px!important;height:28px!important;border-radius:50%!important;object-fit:cover!important;box-shadow:0 0 0 2px rgba(255,255,255,0.3)!important;';
+                img.onerror = function() { this.style.display = 'none'; };
+                avatarsEl.appendChild(img);
+            }
+        }
+    };
+
+    const unsub = subscribeToParticipantCount(hike.date, (_count, participants) => {
+        updateAvatars(participants);
+    });
+
+    return unsub;
+}
+
 // ==================== ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ ССЫЛОК ====================
 document.addEventListener('click', function(e) {
     const dynamicLink = e.target.closest('.dynamic-link');
