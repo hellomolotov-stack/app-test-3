@@ -178,6 +178,20 @@ function highlightElement(el) {
     setTimeout(() => { el.style.boxShadow = ''; }, 2000);
 }
 
+// Ждём появления элемента и скроллим к нему. С таймаутом — без вечного setInterval (#4)
+function scrollToWhenReady(getter, { delay = 300, interval = 100, timeout = 6000 } = {}) {
+    setTimeout(() => {
+        const el0 = getter();
+        if (el0) { scrollToElement(el0, getCurrentTopOffset()); highlightElement(el0); return; }
+        const t0 = Date.now();
+        const iv = setInterval(() => {
+            const el = getter();
+            if (el) { clearInterval(iv); scrollToElement(el, getCurrentTopOffset()); highlightElement(el); }
+            else if (Date.now() - t0 > timeout) clearInterval(iv);
+        }, interval);
+    }, delay);
+}
+
 function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam.startsWith('card_')) {
@@ -238,88 +252,22 @@ function handleDeepLink(startParam) {
     const isGuest = state.userCard.status !== 'active';
     switch (startParam) {
         case 'calendar':
-            setTimeout(() => {
-                const el = document.getElementById('calendarContainer');
-                if (el) {
-                    scrollToElement(el, getCurrentTopOffset());
-                    highlightElement(el);
-                } else {
-                    const check = setInterval(() => {
-                        const cal = document.getElementById('calendarContainer');
-                        if (cal) { clearInterval(check); scrollToElement(cal, getCurrentTopOffset()); highlightElement(cal); }
-                    }, 100);
-                }
-            }, 300);
+            scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;
         case 'updates':
-            setTimeout(() => {
-                const el = document.querySelector('.updates-container');
-                if (el) {
-                    scrollToElement(el, getCurrentTopOffset());
-                    highlightElement(el);
-                } else {
-                    const check = setInterval(() => {
-                        const upd = document.querySelector('.updates-container');
-                        if (upd) { clearInterval(check); scrollToElement(upd, getCurrentTopOffset()); highlightElement(upd); }
-                    }, 100);
-                }
-            }, 300);
+            scrollToWhenReady(() => document.querySelector('.updates-container'));
             break;
         case 'summary':
-            setTimeout(() => {
-                const el = document.getElementById('mastermindSummariesCard');
-                if (el) {
-                    scrollToElement(el, getCurrentTopOffset());
-                    highlightElement(el);
-                } else {
-                    const check = setInterval(() => {
-                        const card = document.getElementById('mastermindSummariesCard');
-                        if (card) { clearInterval(check); scrollToElement(card, getCurrentTopOffset()); highlightElement(card); }
-                    }, 100);
-                }
-            }, 300);
+            scrollToWhenReady(() => document.getElementById('mastermindSummariesCard'));
             break;
         case 'card':
-            setTimeout(() => {
-                const el = document.getElementById('cardBlock');
-                if (el) {
-                    scrollToElement(el, getCurrentTopOffset());
-                    highlightElement(el);
-                } else {
-                    const check = setInterval(() => {
-                        const card = document.getElementById('cardBlock');
-                        if (card) { clearInterval(check); scrollToElement(card, getCurrentTopOffset()); highlightElement(card); }
-                    }, 100);
-                }
-            }, 300);
+            scrollToWhenReady(() => document.getElementById('cardBlock'));
             break;
         case 'bookings':
-            setTimeout(() => {
-                const el = document.getElementById('userBookingsCard');
-                if (el) {
-                    scrollToElement(el, getCurrentTopOffset());
-                    highlightElement(el);
-                } else {
-                    const check = setInterval(() => {
-                        const bookings = document.getElementById('userBookingsCard');
-                        if (bookings) { clearInterval(check); scrollToElement(bookings, getCurrentTopOffset()); highlightElement(bookings); }
-                    }, 100);
-                }
-            }, 300);
+            scrollToWhenReady(() => document.getElementById('userBookingsCard'));
             break;
         case 'newcomer':
-            setTimeout(() => {
-                const el = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                if (el) {
-                    scrollToElement(el, getCurrentTopOffset());
-                    highlightElement(el);
-                } else {
-                    const check = setInterval(() => {
-                        const newcomer = document.querySelector('.btn-newcomer')?.closest('.card-container');
-                        if (newcomer) { clearInterval(check); scrollToElement(newcomer, getCurrentTopOffset()); highlightElement(newcomer); }
-                    }, 100);
-                }
-            }, 300);
+            scrollToWhenReady(() => document.querySelector('.btn-newcomer')?.closest('.card-container'));
             break;
         case 'privileges':
             if (isGuest) renderGuestPrivileges();
@@ -377,29 +325,74 @@ function handleDeepLink(startParam) {
     }
 }
 
+// #5: проставить записи владельца карты по последнему снимку хайков
+function applyOwnerBookings() {
+    if (state.userCard?.status === 'active' && state._userRegs) {
+        state.hikesWithTitle.forEach((hike, index) => {
+            state.hikeBookingStatus[index] = state._userRegs[hike.date] === true;
+        });
+    }
+}
+
+// #1: запрос доступа к сообщениям — фоном, ПОСЛЕ показа приложения (не блокирует первый экран)
+async function maybeRequestWriteAccess() {
+    if (localStorage.getItem('asked_write_access')) return;
+    try {
+        const allowed = await loadGuestAllowMessages(state.user?.id).catch(() => false);
+        if (!allowed && tg?.requestWriteAccess) {
+            const granted = await tg.requestWriteAccess();
+            syncGuestAllowMessages(state.user.id, !!granted);
+        }
+        localStorage.setItem('asked_write_access', 'true');
+    } catch (err) {
+        console.warn('requestWriteAccess failed:', err);
+    }
+}
+
 async function loadAppData() {
     showAnimatedLoader();
     try {
         loadCachedState();
-        
+
         initFirebase();
         const database = getDatabase();
-        
+
         if (database) {
             subscribeToHikes((newList) => {
                 state.hikesList = newList;
                 state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
                 state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
+                applyOwnerBookings(); // #5: переприменить записи владельца при обновлении хайков
                 saveCachedState();
             });
         }
 
-        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent, randomPhrases, leaders, updates, mastermindSummaries] = await Promise.all([
+        // #2: если в кэше уже есть данные — показываем главную мгновенно, сеть обновит тихо
+        let renderedFromCache = false;
+        if (state.hikesWithTitle.length && state.userCard?.status !== 'loading') {
+            if (!state.userCard || state.userCard.status === 'loading') {
+                state.userCard = { status: 'inactive', hikes: 0, cardUrl: '' };
+            }
+            if (state.userCard.status !== 'active') {
+                state.hikeBookingStatus = loadBookingStatusFromLocal();
+            }
+            hideAnimatedLoader();
+            renderHome();
+            mountBotTab();
+            renderedFromCache = true;
+        }
+
+        // #3: всё параллельно, включая userData
+        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,
+               randomPhrases, leaders, updates, mastermindSummaries,
+               regsPopup, popupConfig, popups, userData] = await Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
             loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
-            loadUpdates(), loadMastermindSummaries()
+            loadUpdates(), loadMastermindSummaries(),
+            loadRegistrationsPopup(), loadPopupConfig(), loadPopups().catch(() => null),
+            loadUserData(state.user?.id)
         ]);
-        
+
         if (metrics) state.metrics = metrics;
         if (faq) state.faq = faq;
         if (privileges) state.privileges = privileges;
@@ -410,23 +403,19 @@ async function loadAppData() {
         if (leaders) state.leaders = leaders;
         if (updates) state.updates = updates;
         if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
+        if (regsPopup) state.registrationsPopup = regsPopup;
+        if (popupConfig) state.popupConfig = { ...state.popupConfig, ...popupConfig };
+        if (popups) state.popups = popups;
 
-        await loadRegistrationsPopup().then(data => { if (data) state.registrationsPopup = data; });
-        await loadPopupConfig().then(data => { if (data) state.popupConfig = { ...state.popupConfig, ...data }; });
-        await loadPopups().then(data => { if (data) state.popups = data; }).catch(() => {});
-        
         state.popupConfig.ticketLink = ROBOKASSA_LINK;
         state.popupConfig.seasonCardLink = SEASON_CARD_LINK;
         state.popupConfig.permanentCardLink = PERMANENT_CARD_LINK;
 
-        const userData = await loadUserData(state.user?.id);
         state.userCard = userData;
 
         if (state.userCard.status === 'active') {
-            const regs = await loadUserRegistrations(state.user?.id);
-            state.hikesWithTitle.forEach((hike, index) => {
-                state.hikeBookingStatus[index] = regs[hike.date] === true;
-            });
+            state._userRegs = await loadUserRegistrations(state.user?.id);
+            applyOwnerBookings(); // #5
         } else {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
         }
@@ -434,41 +423,22 @@ async function loadAppData() {
         log('открыл приложение', state.userCard.status !== 'active', state.user);
         saveCachedState();
 
-        const hasAsked = localStorage.getItem('asked_write_access');
-        if (!hasAsked) {
-            const allowed = await loadGuestAllowMessages(state.user?.id).catch(() => false);
-            if (!allowed && tg?.requestWriteAccess) {
-                try {
-                    const granted = await tg.requestWriteAccess();
-                    if (granted) {
-                        syncGuestAllowMessages(state.user.id, true);
-                    } else {
-                        syncGuestAllowMessages(state.user.id, false);
-                    }
-                    localStorage.setItem('asked_write_access', 'true');
-                } catch (err) {
-                    console.warn('requestWriteAccess failed:', err);
-                }
-            } else {
-                localStorage.setItem('asked_write_access', 'true');
-            }
-        }
-
         if (tg) {
             tg.expand();
             if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
         }
-        
-        renderHome();
+
+        renderHome(); // финальный рендер с актуальными данными (поверх кэшированного)
         window.toggleShareButton(false);
+        if (!renderedFromCache) mountBotTab();
 
         const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
         if (startParam) {
             setTimeout(() => handleDeepLink(startParam), 100);
         }
 
-        // постоянный язычок слева зовёт гостей в чат с ботом
-        mountBotTab();
+        // #1: спрашиваем доступ к сообщениям фоном, не блокируя первый экран
+        maybeRequestWriteAccess();
 
         function updateNightBackground() {
             const now = new Date();
