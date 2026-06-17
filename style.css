@@ -1870,6 +1870,77 @@ body::before {
     transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
 
+/* #3 социальное доказательство */
+.booking-social-proof {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 16px;
+}
+.sp-avatars {
+    display: flex;
+    flex-direction: row;
+}
+.sp-avatars .sp-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #1c1c1e;
+    margin-left: -8px;
+    background: #333;
+}
+.sp-avatars .sp-avatar:first-child { margin-left: 0; }
+.booking-social-proof.sp--noavatars .sp-avatars { display: none; }
+.sp-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+}
+.sp-text strong { color: var(--yellow); }
+
+/* #2 распроданность */
+.booking-popup-scarcity--out .booking-popup-scarcity-num { color: rgba(255,255,255,0.4); }
+
+/* #4 превью привилегий */
+.booking-perks {
+    margin-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-top: 4px;
+}
+.booking-perks-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.75);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.booking-perks-arrow {
+    color: var(--yellow);
+    transition: transform 0.2s ease;
+    font-size: 16px;
+}
+.booking-perk-item {
+    font-size: 13px;
+    color: rgba(255,255,255,0.8);
+    padding: 7px 0 7px 18px;
+    position: relative;
+    line-height: 1.4;
+}
+.booking-perk-item::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--yellow);
+    font-weight: 700;
+}
+
 .booking-popup-content {
     max-height: calc(100dvh - 48px);
     overflow-y: auto;

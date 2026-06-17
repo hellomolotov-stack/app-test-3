@@ -274,8 +274,19 @@ async function getCachedAvatar(userId, photoUrl) {
     return photoUrl;
 }
 
+// Сколько карт осталось в этом месяце — управляется из Firebase (popupConfig.cardsLeft).
+// Фолбэк 9, если значение не задано.
 export function getAvailableCardsCount() {
-    return 9;
+    const v = state.popupConfig?.cardsLeft;
+    if (v === undefined || v === null || v === '') return 9;
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) ? Math.max(0, n) : 9;
+}
+
+// Всего карт в месяц (popupConfig.cardsTotal, фолбэк 10)
+export function getTotalCardsCount() {
+    const n = parseInt(state.popupConfig?.cardsTotal, 10);
+    return Number.isFinite(n) && n > 0 ? n : 10;
 }
 
 export function showBottomSheet(index) {
@@ -1565,6 +1576,30 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         <div id="faqBody" style="display:none;">${faqItemsHtml}</div>
     ` : '';
 
+    // #2 динамический счётчик карт
+    const cardsLeft = getAvailableCardsCount();
+    const cardsTotal = getTotalCardsCount();
+    const soldOut = cardsLeft <= 0;
+
+    // #3 социальное доказательство (аватарки членов клуба + счётчик)
+    const membersText = state.popupConfig?.membersText || '20+';
+    const socialProofHtml = `
+        <div class="booking-social-proof" id="bookingSocialProof">
+            <div class="sp-avatars" id="spAvatars"></div>
+            <div class="sp-text">уже <strong>${membersText}</strong> в клубе</div>
+        </div>`;
+
+    // #4 превью привилегий внутри аккордеона
+    const perks = (state.guestPrivileges?.club || []).filter(p => p && p.title);
+    const perksPreviewHtml = perks.length ? `
+        <div class="booking-perks">
+            <button class="booking-perks-toggle" id="perksToggle">что даёт карта <span class="booking-perks-arrow">›</span></button>
+            <div class="booking-perks-body" id="perksBody" style="display:none;">
+                ${perks.slice(0, 6).map(p => `<div class="booking-perk-item">${p.title.replace(/^новое:\s*/i, '')}</div>`).join('')}
+                <button class="btn btn-outline" id="allPerksBtn" style="width:100%; margin:10px 0 0;">смотреть все привилегии</button>
+            </div>
+        </div>` : '';
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay booking-popup-overlay';
     overlay.id = 'guestBookingPopup';
@@ -1573,17 +1608,20 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             <button class="modal-close" id="closePopup">&times;</button>
             ${popupTextHtml}
 
+            ${socialProofHtml}
+
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
                 ${!isReturning ? `<button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0;">я впервые 🎟️</button>` : ''}
                 <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">вступить в клуб</button>
             </div>
 
             <div id="clubJoinAccordion" style="display: none; margin-top: 20px;">
-                <div class="booking-popup-scarcity">
-                    <div class="booking-popup-scarcity-num">10</div>
+                <div class="booking-popup-scarcity${soldOut ? ' booking-popup-scarcity--out' : ''}">
+                    <div class="booking-popup-scarcity-num">${soldOut ? '0' : cardsLeft}</div>
                     <div class="booking-popup-scarcity-text">
-                        <strong>карт в месяц – не больше</strong><br>
-                        клуб растёт медленно и осознанно – только те, кто точно хочет быть здесь
+                        ${soldOut
+                            ? `<strong>на этот месяц карты разобраны</strong><br>загляни в начале следующего – откроем новые ${cardsTotal}`
+                            : `<strong>карт осталось в этом месяце</strong><br>всего ${cardsTotal} в месяц – клуб растёт медленно, только те, кто точно хочет быть здесь`}
                     </div>
                 </div>
 
@@ -1604,6 +1642,8 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                     <div class="booking-card-desc">сезон 2026 – всё то же самое, до конца сезона</div>
                     <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">оформить сезонную</button>
                 </div>
+
+                ${perksPreviewHtml}
 
                 ${faqHtml}
             </div>
@@ -1629,6 +1669,47 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     document.getElementById('closePopup').addEventListener('click', () => {
         haptic();
         closePopup();
+    });
+
+    // #3 подгружаем аватарки членов клуба (лениво, не блокируя показ попапа)
+    (async () => {
+        try {
+            if (!state.profiles || !Object.keys(state.profiles).length) {
+                state.profiles = await loadAllProfiles();
+            }
+            const arr = Object.values(state.profiles || {}).filter(p => p && (p.avatarUrl || p.photoUrl));
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            const picks = arr.slice(0, 3);
+            const el = document.getElementById('spAvatars');
+            if (el && picks.length) {
+                el.innerHTML = picks.map(p => `<img src="${p.avatarUrl || p.photoUrl}" class="sp-avatar" onerror="this.remove()">`).join('');
+            } else {
+                document.getElementById('bookingSocialProof')?.classList.add('sp--noavatars');
+            }
+        } catch (_) {
+            document.getElementById('bookingSocialProof')?.classList.add('sp--noavatars');
+        }
+    })();
+
+    // #4 превью привилегий: разворот + переход к полному списку
+    document.getElementById('perksToggle')?.addEventListener('click', () => {
+        haptic();
+        const body = document.getElementById('perksBody');
+        const arrow = document.querySelector('#perksToggle .booking-perks-arrow');
+        if (!body) return;
+        const opening = body.style.display === 'none';
+        body.style.display = opening ? 'block' : 'none';
+        if (arrow) arrow.style.transform = opening ? 'rotate(90deg)' : '';
+    });
+    document.getElementById('allPerksBtn')?.addEventListener('click', () => {
+        haptic();
+        closePopup();
+        closeBottomSheet();
+        log('все привилегии из попапа', true, state.user);
+        setTimeout(() => renderGuestPrivileges(true), 150);
     });
 
     overlay.addEventListener('click', e => {

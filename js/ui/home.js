@@ -320,6 +320,7 @@ function renderGuestHome() {
         </div>
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
+        ${renderWeatherBlock()}
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -334,7 +335,6 @@ function renderGuestHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
-        ${renderWeatherBlock()}
         ${renderUpdatesBlock()}
     `;
 
@@ -426,6 +426,7 @@ function renderOwnerHome() {
         </div>
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
+        ${renderWeatherBlock()}
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -440,7 +441,6 @@ function renderOwnerHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
-        ${renderWeatherBlock()}
         ${renderUpdatesBlock()}
     `;
 
