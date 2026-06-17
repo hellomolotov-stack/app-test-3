@@ -1532,17 +1532,17 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             <div class="bpu-line">ты уже был на первом хайке</div>
             <div class="bpu-line">теперь ты знаешь формат, людей и то, что ждёт впереди</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">на следующие хайки разовые билеты не продаём — <em>намеренно</em></div>
+            <div class="bpu-line">на следующие хайки разовые билеты не продаём – <em>намеренно</em></div>
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
     ` : `
         <div class="bpu-text">
-            <div class="bpu-line">разовые билеты не продаём — <em>намеренно</em></div>
+            <div class="bpu-line">разовые билеты не продаём – <em>намеренно</em></div>
             <div class="bpu-line bpu-accent">клуб не для всех</div>
             <div class="bpu-line">мы за тихое качество, вместо шумного количества</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">первый хайк — свободно, приходи знакомиться с форматом и людьми</div>
-            <div class="bpu-line">если почувствуешь, что это твоё окружение — вступай</div>
+            <div class="bpu-line">первый хайк – свободно, приходи знакомиться с форматом и людьми</div>
+            <div class="bpu-line">если почувствуешь, что это твоё окружение – вступай</div>
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
     `;
@@ -1582,26 +1582,26 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                 <div class="booking-popup-scarcity">
                     <div class="booking-popup-scarcity-num">10</div>
                     <div class="booking-popup-scarcity-text">
-                        <strong>карт в месяц — не больше</strong><br>
-                        клуб растёт медленно и осознанно — только те, кто точно хочет быть здесь
+                        <strong>карт в месяц – не больше</strong><br>
+                        клуб растёт медленно и осознанно – только те, кто точно хочет быть здесь
                     </div>
                 </div>
 
                 <div class="booking-popup-what-is-card">
-                    карта интеллигента — это и есть членство в клубе. именная, с твоим числом хайков. с ней ты просто ходишь — без покупки билетов каждый раз
+                    карта интеллигента – это и есть членство в клубе. именная, с твоим числом хайков. с ней ты просто ходишь – без покупки билетов каждый раз
                 </div>
 
-                <div class="booking-popup-economy">один хайк без карты — 1500₽. карта окупается на пятом. дальше — просто ходишь</div>
+                <div class="booking-popup-economy">один хайк без карты – 1500₽. карта окупается на пятом. дальше – просто ходишь</div>
 
                 <div class="booking-card-option">
-                    <div class="booking-card-name">бессрочная — ${config.permanentCardPrice} ₽</div>
-                    <div class="booking-card-desc">один раз — и навсегда, никаких продлений и подписок<br>все хайки, события в городе, скидки у партнёров, впн</div>
+                    <div class="booking-card-name">бессрочная – ${config.permanentCardPrice} ₽</div>
+                    <div class="booking-card-desc">один раз – и навсегда, никаких продлений и подписок<br>все хайки, события в городе, скидки у партнёров, впн</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить бессрочную</button>
                 </div>
 
                 <div class="booking-card-option" style="margin-top: 12px;">
-                    <div class="booking-card-name">сезонная — ${config.seasonCardPrice} ₽</div>
-                    <div class="booking-card-desc">сезон 2026 — всё то же самое, до конца сезона</div>
+                    <div class="booking-card-name">сезонная – ${config.seasonCardPrice} ₽</div>
+                    <div class="booking-card-desc">сезон 2026 – всё то же самое, до конца сезона</div>
                     <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">оформить сезонную</button>
                 </div>
 
@@ -1610,6 +1610,14 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         </div>
     `;
     document.body.appendChild(overlay);
+
+    // Отступ под системные кнопки Telegram (fullscreen) – чтобы контент не заезжал под них
+    const tgw = window.Telegram?.WebApp;
+    const topInset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    const bottomInset = (tgw?.safeAreaInset?.bottom || 0) + (tgw?.contentSafeAreaInset?.bottom || 0);
+    overlay.style.paddingTop = Math.max(topInset + 12, 64) + 'px';
+    const _content = overlay.querySelector('.booking-popup-content');
+    if (_content) _content.style.maxHeight = `calc(100dvh - ${Math.max(topInset + 12, 64) + bottomInset + 24}px)`;
 
     const closePopup = () => {
         if (overlay && overlay.parentNode) {
@@ -1633,13 +1641,19 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     document.getElementById('joinClubBtn').addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
+        const btn = e.currentTarget;
         const accordion = document.getElementById('clubJoinAccordion');
         if (!accordion) return;
-        const isOpen = accordion.style.display !== 'none';
-        accordion.style.display = isOpen ? 'none' : 'block';
-        if (!isOpen) {
+        const opening = accordion.style.display === 'none';
+        accordion.style.display = opening ? 'block' : 'none';
+        // при раскрытии гасим акцент кнопки – фокус уходит на «оформить»
+        btn.classList.toggle('btn-yellow', !opening);
+        btn.classList.toggle('btn-outline', opening);
+        if (opening) {
             const content = overlay.querySelector('.booking-popup-content');
-            if (content) setTimeout(() => { content.scrollTop = accordion.offsetTop - 16; }, 50);
+            if (content) setTimeout(() => {
+                content.scrollTo({ top: accordion.offsetTop - 16, behavior: 'smooth' });
+            }, 60);
         }
         log('вступить в клуб', true, state.user);
     });

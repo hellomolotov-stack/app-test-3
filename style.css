@@ -1864,7 +1864,10 @@ body::before {
 /* booking popup redesign */
 .booking-popup-overlay {
     align-items: flex-start !important;
-    padding-top: 60px !important;
+    padding-top: 60px; /* fallback; точное значение ставит JS из safe-area Telegram */
+}
+#joinClubBtn {
+    transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .booking-popup-content {
