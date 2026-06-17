@@ -402,6 +402,7 @@ function buildOptions(node, nodeId) {
         const btn = document.createElement('button');
         btn.className = 'chat-option-btn';
         btn.textContent = opt.label;
+        if (opt.next) btn.dataset.next = opt.next;
         btn.addEventListener('click', () => onOption(opt, nodeId));
         optionsEl.appendChild(btn);
     });
@@ -504,7 +505,7 @@ async function renderNode(nodeId) {
 // ──────────────────────────────────────────────
 // открытие шторки
 // ──────────────────────────────────────────────
-export async function openOnboardingChat() {
+export async function openOnboardingChat(autoNext = null) {
     // если ссылка зависла, но узла в DOM нет — сбрасываем, чтобы можно было открыть
     if (overlay && document.body.contains(overlay)) return;
     overlay = null;
@@ -623,5 +624,10 @@ export async function openOnboardingChat() {
         localStorage.setItem(K_VISITED, '1');
         startNode = 'welcome';
     }
-    renderNode(startNode);
+    await renderNode(startNode);
+    if (autoNext) {
+        const btn = optionsEl.querySelector(`[data-next="${autoNext}"]`);
+        if (btn) btn.click();
+        else await renderNode(autoNext);
+    }
 }

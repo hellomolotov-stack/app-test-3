@@ -3424,8 +3424,12 @@ body::after {
 .guest-club-perks li {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     font-size: 14px;
     color: rgba(255, 255, 255, 0.9);
     line-height: 1.35;
+}
+.guest-club-perks li svg {
+    flex-shrink: 0;
 }

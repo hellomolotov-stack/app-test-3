@@ -349,19 +349,15 @@ function renderGuestHome() {
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container guest-club-card" id="guestClubBlock">
-            <div class="guest-club-proof">
-                <div class="guest-club-avatars" id="guestClubAvatars"></div>
-                <div class="guest-club-members"><strong>${membersText} человек</strong> уже в клубе</div>
-            </div>
             <ul class="guest-club-perks">
-                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>хайкинг каждые выходные</li>
-                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>новые знакомства</li>
-                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>события в городе с членами клуба</li>
-                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>безлимитный VPN</li>
-                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>привилегии у партнёров в городе и онлайне</li>
+                <li>хайкинг каждые выходные<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+                <li>новые знакомства<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+                <li>события в городе с членами клуба<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+                <li>безлимитный VPN<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
+                <li>привилегии у партнёров в городе и онлайне<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
             </ul>
             <div class="guest-club-actions">
-                <button class="btn btn-outline" id="guestPrivilegesBtn">узнать о привилегиях 💳</button>
+                <button class="btn btn-outline" id="guestPrivilegesBtn">узнать о привилегиях</button>
                 <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
             </div>
         </div>
@@ -395,7 +391,7 @@ function renderGuestHome() {
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic(); setUserInteracted();
         log('новичкам', true, state.user);
-        openOnboardingChat();
+        openOnboardingChat('faq');
     });
 
     // клуб-блок
@@ -439,7 +435,6 @@ function renderGuestHome() {
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
-    mountStickyHikeCta();
 
     const goBtn = document.querySelector('.booking-go-btn');
     if (goBtn) {
