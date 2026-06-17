@@ -1627,7 +1627,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                     <div class="booking-popup-scarcity-text">
                         ${soldOut
                             ? `<strong>на этот месяц карты разобраны</strong><br>загляни в начале следующего – откроем новые ${cardsTotal}`
-                            : `<strong>карт осталось в этом месяце</strong><br>всего ${cardsTotal} в месяц – клуб растёт медленно, только те, кто точно хочет быть здесь`}
+                            : `<strong>мы выпускаем ${cardsTotal} клубных карт в месяц.</strong><br>чтобы уделить внимание каждому новому члену клуба.<br>наш принцип: не шумное количество, а тихое качество`}
                     </div>
                 </div>
 

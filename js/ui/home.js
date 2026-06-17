@@ -9,6 +9,7 @@ import { renderCalendar, showBottomSheet, showGuestBookingPopup } from './calend
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
+import { openOnboardingChat } from './onboarding-chat.js';
 
 export function removeStickyHikeCta() {
     document.getElementById('stickyHikeCta')?.remove();
@@ -352,6 +353,13 @@ function renderGuestHome() {
                 <div class="guest-club-avatars" id="guestClubAvatars"></div>
                 <div class="guest-club-members"><strong>${membersText} человек</strong> уже в клубе</div>
             </div>
+            <ul class="guest-club-perks">
+                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>хайкинг каждые выходные</li>
+                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>новые знакомства</li>
+                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>события в городе с членами клуба</li>
+                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>безлимитный VPN</li>
+                <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="8" r="8" fill="#27ae60"/><path d="M4.5 8.5l2 2 5-5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>привилегии у партнёров в городе и онлайне</li>
+            </ul>
             <div class="guest-club-actions">
                 <button class="btn btn-outline" id="guestPrivilegesBtn">узнать о привилегиях 💳</button>
                 <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
@@ -387,7 +395,7 @@ function renderGuestHome() {
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic(); setUserInteracted();
         log('новичкам', true, state.user);
-        renderNewcomerPage(true);
+        openOnboardingChat();
     });
 
     // клуб-блок

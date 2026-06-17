@@ -126,9 +126,16 @@ const WELCOME_BACK_VARIANTS = [
     name => `с возвращением${name ? ', ' + name : ''} ☀️\n\nгоры никуда не делись – ближайший хайк уже скоро\n\nчем займёмся?`,
 ];
 
+const K_LAST_WB = 'botLastWbIdx';
+
 function welcomeBackText() {
     const name = capName(state.user?.first_name);
-    const idx = Math.floor(Math.random() * WELCOME_BACK_VARIANTS.length);
+    const last = parseInt(localStorage.getItem(K_LAST_WB) ?? '-1', 10);
+    let idx = Math.floor(Math.random() * WELCOME_BACK_VARIANTS.length);
+    if (WELCOME_BACK_VARIANTS.length > 1 && idx === last) {
+        idx = (idx + 1) % WELCOME_BACK_VARIANTS.length;
+    }
+    localStorage.setItem(K_LAST_WB, String(idx));
     return WELCOME_BACK_VARIANTS[idx](name);
 }
 
@@ -612,6 +619,9 @@ export async function openOnboardingChat() {
     let startNode;
     if (isMember) startNode = 'member_welcome';
     else if (localStorage.getItem(K_VISITED)) startNode = 'welcome_back';
-    else startNode = 'welcome';
+    else {
+        localStorage.setItem(K_VISITED, '1');
+        startNode = 'welcome';
+    }
     renderNode(startNode);
 }
