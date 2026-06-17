@@ -5,7 +5,7 @@ import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar, showBottomSheet, showGuestBookingPopup } from './calendar.js';
+import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -303,63 +303,43 @@ function renderGuestHome() {
     showBottomNav(true);
     const main = mainDiv();
 
-    // ближайший предстоящий хайк (не city, не cancelled)
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    let nextHikeIndex = -1;
-    for (let i = 0; i < (state.hikesWithTitle || []).length; i++) {
-        const h = state.hikesWithTitle[i];
-        if (new Date(h.date) >= today && !h.cancelled && h.city !== true && h.city !== 'yes') {
-            nextHikeIndex = i;
-            break;
-        }
-    }
-    const nextHike = nextHikeIndex !== -1 ? state.hikesWithTitle[nextHikeIndex] : null;
-    const formattedNextDate = nextHike ? formatDateForDisplay(nextHike.date) : '';
-    const membersText = state.popupConfig?.membersText || '20+';
+    const upcomingHikes = (state.hikesWithTitle || [])
+        .filter(h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today)
+        .slice(0, 5);
+    const nextHike = upcomingHikes[0] || null;
 
-    const heroHtml = nextHike ? `
-        <div class="card-container guest-hero-card" id="cardBlock">
-            <div class="guest-hero-image-wrap">
-                ${nextHike.image
-                    ? `<img src="${nextHike.image}" class="guest-hero-image" alt="${nextHike.title}" onerror="this.style.display='none'">`
-                    : ''}
-                <div class="guest-hero-overlay"></div>
-                <div class="guest-hero-info">
-                    <div class="guest-hero-date">${formattedNextDate}</div>
-                    <div class="guest-hero-title">${nextHike.title}</div>
+    const sliderHtml = upcomingHikes.length ? `
+        <div class="hike-slider" id="hikeSlider">
+            ${upcomingHikes.map(h => `
+                <div class="hike-slide" data-date="${h.date}" data-title="${(h.title || '').replace(/"/g, '&quot;')}">
+                    <div class="hike-slide-image-wrap">
+                        ${h.image ? `<img src="${h.image}" class="hike-slide-img" alt="" onerror="this.style.display='none'">` : ''}
+                        <div class="hike-slide-overlay"></div>
+                        <div class="hike-slide-info">
+                            <div class="hike-slide-date">${formatDateForDisplay(h.date)}</div>
+                            <div class="hike-slide-title">${h.title}</div>
+                        </div>
+                    </div>
+                    <div class="hike-slide-footer">
+                        <button class="btn btn-yellow hike-slide-reg-btn">записаться на хайк</button>
+                    </div>
                 </div>
-            </div>
-            <div class="guest-hero-actions">
-                <button class="btn btn-yellow guest-hero-btn" id="guestHeroRegBtn">записаться на хайк</button>
-            </div>
+            `).join('')}
         </div>
     ` : `
         <div class="card-container" id="cardBlock">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">?</span></div>
         </div>
     `;
 
     main.innerHTML = `
-        ${heroHtml}
+        ${sliderHtml}
         <div id="userBookingsContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
-        </div>
-        <div class="card-container guest-club-card" id="guestClubBlock">
-            <ul class="guest-club-perks">
-                <li>хайкинг каждые выходные<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
-                <li>новые знакомства<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
-                <li>события в городе с членами клуба<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
-                <li>безлимитный VPN<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
-                <li>привилегии у партнёров в городе и онлайне<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></li>
-            </ul>
-            <div class="guest-club-actions">
-                <button class="btn btn-outline" id="guestPrivilegesBtn">узнать о привилегиях</button>
-                <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
-            </div>
         </div>
         <div class="card-container" id="calendarContainer"></div>
         ${renderWeatherBlock()}
@@ -376,38 +356,22 @@ function renderGuestHome() {
         ${renderUpdatesBlock()}
     `;
 
-    // hero: кнопка "записаться"
-    if (nextHike) {
-        document.getElementById('guestHeroRegBtn')?.addEventListener('click', () => {
-            haptic();
-            log('hero записаться', true, state.user);
-            showGuestBookingPopup(nextHike.date, nextHike.title);
-        });
-    } else {
-        document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
-    }
+    // слайдер хайков
+    document.getElementById('hikeSlider')?.addEventListener('click', e => {
+        const btn = e.target.closest('.hike-slide-reg-btn');
+        if (!btn) return;
+        const slide = btn.closest('.hike-slide');
+        haptic();
+        log('hero записаться', true, state.user);
+        showGuestBookingPopup(slide.dataset.date, slide.dataset.title);
+    });
+    document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
 
     // новичкам
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic(); setUserInteracted();
         log('новичкам', true, state.user);
         openOnboardingChat('faq');
-    });
-
-    // клуб-блок
-    document.getElementById('guestPrivilegesBtn')?.addEventListener('click', (e) => {
-        e.preventDefault(); haptic();
-        log('привилегии из главной', true, state.user);
-        renderGuestPrivileges();
-    });
-    document.getElementById('guestJoinClubBtn')?.addEventListener('click', (e) => {
-        e.preventDefault(); haptic();
-        log('вступить в клуб из главной', true, state.user);
-        if (nextHike) {
-            showGuestBookingPopup(nextHike.date, nextHike.title);
-        } else {
-            renderGuestPrivileges();
-        }
     });
 
     // аватарки членов клуба (лениво)

@@ -8,7 +8,7 @@ import { haptic, openLink, formatDateForDisplay, tg, scrollToElement } from '../
 import { log, registerWebAppUser } from '../api.js';
 import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
-import { getAvailableCardsCount } from './calendar.js';
+import { getAvailableCardsCount, showHikePickerSheet } from './calendar.js';
 import { renderHome } from './home.js';
 
 const SUPPORT = 'https://t.me/hellointelligent';
@@ -425,7 +425,13 @@ async function onOption(opt, fromNodeId) {
     if (opt.action === 'book') {
         addUserBubble(opt.label);
         log('бот: записаться на хайк', state.userCard.status !== 'active', state.user);
-        goToCalendar();
+        const isGuest = state.userCard?.status !== 'active';
+        if (isGuest) {
+            closeChat();
+            setTimeout(() => showHikePickerSheet(), 450);
+        } else {
+            goToCalendar();
+        }
         return;
     }
 

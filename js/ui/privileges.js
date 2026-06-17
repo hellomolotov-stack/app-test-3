@@ -111,7 +111,17 @@ export function renderGuestPrivileges() {
         cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
     }
 
+    const CHECK = `<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
     mainDiv().innerHTML = `
+        <div class="card-container">
+            <ul class="guest-club-perks">
+                <li>хайкинг каждые выходные${CHECK}</li>
+                <li>новые знакомства${CHECK}</li>
+                <li>события в городе с членами клуба${CHECK}</li>
+                <li>безлимитный VPN${CHECK}</li>
+                <li>привилегии у партнёров в городе и онлайне${CHECK}</li>
+            </ul>
+        </div>
         <div class="card-container">
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>
             ${clubHtml}

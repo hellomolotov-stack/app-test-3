@@ -2131,6 +2131,58 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     });
 }
 
+// ==================== ВЫБОР ХАЙКА (для гостей без карты) ====================
+export function showHikePickerSheet() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcoming = (state.hikesWithTitle || [])
+        .filter(h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today)
+        .slice(0, 6);
+    if (!upcoming.length) return;
+
+    const pickerOverlay = document.createElement('div');
+    pickerOverlay.className = 'bottom-sheet-overlay';
+    pickerOverlay.innerHTML = `
+        <div class="bottom-sheet hike-picker-sheet">
+            <div class="bottom-sheet-handle"></div>
+            <div class="hike-slider hike-picker-slider">
+                ${upcoming.map(h => `
+                    <div class="hike-slide" data-date="${h.date}" data-title="${(h.title || '').replace(/"/g, '&quot;')}">
+                        <div class="hike-slide-image-wrap">
+                            ${h.image ? `<img src="${h.image}" class="hike-slide-img" alt="" onerror="this.style.display='none'">` : ''}
+                            <div class="hike-slide-overlay"></div>
+                            <div class="hike-slide-info">
+                                <div class="hike-slide-date">${formatDateForDisplay(h.date)}</div>
+                                <div class="hike-slide-title">${h.title}</div>
+                            </div>
+                        </div>
+                        <div class="hike-slide-footer">
+                            <button class="btn btn-yellow hike-slide-reg-btn">записаться</button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    document.body.appendChild(pickerOverlay);
+    requestAnimationFrame(() => {
+        pickerOverlay.classList.add('active');
+        pickerOverlay.querySelector('.bottom-sheet')?.classList.add('active');
+    });
+    pickerOverlay.addEventListener('click', e => {
+        if (e.target.closest('.hike-slide-reg-btn')) {
+            const slide = e.target.closest('.hike-slide');
+            pickerOverlay.remove();
+            showGuestBookingPopup(slide.dataset.date, slide.dataset.title);
+            return;
+        }
+        if (e.target === pickerOverlay) {
+            pickerOverlay.querySelector('.bottom-sheet').style.transform = 'translateY(100%)';
+            setTimeout(() => pickerOverlay.remove(), 400);
+        }
+    });
+}
+
 // ==================== ГЛОБАЛЬНЫЙ ОБРАБОТЧИК ДЛЯ ССЫЛОК ====================
 document.addEventListener('click', function(e) {
     const dynamicLink = e.target.closest('.dynamic-link');
