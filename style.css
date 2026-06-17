@@ -1861,6 +1861,162 @@ body::before {
     width: 100%;
 }
 
+/* booking popup redesign */
+.booking-popup-overlay {
+    align-items: flex-start !important;
+    padding-top: 60px !important;
+}
+
+.booking-popup-content {
+    max-height: calc(100dvh - 48px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 28px;
+}
+
+/* popup text typography */
+.bpu-text {
+    margin: 8px 0 20px;
+    padding-right: 20px;
+}
+
+.bpu-line {
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 4px;
+}
+
+.bpu-line em {
+    font-style: italic;
+    color: rgba(255,255,255,0.55);
+}
+
+.bpu-accent {
+    color: var(--yellow);
+    font-weight: 700;
+    font-size: 15px;
+    margin-top: 2px;
+}
+
+.bpu-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 12px 0;
+}
+
+/* scarcity block */
+.booking-popup-scarcity {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+}
+
+.booking-popup-scarcity-num {
+    font-size: 36px;
+    font-weight: 900;
+    color: var(--yellow);
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.booking-popup-scarcity-text {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.5;
+}
+
+.booking-popup-scarcity-text strong {
+    color: #ffffff;
+}
+
+/* what is card */
+.booking-popup-what-is-card {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
+    margin-bottom: 14px;
+    padding: 0 2px;
+}
+
+.booking-popup-economy {
+    font-size: 13px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.5;
+    margin-bottom: 16px;
+    font-style: italic;
+}
+
+.booking-card-option {
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 16px;
+    background: rgba(255,255,255,0.04);
+}
+
+.booking-card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+}
+
+.booking-card-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.65);
+    line-height: 1.5;
+    margin-bottom: 14px;
+}
+
+/* FAQ toggle */
+.booking-popup-faq-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13px;
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    user-select: none;
+    margin: 20px 0 0;
+    padding: 10px 0;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.faq-toggle-arrow {
+    font-size: 14px;
+    color: rgba(255,255,255,0.3);
+}
+
+.booking-popup-faq-item {
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 0;
+}
+
+.booking-popup-faq-q {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    cursor: pointer;
+    user-select: none;
+    line-height: 1.4;
+}
+
+.booking-popup-faq-a {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
+    margin-top: 6px;
+    display: none;
+}
+
+.booking-popup-faq-a.open {
+    display: block;
+}
+
 .payment-popup {
     background-color: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(4px);
