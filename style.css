@@ -291,7 +291,8 @@ body::before {
 }
 .gc-in {
     background: rgba(255,255,255,0.08);
-    color: rgba(255,255,255,0.86);
+    color: #ffffff;
+    font-weight: 500;
     border-bottom-left-radius: 5px;
 }
 .gc-in.gc-answer {
