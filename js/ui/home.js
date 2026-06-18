@@ -296,9 +296,21 @@ async function showGuestMastermindPopup() {
 }
 
 let _hikePreviewUnsub = null;
+let _ctaTimer = null;
+
+const GUEST_QUOTES = [
+    'вернуться с которого тем, кем ты начинал – не получится',
+    'мы не хотим, чтобы ты платил за искренность знакомства',
+    'без масок социальных статусов, без попыток меряться должностями',
+    'выдохнуть заботы, вдохнуть горный воздух',
+    'мы относимся к своей жизни слишком серьёзно',
+    'опыт, который ты получаешь здесь – не получить ни в каком душном Гарварде',
+    'чувство, что хочется кружиться. широко раскинув руки.',
+];
 
 function renderGuestHome() {
     if (_hikePreviewUnsub) { _hikePreviewUnsub(); _hikePreviewUnsub = null; }
+    clearTimeout(_ctaTimer);
     cleanupProfileOverlays();
     const firstName = state.user?.first_name || 'друг';
     subtitle().textContent = '\u{1F44B}\u{1F3FB} привет, ' + firstName + '!';
@@ -315,7 +327,16 @@ function renderGuestHome() {
     const cardHtml = `
         <div class="card-container" id="cardBlock">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-            <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
+            <div class="guest-card-cta">
+                <div class="guest-cta-quote" id="guestCtaQuote">
+                    <span class="guest-cta-quote-text" id="guestCtaQuoteText"></span>
+                    <div class="guest-cta-dots" id="guestCtaDots"></div>
+                </div>
+                <div class="guest-cta-scarcity" id="guestCtaScarcity"></div>
+            </div>
+            <div class="guest-card-btn-wrap">
+                <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
+            </div>
         </div>
     `;
 
@@ -347,6 +368,55 @@ function renderGuestHome() {
         log('вступить в клуб', true, state.user);
         showHikePickerSheet();
     });
+
+    // цитата-нажималка
+    const textEl = document.getElementById('guestCtaQuoteText');
+    const dotsEl = document.getElementById('guestCtaDots');
+    const quoteWrap = document.getElementById('guestCtaQuote');
+    if (textEl && dotsEl && quoteWrap) {
+        let qIdx = Math.floor(Math.random() * GUEST_QUOTES.length);
+        dotsEl.innerHTML = GUEST_QUOTES.map((_, i) => `<span class="dot"></span>`).join('');
+        const dots = dotsEl.querySelectorAll('.dot');
+
+        const showQ = (i, track = false) => {
+            qIdx = ((i % GUEST_QUOTES.length) + GUEST_QUOTES.length) % GUEST_QUOTES.length;
+            textEl.classList.add('fading');
+            setTimeout(() => {
+                textEl.textContent = `«${GUEST_QUOTES[qIdx]}»`;
+                textEl.classList.remove('fading');
+                dots.forEach((d, di) => d.classList.toggle('active', di === qIdx));
+            }, 220);
+            if (track) log('цитата тык', true, state.user, { idx: String(qIdx) });
+        };
+
+        const startAuto = () => {
+            clearTimeout(_ctaTimer);
+            _ctaTimer = setTimeout(() => { showQ(qIdx + 1); startAuto(); }, 5500);
+        };
+
+        showQ(qIdx);
+        startAuto();
+
+        quoteWrap.addEventListener('click', () => {
+            haptic();
+            showQ(qIdx + 1, true);
+            startAuto();
+        });
+
+        // дефицит (реальные данные)
+        const scarcEl = document.getElementById('guestCtaScarcity');
+        if (scarcEl) {
+            const left = parseInt(state.popupConfig?.cardsLeft, 10);
+            if (left > 0) {
+                const months = ['январе','феврале','марте','апреле','мае','июне','июле','августе','сентябре','октябре','ноябре','декабре'];
+                const m = months[new Date().getMonth()];
+                const word = left === 1 ? 'карта' : left < 5 ? 'карты' : 'карт';
+                scarcEl.innerHTML = `осталось <strong>${left}</strong> ${word} в ${m}`;
+            } else {
+                scarcEl.remove();
+            }
+        }
+    }
 
     // новичкам
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {

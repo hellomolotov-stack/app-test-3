@@ -2166,18 +2166,21 @@ export function showHikePickerSheet() {
     `;
     document.body.appendChild(pickerOverlay);
     requestAnimationFrame(() => {
-        pickerOverlay.classList.add('active');
-        pickerOverlay.querySelector('.bottom-sheet')?.classList.add('active');
+        pickerOverlay.classList.add('visible');
+        pickerOverlay.querySelector('.bottom-sheet')?.classList.add('visible');
     });
     pickerOverlay.addEventListener('click', e => {
         if (e.target.closest('.hike-slide-reg-btn')) {
             const slide = e.target.closest('.hike-slide');
-            pickerOverlay.remove();
+            pickerOverlay.classList.remove('visible');
+            pickerOverlay.querySelector('.bottom-sheet')?.classList.remove('visible');
+            setTimeout(() => pickerOverlay.remove(), 400);
             showGuestBookingPopup(slide.dataset.date, slide.dataset.title);
             return;
         }
         if (e.target === pickerOverlay) {
-            pickerOverlay.querySelector('.bottom-sheet').style.transform = 'translateY(100%)';
+            pickerOverlay.classList.remove('visible');
+            pickerOverlay.querySelector('.bottom-sheet')?.classList.remove('visible');
             setTimeout(() => pickerOverlay.remove(), 400);
         }
     });

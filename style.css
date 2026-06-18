@@ -191,9 +191,62 @@ body::before {
     width: calc(100% - 32px);
     height: auto;
     display: block;
-    margin: 0 16px 8px 16px;
+    margin: 0 16px 0 16px;
     border: none;
     outline: none;
+}
+.guest-card-cta {
+    padding: 14px 16px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.guest-cta-quote {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+.guest-cta-quote-text {
+    font-size: 13px;
+    font-style: italic;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.55;
+    display: block;
+    transition: opacity 0.22s ease;
+}
+.guest-cta-quote-text.fading {
+    opacity: 0;
+}
+.guest-cta-dots {
+    display: flex;
+    gap: 5px;
+    margin-top: 9px;
+    align-items: center;
+}
+.guest-cta-dots .dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    transition: background 0.3s, width 0.3s, border-radius 0.3s;
+    flex-shrink: 0;
+}
+.guest-cta-dots .dot.active {
+    width: 14px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.65);
+}
+.guest-cta-scarcity {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 0.01em;
+}
+.guest-cta-scarcity strong {
+    color: var(--yellow);
+    font-weight: 700;
+}
+.guest-card-btn-wrap {
+    padding: 0 16px 4px;
 }
 
 .hike-counter {
