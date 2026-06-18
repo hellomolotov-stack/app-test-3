@@ -421,7 +421,7 @@ function renderGuestHome() {
 
             const chatBtn = document.createElement('button');
             chatBtn.className = 'gc-chip-chat';
-            chatBtn.textContent = '💬 в чат';
+            chatBtn.textContent = 'в чат';
             chatBtn.addEventListener('click', () => {
                 haptic();
                 log('в чат из qa', true, state.user);

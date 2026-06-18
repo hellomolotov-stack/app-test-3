@@ -347,22 +347,24 @@ body::before {
     justify-content: flex-end;
 }
 .gc-chip-chat {
-    padding: 7px 13px;
+    padding: 7px 15px;
     border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: transparent;
-    color: rgba(255,255,255,0.55);
-    font-size: 13px;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px) saturate(110%);
+    -webkit-backdrop-filter: blur(12px) saturate(110%);
+    color: rgba(255,255,255,0.75);
+    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: border-color 0.18s, color 0.18s, transform 0.1s;
+    transition: background 0.18s, border-color 0.18s, transform 0.1s;
     white-space: nowrap;
     flex-shrink: 0;
 }
 .gc-chip-chat:active {
-    border-color: rgba(255,255,255,0.4);
-    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.14);
+    border-color: rgba(255,255,255,0.3);
     transform: scale(0.96);
 }
 .gc-chip {

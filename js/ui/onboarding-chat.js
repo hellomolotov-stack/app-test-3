@@ -8,7 +8,7 @@ import { haptic, openLink, formatDateForDisplay, tg, scrollToElement } from '../
 import { log, registerWebAppUser } from '../api.js';
 import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
-import { getAvailableCardsCount, showHikePickerSheet } from './calendar.js';
+import { getAvailableCardsCount, showBottomSheet } from './calendar.js';
 import { renderHome } from './home.js';
 
 const SUPPORT = 'https://t.me/hellointelligent';
@@ -428,7 +428,13 @@ async function onOption(opt, fromNodeId) {
         const isGuest = state.userCard?.status !== 'active';
         if (isGuest) {
             closeChat();
-            setTimeout(() => showHikePickerSheet(), 450);
+            setTimeout(() => {
+                const today = new Date(); today.setHours(0,0,0,0);
+                const idx = (state.hikesWithTitle || []).findIndex(
+                    h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today
+                );
+                if (idx >= 0) showBottomSheet(idx);
+            }, 450);
         } else {
             goToCalendar();
         }
