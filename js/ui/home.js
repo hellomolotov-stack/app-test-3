@@ -428,7 +428,7 @@ function renderGuestHome() {
             chip.addEventListener('click', () => {
                 haptic();
                 log('пойти на хайк из qa', true, state.user);
-                showHikePickerSheet();
+                showGuestBookingPopup(nextHike?.date, nextHike?.title);
             });
             gcChips.appendChild(chip);
         };
