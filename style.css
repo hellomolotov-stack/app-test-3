@@ -201,21 +201,58 @@ body::before {
     flex-direction: column;
     gap: 8px;
 }
-.guest-cta-quote {
+.guest-qa-wrap {
+    transition: opacity 0.2s ease;
+}
+.guest-qa-question {
+    font-size: 13px;
+    font-style: italic;
+    color: rgba(255,255,255,0.72);
+    line-height: 1.45;
+    margin-bottom: 8px;
+}
+.guest-qa-spoiler {
+    position: relative;
+    display: inline-block;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
 }
-.guest-cta-quote-text {
-    font-size: 13px;
-    font-style: italic;
-    color: rgba(255,255,255,0.72);
-    line-height: 1.55;
+.guest-qa-answer {
     display: block;
-    transition: opacity 0.22s ease;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--yellow);
+    filter: blur(6px);
+    transition: filter 0.35s ease;
+    padding: 2px 0;
+    line-height: 1.3;
 }
-.guest-cta-quote-text.fading {
+.guest-qa-spoiler.qa-revealed .guest-qa-answer {
+    filter: blur(0);
+}
+.guest-qa-veil {
+    position: absolute;
+    inset: -5px -10px;
+    background: rgba(217, 253, 25, 0.07);
+    border: 1px solid rgba(217, 253, 25, 0.18);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.42);
+    letter-spacing: 0.04em;
+    transition: opacity 0.3s ease;
+}
+.guest-qa-veil-arrow {
+    opacity: 0.55;
+}
+.guest-qa-spoiler.qa-revealed .guest-qa-veil {
     opacity: 0;
+    pointer-events: none;
 }
 .guest-cta-dots {
     display: flex;

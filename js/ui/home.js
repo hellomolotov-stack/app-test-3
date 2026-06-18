@@ -298,14 +298,13 @@ async function showGuestMastermindPopup() {
 let _hikePreviewUnsub = null;
 let _ctaTimer = null;
 
-const GUEST_QUOTES = [
-    'вернуться с которого тем, кем ты начинал – не получится',
-    'мы не хотим, чтобы ты платил за искренность знакомства',
-    'без масок социальных статусов, без попыток меряться должностями',
-    'выдохнуть заботы, вдохнуть горный воздух',
-    'мы относимся к своей жизни слишком серьёзно',
-    'опыт, который ты получаешь здесь – не получить ни в каком душном Гарварде',
-    'чувство, что хочется кружиться. широко раскинув руки.',
+const GUEST_QA = [
+    { q: 'давно не знакомился по-настоящему?', a: 'у нас нет масок' },
+    { q: 'жизнь стала слишком серьёзной?', a: 'мы играем в неё интересно' },
+    { q: 'не можешь найти своих людей?', a: 'они уже здесь' },
+    { q: 'когда последний раз делал что-то впервые?', a: 'первый хайк – бесплатно' },
+    { q: 'устал от показухи?', a: 'у нас всё настоящее' },
+    { q: 'хочется кружиться с раскинутыми руками?', a: '300 метров над Ялтой' },
 ];
 
 function renderGuestHome() {
@@ -328,10 +327,14 @@ function renderGuestHome() {
         <div class="card-container" id="cardBlock">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="guest-card-cta">
-                <div class="guest-cta-quote" id="guestCtaQuote">
-                    <span class="guest-cta-quote-text" id="guestCtaQuoteText"></span>
-                    <div class="guest-cta-dots" id="guestCtaDots"></div>
+                <div class="guest-qa-wrap" id="guestQaWrap">
+                    <div class="guest-qa-question" id="guestQaQuestion"></div>
+                    <div class="guest-qa-spoiler" id="guestQaSpoiler">
+                        <span class="guest-qa-answer" id="guestQaAnswer"></span>
+                        <div class="guest-qa-veil" id="guestQaVeil">нажми <span class="guest-qa-veil-arrow">→</span></div>
+                    </div>
                 </div>
+                <div class="guest-cta-dots" id="guestCtaDots"></div>
                 <div class="guest-cta-scarcity" id="guestCtaScarcity"></div>
             </div>
             <div class="guest-card-btn-wrap">
@@ -366,42 +369,57 @@ function renderGuestHome() {
     document.getElementById('guestJoinClubBtn')?.addEventListener('click', () => {
         haptic();
         log('вступить в клуб', true, state.user);
-        showHikePickerSheet();
+        showGuestBookingPopup(nextHike?.date, nextHike?.title);
     });
 
-    // цитата-нажималка
-    const textEl = document.getElementById('guestCtaQuoteText');
+    // Q&A игровая механика
+    const qaWrap = document.getElementById('guestQaWrap');
+    const qaQ = document.getElementById('guestQaQuestion');
+    const qaA = document.getElementById('guestQaAnswer');
+    const qaSpoiler = document.getElementById('guestQaSpoiler');
     const dotsEl = document.getElementById('guestCtaDots');
-    const quoteWrap = document.getElementById('guestCtaQuote');
-    if (textEl && dotsEl && quoteWrap) {
-        let qIdx = Math.floor(Math.random() * GUEST_QUOTES.length);
-        dotsEl.innerHTML = GUEST_QUOTES.map((_, i) => `<span class="dot"></span>`).join('');
+
+    if (qaQ && qaA && qaSpoiler) {
+        let qaIdx = 0;
+        let revealed = false;
+
+        dotsEl.innerHTML = GUEST_QA.map(() => '<span class="dot"></span>').join('');
         const dots = dotsEl.querySelectorAll('.dot');
 
-        const showQ = (i, track = false) => {
-            qIdx = ((i % GUEST_QUOTES.length) + GUEST_QUOTES.length) % GUEST_QUOTES.length;
-            textEl.classList.add('fading');
-            setTimeout(() => {
-                textEl.textContent = `«${GUEST_QUOTES[qIdx]}»`;
-                textEl.classList.remove('fading');
-                dots.forEach((d, di) => d.classList.toggle('active', di === qIdx));
-            }, 220);
-            if (track) log('цитата тык', true, state.user, { idx: String(qIdx) });
-        };
-
-        const startAuto = () => {
+        const showPair = (i) => {
             clearTimeout(_ctaTimer);
-            _ctaTimer = setTimeout(() => { showQ(qIdx + 1); startAuto(); }, 5500);
+            qaIdx = ((i % GUEST_QA.length) + GUEST_QA.length) % GUEST_QA.length;
+            revealed = false;
+            const pair = GUEST_QA[qaIdx];
+
+            qaWrap.style.opacity = '0';
+            setTimeout(() => {
+                qaQ.textContent = pair.q;
+                qaA.textContent = pair.a;
+                qaSpoiler.classList.remove('qa-revealed');
+                dots.forEach((d, di) => d.classList.toggle('active', di === qaIdx));
+                qaWrap.style.opacity = '1';
+            }, 200);
+
+            _ctaTimer = setTimeout(() => showPair(qaIdx + 1), 7000);
         };
 
-        showQ(qIdx);
-        startAuto();
-
-        quoteWrap.addEventListener('click', () => {
+        const revealAnswer = () => {
+            if (revealed) return;
+            revealed = true;
+            clearTimeout(_ctaTimer);
             haptic();
-            showQ(qIdx + 1, true);
-            startAuto();
+            qaSpoiler.classList.add('qa-revealed');
+            log('qa открыл', true, state.user, { idx: String(qaIdx) });
+            _ctaTimer = setTimeout(() => showPair(qaIdx + 1), 3000);
+        };
+
+        qaSpoiler.addEventListener('click', () => {
+            if (!revealed) revealAnswer();
+            else { clearTimeout(_ctaTimer); showPair(qaIdx + 1); }
         });
+
+        showPair(0);
 
         // дефицит (реальные данные)
         const scarcEl = document.getElementById('guestCtaScarcity');
