@@ -247,8 +247,14 @@ body::before {
 .guest-chat {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 14px 16px 12px;
+    gap: 12px;
+    padding: 0 16px 12px;
+}
+.gc-inner {
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 14px;
 }
 .gc-viewport {
     overflow: hidden;

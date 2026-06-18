@@ -335,8 +335,10 @@ function renderGuestHome() {
         </div>
         <div class="card-container" id="chatBlock">
             <div class="guest-chat">
-                <div class="gc-viewport">
-                    <div class="gc-thread" id="gcThread"></div>
+                <div class="gc-inner">
+                    <div class="gc-viewport">
+                        <div class="gc-thread" id="gcThread"></div>
+                    </div>
                 </div>
                 <div class="gc-chips" id="gcChips"></div>
                 <div class="guest-cta-scarcity" id="guestCtaScarcity"></div>
