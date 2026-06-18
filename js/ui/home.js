@@ -325,12 +325,20 @@ function renderGuestHome() {
 
     const cardHtml = `
         <div class="card-container" id="cardBlock">
-            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-            <div class="guest-card-cta">
-                <div class="guest-chat">
-                    <div class="gc-thread" id="gcThread"></div>
-                    <div class="gc-chips" id="gcChips"></div>
+            <div class="card-image-wrap">
+                <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+                <div class="card-badge" id="cardBadge">
+                    <span class="card-badge-label">🔒 карта интеллигента</span>
+                    <button class="card-badge-btn" id="cardBadgeBtn">как получить?</button>
                 </div>
+            </div>
+        </div>
+        <div class="card-container" id="chatBlock">
+            <div class="guest-chat">
+                <div class="gc-viewport">
+                    <div class="gc-thread" id="gcThread"></div>
+                </div>
+                <div class="gc-chips" id="gcChips"></div>
                 <div class="guest-cta-scarcity" id="guestCtaScarcity"></div>
             </div>
         </div>
@@ -359,6 +367,12 @@ function renderGuestHome() {
     `;
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
+    document.getElementById('cardBadgeBtn')?.addEventListener('click', () => {
+        haptic();
+        log('как получить карту', true, state.user);
+        showGuestBookingPopup(nextHike?.date, nextHike?.title);
+    });
+
     // Q&A диалог с кнопками-ответами
     const gcThread = document.getElementById('gcThread');
     const gcChips = document.getElementById('gcChips');
@@ -390,33 +404,67 @@ function renderGuestHome() {
             });
         };
 
+        const showHikeChip = () => {
+            if (!nextHike) return;
+            const chip = document.createElement('button');
+            chip.className = 'gc-chip gc-chip-hike';
+            chip.textContent = 'пойти на хайк →';
+            chip.addEventListener('click', () => {
+                haptic();
+                log('пойти на хайк из qa', true, state.user);
+                showHikePickerSheet();
+            });
+            gcChips.appendChild(chip);
+        };
+
         const startRound = (i) => {
             clearTimeout(_ctaTimer);
             qaIdx = ((i % GUEST_QA.length) + GUEST_QA.length) % GUEST_QA.length;
             busy = false;
             const pair = GUEST_QA[qaIdx];
 
-            gcThread.innerHTML = '';
-            gcChips.innerHTML = '';
-            addBubble(pair.q, 'gc-in');
-
-            showChips(pair.btns, (picked) => {
-                if (busy) return;
-                busy = true;
+            gcThread.classList.add('gc-thread-exit');
+            setTimeout(() => {
+                gcThread.classList.remove('gc-thread-exit');
+                gcThread.innerHTML = '';
                 gcChips.innerHTML = '';
-                addBubble(picked, 'gc-out');
-                log('qa ответ', true, state.user, { idx: String(qaIdx), btn: picked });
+                addBubble(pair.q, 'gc-in');
 
-                const typingRow = addBubble('', 'gc-typing');
-                setTimeout(() => {
-                    typingRow.remove();
-                    addBubble(pair.a, 'gc-in gc-answer');
-                    _ctaTimer = setTimeout(() => startRound(qaIdx + 1), 3500);
-                }, 900);
-            });
+                showChips(pair.btns, (picked) => {
+                    if (busy) return;
+                    busy = true;
+                    gcChips.innerHTML = '';
+                    addBubble(picked, 'gc-out');
+                    log('qa ответ', true, state.user, { idx: String(qaIdx), btn: picked });
+
+                    const typingRow = addBubble('', 'gc-typing');
+                    setTimeout(() => {
+                        typingRow.remove();
+                        addBubble(pair.a, 'gc-in gc-answer');
+                        showHikeChip();
+                        _ctaTimer = setTimeout(() => startRound(qaIdx + 1), 5000);
+                    }, 900);
+                });
+            }, 350);
         };
 
-        startRound(qaIdx);
+        // первый раунд без exit-анимации
+        const pair = GUEST_QA[qaIdx];
+        addBubble(pair.q, 'gc-in');
+        showChips(pair.btns, (picked) => {
+            if (busy) return;
+            busy = true;
+            gcChips.innerHTML = '';
+            addBubble(picked, 'gc-out');
+            log('qa ответ', true, state.user, { idx: String(qaIdx), btn: picked });
+            const typingRow = addBubble('', 'gc-typing');
+            setTimeout(() => {
+                typingRow.remove();
+                addBubble(pair.a, 'gc-in gc-answer');
+                showHikeChip();
+                _ctaTimer = setTimeout(() => startRound(qaIdx + 1), 5000);
+            }, 900);
+        });
 
         // дефицит (реальные данные)
         const scarcEl = document.getElementById('guestCtaScarcity');

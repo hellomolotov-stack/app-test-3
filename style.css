@@ -187,13 +187,55 @@ body::before {
     box-shadow: var(--glass-highlight), var(--glass-shadow);
 }
 
+.card-image-wrap {
+    position: relative;
+    margin: 0 16px;
+}
 .card-image {
-    width: calc(100% - 32px);
+    width: 100%;
     height: auto;
     display: block;
-    margin: 0 16px 0 16px;
     border: none;
     outline: none;
+}
+.card-badge {
+    position: absolute;
+    bottom: 12px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 8px 8px 14px;
+    border-radius: 14px;
+    background: rgba(20, 20, 20, 0.55);
+    backdrop-filter: blur(18px) saturate(120%);
+    -webkit-backdrop-filter: blur(18px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.card-badge-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+}
+.card-badge-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: none;
+    background: var(--yellow);
+    color: #111;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    flex-shrink: 0;
+}
+.card-badge-btn:active {
+    opacity: 0.85;
+    transform: scale(0.97);
 }
 .guest-card-cta {
     padding: 16px 16px 12px;
@@ -206,12 +248,23 @@ body::before {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding: 14px 16px 12px;
+}
+.gc-viewport {
+    overflow: hidden;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14%, black 100%);
 }
 .gc-thread {
     display: flex;
     flex-direction: column;
     gap: 7px;
     min-height: 44px;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+}
+.gc-thread-exit {
+    transform: translateY(-20px);
+    opacity: 0;
 }
 .gc-row {
     display: flex;
@@ -294,6 +347,14 @@ body::before {
     color: #15170a;
     border-color: var(--yellow);
     transform: scale(0.96);
+}
+.gc-chip-hike {
+    background: var(--yellow);
+    color: #15170a;
+    border-color: var(--yellow);
+}
+.gc-chip-hike:active {
+    opacity: 0.85;
 }
 .guest-cta-scarcity {
     font-size: 12px;
