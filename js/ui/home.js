@@ -92,8 +92,8 @@ export function renderUserBookings(container) {
             container.innerHTML = `
                 <div class="card-container" id="userBookingsCard">
                     <h2 class="section-title">🎫 мои записи</h2>
-                    <div style="margin: 0 16px 12px; padding: 14px; background: rgba(255,255,255,0.07); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
-                        <span style="color: rgba(255,255,255,0.45); font-size: 14px;">здесь будут твои записи на хайки и события</span>
+                    <div style="margin: 0 16px 12px; padding: 14px; background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(110%); -webkit-backdrop-filter: blur(16px) saturate(110%); border-radius: 14px; border: 1px solid rgba(255,255,255,0.18); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);">
+                        <span style="color: #ffffff; font-size: 14px;">здесь будут твои записи на хайки и события</span>
                     </div>
                 </div>
             `;
