@@ -5,7 +5,7 @@ import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, mountHikePreviewCard } from './calendar.js';
+import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -312,14 +312,15 @@ function renderGuestHome() {
         h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today
     ) || null;
 
-    const previewHtml = nextHike
-        ? `<div class="card-container hike-preview-card" id="hikePreviewCard"></div>`
-        : `<div class="card-container" id="cardBlock">
-               <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-           </div>`;
+    const cardHtml = `
+        <div class="card-container" id="cardBlock">
+            <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
+            <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
+        </div>
+    `;
 
     main.innerHTML = `
-        ${previewHtml}
+        ${cardHtml}
         <div id="userBookingsContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -340,14 +341,12 @@ function renderGuestHome() {
         ${renderUpdatesBlock()}
     `;
 
-    // превью хайка — монтируем живую карточку
-    if (nextHike) {
-        _hikePreviewUnsub = mountHikePreviewCard('hikePreviewCard', nextHike, () => {
-            log('hero записаться', true, state.user);
-            showHikePickerSheet();
-        });
-    }
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
+    document.getElementById('guestJoinClubBtn')?.addEventListener('click', () => {
+        haptic();
+        log('вступить в клуб', true, state.user);
+        showHikePickerSheet();
+    });
 
     // новичкам
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
