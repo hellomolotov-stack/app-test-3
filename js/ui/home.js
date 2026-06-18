@@ -332,9 +332,10 @@ function renderGuestHome() {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const nextHike = (state.hikesWithTitle || []).find(
+    const nextHikeIdx = (state.hikesWithTitle || []).findIndex(
         h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today
-    ) || null;
+    );
+    const nextHike = nextHikeIdx >= 0 ? state.hikesWithTitle[nextHikeIdx] : null;
 
     const cardHtml = `
         <div class="card-container" id="cardBlock">
@@ -428,7 +429,7 @@ function renderGuestHome() {
             chip.addEventListener('click', () => {
                 haptic();
                 log('пойти на хайк из qa', true, state.user);
-                showGuestBookingPopup(nextHike?.date, nextHike?.title);
+                showBottomSheet(nextHikeIdx);
             });
             gcChips.appendChild(chip);
         };
