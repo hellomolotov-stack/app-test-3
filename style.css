@@ -273,15 +273,17 @@ body::before {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+    justify-content: flex-end;
     min-height: 34px;
 }
 .gc-chip {
     padding: 7px 15px;
     border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.15);
-    background: rgba(255,255,255,0.05);
-    color: rgba(255,255,255,0.8);
+    border: 1px solid rgba(217, 253, 25, 0.35);
+    background: rgba(217, 253, 25, 0.1);
+    color: var(--yellow);
     font-size: 14px;
+    font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     transition: background 0.18s, border-color 0.18s, transform 0.1s;

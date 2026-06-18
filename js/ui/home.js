@@ -333,9 +333,6 @@ function renderGuestHome() {
                 </div>
                 <div class="guest-cta-scarcity" id="guestCtaScarcity"></div>
             </div>
-            <div class="guest-card-btn-wrap">
-                <button class="btn btn-yellow" id="guestJoinClubBtn">вступить в клуб</button>
-            </div>
         </div>
     `;
 
@@ -362,12 +359,6 @@ function renderGuestHome() {
     `;
 
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
-    document.getElementById('guestJoinClubBtn')?.addEventListener('click', () => {
-        haptic();
-        log('вступить в клуб', true, state.user);
-        showGuestBookingPopup(nextHike?.date, nextHike?.title);
-    });
-
     // Q&A диалог с кнопками-ответами
     const gcThread = document.getElementById('gcThread');
     const gcChips = document.getElementById('gcChips');
@@ -378,7 +369,7 @@ function renderGuestHome() {
 
         const addBubble = (text, cls) => {
             const row = document.createElement('div');
-            row.className = 'gc-row ' + (cls === 'gc-out' || cls === 'gc-typing' ? 'gc-row-out' : 'gc-row-in');
+            row.className = 'gc-row ' + (cls === 'gc-out' ? 'gc-row-out' : 'gc-row-in');
             const b = document.createElement('span');
             b.className = 'gc-bub ' + cls;
             if (cls === 'gc-typing') b.innerHTML = '<i></i><i></i><i></i>';
