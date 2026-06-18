@@ -1544,10 +1544,15 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         return new Date(hike.date) < today && state.hikeBookingStatus[idx];
     });
 
+    const firstName = state.user?.first_name || '';
+    const nameLower = firstName.toLowerCase();
+    const isFemale = nameLower.endsWith('а') || nameLower.endsWith('я');
+    const walked = isFemale ? 'ходила' : 'ходил';
+
     const popupTextHtml = isReturning ? `
         <div class="bpu-text">
-            <div class="bpu-line">ты уже был на первом хайке</div>
-            <div class="bpu-line">теперь ты знаешь формат, людей и то, что ждёт впереди</div>
+            <div class="bpu-line bpu-title">соскучились по тебе, ${firstName || 'друг'}</div>
+            <div class="bpu-line">ты уже ${walked} с нами – и знаешь, что ждёт впереди</div>
             <div class="bpu-divider"></div>
             <div class="bpu-line">на следующие хайки разовые билеты не продаём – <em>намеренно</em></div>
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>

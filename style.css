@@ -2140,6 +2140,12 @@ body::before {
     color: rgba(255,255,255,0.85);
     margin-bottom: 4px;
 }
+.bpu-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--yellow);
+    margin-bottom: 10px;
+}
 
 .bpu-line em {
     font-style: italic;
