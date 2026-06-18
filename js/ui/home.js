@@ -299,12 +299,12 @@ let _hikePreviewUnsub = null;
 let _ctaTimer = null;
 
 const GUEST_QA = [
-    { q: 'давно не знакомился по-настоящему?', a: 'у нас нет масок' },
-    { q: 'жизнь стала слишком серьёзной?', a: 'мы играем в неё интересно' },
-    { q: 'не можешь найти своих людей?', a: 'они уже здесь' },
-    { q: 'когда последний раз делал что-то впервые?', a: 'первый хайк – бесплатно' },
-    { q: 'устал от показухи?', a: 'у нас всё настоящее' },
-    { q: 'хочется кружиться с раскинутыми руками?', a: '300 метров над Ялтой' },
+    { q: 'давно не знакомился по-настоящему?', btns: ['давно…', 'а что?'], a: 'у нас нет масок' },
+    { q: 'жизнь стала слишком серьёзной?', btns: ['бывает', 'ещё как'], a: 'мы играем в неё интересно' },
+    { q: 'не можешь найти своих людей?', btns: ['не могу', 'а где они?'], a: 'они уже здесь' },
+    { q: 'когда последний раз делал что-то впервые?', btns: ['не помню…', 'давно'], a: 'первый хайк – бесплатно' },
+    { q: 'устал от показухи?', btns: ['устал', 'очень'], a: 'у нас всё настоящее' },
+    { q: 'хочется кружиться с раскинутыми руками?', btns: ['хочется!', 'а где?'], a: '300 метров над Ялтой' },
 ];
 
 function renderGuestHome() {
@@ -328,14 +328,8 @@ function renderGuestHome() {
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="guest-card-cta">
                 <div class="guest-chat">
-                    <div class="gc-tap" id="gcTap">
-                        <div class="gc-thread" id="gcThread"></div>
-                        <div class="gc-hint" id="gcHint"></div>
-                    </div>
-                    <div class="gc-inputbar" id="guestChatMore">
-                        <span class="gc-input-ph">спросить ещё…</span>
-                        <span class="gc-send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15170a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
-                    </div>
+                    <div class="gc-thread" id="gcThread"></div>
+                    <div class="gc-chips" id="gcChips"></div>
                 </div>
                 <div class="guest-cta-scarcity" id="guestCtaScarcity"></div>
             </div>
@@ -374,66 +368,64 @@ function renderGuestHome() {
         showGuestBookingPopup(nextHike?.date, nextHike?.title);
     });
 
-    // Q&A диалог-крючок
+    // Q&A диалог с кнопками-ответами
     const gcThread = document.getElementById('gcThread');
-    const gcHint = document.getElementById('gcHint');
-    const gcTap = document.getElementById('gcTap');
-    const gcMore = document.getElementById('guestChatMore');
+    const gcChips = document.getElementById('gcChips');
 
-    if (gcThread && gcTap) {
+    if (gcThread && gcChips) {
         let qaIdx = Math.floor(Math.random() * GUEST_QA.length);
-        let revealed = false;
-        let typingRow = null;
+        let busy = false;
 
-        const bubble = (text, type) => {
+        const addBubble = (text, cls) => {
             const row = document.createElement('div');
-            row.className = 'gc-row gc-row-' + (type === 'in' ? 'in' : 'out');
+            row.className = 'gc-row ' + (cls === 'gc-out' || cls === 'gc-typing' ? 'gc-row-out' : 'gc-row-in');
             const b = document.createElement('span');
-            b.className = 'gc-bub gc-' + type;
-            if (type === 'typing') b.innerHTML = '<i></i><i></i><i></i>';
+            b.className = 'gc-bub ' + cls;
+            if (cls === 'gc-typing') b.innerHTML = '<i></i><i></i><i></i>';
             else b.textContent = text;
             row.appendChild(b);
             gcThread.appendChild(row);
             return row;
         };
 
-        const loadQ = (i) => {
+        const showChips = (labels, onPick) => {
+            gcChips.innerHTML = '';
+            labels.forEach(label => {
+                const chip = document.createElement('button');
+                chip.className = 'gc-chip';
+                chip.textContent = label;
+                chip.addEventListener('click', () => { haptic(); onPick(label); });
+                gcChips.appendChild(chip);
+            });
+        };
+
+        const startRound = (i) => {
             clearTimeout(_ctaTimer);
             qaIdx = ((i % GUEST_QA.length) + GUEST_QA.length) % GUEST_QA.length;
-            revealed = false;
-            typingRow = null;
+            busy = false;
+            const pair = GUEST_QA[qaIdx];
+
             gcThread.innerHTML = '';
-            bubble(GUEST_QA[qaIdx].q, 'in');
-            gcHint.textContent = 'нажми, чтобы узнать ответ';
-            gcHint.classList.remove('gc-hint-next');
-            setTimeout(() => { if (!revealed) typingRow = bubble('', 'typing'); }, 600);
+            gcChips.innerHTML = '';
+            addBubble(pair.q, 'gc-in');
+
+            showChips(pair.btns, (picked) => {
+                if (busy) return;
+                busy = true;
+                gcChips.innerHTML = '';
+                addBubble(picked, 'gc-out');
+                log('qa ответ', true, state.user, { idx: String(qaIdx), btn: picked });
+
+                const typingRow = addBubble('', 'gc-typing');
+                setTimeout(() => {
+                    typingRow.remove();
+                    addBubble(pair.a, 'gc-in gc-answer');
+                    _ctaTimer = setTimeout(() => startRound(qaIdx + 1), 3500);
+                }, 900);
+            });
         };
 
-        const revealAnswer = () => {
-            if (revealed) return;
-            revealed = true;
-            clearTimeout(_ctaTimer);
-            haptic();
-            if (typingRow) { typingRow.remove(); typingRow = null; }
-            bubble(GUEST_QA[qaIdx].a, 'out');
-            gcHint.textContent = 'ещё вопрос →';
-            gcHint.classList.add('gc-hint-next');
-            log('qa открыл', true, state.user, { idx: String(qaIdx) });
-            _ctaTimer = setTimeout(() => loadQ(qaIdx + 1), 6500);
-        };
-
-        gcTap.addEventListener('click', () => {
-            if (!revealed) revealAnswer();
-            else { haptic(); loadQ(qaIdx + 1); }
-        });
-
-        gcMore?.addEventListener('click', () => {
-            haptic();
-            log('продолжить в чате', true, state.user);
-            openOnboardingChat();
-        });
-
-        loadQ(qaIdx);
+        startRound(qaIdx);
 
         // дефицит (реальные данные)
         const scarcEl = document.getElementById('guestCtaScarcity');
