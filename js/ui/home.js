@@ -418,13 +418,27 @@ function renderGuestHome() {
 
         const showChips = (labels, onPick) => {
             gcChips.innerHTML = '';
+
+            const chatBtn = document.createElement('button');
+            chatBtn.className = 'gc-chip-chat';
+            chatBtn.textContent = '💬 в чат';
+            chatBtn.addEventListener('click', () => {
+                haptic();
+                log('в чат из qa', true, state.user);
+                openOnboardingChat();
+            });
+            gcChips.appendChild(chatBtn);
+
+            const right = document.createElement('div');
+            right.className = 'gc-chips-right';
             labels.forEach(label => {
                 const chip = document.createElement('button');
                 chip.className = 'gc-chip';
                 chip.textContent = label;
                 chip.addEventListener('click', () => { haptic(); onPick(label); });
-                gcChips.appendChild(chip);
+                right.appendChild(chip);
             });
+            gcChips.appendChild(right);
         };
 
         const showHikeChip = () => {

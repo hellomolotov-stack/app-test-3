@@ -296,8 +296,8 @@ body::before {
     border-bottom-left-radius: 5px;
 }
 .gc-in.gc-answer {
-    color: var(--yellow);
-    font-weight: 600;
+    color: #ffffff;
+    font-weight: 700;
 }
 .gc-out {
     background: var(--yellow);
@@ -336,8 +336,34 @@ body::before {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: space-between;
+    align-items: center;
     min-height: 34px;
+}
+.gc-chips-right {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+.gc-chip-chat {
+    padding: 7px 13px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: transparent;
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: border-color 0.18s, color 0.18s, transform 0.1s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.gc-chip-chat:active {
+    border-color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.85);
+    transform: scale(0.96);
 }
 .gc-chip {
     padding: 7px 15px;
