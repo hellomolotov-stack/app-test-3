@@ -327,14 +327,16 @@ function renderGuestHome() {
         <div class="card-container" id="cardBlock">
             <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
             <div class="guest-card-cta">
-                <div class="guest-qa-wrap" id="guestQaWrap">
-                    <div class="guest-qa-question" id="guestQaQuestion"></div>
-                    <div class="guest-qa-spoiler" id="guestQaSpoiler">
-                        <span class="guest-qa-answer" id="guestQaAnswer"></span>
-                        <div class="guest-qa-veil" id="guestQaVeil">нажми <span class="guest-qa-veil-arrow">→</span></div>
+                <div class="guest-chat">
+                    <div class="gc-tap" id="gcTap">
+                        <div class="gc-thread" id="gcThread"></div>
+                        <div class="gc-hint" id="gcHint"></div>
+                    </div>
+                    <div class="gc-inputbar" id="guestChatMore">
+                        <span class="gc-input-ph">спросить ещё…</span>
+                        <span class="gc-send"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15170a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span>
                     </div>
                 </div>
-                <div class="guest-cta-dots" id="guestCtaDots"></div>
                 <div class="guest-cta-scarcity" id="guestCtaScarcity"></div>
             </div>
             <div class="guest-card-btn-wrap">
@@ -372,36 +374,39 @@ function renderGuestHome() {
         showGuestBookingPopup(nextHike?.date, nextHike?.title);
     });
 
-    // Q&A игровая механика
-    const qaWrap = document.getElementById('guestQaWrap');
-    const qaQ = document.getElementById('guestQaQuestion');
-    const qaA = document.getElementById('guestQaAnswer');
-    const qaSpoiler = document.getElementById('guestQaSpoiler');
-    const dotsEl = document.getElementById('guestCtaDots');
+    // Q&A диалог-крючок
+    const gcThread = document.getElementById('gcThread');
+    const gcHint = document.getElementById('gcHint');
+    const gcTap = document.getElementById('gcTap');
+    const gcMore = document.getElementById('guestChatMore');
 
-    if (qaQ && qaA && qaSpoiler) {
-        let qaIdx = 0;
+    if (gcThread && gcTap) {
+        let qaIdx = Math.floor(Math.random() * GUEST_QA.length);
         let revealed = false;
+        let typingRow = null;
 
-        dotsEl.innerHTML = GUEST_QA.map(() => '<span class="dot"></span>').join('');
-        const dots = dotsEl.querySelectorAll('.dot');
+        const bubble = (text, type) => {
+            const row = document.createElement('div');
+            row.className = 'gc-row gc-row-' + (type === 'in' ? 'in' : 'out');
+            const b = document.createElement('span');
+            b.className = 'gc-bub gc-' + type;
+            if (type === 'typing') b.innerHTML = '<i></i><i></i><i></i>';
+            else b.textContent = text;
+            row.appendChild(b);
+            gcThread.appendChild(row);
+            return row;
+        };
 
-        const showPair = (i) => {
+        const loadQ = (i) => {
             clearTimeout(_ctaTimer);
             qaIdx = ((i % GUEST_QA.length) + GUEST_QA.length) % GUEST_QA.length;
             revealed = false;
-            const pair = GUEST_QA[qaIdx];
-
-            qaWrap.style.opacity = '0';
-            setTimeout(() => {
-                qaQ.textContent = pair.q;
-                qaA.textContent = pair.a;
-                qaSpoiler.classList.remove('qa-revealed');
-                dots.forEach((d, di) => d.classList.toggle('active', di === qaIdx));
-                qaWrap.style.opacity = '1';
-            }, 200);
-
-            _ctaTimer = setTimeout(() => showPair(qaIdx + 1), 7000);
+            typingRow = null;
+            gcThread.innerHTML = '';
+            bubble(GUEST_QA[qaIdx].q, 'in');
+            gcHint.textContent = 'нажми, чтобы узнать ответ';
+            gcHint.classList.remove('gc-hint-next');
+            setTimeout(() => { if (!revealed) typingRow = bubble('', 'typing'); }, 600);
         };
 
         const revealAnswer = () => {
@@ -409,17 +414,26 @@ function renderGuestHome() {
             revealed = true;
             clearTimeout(_ctaTimer);
             haptic();
-            qaSpoiler.classList.add('qa-revealed');
+            if (typingRow) { typingRow.remove(); typingRow = null; }
+            bubble(GUEST_QA[qaIdx].a, 'out');
+            gcHint.textContent = 'ещё вопрос →';
+            gcHint.classList.add('gc-hint-next');
             log('qa открыл', true, state.user, { idx: String(qaIdx) });
-            _ctaTimer = setTimeout(() => showPair(qaIdx + 1), 3000);
+            _ctaTimer = setTimeout(() => loadQ(qaIdx + 1), 6500);
         };
 
-        qaSpoiler.addEventListener('click', () => {
+        gcTap.addEventListener('click', () => {
             if (!revealed) revealAnswer();
-            else { clearTimeout(_ctaTimer); showPair(qaIdx + 1); }
+            else { haptic(); loadQ(qaIdx + 1); }
         });
 
-        showPair(0);
+        gcMore?.addEventListener('click', () => {
+            haptic();
+            log('продолжить в чате', true, state.user);
+            openOnboardingChat();
+        });
+
+        loadQ(qaIdx);
 
         // дефицит (реальные данные)
         const scarcEl = document.getElementById('guestCtaScarcity');
