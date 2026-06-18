@@ -86,8 +86,21 @@ export function renderUserBookings(container) {
     });
 
     if (bookings.length === 0) {
-        const phrase = state.randomPhrases.length > 0 
-            ? state.randomPhrases[Math.floor(Math.random() * state.randomPhrases.length)] 
+        const isGuest = state.userCard?.status !== 'active';
+        if (isGuest) {
+            container.style.display = 'block';
+            container.innerHTML = `
+                <div class="card-container" id="userBookingsCard">
+                    <h2 class="section-title">🎫 мои записи</h2>
+                    <div style="margin: 0 16px 12px; padding: 14px; background: rgba(255,255,255,0.07); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08);">
+                        <span style="color: rgba(255,255,255,0.45); font-size: 14px;">здесь будут твои записи на хайки и события</span>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        const phrase = state.randomPhrases.length > 0
+            ? state.randomPhrases[Math.floor(Math.random() * state.randomPhrases.length)]
             : 'смотреть 5 сезон глухаря или';
         const phraseParts = phrase.split(' или');
         const mainPart = phraseParts[0];
@@ -334,6 +347,7 @@ function renderGuestHome() {
             </div>
         </div>
         <div class="card-container" id="chatBlock">
+            <h2 class="section-title">💬 интеллигентный помощник</h2>
             <div class="guest-chat">
                 <div class="gc-inner">
                     <div class="gc-viewport">
