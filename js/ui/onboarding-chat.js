@@ -524,7 +524,7 @@ export async function openOnboardingChat(autoNext = null) {
     log('открыл чат с ботом', state.userCard.status !== 'active', state.user);
 
     overlay = document.createElement('div');
-    overlay.className = 'bottom-sheet-overlay';
+    overlay.className = 'bottom-sheet-overlay bot-chat-overlay';
     overlay.innerHTML = `
         <div class="bottom-sheet bot-chat-sheet">
             <div class="bottom-sheet-handle"></div>

@@ -1816,6 +1816,10 @@ body::before {
     pointer-events: none;
 }
 
+.bot-chat-overlay {
+    z-index: 1200;
+}
+
 .spots-counter-chip {
     text-align: center;
     padding: 7px 18px;

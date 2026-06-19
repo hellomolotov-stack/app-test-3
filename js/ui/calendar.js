@@ -1279,8 +1279,7 @@ function updateFloatingSheetButtons() {
                 supportLink.addEventListener('click', (e) => {
                     e.preventDefault();
                     haptic();
-                    closeBottomSheet();
-                    setTimeout(() => openOnboardingChat('support'), 350);
+                    openOnboardingChat('support');
                 });
             }
         }, 50);
