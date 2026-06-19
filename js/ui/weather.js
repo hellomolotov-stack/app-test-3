@@ -5,29 +5,54 @@ import { log } from '../api.js';
 
 const CITIES = [
     {
-        name: 'Ялта',      dative: 'Ялте',
+        name: 'Алушта',     dative: 'Алуште',
+        coast:    { lat: 44.6764, lon: 34.4103, elev: 5 },
+        mountain: { lat: 44.7833, lon: 34.3500, elev: 1240, label: 'Демерджи' },
+    },
+    {
+        name: 'Партенит',   dative: 'Партените',
+        coast:    { lat: 44.5567, lon: 34.3522, elev: 5 },
+        mountain: { lat: 44.5417, lon: 34.3083, elev: 565,  label: 'Аю-Даг' },
+    },
+    {
+        name: 'Перевальное', dative: 'Перевальном',
+        coast:    { lat: 44.9178, lon: 34.2833, elev: 380 },
+        mountain: { lat: 44.7333, lon: 34.2500, elev: 1527, label: 'Чатыр-Даг' },
+    },
+    {
+        name: 'Ялта',       dative: 'Ялте',
         coast:    { lat: 44.4987, lon: 34.1598, elev: 5 },
         mountain: { lat: 44.4314, lon: 34.0644, elev: 1200, label: 'Ай-Петри' },
     },
     {
-        name: 'Алупка',    dative: 'Алупке',
+        name: 'Алупка',     dative: 'Алупке',
         coast:    { lat: 44.4119, lon: 34.0503, elev: 10 },
         mountain: { lat: 44.4314, lon: 34.0644, elev: 1200, label: 'Ай-Петри' },
     },
     {
-        name: 'Симеиз',    dative: 'Симеизе',
+        name: 'Симеиз',     dative: 'Симеизе',
         coast:    { lat: 44.3953, lon: 33.9939, elev: 20 },
-        mountain: { lat: 44.4200, lon: 33.9800, elev: 900, label: 'яйла' },
+        mountain: { lat: 44.4200, lon: 33.9800, elev: 900,  label: 'яйла' },
     },
     {
-        name: 'Ласпи',     dative: 'Ласпи',
+        name: 'Ласпи',      dative: 'Ласпи',
         coast:    { lat: 44.4103, lon: 33.7361, elev: 10 },
-        mountain: { lat: 44.4400, lon: 33.7300, elev: 650, label: 'перевал' },
+        mountain: { lat: 44.4400, lon: 33.7300, elev: 650,  label: 'перевал' },
     },
     {
-        name: 'Балаклава', dative: 'Балаклаве',
+        name: 'Форос',      dative: 'Форосе',
+        coast:    { lat: 44.3972, lon: 33.7783, elev: 5 },
+        mountain: { lat: 44.4200, lon: 33.7817, elev: 620,  label: 'Форосский кант' },
+    },
+    {
+        name: 'Балаклава',  dative: 'Балаклаве',
         coast:    { lat: 44.4978, lon: 33.5986, elev: 5 },
-        mountain: { lat: 44.4700, lon: 33.5700, elev: 350, label: 'Фиолент' },
+        mountain: { lat: 44.4700, lon: 33.5700, elev: 350,  label: 'Фиолент' },
+    },
+    {
+        name: 'Резервное',  dative: 'Резервном',
+        coast:    { lat: 44.5067, lon: 33.4961, elev: 10 },
+        mountain: { lat: 44.4800, lon: 33.4700, elev: 280,  label: 'мыс Фиолент' },
     },
 ];
 
