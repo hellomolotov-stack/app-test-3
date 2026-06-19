@@ -16,6 +16,7 @@ import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
+import { openOnboardingChat } from './onboarding-chat.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -1278,7 +1279,7 @@ function updateFloatingSheetButtons() {
                 supportLink.addEventListener('click', (e) => {
                     e.preventDefault();
                     haptic();
-                    openLink('https://t.me/hellointelligent', 'написать нам — мест нет', isGuest);
+                    openOnboardingChat('support');
                 });
             }
         }, 50);
