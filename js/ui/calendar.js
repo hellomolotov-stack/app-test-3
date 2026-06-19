@@ -1390,6 +1390,27 @@ function updateFloatingSheetButtons() {
         return;
     }
 
+    if (!isSoldOut) {
+        const MAX_SPOTS = 12;
+        const spotsLeft = Math.max(0, MAX_SPOTS - bookedCount);
+        const chip = document.createElement('div');
+        chip.className = 'spots-counter-chip';
+        if (bookedCount < 7) {
+            if (bookedCount === 0) {
+                chip.innerHTML = '⛰️ будь первым – запишись';
+            } else {
+                const w = bookedCount === 1 ? 'человек' : bookedCount < 5 ? 'человека' : 'человек';
+                chip.innerHTML = `⛰️ уже идут <strong>${bookedCount}</strong> ${w}`;
+            }
+        } else {
+            const w = getPlaceWord(spotsLeft);
+            chip.innerHTML = spotsLeft > 0
+                ? `👀 осталось <strong>${spotsLeft}</strong> ${w}`
+                : '👀 последние места разобраны';
+        }
+        container.appendChild(chip);
+    }
+
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
     if (swipeControl) {
         container.appendChild(swipeControl);

@@ -1816,6 +1816,28 @@ body::before {
     pointer-events: none;
 }
 
+.spots-counter-chip {
+    flex-basis: 100%;
+    text-align: center;
+    padding: 7px 18px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 13px;
+    font-weight: 500;
+    pointer-events: none;
+    box-sizing: border-box;
+    letter-spacing: 0.01em;
+}
+
+.spots-counter-chip strong {
+    font-weight: 800;
+    font-style: italic;
+}
+
 .calendar-item {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 24px;
