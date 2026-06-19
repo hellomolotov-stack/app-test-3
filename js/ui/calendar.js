@@ -1263,54 +1263,22 @@ function updateFloatingSheetButtons() {
     if (!isPast && available === 0) {
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 8px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box;';
-
-        if (isGuest) {
-            const popupText = (state.popups && state.popups.guest_soldout_message && state.popups.guest_soldout_message.text) || '';
-            let messageHtml = '';
-            if (popupText.trim()) {
-                let text = popupText.replace(/\[имя\]/gi, firstName);
-                text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
-                text = text.replace(/\n/g, '<br>');
-                messageHtml = text;
-            } else {
-                messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
-            }
-            availBlock.innerHTML = `
-                <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4; text-align: center;">
-                    ${messageHtml}
-                </div>
-            `;
-        } else {
-            availBlock.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">осталось:</span>
-                    <span style="font-size: 14px; color: #ffffff;">🎟️ мест нет</span>
-                </div>
-                <div style="font-size: 14px; color: rgba(255,255,255,0.9); margin-top: 4px;">
-                    у тебя карта интеллигента, ты можешь идти даже, когда места закончились
-                </div>
-            `;
-        }
+        availBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 10px 18px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; text-align: center;';
+        availBlock.innerHTML = `
+            <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.6;">
+                👀 места закончились<br>
+                но можно <a href="#" id="supportLinkSoldOut" style="color: var(--yellow); font-weight: 700; text-decoration: none;">написать нам</a> и договориться
+            </div>
+        `;
         container.appendChild(availBlock);
 
         setTimeout(() => {
-            const cardLink = document.getElementById('cardLinkFromAvailability');
-            if (cardLink) {
-                cardLink.addEventListener('click', (e) => {
+            const supportLink = document.getElementById('supportLinkSoldOut');
+            if (supportLink) {
+                supportLink.addEventListener('click', (e) => {
                     e.preventDefault();
-                    log('ссылка на карту из доступности', true, state.user);
-                    renderHome();
-                    setTimeout(() => {
-                        const cardBlock = document.getElementById('cardBlock');
-                        if (cardBlock) {
-                            cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            cardBlock.style.transition = 'box-shadow 0.5s';
-                            cardBlock.style.boxShadow = '0 0 20px 5px white';
-                            setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
-                        }
-                    }, 300);
+                    haptic();
+                    openLink('https://t.me/hellointelligent', 'написать нам — мест нет', isGuest);
                 });
             }
         }, 50);
@@ -1354,25 +1322,6 @@ function updateFloatingSheetButtons() {
         return;
     }
 
-    if (!isBooked && isSoldOut && isGuest) {
-        const nextIndex = sheetCurrentIndex < state.hikesWithTitle.length - 1 ? sheetCurrentIndex + 1 : 0;
-        const nextBtn = document.createElement('button');
-        nextBtn.className = 'btn btn-outline';
-        nextBtn.style.cssText = 'width: calc(100% - 32px); margin: 0 16px; padding: 16px; border-radius: 40px; font-weight: 900; font-size: 16px;';
-        nextBtn.textContent = 'следующий хайк ›';
-        nextBtn.addEventListener('click', () => {
-            haptic();
-            closeParticipantDropdown();
-            closeLeaderDropdown();
-            sheetCurrentIndex = nextIndex;
-            window._participantCount = 0;
-            updateContent();
-            contentWrapper.scrollTop = 0;
-        });
-        container.appendChild(nextBtn);
-        container.style.pointerEvents = 'auto';
-        return;
-    }
 
     if (!isSoldOut) {
         const MAX_SPOTS = 12;
