@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────
 // Актуальный обработчик suggestEvent для doPost() в Apps Script.
 // Убедись что в doPost() есть:
-//   if (action === 'suggestEvent') { ... handleSuggestEvent(params) ... }
+//   if (action === 'suggestEvent') { handleSuggestEvent(params); }
 // ─────────────────────────────────────────────────────────────────
 
 function handleSuggestEvent(params) {
@@ -36,10 +36,50 @@ function handleSuggestEvent(params) {
 
   sheet.appendRow([
     mskTime,
-    params.user_id  || '',
+    params.user_id        || '',
     params.username ? '@' + params.username : '',
     params.event_title       || '',
     params.event_description || '',
     params.event_datetime    || ''
   ]);
+
+  sendSuggestEventNotification(params);
+}
+
+function sendSuggestEventNotification(params) {
+  var token = getBotToken();
+  var adminChatId = PropertiesService.getScriptProperties().getProperty('ADMIN_CHAT_ID');
+  if (!token || !adminChatId) return;
+
+  var username = params.username || '';
+  var userId   = params.user_id  || '';
+  var userLink = username
+    ? '<a href="https://t.me/' + username + '">' + username + '</a> (@' + username + ')'
+    : 'id ' + userId;
+
+  var text = '💡 <b>Новое предложение события</b>\n\n'
+    + '👤 ' + userLink + '\n'
+    + '🎯 Название: ' + (params.event_title       || '—') + '\n'
+    + '📝 Описание: ' + (params.event_description || '—') + '\n'
+    + '📅 Предлагаемая дата: ' + (params.event_datetime || '—');
+
+  var payload = {
+    chat_id:    adminChatId,
+    text:       text,
+    parse_mode: 'HTML'
+  };
+
+  try {
+    UrlFetchApp.fetch(
+      'https://api.telegram.org/bot' + token + '/sendMessage',
+      {
+        method:           'post',
+        contentType:      'application/json',
+        payload:          JSON.stringify(payload),
+        muteHttpExceptions: true
+      }
+    );
+  } catch(e) {
+    Logger.log('sendSuggestEventNotification error: ' + e);
+  }
 }
