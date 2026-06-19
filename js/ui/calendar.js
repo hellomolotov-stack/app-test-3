@@ -632,7 +632,7 @@ export function showBottomSheet(index) {
                     }
                 }
                 const imageContainer = contentWrapper.querySelector('.image-container');
-                const isSoldOut = count >= 15;
+                const isSoldOut = count >= 12;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
                 window._participantCount = count;
                 updateFloatingSheetButtons();
@@ -651,7 +651,7 @@ export function showBottomSheet(index) {
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');
-        const isSoldOut = (window._participantCount || 0) >= 15 && !isPast;
+        const isSoldOut = (window._participantCount || 0) >= 12 && !isPast;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
         const participantCounterEl = document.getElementById('participantCounter');
@@ -1254,7 +1254,7 @@ function updateFloatingSheetButtons() {
         accentColor = 'var(--yellow)';
     }
     const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-    const MAX_TICKETS = 15;
+    const MAX_TICKETS = 12;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
     const isSoldOut = bookedCount >= MAX_TICKETS;
