@@ -1260,52 +1260,36 @@ function updateFloatingSheetButtons() {
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    if (!isPast && available <= 5) {
-        const ticketWord = available === 0 ? 'мест нет' : `${available} ${getPlaceWord(available)}`;
-        const progressPercent = Math.round((available / MAX_TICKETS) * 100);
+    if (!isPast && available === 0) {
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
         availBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 8px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box;';
 
-        if (available === 0) {
-            if (isGuest) {
-                const popupText = (state.popups && state.popups.guest_soldout_message && state.popups.guest_soldout_message.text) || '';
-                let messageHtml = '';
-                if (popupText.trim()) {
-                    let text = popupText.replace(/\[имя\]/gi, firstName);
-                    text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
-                    text = text.replace(/\n/g, '<br>');
-                    messageHtml = text;
-                } else {
-                    messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
-                }
-                availBlock.innerHTML = `
-                    <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4; text-align: center;">
-                        ${messageHtml}
-                    </div>
-                `;
+        if (isGuest) {
+            const popupText = (state.popups && state.popups.guest_soldout_message && state.popups.guest_soldout_message.text) || '';
+            let messageHtml = '';
+            if (popupText.trim()) {
+                let text = popupText.replace(/\[имя\]/gi, firstName);
+                text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;">$1</a>');
+                text = text.replace(/\n/g, '<br>');
+                messageHtml = text;
             } else {
-                availBlock.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">осталось:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-                    </div>
-                    <div style="font-size: 14px; color: rgba(255,255,255,0.9); margin-top: 4px;">
-                        у тебя карта интеллигента, ты можешь идти даже, когда места закончились
-                    </div>
-                `;
+                messageHtml = `места закончились, ${firstName} 👀<br>мы собрали полную группу. если кто-то отменит – сможешь записаться.<br>чтобы не ждать случая, ты можешь выпустить именную <a href="#" class="dynamic-link" style="color: #D9FD19 !important; text-decoration: none; font-weight: 700; font-style: italic;" id="cardLinkFromAvailability">карту интеллигента</a> и ходить с нами на хайки даже если мест нет`;
             }
+            availBlock.innerHTML = `
+                <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.4; text-align: center;">
+                    ${messageHtml}
+                </div>
+            `;
         } else {
             availBlock.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">осталось:</span>
-                        <span style="font-size: 14px; color: #ffffff;">🎟️ ${ticketWord}</span>
-                    </div>
-                    <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; overflow: hidden;">
-                        <div style="width: ${progressPercent}%; height: 100%; background: ${accentColor}; border-radius: 4px; transition: width 0.3s;"></div>
-                    </div>
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                    <span style="font-size: 12px; font-weight: 900; font-style: italic; color: ${accentColor};">осталось:</span>
+                    <span style="font-size: 14px; color: #ffffff;">🎟️ мест нет</span>
+                </div>
+                <div style="font-size: 14px; color: rgba(255,255,255,0.9); margin-top: 4px;">
+                    у тебя карта интеллигента, ты можешь идти даже, когда места закончились
                 </div>
             `;
         }
