@@ -578,8 +578,8 @@ export function showBottomSheet(index) {
         }
 
         if (!isCancelled && !isPlaceholder) {
-            const updateAvatars = async (participants) => {
-                const count = participants.length;
+            const updateAvatars = async (participants, totalCount) => {
+                const count = totalCount !== undefined ? totalCount : participants.length;
                 const countEl = contentWrapper.querySelector('#participantCountValue');
                 const avatarsEl = contentWrapper.querySelector('#participantAvatars');
                 if (countEl) {
@@ -643,7 +643,7 @@ export function showBottomSheet(index) {
             } else {
                 if (currentUnsubscribe) currentUnsubscribe();
                 currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
-                    updateAvatars(participants);
+                    updateAvatars(participants, count);
                 });
             }
         }
@@ -1393,6 +1393,8 @@ function updateFloatingSheetButtons() {
     if (!isSoldOut) {
         const MAX_SPOTS = 12;
         const spotsLeft = Math.max(0, MAX_SPOTS - bookedCount);
+        const chipRow = document.createElement('div');
+        chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none;';
         const chip = document.createElement('div');
         chip.className = 'spots-counter-chip';
         if (bookedCount < 7) {
@@ -1408,7 +1410,8 @@ function updateFloatingSheetButtons() {
                 ? `👀 осталось <strong>${spotsLeft}</strong> ${w}`
                 : '👀 последние места разобраны';
         }
-        container.appendChild(chip);
+        chipRow.appendChild(chip);
+        container.appendChild(chipRow);
     }
 
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
