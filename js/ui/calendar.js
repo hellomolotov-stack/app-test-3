@@ -303,7 +303,7 @@ function initHikeMap(el, track) {
         if (d < best) { best = d; ni = k; }
     }
     const line = [LAKE].concat(C.slice(ni));
-    const map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false, tap: false, keyboard: false });
+    const map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: true, touchZoom: true, doubleClickZoom: false, keyboard: false });
     el.style.background = '#0A0B09'; // инлайн перебивает дефолтный светлый фон Leaflet (.leaflet-container)
     currentHikeMap = map;
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 20, detectRetina: true }).addTo(map);
@@ -315,6 +315,12 @@ function initHikeMap(el, track) {
     const fit = () => { try { map.invalidateSize(); map.fitBounds(poly.getBounds(), { paddingTopLeft: [28, 52], paddingBottomRight: [28, 28] }); } catch (e) {} };
     setTimeout(fit, 160);
     setTimeout(fit, 520);
+    // символичная подсказка-свайп: два маркера расходятся в стороны (карту можно тянуть)
+    const hint = document.createElement('div');
+    hint.className = 'map-swipe-hint';
+    hint.innerHTML = '<div class="mh-dot mh-l">‹</div><div class="mh-dot mh-r">›</div>';
+    el.appendChild(hint);
+    setTimeout(() => { hint.remove(); }, 2900);
 }
 
 let sheetCurrentIndex = 0;
@@ -1179,6 +1185,24 @@ function updateFloatingSheetButtons() {
     const isGuest = state.userCard.status !== 'active';
     const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
 
+    // Фазы по времени в день хайка:
+    //   запись закрыта  — через час после старта и до 20:00
+    //   хайк завершён    — после 20:00 того же дня
+    let isClosedRegistration = false;
+    let isCompletedToday = false;
+    if (!isPast && !isCancelled && !isPlaceholder && hike.start_time) {
+        const tm = String(hike.start_time).match(/(\d{1,2})[:.](\d{2})/);
+        const dp = String(hike.date).split('-').map(Number);
+        if (tm && dp.length === 3) {
+            const startDT = new Date(dp[0], dp[1] - 1, dp[2], Number(tm[1]), Number(tm[2]));
+            const closedDT = new Date(startDT.getTime() + 60 * 60 * 1000);
+            const completedDT = new Date(dp[0], dp[1] - 1, dp[2], 20, 0);
+            const now = new Date();
+            if (now >= completedDT) isCompletedToday = true;
+            else if (now >= closedDT) isClosedRegistration = true;
+        }
+    }
+
     container.innerHTML = '';
 
     // Городские события: для гостей – баннеры, для владельцев карт – свайп-контрол
@@ -1332,7 +1356,7 @@ function updateFloatingSheetButtons() {
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    if (!isPast && available === 0) {
+    if (!isPast && !isClosedRegistration && !isCompletedToday && available === 0) {
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
         availBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 10px 18px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; text-align: center;';
@@ -1356,7 +1380,7 @@ function updateFloatingSheetButtons() {
         }, 50);
     }
 
-    if (isPast) {
+    if (isPast || isCompletedToday) {
         const row = document.createElement('div');
         row.style.display = 'flex';
         row.style.gap = '12px';
@@ -1366,7 +1390,7 @@ function updateFloatingSheetButtons() {
         const completedBtn = document.createElement('a');
         completedBtn.href = '#';
         completedBtn.className = 'btn btn-outline';
-        completedBtn.textContent = isCity ? 'событие завершено' : 'хайк завершен';
+        completedBtn.textContent = isCity ? 'событие завершено' : 'хайк завершён';
         completedBtn.style.pointerEvents = 'none';
         row.appendChild(completedBtn);
 
@@ -1390,6 +1414,16 @@ function updateFloatingSheetButtons() {
             row.appendChild(reportBtn);
         }
         container.appendChild(row);
+        container.style.pointerEvents = 'none';
+        return;
+    }
+
+    if (isClosedRegistration) {
+        const closedMsg = document.createElement('div');
+        closedMsg.className = 'availability-floating';
+        closedMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; text-align: center; color: #ffffff; font-weight: 600;';
+        closedMsg.textContent = '⏳ запись закрыта';
+        container.appendChild(closedMsg);
         container.style.pointerEvents = 'none';
         return;
     }
