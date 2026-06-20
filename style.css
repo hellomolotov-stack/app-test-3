@@ -1489,6 +1489,27 @@ body::before {
     margin: 2px 0 12px 0;
 }
 
+/* Живая карта маршрута в блоке трека */
+.hike-map-box {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 2px 0 12px 0;
+    background: #0A0B09;
+}
+.hike-map-box .leaflet-container { background: #0A0B09; }
+.image-container.has-map .leaflet-control-attribution { display: none !important; }
+.image-container.has-map .participant-counter { z-index: 1000; }
+.hm-mk { display: flex; flex-direction: column; align-items: center; }
+.hm-dot { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700; }
+.hm-s { background: #0C0D0B; border: 2px solid #D9FD19; color: #D9FD19; }
+.hm-f { background: #27C2E8; border: 2px solid #0C0D0B; color: #0C0D0B; box-shadow: 0 0 0 1.5px #27C2E8; }
+.hm-cap { margin-top: 3px; font-size: 10px; font-weight: 600; white-space: nowrap; padding: 1px 6px; border-radius: 6px; background: rgba(8,9,7,0.82); }
+.hm-cap-s { color: #C9D6B0; }
+.hm-cap-f { color: #7DE3F7; }
+
 .participant-counter {
     position: absolute;
     top: 12px;

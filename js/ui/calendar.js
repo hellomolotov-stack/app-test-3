@@ -256,6 +256,66 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
     }
 }
 
+// ==================== ЖИВАЯ КАРТА МАРШРУТА (трек по точкам) ====================
+// Реестр хайков с треком. Карта рисуется только для дат из этого объекта,
+// остальные хайки показывают обычную картинку маршрута как раньше.
+const HIKE_TRACKS = {
+    '2026-06-25': {
+        lake: [44.45208, 34.08715],
+        coords: [
+[44.467423,34.091265],[44.467337,34.091286],[44.467209,34.091158],[44.466994,34.091029],[44.466565,34.090857],[44.466458,34.090750],[44.466307,34.090342],[44.466028,34.090192],[44.465513,34.089720],[44.465471,34.089634],[44.464612,34.088819],[44.464462,34.088626],[44.464333,34.088368],[44.464247,34.088325],[44.464183,34.088153],[44.463969,34.087939],[44.463690,34.087746],[44.463539,34.088132],[44.463389,34.088239],[44.463067,34.088325],[44.462810,34.088282],[44.462681,34.088325],[44.462531,34.088475],[44.462295,34.088518],[44.461994,34.088368],[44.461801,34.088497],[44.461780,34.088561],[44.461587,34.088776],[44.461415,34.088862],[44.461286,34.088862],[44.461093,34.088947],[44.460793,34.089183],[44.460621,34.089419],[44.460600,34.089398],[44.460342,34.089591],[44.460235,34.089505],[44.460149,34.089505],[44.460020,34.089377],[44.459677,34.089441],[44.459570,34.089377],[44.459484,34.089419],[44.459420,34.089377],[44.459312,34.089398],[44.459334,34.089312],[44.459183,34.089377],[44.458926,34.089355],[44.458883,34.089398],[44.458797,34.089334],[44.458711,34.089419],[44.458583,34.089398],[44.458411,34.089484],[44.458046,34.089398],[44.457960,34.089248],[44.458003,34.089334],[44.457896,34.088711],[44.457681,34.088776],[44.457531,34.088905],[44.457338,34.088647],[44.457338,34.088390],[44.457445,34.088111],[44.457596,34.088003],[44.457681,34.088111],[44.457596,34.087982],[44.457531,34.087960],[44.457360,34.088003],[44.457231,34.088175],[44.457166,34.088175],[44.457059,34.088261],[44.457016,34.088411],[44.456651,34.088690],[44.456523,34.089012],[44.456265,34.089462],[44.456201,34.089462],[44.456136,34.089527],[44.455879,34.089570],[44.455943,34.089570],[44.455750,34.089613],[44.455622,34.089698],[44.455407,34.089698],[44.454806,34.089505],[44.454699,34.089505],[44.454592,34.089570],[44.454613,34.089570],[44.454570,34.089656],[44.454592,34.089613],[44.454506,34.089698],[44.454270,34.089763],[44.454248,34.089698],[44.454205,34.089741],[44.454034,34.089698],[44.453841,34.089827],[44.453798,34.089763],[44.453690,34.089892],[44.453368,34.089934],[44.453175,34.089870],[44.453068,34.089784],[44.452853,34.089741],[44.452682,34.089591],[44.452617,34.089613],[44.452575,34.089570],[44.452553,34.089591],[44.452424,34.089548],[44.452446,34.089570],[44.452317,34.089441],[44.452188,34.089419],[44.452210,34.089441],[44.452124,34.089334],[44.451845,34.089141],[44.451866,34.089055],[44.451866,34.089076],[44.451781,34.088947],[44.451587,34.088883],[44.451459,34.088776],[44.451330,34.088411],[44.451223,34.088411],[44.451244,34.088432],[44.451137,34.088390],[44.451051,34.088561],[44.450987,34.088540],[44.450901,34.088647],[44.450686,34.088776],[44.450622,34.088733],[44.450536,34.088754],[44.450450,34.088840],[44.450450,34.088905],[44.450364,34.088926],[44.450343,34.089055],[44.450364,34.089012],[44.450236,34.089119],[44.449849,34.089269],[44.449699,34.089484],[44.449485,34.089548],[44.449249,34.089527],[44.449141,34.089677],[44.449120,34.089849],[44.449077,34.089913],[44.449034,34.089913],[44.448948,34.090106],[44.448498,34.090128],[44.448476,34.090213],[44.448433,34.090192],[44.448262,34.090321],[44.448176,34.090235],[44.448025,34.090299],[44.447983,34.090385],[44.447832,34.090428],[44.447789,34.090364],[44.447725,34.090449],[44.447768,34.090471],[44.447725,34.090600],[44.447639,34.090664],[44.447532,34.090664],[44.447468,34.090621],[44.447210,34.090685],[44.447038,34.090771],[44.446802,34.090492],[44.446674,34.090492],[44.446609,34.090449],[44.446652,34.090449],[44.446373,34.090643],[44.446330,34.090621],[44.446073,34.090814],[44.446008,34.090814],[44.445966,34.090900],[44.445730,34.090836],[44.445730,34.090900],[44.445601,34.090964],[44.445515,34.091265],[44.445451,34.091265],[44.445300,34.091437],[44.445215,34.091479],[44.445000,34.091458],[44.444914,34.091479],[44.444785,34.091415],[44.444592,34.091479],[44.444506,34.091372],[44.444206,34.091479],[44.444099,34.091437],[44.444013,34.091608],[44.444013,34.091565],[44.443949,34.091608],[44.443734,34.091887],[44.443605,34.091930],[44.443519,34.092123],[44.443434,34.092166],[44.443369,34.092273],[44.443283,34.092295],[44.442940,34.092617],[44.442511,34.092595],[44.442361,34.092788],[44.442404,34.092917]
+        ]
+    }
+};
+
+let _leafletLoading = null;
+function ensureLeaflet() {
+    if (window.L) return Promise.resolve();
+    if (_leafletLoading) return _leafletLoading;
+    _leafletLoading = new Promise((resolve, reject) => {
+        const css = document.createElement('link');
+        css.rel = 'stylesheet';
+        css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+        document.head.appendChild(css);
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+    return _leafletLoading;
+}
+
+function _hvKm(a1, o1, a2, o2) {
+    const R = 6371, dLa = (a2 - a1) * Math.PI / 180, dLo = (o2 - o1) * Math.PI / 180;
+    const a = Math.sin(dLa / 2) ** 2 + Math.cos(a1 * Math.PI / 180) * Math.cos(a2 * Math.PI / 180) * Math.sin(dLo / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+let currentHikeMap = null;
+function initHikeMap(el, track) {
+    try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
+    const C = track.coords, LAKE = track.lake;
+    // обрезаем маршрут до озера: ближайшая к озеру точка -> южный конец (старт внизу)
+    let ni = 0, best = Infinity;
+    for (let k = 0; k < C.length; k++) {
+        const d = _hvKm(C[k][0], C[k][1], LAKE[0], LAKE[1]);
+        if (d < best) { best = d; ni = k; }
+    }
+    const line = [LAKE].concat(C.slice(ni));
+    const map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: false, doubleClickZoom: false, tap: false, keyboard: false });
+    currentHikeMap = map;
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 20, detectRetina: true }).addTo(map);
+    const poly = L.polyline(line, { color: '#D9FD19', weight: 3.5, opacity: 0.96, lineJoin: 'round', lineCap: 'round' }).addTo(map);
+    const start = line[line.length - 1];
+    const mk = (cls, cap, capcls, lbl) => L.divIcon({ className: '', html: '<div class="hm-mk"><div class="hm-dot ' + cls + '">' + (lbl || '') + '</div><div class="hm-cap ' + capcls + '">' + cap + '</div></div>', iconSize: [60, 30], iconAnchor: [30, 8] });
+    L.marker(start, { icon: mk('hm-s', 'старт', 'hm-cap-s', 'S') }).addTo(map);
+    L.marker(LAKE, { icon: mk('hm-f', 'озеро', 'hm-cap-f', '') }).addTo(map);
+    const fit = () => { try { map.invalidateSize(); map.fitBounds(poly.getBounds(), { paddingTopLeft: [28, 52], paddingBottomRight: [28, 28] }); } catch (e) {} };
+    setTimeout(fit, 160);
+    setTimeout(fit, 520);
+}
+
 let sheetCurrentIndex = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -444,11 +504,15 @@ export function showBottomSheet(index) {
         const isPast = hikeDateObj < todayDate;
 
         let imageHtml = '';
-        if (hike.image && !isPlaceholder) {
+        const hikeTrack = HIKE_TRACKS[hike.date];
+        if ((hikeTrack || hike.image) && !isPlaceholder) {
             const participantText = isPast ? (isCity ? 'были' : 'ходили') : (isCity ? 'будут' : 'идут');
+            const mediaHtml = hikeTrack
+                ? `<div class="hike-map-box" id="hikeMapBox"></div>`
+                : `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
             imageHtml = `
-                <div class="image-container">
-                    <img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">
+                <div class="image-container${hikeTrack ? ' has-map' : ''}">
+                    ${mediaHtml}
                     <div class="participant-counter" id="participantCounter" data-hike-date="${hike.date}" style="color: ${accentColor};">
                         <span class="participant-text" style="color: ${accentColor};">${participantText}</span>
                         <span class="participant-count" id="participantCountValue" style="color: ${accentColor}; display: none;">0</span>
@@ -562,6 +626,11 @@ export function showBottomSheet(index) {
             ${shareButtonHtml}
             ${inviteButtonHtml}
         `;
+
+        if (hikeTrack) {
+            const mapBox = contentWrapper.querySelector('#hikeMapBox');
+            if (mapBox) ensureLeaflet().then(() => initHikeMap(mapBox, hikeTrack)).catch(() => {});
+        }
 
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
         if (shareBtn) {
