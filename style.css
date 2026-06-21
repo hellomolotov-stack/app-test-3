@@ -3416,6 +3416,7 @@ body::after {
 }
 .bookclub-sheet .feature-tag {
     background: #FFF1B2 !important;
+    color: #000000 !important;
 }
 .bookclub-sheet .btn-yellow {
     background: #FFF1B2 !important;
