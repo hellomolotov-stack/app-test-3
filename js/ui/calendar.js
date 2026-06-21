@@ -312,8 +312,8 @@ function initHikeMap(el, track) {
     const geojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: line.map(c => [c[1], c[0]]) } };
     el.style.background = '#0A0B09';
 
-    // Балаклава—Алушта: ограничиваем панорамирование, предгружаем тайлы
-    const BOUNDS = [[33.55, 44.35], [34.45, 44.70]];
+    // Весь Крым: ограничиваем панорамирование
+    const CRIMEA = [[32.4, 44.2], [36.7, 46.3]];
 
     const map = new maplibregl.Map({
         container: el,
@@ -323,8 +323,7 @@ function initHikeMap(el, track) {
                 'satellite': {
                     type: 'raster',
                     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-                    tileSize: 256, maxzoom: 18,
-                    bounds: [33.55, 44.35, 34.45, 44.70]
+                    tileSize: 256, maxzoom: 18
                 }
             },
             layers: [{
@@ -332,12 +331,12 @@ function initHikeMap(el, track) {
                 paint: { 'raster-brightness-max': 0.7, 'raster-contrast': 0.15, 'raster-saturation': -1 }
             }]
         },
-        center: [34.0893, 44.4550],
-        zoom: 11.5,
+        center: [34.1, 45.0],
+        zoom: 7,
         pitch: 0,
         bearing: 0,
-        maxPitch: 80,
-        maxBounds: BOUNDS,
+        maxPitch: 85,
+        maxBounds: CRIMEA,
         attributionControl: false,
         keyboard: false,
         doubleClickZoom: false
@@ -350,6 +349,8 @@ function initHikeMap(el, track) {
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
             tileSize: 256, encoding: 'terrarium', maxzoom: 15
         });
+        map.setTerrain({ source: 'dem', exaggeration: 1.8 });
+        map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
 
         map.addSource('route', { type: 'geojson', data: geojson });
         map.addLayer({
@@ -371,16 +372,14 @@ function initHikeMap(el, track) {
         lakeEl.style.cssText = 'width:12px;height:12px;background:#4FC3F7;border-radius:50%;box-shadow:0 0 8px #4FC3F7;';
         new maplibregl.Marker({ element: lakeEl }).setLngLat([LAKE[1], LAKE[0]]).addTo(map);
 
-        // Ждём загрузки тайлов на обзорном зуме, затем плавно летим к маршруту с 3D
+        // Прилёт от всего Крыма к маршруту, вид сбоку (pitch 80°)
         map.once('idle', () => {
-            map.setTerrain({ source: 'dem', exaggeration: 1.8 });
-            map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
             map.flyTo({
-                center: [34.0893, 44.4550],
-                zoom: 13.2,
-                pitch: 60,
-                bearing: -20,
-                duration: 1800,
+                center: [34.0893, 44.4480],
+                zoom: 14,
+                pitch: 80,
+                bearing: 0,
+                duration: 3500,
                 essential: true
             });
         });
