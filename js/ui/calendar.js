@@ -1723,23 +1723,26 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     const nameLower = firstName.toLowerCase();
     const isFemale = nameLower.endsWith('а') || nameLower.endsWith('я');
     const walked = isFemale ? 'ходила' : 'ходил';
+    const was = isFemale ? 'была' : 'был';
 
     const popupTextHtml = isReturning ? `
         <div class="bpu-text">
-            <div class="bpu-line bpu-title">соскучились по тебе, ${firstName || 'друг'}</div>
-            <div class="bpu-line">ты уже ${walked} с нами – и знаешь, что ждёт впереди</div>
+            <div class="bpu-line bpu-title">рад, что ты ${was} с нами, ${firstName || 'друг'}</div>
+            <div class="bpu-line">один хайк позади — и обычным походом это уже не назовёшь</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">на следующие хайки разовые билеты не продаём – <em>намеренно</em></div>
+            <div class="bpu-line">дальше ходят только свои. билетов нет — <em>намеренно</em></div>
+            <div class="bpu-line">карта интеллигента — твой вход во все хайки сезона</div>
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
     ` : `
         <div class="bpu-text">
-            <div class="bpu-line">разовые билеты не продаём – <em>намеренно</em></div>
-            <div class="bpu-line bpu-accent">клуб не для всех</div>
-            <div class="bpu-line">мы за тихое качество, вместо шумного количества</div>
+            <div class="bpu-line">мы не продаём разовые билеты — <em>принципиально</em></div>
+            <div class="bpu-line bpu-accent">клуб не для всех. и это честно</div>
+            <div class="bpu-line">сюда идут за тишиной, горами и своими людьми — не за толпой</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">первый хайк – свободно, приходи знакомиться с форматом и людьми</div>
-            <div class="bpu-line">если почувствуешь, что это твоё окружение – вступай</div>
+            <div class="bpu-line">первый хайк — за наш счёт</div>
+            <div class="bpu-line">приходи: посмотри на формат, на людей, на разговоры у воды</div>
+            <div class="bpu-line">твоё — останешься. нет — разойдёмся по-доброму</div>
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
     `;
@@ -1772,7 +1775,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     const socialProofHtml = `
         <div class="booking-social-proof" id="bookingSocialProof">
             <div class="sp-avatars" id="spAvatars"></div>
-            <div class="sp-text">уже <strong>${membersText}</strong> в клубе</div>
+            <div class="sp-text">нас уже <strong>${membersText}</strong> — и каждого знаем по имени</div>
         </div>`;
 
     // #4 превью привилегий внутри аккордеона
@@ -1797,8 +1800,8 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             ${socialProofHtml}
 
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
-                ${!isReturning ? `<button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0;">я впервые 🎟️</button>` : ''}
-                <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">вступить в клуб</button>
+                ${!isReturning ? `<button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0;">первый хайк — бесплатно 🎟️</button>` : ''}
+                <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">${isReturning ? 'хочу карту' : 'вступить в клуб'}</button>
             </div>
 
             <div id="clubJoinAccordion" style="display: none; margin-top: 20px;">
@@ -1806,27 +1809,27 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
                     <div class="booking-popup-scarcity-num">${soldOut ? '0' : cardsLeft}</div>
                     <div class="booking-popup-scarcity-text">
                         ${soldOut
-                            ? `<strong>на этот месяц карты разобраны</strong><br>загляни в начале следующего – откроем новые ${cardsTotal}`
-                            : `<strong>мы выпускаем ${cardsTotal} клубных карт в месяц.</strong><br>чтобы уделить внимание каждому новому члену клуба.<br>наш принцип: не шумное количество, а тихое качество`}
+                            ? `<strong>карты на этот месяц разобраны</strong><br>возвращайся в начале следующего — откроем ещё ${cardsTotal}. место будет`
+                            : `<strong>${cardsTotal} карт в месяц — и ни одной больше</strong><br>чтобы каждый новый человек получил внимание, а не растворился в толпе<br>не шумное количество — тихое качество`}
                     </div>
                 </div>
 
                 <div class="booking-popup-what-is-card">
-                    карта интеллигента – это и есть членство в клубе. именная, с твоим числом хайков. с ней ты просто ходишь – без покупки билетов каждый раз
+                    карта интеллигента — это членство в клубе. именная, с твоим счётом хайков. с ней ты не покупаешь билеты — просто приходишь
                 </div>
 
-                <div class="booking-popup-economy">один хайк без карты – 1500₽. карта окупается на пятом. дальше – просто ходишь</div>
+                <div class="booking-popup-economy">один хайк по разовому — 1500 ₽. карта окупается к пятому. дальше каждый поход — бесплатно</div>
 
                 <div class="booking-card-option">
-                    <div class="booking-card-name">бессрочная – ${config.permanentCardPrice} ₽</div>
-                    <div class="booking-card-desc">один раз – и навсегда, никаких продлений и подписок<br>все хайки, события в городе, скидки у партнёров, впн</div>
-                    <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить бессрочную</button>
+                    <div class="booking-card-name">бессрочная — ${config.permanentCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">берут чаще</span></div>
+                    <div class="booking-card-desc">заплатил один раз — ходишь годами. без продлений и подписок<br>все хайки, городские события, скидки у партнёров, впн</div>
+                    <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить навсегда</button>
                 </div>
 
                 <div class="booking-card-option" style="margin-top: 12px;">
-                    <div class="booking-card-name">сезонная – ${config.seasonCardPrice} ₽</div>
-                    <div class="booking-card-desc">сезон 2026 – всё то же самое, до конца сезона</div>
-                    <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">оформить сезонную</button>
+                    <div class="booking-card-name">сезонная — ${config.seasonCardPrice} ₽</div>
+                    <div class="booking-card-desc">те же привилегии — до конца сезона 2026</div>
+                    <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">взять на сезон</button>
                 </div>
 
                 ${perksPreviewHtml}
