@@ -99,7 +99,7 @@ export function renderCalendar(container) {
 
         let innerHtml = `${day}`;
         if (isFullHike) {
-            if (isPast && hike.report_link && hike.report_link.trim() !== '')
+            if (isPast && hasReportLink(hike))
                 innerHtml += `<span class="calendar-emoji">📷</span>`;
             else if (isPast && (hike.letter_text || hike.letter_link))
                 innerHtml += `<span class="calendar-emoji-letter">✉️</span>`;
@@ -254,6 +254,13 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
         if (img) img.style.filter = '';
         if (overlayImg) overlayImg.remove();
     }
+}
+
+// Отчёт (кнопка и значок 📷) показывается только если в report_link реальная
+// ссылка, а не пустое значение/заглушка/случайный текст.
+function hasReportLink(hike) {
+    const v = (hike && hike.report_link != null ? String(hike.report_link) : '').trim();
+    return /^(https?:\/\/|tg:\/\/|t\.me\/)/i.test(v);
 }
 
 // ==================== ЖИВАЯ КАРТА МАРШРУТА (трек по точкам) ====================
@@ -1394,7 +1401,7 @@ function updateFloatingSheetButtons() {
         completedBtn.style.pointerEvents = 'none';
         row.appendChild(completedBtn);
 
-        if (hike.report_link && hike.report_link.trim() !== '') {
+        if (hasReportLink(hike)) {
             const reportBtn = document.createElement('a');
             reportBtn.href = '#';
             reportBtn.className = 'btn btn-yellow';
