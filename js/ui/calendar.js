@@ -510,10 +510,11 @@ export function showBottomSheet(index) {
             accentColor = 'var(--yellow)';
         }
 
-        if (isCity || isBookClub) {
+        contentWrapper.classList.remove('city-sheet', 'bookclub-sheet');
+        if (isBookClub) {
+            contentWrapper.classList.add('bookclub-sheet');
+        } else if (isCity) {
             contentWrapper.classList.add('city-sheet');
-        } else {
-            contentWrapper.classList.remove('city-sheet');
         }
 
         const isCancelled = hike.cancelled === true;
@@ -614,7 +615,9 @@ export function showBottomSheet(index) {
         let imageHtml = '';
         const hikeTrack = HIKE_TRACKS[hike.date];
         if ((hikeTrack || hike.image) && !isPlaceholder) {
-            const participantText = isPast ? ((isCity || isBookClub) ? 'были' : 'ходили') : ((isCity || isBookClub) ? 'будут' : 'идут');
+            const participantText = isPast
+                ? (isBookClub ? 'читали' : (isCity ? 'были' : 'ходили'))
+                : (isBookClub ? 'читают' : (isCity ? 'будут' : 'идут'));
             const mediaHtml = hikeTrack
                 ? `<div class="hike-map-box" id="hikeMapBox"></div>`
                 : `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
@@ -993,9 +996,11 @@ const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     if (!isTouchDevice()) return null;
 
-    const thumbText = isBooked 
-        ? (hike.woman === 'yes' ? 'ты записана' : 'ты записан')
-        : 'иду';
+    const isBookClub = hike.book_club === true;
+    const isCity = hike.city === true || hike.city === 'yes';
+    const bookedText = isBookClub ? 'читаю' : (hike.woman === 'yes' ? 'ты записана' : 'ты записан');
+    const unbookedText = isBookClub ? 'читаю' : 'иду';
+    const thumbText = isBooked ? bookedText : unbookedText;
 
     const hintTextBooked = 'сдвинь для отмены ‹';
     const hintTextUnbooked = '› сдвинь, чтобы записаться';
@@ -1153,7 +1158,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     currentThumbWidth = minThumbWidth;
                     thumb.style.width = currentThumbWidth + 'px';
                     thumb.style.left = THUMB_MARGIN + 'px';
-                    thumb.textContent = 'иду';
+                    thumb.textContent = unbookedText;
                     thumb.style.fontWeight = '900';
                     thumb.style.fontStyle = 'normal';
                     placeHint(THUMB_MARGIN);
@@ -1162,7 +1167,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             }
             completed = true;
             isDown = false;
-            const newText = hike.woman === 'yes' ? 'ты записана' : 'ты записан';
+            const newText = bookedText;
             const newWidth = Math.max(minThumbWidth, ctx.measureText(newText).width + THUMB_PADDING * 2);
             currentThumbWidth = newWidth;
             thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
@@ -1381,9 +1386,9 @@ function updateFloatingSheetButtons() {
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow btn-glow';
-            goBtn.textContent = isBooked ? 'ты записан' : 'я иду';
+            goBtn.textContent = isBooked ? (isBookClub ? 'читаю' : 'ты записан') : (isBookClub ? 'читаю' : 'я иду');
             goBtn.style.backgroundColor = accentColor;
-            goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
+            goBtn.style.color = (accentColor === '#41B5ED') ? '#ffffff' : '#000000';
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 const userId = state.user?.id;
@@ -2214,6 +2219,9 @@ export function showLeaderDropdown(leaderElement, leaderData) {
 
 // ==================== ЭКРАН ПОСЛЕ РЕГИСТРАЦИИ ====================
 export function showRegistrationSuccess(hikeDate, hikeTitle) {
+    const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
+    if (hikeObj && (hikeObj.city === true || hikeObj.book_club === true)) return;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const isReturning = state.hikesWithTitle.some((hike, idx) =>

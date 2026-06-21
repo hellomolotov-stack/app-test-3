@@ -1374,10 +1374,12 @@ body::before {
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 12px;
+    gap: 12px;
 }
 
 .bottom-sheet-header-left {
     flex: 1;
+    min-width: 0;
 }
 
 .bottom-sheet-header-date {
@@ -3398,6 +3400,26 @@ body::after {
 .city-sheet .btn-yellow {
     background: #41B5ED !important;
     color: #ffffff !important;
+}
+
+.bookclub-sheet .dynamic-link,
+.bookclub-sheet .info-row a,
+.bookclub-sheet .bottom-sheet-section-content a {
+    color: #FFF1B2 !important;
+}
+.bookclub-sheet .bottom-sheet-section-title,
+.bookclub-sheet .bottom-sheet-header-date,
+.bookclub-sheet .info-icon,
+.bookclub-sheet .participant-text,
+.bookclub-sheet .feature-tag {
+    color: #FFF1B2 !important;
+}
+.bookclub-sheet .feature-tag {
+    background: #FFF1B2 !important;
+}
+.bookclub-sheet .btn-yellow {
+    background: #FFF1B2 !important;
+    color: #000000 !important;
 }
 
 /* Убираем лишние градиенты внутри слайдера */
