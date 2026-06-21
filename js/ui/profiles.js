@@ -172,7 +172,7 @@ export async function renderProfiles() {
 
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
-    blurOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:40;background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);';
+    blurOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:40;background: linear-gradient(to bottom, rgba(10, 11, 9, 0.35) 0%, rgba(73, 138, 176, 0.55) 60%, rgba(73, 138, 176, 0.75) 100%); backdrop-filter: blur(40px) saturate(110%); -webkit-backdrop-filter: blur(40px) saturate(110%);';
     document.body.appendChild(blurOverlay);
 
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
@@ -258,7 +258,6 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
 }
 
 function showGuestProfilePopup() {
-    cleanupProfileOverlays();
     showGuestBookingPopup(null, null, null, 'profiles');
 }
 

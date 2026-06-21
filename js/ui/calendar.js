@@ -1742,10 +1742,9 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             <div class="bpu-text">
                 <div class="bpu-line bpu-title">мастермайнды – на вершине, не в офисе</div>
                 <div class="bpu-line">поднимаемся на гору, садимся в круг и разбираем задачи друг друга</div>
-                <div class="bpu-line"><em>воздух разрежен, лишнего сказать не получается</em></div>
+                <div class="bpu-line"><em>после общего подъёма разговор идёт по-настоящему</em></div>
                 <div class="bpu-divider"></div>
                 <div class="bpu-line">работает с теми, кто ещё не знаком – но уже прошёл первый подъём вместе</div>
-                <div class="bpu-line">общий путь наверх делает разговор настоящим</div>
                 <div class="bpu-line bpu-accent">карта – вход в этот круг</div>
             </div>
         `,
