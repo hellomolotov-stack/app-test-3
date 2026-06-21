@@ -312,6 +312,9 @@ function initHikeMap(el, track) {
     const geojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: line.map(c => [c[1], c[0]]) } };
     el.style.background = '#0A0B09';
 
+    // Балаклава—Алушта: ограничиваем панорамирование, предгружаем тайлы
+    const BOUNDS = [[33.55, 44.35], [34.45, 44.70]];
+
     const map = new maplibregl.Map({
         container: el,
         style: {
@@ -320,7 +323,8 @@ function initHikeMap(el, track) {
                 'satellite': {
                     type: 'raster',
                     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-                    tileSize: 256, maxzoom: 18
+                    tileSize: 256, maxzoom: 18,
+                    bounds: [33.55, 44.35, 34.45, 44.70]
                 }
             },
             layers: [{
@@ -329,10 +333,11 @@ function initHikeMap(el, track) {
             }]
         },
         center: [34.0893, 44.4550],
-        zoom: 13.2,
-        pitch: 60,
-        bearing: -20,
+        zoom: 11.5,
+        pitch: 0,
+        bearing: 0,
         maxPitch: 80,
+        maxBounds: BOUNDS,
         attributionControl: false,
         keyboard: false,
         doubleClickZoom: false
@@ -345,8 +350,6 @@ function initHikeMap(el, track) {
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
             tileSize: 256, encoding: 'terrarium', maxzoom: 15
         });
-        map.setTerrain({ source: 'dem', exaggeration: 1.8 });
-        map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
 
         map.addSource('route', { type: 'geojson', data: geojson });
         map.addLayer({
@@ -367,6 +370,20 @@ function initHikeMap(el, track) {
         const lakeEl = document.createElement('div');
         lakeEl.style.cssText = 'width:12px;height:12px;background:#4FC3F7;border-radius:50%;box-shadow:0 0 8px #4FC3F7;';
         new maplibregl.Marker({ element: lakeEl }).setLngLat([LAKE[1], LAKE[0]]).addTo(map);
+
+        // Ждём загрузки тайлов на обзорном зуме, затем плавно летим к маршруту с 3D
+        map.once('idle', () => {
+            map.setTerrain({ source: 'dem', exaggeration: 1.8 });
+            map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
+            map.flyTo({
+                center: [34.0893, 44.4550],
+                zoom: 13.2,
+                pitch: 60,
+                bearing: -20,
+                duration: 1800,
+                essential: true
+            });
+        });
     });
 
     const hint = document.createElement('div');
