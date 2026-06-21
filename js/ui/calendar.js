@@ -331,8 +331,8 @@ function initHikeMap(el, track) {
                 paint: { 'raster-brightness-max': 0.7, 'raster-contrast': 0.15, 'raster-saturation': -1 }
             }]
         },
-        center: [34.1, 45.0],
-        zoom: 7,
+        center: [34.09, 44.52],
+        zoom: 9.5,
         pitch: 0,
         bearing: 0,
         maxPitch: 85,
@@ -369,17 +369,17 @@ function initHikeMap(el, track) {
         new maplibregl.Marker({ element: startEl }).setLngLat([startCoord[1], startCoord[0]]).addTo(map);
 
         const lakeEl = document.createElement('div');
-        lakeEl.style.cssText = 'width:12px;height:12px;background:#4FC3F7;border-radius:50%;box-shadow:0 0 8px #4FC3F7;';
+        lakeEl.style.cssText = 'width:12px;height:12px;background:#D9FD19;border-radius:50%;box-shadow:0 0 6px #D9FD19;';
         new maplibregl.Marker({ element: lakeEl }).setLngLat([LAKE[1], LAKE[0]]).addTo(map);
 
-        // Прилёт от всего Крыма к маршруту, вид сбоку (pitch 80°)
         map.once('idle', () => {
             map.flyTo({
                 center: [34.0893, 44.4480],
                 zoom: 14,
                 pitch: 80,
                 bearing: 0,
-                duration: 3500,
+                speed: 0.4,
+                curve: 1.2,
                 essential: true
             });
         });
@@ -387,9 +387,9 @@ function initHikeMap(el, track) {
 
     const hint = document.createElement('div');
     hint.className = 'map-swipe-hint';
-    hint.innerHTML = '<div class="mh-dot mh-l"></div><div class="mh-dot mh-r"></div>';
+    hint.innerHTML = '<div class="mh-dot mh-l"></div><div class="mh-dot mh-r"></div><div class="mh-dot mh-cw"></div><div class="mh-dot mh-ccw"></div>';
     el.appendChild(hint);
-    setTimeout(() => { hint.remove(); }, 2900);
+    setTimeout(() => { hint.remove(); }, 4500);
 }
 
 let sheetCurrentIndex = 0;

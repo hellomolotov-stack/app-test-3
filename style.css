@@ -1531,6 +1531,8 @@ body::before {
 }
 .map-swipe-hint .mh-l { animation: mhSpreadL 1.5s ease-in-out 2; }
 .map-swipe-hint .mh-r { animation: mhSpreadR 1.5s ease-in-out 2; }
+.map-swipe-hint .mh-cw { animation: mhRotateCW 1.8s ease-in-out 2 3s; }
+.map-swipe-hint .mh-ccw { animation: mhRotateCCW 1.8s ease-in-out 2 3s; }
 @keyframes mhSpreadL {
     0%   { transform: translateX(0);     opacity: 0; }
     15%  { opacity: 0.5; }
@@ -1540,6 +1542,16 @@ body::before {
     0%   { transform: translateX(0);     opacity: 0; }
     15%  { opacity: 0.5; }
     100% { transform: translateX(65px);  opacity: 0; }
+}
+@keyframes mhRotateCW {
+    0%   { transform: translate(0, -50px); opacity: 0; }
+    15%  { opacity: 0.5; }
+    100% { transform: translate(50px, 0);  opacity: 0; }
+}
+@keyframes mhRotateCCW {
+    0%   { transform: translate(0, -50px); opacity: 0; }
+    15%  { opacity: 0.5; }
+    100% { transform: translate(-50px, 0); opacity: 0; }
 }
 
 .participant-counter {
