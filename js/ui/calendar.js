@@ -1705,9 +1705,10 @@ function updateFloatingSheetButtons() {
     container.appendChild(row);
 }
 
-export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
+export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'hike') {
     haptic();
     const config = state.popupConfig;
+    const isHikeContext = feature === 'hike';
 
     window._bookingPopupHikeDate = hikeDate;
     window._bookingPopupHikeIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
@@ -1725,7 +1726,43 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
     const walked = isFemale ? 'ходила' : 'ходил';
     const was = isFemale ? 'была' : 'был';
 
-    const popupTextHtml = isReturning ? `
+    const FEATURE_TEXTS = {
+        profiles: `
+            <div class="bpu-text">
+                <div class="bpu-line bpu-title">профили – это не каталог</div>
+                <div class="bpu-line">здесь живут анкеты людей, которые ходят с нами</div>
+                <div class="bpu-line"><em>кто чем занят, что умеет, с кем стоит выпить чаю</em></div>
+                <div class="bpu-divider"></div>
+                <div class="bpu-line">публично – не покажем. это не реклама себя в интернете</div>
+                <div class="bpu-line">доверие невозможно без узнавания</div>
+                <div class="bpu-line bpu-accent">с картой – войдёшь и увидишь круг</div>
+            </div>
+        `,
+        mastermind: `
+            <div class="bpu-text">
+                <div class="bpu-line bpu-title">мастермайнды – на вершине, не в офисе</div>
+                <div class="bpu-line">поднимаемся на гору, садимся в круг и разбираем задачи друг друга</div>
+                <div class="bpu-line"><em>воздух разрежен, лишнего сказать не получается</em></div>
+                <div class="bpu-divider"></div>
+                <div class="bpu-line">работает с теми, кто ещё не знаком – но уже прошёл первый подъём вместе</div>
+                <div class="bpu-line">общий путь наверх делает разговор настоящим</div>
+                <div class="bpu-line bpu-accent">карта – вход в этот круг</div>
+            </div>
+        `,
+        generic: `
+            <div class="bpu-text">
+                <div class="bpu-line bpu-title">эта часть клуба – для своих</div>
+                <div class="bpu-line">и ещё десятки: события в городе, чат, скидки у партнёров, впн, мастермайнды</div>
+                <div class="bpu-line"><em>одна карта – все двери открыты</em></div>
+                <div class="bpu-divider"></div>
+                <div class="bpu-line">мы не продаём фичи поштучно – <em>намеренно</em></div>
+                <div class="bpu-line">клуб – это целое, не набор кнопок</div>
+                <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
+            </div>
+        `
+    };
+
+    const hikeReturningHtml = `
         <div class="bpu-text">
             <div class="bpu-line bpu-title">рад, что ты ${was} с нами, ${firstName || 'друг'}</div>
             <div class="bpu-line">один хайк позади – и обычным походом это уже не назовёшь</div>
@@ -1734,7 +1771,8 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             <div class="bpu-line">карта интеллигента – твой вход во все хайки сезона</div>
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
-    ` : `
+    `;
+    const hikeNewHtml = `
         <div class="bpu-text">
             <div class="bpu-line">мы не продаём разовые билеты – <em>принципиально</em></div>
             <div class="bpu-line bpu-accent">клуб не для всех. и это честно</div>
@@ -1744,6 +1782,10 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
     `;
+
+    const popupTextHtml = isHikeContext
+        ? (isReturning ? hikeReturningHtml : hikeNewHtml)
+        : (FEATURE_TEXTS[feature] || FEATURE_TEXTS.generic);
 
     let faqItemsHtml = '';
     if (state.faq && state.faq.length) {
@@ -1798,7 +1840,10 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
             ${socialProofHtml}
 
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
-                ${!isReturning ? `<button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0;">первый хайк – бесплатно 🎟️</button>` : ''}
+                ${!isReturning ? (isHikeContext
+                    ? `<button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0;">первый хайк – бесплатно 🎟️</button>`
+                    : `<button class="btn btn-outline" id="pickHikeBtn" style="width: 100%; margin: 0;">выбрать первый хайк – бесплатно 🎟️</button>`
+                ) : ''}
                 <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">${isReturning ? 'хочу карту' : 'вступить в клуб'}</button>
             </div>
 
@@ -1947,7 +1992,17 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose) {
         if (answer) answer.classList.toggle('open');
     });
 
-    if (!isReturning) {
+    if (!isReturning && !isHikeContext) {
+        document.getElementById('pickHikeBtn')?.addEventListener('click', e => {
+            e.preventDefault();
+            haptic();
+            closePopup();
+            try { showHikePickerSheet(); } catch (_) {}
+            log('выбрать хайк из попапа фичи', true, state.user, { feature });
+        });
+    }
+
+    if (!isReturning && isHikeContext) {
         document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
             e.preventDefault();
             if (e.target.dataset.processing === 'true') return;

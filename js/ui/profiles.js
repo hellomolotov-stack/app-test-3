@@ -7,6 +7,7 @@ import {
 } from '../firebase.js';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
+import { showGuestBookingPopup } from './calendar.js';
 
 let profiles = {};
 let myProfile = null;
@@ -257,34 +258,8 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
 }
 
 function showGuestProfilePopup() {
-    const popupData = (state.popups && state.popups.guest_profile_popup) || {
-        title: '💳 карта интеллигента',
-        text: 'для доступа к разделу знакомств тебе понадобится карта интеллигента, которая делает хайкинг бесплатным, а тебя – членом клуба со множеством привилегий. хочешь обо всём узнать?',
-        button_text: 'да, хочу узнать'
-    };
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width: 360px;">
-            <div class="modal-title" style="font-size: 18px;">${popupData.title}</div>
-            <img src="https://i.postimg.cc/HL2jPSYK/test-karty-2.png" style="width:100%; border-radius:12px; margin-bottom:12px;">
-            <div class="modal-text" style="font-size: 14px;">${popupData.text}</div>
-            <button class="btn btn-yellow" id="goToPrivilegesBtn" style="margin-top: 16px;">${popupData.button_text}</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) { haptic(); overlay.remove(); }
-    });
-    document.getElementById('goToPrivilegesBtn').addEventListener('click', (e) => {
-        e.preventDefault();
-        haptic();
-        overlay.remove();
-        cleanupProfileOverlays();
-        renderGuestPrivileges();
-        log('привилегии из профиля', true, state.user);
-    });
+    cleanupProfileOverlays();
+    showGuestBookingPopup(null, null, null, 'profiles');
 }
 
 async function renderEditProfile() {
