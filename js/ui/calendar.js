@@ -2210,8 +2210,8 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
         : 'там договариваются о совместном такси и задают вопросы про маршрут';
     const chatBtn = isExperienced ? 'открыть чат' : 'вступить в чат';
     const packText = isExperienced
-        ? 'на всякий случай – вода, перекус, удобная обувь'
-        : 'вода 1.5л, перекус, удобная обувь с закрытым носком, солнцезащитный крем, головной убор';
+        ? 'на всякий случай – вода, перекус, удобная обувь, головной убор, санскрин'
+        : 'вода 1.5л, перекус, удобная обувь с закрытым носком, санскрин, головной убор';
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay reg-success-overlay';
@@ -2237,6 +2237,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
                     <button class="reg-success-card-btn" id="regWeatherBtn">открыть</button>
                 </div>
             </div>
+            <div class="reg-success-phone">обязательно запиши (или сделай скрин) телефон организатора на случай, если пропадёт интернет: <b>+7 (978) 549 09 74 Максим</b></div>
             <button class="btn btn-outline reg-success-close-btn" id="regSuccessCloseBtn">закрыть</button>
         </div>
     `;
@@ -2248,7 +2249,8 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     loadAllParticipants(hikeDate).then(pts => {
         const el = document.getElementById('regSuccessSubtitle');
         if (el && pts.length > 0) {
-            el.textContent = `ты ${pts.length}-й участник хайка «${hikeTitle}» – ${formattedDate}`;
+            const cleanTitle = hikeTitle.replace(/^хайк\s+/i, '');
+            el.textContent = `ты ${pts.length}-й участник «${cleanTitle}» – ${formattedDate}`;
         }
     }).catch(() => {});
 

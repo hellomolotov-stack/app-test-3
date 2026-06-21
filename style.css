@@ -3625,6 +3625,15 @@ body::after {
 .reg-success-card-btn:active {
     background: rgba(255, 255, 255, 0.22);
 }
+.reg-success-phone {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+.reg-success-phone b {
+    color: rgba(255, 255, 255, 0.85);
+}
 .reg-success-close-btn {
     width: 100%;
     margin: 0;
