@@ -390,9 +390,12 @@ function initHikeMap(el, track) {
 
         map.once('idle', () => {
             const latSpan = maxLat - minLat;
+            const lonSpan = maxLon - minLon;
+            const span = Math.max(latSpan, lonSpan);
+            const z = Math.min(14.5, 14.5 - Math.log2(span / 0.005));
             map.flyTo({
-                center: [cLon, cLat - latSpan * 0.15],
-                zoom: 13.2,
+                center: [cLon, cLat - latSpan * 0.45],
+                zoom: z,
                 pitch: 45,
                 bearing: 0,
                 speed: 0.4,
