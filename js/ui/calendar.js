@@ -374,9 +374,9 @@ function initHikeMap(el, track) {
 
         map.once('idle', () => {
             map.flyTo({
-                center: [34.0893, 44.4350],
-                zoom: 12.8,
-                pitch: 60,
+                center: [34.0893, 44.4530],
+                zoom: 13.2,
+                pitch: 45,
                 bearing: 0,
                 speed: 0.4,
                 curve: 1.2,
