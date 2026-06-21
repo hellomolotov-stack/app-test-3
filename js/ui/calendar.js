@@ -2237,7 +2237,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
                     <button class="reg-success-card-btn" id="regWeatherBtn">открыть</button>
                 </div>
             </div>
-            <div class="reg-success-phone">обязательно запиши (или сделай скрин) телефон организатора на случай, если пропадёт интернет: <b>+7 (978) 549 09 74 Максим</b></div>
+            <div class="reg-success-phone">обязательно запиши (или сделай скрин) телефон организатора на случай, если пропадёт интернет: <b style="white-space:nowrap">+7 (978) 549 09 74 Максим</b></div>
             <button class="btn btn-outline reg-success-close-btn" id="regSuccessCloseBtn">закрыть</button>
         </div>
     `;
@@ -2249,8 +2249,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     loadAllParticipants(hikeDate).then(pts => {
         const el = document.getElementById('regSuccessSubtitle');
         if (el && pts.length > 0) {
-            const cleanTitle = hikeTitle.replace(/^хайк\s+/i, '');
-            el.textContent = `ты ${pts.length}-й участник «${cleanTitle}» – ${formattedDate}`;
+            el.textContent = `ты ${pts.length}-й участник «${hikeTitle}» – ${formattedDate}`;
         }
     }).catch(() => {});
 
