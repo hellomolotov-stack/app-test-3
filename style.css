@@ -1522,32 +1522,24 @@ body::before {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 30px;
-    height: 30px;
-    margin: -15px 0 0 -15px;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 -22px;
     border-radius: 50%;
-    background: rgba(217, 253, 25, 0.9);
-    box-shadow: 0 0 0 5px rgba(217, 253, 25, 0.22);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #0C0D0B;
-    font-size: 17px;
-    font-weight: 700;
-    line-height: 1;
+    background: rgba(255, 255, 255, 0.25);
     opacity: 0;
 }
-.map-swipe-hint .mh-l { animation: mhSpreadL 1.35s ease-in-out 2; }
-.map-swipe-hint .mh-r { animation: mhSpreadR 1.35s ease-in-out 2; }
+.map-swipe-hint .mh-l { animation: mhSpreadL 1.5s ease-in-out 2; }
+.map-swipe-hint .mh-r { animation: mhSpreadR 1.5s ease-in-out 2; }
 @keyframes mhSpreadL {
     0%   { transform: translateX(0);     opacity: 0; }
-    18%  { opacity: 1; }
-    100% { transform: translateX(-58px); opacity: 0; }
+    15%  { opacity: 0.5; }
+    100% { transform: translateX(-65px); opacity: 0; }
 }
 @keyframes mhSpreadR {
     0%   { transform: translateX(0);     opacity: 0; }
-    18%  { opacity: 1; }
-    100% { transform: translateX(58px);  opacity: 0; }
+    15%  { opacity: 0.5; }
+    100% { transform: translateX(65px);  opacity: 0; }
 }
 
 .participant-counter {

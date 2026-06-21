@@ -275,22 +275,22 @@ const HIKE_TRACKS = {
     }
 };
 
-let _leafletLoading = null;
-function ensureLeaflet() {
-    if (window.L) return Promise.resolve();
-    if (_leafletLoading) return _leafletLoading;
-    _leafletLoading = new Promise((resolve, reject) => {
+let _maplibreLoading = null;
+function ensureMapLibre() {
+    if (window.maplibregl) return Promise.resolve();
+    if (_maplibreLoading) return _maplibreLoading;
+    _maplibreLoading = new Promise((resolve, reject) => {
         const css = document.createElement('link');
         css.rel = 'stylesheet';
-        css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+        css.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
         document.head.appendChild(css);
         const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+        s.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
         s.onload = resolve;
         s.onerror = reject;
         document.head.appendChild(s);
     });
-    return _leafletLoading;
+    return _maplibreLoading;
 }
 
 function _hvKm(a1, o1, a2, o2) {
@@ -303,29 +303,75 @@ let currentHikeMap = null;
 function initHikeMap(el, track) {
     try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
     const C = track.coords, LAKE = track.lake;
-    // обрезаем маршрут до озера: ближайшая к озеру точка -> южный конец (старт внизу)
     let ni = 0, best = Infinity;
     for (let k = 0; k < C.length; k++) {
         const d = _hvKm(C[k][0], C[k][1], LAKE[0], LAKE[1]);
         if (d < best) { best = d; ni = k; }
     }
     const line = [LAKE].concat(C.slice(ni));
-    const map = L.map(el, { zoomControl: false, attributionControl: false, scrollWheelZoom: false, dragging: true, touchZoom: true, doubleClickZoom: false, keyboard: false });
-    el.style.background = '#0A0B09'; // инлайн перебивает дефолтный светлый фон Leaflet (.leaflet-container)
+    const geojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: line.map(c => [c[1], c[0]]) } };
+    el.style.background = '#0A0B09';
+
+    const map = new maplibregl.Map({
+        container: el,
+        style: {
+            version: 8,
+            sources: {
+                'satellite': {
+                    type: 'raster',
+                    tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+                    tileSize: 256, maxzoom: 18
+                }
+            },
+            layers: [{
+                id: 'satellite-layer', type: 'raster', source: 'satellite',
+                paint: { 'raster-brightness-max': 0.7, 'raster-contrast': 0.15, 'raster-saturation': -1 }
+            }]
+        },
+        center: [34.0893, 44.4550],
+        zoom: 13.2,
+        pitch: 60,
+        bearing: -20,
+        maxPitch: 80,
+        attributionControl: false,
+        keyboard: false,
+        doubleClickZoom: false
+    });
     currentHikeMap = map;
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { subdomains: 'abcd', maxZoom: 20, detectRetina: true }).addTo(map);
-    const poly = L.polyline(line, { color: '#D9FD19', weight: 3.5, opacity: 0.96, lineJoin: 'round', lineCap: 'round' }).addTo(map);
-    const start = line[line.length - 1];
-    const mk = (cls, cap, capcls, lbl) => L.divIcon({ className: '', html: '<div class="hm-mk"><div class="hm-dot ' + cls + '">' + (lbl || '') + '</div><div class="hm-cap ' + capcls + '">' + cap + '</div></div>', iconSize: [60, 30], iconAnchor: [30, 8] });
-    L.marker(start, { icon: mk('hm-s', 'старт', 'hm-cap-s', 'S') }).addTo(map);
-    L.marker(LAKE, { icon: mk('hm-f', 'озеро', 'hm-cap-f', '') }).addTo(map);
-    const fit = () => { try { map.invalidateSize(); map.fitBounds(poly.getBounds(), { paddingTopLeft: [28, 52], paddingBottomRight: [28, 28] }); } catch (e) {} };
-    setTimeout(fit, 160);
-    setTimeout(fit, 520);
-    // символичная подсказка-свайп: два маркера расходятся в стороны (карту можно тянуть)
+
+    map.on('load', () => {
+        map.addSource('dem', {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            tileSize: 256, encoding: 'terrarium', maxzoom: 15
+        });
+        map.setTerrain({ source: 'dem', exaggeration: 1.8 });
+        map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
+
+        map.addSource('route', { type: 'geojson', data: geojson });
+        map.addLayer({
+            id: 'route-glow', type: 'line', source: 'route',
+            paint: { 'line-color': '#D9FD19', 'line-width': 7, 'line-opacity': 0.35, 'line-blur': 5 }
+        });
+        map.addLayer({
+            id: 'route-line', type: 'line', source: 'route',
+            paint: { 'line-color': '#D9FD19', 'line-width': 3.5, 'line-opacity': 0.95 },
+            layout: { 'line-cap': 'round', 'line-join': 'round' }
+        });
+
+        const startCoord = line[line.length - 1];
+        const startEl = document.createElement('div');
+        startEl.style.cssText = 'width:10px;height:10px;background:#D9FD19;border-radius:50%;box-shadow:0 0 6px #D9FD19;';
+        new maplibregl.Marker({ element: startEl }).setLngLat([startCoord[1], startCoord[0]]).addTo(map);
+
+        const lakeEl = document.createElement('div');
+        lakeEl.style.cssText = 'width:12px;height:12px;background:#4FC3F7;border-radius:50%;box-shadow:0 0 8px #4FC3F7;';
+        new maplibregl.Marker({ element: lakeEl }).setLngLat([LAKE[1], LAKE[0]]).addTo(map);
+    });
+
     const hint = document.createElement('div');
     hint.className = 'map-swipe-hint';
-    hint.innerHTML = '<div class="mh-dot mh-l">‹</div><div class="mh-dot mh-r">›</div>';
+    hint.innerHTML = '<div class="mh-dot mh-l"></div><div class="mh-dot mh-r"></div>';
     el.appendChild(hint);
     setTimeout(() => { hint.remove(); }, 2900);
 }
@@ -643,7 +689,7 @@ export function showBottomSheet(index) {
 
         if (hikeTrack) {
             const mapBox = contentWrapper.querySelector('#hikeMapBox');
-            if (mapBox) ensureLeaflet().then(() => initHikeMap(mapBox, hikeTrack)).catch(() => {});
+            if (mapBox) ensureMapLibre().then(() => initHikeMap(mapBox, hikeTrack)).catch(() => {});
         }
 
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
