@@ -379,20 +379,19 @@ function initHikeMap(el, track) {
             layout: { 'line-cap': 'round', 'line-join': 'round' }
         });
 
-        const startCoord = line[0];
-        const startEl = document.createElement('div');
-        startEl.style.cssText = 'width:10px;height:10px;background:#D9FD19;border-radius:50%;box-shadow:0 0 6px #D9FD19;';
-        new maplibregl.Marker({ element: startEl }).setLngLat([startCoord[1], startCoord[0]]).addTo(map);
-
-        if (!track.loop) {
-            const destEl = document.createElement('div');
-            destEl.style.cssText = 'width:12px;height:12px;background:#D9FD19;border-radius:50%;box-shadow:0 0 6px #D9FD19;';
-            new maplibregl.Marker({ element: destEl }).setLngLat([DEST[1], DEST[0]]).addTo(map);
+        const mkDot = (sz) => { const d = document.createElement('div'); d.style.cssText = `width:${sz}px;height:${sz}px;background:#D9FD19;border-radius:50%;box-shadow:0 0 6px #D9FD19;`; return d; };
+        if (track.loop) {
+            new maplibregl.Marker({ element: mkDot(10) }).setLngLat([line[0][1], line[0][0]]).addTo(map);
+        } else {
+            const startCoord = line[line.length - 1];
+            new maplibregl.Marker({ element: mkDot(10) }).setLngLat([startCoord[1], startCoord[0]]).addTo(map);
+            new maplibregl.Marker({ element: mkDot(12) }).setLngLat([DEST[1], DEST[0]]).addTo(map);
         }
 
         map.once('idle', () => {
+            const latSpan = maxLat - minLat;
             map.flyTo({
-                center: [cLon, cLat],
+                center: [cLon, cLat - latSpan * 0.15],
                 zoom: 13.2,
                 pitch: 45,
                 bearing: 0,
