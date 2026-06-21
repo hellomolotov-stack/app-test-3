@@ -1531,8 +1531,8 @@ body::before {
 }
 .map-swipe-hint .mh-l { animation: mhSpreadL 1.5s ease-in-out 2; }
 .map-swipe-hint .mh-r { animation: mhSpreadR 1.5s ease-in-out 2; }
-.map-swipe-hint .mh-cw { animation: mhRotateCW 1.8s ease-in-out 2 3s; }
-.map-swipe-hint .mh-ccw { animation: mhRotateCCW 1.8s ease-in-out 2 3s; }
+.map-swipe-hint .mh-cw { animation: mhArcA 3s ease-in-out 1 3s; }
+.map-swipe-hint .mh-ccw { animation: mhArcB 3s ease-in-out 1 3s; }
 @keyframes mhSpreadL {
     0%   { transform: translateX(0);     opacity: 0; }
     15%  { opacity: 0.5; }
@@ -1543,15 +1543,25 @@ body::before {
     15%  { opacity: 0.5; }
     100% { transform: translateX(65px);  opacity: 0; }
 }
-@keyframes mhRotateCW {
-    0%   { transform: translate(0, -50px); opacity: 0; }
-    15%  { opacity: 0.5; }
-    100% { transform: translate(50px, 0);  opacity: 0; }
+@keyframes mhArcA {
+    0%   { transform: translate(-45px, 0); opacity: 0; }
+    8%   { opacity: 0.5; }
+    45%  { transform: translate(0, -45px); opacity: 0.5; }
+    50%  { transform: translate(45px, 0);  opacity: 0; }
+    55%  { transform: translate(45px, 0);  opacity: 0; }
+    60%  { opacity: 0.5; }
+    95%  { transform: translate(0, -45px); opacity: 0.5; }
+    100% { transform: translate(-45px, 0); opacity: 0; }
 }
-@keyframes mhRotateCCW {
-    0%   { transform: translate(0, -50px); opacity: 0; }
-    15%  { opacity: 0.5; }
-    100% { transform: translate(-50px, 0); opacity: 0; }
+@keyframes mhArcB {
+    0%   { transform: translate(45px, 0);  opacity: 0; }
+    8%   { opacity: 0.5; }
+    45%  { transform: translate(0, 45px);  opacity: 0.5; }
+    50%  { transform: translate(-45px, 0); opacity: 0; }
+    55%  { transform: translate(-45px, 0); opacity: 0; }
+    60%  { opacity: 0.5; }
+    95%  { transform: translate(0, 45px);  opacity: 0.5; }
+    100% { transform: translate(45px, 0);  opacity: 0; }
 }
 
 .participant-counter {
