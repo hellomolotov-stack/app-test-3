@@ -129,7 +129,8 @@ export function renderUserBookings(container) {
     bookings.forEach(booking => {
         const isWoman = booking.woman === 'yes';
         const isCity = booking.city === true || booking.city === 'yes';
-        const accentColor = isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)');
+        const isBookClub = booking.book_club === true;
+        const accentColor = isBookClub ? '#FFF1B2' : (isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)'));
         const dateParts = booking.date.split('-');
         const day = parseInt(dateParts[2], 10);
         const month = parseInt(dateParts[1], 10) - 1;

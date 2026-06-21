@@ -86,6 +86,7 @@ export function renderCalendar(container) {
         const isCancelled = isFullHike && hike.cancelled === true;
         const isWoman = isFullHike && hike.woman === 'yes';
         const isCity = isFullHike && (hike.city === true || hike.city === 'yes');
+        const isBookClub = isFullHike && hike.book_club === true;
 
         let classes = 'calendar-day';
         if (isToday) classes += ' today';
@@ -124,7 +125,11 @@ export function renderCalendar(container) {
         }
 
         let inlineStyle = '';
-        if (isCity && isPast) {
+        if (isBookClub && isPast) {
+            inlineStyle = ' style="background: rgba(255, 241, 178, 0.3) !important; color: #000000 !important; border-radius: 50%;"';
+        } else if (isBookClub) {
+            inlineStyle = ' style="background: #FFF1B2 !important; color: #000000 !important; border-radius: 50%;"';
+        } else if (isCity && isPast) {
             inlineStyle = ' style="background: rgba(65, 181, 237, 0.3) !important; color: #000000 !important; border-radius: 50%;"';
         } else if (isCity) {
             inlineStyle = ' style="background: #41B5ED !important; color: #ffffff !important; border-radius: 50%;"';
@@ -493,8 +498,11 @@ export function showBottomSheet(index) {
 
         const isWoman = hike.woman === 'yes';
         const isCity = hike.city === true || hike.city === 'yes';
+        const isBookClub = hike.book_club === true;
         let accentColor;
-        if (isCity) {
+        if (isBookClub) {
+            accentColor = '#FFF1B2';
+        } else if (isCity) {
             accentColor = '#41B5ED';
         } else if (isWoman) {
             accentColor = '#FB5EB0';
@@ -502,7 +510,7 @@ export function showBottomSheet(index) {
             accentColor = 'var(--yellow)';
         }
 
-        if (isCity) {
+        if (isCity || isBookClub) {
             contentWrapper.classList.add('city-sheet');
         } else {
             contentWrapper.classList.remove('city-sheet');
@@ -578,7 +586,11 @@ export function showBottomSheet(index) {
         let shareButtonHtml = '';
         if (!isPlaceholder && !isCancelled) {
             let buttonColor, buttonTextColor, buttonText;
-            if (isCity) {
+            if (isBookClub) {
+                buttonColor = '#FFF1B2';
+                buttonTextColor = '#000000';
+                buttonText = 'поделиться событием';
+            } else if (isCity) {
                 buttonColor = '#41B5ED';
                 buttonTextColor = '#ffffff';
                 buttonText = 'поделиться событием';
@@ -602,7 +614,7 @@ export function showBottomSheet(index) {
         let imageHtml = '';
         const hikeTrack = HIKE_TRACKS[hike.date];
         if ((hikeTrack || hike.image) && !isPlaceholder) {
-            const participantText = isPast ? (isCity ? 'были' : 'ходили') : (isCity ? 'будут' : 'идут');
+            const participantText = isPast ? ((isCity || isBookClub) ? 'были' : 'ходили') : ((isCity || isBookClub) ? 'будут' : 'идут');
             const mediaHtml = hikeTrack
                 ? `<div class="hike-map-box" id="hikeMapBox"></div>`
                 : `<img src="${hike.image}" class="bottom-sheet-image" loading="lazy" onerror="this.style.display='none'" id="hikeMainImage">`;
@@ -622,7 +634,7 @@ export function showBottomSheet(index) {
         if (!isPast && !isCancelled && !isPlaceholder) {
             extraInfoHtml = '<div class="hike-extra-info">';
             if (hike.start_time) {
-                if (isCity) {
+                if (isCity || isBookClub) {
                     if (!isGuest) {
                         extraInfoHtml += `
                             <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
@@ -660,7 +672,7 @@ export function showBottomSheet(index) {
                 } else {
                     locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
-                const locationLabel = isCity ? 'локация' : 'точка сбора';
+                const locationLabel = (isCity || isBookClub) ? 'локация' : 'точка сбора';
                 extraInfoHtml += `
                     <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
@@ -1271,6 +1283,7 @@ function updateFloatingSheetButtons() {
     const isPlaceholder = !hike.title || hike.title.trim() === '';
     const isCancelled = hike.cancelled === true;
     const isCity = (hike.city === true || hike.city === 'yes');
+    const isBookClub = hike.book_club === true;
     const isGuest = state.userCard.status !== 'active';
     const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
 
@@ -1294,13 +1307,14 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Городские события: для гостей – баннеры, для владельцев карт – свайп-контрол
-    if (isCity && !isPast && !isCancelled && !isPlaceholder) {
+    // Городские события / книжный клуб: для гостей – баннеры, для владельцев карт – свайп-контрол
+    if ((isCity || isBookClub) && !isPast && !isCancelled && !isPlaceholder) {
         if (isGuest) {
             // Баннер "вход по карте"
             const infoMsg = document.createElement('div');
             infoMsg.className = 'availability-floating';
-            infoMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
+            const bcBg = isBookClub ? 'rgba(255, 241, 178, 0.15)' : 'rgba(73, 138, 176, 0.15)';
+            infoMsg.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: ${bcBg}; backdrop-filter: blur(12px); text-align: center; color: #ffffff;`;
             infoMsg.textContent = 'вход по карте интеллигента';
             container.appendChild(infoMsg);
 
@@ -1311,13 +1325,16 @@ function updateFloatingSheetButtons() {
 
             const cardsBlock = document.createElement('div');
             cardsBlock.className = 'availability-floating';
-            cardsBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center;';
+            const bcBg2 = isBookClub ? 'rgba(255, 241, 178, 0.15)' : 'rgba(73, 138, 176, 0.15)';
+            const bcAccent = isBookClub ? '#FFF1B2' : '#41B5ED';
+            const bcBtnText = isBookClub ? '#000000' : '#ffffff';
+            cardsBlock.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: ${bcBg2}; backdrop-filter: blur(12px); text-align: center;`;
             cardsBlock.innerHTML = `
                 <div style="font-size: 14px; line-height: 1.4;">
-                    <strong style="color: #41B5ED; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
+                    <strong style="color: ${bcAccent}; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
                     <span style="color: #ffffff; font-style: italic;"> ${availableCards} из 10 карт</span>
                 </div>
-                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #41B5ED; color: #ffffff; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
+                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: ${bcAccent}; color: ${bcBtnText}; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
             `;
             const buyBtn = cardsBlock.querySelector('#buyCardFromFloatingBtn');
             if (buyBtn) {
@@ -1347,7 +1364,7 @@ function updateFloatingSheetButtons() {
         } else {
             // Владельцы карт – показываем интерфейс записи (свайп-контрол)
             const isWoman = hike.woman === 'yes';
-            const accentColor = isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)');
+            const accentColor = isBookClub ? '#FFF1B2' : (isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)'));
             const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
             const swipeControl = renderSwipeControl({ isBooked, isGuest: false, hike, accentColor });
             if (swipeControl) {
@@ -1479,7 +1496,7 @@ function updateFloatingSheetButtons() {
         const completedBtn = document.createElement('a');
         completedBtn.href = '#';
         completedBtn.className = 'btn btn-outline';
-        completedBtn.textContent = isCity ? 'событие завершено' : 'хайк завершён';
+        completedBtn.textContent = (isCity || isBookClub) ? 'событие завершено' : 'хайк завершён';
         completedBtn.style.pointerEvents = 'none';
         row.appendChild(completedBtn);
 
@@ -1487,7 +1504,8 @@ function updateFloatingSheetButtons() {
             const reportBtn = document.createElement('a');
             reportBtn.href = '#';
             reportBtn.className = 'btn btn-yellow';
-            if (isCity) reportBtn.style.backgroundColor = '#41B5ED';
+            if (isBookClub) reportBtn.style.backgroundColor = '#FFF1B2';
+            else if (isCity) reportBtn.style.backgroundColor = '#41B5ED';
             else if (isWoman) reportBtn.style.backgroundColor = '#FB5EB0';
             else reportBtn.style.backgroundColor = 'var(--yellow)';
             reportBtn.style.color = isCity ? '#ffffff' : '#000000';
@@ -2294,7 +2312,7 @@ export function showHikePickerSheet() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const upcoming = (state.hikesWithTitle || [])
-        .filter(h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today)
+        .filter(h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && h.book_club !== true && new Date(h.date) >= today)
         .slice(0, 6);
     if (!upcoming.length) return;
 

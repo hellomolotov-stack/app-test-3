@@ -47,7 +47,8 @@ export function subscribeToHikes(callback) {
             half_image: data.half_image || '',
             cancelled: data.cancelled === true || data.cancelled === 'yes' || data.cancelled === '1',
             city: data.city === 'yes' || data.city === true,
-            emoji: data.emoji || ''   // новое поле
+            book_club: data.book_club === 'yes' || data.book_club === true,
+            emoji: data.emoji || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
         callback(list);
     });
