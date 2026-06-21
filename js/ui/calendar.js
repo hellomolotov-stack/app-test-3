@@ -578,7 +578,7 @@ export function showBottomSheet(index) {
             processedText = processedText.replace(/\n/g, '<br>');
             sectionsHtml += `
                 <div class="bottom-sheet-section">
-                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">детали</div>
+                    <div class="bottom-sheet-section-title" style="color: ${accentColor};">${isBookClub ? 'что читаем' : 'детали'}</div>
                     <div class="bottom-sheet-section-content${isWoman ? ' woman-content' : ''}">${processedText}</div>
                 </div>
             `;
