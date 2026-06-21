@@ -148,7 +148,9 @@ export function renderUserBookings(container) {
         cleanedTitle = cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
         
         let eventType, displayTitle;
-        if (isCity) {
+        if (isBookClub) {
+            displayTitle = booking.title;
+        } else if (isCity) {
             eventType = 'событие';
             const lowerTitle = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
             displayTitle = `${eventType} ${lowerTitle}`;
