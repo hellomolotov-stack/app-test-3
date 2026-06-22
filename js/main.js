@@ -1,14 +1,14 @@
 // js/main.js
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadGuestAllowMessages, loadPopups } from './firebase.js';
+import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadGuestAllowMessages, loadPopups } from './firebase.js';
 import { log, syncGuestAllowMessages } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622d';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622e';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
@@ -397,12 +397,12 @@ async function loadAppData() {
         // #3: всё параллельно, включая userData
         const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,
                randomPhrases, leaders, updates, mastermindSummaries,
-               regsPopup, popupConfig, popups, userData] = await Promise.all([
+               regsPopup, popupConfig, popups, userData, testimonials] = await Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
             loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
             loadUpdates(), loadMastermindSummaries(),
             loadRegistrationsPopup(), loadPopupConfig(), loadPopups().catch(() => null),
-            loadUserData(state.user?.id)
+            loadUserData(state.user?.id), loadTestimonials().catch(() => [])
         ]);
 
         if (metrics) state.metrics = metrics;
@@ -415,6 +415,7 @@ async function loadAppData() {
         if (leaders) state.leaders = leaders;
         if (updates) state.updates = updates;
         if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
+        if (testimonials) state.testimonials = testimonials;
         if (regsPopup) state.registrationsPopup = regsPopup;
         if (popupConfig) state.popupConfig = { ...state.popupConfig, ...popupConfig };
         if (popups) state.popups = popups;

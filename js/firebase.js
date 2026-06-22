@@ -156,6 +156,15 @@ export async function loadMastermindSummaries() {
     return [];
 }
 
+export async function loadTestimonials() {
+    if (!database) return [];
+    const snapshot = await database.ref('testimonials').once('value');
+    const data = snapshot.val();
+    if (Array.isArray(data)) return data.filter(Boolean);
+    if (data && typeof data === 'object') return Object.values(data);
+    return [];
+}
+
 export async function loadPopups() {
     if (!database) return {};
     try {

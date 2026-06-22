@@ -252,6 +252,41 @@ function renderMastermindSummaries() {
     `;
 }
 
+function renderTestimonialsBlock() {
+    const items = (state.testimonials || []).filter(t => t && (t.text || t.quote));
+    if (!items.length) return '<div id="testimonialsContainer"></div>';
+
+    let cards = '';
+    items.forEach(t => {
+        const text = t.text || t.quote || '';
+        const name = t.name || '';
+        const meta = t.meta || t.role || (t.hikes ? `${t.hikes} хайков в клубе` : '');
+        const photo = t.photo || t.avatar || '';
+        const avatar = photo
+            ? `<img src="${photo}" class="tst-avatar" onerror="this.style.display='none'">`
+            : `<div class="tst-avatar tst-avatar-ph">${(name.charAt(0) || '🙂').toUpperCase()}</div>`;
+        cards += `
+            <div class="tst-card">
+                <div class="tst-quote">«${text}»</div>
+                <div class="tst-author">
+                    ${avatar}
+                    <div class="tst-author-meta">
+                        <div class="tst-name">${name}</div>
+                        ${meta ? `<div class="tst-role">${meta}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    return `
+        <div class="card-container" id="testimonialsContainer">
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;">💬 почему остаются</h2>
+            <div class="tst-scroller">${cards}</div>
+        </div>
+    `;
+}
+
 function renderUpdatesBlock() {
     const updates = state.updates || [];
     if (!updates.length) return '';
@@ -382,6 +417,7 @@ function renderGuestHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
+        ${renderTestimonialsBlock()}
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderUpdatesBlock()}
     `;
