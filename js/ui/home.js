@@ -360,21 +360,6 @@ function renderGuestHome() {
         badgeText = `🔒 осталось ${cardsLeft} ${word} в ${months[new Date().getMonth()]}`;
     }
 
-    // Вернувшийся гость — уже был хотя бы на одном прошедшем хайке
-    const isReturningGuest = (state.hikesWithTitle || []).some((h, idx) =>
-        h.date && new Date(h.date) < today && state.hikeBookingStatus?.[idx]
-    );
-    const cardsWord = cardsLeft === 1 ? 'карта' : cardsLeft < 5 ? 'карты' : 'карт';
-    const nm = (firstName || '').toLowerCase();
-    const wasWord = (nm.endsWith('а') || nm.endsWith('я')) ? 'была' : 'был';
-    const returningBannerHtml = isReturningGuest ? `
-        <div class="card-container returning-guest-banner" id="returningGuestBanner">
-            <div class="rgb-line">ты уже ${wasWord} с нами, <strong>${firstName}</strong> 🏔️</div>
-            <div class="rgb-sub">${cardsLeft > 0 ? `дальше ходят только свои — осталось <strong>${cardsLeft} ${cardsWord}</strong> в ${months[new Date().getMonth()]}` : 'дальше ходят только свои'}</div>
-            <button class="btn btn-yellow rgb-btn" id="returningGuestBtn">хочу карту</button>
-        </div>
-    ` : '';
-
     const cardHtml = `
         <div class="card-container" id="cardBlock">
             <div class="card-image-wrap">
@@ -399,7 +384,6 @@ function renderGuestHome() {
     `;
 
     main.innerHTML = `
-        ${returningBannerHtml}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
         <div class="card-container">
@@ -426,11 +410,6 @@ function renderGuestHome() {
     document.getElementById('cardBadgeBtn')?.addEventListener('click', () => {
         haptic();
         log('как получить карту', true, state.user);
-        showGuestBookingPopup(nextHike?.date, nextHike?.title);
-    });
-    document.getElementById('returningGuestBtn')?.addEventListener('click', () => {
-        haptic();
-        log('баннер вернувшегося гостя', true, state.user);
         showGuestBookingPopup(nextHike?.date, nextHike?.title);
     });
 

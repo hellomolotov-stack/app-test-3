@@ -1763,7 +1763,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
 
     const hikeReturningHtml = `
         <div class="bpu-text">
-            <div class="bpu-line bpu-title">рад, что ты ${was} с нами, ${firstName || 'друг'}</div>
+            <div class="bpu-line bpu-title">рады, что ты ${was} с нами, ${firstName || 'друг'}</div>
             <div class="bpu-line">один хайк позади – и обычным походом это уже не назовёшь</div>
             <div class="bpu-divider"></div>
             <div class="bpu-line">дальше ходят только свои. билетов нет – <em>намеренно</em></div>
