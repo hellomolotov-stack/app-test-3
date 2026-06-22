@@ -192,6 +192,33 @@ body::before {
     box-shadow: var(--glass-highlight), var(--glass-shadow);
 }
 
+.returning-guest-banner {
+    padding: 18px 20px;
+    text-align: center;
+    border: 1px solid rgba(217, 253, 25, 0.35);
+    box-shadow: 0 0 0 1px rgba(217,253,25,0.12) inset, var(--glass-shadow);
+}
+.returning-guest-banner .rgb-line {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+.returning-guest-banner .rgb-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.4;
+    margin-bottom: 14px;
+}
+.returning-guest-banner .rgb-sub strong {
+    color: var(--yellow);
+}
+.returning-guest-banner .rgb-btn {
+    width: auto;
+    margin: 0 auto;
+    padding: 10px 28px;
+}
+
 .card-image-wrap {
     position: relative;
     margin: 0 16px;
@@ -2366,6 +2393,14 @@ body::before {
     color: rgba(255,255,255,0.65);
     line-height: 1.5;
     margin-bottom: 14px;
+}
+
+.booking-popup-reassurance {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+    text-align: center;
+    margin: 14px 4px 4px;
 }
 
 /* FAQ toggle */

@@ -1864,15 +1864,17 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
 
                 <div class="booking-card-option">
                     <div class="booking-card-name">бессрочная – ${config.permanentCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">берут чаще</span></div>
-                    <div class="booking-card-desc">заплатил один раз – ходишь годами. без продлений и подписок<br>все хайки, городские события, скидки у партнёров, впн</div>
+                    <div class="booking-card-desc">заплатил один раз – ходишь годами. без продлений и подписок<br>выгоднее сезонной уже на второй год – а впн и привилегии остаются навсегда<br>все хайки, городские события, скидки у партнёров, впн</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить навсегда</button>
                 </div>
 
                 <div class="booking-card-option" style="margin-top: 12px;">
                     <div class="booking-card-name">сезонная – ${config.seasonCardPrice} ₽</div>
-                    <div class="booking-card-desc">те же привилегии – до конца сезона 2026</div>
+                    <div class="booking-card-desc">попробовать клуб на сезон – все привилегии до конца 2026, потом продление</div>
                     <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">взять на сезон</button>
                 </div>
+
+                <div class="booking-popup-reassurance">🔒 оформление займёт минуту – карта появится в приложении сразу после оплаты. платёж защищён</div>
 
                 ${perksPreviewHtml}
 
