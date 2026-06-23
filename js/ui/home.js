@@ -6,7 +6,7 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount } from './calendar.js';
-import { renderNewcomerPage, renderPriv, renderGuestPrivileges } from './privileges.js';
+import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openOnboardingChat } from './onboarding-chat.js';
@@ -252,6 +252,26 @@ function renderMastermindSummaries() {
     `;
 }
 
+function renderSafetyBanner() {
+    const s = state.safety;
+    if (!s || !s.active) return '';
+    const label = s.banner || '🆘 на случай ЧП — будь наготове';
+    return `
+        <div class="safety-banner" id="safetyBanner">
+            <span class="safety-banner-text">${label}</span>
+            <span class="safety-banner-arrow">›</span>
+        </div>
+    `;
+}
+
+function wireSafetyBanner() {
+    document.getElementById('safetyBanner')?.addEventListener('click', () => {
+        haptic();
+        log('баннер ЧП', state.userCard.status !== 'active', state.user);
+        renderSafetyPage(state.userCard.status !== 'active');
+    });
+}
+
 function renderTestimonialsBlock() {
     const items = (state.testimonials || []).filter(t => t && (t.text || t.quote));
     if (!items.length) return '<div id="testimonialsContainer"></div>';
@@ -384,6 +404,7 @@ function renderGuestHome() {
     `;
 
     main.innerHTML = `
+        ${renderSafetyBanner()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
         <div class="card-container">
@@ -406,6 +427,7 @@ function renderGuestHome() {
         ${renderUpdatesBlock()}
     `;
 
+    wireSafetyBanner();
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
     document.getElementById('cardBadgeBtn')?.addEventListener('click', () => {
         haptic();
@@ -583,6 +605,7 @@ function renderOwnerHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
+        ${renderSafetyBanner()}
         <div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
@@ -611,6 +634,7 @@ function renderOwnerHome() {
         ${renderUpdatesBlock()}
     `;
 
+    wireSafetyBanner();
     document.getElementById('ownerCardImage')?.addEventListener('click', () => {
         haptic();
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');

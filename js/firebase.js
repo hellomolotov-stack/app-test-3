@@ -111,6 +111,21 @@ export async function loadGiftContent() {
     return snapshot.val()?.content || '';
 }
 
+export async function loadSafety() {
+    const fallback = { active: false, banner: '', intro: '', items: [] };
+    if (!database) return fallback;
+    const snapshot = await database.ref('safety').once('value');
+    const data = snapshot.val();
+    if (!data) return fallback;
+    return {
+        active: data.active === true || data.active === 'yes',
+        banner: data.banner || '',
+        intro: data.intro || '',
+        items: Array.isArray(data.items) ? data.items.filter(Boolean)
+             : (data.items && typeof data.items === 'object' ? Object.values(data.items) : [])
+    };
+}
+
 export async function loadRandomPhrases() {
     if (!database) return [];
     const snapshot = await database.ref('randomPhrases').once('value');

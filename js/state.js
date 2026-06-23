@@ -29,6 +29,7 @@ export const state = {
     updates: [],
     mastermindSummaries: [],
     testimonials: [],
+    safety: { active: false, banner: '', intro: '', items: [] },
     pendingProfileClick: null,
 };
 
@@ -53,6 +54,7 @@ export function loadCachedState() {
             if (data.updates) state.updates = data.updates;
             if (data.mastermindSummaries) state.mastermindSummaries = data.mastermindSummaries;
             if (data.testimonials) state.testimonials = data.testimonials;
+            if (data.safety) state.safety = data.safety;
             if (data.userCard) state.userCard = data.userCard; // для мгновенного рендера из кэша
             return true;
         }
@@ -76,6 +78,7 @@ export function saveCachedState() {
             updates: state.updates,
             mastermindSummaries: state.mastermindSummaries,
             testimonials: state.testimonials,
+            safety: state.safety,
             userCard: state.userCard && state.userCard.status !== 'loading' ? state.userCard : undefined,
         };
         localStorage.setItem('hikingAppCache', JSON.stringify(toCache));

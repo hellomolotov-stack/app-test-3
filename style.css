@@ -192,6 +192,43 @@ body::before {
     box-shadow: var(--glass-highlight), var(--glass-shadow);
 }
 
+.safety-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 20px;
+    padding: 14px 18px;
+    border-radius: 18px;
+    background: rgba(229, 115, 47, 0.18);
+    border: 1px solid rgba(245, 158, 66, 0.55);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.safety-banner:active {
+    background: rgba(229, 115, 47, 0.28);
+}
+.safety-banner-text {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffd9a8;
+    line-height: 1.35;
+}
+.safety-banner-arrow {
+    font-size: 22px;
+    color: #ffd9a8;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.safety-intro {
+    font-size: 14px;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.85);
+    padding: 4px 16px;
+    white-space: pre-line;
+}
+
 .tst-scroller {
     display: flex;
     gap: 12px;

@@ -1,14 +1,14 @@
 // js/main.js
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadGuestAllowMessages, loadPopups } from './firebase.js';
+import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadGuestAllowMessages, loadPopups } from './firebase.js';
 import { log, syncGuestAllowMessages } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
-import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage } from './ui/privileges.js';
+import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622f';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622g';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
@@ -150,6 +150,10 @@ function setupBottomNav() {
     popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderGift(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(true); });
     popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+    const popupSafety = document.getElementById('popupSafety');
+    if (popupSafety) {
+        popupSafety.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderSafetyPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+    }
     if (popupQuestion) {
         popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'написать организатору', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     }
@@ -397,12 +401,13 @@ async function loadAppData() {
         // #3: всё параллельно, включая userData
         const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,
                randomPhrases, leaders, updates, mastermindSummaries,
-               regsPopup, popupConfig, popups, userData, testimonials] = await Promise.all([
+               regsPopup, popupConfig, popups, userData, testimonials, safety] = await Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
             loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
             loadUpdates(), loadMastermindSummaries(),
             loadRegistrationsPopup(), loadPopupConfig(), loadPopups().catch(() => null),
-            loadUserData(state.user?.id), loadTestimonials().catch(() => [])
+            loadUserData(state.user?.id), loadTestimonials().catch(() => []),
+            loadSafety().catch(() => null)
         ]);
 
         if (metrics) state.metrics = metrics;
@@ -416,6 +421,9 @@ async function loadAppData() {
         if (updates) state.updates = updates;
         if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
         if (testimonials) state.testimonials = testimonials;
+        if (safety) state.safety = safety;
+        const safetyMenuItem = document.getElementById('popupSafety');
+        if (safetyMenuItem) safetyMenuItem.style.display = state.safety?.active ? '' : 'none';
         if (regsPopup) state.registrationsPopup = regsPopup;
         if (popupConfig) state.popupConfig = { ...state.popupConfig, ...popupConfig };
         if (popups) state.popups = popups;

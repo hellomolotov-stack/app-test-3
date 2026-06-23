@@ -249,6 +249,43 @@ export function renderPassPage(isGuest = false) {
     }
 }
 
+export function renderSafetyPage(isGuest = false) {
+    cleanupProfileOverlays();
+    window.isPrivPage = true;
+    window.isMenuActive = false;
+    resetNavActive();
+    subtitle().textContent = `🆘 на случай ЧП`;
+    showBack(renderHome);
+    showBottomNav(true);
+    setupBottomNav();
+    scrollPageToTop();
+
+    const safety = state.safety || { intro: '', items: [] };
+    const intro = safety.intro
+        ? `<div class="card-container"><div class="safety-intro">${safety.intro.replace(/\n/g, '<br>')}</div></div>`
+        : '';
+
+    let itemsHtml = '';
+    (safety.items || []).forEach(item => {
+        if (!item || (!item.title && !item.text)) return;
+        const text = (item.text || '').replace(/\n/g, '<br>');
+        let linkHtml = '';
+        if (item.link) {
+            const label = item.link_text || 'открыть';
+            linkHtml = `<a href="#" data-url="${item.link}" data-guest="${isGuest}" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${label}</a>`;
+        }
+        itemsHtml += `<div class="partner-item">${item.title ? `<strong>${item.title}</strong>` : ''}<p style="white-space: pre-line;">${text}</p>${linkHtml}</div>`;
+    });
+    if (!itemsHtml) itemsHtml = '<div class="partner-item"><p>информация скоро появится</p></div>';
+
+    mainDiv().innerHTML = `
+        ${intro}
+        <div class="card-container">
+            ${itemsHtml}
+        </div>
+    `;
+}
+
 function setupAccordion(containerId, isGuest) {
     const container = document.getElementById(containerId);
     if (!container) return;
