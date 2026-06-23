@@ -1,5 +1,5 @@
 // js/ui/privileges.js
-import { haptic, openLink, mainDiv, subtitle, parseLinks } from '../utils.js';
+import { haptic, openLink, mainDiv, subtitle, parseLinks, tg } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
@@ -301,6 +301,26 @@ export function renderSafetyPage(isGuest = false) {
             ${catsHtml}
         </div>
     `;
+
+    addSafetyShareButton(isGuest);
+}
+
+function addSafetyShareButton(isGuest) {
+    document.getElementById('safetyShareBtn')?.remove();
+    const btn = document.createElement('button');
+    btn.id = 'safetyShareBtn';
+    btn.className = 'floating-share-btn';
+    btn.textContent = '🔗 поделиться чек-листом';
+    btn.addEventListener('click', () => {
+        haptic();
+        log('поделиться чеклистом ЧП', isGuest, state.user);
+        const url = 'https://t.me/yaltahiking_bot?startapp=safety';
+        const text = 'на случай ЧП в Крыму — чек-лист, как быть наготове';
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+        if (tg && tg.openTelegramLink) tg.openTelegramLink(shareUrl);
+        else window.open(shareUrl, '_blank');
+    });
+    document.body.appendChild(btn);
 }
 
 function setupAccordion(containerId, isGuest) {

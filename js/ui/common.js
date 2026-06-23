@@ -149,5 +149,6 @@ export function cleanupProfileOverlays() {
     document.querySelector('.profile-preview-banner')?.remove();
     document.querySelector('.profile-edit-fab')?.remove();
     document.getElementById('stickyHikeCta')?.remove();
+    document.getElementById('safetyShareBtn')?.remove();
     document.body.style.overflow = '';
 }

@@ -209,6 +209,28 @@ body::before {
 .safety-banner:active {
     background: rgba(229, 115, 47, 0.28);
 }
+.floating-share-btn {
+    position: fixed;
+    bottom: 90px;
+    right: 16px;
+    max-width: calc(100% - 32px);
+    width: auto;
+    padding: 12px 20px;
+    background-color: #D9FD19;
+    color: #000000;
+    border: none;
+    border-radius: 40px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 101;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    white-space: nowrap;
+}
+.floating-share-btn:active {
+    transform: scale(0.97);
+}
+
 .safety-banner-flash {
     animation: safetyBannerFlash 0.85s ease-out 3;
 }
