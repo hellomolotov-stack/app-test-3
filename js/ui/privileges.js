@@ -262,12 +262,12 @@ export function renderSafetyPage(isGuest = false) {
 
     const safety = state.safety || { intro: '', items: [] };
     const intro = safety.intro
-        ? `<div class="card-container"><div class="safety-intro">${safety.intro.replace(/\n/g, '<br>')}</div></div>`
+        ? `<div class="card-container"><div class="safety-intro">${parseLinks(safety.intro, isGuest).replace(/\n/g, '<br>')}</div></div>`
         : '';
 
     const renderBullet = (b) => {
         if (!b || (!b.text && !b.link)) return '';
-        const text = (b.text || '').replace(/\n/g, '<br>');
+        const text = parseLinks(b.text || '', isGuest).replace(/\n/g, '<br>');
         let linkHtml = '';
         if (b.link) {
             const label = b.link_text || b.text || 'открыть';
