@@ -254,7 +254,7 @@ export function renderSafetyPage(isGuest = false) {
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
-    subtitle().textContent = `🆘 на случай ЧП`;
+    subtitle().textContent = (state.safety && state.safety.page_title) || `🆘 на случай ЧП`;
     showBack(renderHome);
     showBottomNav(true);
     setupBottomNav();

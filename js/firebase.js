@@ -112,7 +112,7 @@ export async function loadGiftContent() {
 }
 
 export async function loadSafety() {
-    const fallback = { active: false, banner: '', intro: '', items: [] };
+    const fallback = { active: false, banner: '', intro: '', page_title: '', items: [] };
     if (!database) return fallback;
     const snapshot = await database.ref('safety').once('value');
     const data = snapshot.val();
@@ -121,6 +121,7 @@ export async function loadSafety() {
         active: data.active === true || data.active === 'yes',
         banner: data.banner || '',
         intro: data.intro || '',
+        page_title: data.page_title || '',
         items: Array.isArray(data.items) ? data.items.filter(Boolean)
              : (data.items && typeof data.items === 'object' ? Object.values(data.items) : [])
     };
