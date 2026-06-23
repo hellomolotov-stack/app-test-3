@@ -8,7 +8,7 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622j';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622k';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
@@ -182,6 +182,28 @@ function highlightElement(el) {
     setTimeout(() => { el.style.boxShadow = ''; }, 2000);
 }
 
+// Скролл к баннеру ЧП на главной + янтарная подсветка под его цвет.
+// Ждём появления баннера (он есть только при safety.active), затем пульсируем.
+function highlightSafetyBanner({ delay = 400, interval = 100, timeout = 6000 } = {}) {
+    const flash = (el) => {
+        scrollToElement(el, getCurrentTopOffset());
+        el.classList.remove('safety-banner-flash');
+        void el.offsetWidth; // перезапуск анимации
+        el.classList.add('safety-banner-flash');
+        setTimeout(() => el.classList.remove('safety-banner-flash'), 2600);
+    };
+    setTimeout(() => {
+        const el0 = document.getElementById('safetyBanner');
+        if (el0) { flash(el0); return; }
+        const t0 = Date.now();
+        const iv = setInterval(() => {
+            const el = document.getElementById('safetyBanner');
+            if (el) { clearInterval(iv); flash(el); }
+            else if (Date.now() - t0 > timeout) clearInterval(iv);
+        }, interval);
+    }, delay);
+}
+
 // Ждём появления элемента и скроллим к нему. С таймаутом — без вечного setInterval (#4)
 function scrollToWhenReady(getter, { delay = 300, interval = 100, timeout = 6000 } = {}) {
     setTimeout(() => {
@@ -272,6 +294,9 @@ function handleDeepLink(startParam) {
             break;
         case 'newcomer':
             scrollToWhenReady(() => document.querySelector('.btn-newcomer')?.closest('.card-container'));
+            break;
+        case 'safety':
+            highlightSafetyBanner();
             break;
         case 'privileges':
             if (isGuest) renderGuestPrivileges();
