@@ -15,6 +15,16 @@ export function removeStickyHikeCta() {
     document.getElementById('stickyHikeCta')?.remove();
 }
 
+// Приветствие по времени суток (по локальному времени устройства)
+function timeGreeting(firstName) {
+    const h = new Date().getHours();
+    let word, emoji;
+    if (h >= 5 && h < 12) { word = 'доброе утро'; emoji = '🌤️'; }
+    else if (h >= 12 && h < 18) { word = 'хорошего дня'; emoji = '☀️'; }
+    else { word = 'доброй ночи'; emoji = '🌙'; }
+    return `${emoji} ${word}, ${firstName}!`;
+}
+
 function mountStickyHikeCta() {
     removeStickyHikeCta();
     const today = new Date();
@@ -360,7 +370,7 @@ function renderGuestHome() {
     clearTimeout(_ctaTimer);
     cleanupProfileOverlays();
     const firstName = state.user?.first_name || 'друг';
-    subtitle().textContent = '\u{1F44B}\u{1F3FB} привет, ' + firstName + '!';
+    subtitle().textContent = timeGreeting(firstName);
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
@@ -600,7 +610,7 @@ function renderOwnerHome() {
     cleanupProfileOverlays();
     const user = state.user;
     const firstName = user?.first_name || 'друг';
-    subtitle().textContent = `💳 твоя карта, ${firstName}`;
+    subtitle().textContent = timeGreeting(firstName);
     subtitle().classList.remove('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
