@@ -261,13 +261,17 @@ export function renderSafetyPage(isGuest = false) {
     scrollPageToTop();
 
     const safety = state.safety || { intro: '', items: [] };
+    // ссылки [текст](url), жирный **текст**, переносы строк
+    const fmt = (t) => parseLinks(t || '', isGuest)
+        .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
     const intro = safety.intro
-        ? `<div class="card-container"><div class="safety-intro">${parseLinks(safety.intro, isGuest).replace(/\n/g, '<br>')}</div></div>`
+        ? `<div class="card-container"><div class="safety-intro">${fmt(safety.intro)}</div></div>`
         : '';
 
     const renderBullet = (b) => {
         if (!b || (!b.text && !b.link)) return '';
-        const text = parseLinks(b.text || '', isGuest).replace(/\n/g, '<br>');
+        const text = fmt(b.text || '');
         let linkHtml = '';
         if (b.link) {
             const label = b.link_text || b.text || 'открыть';
