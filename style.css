@@ -228,6 +228,48 @@ body::before {
     padding: 4px 16px;
     white-space: pre-line;
 }
+.safety-cat {
+    padding: 4px 16px 16px;
+}
+.safety-cat + .safety-cat {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-top: 16px;
+}
+.safety-cat-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--yellow);
+    margin-bottom: 10px;
+}
+.safety-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.safety-list li {
+    position: relative;
+    padding-left: 18px;
+    margin-bottom: 9px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.88);
+}
+.safety-list li::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 9px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--yellow);
+}
+.safety-link {
+    color: var(--yellow);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
 
 .tst-scroller {
     display: flex;

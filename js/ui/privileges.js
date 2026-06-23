@@ -265,23 +265,40 @@ export function renderSafetyPage(isGuest = false) {
         ? `<div class="card-container"><div class="safety-intro">${safety.intro.replace(/\n/g, '<br>')}</div></div>`
         : '';
 
-    let itemsHtml = '';
-    (safety.items || []).forEach(item => {
-        if (!item || (!item.title && !item.text)) return;
-        const text = (item.text || '').replace(/\n/g, '<br>');
+    const renderBullet = (b) => {
+        if (!b || (!b.text && !b.link)) return '';
+        const text = (b.text || '').replace(/\n/g, '<br>');
         let linkHtml = '';
-        if (item.link) {
-            const label = item.link_text || 'открыть';
-            linkHtml = `<a href="#" data-url="${item.link}" data-guest="${isGuest}" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${label}</a>`;
+        if (b.link) {
+            const label = b.link_text || b.text || 'открыть';
+            // если есть отдельный текст — ссылка идёт отдельной строкой; иначе сама строка-ссылка
+            linkHtml = `<a href="#" data-url="${b.link}" data-guest="${isGuest}" class="dynamic-link safety-link">${b.text ? (b.link_text || 'открыть') : label}</a>`;
         }
-        itemsHtml += `<div class="partner-item">${item.title ? `<strong>${item.title}</strong>` : ''}<p style="white-space: pre-line;">${text}</p>${linkHtml}</div>`;
+        const textHtml = b.text ? `<span>${text}</span>` : '';
+        return `<li>${textHtml}${textHtml && linkHtml ? ' ' : ''}${linkHtml}</li>`;
+    };
+
+    let catsHtml = '';
+    (safety.items || []).forEach(cat => {
+        if (!cat) return;
+        // поддержка двух форматов: { title, bullets:[...] } или одиночный { title, text, link }
+        const bullets = Array.isArray(cat.bullets) ? cat.bullets
+                      : (cat.text || cat.link) ? [{ text: cat.text, link: cat.link, link_text: cat.link_text }] : [];
+        const lis = bullets.map(renderBullet).join('');
+        if (!cat.title && !lis) return;
+        catsHtml += `
+            <div class="safety-cat">
+                ${cat.title ? `<div class="safety-cat-title">${cat.title}</div>` : ''}
+                ${lis ? `<ul class="safety-list">${lis}</ul>` : ''}
+            </div>
+        `;
     });
-    if (!itemsHtml) itemsHtml = '<div class="partner-item"><p>информация скоро появится</p></div>';
+    if (!catsHtml) catsHtml = '<div class="partner-item"><p>информация скоро появится</p></div>';
 
     mainDiv().innerHTML = `
         ${intro}
         <div class="card-container">
-            ${itemsHtml}
+            ${catsHtml}
         </div>
     `;
 }
