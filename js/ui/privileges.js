@@ -266,7 +266,7 @@ export function renderSafetyPage(isGuest = false) {
         .replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>')
         .replace(/\n/g, '<br>');
     const intro = safety.intro
-        ? `<div class="card-container"><div class="safety-intro">${fmt(safety.intro)}</div></div>`
+        ? `<div class="safety-intro">${fmt(safety.intro)}</div>`
         : '';
 
     const renderBullet = (b) => {
@@ -313,9 +313,9 @@ export function renderSafetyPage(isGuest = false) {
             catsHtml += updatesHtml;
             updatesInserted = true;
         }
-        // каждая категория — отдельная карточка для чёткой структуры
+        // каждая категория — отдельный внутренний блок для чёткой структуры
         catsHtml += `
-            <div class="card-container safety-cat">
+            <div class="safety-cat">
                 ${cat.title ? `<div class="safety-cat-title">${cat.title}</div>` : ''}
                 ${cat.desc ? `<div class="safety-cat-desc">${fmt(cat.desc)}</div>` : ''}
                 ${lis ? `<ul class="safety-list">${lis}</ul>` : ''}
@@ -324,10 +324,10 @@ export function renderSafetyPage(isGuest = false) {
     });
     // если категория «эссе Макса» не нашлась — показываем обновления сверху
     if (updatesHtml && !updatesInserted) catsHtml = updatesHtml + catsHtml;
-    if (!catsHtml) catsHtml = '<div class="card-container"><p style="padding:4px 16px;">информация скоро появится</p></div>';
+    if (!catsHtml) catsHtml = '<div class="safety-cat"><p>информация скоро появится</p></div>';
 
     const reportBlock = `
-        <div class="card-container safety-cat safety-report-block">
+        <div class="safety-cat safety-report-block">
             <div class="safety-cat-title">знаешь что-то важное?</div>
             <div class="safety-cat-desc">если у тебя есть актуальная информация – поделись с организаторами. мы добавим её в чек-лист</div>
             <button class="btn btn-yellow safety-report-btn" id="safetyReportBtn">📢 поделиться информацией</button>
@@ -335,9 +335,11 @@ export function renderSafetyPage(isGuest = false) {
     `;
 
     mainDiv().innerHTML = `
-        ${intro}
-        ${catsHtml}
-        ${reportBlock}
+        <div class="card-container safety-page">
+            ${intro}
+            ${catsHtml}
+            ${reportBlock}
+        </div>
     `;
 
     document.getElementById('safetyReportBtn')?.addEventListener('click', () => {
