@@ -263,6 +263,27 @@ body::before {
     padding: 4px 16px;
     white-space: pre-line;
 }
+/* Блок «важные обновления» — в стиле баннера ЧП, но жёлтый */
+.safety-updates {
+    margin: 0 0 20px;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: rgba(217, 253, 25, 0.12);
+    border: 1px solid rgba(217, 253, 25, 0.55);
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+}
+.safety-updates-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--yellow);
+    margin-bottom: 8px;
+}
+.safety-updates-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
 .safety-cat {
     padding: 16px 18px;
 }

@@ -282,7 +282,25 @@ export function renderSafetyPage(isGuest = false) {
         return `<li>${textHtml}${textHtml && linkHtml ? ' ' : ''}${linkHtml}</li>`;
     };
 
+    // Блок «важные обновления» — в стиле баннера ЧП, но жёлтый. Структура как у категорий.
+    const upd = safety.updates || {};
+    const updItems = Array.isArray(upd.items) ? upd.items.filter(x => x && (x.text || x.link)) : [];
+    let updatesHtml = '';
+    if (updItems.length) {
+        const updTitle = upd.title || '⚡ важные обновления';
+        const updDesc = upd.desc ? `<div class="safety-updates-desc">${fmt(upd.desc)}</div>` : '';
+        const updLis = updItems.map(renderBullet).join('');
+        updatesHtml = `
+            <div class="safety-updates" id="safetyUpdates">
+                <div class="safety-updates-title">${updTitle}</div>
+                ${updDesc}
+                <ul class="safety-list">${updLis}</ul>
+            </div>
+        `;
+    }
+
     let catsHtml = '';
+    let updatesInserted = false;
     (safety.items || []).forEach(cat => {
         if (!cat) return;
         // поддержка двух форматов: { title, bullets:[...] } или одиночный { title, text, link }
@@ -290,6 +308,11 @@ export function renderSafetyPage(isGuest = false) {
                       : (cat.text || cat.link) ? [{ text: cat.text, link: cat.link, link_text: cat.link_text }] : [];
         const lis = bullets.map(renderBullet).join('');
         if (!cat.title && !lis) return;
+        // вставляем блок обновлений прямо перед категорией «эссе Макса»
+        if (updatesHtml && !updatesInserted && /эссе|макс/i.test(cat.title || '')) {
+            catsHtml += updatesHtml;
+            updatesInserted = true;
+        }
         // каждая категория — отдельная карточка для чёткой структуры
         catsHtml += `
             <div class="card-container safety-cat">
@@ -299,6 +322,8 @@ export function renderSafetyPage(isGuest = false) {
             </div>
         `;
     });
+    // если категория «эссе Макса» не нашлась — показываем обновления сверху
+    if (updatesHtml && !updatesInserted) catsHtml = updatesHtml + catsHtml;
     if (!catsHtml) catsHtml = '<div class="card-container"><p style="padding:4px 16px;">информация скоро появится</p></div>';
 
     const reportBlock = `
