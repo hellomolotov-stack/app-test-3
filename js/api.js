@@ -15,6 +15,19 @@ export function log(action, isGuest = false, user, meta = {}) {
     new Image().src = `${GUEST_API_URL}?${params}`;
 }
 
+// Привязка клика по авто-сообщению (auto_sends): шлёт в основной скрипт, тот ставит clicked_at.
+export function logAutoSendClick(messageKey, user, clickSource = 'deeplink') {
+    if (!user?.id || !REGISTRATION_API_URL || !messageKey) return;
+    const params = new URLSearchParams({
+        action: 'logClick',
+        user_id: user.id,
+        message_key: messageKey,
+        click_source: clickSource
+    });
+    fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true })
+        .catch(e => console.error('logAutoSendClick error:', e));
+}
+
 export function updateRegistrationInSheet(hikeDate, hikeTitle, status, purchaseType, user, hasCard) {
     if (!user?.id || !REGISTRATION_API_URL) return;
     try {

@@ -2,7 +2,7 @@
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadGuestAllowMessages, loadPopups } from './firebase.js';
-import { log, syncGuestAllowMessages } from './api.js';
+import { log, syncGuestAllowMessages, logAutoSendClick } from './api.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
@@ -220,6 +220,23 @@ function scrollToWhenReady(getter, { delay = 300, interval = 100, timeout = 6000
 
 function handleDeepLink(startParam) {
     if (!startParam) return;
+    if (startParam.startsWith('nudge_')) {
+        const keyMap = {
+            nudge_firsthike: 'first_hike',
+            nudge_day3: 'second_hike_day3',
+            nudge_retention: 'retention_48h',
+            nudge_payment: 'payment_incomplete',
+        };
+        const messageKey = keyMap[startParam] || startParam;
+        logAutoSendClick(messageKey, state.user);
+        log('клик по авто-сообщению', false, state.user, { message_key: messageKey });
+        if (startParam === 'nudge_retention') {
+            scrollToWhenReady(() => document.getElementById('calendarContainer'));
+        } else {
+            scrollToWhenReady(() => document.getElementById('cardBlock'));
+        }
+        return;
+    }
     if (startParam.startsWith('card_')) {
         const targetDate = normalizeDate(startParam.substring(5));
         console.log('Deep link card popup target:', targetDate);
