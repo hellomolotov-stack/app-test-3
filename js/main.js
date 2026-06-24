@@ -8,7 +8,7 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622o';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622p';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
@@ -186,7 +186,7 @@ function highlightElement(el) {
 // Ждём появления баннера (он есть только при safety.active), затем пульсируем.
 function highlightSafetyBanner({ delay = 400, interval = 100, timeout = 6000 } = {}) {
     const flash = (el) => {
-        scrollToElement(el, getCurrentTopOffset());
+        // не скроллим — баннер вверху, экран не должен двигаться
         el.classList.remove('safety-banner-flash');
         void el.offsetWidth; // перезапуск анимации
         el.classList.add('safety-banner-flash');
@@ -394,6 +394,8 @@ async function loadAppData() {
     showAnimatedLoader();
     try {
         loadCachedState();
+        // Отдельный мгновенный кэш safety — чтобы баннер ЧП рисовался на первом кадре
+        try { const sc = localStorage.getItem('safetyCache'); if (sc) state.safety = JSON.parse(sc); } catch (e) {}
 
         initFirebase();
         const database = getDatabase();
@@ -447,6 +449,7 @@ async function loadAppData() {
         if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
         if (testimonials) state.testimonials = testimonials;
         if (safety) state.safety = safety;
+        try { localStorage.setItem('safetyCache', JSON.stringify(state.safety)); } catch (e) {}
         const safetyMenuItem = document.getElementById('popupSafety');
         if (safetyMenuItem) safetyMenuItem.style.display = state.safety?.active ? '' : 'none';
         if (regsPopup) state.registrationsPopup = regsPopup;
