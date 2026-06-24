@@ -281,6 +281,14 @@ body::before {
 .safety-cat-title + .safety-list {
     margin-top: 10px;
 }
+.safety-report-block .safety-cat-desc {
+    margin-bottom: 16px;
+}
+.safety-report-btn.btn {
+    width: 100%;
+    margin: 0;
+    padding: 14px 16px;
+}
 .safety-list {
     list-style: none;
     margin: 0;

@@ -302,9 +302,9 @@ export function renderSafetyPage(isGuest = false) {
     if (!catsHtml) catsHtml = '<div class="card-container"><p style="padding:4px 16px;">информация скоро появится</p></div>';
 
     const reportBlock = `
-        <div class="card-container safety-report-block">
-            <div class="safety-cat-title" style="margin-bottom: 8px;">знаете что-то важное?</div>
-            <div class="safety-cat-desc" style="margin-bottom: 14px;">если у вас есть актуальная информация – поделитесь с организаторами. мы добавим её в этот чек-лист</div>
+        <div class="card-container safety-cat safety-report-block">
+            <div class="safety-cat-title">знаешь что-то важное?</div>
+            <div class="safety-cat-desc">если у тебя есть актуальная информация – поделись с организаторами. мы добавим её в чек-лист</div>
             <button class="btn btn-yellow safety-report-btn" id="safetyReportBtn">📢 поделиться информацией</button>
         </div>
     `;
