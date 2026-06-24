@@ -301,10 +301,25 @@ export function renderSafetyPage(isGuest = false) {
     });
     if (!catsHtml) catsHtml = '<div class="card-container"><p style="padding:4px 16px;">информация скоро появится</p></div>';
 
+    const reportBlock = `
+        <div class="card-container safety-report-block">
+            <div class="safety-cat-title" style="margin-bottom: 8px;">знаете что-то важное?</div>
+            <div class="safety-cat-desc" style="margin-bottom: 14px;">если у вас есть актуальная информация – поделитесь с организаторами. мы добавим её в этот чек-лист</div>
+            <button class="btn btn-yellow safety-report-btn" id="safetyReportBtn">📢 поделиться информацией</button>
+        </div>
+    `;
+
     mainDiv().innerHTML = `
         ${intro}
         ${catsHtml}
+        ${reportBlock}
     `;
+
+    document.getElementById('safetyReportBtn')?.addEventListener('click', () => {
+        haptic();
+        log('кнопка поделиться информацией ЧП', isGuest, state.user);
+        openLink('https://t.me/yaltahiking_bot?start=report', 'поделиться информацией ЧП', false);
+    });
 
     // Явная привязка кликов по ссылкам этой страницы (надёжнее глобального делегата)
     // + нормализация ссылок без протокола (напр. t.me/bot → https://t.me/bot)
