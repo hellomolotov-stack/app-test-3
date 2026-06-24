@@ -264,17 +264,22 @@ body::before {
     white-space: pre-line;
 }
 .safety-cat {
-    padding: 4px 16px 16px;
-}
-.safety-cat + .safety-cat {
-    border-top: 1px solid rgba(255,255,255,0.1);
-    padding-top: 16px;
+    padding: 16px 18px;
 }
 .safety-cat-title {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--yellow);
-    margin-bottom: 10px;
+    margin-bottom: 4px;
+}
+.safety-cat-desc {
+    font-size: 13px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+.safety-cat-title + .safety-list {
+    margin-top: 10px;
 }
 .safety-list {
     list-style: none;

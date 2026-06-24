@@ -290,20 +290,20 @@ export function renderSafetyPage(isGuest = false) {
                       : (cat.text || cat.link) ? [{ text: cat.text, link: cat.link, link_text: cat.link_text }] : [];
         const lis = bullets.map(renderBullet).join('');
         if (!cat.title && !lis) return;
+        // каждая категория — отдельная карточка для чёткой структуры
         catsHtml += `
-            <div class="safety-cat">
+            <div class="card-container safety-cat">
                 ${cat.title ? `<div class="safety-cat-title">${cat.title}</div>` : ''}
+                ${cat.desc ? `<div class="safety-cat-desc">${fmt(cat.desc)}</div>` : ''}
                 ${lis ? `<ul class="safety-list">${lis}</ul>` : ''}
             </div>
         `;
     });
-    if (!catsHtml) catsHtml = '<div class="partner-item"><p>информация скоро появится</p></div>';
+    if (!catsHtml) catsHtml = '<div class="card-container"><p style="padding:4px 16px;">информация скоро появится</p></div>';
 
     mainDiv().innerHTML = `
         ${intro}
-        <div class="card-container">
-            ${catsHtml}
-        </div>
+        ${catsHtml}
     `;
 
     // Явная привязка кликов по ссылкам этой страницы (надёжнее глобального делегата)
