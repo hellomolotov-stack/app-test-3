@@ -117,13 +117,17 @@ export async function loadSafety() {
     const snapshot = await database.ref('safety').once('value');
     const data = snapshot.val();
     if (!data) return fallback;
+    const u = data.updates && typeof data.updates === 'object' ? data.updates : {};
+    const updItems = Array.isArray(u.items) ? u.items.filter(Boolean)
+                   : (u.items && typeof u.items === 'object' ? Object.values(u.items).filter(Boolean) : []);
     return {
         active: data.active === true || data.active === 'yes',
         banner: data.banner || '',
         intro: data.intro || '',
         page_title: data.page_title || '',
         items: Array.isArray(data.items) ? data.items.filter(Boolean)
-             : (data.items && typeof data.items === 'object' ? Object.values(data.items) : [])
+             : (data.items && typeof data.items === 'object' ? Object.values(data.items) : []),
+        updates: { title: u.title || '', desc: u.desc || '', items: updItems }
     };
 }
 
