@@ -306,6 +306,19 @@ export function renderSafetyPage(isGuest = false) {
         </div>
     `;
 
+    // Явная привязка кликов по ссылкам этой страницы (надёжнее глобального делегата)
+    // + нормализация ссылок без протокола (напр. t.me/bot → https://t.me/bot)
+    mainDiv().querySelectorAll('.dynamic-link').forEach(a => {
+        a.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            let url = (a.getAttribute('data-url') || '').trim();
+            if (!url) return;
+            if (!/^(https?:\/\/|tg:|mailto:|tel:)/i.test(url)) url = 'https://' + url.replace(/^\/+/, '');
+            openLink(url, 'ссылка ЧП', isGuest);
+        });
+    });
+
     addSafetyShareButton(isGuest);
 }
 
