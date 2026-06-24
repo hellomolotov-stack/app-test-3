@@ -318,7 +318,7 @@ export function renderSafetyPage(isGuest = false) {
     document.getElementById('safetyReportBtn')?.addEventListener('click', () => {
         haptic();
         log('кнопка поделиться информацией ЧП', isGuest, state.user);
-        openLink('https://t.me/yaltahiking_bot?start=report', 'поделиться информацией ЧП', false);
+        openOnboardingChat('safety_report');
     });
 
     // Явная привязка кликов по ссылкам этой страницы (надёжнее глобального делегата)
