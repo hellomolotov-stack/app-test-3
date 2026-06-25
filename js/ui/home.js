@@ -423,6 +423,7 @@ function renderGuestHome() {
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
         </div>
         <div class="card-container" id="calendarContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true">смотреть отчёты &gt;</a></div>
@@ -434,7 +435,6 @@ function renderGuestHome() {
             </div>
         </div>
         ${renderTestimonialsBlock()}
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderUpdatesBlock()}
     `;
 
@@ -627,8 +627,8 @@ function renderOwnerHome() {
         </div>
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
-        ${renderWeatherBlock()}
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
+        ${renderWeatherBlock()}
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
