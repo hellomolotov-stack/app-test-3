@@ -21,7 +21,7 @@ function timeGreeting(firstName) {
     let word, emoji;
     if (h >= 5 && h < 12) { word = 'доброе утро'; emoji = '🌤️'; }
     else if (h >= 12 && h < 17) { word = 'хорошего дня'; emoji = '☀️'; }
-    else if (h >= 17 && h < 23) { word = 'уютного вечера'; emoji = '🌇'; }
+    else if (h >= 17 && h < 23) { word = 'уютного вечера 🤍'; emoji = '🌇'; }
     else { word = 'доброй ночи'; emoji = '🌙'; }
     return `${emoji} ${word}, ${firstName}!`;
 }
