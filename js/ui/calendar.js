@@ -1728,33 +1728,32 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
     const FEATURE_TEXTS = {
         profiles: `
             <div class="bpu-text">
-                <div class="bpu-line bpu-title">профили – это не каталог</div>
+                <div class="bpu-line bpu-title">профили – это не тиндер</div>
                 <div class="bpu-line">здесь живут анкеты людей, которые ходят с нами</div>
-                <div class="bpu-line"><em>кто чем занят, что умеет, с кем стоит выпить чаю</em></div>
+                <div class="bpu-line"><em>кто чем занят, что умеет, с кем стоит обсудить твою идею</em></div>
                 <div class="bpu-divider"></div>
-                <div class="bpu-line">публично – не покажем. это не реклама себя в интернете</div>
-                <div class="bpu-line">доверие невозможно без узнавания</div>
-                <div class="bpu-line bpu-accent">с картой – войдёшь и увидишь круг</div>
+                <div class="bpu-line">публично профили не покажем. это не реклама себя в интернете. это закрытый круг деятельных личностей</div>
+                <div class="bpu-line bpu-accent">с картой – ты станешь его частью и обретёшь новые связи</div>
             </div>
         `,
         mastermind: `
             <div class="bpu-text">
                 <div class="bpu-line bpu-title">мастермайнды – на вершине, не в офисе</div>
-                <div class="bpu-line">поднимаемся на гору, садимся в круг и разбираем задачи друг друга</div>
+                <div class="bpu-line">поднимаемся на вершину, садимся в круг и разбираем задачи друг друга</div>
                 <div class="bpu-line"><em>после общего подъёма разговор идёт по-настоящему</em></div>
                 <div class="bpu-divider"></div>
                 <div class="bpu-line">работает с теми, кто ещё не знаком – но уже прошёл первый подъём вместе</div>
-                <div class="bpu-line bpu-accent">карта – вход в этот круг</div>
+                <div class="bpu-line bpu-accent">карта – вход в этот круг и возможность читать саммари</div>
             </div>
         `,
         generic: `
             <div class="bpu-text">
                 <div class="bpu-line bpu-title">эта часть клуба – для своих</div>
-                <div class="bpu-line">и ещё десятки: события в городе, чат, скидки у партнёров, впн, мастермайнды</div>
+                <div class="bpu-line">и ещё десятки: события в городе, чат с членами клуба, привилегии у десятка партнёров в городе, безлимитный *PN, мастермайнды, профили членов клуба</div>
                 <div class="bpu-line"><em>одна карта – все двери открыты</em></div>
                 <div class="bpu-divider"></div>
-                <div class="bpu-line">мы не продаём фичи поштучно – <em>намеренно</em></div>
-                <div class="bpu-line">клуб – это целое, не набор кнопок</div>
+                <div class="bpu-line">мы не продаём доступы по билетам – <em>намеренно</em></div>
+                <div class="bpu-line">клуб – это единое целое, а не набор кнопок</div>
                 <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
             </div>
         `
@@ -1762,11 +1761,11 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
 
     const hikeReturningHtml = `
         <div class="bpu-text">
-            <div class="bpu-line bpu-title">рады, что ты ${was} с нами, ${firstName || 'друг'}</div>
+            <div class="bpu-line bpu-title">рады знакомству с тобой, ${firstName || 'друг'}</div>
             <div class="bpu-line">один хайк позади – и обычным походом это уже не назовёшь</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">дальше ходят только свои. билетов нет – <em>намеренно</em></div>
-            <div class="bpu-line">карта интеллигента – твой вход во все хайки сезона</div>
+            <div class="bpu-line">мы ждём тебя в клубе</div>
+            <div class="bpu-line">карта интеллигента – твой вход в закрытое окружение</div>
             <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
     `;
@@ -1850,21 +1849,21 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                     <div class="booking-popup-scarcity-num">${soldOut ? '0' : cardsLeft}</div>
                     <div class="booking-popup-scarcity-text">
                         ${soldOut
-                            ? `<strong>карты на этот месяц разобраны</strong><br>возвращайся в начале следующего – откроем ещё ${cardsTotal}. место будет`
-                            : `<strong>${cardsTotal} карт в месяц – и ни одной больше</strong><br>чтобы каждый новый человек получил внимание, а не растворился в толпе<br>не шумное количество – тихое качество`}
+                            ? `<strong>карты на этот месяц закончились</strong><br>возвращайся в начале следующего месяца – откроем ещё ${cardsTotal}`
+                            : `<strong>${cardsTotal} карт доступно в месяц</strong><br>чтобы каждый новый член клуба получил наше внимание, а не растворился в толпе<br>не шумное количество – тихое качество`}
                     </div>
                 </div>
 
                 <div class="booking-popup-what-is-card">
-                    карта интеллигента – это членство в клубе. именная, с твоим счётом хайков. с ней ты не покупаешь билеты – просто приходишь
+                    карта интеллигента – это членство в клубе. именная, с твоим счётом хайков. с ней ты не покупаешь билеты – становишься членом клуба
                 </div>
 
-                <div class="booking-popup-economy">один хайк по разовому – 1500 ₽. карта окупается к пятому. дальше каждый поход – бесплатно</div>
+                <div class="booking-popup-economy">один хайк по разовому билету стоил 1500 ₽. карта окупается к пятому. дальше каждый поход – бесплатно</div>
 
                 <div class="booking-card-option">
-                    <div class="booking-card-name">бессрочная – ${config.seasonCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">берут чаще</span></div>
-                    <div class="booking-card-care">🕊️ на время ЧС в Крыму бессрочную карту отдаём по цене сезонной – чтобы поддержать друг друга в это время</div>
-                    <div class="booking-card-desc">заплатил один раз – ходишь годами. без продлений и подписок<br>выгоднее сезонной уже на второй год – а впн и привилегии остаются навсегда<br>все хайки, городские события, скидки у партнёров, впн</div>
+                    <div class="booking-card-name">бессрочная – <span style="opacity:0.45; text-decoration:line-through; font-weight:600; margin-right:2px;">7500</span> ${config.seasonCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">не нужно продлевать</span></div>
+                    <div class="booking-card-care">🕊 на время ЧС в Крыму бессрочная карта доступна по цене сезонной – сильное окружение сейчас самый ценный ресурс</div>
+                    <div class="booking-card-desc">оплатил один раз – доступ к клубу всегда. без продлений и подписок<br>выгоднее сезонной уже на второй год – а *PN и привилегии остаются навсегда<br>*PN, все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить навсегда</button>
                 </div>
 
@@ -1874,7 +1873,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                     <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">взять на сезон</button>
                 </div>
 
-                <div class="booking-popup-reassurance">🔒 оформление займёт минуту – карта появится в приложении сразу после оплаты. платёж защищён</div>
+                <div class="booking-popup-reassurance">🔒 оформление через Robokassa займёт минуту – карта появится в приложении сразу после оплаты. платёж защищён</div>
 
                 ${perksPreviewHtml}
 
