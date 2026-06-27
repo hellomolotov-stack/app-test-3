@@ -334,8 +334,9 @@ export function renderSafetyPage(isGuest = false) {
         </div>
     `;
 
-    // Кнопка скачивания PDF: экстренные службы + чек-лист, чтобы работало офлайн
-    const pdfUrl = `${location.origin}/safety-checklist.pdf`;
+    // Кнопка скачивания PDF: экстренные службы + чек-лист, чтобы работало офлайн.
+    // Хостится на сайте клуба (reg.ru), не на домене Vercel.
+    const pdfUrl = 'https://intelligentsia-club.ru/safety-checklist.pdf';
     const downloadBlock = `
         <a href="${pdfUrl}" id="safetyDownloadBtn" class="safety-download" target="_blank" rel="noopener">
             <span class="safety-download-ic">⬇</span>
