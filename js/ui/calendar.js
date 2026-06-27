@@ -1862,6 +1862,8 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                     <div class="booking-card-care">🕊 на время ЧС в Крыму бессрочная карта доступна по цене сезонной – сильное окружение сейчас самый ценный ресурс</div>
                     <div class="booking-card-desc">оплатил один раз – доступ к клубу всегда. без продлений и подписок<br>выгоднее сезонной уже на второй год – а *PN и привилегии остаются навсегда<br>*PN, все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить навсегда</button>
+                    <div class="booking-card-ticket-note">если ты оплачивал билет, но так и не успел сходить по нему – можешь приобрести карту с учётом ранее оплаченного билета. для этого напиши нам в поддержку и пришли чек билета – отправим тебе специальную ссылку для оформления карты</div>
+                    <button class="btn btn-outline booking-card-support-btn" id="cardTicketSupportBtn" style="width: 100%; margin: 10px 0 0;">написать в поддержку</button>
                 </div>
 
                 <div class="booking-card-option" style="margin-top: 12px;">
@@ -2094,6 +2096,13 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             btn.dataset.processing = 'false';
             alert('Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.');
         }
+    });
+
+    document.getElementById('cardTicketSupportBtn')?.addEventListener('click', e => {
+        e.preventDefault();
+        haptic();
+        log('зачёт билета — написать в поддержку', true, state.user, { hike_date: hikeDate });
+        openLink('https://t.me/hellointelligent', 'поддержка зачёт билета', true);
     });
 }
 
