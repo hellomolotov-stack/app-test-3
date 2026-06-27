@@ -521,8 +521,10 @@ async function loadAppData() {
 
         state.userCard = userData;
 
+        // _userRegs (Firebase) нужен всем — на нём держится определение «первый хайк бесплатно».
+        // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
+        state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
         if (state.userCard.status === 'active') {
-            state._userRegs = await loadUserRegistrations(state.user?.id);
             applyOwnerBookings(); // #5
         } else {
             state.hikeBookingStatus = loadBookingStatusFromLocal();

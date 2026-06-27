@@ -1701,6 +1701,19 @@ function updateFloatingSheetButtons() {
     container.appendChild(row);
 }
 
+// «Возвращающийся» = есть хотя бы один прошедший хайк, на который человек был записан (по Firebase).
+// Серверный источник правды: админ может вернуть право на бесплатный первый хайк, удалив userRegistrations.
+function hasPastBooking() {
+    const regs = state._userRegs || {};
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Object.keys(regs).some(date => {
+        if (regs[date] !== true) return false;
+        const d = new Date(date);
+        return !isNaN(d.getTime()) && d < today;
+    });
+}
+
 export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'hike') {
     haptic();
     const config = state.popupConfig;
@@ -1710,11 +1723,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
     window._bookingPopupHikeIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
 
     // Returning visitor = has any past hike registration
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isReturning = state.hikesWithTitle.some((hike, idx) => {
-        return new Date(hike.date) < today && state.hikeBookingStatus[idx];
-    });
+    const isReturning = hasPastBooking();
 
     const firstName = state.user?.first_name || '';
     const nameLower = firstName.toLowerCase();
@@ -2285,11 +2294,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
     if (hikeObj && (hikeObj.city === true || hikeObj.book_club === true)) return;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const isReturning = state.hikesWithTitle.some((hike, idx) =>
-        new Date(hike.date) < today && state.hikeBookingStatus[idx]
-    );
+    const isReturning = hasPastBooking();
     const hasCard = state.userCard.status === 'active';
     const isExperienced = isReturning || hasCard;
     const formattedDate = formatDateForDisplay(hikeDate);
