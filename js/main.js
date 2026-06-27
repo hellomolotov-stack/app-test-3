@@ -339,20 +339,25 @@ function handleDeepLink(startParam) {
             break;
         case 'safety_download':
         case 'checklist':
+            window._deepLinkPageChanged = true;
             renderSafetyPage(isGuest);
             flashSafetyDownload();
             break;
         case 'privileges':
+            window._deepLinkPageChanged = true;
             if (isGuest) renderGuestPrivileges();
             else renderPriv();
             break;
         case 'profiles':
+            window._deepLinkPageChanged = true;
             renderProfiles();
             break;
         case 'pass':
+            window._deepLinkPageChanged = true;
             renderPassPage(isGuest);
             break;
         case 'gift':
+            window._deepLinkPageChanged = true;
             renderGift(isGuest);
             break;
         case 'bot':
@@ -448,7 +453,7 @@ async function loadAppData() {
         const ensureDeepLink = () => {
             if (deepLinkHandled || !startParam) return;
             deepLinkHandled = true;
-            setTimeout(() => handleDeepLink(startParam), 100);
+            handleDeepLink(startParam);
         };
         // Ранний рендер главной: как только есть список хайков (из кэша или первого ответа Firebase) —
         // показываем экран и сразу выполняем deep-link, не дожидаясь всех сетевых запросов
@@ -538,7 +543,8 @@ async function loadAppData() {
             if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
         }
 
-        renderHome(); // финальный рендер с актуальными данными (поверх кэшированного)
+        // финальный рендер с актуальными данными — пропускаем, если диплинк увёл на другую страницу
+        if (!window._deepLinkPageChanged) renderHome();
         window.toggleShareButton(false);
         if (!firstRenderDone) mountBotTab();
 
