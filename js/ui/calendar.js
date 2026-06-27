@@ -1548,14 +1548,14 @@ function updateFloatingSheetButtons() {
         chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none;';
         const chip = document.createElement('div');
         chip.className = 'spots-counter-chip';
-        if (bookedCount < 7) {
+        if (bookedCount <= 9) {
             const w = bookedCount === 1 ? 'человек' : bookedCount < 5 ? 'человека' : 'человек';
             chip.innerHTML = `⛰️ уже идут <strong>${bookedCount}</strong> ${w}`;
         } else {
             const w = getPlaceWord(spotsLeft);
             chip.innerHTML = spotsLeft > 0
-                ? `👀 осталось <strong>${spotsLeft}</strong> ${w}`
-                : '👀 последние места разобраны';
+                ? `⏳ осталось <strong>${spotsLeft}</strong> ${w}`
+                : '⏳ последние места разобраны';
         }
         chipRow.appendChild(chip);
         container.appendChild(chipRow);
