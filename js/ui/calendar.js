@@ -1858,7 +1858,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                 <div class="booking-popup-economy">один хайк по разовому билету стоил 1500 ₽. карта окупается к пятому. дальше каждый поход – бесплатно</div>
 
                 <div class="booking-card-option">
-                    <div class="booking-card-name">бессрочная – <span style="opacity:0.45; text-decoration:line-through; font-weight:600; margin-right:2px;">7500</span> ${config.seasonCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">не нужно продлевать</span></div>
+                    <div class="booking-card-name">бессрочная – <span style="opacity:0.45; text-decoration:line-through; font-weight:600; margin-right:2px;">7500</span> ${config.seasonCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">навсегда</span></div>
                     <div class="booking-card-care">🕊 на время ЧС в Крыму бессрочная карта доступна по цене сезонной – сильное окружение сейчас самый ценный ресурс</div>
                     <div class="booking-card-desc">оплатил один раз – доступ к клубу всегда. без продлений и подписок<br>выгоднее сезонной уже на второй год – а *PN и привилегии остаются навсегда<br>*PN, все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить навсегда</button>
