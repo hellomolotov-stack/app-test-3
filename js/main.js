@@ -441,6 +441,32 @@ async function loadAppData() {
         // Отдельный мгновенный кэш safety — чтобы баннер ЧП рисовался на первом кадре
         try { const sc = localStorage.getItem('safetyCache'); if (sc) state.safety = JSON.parse(sc); } catch (e) {}
 
+        // deep-link из поста Telegram — читаем сразу, чтобы выполнить как можно раньше
+        const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
+        let firstRenderDone = false;
+        let deepLinkHandled = false;
+        const ensureDeepLink = () => {
+            if (deepLinkHandled || !startParam) return;
+            deepLinkHandled = true;
+            setTimeout(() => handleDeepLink(startParam), 100);
+        };
+        // Ранний рендер главной: как только есть список хайков (из кэша или первого ответа Firebase) —
+        // показываем экран и сразу выполняем deep-link, не дожидаясь всех сетевых запросов
+        const earlyRenderHome = () => {
+            if (firstRenderDone || !state.hikesWithTitle.length) return;
+            if (!state.userCard || state.userCard.status === 'loading') {
+                state.userCard = { status: 'inactive', hikes: 0, cardUrl: '' };
+            }
+            if (state.userCard.status !== 'active') {
+                state.hikeBookingStatus = loadBookingStatusFromLocal();
+            }
+            hideAnimatedLoader();
+            renderHome();
+            mountBotTab();
+            firstRenderDone = true;
+            ensureDeepLink();
+        };
+
         initFirebase();
         const database = getDatabase();
 
@@ -451,23 +477,12 @@ async function loadAppData() {
                 state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
                 applyOwnerBookings(); // #5: переприменить записи владельца при обновлении хайков
                 saveCachedState();
+                earlyRenderHome(); // показать экран сразу, как пришли хайки (для тех, у кого нет кэша)
             });
         }
 
         // #2: если в кэше уже есть данные — показываем главную мгновенно, сеть обновит тихо
-        let renderedFromCache = false;
-        if (state.hikesWithTitle.length && state.userCard?.status !== 'loading') {
-            if (!state.userCard || state.userCard.status === 'loading') {
-                state.userCard = { status: 'inactive', hikes: 0, cardUrl: '' };
-            }
-            if (state.userCard.status !== 'active') {
-                state.hikeBookingStatus = loadBookingStatusFromLocal();
-            }
-            hideAnimatedLoader();
-            renderHome();
-            mountBotTab();
-            renderedFromCache = true;
-        }
+        earlyRenderHome();
 
         // #3: всё параллельно, включая userData
         const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,
@@ -523,12 +538,10 @@ async function loadAppData() {
 
         renderHome(); // финальный рендер с актуальными данными (поверх кэшированного)
         window.toggleShareButton(false);
-        if (!renderedFromCache) mountBotTab();
+        if (!firstRenderDone) mountBotTab();
 
-        const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
-        if (startParam) {
-            setTimeout(() => handleDeepLink(startParam), 100);
-        }
+        // если ранний рендер не случился (нет кэша и Firebase не успел) — выполняем deep-link сейчас
+        ensureDeepLink();
 
         // #1: спрашиваем доступ к сообщениям фоном, не блокируя первый экран
         maybeRequestWriteAccess();
