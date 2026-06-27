@@ -277,6 +277,17 @@ body::before {
     box-shadow: 0 6px 20px rgba(217, 253, 25, 0.30), inset 0 1px 0 rgba(255,255,255,0.4);
 }
 .safety-download:active { transform: scale(0.98); }
+@keyframes safetyDownloadFlash {
+    0%, 100% {
+        box-shadow: 0 6px 20px rgba(217, 253, 25, 0.30), inset 0 1px 0 rgba(255,255,255,0.4);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 0 4px rgba(217, 253, 25, 0.6), 0 10px 34px rgba(217, 253, 25, 0.85);
+        transform: scale(1.035);
+    }
+}
+.safety-download-flash { animation: safetyDownloadFlash 0.85s ease-in-out 3; }
 .safety-download-ic {
     flex: 0 0 auto;
     font-size: 22px;

@@ -204,6 +204,28 @@ function highlightSafetyBanner({ delay = 400, interval = 100, timeout = 6000 } =
     }, delay);
 }
 
+// Открываем страницу ЧП и подсвечиваем-мерцаем кнопку скачивания офлайн-чек-листа.
+// Ждём, пока кнопка появится в DOM, скроллим к ней и запускаем пульс-анимацию.
+function flashSafetyDownload({ delay = 450, interval = 100, timeout = 6000 } = {}) {
+    const flash = (el) => {
+        scrollToElement(el, getCurrentTopOffset());
+        el.classList.remove('safety-download-flash');
+        void el.offsetWidth; // перезапуск анимации
+        el.classList.add('safety-download-flash');
+        setTimeout(() => el.classList.remove('safety-download-flash'), 3400);
+    };
+    setTimeout(() => {
+        const el0 = document.getElementById('safetyDownloadBtn');
+        if (el0) { flash(el0); return; }
+        const t0 = Date.now();
+        const iv = setInterval(() => {
+            const el = document.getElementById('safetyDownloadBtn');
+            if (el) { clearInterval(iv); flash(el); }
+            else if (Date.now() - t0 > timeout) clearInterval(iv);
+        }, interval);
+    }, delay);
+}
+
 // Ждём появления элемента и скроллим к нему. С таймаутом — без вечного setInterval (#4)
 function scrollToWhenReady(getter, { delay = 300, interval = 100, timeout = 6000 } = {}) {
     setTimeout(() => {
@@ -314,6 +336,11 @@ function handleDeepLink(startParam) {
             break;
         case 'safety':
             highlightSafetyBanner();
+            break;
+        case 'safety_download':
+        case 'checklist':
+            renderSafetyPage(isGuest);
+            flashSafetyDownload();
             break;
         case 'privileges':
             if (isGuest) renderGuestPrivileges();
