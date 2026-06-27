@@ -334,13 +334,33 @@ export function renderSafetyPage(isGuest = false) {
         </div>
     `;
 
+    // Кнопка скачивания PDF: экстренные службы + чек-лист, чтобы работало офлайн
+    const pdfUrl = `${location.origin}/safety-checklist.pdf`;
+    const downloadBlock = `
+        <a href="${pdfUrl}" id="safetyDownloadBtn" class="safety-download" target="_blank" rel="noopener">
+            <span class="safety-download-ic">⬇</span>
+            <span class="safety-download-tx">
+                <span class="safety-download-t">скачать список одним файлом</span>
+                <span class="safety-download-s">экстренные службы и чек-лист · сохрани, пока есть интернет</span>
+            </span>
+        </a>
+    `;
+
     mainDiv().innerHTML = `
         <div class="card-container safety-page">
             ${intro}
+            ${downloadBlock}
             ${catsHtml}
             ${reportBlock}
         </div>
     `;
+
+    document.getElementById('safetyDownloadBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        haptic();
+        log('скачать чек-лист PDF', isGuest, state.user);
+        openLink(pdfUrl, 'скачать чек-лист ЧП', isGuest);
+    });
 
     document.getElementById('safetyReportBtn')?.addEventListener('click', () => {
         haptic();

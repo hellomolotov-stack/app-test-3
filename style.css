@@ -264,6 +264,28 @@ body::before {
     white-space: pre-line;
 }
 /* Блок «важные обновления» — внутренний блок (как .partner-item), но с жёлтой рамкой */
+.safety-download {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin: 0 16px 14px 16px;
+    padding: 15px 17px;
+    background: var(--yellow);
+    color: #0A0B09;
+    border-radius: 20px;
+    text-decoration: none;
+    box-shadow: 0 6px 20px rgba(217, 253, 25, 0.30), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.safety-download:active { transform: scale(0.98); }
+.safety-download-ic {
+    flex: 0 0 auto;
+    font-size: 22px;
+    line-height: 1;
+}
+.safety-download-tx { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.safety-download-t { font-size: 15px; font-weight: 800; line-height: 1.2; }
+.safety-download-s { font-size: 12px; font-weight: 600; line-height: 1.35; opacity: 0.7; }
+
 .safety-updates {
     background: rgba(255, 255, 255, 0.08);
     border-radius: 20px;
