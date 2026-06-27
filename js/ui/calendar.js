@@ -1540,7 +1540,8 @@ function updateFloatingSheetButtons() {
     }
 
 
-    if (!isSoldOut) {
+    // Плашку показываем только когда есть хотя бы одна запись — иначе ничего
+    if (!isSoldOut && bookedCount > 0) {
         const MAX_SPOTS = 12;
         const spotsLeft = Math.max(0, MAX_SPOTS - bookedCount);
         const chipRow = document.createElement('div');
@@ -1548,12 +1549,8 @@ function updateFloatingSheetButtons() {
         const chip = document.createElement('div');
         chip.className = 'spots-counter-chip';
         if (bookedCount < 7) {
-            if (bookedCount === 0) {
-                chip.innerHTML = '⛰️ будь первым – запишись';
-            } else {
-                const w = bookedCount === 1 ? 'человек' : bookedCount < 5 ? 'человека' : 'человек';
-                chip.innerHTML = `⛰️ уже идут <strong>${bookedCount}</strong> ${w}`;
-            }
+            const w = bookedCount === 1 ? 'человек' : bookedCount < 5 ? 'человека' : 'человек';
+            chip.innerHTML = `⛰️ уже идут <strong>${bookedCount}</strong> ${w}`;
         } else {
             const w = getPlaceWord(spotsLeft);
             chip.innerHTML = spotsLeft > 0
