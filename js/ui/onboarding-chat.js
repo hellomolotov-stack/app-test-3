@@ -7,7 +7,7 @@ import { state } from '../state.js';
 import { haptic, openLink, formatDateForDisplay, tg, scrollToElement } from '../utils.js';
 import { log, registerWebAppUser } from '../api.js';
 import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages } from '../firebase.js';
-import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
+import { SEASON_CARD_LINK } from '../config.js';
 import { getAvailableCardsCount, showBottomSheet } from './calendar.js';
 import { renderHome } from './home.js';
 
@@ -111,7 +111,7 @@ function cardText() {
     const total = 10;
     let scarcity = '';
     if (left > 0) scarcity = `\n\n🔥 в этом месяце осталось <b>${left} из ${total}</b> карт`;
-    return `<b>карта интеллигента</b> – это когда ты больше не гость\n\nоформляешь один раз и становишься своим:\n\n🌟 <b>все хайки и события</b> – просто приходишь, без доп. оплаты\n🌟 <b>закрытый чат</b> – свои люди, близкое общение, неформальные встречи\n🌟 <b>закрытые события</b> – ужины, пляжные пикники, сапы, мастермайнды, посиделки у костра\n🌟 <b>скидки у партнёров</b> в Ялте и онлайне: HOKA, Геккон, Nothomme, кофейни, барбершоп и другие\n🌟 <b>безлимитный VPN</b> для всех устройств с поддержкой подключения\n🌟 привилегии растут вместе с клубом\n\n<b>бессрочная – 7 500₽</b> – действует всё время\n<b>сезонная – 5 500₽</b> – весь 2026 год${scarcity}`;
+    return `<b>карта интеллигента</b> – это когда ты больше не гость\n\nоформляешь один раз и становишься своим:\n\n🌟 <b>все хайки и события</b> – просто приходишь, без доп. оплаты\n🌟 <b>закрытый чат</b> – свои люди, близкое общение, неформальные встречи\n🌟 <b>закрытые события</b> – ужины, пляжные пикники, сапы, мастермайнды, посиделки у костра\n🌟 <b>скидки у партнёров</b> в Ялте и онлайне: HOKA, Геккон, Nothomme, кофейни, барбершоп и другие\n🌟 <b>безлимитный VPN</b> для всех устройств с поддержкой подключения\n🌟 привилегии растут вместе с клубом\n\n<b>бессрочная – 5 500₽</b> – действует всё время\n<b>сезонная – 5 500₽</b> – весь 2026 год\n\n🕊️ на время ЧС в Крыму бессрочную карту отдаём по цене сезонной – чтобы поддержать друг друга${scarcity}`;
 }
 
 const TEXT_TRY_FIRST = 'отлично – первый хайк бесплатно, просто приходи 🏔\n\nсмотри актуальные анонсы на канале и записывайся на хайк или событие прямо в приложении\n\nесли появятся вопросы – напишем, ответим 🤍';
@@ -256,7 +256,7 @@ const FLOW = {
     card: {
         msgs: [cardText],
         options: [
-            { label: 'стать своим – 7 500₽ (бессрочная)', href: PERMANENT_CARD_LINK, logName: 'купить бессрочную' },
+            { label: 'стать своим – 5 500₽ (бессрочная)', href: SEASON_CARD_LINK, logName: 'купить бессрочную' },
             { label: 'стать своим – 5 500₽ (сезон 2026)', href: SEASON_CARD_LINK, logName: 'купить сезонную' },
             { label: 'сначала попробую хайк →', next: 'try_first' },
             { label: 'написать нам →', next: 'support' },

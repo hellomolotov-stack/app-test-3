@@ -1862,7 +1862,8 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                 <div class="booking-popup-economy">один хайк по разовому – 1500 ₽. карта окупается к пятому. дальше каждый поход – бесплатно</div>
 
                 <div class="booking-card-option">
-                    <div class="booking-card-name">бессрочная – ${config.permanentCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">берут чаще</span></div>
+                    <div class="booking-card-name">бессрочная – ${config.seasonCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">берут чаще</span></div>
+                    <div class="booking-card-care">🕊️ на время ЧС в Крыму бессрочную карту отдаём по цене сезонной – чтобы поддержать друг друга в это время</div>
                     <div class="booking-card-desc">заплатил один раз – ходишь годами. без продлений и подписок<br>выгоднее сезонной уже на второй год – а впн и привилегии остаются навсегда<br>все хайки, городские события, скидки у партнёров, впн</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить навсегда</button>
                 </div>
@@ -2078,12 +2079,13 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
         log('клик бессрочная карта', true, state.user, { hike_date: hikeDate });
         const stopSpinner = startSpinner(btn);
         try {
+            // На время ЧС бессрочная карта оформляется по цене и через оплату сезонной
             const { url } = await initPayment({
                 userId: state.user?.id,
                 firstName: state.user?.first_name,
                 lastName: state.user?.last_name,
                 username: state.user?.username,
-                hikeDate, hikeTitle, cardType: 'permanent'
+                hikeDate, hikeTitle, cardType: 'season'
             });
             stopSpinner();
             closePopup();
