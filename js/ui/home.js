@@ -166,8 +166,9 @@ export function renderUserBookings(container) {
             const lowerTitle = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
             displayTitle = `${eventType} ${lowerTitle}`;
         } else {
-            eventType = 'хайк на';
             const lowerTitle = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
+            const startsWithPrep = /^(в |на |по |к |до |за |из |со? )/.test(lowerTitle);
+            eventType = startsWithPrep ? 'хайк' : 'хайк на';
             displayTitle = `${eventType} ${lowerTitle}`;
         }
         
