@@ -167,7 +167,8 @@ export function renderUserBookings(container) {
             displayTitle = `${eventType} ${lowerTitle}`;
         } else {
             eventType = 'хайк на';
-            displayTitle = `${eventType} ${cleanedTitle}`;
+            const lowerTitle = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
+            displayTitle = `${eventType} ${lowerTitle}`;
         }
         
         // Для city-событий кнопка голубая с белым текстом
