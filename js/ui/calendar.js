@@ -390,6 +390,10 @@ function initHikeMap(el, track) {
         const mkDot = (sz) => { const d = document.createElement('div'); d.style.cssText = `width:${sz}px;height:${sz}px;background:#D9FD19;border-radius:50%;box-shadow:0 0 6px #D9FD19;`; return d; };
         if (track.loop) {
             new maplibregl.Marker({ element: mkDot(10) }).setLngLat([line[0][1], line[0][0]]).addTo(map);
+            const lastPt = line[line.length - 1];
+            if (_hvKm(lastPt[0], lastPt[1], line[0][0], line[0][1]) > 0.05) {
+                new maplibregl.Marker({ element: mkDot(10) }).setLngLat([lastPt[1], lastPt[0]]).addTo(map);
+            }
         } else {
             const startCoord = line[line.length - 1];
             new maplibregl.Marker({ element: mkDot(10) }).setLngLat([startCoord[1], startCoord[0]]).addTo(map);
