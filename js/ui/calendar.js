@@ -555,8 +555,9 @@ export function showBottomSheet(index) {
             let featureTagsHtml = '';
             if (hike.feature_tags && hike.feature_tags.length > 0) {
                 featureTagsHtml = '<div class="feature-tags-container">';
+                const tagTextColor = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
                 hike.feature_tags.forEach(tag => {
-                    featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor} !important;">${tag}</span>`;
+                    featureTagsHtml += `<span class="feature-tag" style="background: ${accentColor} !important; color: ${tagTextColor} !important;">${tag}</span>`;
                 });
                 featureTagsHtml += '</div>';
             }
