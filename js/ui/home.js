@@ -5,11 +5,23 @@ import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount } from './calendar.js';
+import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, ROUTE_TRACKS, renderRoutesMap } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openOnboardingChat } from './onboarding-chat.js';
+
+function getVisitedRouteIds() {
+    const visited = new Set();
+    state.hikesWithTitle.forEach((hike, index) => {
+        if (!state.hikeBookingStatus[index]) return;
+        const title = (hike.title || '').toLowerCase();
+        ROUTE_TRACKS.forEach(route => {
+            if (route.keywords.some(kw => title.includes(kw))) visited.add(route.id);
+        });
+    });
+    return visited;
+}
 
 export function removeStickyHikeCta() {
     document.getElementById('stickyHikeCta')?.remove();
@@ -420,6 +432,7 @@ function renderGuestHome() {
         ${renderSafetyBanner()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
+        <div id="routesMapContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
@@ -587,6 +600,7 @@ function renderGuestHome() {
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
+    renderRoutesMap(document.getElementById('routesMapContainer'), getVisitedRouteIds());
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
@@ -628,6 +642,7 @@ function renderOwnerHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
+        <div id="routesMapContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
@@ -665,6 +680,7 @@ function renderOwnerHome() {
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
+    renderRoutesMap(document.getElementById('routesMapContainer'), getVisitedRouteIds());
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
