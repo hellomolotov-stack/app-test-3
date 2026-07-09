@@ -321,7 +321,7 @@ export function renderRoutesMap(container, visitedIds) {
     container.innerHTML = `
         <div class="card-container">
             <h2 class="section-title">🗺 наши маршруты</h2>
-            <div id="routesMapEl" style="height: 260px; border-radius: 14px; margin: 0 16px 16px; overflow: hidden; background: #0A0B09;"></div>
+            <div id="routesMapEl" style="height: 340px; border-radius: 14px; margin: 0 16px 16px; overflow: hidden; background: #0A0B09;"></div>
         </div>
     `;
     ensureMapLibre().then(() => {
@@ -340,21 +340,23 @@ export function renderRoutesMap(container, visitedIds) {
                 },
                 layers: [{ id: 'sat', type: 'raster', source: 'satellite', paint: { 'raster-brightness-max': 0.65, 'raster-contrast': 0.1, 'raster-saturation': -1 } }]
             },
-            center: [34.15, 44.57],
-            zoom: 7.8,
+            center: [34.1, 44.58],
+            zoom: 7.5,
             pitch: 0, bearing: 0,
-            attributionControl: false,
-            interactive: false
+            attributionControl: false
         });
         map.on('load', () => {
+            let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
             ROUTE_TRACKS.forEach(route => {
                 const visited = visitedIds.has(route.id);
-                map.addSource(`r-${route.id}`, { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: route.coords.map(([la, lo]) => [lo, la]) } } });
+                const coords = route.coords.map(([la, lo]) => { minLon = Math.min(minLon, lo); maxLon = Math.max(maxLon, lo); minLat = Math.min(minLat, la); maxLat = Math.max(maxLat, la); return [lo, la]; });
+                map.addSource(`r-${route.id}`, { type: 'geojson', data: { type: 'Feature', geometry: { type: 'LineString', coordinates: coords } } });
                 if (visited) {
                     map.addLayer({ id: `r-${route.id}-glow`, type: 'line', source: `r-${route.id}`, paint: { 'line-color': '#D9FD19', 'line-width': 6, 'line-opacity': 0.3, 'line-blur': 4 } });
                 }
-                map.addLayer({ id: `r-${route.id}`, type: 'line', source: `r-${route.id}`, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': visited ? '#D9FD19' : 'rgba(255,255,255,0.35)', 'line-width': visited ? 2.5 : 1.5, 'line-opacity': visited ? 1 : 0.6 } });
+                map.addLayer({ id: `r-${route.id}`, type: 'line', source: `r-${route.id}`, layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': visited ? '#D9FD19' : 'rgba(255,255,255,0.4)', 'line-width': visited ? 2.5 : 1.5, 'line-opacity': visited ? 1 : 0.7 } });
             });
+            map.fitBounds([[minLon - 0.15, minLat - 0.08], [maxLon + 0.15, maxLat + 0.08]], { animate: false });
         });
     });
 }

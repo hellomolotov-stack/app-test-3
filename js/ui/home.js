@@ -432,7 +432,6 @@ function renderGuestHome() {
         ${renderSafetyBanner()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
-        <div id="routesMapContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
@@ -451,6 +450,7 @@ function renderGuestHome() {
         </div>
         ${renderTestimonialsBlock()}
         ${renderUpdatesBlock()}
+        <div id="routesMapContainer"></div>
     `;
 
     wireSafetyBanner();
@@ -642,7 +642,6 @@ function renderOwnerHome() {
             </div>
         </div>
         <div id="userBookingsContainer"></div>
-        <div id="routesMapContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
@@ -660,6 +659,7 @@ function renderOwnerHome() {
             </div>
         </div>
         ${renderUpdatesBlock()}
+        <div id="routesMapContainer"></div>
     `;
 
     wireSafetyBanner();
