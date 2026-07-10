@@ -316,7 +316,7 @@ export const ROUTE_TRACKS = [
   { id: 'tsarskaya', label: 'Царская тропа', keywords: ['царск'], coords: [[44.46733,34.14366],[44.46709,34.14222],[44.46632,34.14238],[44.46514,34.14069],[44.46429,34.13884],[44.46267,34.13756],[44.46096,34.13758],[44.46016,34.13698],[44.45989,34.13552],[44.45930,34.13514],[44.45826,34.13584],[44.45724,34.13533],[44.45669,34.13449],[44.45590,34.13281],[44.45522,34.13170],[44.45469,34.13140],[44.45459,34.13120],[44.45417,34.13041],[44.45356,34.12907],[44.45249,34.12836],[44.45120,34.12683],[44.45016,34.12752],[44.44817,34.12767],[44.44696,34.12643],[44.44608,34.12683],[44.44520,34.12684],[44.44448,34.12721],[44.44368,34.12709],[44.44295,34.12720],[44.44169,34.12736],[44.44096,34.12796],[44.43928,34.12804],[44.43844,34.12776],[44.43802,34.12661],[44.43783,34.12505],[44.43791,34.12329],[44.43724,34.12123],[44.43647,34.12052],[44.43572,34.11810],[44.43502,34.11657],[44.43539,34.11470],[44.43485,34.11348],[44.43449,34.11174],[44.43523,34.11107],[44.43508,34.10994],[44.43536,34.10814],[44.43630,34.10785],[44.43616,34.10547],[44.43579,34.10494],[44.43544,34.10363],[44.43523,34.10269],[44.43434,34.10449],[44.43414,34.10537],[44.43420,34.10432],[44.43383,34.10269],[44.43379,34.10194],[44.43352,34.10296],[44.43336,34.10163],[44.43318,34.10217],[44.43258,34.10220]] },
 ];
 
-export function renderRoutesMap(container, visitedIds) {
+export function renderRoutesMap(container) {
     if (!container) return;
     container.innerHTML = `
         <div class="card-container">
@@ -325,11 +325,10 @@ export function renderRoutesMap(container, visitedIds) {
         </div>
     `;
 
-    const visitedFeatures = [], unvisitedFeatures = [];
-    ROUTE_TRACKS.forEach(route => {
-        const feature = { type: 'Feature', geometry: { type: 'LineString', coordinates: route.coords.map(([la, lo]) => [lo, la]) } };
-        (visitedIds.has(route.id) ? visitedFeatures : unvisitedFeatures).push(feature);
-    });
+    const features = ROUTE_TRACKS.map(route => ({
+        type: 'Feature',
+        geometry: { type: 'LineString', coordinates: route.coords.map(([la, lo]) => [lo, la]) }
+    }));
 
     ensureMapLibre().then(() => {
         const el = document.getElementById('routesMapEl');
@@ -347,23 +346,33 @@ export function renderRoutesMap(container, visitedIds) {
                 },
                 layers: [{ id: 'sat', type: 'raster', source: 'satellite', paint: { 'raster-brightness-max': 0.65, 'raster-contrast': 0.1, 'raster-saturation': -1 } }]
             },
-            bounds: [[33.45, 44.22], [34.8, 44.88]],
-            pitch: 40, bearing: 0, maxPitch: 85,
+            center: [33.95, 44.42],
+            zoom: 9.8,
+            pitch: 68,
+            bearing: -25,
+            maxPitch: 85,
             attributionControl: false
         });
         map.on('load', () => {
             map.addSource('dem', { type: 'raster-dem', tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'], tileSize: 256, encoding: 'terrarium', maxzoom: 15 });
-            map.setTerrain({ source: 'dem', exaggeration: 1.6 });
+            map.setTerrain({ source: 'dem', exaggeration: 1.8 });
             map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
 
-            map.addSource('unvisited', { type: 'geojson', data: { type: 'FeatureCollection', features: unvisitedFeatures } });
-            map.addLayer({ id: 'unvisited', type: 'line', source: 'unvisited', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': 'rgba(255,255,255,0.5)', 'line-width': 2, 'line-opacity': 0.85 } });
+            map.addSource('routes', { type: 'geojson', data: { type: 'FeatureCollection', features } });
+            map.addLayer({ id: 'routes-glow', type: 'line', source: 'routes', paint: { 'line-color': '#D9FD19', 'line-width': 8, 'line-opacity': 0.28, 'line-blur': 5 } });
+            map.addLayer({ id: 'routes', type: 'line', source: 'routes', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#D9FD19', 'line-width': 2.5, 'line-opacity': 1 } });
 
-            if (visitedFeatures.length > 0) {
-                map.addSource('visited', { type: 'geojson', data: { type: 'FeatureCollection', features: visitedFeatures } });
-                map.addLayer({ id: 'visited-glow', type: 'line', source: 'visited', paint: { 'line-color': '#D9FD19', 'line-width': 8, 'line-opacity': 0.28, 'line-blur': 5 } });
-                map.addLayer({ id: 'visited', type: 'line', source: 'visited', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#D9FD19', 'line-width': 2.5, 'line-opacity': 1 } });
-            }
+            map.once('idle', () => {
+                map.flyTo({
+                    center: [34.1, 44.6],
+                    zoom: 7.9,
+                    pitch: 48,
+                    bearing: 0,
+                    speed: 0.22,
+                    curve: 1.3,
+                    essential: true
+                });
+            });
         });
     });
 }

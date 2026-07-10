@@ -5,7 +5,7 @@ import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, ROUTE_TRACKS, renderRoutesMap } from './calendar.js';
+import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -600,7 +600,7 @@ function renderGuestHome() {
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
-    renderRoutesMap(document.getElementById('routesMapContainer'), getVisitedRouteIds());
+    renderRoutesMap(document.getElementById('routesMapContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
@@ -680,7 +680,7 @@ function renderOwnerHome() {
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
-    renderRoutesMap(document.getElementById('routesMapContainer'), getVisitedRouteIds());
+    renderRoutesMap(document.getElementById('routesMapContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
