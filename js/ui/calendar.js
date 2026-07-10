@@ -1438,22 +1438,8 @@ function updateFloatingSheetButtons() {
                 buyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     haptic();
-                    closeBottomSheet();
-                    renderHome();
-                    setTimeout(() => {
-                        const cardBlock = document.getElementById('cardBlock');
-                        if (cardBlock) {
-                            cardBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            cardBlock.style.transition = 'box-shadow 0.5s';
-                            cardBlock.style.boxShadow = '0 0 20px 5px white';
-                            setTimeout(() => { cardBlock.style.boxShadow = ''; }, 2000);
-                            const guestAccordion = document.querySelector('#cardAccordionGuest .dropdown-menu');
-                            if (guestAccordion && !guestAccordion.classList.contains('show')) {
-                                guestAccordion.classList.add('show');
-                            }
-                        }
-                    }, 300);
                     log('купить карту', true, state.user);
+                    showGuestBookingPopup(null, null, null, 'generic');
                 });
             }
             container.appendChild(cardsBlock);
