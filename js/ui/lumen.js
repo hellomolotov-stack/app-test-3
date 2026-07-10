@@ -18,11 +18,10 @@ function analytics(name, meta = {}) { log(name, state.userCard?.status !== 'acti
 function currentContext() { return { ...context, route: context.route ? { ...context.route } : undefined }; }
 
 function openChat() {
-    const scenario = getLumenScenario(context);
-    const chatScenario = getLumenChatScenario(userStatus, firstHikePending);
     analytics('lumen_opened', { screen: context.screen || 'home', action: context.action || '' });
     hidePrompt();
-    openOnboardingChat(chatScenario || scenario.next, currentContext());
+    // autoNext=null: openOnboardingChat сам определяет стартовый узел по статусу пользователя
+    openOnboardingChat(null, currentContext(), true);
     analytics('lumen_chat_opened', { screen: context.screen || 'home' });
 }
 

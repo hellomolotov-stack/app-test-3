@@ -521,7 +521,7 @@ async function renderNode(nodeId) {
 // ──────────────────────────────────────────────
 // открытие шторки
 // ──────────────────────────────────────────────
-export async function openOnboardingChat(autoNext = null, lumenContext = null) {
+export async function openOnboardingChat(autoNext = null, lumenContext = null, lumenMode = false) {
     // если ссылка зависла, но узла в DOM нет — сбрасываем, чтобы можно было открыть
     if (overlay && document.body.contains(overlay)) return;
     overlay = null;
@@ -539,9 +539,12 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null) {
         <div class="bottom-sheet bot-chat-sheet">
             <div class="bottom-sheet-handle"></div>
             <div class="bot-chat-header">
-                <div class="bot-chat-avatar">💬</div>
+                ${lumenMode
+                    ? `<div class="bot-chat-avatar bot-chat-avatar-lumen"><img src="assets/lumen/sitting.png" alt="Lumen"></div>`
+                    : `<div class="bot-chat-avatar">💬</div>`
+                }
                 <div class="bot-chat-title">
-                    <div class="bot-chat-name">интеллигентный помощник</div>
+                    <div class="bot-chat-name">${lumenMode ? 'помощник Lumen' : 'интеллигентный помощник'}</div>
                     <div class="bot-chat-status">помогу разобраться</div>
                 </div>
                 <button class="bot-chat-close" aria-label="закрыть">✕</button>

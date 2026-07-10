@@ -24,7 +24,7 @@
 .lumen-root {
     position: fixed;
     right: max(12px, env(safe-area-inset-right, 0px));
-    bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(50px + env(safe-area-inset-bottom, 0px));
     width: 112px;
     height: 166px;
     z-index: 120;
@@ -49,22 +49,27 @@
 .lumen-root.lumen-peek {
     right: auto;
     left: max(0px, env(safe-area-inset-left, 0px));
-    /* нога наступает на навбар (bottom-nav: bottom 20px + ~56px высота = 76px) */
-    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    /* нога наступает на плоскую часть навбара (левый радиус 50px, плоский край от ~66px) */
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     width: 132px;
     height: 192px;
 }
 .lumen-root.lumen-peek .lumen-character {
-    left: -22px;
+    /* left: 8px → нога ≈70px от левого края, попадает на плоскую часть навбара */
+    left: 8px;
     right: auto;
     width: 124px;
     height: 172px;
+    /* нога слегка наступает на навбар */
+    bottom: -16px;
 }
 .lumen-root.lumen-peek .lumen-image {
     transform: scaleX(-1);
 }
 .lumen-root.lumen-sitting .lumen-character {
     right: -10px;
+    /* нижняя часть чуть заходит на навбар */
+    bottom: -12px;
 }
 .lumen-image { position: relative; z-index: 2; width: 100%; height: 100%; object-fit: contain; display: block; }
 .lumen-glow {
@@ -80,7 +85,7 @@
 .lumen-prompt {
     position: absolute;
     right: 82px;
-    bottom: 118px;
+    bottom: 106px;
     width: min(238px, calc(100vw - 116px));
     padding: 12px 14px 10px;
     border: 1px solid rgba(255,255,255,.5);
@@ -1516,6 +1521,19 @@ body::before {
     justify-content: center;
     font-size: 22px;
     flex-shrink: 0;
+}
+/* Lumen-аватар: голубой фон, персонаж в сидящей позе */
+.bot-chat-avatar-lumen {
+    background: linear-gradient(145deg, #3a6fcf 0%, #7eb4f0 100%);
+    overflow: hidden;
+    padding: 0;
+}
+.bot-chat-avatar-lumen img {
+    width: 110%;
+    height: 110%;
+    object-fit: cover;
+    object-position: center top;
+    margin-top: 6px;
 }
 
 .bot-chat-title { flex: 1; min-width: 0; }
