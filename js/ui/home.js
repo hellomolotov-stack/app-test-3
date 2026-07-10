@@ -612,7 +612,7 @@ function renderGuestHome() {
             e.preventDefault();
             haptic();
             scrollToCalendarAndHighlight();
-            log('мне повезёт', true, state.user);
+            log('перейти к календарю', true, state.user);
         });
     }
 
@@ -699,7 +699,7 @@ function renderOwnerHome() {
             e.preventDefault();
             haptic();
             scrollToCalendarAndHighlight();
-            log('мне повезёт', false, state.user);
+            log('перейти к календарю', false, state.user);
         });
     }
 
