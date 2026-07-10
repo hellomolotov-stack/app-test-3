@@ -4168,3 +4168,7 @@ body::after {
 .guest-club-perks li svg {
     flex-shrink: 0;
 }
+
+.mastermind-summary-row:active {
+    background-color: rgba(255,255,255,0.2) !important;
+}

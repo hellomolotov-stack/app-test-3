@@ -251,17 +251,20 @@ function renderMastermindSummaries() {
                     formattedDate = item.date;
                 }
             }
-            const readBtn = isGuest
-                ? `<button class="btn btn-outline guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">🔒</button>`
-                : `<a href="${item.link}" target="_blank" class="btn btn-yellow mastermind-read-link" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
+            const arrow = `<span style="color: rgba(255,255,255,0.4); font-size: 20px; flex-shrink: 0; line-height: 1;">›</span>`;
+            const lockIcon = `<span style="color: rgba(255,255,255,0.4); font-size: 16px; flex-shrink: 0;">🔒</span>`;
+            const rowAttrs = isGuest
+                ? `class="mastermind-summary-row guest-read-btn" style="cursor:pointer;"`
+                : `class="mastermind-summary-row mastermind-read-link" href="${item.link}" target="_blank" data-date="${item.date}" data-title="${item.title || ''}" style="text-decoration:none; cursor:pointer;"`;
+            const tag = isGuest ? 'div' : 'a';
             innerHtml += `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
-                    <div style="flex: 1; margin-right: 16px;">
+                <${tag} ${rowAttrs} style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px); transition: background-color 0.15s;">
+                    <div style="flex: 1; margin-right: 12px;">
                         <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
                         <span style="color: #ffffff; margin-left: 8px;">${item.title || 'Без названия'}</span>
                     </div>
-                    ${readBtn}
-                </div>
+                    ${isGuest ? lockIcon : arrow}
+                </${tag}>
             `;
         });
     }
@@ -677,6 +680,7 @@ function renderOwnerHome() {
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
+            haptic();
             log('мастермайнд', false, state.user);
             const url = link.href;
             const tgApp = window.Telegram?.WebApp;
@@ -684,6 +688,7 @@ function renderOwnerHome() {
             else window.open(url, '_blank');
         });
     });
+
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderRoutesMap(document.getElementById('routesMapContainer'));
