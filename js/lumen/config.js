@@ -7,10 +7,12 @@ export const LUMEN_SCENARIOS = {
 };
 
 export const LUMEN_POSES = {
-    home: 'standing',
+    home: 'sitting',
     route: 'sitting',
-    first_visit: 'waving',
-    default: 'compact',
+    first_visit: 'sitting',
+    profiles: 'peek',
+    menu: 'peek',
+    default: 'peek',
 };
 
 const LUMEN_PILOT_USERNAME = 'hellointelligent';

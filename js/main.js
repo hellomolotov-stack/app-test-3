@@ -10,7 +10,7 @@ import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, rend
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen } from './ui/calendar.js?v=20260622r';
 import { mountBotTab } from './ui/bot-nudge.js';
-import { mountLumen } from './ui/lumen.js';
+import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
@@ -112,6 +112,7 @@ function setupBottomNav() {
         cleanupProfileOverlays();
         document.getElementById('floatingCardBtn')?.remove();
         renderHome();
+        setLumenContext({ screen: 'route', scenario: 'route' });
         setTimeout(() => {
             const calendar = document.getElementById('calendarContainer');
             if (calendar) {
@@ -130,6 +131,7 @@ function setupBottomNav() {
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
+        setLumenContext({ screen: 'profiles', scenario: 'profiles' });
         cleanupProfileOverlays();
         document.getElementById('floatingCardBtn')?.remove();
         renderProfiles();
@@ -147,6 +149,7 @@ function setupBottomNav() {
         } else {
             popup.classList.add('show');
             window.isMenuActive = true;
+            setLumenContext({ screen: 'menu', scenario: 'menu' });
         }
         log('меню', state.userCard.status !== 'active', state.user);
         updateActiveNav();
@@ -534,6 +537,9 @@ async function loadAppData() {
         // _userRegs (Firebase) нужен всем — на нём держится определение «первый хайк бесплатно».
         // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
         state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
+        setLumenEligibility({
+            firstHikePending: !Object.values(state._userRegs || {}).some(value => value === true)
+        });
         if (state.userCard.status === 'active') {
             applyOwnerBookings(); // #5
             saveBookingStatusToLocal(); // кэш на следующий запуск, чтобы ранний рендер видел корректный статус

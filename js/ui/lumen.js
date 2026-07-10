@@ -9,6 +9,8 @@ let root = null;
 let context = { screen: 'home', action: null, scenario: 'home' };
 let promptTimer = null;
 let observer = null;
+let firstHikePending = false;
+let promptReady = false;
 
 function analytics(name, meta = {}) { log(name, state.userCard?.status !== 'active', state.user, meta); }
 
@@ -27,21 +29,23 @@ function hidePrompt() {
 }
 
 function showPrompt() {
-    if (!root || isLumenDisabled()) return;
+    if (!root || !promptReady || !firstHikePending || isLumenDisabled()) return;
     const scenarioKey = context.scenario || context.screen || 'home';
     if (!canShowLumenPrompt(scenarioKey)) return;
-    const scenario = getLumenScenario(context);
     const prompt = root.querySelector('.lumen-prompt');
-    prompt.querySelector('.lumen-prompt-text').textContent = scenario.message;
+    const name = state.user?.first_name?.trim() || 'друг';
+    prompt.querySelector('.lumen-prompt-text').textContent = `привет, ${name}. я Люмен, подсвечу путь к твоему первому хайку. нажми на сообщение`;
     prompt.classList.add('is-visible');
     markLumenSeen(scenarioKey);
-    analytics('lumen_message_shown', { scenario: scenarioKey, screen: context.screen || 'home' });
+    analytics('lumen_first_hike_message_shown', { scenario: scenarioKey, screen: context.screen || 'home' });
     promptTimer = setTimeout(hidePrompt, 9000);
 }
 
 function setPose() {
     const pose = LUMEN_POSES[context.scenario] || LUMEN_POSES[context.screen] || LUMEN_POSES.default;
     const img = root?.querySelector('.lumen-image');
+    root?.classList.toggle('lumen-peek', pose === 'peek');
+    root?.classList.toggle('lumen-sitting', pose === 'sitting');
     if (img) { img.src = `assets/lumen/${pose}.png`; img.alt = 'Люмен'; }
 }
 
@@ -50,12 +54,23 @@ export function setLumenContext(next = {}) {
     setPose();
 }
 
+export function setLumenEligibility({ firstHikePending: pending = false } = {}) {
+    firstHikePending = !!pending;
+    promptReady = true;
+    if (firstHikePending) {
+        clearTimeout(promptTimer);
+        promptTimer = setTimeout(showPrompt, 3200);
+    } else {
+        hidePrompt();
+    }
+}
+
 export function mountLumen(initialContext = {}) {
     if (root) { setLumenContext(initialContext); return; }
     registerLumenVisit();
     context = { screen: 'home', ...initialContext };
     root = document.createElement('aside');
-    root.className = 'lumen-root';
+    root.className = 'lumen-root lumen-sitting';
     root.setAttribute('aria-label', 'Люмен, помощник клуба');
     root.innerHTML = `
         <div class="lumen-prompt" role="status">
@@ -84,7 +99,6 @@ export function mountLumen(initialContext = {}) {
     root.querySelector('.lumen-prompt-disable').addEventListener('click', (event) => {
         event.stopPropagation(); disableLumenPrompts(); hidePrompt(); analytics('lumen_prompt_disabled');
     });
-    promptTimer = setTimeout(showPrompt, 1400);
 }
 
 export function showLumenPrompt() { clearTimeout(promptTimer); promptTimer = setTimeout(showPrompt, 350); }
