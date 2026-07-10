@@ -13,6 +13,12 @@ export const LUMEN_POSES = {
     default: 'compact',
 };
 
+const LUMEN_PILOT_USERNAME = 'hellointelligent';
+
+export function isLumenPilotUser(user) {
+    return String(user?.username || '').replace(/^@/, '').toLowerCase() === LUMEN_PILOT_USERNAME;
+}
+
 export function getLumenScenario(context = {}) {
     if (context.scenario && LUMEN_SCENARIOS[context.scenario]) return LUMEN_SCENARIOS[context.scenario];
     return LUMEN_SCENARIOS[context.screen === 'route' ? 'route' : 'home'];

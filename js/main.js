@@ -10,11 +10,18 @@ import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, rend
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen } from './ui/calendar.js?v=20260622r';
 import { mountBotTab } from './ui/bot-nudge.js';
+import { mountLumen } from './ui/lumen.js';
+import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
+
+function mountAssistant() {
+    if (isLumenPilotUser(state.user)) mountLumen();
+    else mountBotTab();
+}
 
 function getCurrentTopOffset() {
     if (!tg) return 76;
@@ -465,7 +472,7 @@ async function loadAppData() {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
             hideAnimatedLoader();
             renderHome();
-            mountBotTab();
+            mountAssistant();
             firstRenderDone = true;
             ensureDeepLink();
         };
@@ -546,7 +553,7 @@ async function loadAppData() {
         // финальный рендер с актуальными данными — пропускаем, если диплинк увёл на другую страницу
         if (!window._deepLinkPageChanged) renderHome();
         window.toggleShareButton(false);
-        if (!firstRenderDone) mountBotTab();
+        if (!firstRenderDone) mountAssistant();
 
         // если ранний рендер не случился (нет кэша и Firebase не успел) — выполняем deep-link сейчас
         ensureDeepLink();
