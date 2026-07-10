@@ -49,10 +49,16 @@
 .lumen-root.lumen-peek {
     right: auto;
     left: max(0px, env(safe-area-inset-left, 0px));
+    /* нога наступает на навбар (bottom-nav: bottom 20px + ~56px высота = 76px) */
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    width: 132px;
+    height: 192px;
 }
 .lumen-root.lumen-peek .lumen-character {
-    left: -28px;
+    left: -22px;
     right: auto;
+    width: 124px;
+    height: 172px;
 }
 .lumen-root.lumen-peek .lumen-image {
     transform: scaleX(-1);
@@ -62,9 +68,14 @@
 }
 .lumen-image { position: relative; z-index: 2; width: 100%; height: 100%; object-fit: contain; display: block; }
 .lumen-glow {
-    position: absolute; z-index: 1; left: 20px; right: 20px; top: 28px; bottom: 18px;
-    border-radius: 50%; background: rgba(255, 211, 132, .23); filter: blur(18px);
-    animation: lumenBreath 3.6s ease-in-out infinite;
+    position: absolute; z-index: 1; left: 16px; right: 16px; top: 24px; bottom: 14px;
+    border-radius: 50%; background: rgba(255, 211, 132, .18);
+    box-shadow:
+        0 0 22px 10px rgba(255, 211, 132, .28),
+        0 0 55px 22px rgba(255, 195, 100, .16),
+        0 0 90px 36px rgba(255, 175, 80, .08);
+    filter: blur(12px);
+    animation: lumenBreath 4.8s ease-in-out infinite;
 }
 .lumen-prompt {
     position: absolute;
@@ -87,7 +98,17 @@
 .lumen-prompt-open { display: block; width: 100%; padding: 0 18px 2px 0; border: 0; background: transparent; color: #25303a; text-align: left; font: inherit; font-size: 13px; line-height: 1.35; cursor: pointer; }
 .lumen-prompt-close { position: absolute; top: 5px; right: 7px; width: 20px; height: 20px; border: 0; background: transparent; color: rgba(37,48,58,.65); font-size: 18px; cursor: pointer; }
 .lumen-prompt-disable { margin-top: 8px; padding: 0; border: 0; background: transparent; color: rgba(37,48,58,.58); font-size: 10px; cursor: pointer; }
-@keyframes lumenBreath { 0%,100% { opacity: .55; transform: scale(.96); } 50% { opacity: .82; transform: scale(1.04); } }
+@keyframes lumenBreath {
+    0%, 100% { opacity: .45; transform: scale(.93); }
+    50%       { opacity: .85; transform: scale(1.07); }
+}
+/* Всплывающее сообщение в peek-режиме — справа от персонажа */
+.lumen-root.lumen-peek .lumen-prompt {
+    right: auto;
+    left: 96px;
+    bottom: 110px;
+    border-radius: 18px 18px 18px 4px;
+}
 @media (max-width: 380px) { .lumen-root { right: 2px; transform: scale(.86); transform-origin: right bottom; } .lumen-root.lumen-peek { right: auto; left: 0; } }
 @media (prefers-reduced-motion: reduce) { .lumen-character, .lumen-glow { animation: none; } .lumen-prompt { transition-duration: .01ms; } }
 

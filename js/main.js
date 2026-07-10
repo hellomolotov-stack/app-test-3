@@ -538,7 +538,8 @@ async function loadAppData() {
         // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
         state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
         setLumenEligibility({
-            firstHikePending: !Object.values(state._userRegs || {}).some(value => value === true)
+            firstHikePending: !Object.values(state._userRegs || {}).some(value => value === true),
+            status: state.userCard.status,
         });
         if (state.userCard.status === 'active') {
             applyOwnerBookings(); // #5

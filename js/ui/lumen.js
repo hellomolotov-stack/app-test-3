@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
-import { getLumenScenario, LUMEN_POSES } from '../lumen/config.js';
+import { getLumenScenario, getLumenGreeting, getLumenChatScenario, LUMEN_POSES } from '../lumen/config.js';
 import { canShowLumenPrompt, disableLumenPrompts, markLumenClosed, markLumenSeen, registerLumenVisit, isLumenDisabled } from '../lumen/state.js';
 
 let root = null;
@@ -11,6 +11,7 @@ let promptTimer = null;
 let observer = null;
 let firstHikePending = false;
 let promptReady = false;
+let userStatus = 'inactive';
 
 function analytics(name, meta = {}) { log(name, state.userCard?.status !== 'active', state.user, meta); }
 
@@ -18,9 +19,10 @@ function currentContext() { return { ...context, route: context.route ? { ...con
 
 function openChat() {
     const scenario = getLumenScenario(context);
+    const chatScenario = getLumenChatScenario(userStatus, firstHikePending);
     analytics('lumen_opened', { screen: context.screen || 'home', action: context.action || '' });
     hidePrompt();
-    openOnboardingChat(scenario.next, currentContext());
+    openOnboardingChat(chatScenario || scenario.next, currentContext());
     analytics('lumen_chat_opened', { screen: context.screen || 'home' });
 }
 
@@ -33,8 +35,8 @@ function showPrompt() {
     const scenarioKey = context.scenario || context.screen || 'home';
     if (!canShowLumenPrompt(scenarioKey)) return;
     const prompt = root.querySelector('.lumen-prompt');
-    const name = state.user?.first_name?.trim() || 'друг';
-    prompt.querySelector('.lumen-prompt-text').textContent = `привет, ${name}. я Люмен, подсвечу путь к твоему первому хайку. нажми на сообщение`;
+    const greeting = getLumenGreeting(userStatus, firstHikePending);
+    prompt.querySelector('.lumen-prompt-text').textContent = greeting;
     prompt.classList.add('is-visible');
     markLumenSeen(scenarioKey);
     analytics('lumen_first_hike_message_shown', { scenario: scenarioKey, screen: context.screen || 'home' });
@@ -54,15 +56,12 @@ export function setLumenContext(next = {}) {
     setPose();
 }
 
-export function setLumenEligibility({ firstHikePending: pending = false } = {}) {
+export function setLumenEligibility({ firstHikePending: pending = false, status = 'inactive' } = {}) {
     firstHikePending = !!pending;
+    userStatus = status;
     promptReady = true;
-    if (firstHikePending) {
-        clearTimeout(promptTimer);
-        promptTimer = setTimeout(showPrompt, 3200);
-    } else {
-        hidePrompt();
-    }
+    clearTimeout(promptTimer);
+    promptTimer = setTimeout(showPrompt, 3200);
 }
 
 export function mountLumen(initialContext = {}) {
