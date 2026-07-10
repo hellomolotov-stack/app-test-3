@@ -1,8 +1,14 @@
 // js/api.js
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
 
+function isQuietHours() {
+    const hour = new Date().getHours();
+    return hour < 10 || hour >= 23;
+}
+
 export function log(action, isGuest = false, user, meta = {}) {
     if (!user?.id) return;
+    if (isQuietHours()) return;
     const finalAction = isGuest ? `${action}_guest` : action;
     const params = new URLSearchParams({
         user_id: user.id,
