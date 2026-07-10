@@ -27,7 +27,7 @@
     bottom: calc(18px + env(safe-area-inset-bottom, 0px));
     width: 112px;
     height: 166px;
-    z-index: 90;
+    z-index: 120;
     pointer-events: none;
     transition: opacity .25s ease, transform .35s ease;
 }
@@ -53,6 +53,9 @@
 .lumen-root.lumen-peek .lumen-character {
     left: -28px;
     right: auto;
+}
+.lumen-root.lumen-peek .lumen-image {
+    transform: scaleX(-1);
 }
 .lumen-root.lumen-sitting .lumen-character {
     right: -10px;
