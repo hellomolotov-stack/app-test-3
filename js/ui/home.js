@@ -251,20 +251,17 @@ function renderMastermindSummaries() {
                     formattedDate = item.date;
                 }
             }
-            const arrow = `<span style="color: rgba(255,255,255,0.4); font-size: 20px; flex-shrink: 0; line-height: 1;">›</span>`;
-            const lockIcon = `<span style="color: rgba(255,255,255,0.4); font-size: 16px; flex-shrink: 0;">🔒</span>`;
-            const rowAttrs = isGuest
-                ? `class="mastermind-summary-row guest-read-btn" style="cursor:pointer;"`
-                : `class="mastermind-summary-row mastermind-read-link" href="${item.link}" target="_blank" data-date="${item.date}" data-title="${item.title || ''}" style="text-decoration:none; cursor:pointer;"`;
-            const tag = isGuest ? 'div' : 'a';
+            const readBtn = isGuest
+                ? `<button class="btn guest-read-btn" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.5); border-radius: 20px; font-size: 13px;">🔒</button>`
+                : `<a href="${item.link}" target="_blank" class="mastermind-read-link" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; text-decoration: none; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); border-radius: 20px; font-size: 13px; white-space: nowrap;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
-                <${tag} ${rowAttrs} style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px); transition: background-color 0.15s;">
-                    <div style="flex: 1; margin-right: 12px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+                    <div style="flex: 1; margin-right: 16px;">
                         <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
                         <span style="color: #ffffff; margin-left: 8px;">${item.title || 'Без названия'}</span>
                     </div>
-                    ${isGuest ? lockIcon : arrow}
-                </${tag}>
+                    ${readBtn}
+                </div>
             `;
         });
     }
