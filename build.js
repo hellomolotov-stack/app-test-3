@@ -87,5 +87,10 @@ async function processDirectory(srcDir, outDir) {
         }
     }
 
+    // Переносим растровые ассеты Люмена в deployable output.
+    if (fs.existsSync('assets')) {
+        await processDirectory('assets', path.join(outputDir, 'assets'));
+    }
+
     console.log('✅ Сборка завершена. Папка dist готова к деплою.');
 })();

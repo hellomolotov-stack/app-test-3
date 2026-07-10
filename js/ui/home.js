@@ -10,6 +10,7 @@ import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openOnboardingChat } from './onboarding-chat.js';
+import { setLumenContext } from './lumen.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -706,6 +707,7 @@ function renderOwnerHome() {
 }
 
 export function renderHome() {
+    setLumenContext({ screen: 'home', scenario: localStorage.getItem('chatOnboardingVisited') ? 'home' : 'first_visit' });
     document.querySelector('.profile-edit-fab')?.remove();
     hideBack();
     if (window._floatingScrollHandler) {

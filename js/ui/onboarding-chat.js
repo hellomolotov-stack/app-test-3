@@ -521,14 +521,20 @@ async function renderNode(nodeId) {
 // ──────────────────────────────────────────────
 // открытие шторки
 // ──────────────────────────────────────────────
-export async function openOnboardingChat(autoNext = null) {
+export async function openOnboardingChat(autoNext = null, lumenContext = null) {
     // если ссылка зависла, но узла в DOM нет — сбрасываем, чтобы можно было открыть
     if (overlay && document.body.contains(overlay)) return;
     overlay = null;
-    log('открыл чат с ботом', state.userCard.status !== 'active', state.user);
+    if (lumenContext) window.lumenChatContext = lumenContext;
+    log('открыл чат с ботом', state.userCard.status !== 'active', state.user, lumenContext ? {
+        lumen_screen: lumenContext.screen || '',
+        lumen_action: lumenContext.action || '',
+        lumen_route_id: lumenContext.route?.id || ''
+    } : {});
 
     overlay = document.createElement('div');
     overlay.className = 'bottom-sheet-overlay bot-chat-overlay';
+    if (lumenContext) overlay.dataset.lumenScreen = lumenContext.screen || '';
     overlay.innerHTML = `
         <div class="bottom-sheet bot-chat-sheet">
             <div class="bottom-sheet-handle"></div>

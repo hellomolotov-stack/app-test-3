@@ -17,6 +17,7 @@ import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
+import { setLumenContext } from './lumen.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -546,6 +547,19 @@ export function getTotalCardsCount() {
 
 export function showBottomSheet(index) {
     if (!state.hikesWithTitle.length) return;
+
+    const selectedHike = state.hikesWithTitle[index];
+    setLumenContext({
+        screen: 'route',
+        scenario: 'route',
+        action: 'open_route',
+        route: selectedHike ? {
+            id: selectedHike.id || selectedHike.date || String(index),
+            title: selectedHike.title || '',
+            date: selectedHike.date || '',
+            difficulty: selectedHike.difficulty || ''
+        } : null
+    });
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
