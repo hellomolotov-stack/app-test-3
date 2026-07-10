@@ -1099,7 +1099,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const isBookClub = hike.book_club === true;
     const isCity = hike.city === true || hike.city === 'yes';
     const bookedText = isBookClub ? 'читаю' : (hike.woman === 'yes' ? 'ты записана' : 'ты записан');
-    const unbookedText = isBookClub ? 'читаю' : 'иду';
+    const unbookedText = isBookClub ? 'читаю' : (isCity ? 'буду' : 'иду');
     const thumbText = isBooked ? bookedText : unbookedText;
 
     const hintTextBooked = 'сдвинь для отмены ‹';
@@ -1457,13 +1457,27 @@ function updateFloatingSheetButtons() {
             const isWoman = hike.woman === 'yes';
             const accentColor = isBookClub ? '#FFF1B2' : (isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)'));
             const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+
+            // Счётчик участников
+            const cityBookedCount = window._participantCount || 0;
+            if (cityBookedCount > 0) {
+                const chipRow = document.createElement('div');
+                chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none; margin-bottom: 4px;';
+                const chip = document.createElement('div');
+                chip.className = 'spots-counter-chip';
+                const w = cityBookedCount === 1 ? 'человек' : cityBookedCount < 5 ? 'человека' : 'человек';
+                chip.innerHTML = `🏙️ будут <strong>${cityBookedCount}</strong> ${w}`;
+                chipRow.appendChild(chip);
+                container.appendChild(chipRow);
+            }
+
             const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
             if (swipeControl) {
                 container.appendChild(swipeControl);
                 container.style.pointerEvents = 'auto';
                 return;
             }
-            // fallback: кнопка "я иду" если свайп не поддерживается
+            // fallback: кнопка "буду" если свайп не поддерживается
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
@@ -1472,7 +1486,7 @@ function updateFloatingSheetButtons() {
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow btn-glow';
-            goBtn.textContent = isBooked ? (isBookClub ? 'читаю' : 'ты записан') : (isBookClub ? 'читаю' : 'я иду');
+            goBtn.textContent = isBooked ? (isBookClub ? 'читаю' : 'ты записан') : (isBookClub ? 'читаю' : (isCity ? 'буду' : 'я иду'));
             goBtn.style.backgroundColor = accentColor;
             goBtn.style.color = (accentColor === '#41B5ED') ? '#ffffff' : '#000000';
             goBtn.addEventListener('click', (e) => {
@@ -1818,7 +1832,7 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
                 <div style="color: rgba(255,255,255,0.85); font-size: 15px; line-height: 1.55;">первое событие — бесплатно.<br>приходи, познакомимся.</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <button id="cityFreeBtn" style="width:100%; padding:14px; background:#41B5ED; color:#fff; border:none; border-radius:40px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:0.01em;">иду впервые</button>
+                <button id="cityFreeBtn" style="width:100%; padding:14px; background:#41B5ED; color:#fff; border:none; border-radius:40px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:0.01em;">буду впервые</button>
                 <button id="cityCardBtn" style="width:100%; padding:14px; background:transparent; color:#41B5ED; border:2px solid rgba(65,181,237,0.5); border-radius:40px; font-size:15px; font-weight:700; cursor:pointer;">оформить карту</button>
             </div>
         </div>
@@ -1865,7 +1879,7 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
                 e.target.dataset.processing = 'false';
                 alert('Ошибка при регистрации. Попробуй ещё раз.');
             });
-        log('городское событие — иду впервые', true, state.user, { hike_date: hikeDate });
+        log('городское событие — буду впервые', true, state.user, { hike_date: hikeDate });
     });
 
     document.getElementById('cityCardBtn').addEventListener('click', () => {
