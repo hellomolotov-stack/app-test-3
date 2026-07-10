@@ -35,6 +35,8 @@ export function renderCalendar(container) {
     const year = currentCalendarYear,
         month = currentCalendarMonth;
     const today = new Date();
+    const todayMidnight = new Date(today);
+    todayMidnight.setHours(0, 0, 0, 0);
     const currentYear = today.getFullYear(),
         currentMonth = today.getMonth(),
         currentDate = today.getDate();
@@ -82,7 +84,7 @@ export function renderCalendar(container) {
         const isHikeExist = !!hike;
         const isPlaceholder = isHikeExist && (!hike.title || hike.title.trim() === '');
         const isFullHike = isHikeExist && hike.title && hike.title.trim() !== '';
-        const isPast = isFullHike && new Date(dateStr) < today;
+        const isPast = isFullHike && new Date(dateStr) < todayMidnight;
         const isCancelled = isFullHike && hike.cancelled === true;
         const isWoman = isFullHike && hike.woman === 'yes';
         const isCity = isFullHike && (hike.city === true || hike.city === 'yes');
