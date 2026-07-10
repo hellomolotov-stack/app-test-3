@@ -747,7 +747,7 @@ export function showBottomSheet(index) {
                                 <span class="info-icon" style="color: ${accentColor};">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                 </span>
-                                <span><strong>начало:</strong> 🔒</span>
+                                <span><strong>начало:</strong> ${hike.start_time}</span>
                             </div>
                         `;
                     }
@@ -763,13 +763,15 @@ export function showBottomSheet(index) {
                 }
             }
             if (hike.location_link) {
+                const locationLabel = (isCity || isBookClub) ? 'локация' : 'точка сбора';
                 let locationHtml = '';
-                if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
+                if (isGuest && isCity) {
+                    locationHtml = `🔒 <span style="color: rgba(255,255,255,0.35); font-size: 13px;">будет доступно после записи</span>`;
+                } else if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
                     locationHtml = parseLinks(hike.location_link, isGuest);
                 } else {
                     locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
-                const locationLabel = (isCity || isBookClub) ? 'локация' : 'точка сбора';
                 extraInfoHtml += `
                     <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
@@ -1834,6 +1836,7 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
                 <button id="cityFreeBtn" style="width:100%; padding:14px; background:#41B5ED; color:#fff; border:none; border-radius:40px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:0.01em;">буду впервые</button>
                 <button id="cityCardBtn" style="width:100%; padding:14px; background:transparent; color:#41B5ED; border:2px solid rgba(65,181,237,0.5); border-radius:40px; font-size:15px; font-weight:700; cursor:pointer;">оформить карту</button>
+                <button id="cityChatBtn" style="width:100%; padding:12px; background:transparent; color:rgba(255,255,255,0.45); border:none; border-radius:40px; font-size:14px; cursor:pointer;">познакомиться с клубом</button>
             </div>
         </div>
     `;
@@ -1887,6 +1890,13 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
         closePopup();
         setTimeout(() => showGuestBookingPopup(hikeDate, hikeTitle, null, 'generic'), 200);
         log('городское событие — оформить карту', true, state.user, { hike_date: hikeDate });
+    });
+
+    document.getElementById('cityChatBtn').addEventListener('click', () => {
+        haptic();
+        closePopup();
+        log('городское событие — познакомиться с клубом', true, state.user, { hike_date: hikeDate });
+        setTimeout(() => openOnboardingChat(), 200);
     });
 }
 
