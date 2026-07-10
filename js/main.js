@@ -8,7 +8,7 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess } from './ui/calendar.js?v=20260622r';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen } from './ui/calendar.js?v=20260622r';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
@@ -462,9 +462,7 @@ async function loadAppData() {
             if (!state.userCard || state.userCard.status === 'loading') {
                 state.userCard = { status: 'inactive', hikes: 0, cardUrl: '' };
             }
-            if (state.userCard.status !== 'active') {
-                state.hikeBookingStatus = loadBookingStatusFromLocal();
-            }
+            state.hikeBookingStatus = loadBookingStatusFromLocal();
             hideAnimatedLoader();
             renderHome();
             mountBotTab();
@@ -531,6 +529,8 @@ async function loadAppData() {
         state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
         if (state.userCard.status === 'active') {
             applyOwnerBookings(); // #5
+            saveBookingStatusToLocal(); // кэш на следующий запуск, чтобы ранний рендер видел корректный статус
+            refreshBottomSheetIfOpen(); // обновить открытый шит если он уже был показан до загрузки _userRegs
         } else {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
         }

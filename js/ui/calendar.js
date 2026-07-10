@@ -1059,6 +1059,12 @@ export function showBottomSheet(index) {
     log('детали хайка', false, state.user);
 }
 
+export function refreshBottomSheetIfOpen() {
+    if (document.getElementById('hikeBottomSheet')) {
+        showBottomSheet(sheetCurrentIndex);
+    }
+}
+
 export function closeBottomSheet() {
     closeParticipantDropdown();
     closeLeaderDropdown();
