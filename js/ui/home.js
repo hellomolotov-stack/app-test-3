@@ -675,8 +675,13 @@ function renderOwnerHome() {
     document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('новичкам', false, user); renderNewcomerPage(false); });
 
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
             log('мастермайнд', false, state.user);
+            const url = link.href;
+            const tgApp = window.Telegram?.WebApp;
+            if (tgApp) tgApp.openLink(url);
+            else window.open(url, '_blank');
         });
     });
 
