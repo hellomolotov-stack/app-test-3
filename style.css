@@ -117,34 +117,42 @@
 @media (max-width: 380px) { .lumen-root { right: 2px; transform: scale(.86); transform-origin: right bottom; } .lumen-root.lumen-peek { right: auto; left: 0; } }
 @media (prefers-reduced-motion: reduce) { .lumen-character, .lumen-glow { animation: none; } .lumen-prompt { transition-duration: .01ms; } }
 
-/* Люмен: интро-облачко с двумя кнопками */
+/* Люмен: интро-сияние с текстом и кнопками */
 .lumen-intro-bubble {
     position: absolute;
-    right: 90px;
-    bottom: 100px;
-    width: min(256px, calc(100vw - 108px));
-    padding: 14px 14px 12px;
-    border: 1px solid var(--glass-border);
-    border-radius: 18px 18px 4px 18px;
-    background: rgba(20, 30, 40, 0.82);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    box-shadow: var(--glass-highlight), 0 12px 34px rgba(0,0,0,.4);
+    right: 72px;
+    bottom: 110px;
+    width: min(260px, calc(100vw - 104px));
+    padding: 20px 18px 16px;
+    border: none;
+    border-radius: 24px;
+    background: radial-gradient(ellipse at 50% 48%,
+        rgba(255, 218, 80, 0.97) 0%,
+        rgba(255, 204, 58, 0.91) 28%,
+        rgba(255, 190, 42, 0.64) 52%,
+        rgba(255, 175, 30, 0.24) 72%,
+        rgba(255, 165, 20, 0) 100%);
+    box-shadow:
+        0 0 22px 10px  rgba(255, 208, 65, 0.70),
+        0 0 55px 28px  rgba(255, 192, 48, 0.45),
+        0 0 100px 50px rgba(255, 178, 35, 0.25),
+        0 0 160px 80px rgba(255, 165, 24, 0.12),
+        0 0 220px 110px rgba(255, 155, 18, 0.05);
     opacity: 0;
-    transform: translateY(10px) scale(.97);
+    transform: translateY(12px) scale(.96);
     pointer-events: none;
-    transition: opacity .35s ease, transform .35s ease;
+    transition: opacity .38s ease, transform .38s ease;
     z-index: 121;
 }
 .lumen-intro-bubble.is-visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
 .lumen-intro-close {
-    position: absolute; top: 6px; right: 8px;
+    position: absolute; top: 6px; right: 10px;
     width: 20px; height: 20px; border: 0; background: transparent;
-    color: rgba(255,255,255,.45); font-size: 18px; cursor: pointer; line-height: 1;
+    color: rgba(60, 35, 0, 0.45); font-size: 18px; cursor: pointer; line-height: 1;
 }
 .lumen-intro-text {
-    margin: 0 16px 10px 0;
-    font-size: 13px; line-height: 1.45; color: rgba(255,255,255,.9);
+    margin: 0 14px 12px 0;
+    font-size: 13px; line-height: 1.5; color: rgba(40, 22, 0, 0.92);
 }
 .lumen-intro-btns {
     display: flex; gap: 7px;
@@ -152,23 +160,20 @@
 .lumen-intro-btn {
     flex: 1;
     padding: 7px 10px;
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(120, 75, 0, 0.22);
     border-radius: 50px;
-    background: rgba(255,255,255,.09);
-    backdrop-filter: var(--glass-blur-sm);
-    -webkit-backdrop-filter: var(--glass-blur-sm);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
-    color: #ffffff;
+    background: rgba(0, 0, 0, 0.10);
+    color: rgba(40, 22, 0, 0.88);
     font-size: 12.5px;
     font-family: inherit;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: background .15s, transform .1s;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.lumen-intro-btn:active { transform: scale(.97); background: rgba(217,253,25,.15); }
+.lumen-intro-btn:active { transform: scale(.97); background: rgba(0, 0, 0, 0.18); }
 
 /* Запрет масштабирования системного шрифта iOS (Accessibility → Larger Text) */
 html {
