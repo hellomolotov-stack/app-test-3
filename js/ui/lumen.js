@@ -62,7 +62,6 @@ function hideIntroBubble() {
 
 function showIntroBubble() {
     if (!root || isLumenDisabled()) return;
-    if (localStorage.getItem(INTRO_PROMPT_KEY)) return;
 
     const userName = state.user?.first_name?.trim();
     const nameLabel = userName || 'это я';
@@ -78,7 +77,6 @@ function showIntroBubble() {
         </div>`;
 
     root.appendChild(introBubble);
-    localStorage.setItem(INTRO_PROMPT_KEY, '1');
     analytics('lumen_intro_shown', {});
 
     requestAnimationFrame(() => introBubble?.classList.add('is-visible'));
@@ -124,11 +122,7 @@ export function setLumenEligibility({ firstHikePending: pending = false, status 
     userStatus = status;
     promptReady = true;
     clearTimeout(promptTimer);
-    if (!localStorage.getItem(INTRO_PROMPT_KEY)) {
-        promptTimer = setTimeout(showIntroBubble, 2500);
-    } else {
-        promptTimer = setTimeout(showPrompt, 3200);
-    }
+    promptTimer = setTimeout(showIntroBubble, 2500);
 }
 
 export function mountLumen(initialContext = {}) {
