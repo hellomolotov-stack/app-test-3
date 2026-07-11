@@ -11,6 +11,7 @@ import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
+import { isLumenPilotUser } from '../lumen/config.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -436,7 +437,12 @@ function renderGuestHome() {
         <div id="userBookingsContainer"></div>
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
-            <div class="btn-newcomer" id="newcomerBtnGuest"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+            <div class="btn-newcomer" id="newcomerBtnGuest">
+                <span class="newcomer-text">как всё устроено</span>
+                ${isLumenPilotUser(state.user)
+                    ? `<img src="assets/lumen/sitting.png" alt="Люмен" class="newcomer-image newcomer-lumen">`
+                    : `<img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">`}
+            </div>
         </div>
         <div class="card-container" id="calendarContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
@@ -575,7 +581,8 @@ function renderGuestHome() {
     document.getElementById('newcomerBtnGuest')?.addEventListener('click', () => {
         haptic(); setUserInteracted();
         log('новичкам', true, state.user);
-        openOnboardingChat('faq');
+        if (isLumenPilotUser(state.user)) openOnboardingChat(null, null, true);
+        else openOnboardingChat('faq');
     });
 
     // аватарки членов клуба (лениво)
@@ -647,7 +654,12 @@ function renderOwnerHome() {
         ${renderWeatherBlock()}
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
-            <div class="btn-newcomer" id="newcomerBtn"><span class="newcomer-text">как всё устроено</span><img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image"></div>
+            <div class="btn-newcomer" id="newcomerBtn">
+                <span class="newcomer-text">как всё устроено</span>
+                ${isLumenPilotUser(state.user)
+                    ? `<img src="assets/lumen/sitting.png" alt="Люмен" class="newcomer-image newcomer-lumen">`
+                    : `<img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">`}
+            </div>
         </div>
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false">смотреть отчёты &gt;</a></div>
@@ -670,7 +682,11 @@ function renderOwnerHome() {
     });
     document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('привилегии', false, user); renderPriv(); });
     document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'поддержка', false); });
-    document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('новичкам', false, user); renderNewcomerPage(false); });
+    document.getElementById('newcomerBtn')?.addEventListener('click', () => {
+        haptic(); setUserInteracted(); log('новичкам', false, user);
+        if (isLumenPilotUser(state.user)) openOnboardingChat(null, null, true);
+        else renderNewcomerPage(false);
+    });
 
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
         link.addEventListener('click', (e) => {
