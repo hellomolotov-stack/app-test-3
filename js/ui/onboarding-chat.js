@@ -207,10 +207,22 @@ const TEXTS_DOUBTS = {
     get d_ordinary(){ return lumenActive ? TEXTS_DOUBTS_LUMEN.d_ordinary: TEXTS_DOUBTS_DEFAULT.d_ordinary; },
 };
 
-const TEXTS_EXP = {
+const TEXTS_EXP_DEFAULT = {
     exp_nature: 'отличный выбор – горы южного берега Крыма это что-то особенное\n\nкрымские тропы, виды на море с высоты, аромат хвои, чистейший воздух и 3–5 часов настоящей жизни без экрана – именно это мы и делаем каждые выходные\n\nи кстати – никакой подготовки не нужно. берём всех 🙌',
     exp_social: 'вот это по-нашему – знакомиться вживую, а не в тиндере, чувствуя себя словно на рынке\n\nна хайке всё иначе: люди рядом, впечатления общие, разговоры настоящие. уже после первого маршрута – ощущение, что знал этих людей давно\n\nа с картой интеллигента открывается доступ в закрытый чат клуба 🤍',
     exp_curious: 'сейчас всё расскажу – кратко и по делу\n\n<b>хайкинг интеллигенция</b> – это не просто прогулки. это сообщество людей, которые решили жить интересно: горы, события, знакомства, смыслы\n\nсуществуем с мая 2025, уже сделали больше 20 маршрутов и кучу событий в Ялте',
+};
+
+const TEXTS_EXP_LUMEN = {
+    exp_nature: 'понимаю. горы южного берега – это виды на море с высоты, аромат хвои и 3–5 часов без экрана\n\nименно туда мы и ходим каждые выходные. подготовка не нужна – просто приходи 🌿',
+    exp_social: 'знакомиться вживую – это по-нашему\n\nна хайке всё случается само: общий путь, общие виды, настоящие разговоры. после первого маршрута кажется, что знал этих людей давно\n\nздесь можно не казаться интересным. можно просто быть 🤍',
+    exp_curious: 'расскажу, что знаю\n\n<b>хайкинг интеллигенция</b> – это люди, которые решили жить интересно: горы, события, знакомства, смыслы\n\nклуб живёт с мая 2025 – больше 20 маршрутов и много событий в Ялте',
+};
+
+const TEXTS_EXP = {
+    get exp_nature() { return lumenActive ? TEXTS_EXP_LUMEN.exp_nature : TEXTS_EXP_DEFAULT.exp_nature; },
+    get exp_social() { return lumenActive ? TEXTS_EXP_LUMEN.exp_social : TEXTS_EXP_DEFAULT.exp_social; },
+    get exp_curious() { return lumenActive ? TEXTS_EXP_LUMEN.exp_curious : TEXTS_EXP_DEFAULT.exp_curious; },
 };
 
 // ──────────────────────────────────────────────
@@ -240,7 +252,7 @@ const FLOW = {
         ],
     },
     member_partners: {
-        msgs: [() => memberPartnersText() || 'скоро тут появятся новые партнёры 🤍'],
+        msgs: [() => memberPartnersText() || (lumenActive ? 'здесь пока тихо – скоро подсвечу новых партнёров 🤍' : 'скоро тут появятся новые партнёры 🤍')],
         options: [
             { label: 'записаться на хайк 🏔', action: 'book' },
             { label: 'написать нам →', next: 'support' },
@@ -260,7 +272,7 @@ const FLOW = {
         ],
     },
     experience: {
-        msgs: ['расскажи – что тебя сюда привело?'],
+        msgs: [() => lumenActive ? 'расскажи – что тебя сюда привело?\n\nдавай немного посветим туда' : 'расскажи – что тебя сюда привело?'],
         options: [
             { label: '🏔 горы и природа', next: 'exp_nature' },
             { label: '🤝 хочу познакомиться с людьми', next: 'exp_social' },
@@ -333,12 +345,16 @@ const FLOW = {
         dynamic: 'support_input',
     },
     safety_report: {
-        msgs: ['спасибо, что решил поделиться важной информацией! можешь прислать её прямо сюда – я сразу передам её организаторам 🤍'],
+        msgs: [() => lumenActive
+            ? 'спасибо, что делишься – это важно 🤍\n\nнапиши прямо сюда, я сразу передам организаторам'
+            : 'спасибо, что решил поделиться важной информацией! можешь прислать её прямо сюда – я сразу передам её организаторам 🤍'],
         dynamic: 'support_input',
     },
     // faq — динамический узел, options строятся в renderNode
     faq: {
-        msgs: ['<b>как всё устроено</b>\n\nвыбери, что интересно – расскажу 👇'],
+        msgs: [() => lumenActive
+            ? '<b>как всё устроено</b>\n\nвыбери, что интересно – подсвечу 👇'
+            : '<b>как всё устроено</b>\n\nвыбери, что интересно – расскажу 👇'],
         dynamic: 'faq_list',
     },
 
@@ -582,7 +598,7 @@ async function onSupportSend(text) {
     addUserBubble(text);
     optionsEl.innerHTML = '';
     try { await sendSupportMessage(state.user, text); } catch (e) { console.error(e); }
-    await streamMessages(['передал 🤍 как только ответят – покажу здесь']);
+    await streamMessages([lumenActive ? 'передал 🤍\n\nкак только ответят – подсвечу здесь' : 'передал 🤍 как только ответят – покажу здесь']);
     buildOptions({ options: [
         { label: 'ещё вопрос', next: 'support' },
         { label: 'закрыть', action: 'close' },
@@ -624,7 +640,7 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
                 }
                 <div class="bot-chat-title">
                     <div class="bot-chat-name">${lumenMode ? 'помощник Люмен' : 'интеллигентный помощник'}</div>
-                    <div class="bot-chat-status">помогу разобраться</div>
+                    <div class="bot-chat-status">${lumenMode ? 'подсвечу следующий шаг' : 'помогу разобраться'}</div>
                 </div>
                 <button class="bot-chat-close" aria-label="закрыть">✕</button>
             </div>

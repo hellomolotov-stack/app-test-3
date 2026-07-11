@@ -2,8 +2,8 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
-import { getLumenGreeting } from '../lumen/config.js';
-import { canShowLumenPrompt, disableLumenPrompts, markLumenClosed, markLumenSeen, registerLumenVisit, isLumenDisabled } from '../lumen/state.js';
+import { getLumenGreeting, getLumenSegment } from '../lumen/config.js';
+import { canShowLumenPrompt, disableLumenPrompts, markLumenClosed, markLumenSeen, registerLumenVisit, isLumenDisabled, getLumenState } from '../lumen/state.js';
 
 let root = null;
 let introBubble = null;
@@ -11,10 +11,9 @@ let context = { screen: 'home', action: null, scenario: 'home' };
 let promptTimer = null;
 let observer = null;
 let firstHikePending = false;
+let hikesCount = 0;
 let promptReady = false;
 let userStatus = 'inactive';
-
-const INTRO_PROMPT_KEY = 'lumenIntroShown';
 
 function analytics(name, meta = {}) { log(name, state.userCard?.status !== 'active', state.user, meta); }
 
@@ -45,15 +44,60 @@ function showPrompt() {
     const scenarioKey = context.scenario || context.screen || 'home';
     if (!canShowLumenPrompt(scenarioKey)) return;
     const prompt = root.querySelector('.lumen-prompt');
-    const greeting = getLumenGreeting(userStatus, firstHikePending);
+    const segment = currentSegment();
+    const greeting = getLumenGreeting(segment);
     prompt.querySelector('.lumen-prompt-text').textContent = greeting;
     prompt.classList.add('is-visible');
     markLumenSeen(scenarioKey);
-    analytics('lumen_prompt_shown', { scenario: scenarioKey });
+    analytics('lumen_prompt_shown', { scenario: scenarioKey, segment });
     promptTimer = setTimeout(hidePrompt, 9000);
 }
 
-// ── интро-облачко с двумя кнопками ─────────────────────────────────────────
+// ── сегмент пользователя ─────────────────────────────────────────────────────
+
+function currentSegment() {
+    return getLumenSegment({
+        status: userStatus,
+        hikesCount,
+        visits: getLumenState().visits || 1,
+    });
+}
+
+// Кнопки интро-облачка под каждый сегмент.
+// node — узел FLOW чат-бота, который откроется по нажатию.
+function introButtonsFor(segment) {
+    const userName = state.user?.first_name?.trim();
+    switch (segment) {
+        case 'first_time':
+            return [
+                { label: userName || 'это я', node: 'lumen_greet_name' },
+                { label: 'а ты кто?', node: 'lumen_about' },
+            ];
+        case 'visited_no_hike':
+            return [
+                { label: 'найти хайк', node: 'about' },
+                { label: 'есть сомнения…', node: 'doubts' },
+            ];
+        case 'hiker':
+            return [
+                { label: 'выбрать маршрут', node: 'welcome_back' },
+                { label: 'что даёт карта?', node: 'card' },
+            ];
+        case 'card_step':
+            return [
+                { label: 'расскажи про карту', node: 'card' },
+                { label: 'пока просто хайк', node: 'welcome_back' },
+            ];
+        case 'member':
+        default:
+            return [
+                { label: 'что мне доступно?', node: 'member_perks' },
+                { label: 'задать вопрос', node: 'support' },
+            ];
+    }
+}
+
+// ── интро-облачко с кнопками ─────────────────────────────────────────────────
 
 function hideIntroBubble() {
     introBubble?.classList.remove('is-visible');
@@ -63,38 +107,37 @@ function hideIntroBubble() {
 function showIntroBubble() {
     if (!root || isLumenDisabled()) return;
 
-    const userName = state.user?.first_name?.trim();
-    const nameLabel = userName || 'это я';
+    const segment = currentSegment();
+    const greeting = getLumenGreeting(segment);
+    const buttons = introButtonsFor(segment);
 
     introBubble = document.createElement('div');
     introBubble.className = 'lumen-intro-bubble';
     introBubble.innerHTML = `
         <button class="lumen-intro-close" aria-label="закрыть">×</button>
-        <p class="lumen-intro-text">привет! я Люмен. могу осветить твой путь по клубу.<br>а тебя как зовут?</p>
+        <p class="lumen-intro-text">${greeting.replace(/\n/g, '<br>')}</p>
         <div class="lumen-intro-btns">
-            <button class="lumen-intro-btn lumen-intro-btn-name">${nameLabel}</button>
-            <button class="lumen-intro-btn lumen-intro-btn-about">а ты кто?</button>
+            ${buttons.map((b, i) => `<button class="lumen-intro-btn" data-idx="${i}">${b.label}</button>`).join('')}
         </div>`;
 
     root.appendChild(introBubble);
-    analytics('lumen_intro_shown', {});
+    analytics('lumen_intro_shown', { segment });
 
     requestAnimationFrame(() => introBubble?.classList.add('is-visible'));
 
     introBubble.querySelector('.lumen-intro-close').addEventListener('click', (e) => {
         e.stopPropagation();
         hideIntroBubble();
-        analytics('lumen_intro_closed', {});
+        analytics('lumen_intro_closed', { segment });
     });
 
-    introBubble.querySelector('.lumen-intro-btn-name').addEventListener('click', () => {
-        openChatWithNode('lumen_greet_name');
-        analytics('lumen_intro_name_clicked', {});
-    });
-
-    introBubble.querySelector('.lumen-intro-btn-about').addEventListener('click', () => {
-        openChatWithNode('lumen_about');
-        analytics('lumen_intro_about_clicked', {});
+    introBubble.querySelectorAll('.lumen-intro-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const b = buttons[Number(btn.dataset.idx)];
+            if (!b) return;
+            openChatWithNode(b.node);
+            analytics('lumen_intro_btn_clicked', { segment, node: b.node });
+        });
     });
 
     // автоскрытие через 20 секунд
@@ -117,8 +160,9 @@ export function setLumenContext(next = {}) {
     setPose();
 }
 
-export function setLumenEligibility({ firstHikePending: pending = false, status = 'inactive' } = {}) {
+export function setLumenEligibility({ firstHikePending: pending = false, hikesCount: hikes = 0, status = 'inactive' } = {}) {
     firstHikePending = !!pending;
+    hikesCount = hikes;
     userStatus = status;
     promptReady = true;
     clearTimeout(promptTimer);

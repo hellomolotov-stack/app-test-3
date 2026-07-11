@@ -537,8 +537,10 @@ async function loadAppData() {
         // _userRegs (Firebase) нужен всем — на нём держится определение «первый хайк бесплатно».
         // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
         state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
+        const lumenHikesCount = Object.values(state._userRegs || {}).filter(value => value === true).length;
         setLumenEligibility({
-            firstHikePending: !Object.values(state._userRegs || {}).some(value => value === true),
+            firstHikePending: lumenHikesCount === 0,
+            hikesCount: lumenHikesCount,
             status: state.userCard.status,
         });
         if (state.userCard.status === 'active') {
