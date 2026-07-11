@@ -512,6 +512,7 @@ function initHikeMap(el, track) {
 }
 
 let sheetCurrentIndex = 0;
+let sheetLastOpenedAt = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
 let isDragging = false;
@@ -548,6 +549,7 @@ export function getTotalCardsCount() {
 export function showBottomSheet(index) {
     if (!state.hikesWithTitle.length) return;
 
+    sheetLastOpenedAt = Date.now();
     const selectedHike = state.hikesWithTitle[index];
     setLumenContext({
         screen: 'route',
@@ -560,6 +562,7 @@ export function showBottomSheet(index) {
             difficulty: selectedHike.difficulty || ''
         } : null
     });
+
 
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
@@ -1079,6 +1082,8 @@ export function showBottomSheet(index) {
 
 export function refreshBottomSheetIfOpen() {
     if (document.getElementById('hikeBottomSheet')) {
+        // Пропускаем если шит только что открылся (например, из deeplink) — иначе будет двойное открытие
+        if (Date.now() - sheetLastOpenedAt < 2000) return;
         showBottomSheet(sheetCurrentIndex);
     }
 }
@@ -1482,7 +1487,9 @@ function updateFloatingSheetButtons() {
                 const chip = document.createElement('div');
                 chip.className = 'spots-counter-chip';
                 const w = cityBookedCount === 1 ? 'человек' : cityBookedCount < 5 ? 'человека' : 'человек';
-                chip.innerHTML = `🏙️ будут <strong>${cityBookedCount}</strong> ${w}`;
+                chip.innerHTML = isBookClub
+                    ? `📖 уже читают <strong>${cityBookedCount}</strong> ${w}`
+                    : `🏙️ будут <strong>${cityBookedCount}</strong> ${w}`;
                 chipRow.appendChild(chip);
                 container.appendChild(chipRow);
             }

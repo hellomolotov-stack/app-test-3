@@ -1470,6 +1470,14 @@ body::before {
     -webkit-backdrop-filter: blur(12px);
 }
 
+/* Восстанавливаем pointer-events для интерактивных элементов внутри контейнера */
+.floating-sheet-buttons .swipe-track,
+.floating-sheet-buttons .availability-floating,
+.floating-sheet-buttons .spots-counter-chip,
+.floating-sheet-buttons > * {
+    pointer-events: auto;
+}
+
 /* -------------------- ЧАТ-ОНБОРДИНГ (бот для новичков) -------------------- */
 .bot-chat-sheet {
     height: 85vh;
@@ -2147,6 +2155,7 @@ body::before {
     bottom: 30px;
     right: 16px;
     left: 16px;
+    pointer-events: none;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
