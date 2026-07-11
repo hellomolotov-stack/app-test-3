@@ -3984,8 +3984,15 @@ body::after {
 }
 .reg-success-card-icon {
     font-size: 20px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     line-height: 1;
+}
+.reg-success-card-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
 }
 .reg-success-card-text {
     font-size: 13px;

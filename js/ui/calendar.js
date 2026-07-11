@@ -2512,8 +2512,8 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     const formattedDate = formatDateForDisplay(hikeDate);
 
     const chatText = isExperienced
-        ? 'напомним – там обычно договариваются о такси и отвечают на вопросы'
-        : 'там договариваются о совместном такси и задают вопросы про маршрут';
+        ? 'все уведомления по маршруту, обновления деталей и договорённости о такси – только там'
+        : 'там выходят обновления по маршруту и деталям, договариваются о такси и задают вопросы';
     const chatBtn = isExperienced ? 'открыть чат' : 'вступить в чат';
     const packText = isExperienced
         ? 'на всякий случай – вода, перекус, удобная обувь, головной убор, санскрин'
@@ -2529,16 +2529,19 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
             <div class="reg-success-cards">
                 <div class="reg-success-card">
                     <div class="reg-success-card-icon">💬</div>
+                    <div class="reg-success-card-label">чат</div>
                     <div class="reg-success-card-text">${chatText}</div>
                     <button class="reg-success-card-btn" id="regChatBtn">${chatBtn}</button>
                 </div>
                 <div class="reg-success-card">
                     <div class="reg-success-card-icon">🎒</div>
+                    <div class="reg-success-card-label">что взять</div>
                     <div class="reg-success-card-text" id="regPackText">${packText}</div>
-                    <button class="reg-success-card-btn" id="regPackBtn">показать список</button>
+                    <button class="reg-success-card-btn" id="regPackBtn">подробности</button>
                 </div>
                 <div class="reg-success-card">
                     <div class="reg-success-card-icon">🌤</div>
+                    <div class="reg-success-card-label">погода</div>
                     <div class="reg-success-card-text">погода на дату хайка</div>
                     <button class="reg-success-card-btn" id="regWeatherBtn">открыть</button>
                 </div>
@@ -2564,26 +2567,19 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
         openLink('https://t.me/yaltahikingchat', 'чат хайка из успешной регистрации', false);
     });
 
-    let packExpanded = false;
     document.getElementById('regPackBtn')?.addEventListener('click', () => {
         haptic();
-        if (packExpanded) return;
-        packExpanded = true;
-        const textEl = document.getElementById('regPackText');
-        const btn = document.getElementById('regPackBtn');
-        if (textEl) textEl.innerHTML = `<div class="reg-packlist">
-            <div>✅ вода 1.5л</div>
-            <div>✅ перекус</div>
-            <div>✅ удобная обувь с закрытым носком</div>
-            <div>✅ солнцезащитный крем</div>
-            <div>✅ головной убор</div>
-        </div>`;
-        if (btn) btn.style.display = 'none';
+        overlay.remove();
+        openOnboardingChat('d_gear');
     });
 
     document.getElementById('regWeatherBtn')?.addEventListener('click', () => {
         haptic();
-        openLink('https://yandex.ru/pogoda/yalta', 'погода из успешной регистрации', false);
+        const dateObj = new Date(hikeDate);
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        openLink(`https://www.gismeteo.ru/weather-yalta-4843/`, 'погода из успешной регистрации', false);
     });
 
     document.getElementById('regSuccessCloseBtn')?.addEventListener('click', () => {
