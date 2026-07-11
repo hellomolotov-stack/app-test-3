@@ -74,6 +74,8 @@ export const LUMEN_POSES = {
     home: 'sitting',
     route: 'sitting',
     first_visit: 'sitting',
+    lotus: 'lotus',
+    prone: 'prone',
     profiles: 'peek',
     menu: 'peek',
     default: 'peek',
