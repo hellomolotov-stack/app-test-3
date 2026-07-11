@@ -1473,7 +1473,6 @@ body::before {
 /* Восстанавливаем pointer-events для интерактивных элементов внутри контейнера */
 .floating-sheet-buttons .swipe-track,
 .floating-sheet-buttons .availability-floating,
-.floating-sheet-buttons .spots-counter-chip,
 .floating-sheet-buttons > * {
     pointer-events: auto;
 }
@@ -2243,7 +2242,7 @@ body::before {
     color: rgba(255, 255, 255, 0.9);
     font-size: 13px;
     font-weight: 500;
-    pointer-events: none;
+    pointer-events: none !important;
     box-sizing: border-box;
     letter-spacing: 0.01em;
 }
