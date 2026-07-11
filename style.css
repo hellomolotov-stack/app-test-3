@@ -1676,7 +1676,7 @@ body::before {
     flex: 1 1 auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 0 16px 80px 16px;
+    padding: 0 16px 140px 16px;
     color: #ffffff;
     min-height: 0;
     scrollbar-width: thin;
