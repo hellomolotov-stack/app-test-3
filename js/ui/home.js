@@ -418,6 +418,7 @@ function renderGuestHome() {
                 </div>
             </div>
         </div>
+        ${!isLumenPilotUser(state.user) ? `
         <div class="card-container" id="chatBlock">
             <h2 class="section-title">💬 интеллигентный помощник</h2>
             <div class="guest-chat">
@@ -429,21 +430,22 @@ function renderGuestHome() {
                 <div class="gc-chips" id="gcChips"></div>
             </div>
         </div>
+        ` : ''}
     `;
 
     main.innerHTML = `
         ${renderSafetyBanner()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
+        ${!isLumenPilotUser(state.user) ? `
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
                 <span class="newcomer-text">как всё устроено</span>
-                ${isLumenPilotUser(state.user)
-                    ? `<img src="assets/lumen/sitting.png" alt="Люмен" class="newcomer-image newcomer-lumen">`
-                    : `<img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">`}
+                <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
             </div>
         </div>
+        ` : ''}
         <div class="card-container" id="calendarContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
@@ -652,15 +654,15 @@ function renderOwnerHome() {
         <div class="card-container" id="calendarContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
+        ${!isLumenPilotUser(state.user) ? `
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtn">
                 <span class="newcomer-text">как всё устроено</span>
-                ${isLumenPilotUser(state.user)
-                    ? `<img src="assets/lumen/sitting.png" alt="Люмен" class="newcomer-image newcomer-lumen">`
-                    : `<img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">`}
+                <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
             </div>
         </div>
+        ` : ''}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false">смотреть отчёты &gt;</a></div>
             <div class="metrics-grid">
