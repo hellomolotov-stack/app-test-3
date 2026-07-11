@@ -1496,6 +1496,13 @@ body::before {
     -webkit-backdrop-filter: blur(12px);
 }
 
+/* Восстанавливаем pointer-events для интерактивных элементов внутри контейнера */
+.floating-sheet-buttons .swipe-track,
+.floating-sheet-buttons .availability-floating,
+.floating-sheet-buttons > * {
+    pointer-events: auto;
+}
+
 /* -------------------- ЧАТ-ОНБОРДИНГ (бот для новичков) -------------------- */
 .bot-chat-sheet {
     height: 85vh;
@@ -1708,7 +1715,7 @@ body::before {
     flex: 1 1 auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 0 16px 80px 16px;
+    padding: 0 16px 140px 16px;
     color: #ffffff;
     min-height: 0;
     scrollbar-width: thin;
@@ -2186,6 +2193,7 @@ body::before {
     bottom: 30px;
     right: 16px;
     left: 16px;
+    pointer-events: none;
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
@@ -2273,7 +2281,7 @@ body::before {
     color: rgba(255, 255, 255, 0.9);
     font-size: 13px;
     font-weight: 500;
-    pointer-events: none;
+    pointer-events: none !important;
     box-sizing: border-box;
     letter-spacing: 0.01em;
 }
@@ -4015,8 +4023,15 @@ body::after {
 }
 .reg-success-card-icon {
     font-size: 20px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     line-height: 1;
+}
+.reg-success-card-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 6px;
+    letter-spacing: 0.01em;
 }
 .reg-success-card-text {
     font-size: 13px;

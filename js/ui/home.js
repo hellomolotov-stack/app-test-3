@@ -452,7 +452,6 @@ function renderGuestHome() {
         </div>
         ${renderTestimonialsBlock()}
         ${renderUpdatesBlock()}
-        <div id="routesMapContainer"></div>
     `;
 
     wireSafetyBanner();
@@ -602,7 +601,6 @@ function renderGuestHome() {
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
-    renderRoutesMap(document.getElementById('routesMapContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
@@ -661,7 +659,6 @@ function renderOwnerHome() {
             </div>
         </div>
         ${renderUpdatesBlock()}
-        <div id="routesMapContainer"></div>
     `;
 
     wireSafetyBanner();
@@ -689,7 +686,6 @@ function renderOwnerHome() {
 
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
-    renderRoutesMap(document.getElementById('routesMapContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
