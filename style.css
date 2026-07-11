@@ -67,9 +67,9 @@
     transform: scaleX(-1);
 }
 .lumen-root.lumen-sitting .lumen-character {
-    right: -10px;
-    /* нижняя часть чуть заходит на навбар */
-    bottom: -12px;
+    /* Люмен сидит попой на меню, а ступни слегка свешиваются на его верхний край. */
+    right: -8px;
+    bottom: -18px;
 }
 .lumen-image { position: relative; z-index: 2; width: 100%; height: 100%; object-fit: contain; display: block; }
 .lumen-glow {
