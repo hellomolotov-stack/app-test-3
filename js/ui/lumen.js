@@ -2,53 +2,42 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
-import { getLumenGreeting, LUMEN_POSES } from '../lumen/config.js';
+import { getLumenGreeting } from '../lumen/config.js';
 import { canShowLumenPrompt, disableLumenPrompts, markLumenClosed, markLumenSeen, registerLumenVisit, isLumenDisabled } from '../lumen/state.js';
 
 let root = null;
+let introBubble = null;
 let context = { screen: 'home', action: null, scenario: 'home' };
 let promptTimer = null;
 let observer = null;
 let firstHikePending = false;
 let promptReady = false;
 let userStatus = 'inactive';
-// Счётчик переходов между экранами для триггера приветственного облачка
-let screenSwitchCount = 0;
+
 const INTRO_PROMPT_KEY = 'lumenIntroShown';
-const INTRO_SWITCHES_NEEDED = 3;
 
 function analytics(name, meta = {}) { log(name, state.userCard?.status !== 'active', state.user, meta); }
 
 function currentContext() { return { ...context, route: context.route ? { ...context.route } : undefined }; }
 
+function openChatWithNode(node) {
+    haptic();
+    hideIntroBubble();
+    hidePrompt();
+    analytics('lumen_opened', { screen: context.screen || 'home', node });
+    openOnboardingChat(node, currentContext(), true);
+}
+
 function openChat() {
     analytics('lumen_opened', { screen: context.screen || 'home', action: context.action || '' });
     hidePrompt();
-    // autoNext=null: openOnboardingChat сам определяет стартовый узел по статусу пользователя
     openOnboardingChat(null, currentContext(), true);
-    analytics('lumen_chat_opened', { screen: context.screen || 'home' });
 }
+
+// ── обычный prompt (для повторных визитов) ──────────────────────────────────
 
 function hidePrompt() {
     root?.querySelector('.lumen-prompt')?.classList.remove('is-visible');
-}
-
-function buildIntroText() {
-    const name = state.user?.first_name?.trim();
-    return name
-        ? `привет, ${name}! меня зовут Люмен. я освещу тебе путь по клубу.`
-        : 'привет! меня зовут Люмен. я освещу тебе путь по клубу.';
-}
-
-function showIntroPrompt() {
-    if (!root || isLumenDisabled()) return;
-    if (localStorage.getItem(INTRO_PROMPT_KEY)) return;
-    const prompt = root.querySelector('.lumen-prompt');
-    prompt.querySelector('.lumen-prompt-text').textContent = buildIntroText();
-    prompt.classList.add('is-visible');
-    localStorage.setItem(INTRO_PROMPT_KEY, '1');
-    analytics('lumen_intro_shown', {});
-    promptTimer = setTimeout(hidePrompt, 12000);
 }
 
 function showPrompt() {
@@ -60,30 +49,74 @@ function showPrompt() {
     prompt.querySelector('.lumen-prompt-text').textContent = greeting;
     prompt.classList.add('is-visible');
     markLumenSeen(scenarioKey);
-    analytics('lumen_prompt_shown', { scenario: scenarioKey, screen: context.screen || 'home' });
+    analytics('lumen_prompt_shown', { scenario: scenarioKey });
     promptTimer = setTimeout(hidePrompt, 9000);
 }
 
+// ── интро-облачко с двумя кнопками ─────────────────────────────────────────
+
+function hideIntroBubble() {
+    introBubble?.classList.remove('is-visible');
+    clearTimeout(promptTimer);
+}
+
+function showIntroBubble() {
+    if (!root || isLumenDisabled()) return;
+    if (localStorage.getItem(INTRO_PROMPT_KEY)) return;
+
+    const userName = state.user?.first_name?.trim();
+    const nameLabel = userName || 'это я';
+
+    introBubble = document.createElement('div');
+    introBubble.className = 'lumen-intro-bubble';
+    introBubble.innerHTML = `
+        <button class="lumen-intro-close" aria-label="закрыть">×</button>
+        <p class="lumen-intro-text">привет! я Люмен. могу осветить твой путь по клубу.<br>а тебя как зовут?</p>
+        <div class="lumen-intro-btns">
+            <button class="lumen-intro-btn lumen-intro-btn-name">${nameLabel}</button>
+            <button class="lumen-intro-btn lumen-intro-btn-about">а ты кто?</button>
+        </div>`;
+
+    root.appendChild(introBubble);
+    localStorage.setItem(INTRO_PROMPT_KEY, '1');
+    analytics('lumen_intro_shown', {});
+
+    requestAnimationFrame(() => introBubble?.classList.add('is-visible'));
+
+    introBubble.querySelector('.lumen-intro-close').addEventListener('click', (e) => {
+        e.stopPropagation();
+        hideIntroBubble();
+        analytics('lumen_intro_closed', {});
+    });
+
+    introBubble.querySelector('.lumen-intro-btn-name').addEventListener('click', () => {
+        openChatWithNode('lumen_greet_name');
+        analytics('lumen_intro_name_clicked', {});
+    });
+
+    introBubble.querySelector('.lumen-intro-btn-about').addEventListener('click', () => {
+        openChatWithNode('lumen_about');
+        analytics('lumen_intro_about_clicked', {});
+    });
+
+    // автоскрытие через 20 секунд
+    promptTimer = setTimeout(hideIntroBubble, 20000);
+}
+
+// ── поза ────────────────────────────────────────────────────────────────────
+
 function setPose() {
-    // В пилотном режиме всегда sitting справа — без peek
-    const pose = 'sitting';
     const img = root?.querySelector('.lumen-image');
     root?.classList.remove('lumen-peek');
     root?.classList.add('lumen-sitting');
-    if (img) { img.src = `assets/lumen/${pose}.png`; img.alt = 'Люмен'; }
+    if (img) { img.src = 'assets/lumen/sitting.png'; img.alt = 'Люмен'; }
 }
+
+// ── публичные функции ────────────────────────────────────────────────────────
 
 export function setLumenContext(next = {}) {
     context = { screen: 'home', ...next };
     setPose();
-    // Считаем переходы между экранами и показываем intro-облачко после INTRO_SWITCHES_NEEDED
-    if (!localStorage.getItem(INTRO_PROMPT_KEY) && promptReady) {
-        screenSwitchCount++;
-        if (screenSwitchCount >= INTRO_SWITCHES_NEEDED) {
-            clearTimeout(promptTimer);
-            promptTimer = setTimeout(showIntroPrompt, 600);
-        }
-    }
 }
 
 export function setLumenEligibility({ firstHikePending: pending = false, status = 'inactive' } = {}) {
@@ -91,7 +124,11 @@ export function setLumenEligibility({ firstHikePending: pending = false, status 
     userStatus = status;
     promptReady = true;
     clearTimeout(promptTimer);
-    promptTimer = setTimeout(showPrompt, 3200);
+    if (!localStorage.getItem(INTRO_PROMPT_KEY)) {
+        promptTimer = setTimeout(showIntroBubble, 2500);
+    } else {
+        promptTimer = setTimeout(showPrompt, 3200);
+    }
 }
 
 export function mountLumen(initialContext = {}) {
@@ -109,7 +146,7 @@ export function mountLumen(initialContext = {}) {
         </div>
         <button class="lumen-character" aria-label="открыть чат с Люменом">
             <span class="lumen-glow"></span>
-            <img class="lumen-image" src="assets/lumen/standing.png" alt="Люмен">
+            <img class="lumen-image" src="assets/lumen/sitting.png" alt="Люмен">
         </button>`;
     document.body.appendChild(root);
     observer = new MutationObserver(() => {
@@ -131,4 +168,4 @@ export function mountLumen(initialContext = {}) {
 }
 
 export function showLumenPrompt() { clearTimeout(promptTimer); promptTimer = setTimeout(showPrompt, 350); }
-export function unmountLumen() { clearTimeout(promptTimer); observer?.disconnect(); observer = null; root?.remove(); root = null; }
+export function unmountLumen() { clearTimeout(promptTimer); observer?.disconnect(); observer = null; root?.remove(); root = null; introBubble = null; }
