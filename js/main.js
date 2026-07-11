@@ -10,11 +10,18 @@ import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, rend
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen } from './ui/calendar.js?v=20260622r';
 import { mountBotTab } from './ui/bot-nudge.js';
+import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
+import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
 window.isMenuActive = false;
+
+function mountAssistant() {
+    if (isLumenPilotUser(state.user)) mountLumen();
+    else mountBotTab();
+}
 
 function getCurrentTopOffset() {
     if (!tg) return 76;
@@ -105,6 +112,7 @@ function setupBottomNav() {
         cleanupProfileOverlays();
         document.getElementById('floatingCardBtn')?.remove();
         renderHome();
+        setLumenContext({ screen: 'route', scenario: 'route' });
         setTimeout(() => {
             const calendar = document.getElementById('calendarContainer');
             if (calendar) {
@@ -123,6 +131,7 @@ function setupBottomNav() {
     });
     navProfilesNew.addEventListener('click', () => {
         haptic(); setUserInteracted(); setManualNav('profiles');
+        setLumenContext({ screen: 'profiles', scenario: 'profiles' });
         cleanupProfileOverlays();
         document.getElementById('floatingCardBtn')?.remove();
         renderProfiles();
@@ -140,6 +149,7 @@ function setupBottomNav() {
         } else {
             popup.classList.add('show');
             window.isMenuActive = true;
+            setLumenContext({ screen: 'menu', scenario: 'menu' });
         }
         log('меню', state.userCard.status !== 'active', state.user);
         updateActiveNav();
@@ -465,7 +475,7 @@ async function loadAppData() {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
             hideAnimatedLoader();
             renderHome();
-            mountBotTab();
+            mountAssistant();
             firstRenderDone = true;
             ensureDeepLink();
         };
@@ -527,6 +537,10 @@ async function loadAppData() {
         // _userRegs (Firebase) нужен всем — на нём держится определение «первый хайк бесплатно».
         // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
         state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
+        setLumenEligibility({
+            firstHikePending: !Object.values(state._userRegs || {}).some(value => value === true),
+            status: state.userCard.status,
+        });
         if (state.userCard.status === 'active') {
             applyOwnerBookings(); // #5
             saveBookingStatusToLocal(); // кэш на следующий запуск, чтобы ранний рендер видел корректный статус
@@ -546,7 +560,7 @@ async function loadAppData() {
         // финальный рендер с актуальными данными — пропускаем, если диплинк увёл на другую страницу
         if (!window._deepLinkPageChanged) renderHome();
         window.toggleShareButton(false);
-        if (!firstRenderDone) mountBotTab();
+        if (!firstRenderDone) mountAssistant();
 
         // если ранний рендер не случился (нет кэша и Firebase не успел) — выполняем deep-link сейчас
         ensureDeepLink();

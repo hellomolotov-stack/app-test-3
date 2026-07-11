@@ -17,6 +17,7 @@ import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
+import { setLumenContext } from './lumen.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -35,6 +36,8 @@ export function renderCalendar(container) {
     const year = currentCalendarYear,
         month = currentCalendarMonth;
     const today = new Date();
+    const todayMidnight = new Date(today);
+    todayMidnight.setHours(0, 0, 0, 0);
     const currentYear = today.getFullYear(),
         currentMonth = today.getMonth(),
         currentDate = today.getDate();
@@ -82,7 +85,7 @@ export function renderCalendar(container) {
         const isHikeExist = !!hike;
         const isPlaceholder = isHikeExist && (!hike.title || hike.title.trim() === '');
         const isFullHike = isHikeExist && hike.title && hike.title.trim() !== '';
-        const isPast = isFullHike && new Date(dateStr) < today;
+        const isPast = isFullHike && new Date(dateStr) < todayMidnight;
         const isCancelled = isFullHike && hike.cancelled === true;
         const isWoman = isFullHike && hike.woman === 'yes';
         const isCity = isFullHike && (hike.city === true || hike.city === 'yes');
@@ -545,6 +548,19 @@ export function getTotalCardsCount() {
 export function showBottomSheet(index) {
     if (!state.hikesWithTitle.length) return;
 
+    const selectedHike = state.hikesWithTitle[index];
+    setLumenContext({
+        screen: 'route',
+        scenario: 'route',
+        action: 'open_route',
+        route: selectedHike ? {
+            id: selectedHike.id || selectedHike.date || String(index),
+            title: selectedHike.title || '',
+            date: selectedHike.date || '',
+            difficulty: selectedHike.difficulty || ''
+        } : null
+    });
+
     const existingOverlay = document.querySelector('.bottom-sheet-overlay');
     if (existingOverlay) existingOverlay.remove();
     const existingSheetButtons = document.querySelector('.floating-sheet-buttons');
@@ -745,7 +761,7 @@ export function showBottomSheet(index) {
                                 <span class="info-icon" style="color: ${accentColor};">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                 </span>
-                                <span><strong>начало:</strong> 🔒</span>
+                                <span><strong>начало:</strong> ${hike.start_time}</span>
                             </div>
                         `;
                     }
@@ -761,13 +777,15 @@ export function showBottomSheet(index) {
                 }
             }
             if (hike.location_link) {
+                const locationLabel = (isCity || isBookClub) ? 'локация' : 'точка сбора';
                 let locationHtml = '';
-                if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
+                if (isGuest && isCity) {
+                    locationHtml = `🔒 <span style="color: rgba(255,255,255,0.35); font-size: 13px;">будет доступно после записи</span>`;
+                } else if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
                     locationHtml = parseLinks(hike.location_link, isGuest);
                 } else {
                     locationHtml = `<a href="#" data-url="${hike.location_link}" data-guest="${isGuest}" class="dynamic-link">открыть на карте</a>`;
                 }
-                const locationLabel = (isCity || isBookClub) ? 'локация' : 'точка сбора';
                 extraInfoHtml += `
                     <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
                         <span class="info-icon" style="color: ${accentColor};">
@@ -1097,7 +1115,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const isBookClub = hike.book_club === true;
     const isCity = hike.city === true || hike.city === 'yes';
     const bookedText = isBookClub ? 'читаю' : (hike.woman === 'yes' ? 'ты записана' : 'ты записан');
-    const unbookedText = isBookClub ? 'читаю' : 'иду';
+    const unbookedText = isBookClub ? 'читаю' : (isCity ? 'буду' : 'иду');
     const thumbText = isBooked ? bookedText : unbookedText;
 
     const hintTextBooked = 'сдвинь для отмены ‹';
@@ -1249,7 +1267,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 hint.style.transition = 'left 0.2s ease-out, width 0.2s ease-out';
                 thumb.style.left = maxLeft + 'px';
                 placeHint(maxLeft);
-                showGuestBookingPopup(hike.date, hike.title, () => {
+                const resetSwipe = () => {
                     completed = false;
                     thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
                     hint.style.transition = 'left 0.3s ease-out, width 0.3s ease-out';
@@ -1260,7 +1278,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                     thumb.style.fontWeight = '900';
                     thumb.style.fontStyle = 'normal';
                     placeHint(THUMB_MARGIN);
-                });
+                };
+                const isHikeCity = hike.city === true || hike.city === 'yes';
+                if (isHikeCity) {
+                    showCityGuestPopup(hike.date, hike.title, resetSwipe);
+                } else {
+                    showGuestBookingPopup(hike.date, hike.title, resetSwipe);
+                }
                 return;
             }
             completed = true;
@@ -1410,34 +1434,28 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
 
-    // Городские события / книжный клуб: для гостей – баннеры, для владельцев карт – свайп-контрол
+    // Городские события / книжный клуб: для гостей – баннеры (книжный клуб) или свайп (город)
     if ((isCity || isBookClub) && !isPast && !isCancelled && !isPlaceholder) {
-        if (isGuest) {
-            // Баннер "вход по карте"
+        if (isGuest && isBookClub) {
+            // Баннер "вход по карте" только для книжного клуба
             const infoMsg = document.createElement('div');
             infoMsg.className = 'availability-floating';
-            const bcBg = isBookClub ? 'rgba(255, 241, 178, 0.15)' : 'rgba(73, 138, 176, 0.15)';
-            infoMsg.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: ${bcBg}; backdrop-filter: blur(12px); text-align: center; color: #ffffff;`;
+            infoMsg.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(255, 241, 178, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;`;
             infoMsg.textContent = 'вход по карте интеллигента';
             container.appendChild(infoMsg);
 
-            // Блок доступных карт
             const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
             const currentMonthName = monthNamesGen[new Date().getMonth()];
             const availableCards = getAvailableCardsCount();
-
             const cardsBlock = document.createElement('div');
             cardsBlock.className = 'availability-floating';
-            const bcBg2 = isBookClub ? 'rgba(255, 241, 178, 0.15)' : 'rgba(73, 138, 176, 0.15)';
-            const bcAccent = isBookClub ? '#FFF1B2' : '#41B5ED';
-            const bcBtnText = isBookClub ? '#000000' : '#ffffff';
-            cardsBlock.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: ${bcBg2}; backdrop-filter: blur(12px); text-align: center;`;
+            cardsBlock.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(255, 241, 178, 0.15); backdrop-filter: blur(12px); text-align: center;`;
             cardsBlock.innerHTML = `
                 <div style="font-size: 14px; line-height: 1.4;">
-                    <strong style="color: ${bcAccent}; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
+                    <strong style="color: #FFF1B2; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
                     <span style="color: #ffffff; font-style: italic;"> ${availableCards} из 10 карт</span>
                 </div>
-                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: ${bcAccent}; color: ${bcBtnText}; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
+                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #FFF1B2; color: #000000; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
             `;
             const buyBtn = cardsBlock.querySelector('#buyCardFromFloatingBtn');
             if (buyBtn) {
@@ -1451,17 +1469,31 @@ function updateFloatingSheetButtons() {
             container.appendChild(cardsBlock);
             return;
         } else {
-            // Владельцы карт – показываем интерфейс записи (свайп-контрол)
+            // Городские события: и гости, и владельцы карт видят свайп-контрол
             const isWoman = hike.woman === 'yes';
             const accentColor = isBookClub ? '#FFF1B2' : (isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)'));
             const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
-            const swipeControl = renderSwipeControl({ isBooked, isGuest: false, hike, accentColor });
+
+            // Счётчик участников
+            const cityBookedCount = window._participantCount || 0;
+            if (cityBookedCount > 0) {
+                const chipRow = document.createElement('div');
+                chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none; margin-bottom: 4px;';
+                const chip = document.createElement('div');
+                chip.className = 'spots-counter-chip';
+                const w = cityBookedCount === 1 ? 'человек' : cityBookedCount < 5 ? 'человека' : 'человек';
+                chip.innerHTML = `🏙️ будут <strong>${cityBookedCount}</strong> ${w}`;
+                chipRow.appendChild(chip);
+                container.appendChild(chipRow);
+            }
+
+            const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
             if (swipeControl) {
                 container.appendChild(swipeControl);
                 container.style.pointerEvents = 'auto';
                 return;
             }
-            // fallback: кнопка "я иду" если свайп не поддерживается
+            // fallback: кнопка "буду" если свайп не поддерживается
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '12px';
@@ -1470,7 +1502,7 @@ function updateFloatingSheetButtons() {
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow btn-glow';
-            goBtn.textContent = isBooked ? (isBookClub ? 'читаю' : 'ты записан') : (isBookClub ? 'читаю' : 'я иду');
+            goBtn.textContent = isBooked ? (isBookClub ? 'читаю' : 'ты записан') : (isBookClub ? 'читаю' : (isCity ? 'буду' : 'я иду'));
             goBtn.style.backgroundColor = accentColor;
             goBtn.style.color = (accentColor === '#41B5ED') ? '#ffffff' : '#000000';
             goBtn.addEventListener('click', (e) => {
@@ -1796,6 +1828,89 @@ function hasPastBooking() {
         if (regs[date] !== true) return false;
         const d = new Date(date);
         return !isNaN(d.getTime()) && d < today;
+    });
+}
+
+function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
+    haptic();
+    const tgw = window.Telegram?.WebApp;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.id = 'cityGuestPopup';
+
+    const topInset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+
+    overlay.innerHTML = `
+        <div class="modal-content" style="background: linear-gradient(160deg, #0d2535 0%, #1a3a4a 100%); border: 1px solid rgba(65,181,237,0.25);">
+            <button class="modal-close" id="cityPopupClose">&times;</button>
+            <div style="text-align: center; padding: 8px 0 20px;">
+                <div style="font-size: 18px; font-weight: 900; color: #41B5ED; margin-bottom: 10px; line-height: 1.3;">${hikeTitle || 'городское событие'}</div>
+                <div style="color: rgba(255,255,255,0.85); font-size: 15px; line-height: 1.55;">первое событие — бесплатно.<br>приходи, познакомимся.</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+                <button id="cityFreeBtn" style="width:100%; padding:14px; background:#41B5ED; color:#fff; border:none; border-radius:40px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:0.01em;">буду впервые</button>
+                <button id="cityCardBtn" style="width:100%; padding:14px; background:transparent; color:#41B5ED; border:2px solid rgba(65,181,237,0.5); border-radius:40px; font-size:15px; font-weight:700; cursor:pointer;">оформить карту</button>
+                <button id="cityChatBtn" style="width:100%; padding:12px; background:transparent; color:rgba(255,255,255,0.45); border:none; border-radius:40px; font-size:14px; cursor:pointer;">познакомиться с клубом</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.style.paddingTop = Math.max(topInset + 12, 64) + 'px';
+
+    const closePopup = (callOnClose = true) => {
+        if (overlay?.parentNode) overlay.parentNode.removeChild(overlay);
+        if (callOnClose && onClose) onClose();
+    };
+
+    document.getElementById('cityPopupClose').addEventListener('click', () => { haptic(); closePopup(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) { haptic(); closePopup(); } });
+
+    document.getElementById('cityFreeBtn').addEventListener('click', e => {
+        e.preventDefault();
+        if (e.target.dataset.processing === 'true') return;
+        e.target.dataset.processing = 'true';
+        haptic();
+        tgw?.HapticFeedback?.impactOccurred('heavy');
+        setTimeout(() => tgw?.HapticFeedback?.impactOccurred('heavy'), 70);
+
+        const userId = state.user?.id;
+        addParticipant(hikeDate, userId, {
+            first_name: state.user?.first_name,
+            photo_url: state.user?.photo_url,
+        })
+            .then(() => setUserRegistrationStatus(userId, hikeDate, true))
+            .then(() => {
+                const hikeIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
+                if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
+                if (state.userCard.status !== 'active') saveBookingStatusToLocal();
+                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'free_first', state.user, false);
+                sendBookingNotification(hikeDate, hikeTitle, state.user);
+                closePopup(false); // не сбрасывать свайп — он уже в позиции «записан»
+                updateFloatingSheetButtons();
+                renderUserBookings(document.getElementById('userBookingsContainer'));
+                const cal = document.getElementById('calendarContainer');
+                if (cal) renderCalendar(cal);
+            })
+            .catch(err => {
+                console.error(err);
+                e.target.dataset.processing = 'false';
+                alert('Ошибка при регистрации. Попробуй ещё раз.');
+            });
+        log('городское событие — буду впервые', true, state.user, { hike_date: hikeDate });
+    });
+
+    document.getElementById('cityCardBtn').addEventListener('click', () => {
+        haptic();
+        closePopup();
+        setTimeout(() => showGuestBookingPopup(hikeDate, hikeTitle, null, 'generic'), 200);
+        log('городское событие — оформить карту', true, state.user, { hike_date: hikeDate });
+    });
+
+    document.getElementById('cityChatBtn').addEventListener('click', () => {
+        haptic();
+        closePopup();
+        log('городское событие — познакомиться с клубом', true, state.user, { hike_date: hikeDate });
+        setTimeout(() => openOnboardingChat(), 200);
     });
 }
 

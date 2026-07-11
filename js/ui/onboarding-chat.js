@@ -521,21 +521,30 @@ async function renderNode(nodeId) {
 // ──────────────────────────────────────────────
 // открытие шторки
 // ──────────────────────────────────────────────
-export async function openOnboardingChat(autoNext = null) {
+export async function openOnboardingChat(autoNext = null, lumenContext = null, lumenMode = false) {
     // если ссылка зависла, но узла в DOM нет — сбрасываем, чтобы можно было открыть
     if (overlay && document.body.contains(overlay)) return;
     overlay = null;
-    log('открыл чат с ботом', state.userCard.status !== 'active', state.user);
+    if (lumenContext) window.lumenChatContext = lumenContext;
+    log('открыл чат с ботом', state.userCard.status !== 'active', state.user, lumenContext ? {
+        lumen_screen: lumenContext.screen || '',
+        lumen_action: lumenContext.action || '',
+        lumen_route_id: lumenContext.route?.id || ''
+    } : {});
 
     overlay = document.createElement('div');
     overlay.className = 'bottom-sheet-overlay bot-chat-overlay';
+    if (lumenContext) overlay.dataset.lumenScreen = lumenContext.screen || '';
     overlay.innerHTML = `
         <div class="bottom-sheet bot-chat-sheet">
             <div class="bottom-sheet-handle"></div>
             <div class="bot-chat-header">
-                <div class="bot-chat-avatar">💬</div>
+                ${lumenMode
+                    ? `<div class="bot-chat-avatar bot-chat-avatar-lumen"><img src="assets/lumen/sitting.png" alt="Lumen"></div>`
+                    : `<div class="bot-chat-avatar">💬</div>`
+                }
                 <div class="bot-chat-title">
-                    <div class="bot-chat-name">интеллигентный помощник</div>
+                    <div class="bot-chat-name">${lumenMode ? 'помощник Lumen' : 'интеллигентный помощник'}</div>
                     <div class="bot-chat-status">помогу разобраться</div>
                 </div>
                 <button class="bot-chat-close" aria-label="закрыть">✕</button>

@@ -1,18 +1,12 @@
-// js/ui/bot-nudge.js
-// Постоянный язычок-слайдер слева (чуть выше середины) — всегда висит для гостей.
-// В стиле iOS-26 liquid glass + акценты приложения. Лёгкая анимация «выглядывает»
-// вправо, намекая что активный. По тапу вылетает облачко с рандомной фразой,
-// по тапу на облачко открывается встроенный чат с ботом.
-
+// Прежний постоянный язычок помощника для пользователей вне Lumen-пилота.
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 
-const BUBBLE_AUTO_HIDE_MS = 9000;   // облачко само прячется, если не нажали
+const BUBBLE_AUTO_HIDE_MS = 9000;
 const K_LAST_PHRASE = 'botNudge_lastPhrase';
 
-// ── фразы для гостей ─────
 const PHRASES_GUEST = [
     'первый раз у нас? давай познакомлю с клубом',
     'загляни – расскажу про хайки и карту за пару минут',
@@ -25,7 +19,6 @@ const PHRASES_GUEST = [
     'горы, события, свои люди. любопытно? загляни',
 ];
 
-// ── фразы для участников с картой ─────
 const PHRASES_MEMBER = [
     'есть вопрос? напиши – организаторы ответят 🤍',
     'что-то нужно? просто напиши',
@@ -68,8 +61,7 @@ function toggleBubble() {
 }
 
 export function mountBotTab() {
-    if (document.querySelector('.bot-tab-wrap')) return;   // уже смонтирован
-
+    if (document.querySelector('.bot-tab-wrap')) return;
     wrap = document.createElement('div');
     wrap.className = 'bot-tab-wrap';
     wrap.innerHTML = `
@@ -84,15 +76,10 @@ export function mountBotTab() {
                 <div class="bot-tab-bubble-text"></div>
             </div>
             <button class="bot-tab-bubble-close" aria-label="закрыть">✕</button>
-        </div>
-    `;
+        </div>`;
     document.body.appendChild(wrap);
-
     bubble = wrap.querySelector('.bot-tab-bubble');
-
     wrap.querySelector('.bot-tab').addEventListener('click', () => { haptic(); toggleBubble(); });
-
-    // тап по облачку (кроме крестика) — открываем чат
     bubble.addEventListener('click', (e) => {
         if (e.target.closest('.bot-tab-bubble-close')) return;
         haptic();
@@ -100,7 +87,6 @@ export function mountBotTab() {
         hideBubble();
         openOnboardingChat();
     });
-
     bubble.querySelector('.bot-tab-bubble-close').addEventListener('click', (e) => {
         e.stopPropagation();
         haptic();
@@ -108,8 +94,8 @@ export function mountBotTab() {
     });
 }
 
-// убрать язычок (напр. если человек стал владельцем карты)
 export function unmountBotTab() {
+    hideBubble();
     wrap?.remove();
     wrap = null;
     bubble = null;

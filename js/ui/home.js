@@ -10,6 +10,7 @@ import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openOnboardingChat } from './onboarding-chat.js';
+import { setLumenContext } from './lumen.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -252,8 +253,8 @@ function renderMastermindSummaries() {
                 }
             }
             const readBtn = isGuest
-                ? `<button class="btn btn-outline guest-read-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">🔒</button>`
-                : `<a href="${item.link}" target="_blank" class="btn btn-yellow mastermind-read-link" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; text-decoration: none;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
+                ? `<button class="btn guest-read-btn" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.5); border-radius: 20px; font-size: 13px;">🔒</button>`
+                : `<a href="${item.link}" target="_blank" class="mastermind-read-link" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; text-decoration: none; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); border-radius: 20px; font-size: 13px; white-space: nowrap;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
                     <div style="flex: 1; margin-right: 16px;">
@@ -272,6 +273,7 @@ function renderMastermindSummaries() {
                 🧠 саммари мастермайнда
                 <span class="new-badge">новое</span>
             </h2>
+            <p style="margin: -8px 16px 16px; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.55);">здесь собраны записи всех ценных мыслей, которые были озвучены участниками на мастермайнд сессиях во время хайков на вершинах гор южного берега. материал записан Plaud Note Pro и обработан с помощью последних моделей ChatGPT и Claude</p>
             ${innerHtml}
         </div>
     `;
@@ -674,10 +676,17 @@ function renderOwnerHome() {
     document.getElementById('newcomerBtn')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('новичкам', false, user); renderNewcomerPage(false); });
 
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
-        link.addEventListener('click', () => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
             log('мастермайнд', false, state.user);
+            const url = link.href;
+            const tgApp = window.Telegram?.WebApp;
+            if (tgApp) tgApp.openLink(url);
+            else window.open(url, '_blank');
         });
     });
+
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderRoutesMap(document.getElementById('routesMapContainer'));
@@ -698,6 +707,7 @@ function renderOwnerHome() {
 }
 
 export function renderHome() {
+    setLumenContext({ screen: 'home', scenario: localStorage.getItem('chatOnboardingVisited') ? 'home' : 'first_visit' });
     document.querySelector('.profile-edit-fab')?.remove();
     hideBack();
     if (window._floatingScrollHandler) {
