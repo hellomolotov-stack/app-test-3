@@ -646,10 +646,9 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null) {
         localStorage.setItem(K_VISITED, '1');
         startNode = 'welcome';
     }
-    await renderNode(startNode);
     if (autoNext) {
-        const btn = optionsEl.querySelector(`[data-next="${autoNext}"]`);
-        if (btn) btn.click();
-        else await renderNode(autoNext);
+        await renderNode(autoNext);
+    } else {
+        await renderNode(startNode);
     }
 }
