@@ -80,18 +80,18 @@ function introButtonsFor(segment) {
             ];
         case 'hiker':
             return [
-                { label: 'выбрать маршрут', node: 'welcome_back' },
+                { label: 'следующий маршрут', node: 'welcome_back' },
                 { label: 'что даёт карта?', node: 'card' },
             ];
         case 'card_step':
             return [
-                { label: 'расскажи про карту', node: 'card' },
-                { label: 'пока просто хайк', node: 'welcome_back' },
+                { label: 'про карту →', node: 'card' },
+                { label: 'просто хайк', node: 'welcome_back' },
             ];
         case 'member':
         default:
             return [
-                { label: 'что мне доступно?', node: 'member_perks' },
+                { label: 'мои привилегии', node: 'member_perks' },
                 { label: 'задать вопрос', node: 'support' },
             ];
     }
