@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
-import { getLumenGreeting, getLumenSegment } from '../lumen/config.js';
+import { getLumenGreeting, getLumenPose, getLumenSegment } from '../lumen/config.js';
 import { canShowLumenPrompt, disableLumenPrompts, markLumenClosed, markLumenSeen, registerLumenVisit, isLumenDisabled, getLumenState } from '../lumen/state.js';
 
 let root = null;
@@ -148,9 +148,14 @@ function showIntroBubble() {
 
 function setPose() {
     const img = root?.querySelector('.lumen-image');
-    root?.classList.remove('lumen-peek');
-    root?.classList.add('lumen-sitting');
-    if (img) { img.src = 'assets/lumen/sitting.png'; img.alt = 'Люмен'; }
+    if (!root || !img) return;
+    const pose = getLumenPose(context);
+    root.classList.remove('lumen-sitting', 'lumen-peek', 'lumen-edge-peek', 'lumen-top-drape');
+    root.classList.add(`lumen-${pose.name}`);
+    root.dataset.pose = pose.name;
+    img.src = pose.src;
+    img.alt = '';
+    root.querySelector('.lumen-character')?.setAttribute('aria-label', `${pose.label}. Открыть чат`);
 }
 
 // ── публичные функции ────────────────────────────────────────────────────────
@@ -174,7 +179,7 @@ export function mountLumen(initialContext = {}) {
     registerLumenVisit();
     context = { screen: 'home', ...initialContext };
     root = document.createElement('aside');
-    root.className = 'lumen-root lumen-sitting';
+    root.className = 'lumen-root lumen-top-drape';
     root.setAttribute('aria-label', 'Люмен, помощник клуба');
     root.innerHTML = `
         <div class="lumen-prompt" role="status">
@@ -184,7 +189,7 @@ export function mountLumen(initialContext = {}) {
         </div>
         <button class="lumen-character" aria-label="открыть чат с Люменом">
             <span class="lumen-glow"></span>
-            <img class="lumen-image" src="assets/lumen/sitting.png" alt="Люмен">
+            <img class="lumen-image" src="assets/lumen/top-drape-pilot.webp" alt="">
         </button>`;
     document.body.appendChild(root);
     observer = new MutationObserver(() => {
