@@ -23,6 +23,10 @@
 /* Люмен: тихий плавающий спутник, не влияющий на поток контента. */
 .lumen-root {
     position: fixed;
+    right: max(12px, env(safe-area-inset-right, 0px));
+    bottom: calc(50px + env(safe-area-inset-bottom, 0px));
+    width: 112px;
+    height: 166px;
     z-index: 120;
     pointer-events: none;
     transition: opacity .25s ease, transform .35s ease;
@@ -39,32 +43,50 @@
     background: transparent;
     cursor: pointer;
     pointer-events: auto;
-    filter: drop-shadow(0 0 14px rgba(255, 244, 180, .14));
+    filter: drop-shadow(0 8px 18px rgba(255, 205, 120, .18));
     -webkit-tap-highlight-color: transparent;
 }
-.lumen-root.lumen-top-drape {
-    right: max(8px, env(safe-area-inset-right, 0px));
-    bottom: calc(30px + env(safe-area-inset-bottom, 0px));
-    width: 130px;
-    height: 148px;
+.lumen-root.lumen-peek {
+    right: auto;
+    left: max(0px, env(safe-area-inset-left, 0px));
+    /* нога наступает на плоскую часть навбара (левый радиус 50px, плоский край от ~66px) */
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    width: 132px;
+    height: 192px;
 }
-.lumen-root.lumen-top-drape .lumen-character {
-    right: 0;
-    bottom: 0;
-    width: 130px;
-    height: 148px;
+.lumen-root.lumen-peek .lumen-character {
+    /* left: 8px → нога ≈70px от левого края, попадает на плоскую часть навбара */
+    left: 8px;
+    right: auto;
+    width: 124px;
+    height: 172px;
+    /* нога слегка наступает на навбар */
+    bottom: -16px;
 }
+.lumen-root.lumen-peek .lumen-image {
+    transform: scaleX(-1);
+}
+.lumen-root.lumen-sitting .lumen-character {
+    /* Люмен сидит попой на меню, а ступни слегка свешиваются на его верхний край. */
+    right: -8px;
+    bottom: -18px;
+}
+/* Две дополнительные позы используют тот же визуальный масштаб, что и сидящий Люмен. */
 .lumen-root.lumen-edge-peek {
-    right: calc(env(safe-area-inset-right, 0px) - 8px);
-    bottom: calc(108px + env(safe-area-inset-bottom, 0px));
-    width: 96px;
-    height: 184px;
+    right: calc(env(safe-area-inset-right, 0px) - 6px);
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
 .lumen-root.lumen-edge-peek .lumen-character {
-    right: 0;
+    right: -4px;
     bottom: 0;
-    width: 96px;
-    height: 184px;
+    width: 104px;
+    height: 112px;
+}
+.lumen-root.lumen-top-drape .lumen-character {
+    right: 2px;
+    bottom: 0;
+    width: 84px;
+    height: 112px;
 }
 .lumen-image { position: relative; z-index: 2; width: 100%; height: 100%; object-fit: contain; display: block; }
 .lumen-glow {
@@ -102,20 +124,14 @@
     0%, 100% { opacity: .45; transform: scale(.93); }
     50%       { opacity: .85; transform: scale(1.07); }
 }
-/* Облачко всегда раскрывается внутрь экрана, не перекрывая самого Люмена. */
-.lumen-root.lumen-top-drape .lumen-prompt {
-    right: 106px;
-    bottom: 94px;
+/* Всплывающее сообщение в peek-режиме — справа от персонажа */
+.lumen-root.lumen-peek .lumen-prompt {
+    right: auto;
+    left: 96px;
+    bottom: 110px;
+    border-radius: 18px 18px 18px 4px;
 }
-.lumen-root.lumen-edge-peek .lumen-prompt {
-    right: 72px;
-    bottom: 94px;
-}
-@media (max-width: 380px) {
-    .lumen-root { transform: scale(.88); transform-origin: right bottom; }
-    .lumen-root.lumen-top-drape { right: 2px; }
-    .lumen-root.lumen-edge-peek { right: -10px; }
-}
+@media (max-width: 380px) { .lumen-root { right: 2px; transform: scale(.86); transform-origin: right bottom; } .lumen-root.lumen-peek { right: auto; left: 0; } }
 @media (prefers-reduced-motion: reduce) { .lumen-character, .lumen-glow { animation: none; } .lumen-prompt { transition-duration: .01ms; } }
 
 /* Люмен: интро-облачко — тёмный стеклянный стиль */
@@ -138,8 +154,6 @@
     z-index: 121;
 }
 .lumen-intro-bubble.is-visible { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
-.lumen-root.lumen-top-drape .lumen-intro-bubble { right: 106px; bottom: 90px; }
-.lumen-root.lumen-edge-peek .lumen-intro-bubble { right: 72px; bottom: 92px; }
 .lumen-intro-close {
     position: absolute; top: 6px; right: 8px;
     width: 20px; height: 20px; border: 0; background: transparent;

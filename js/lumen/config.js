@@ -71,30 +71,18 @@ export function getLumenChatScenario(status, firstHikePending) {
 }
 
 export const LUMEN_POSES = {
-    home: 'top-drape',
-    first_visit: 'top-drape',
-    route: 'edge-peek',
-    profiles: 'edge-peek',
-    menu: 'edge-peek',
-    default: 'top-drape',
+    home: 'sitting',
+    route: 'sitting',
+    first_visit: 'sitting',
+    corner: 'corner-peek-v2',
+    top: 'top-drape-v2',
+    lying: 'prone-v2',
+    lotus: 'lotus-v2',
+    pointing: 'pointing-v2',
+    profiles: 'peek',
+    menu: 'peek',
+    default: 'peek',
 };
-
-const LUMEN_POSE_ASSETS = {
-    'edge-peek': {
-        src: 'assets/lumen/edge-peek-pilot.webp',
-        label: 'Люмен выглядывает из-за края',
-    },
-    'top-drape': {
-        src: 'assets/lumen/top-drape-pilot.webp',
-        label: 'Люмен выглядывает поверх меню',
-    },
-};
-
-export function getLumenPose(context = {}) {
-    const scenarioPose = context.scenario && LUMEN_POSES[context.scenario];
-    const name = scenarioPose || LUMEN_POSES[context.screen] || LUMEN_POSES.default;
-    return { name, ...LUMEN_POSE_ASSETS[name] };
-}
 
 const LUMEN_PILOT_USERNAME = 'hellointelligent';
 

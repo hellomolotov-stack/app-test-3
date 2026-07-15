@@ -635,7 +635,7 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
             <div class="bottom-sheet-handle"></div>
             <div class="bot-chat-header">
                 ${lumenMode
-                    ? `<div class="bot-chat-avatar bot-chat-avatar-lumen"><img src="assets/lumen/top-drape-pilot.webp" alt="Lumen"></div>`
+                    ? `<div class="bot-chat-avatar bot-chat-avatar-lumen"><img src="assets/lumen/sitting.png" alt="Lumen"></div>`
                     : `<div class="bot-chat-avatar">💬</div>`
                 }
                 <div class="bot-chat-title">
