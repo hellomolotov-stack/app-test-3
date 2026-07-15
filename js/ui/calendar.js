@@ -1462,10 +1462,9 @@ function updateFloatingSheetButtons() {
             cardsBlock.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(255, 241, 178, 0.15); backdrop-filter: blur(12px); text-align: center;`;
             cardsBlock.innerHTML = `
                 <div style="font-size: 14px; line-height: 1.4;">
-                    <strong style="color: #FFF1B2; font-style: italic; font-weight: 800;">в ${currentMonthName} доступно</strong>
-                    <span style="color: #ffffff; font-style: italic;"> ${availableCards} из 10 карт</span>
+                    <strong style="color: #FFF1B2; font-style: italic; font-weight: 800;">вступить в клуб</strong>
                 </div>
-                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #FFF1B2; color: #000000; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить</button>
+                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #FFF1B2; color: #000000; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить карту</button>
             `;
             const buyBtn = cardsBlock.querySelector('#buyCardFromFloatingBtn');
             if (buyBtn) {
@@ -2063,14 +2062,6 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             </div>
 
             <div id="clubJoinAccordion" style="display: none; margin-top: 20px;">
-                <div class="booking-popup-scarcity${soldOut ? ' booking-popup-scarcity--out' : ''}">
-                    <div class="booking-popup-scarcity-num">${soldOut ? '0' : cardsLeft}</div>
-                    <div class="booking-popup-scarcity-text">
-                        ${soldOut
-                            ? `<strong>карты на этот месяц закончились</strong><br>возвращайся в начале следующего месяца – откроем ещё ${cardsTotal}`
-                            : `<strong>${cardsTotal} карт доступно в месяц</strong><br>чтобы каждый новый член клуба получил наше внимание, а не растворился в толпе<br>не шумное количество – тихое качество`}
-                    </div>
-                </div>
 
                 <div class="booking-popup-what-is-card">
                     карта интеллигента – это членство в клубе. именная, с твоим счётом хайков. с ней ты не покупаешь билеты – становишься членом клуба
