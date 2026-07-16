@@ -17,8 +17,8 @@ let userStatus = 'inactive';
 
 const LUMEN_SCREEN_POSES = {
     home: { className: 'lumen-sitting', src: 'assets/lumen/sitting.png' },
-    route: { className: 'lumen-edge-peek', src: 'assets/lumen/edge-peek-pilot.webp' },
-    profiles: { className: 'lumen-top-drape', src: 'assets/lumen/top-drape-pilot.webp' },
+    route: { className: 'lumen-edge-peek', src: 'assets/lumen/edge-peek-device-v3.webp' },
+    profiles: { className: 'lumen-top-drape', src: 'assets/lumen/top-drape-pilot-v3.webp' },
     menu: { className: 'lumen-sitting', src: 'assets/lumen/sitting.png' },
 };
 

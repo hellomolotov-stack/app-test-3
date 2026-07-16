@@ -77,11 +77,13 @@
     bottom: calc(96px + env(safe-area-inset-bottom, 0px));
 }
 .lumen-root.lumen-edge-peek .lumen-character {
-    right: -4px;
+    /* Правая альфа-граница ассета совпадает с правой границей iPhone viewport. */
+    right: 6px;
     bottom: 0;
     width: 104px;
     height: 112px;
 }
+.lumen-root.lumen-edge-peek .lumen-image { object-position: right center; }
 .lumen-root.lumen-top-drape .lumen-character {
     right: 2px;
     bottom: 0;
