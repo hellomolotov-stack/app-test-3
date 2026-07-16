@@ -7,9 +7,20 @@ let maplibreLoading = null;
 let currentMap = null;
 let currentRouteIndex = 0;
 let flightTimer = null;
+let resizeTimer = null;
+let mapResizeObserver = null;
 let stylesInjected = false;
 
-const CLUB_REPORTS_URL = 'https://t.me/yaltahiking/148';
+const ROUTE_REPORTS = {
+    'biyuk-isar': 'https://t.me/yaltahiking/119',
+    'alupka-isar': 'https://t.me/yaltahiking/192',
+    evrejskaya: 'https://t.me/yaltahiking/353',
+    'uch-kosh': 'https://t.me/yaltahiking/157',
+    massandra: 'https://t.me/yaltahiking/250',
+    biruzovoe: 'https://t.me/yaltahiking/399',
+    pallasa: 'https://t.me/yaltahiking/195',
+    'chernaya-rechka': 'https://t.me/yaltahiking/135'
+};
 const REPORT_KEYWORDS = {
     'biyuk-isar': ['биюк'],
     'alupka-isar': ['алупка'],
@@ -50,14 +61,16 @@ function injectStyles() {
         .intelligentsia-routes-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 16px 14px 16px; }
         .intelligentsia-routes-header .section-title { margin: 0; line-height: 1.1; }
         .intelligentsia-routes-nav { display: inline-flex; gap: 8px; flex-shrink: 0; }
-        .intelligentsia-route-map-wrap { position: relative; margin: 0 16px; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
-        .intelligentsia-route-map { width: 100%; height: clamp(300px, 78vw, 430px); background: #0A0B09; }
+        .intelligentsia-route-map-wrap { position: relative; aspect-ratio: 1 / 1; margin: 0 16px; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
+        .intelligentsia-route-map { width: 100%; height: 100%; background: #0A0B09; }
         .intelligentsia-route-map .maplibregl-ctrl-bottom-left, .intelligentsia-route-map .maplibregl-ctrl-bottom-right { display: none; }
         .intelligentsia-route-caption { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.68); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); }
-        .intelligentsia-route-report { display: block; min-width: 0; color: inherit; text-decoration: none; }
+        .intelligentsia-route-meta { min-width: 0; }
+        .intelligentsia-route-report { display: inline-block; color: rgba(255,255,255,0.68); text-decoration: underline; text-underline-offset: 2px; }
         .intelligentsia-route-report:active { opacity: 0.72; }
+        .intelligentsia-route-report[aria-disabled="true"] { color: rgba(255,255,255,0.48); text-decoration: none; pointer-events: none; }
         .intelligentsia-route-title { color: #ffffff; font-size: 18px; line-height: 1.12; font-weight: 800; }
-        .intelligentsia-route-subtitle { color: rgba(255,255,255,0.68); font-size: 12px; line-height: 1.25; margin-top: 4px; text-decoration: underline; text-underline-offset: 2px; }
+        .intelligentsia-route-subtitle { font-size: 12px; line-height: 1.25; margin-top: 4px; }
         .intelligentsia-route-counter { color: #0A0B09; background: #D9FD19; border-radius: 999px; padding: 5px 9px; font-size: 12px; line-height: 1; font-weight: 800; white-space: nowrap; }
         .intelligentsia-map-fallback { height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.68); font-size: 14px; }
     `;
@@ -96,6 +109,9 @@ function normalizeReportUrl(value) {
 }
 
 function routeReport(route) {
+    if (ROUTE_REPORTS[route.id]) {
+        return { url: ROUTE_REPORTS[route.id], specific: true };
+    }
     const keywords = REPORT_KEYWORDS[route.id] || [route.title];
     const normalizedKeywords = keywords.map(normalizeText).filter(Boolean);
     const hike = [...(state.hikesWithTitle || [])]
@@ -105,29 +121,42 @@ function routeReport(route) {
             const title = normalizeText(item.title);
             return normalizedKeywords.some(keyword => title.includes(keyword));
         });
-    return hike
-        ? { url: normalizeReportUrl(hike.report_link), specific: true }
-        : { url: CLUB_REPORTS_URL, specific: false };
+    return hike ? { url: normalizeReportUrl(hike.report_link), specific: true } : null;
 }
 
 function updateRouteMeta(route, index) {
     const reportLink = document.getElementById('intelligentsiaRouteReport');
     const title = document.getElementById('intelligentsiaRouteTitle');
-    const subtitle = document.getElementById('intelligentsiaRouteSubtitle');
     const counter = document.getElementById('intelligentsiaRouteCounter');
     const report = routeReport(route);
     if (reportLink) {
-        reportLink.href = report.url;
-        reportLink.setAttribute('aria-label', `${route.title}: открыть отчёт`);
+        if (report) {
+            reportLink.href = report.url;
+            reportLink.removeAttribute('aria-disabled');
+            reportLink.setAttribute('aria-label', `${route.title}: открыть отчёт`);
+        } else {
+            reportLink.removeAttribute('href');
+            reportLink.setAttribute('aria-disabled', 'true');
+            reportLink.removeAttribute('aria-label');
+        }
     }
     if (title) title.textContent = route.title;
-    if (subtitle) subtitle.textContent = report.specific ? 'отчёт о хайке ↗' : 'все отчёты клуба ↗';
+    if (reportLink) reportLink.textContent = report ? 'отчёт / заметки ↗' : 'заметки пока не опубликованы';
     if (counter) counter.textContent = `${index + 1} / ${INTELLIGENTSIA_ROUTES.length}`;
 }
 
 function cameraForRoute(map, route) {
+    const mapHeight = map.getContainer?.().clientHeight || 360;
+    const horizontalPadding = Math.max(28, Math.round(mapHeight * 0.09));
+    const topPadding = Math.max(26, Math.round(mapHeight * 0.08));
+    const bottomPadding = Math.max(124, Math.round(mapHeight * 0.38));
     const camera = map.cameraForBounds(route.bounds, {
-        padding: { top: 58, right: 34, bottom: 74, left: 34 },
+        padding: {
+            top: topPadding,
+            right: horizontalPadding,
+            bottom: bottomPadding,
+            left: horizontalPadding
+        },
         maxZoom: 14.2
     }) || {};
     return {
@@ -136,7 +165,7 @@ function cameraForRoute(map, route) {
             (route.bounds[0][1] + route.bounds[1][1]) / 2
         ],
         zoom: Math.min(camera.zoom || 12, 14.2),
-        pitch: 56,
+        pitch: 52,
         bearing: 0
     };
 }
@@ -200,10 +229,10 @@ export function renderIntelligentsiaRoutes(container) {
             <div class="intelligentsia-route-map-wrap">
                 <div id="intelligentsiaRoutesMap" class="intelligentsia-route-map"></div>
                 <div class="intelligentsia-route-caption">
-                    <a id="intelligentsiaRouteReport" class="intelligentsia-route-report" href="${CLUB_REPORTS_URL}" target="_blank" rel="noopener noreferrer">
+                    <div class="intelligentsia-route-meta">
                         <div id="intelligentsiaRouteTitle" class="intelligentsia-route-title"></div>
-                        <div id="intelligentsiaRouteSubtitle" class="intelligentsia-route-subtitle"></div>
-                    </a>
+                        <a id="intelligentsiaRouteReport" class="intelligentsia-route-report intelligentsia-route-subtitle" target="_blank" rel="noopener noreferrer"></a>
+                    </div>
                     <div id="intelligentsiaRouteCounter" class="intelligentsia-route-counter"></div>
                 </div>
             </div>
@@ -224,14 +253,16 @@ export function renderIntelligentsiaRoutes(container) {
         event.preventDefault();
         const route = INTELLIGENTSIA_ROUTES[currentRouteIndex];
         const report = routeReport(route);
+        if (!report) return;
         openLink(report.url, `отчёт: ${route.title}`, state.userCard.status !== 'active');
-        log('карта хайков отчёт', state.userCard.status !== 'active', state.user, { route: route.id, specific: report.specific });
+        log('карта хайков отчёт', state.userCard.status !== 'active', state.user, { route: route.id, specific: true });
     });
     updateRouteMeta(INTELLIGENTSIA_ROUTES[0], 0);
 
     ensureMapLibre().then(() => {
         const el = document.getElementById('intelligentsiaRoutesMap');
         if (!el) return;
+        mapResizeObserver?.disconnect();
         try { if (currentMap) currentMap.remove(); } catch (e) {}
         const first = INTELLIGENTSIA_ROUTES[0];
         const startCenter = [
@@ -309,6 +340,18 @@ export function renderIntelligentsiaRoutes(container) {
             });
             currentMap.once('idle', () => flyToRoute(0, true));
         });
+
+        if (window.ResizeObserver) {
+            mapResizeObserver = new ResizeObserver(() => {
+                window.clearTimeout(resizeTimer);
+                resizeTimer = window.setTimeout(() => {
+                    if (!currentMap) return;
+                    currentMap.resize();
+                    flyToRoute(currentRouteIndex, true);
+                }, 80);
+            });
+            mapResizeObserver.observe(el);
+        }
     }).catch(() => {
         const el = document.getElementById('intelligentsiaRoutesMap');
         if (el) el.innerHTML = '<div class="intelligentsia-map-fallback">карта временно недоступна</div>';
