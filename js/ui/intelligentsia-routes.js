@@ -218,6 +218,22 @@ function flyToRoute(index, instant = false) {
     }, 540);
 }
 
+function trackRouteSwitch(direction, fromIndex, toIndex) {
+    const fromRoute = INTELLIGENTSIA_ROUTES[fromIndex];
+    const toRoute = INTELLIGENTSIA_ROUTES[toIndex];
+    const trackingTag = direction === 'previous'
+        ? 'hike_map_route_previous'
+        : 'hike_map_route_next';
+    log(trackingTag, state.userCard.status !== 'active', state.user, {
+        tracking_tag: trackingTag,
+        block: 'hike_map',
+        direction,
+        from_route: fromRoute?.id || '',
+        to_route: toRoute?.id || '',
+        route_position: `${toIndex + 1}/${INTELLIGENTSIA_ROUTES.length}`
+    });
+}
+
 export function renderIntelligentsiaRoutes(container) {
     if (!container || !INTELLIGENTSIA_ROUTES.length) return;
     injectStyles();
@@ -250,13 +266,17 @@ export function renderIntelligentsiaRoutes(container) {
 
     document.getElementById('prevIntelligentsiaRoute')?.addEventListener('click', () => {
         haptic();
-        flyToRoute(currentRouteIndex - 1);
-        log('маршруты интеллигенции назад', state.userCard.status !== 'active', state.user);
+        const fromIndex = currentRouteIndex;
+        const toIndex = (fromIndex - 1 + INTELLIGENTSIA_ROUTES.length) % INTELLIGENTSIA_ROUTES.length;
+        flyToRoute(toIndex);
+        trackRouteSwitch('previous', fromIndex, toIndex);
     });
     document.getElementById('nextIntelligentsiaRoute')?.addEventListener('click', () => {
         haptic();
-        flyToRoute(currentRouteIndex + 1);
-        log('маршруты интеллигенции вперёд', state.userCard.status !== 'active', state.user);
+        const fromIndex = currentRouteIndex;
+        const toIndex = (fromIndex + 1) % INTELLIGENTSIA_ROUTES.length;
+        flyToRoute(toIndex);
+        trackRouteSwitch('next', fromIndex, toIndex);
     });
     document.getElementById('intelligentsiaRouteReport')?.addEventListener('click', event => {
         event.preventDefault();
