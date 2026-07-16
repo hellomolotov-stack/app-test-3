@@ -2551,6 +2551,103 @@ body::before {
     background: rgba(255,255,255,0.3);
 }
 
+.intelligentsia-routes-card {
+    padding-bottom: 16px;
+}
+
+.intelligentsia-routes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 16px 14px 16px;
+}
+
+.intelligentsia-routes-header .section-title {
+    margin: 0;
+    line-height: 1.1;
+}
+
+.intelligentsia-routes-nav {
+    display: inline-flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.intelligentsia-route-map-wrap {
+    position: relative;
+    margin: 0 16px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #0A0B09;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22);
+}
+
+.intelligentsia-route-map {
+    width: 100%;
+    height: clamp(300px, 78vw, 430px);
+    background: #0A0B09;
+}
+
+.intelligentsia-route-map .maplibregl-ctrl-bottom-left,
+.intelligentsia-route-map .maplibregl-ctrl-bottom-right {
+    display: none;
+}
+
+.intelligentsia-route-caption {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(10, 11, 9, 0.68);
+    border: 1px solid rgba(255,255,255,0.14);
+    backdrop-filter: blur(14px) saturate(120%);
+    -webkit-backdrop-filter: blur(14px) saturate(120%);
+}
+
+.intelligentsia-route-title {
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1.12;
+    font-weight: 800;
+}
+
+.intelligentsia-route-subtitle {
+    color: rgba(255,255,255,0.68);
+    font-size: 12px;
+    line-height: 1.25;
+    margin-top: 4px;
+}
+
+.intelligentsia-route-counter {
+    color: #0A0B09;
+    background: #D9FD19;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 12px;
+    line-height: 1;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.intelligentsia-map-fallback {
+    height: 100%;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.68);
+    font-size: 14px;
+}
+
 .modal-overlay {
     position: fixed;
     top: 0;

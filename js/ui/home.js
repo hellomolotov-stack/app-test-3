@@ -5,7 +5,7 @@ import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
-import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
+import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap, renderIntelligentsiaRoutes } from './calendar.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -459,6 +459,7 @@ function renderGuestHome() {
             </div>
         </div>
         ${renderTestimonialsBlock()}
+        <div id="intelligentsiaRoutesContainer"></div>
         ${renderUpdatesBlock()}
     `;
 
@@ -611,6 +612,7 @@ function renderGuestHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
+    renderIntelligentsiaRoutes(document.getElementById('intelligentsiaRoutesContainer'));
     initWeatherBlock();
 
     const goBtn = document.querySelector('.booking-go-btn');
@@ -672,6 +674,7 @@ function renderOwnerHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
+        <div id="intelligentsiaRoutesContainer"></div>
         ${renderUpdatesBlock()}
     `;
 
@@ -705,6 +708,7 @@ function renderOwnerHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
+    renderIntelligentsiaRoutes(document.getElementById('intelligentsiaRoutesContainer'));
     initWeatherBlock();
 
     const goBtn = document.querySelector('.booking-go-btn');
