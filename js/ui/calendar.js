@@ -1454,9 +1454,6 @@ function updateFloatingSheetButtons() {
             infoMsg.textContent = 'вход по карте интеллигента';
             container.appendChild(infoMsg);
 
-            const monthNamesGen = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
-            const currentMonthName = monthNamesGen[new Date().getMonth()];
-            const availableCards = getAvailableCardsCount();
             const cardsBlock = document.createElement('div');
             cardsBlock.className = 'availability-floating';
             cardsBlock.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(255, 241, 178, 0.15); backdrop-filter: blur(12px); text-align: center;`;
@@ -2019,11 +2016,6 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
         <div id="faqBody" style="display:none;">${faqItemsHtml}</div>
     ` : '';
 
-    // #2 динамический счётчик карт
-    const cardsLeft = getAvailableCardsCount();
-    const cardsTotal = getTotalCardsCount();
-    const soldOut = cardsLeft <= 0;
-
     // #3 социальное доказательство (аватарки членов клуба + счётчик)
     const membersText = state.popupConfig?.membersText || '20+';
     const socialProofHtml = `
@@ -2064,7 +2056,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             <div id="clubJoinAccordion" style="display: none; margin-top: 20px;">
 
                 <div class="booking-popup-what-is-card">
-                    карта интеллигента – это членство в клубе. именная, с твоим счётом хайков. с ней ты не покупаешь билеты – становишься членом клуба
+                    карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе
                 </div>
 
                 <div class="booking-popup-economy">один хайк по разовому билету стоил 1500 ₽. карта окупается к пятому. дальше каждый поход – бесплатно</div>
