@@ -2,16 +2,24 @@ import { haptic, openLink } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { INTELLIGENTSIA_ROUTES as ROUTE_DATA } from './intelligentsia-routes-data.js';
+import { EXTRA_INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-extra-data.js';
+import { ROUTE_DESCRIPTIONS } from './intelligentsia-routes-catalog.js';
 
 const CHERNAYA_RECHKA_COORDS = [[44.493100,33.793747],[44.492947,33.793114],[44.493314,33.792416],[44.493612,33.791515],[44.494240,33.790748],[44.494646,33.790179],[44.494879,33.790314],[44.495246,33.790249],[44.495467,33.789863],[44.495872,33.787240],[44.496335,33.786505],[44.496875,33.785909],[44.497047,33.784879],[44.496974,33.783436],[44.497097,33.782476],[44.497384,33.782320],[44.498751,33.782247],[44.499469,33.781852],[44.499645,33.781492],[44.499939,33.781256],[44.500261,33.780581],[44.501034,33.780328],[44.502006,33.780361],[44.502718,33.780310],[44.503282,33.780061],[44.503485,33.780050],[44.503944,33.779782],[44.504460,33.779723],[44.504904,33.779862],[44.505325,33.779905],[44.505176,33.779674],[44.504774,33.779278],[44.504246,33.779084],[44.504101,33.779208],[44.503875,33.779245],[44.503328,33.779412],[44.502880,33.779599],[44.502421,33.779680],[44.501855,33.779522],[44.501137,33.779351],[44.500678,33.779260],[44.500341,33.779400],[44.500019,33.779737],[44.499840,33.779802],[44.499748,33.780177],[44.499465,33.780725],[44.499105,33.781288],[44.498607,33.781768],[44.497857,33.781790],[44.497271,33.781795],[44.496927,33.781945],[44.496778,33.782294],[44.496736,33.783072],[44.496690,33.783839],[44.496736,33.784231],[44.496648,33.784542],[44.496544,33.785186],[44.496139,33.785615],[44.495446,33.786049],[44.495067,33.785990],[44.494712,33.786344],[44.494343,33.786779],[44.494170,33.787836],[44.493964,33.788179],[44.493773,33.788785],[44.493489,33.789316],[44.493145,33.789960],[44.492736,33.790690],[44.492292,33.791146],[44.491752,33.791559],[44.491626,33.791639],[44.492154,33.792337],[44.492311,33.792562],[44.492494,33.792868],[44.493099,33.793744]];
-const INTELLIGENTSIA_ROUTES = ROUTE_DATA.map(route => route.id === 'chernaya-rechka'
-    ? {
+const INTELLIGENTSIA_ROUTES = [...ROUTE_DATA, ...EXTRA_INTELLIGENTSIA_ROUTES].map(route => {
+    const routeWithExactTrack = route.id === 'chernaya-rechka'
+        ? {
         ...route,
         segments: [CHERNAYA_RECHKA_COORDS],
         bounds: [[33.779084, 44.491626], [33.793747, 44.505325]],
         pointCount: CHERNAYA_RECHKA_COORDS.length
-    }
-    : route);
+        }
+        : route;
+    return {
+        ...routeWithExactTrack,
+        description: ROUTE_DESCRIPTIONS[route.id] || route.description || route.subtitle || ''
+    };
+});
 
 let maplibreLoading = null;
 let currentMap = null;
@@ -55,7 +63,12 @@ const REPORT_KEYWORDS = {
     biruzovoe: ['бирюзов'],
     pallasa: ['паллас'],
     tsarskaya: ['царск'],
-    'chernaya-rechka': ['черная реч', 'чёрная реч']
+    'chernaya-rechka': ['черная реч', 'чёрная реч'],
+    'ilyas-kaya': ['ильяс'],
+    paragilmen: ['парагильмен'],
+    'ayu-dag': ['аю-даг', 'аю даг'],
+    'foros-kant': ['форосск', 'кант'],
+    'kush-kaya': ['куш-кая', 'куш кая']
 };
 
 function ensureMapLibre() {
@@ -82,15 +95,16 @@ function injectStyles() {
     const style = document.createElement('style');
     style.id = 'intelligentsiaRoutesStyles';
     style.textContent = `
-        .intelligentsia-routes-card { padding-bottom: 16px; }
+        .intelligentsia-routes-card { padding-bottom: 96px; }
         .intelligentsia-routes-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 16px 14px 16px; }
         .intelligentsia-routes-header .section-title { margin: 0 !important; line-height: 1.1; }
         .intelligentsia-routes-nav { display: inline-flex; gap: 8px; flex-shrink: 0; }
-        .intelligentsia-route-map-wrap { position: relative; aspect-ratio: 1 / 1; margin: 0 16px; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
-        .intelligentsia-route-map { width: 100%; height: 100%; background: #0A0B09; }
+        .intelligentsia-route-map-wrap { margin: 0 16px; }
+        .intelligentsia-route-map { width: 100%; aspect-ratio: 5 / 6; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
         .intelligentsia-route-map .maplibregl-ctrl-bottom-left, .intelligentsia-route-map .maplibregl-ctrl-bottom-right { display: none; }
-        .intelligentsia-route-caption { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.68); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); }
+        .intelligentsia-route-caption { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; margin-top: 10px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.76); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); }
         .intelligentsia-route-meta { min-width: 0; }
+        .intelligentsia-route-description { margin-top: 8px; color: rgba(255,255,255,0.82); font-size: 13px; line-height: 1.4; }
         .intelligentsia-route-reports { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 5px; color: rgba(255,255,255,0.54); font-size: 12px; line-height: 1.25; }
         .intelligentsia-route-report { display: inline-block; color: rgba(255,255,255,0.78); text-decoration: underline; text-underline-offset: 2px; }
         .intelligentsia-route-report:active { opacity: 0.72; }
@@ -170,9 +184,14 @@ function routeReports(route) {
 function updateRouteMeta(route, index) {
     const reportsContainer = document.getElementById('intelligentsiaRouteReports');
     const title = document.getElementById('intelligentsiaRouteTitle');
+    const description = document.getElementById('intelligentsiaRouteDescription');
     const counter = document.getElementById('intelligentsiaRouteCounter');
     const reports = routeReports(route);
     if (title) title.textContent = route.title;
+    if (description) {
+        description.textContent = route.description || '';
+        description.hidden = !route.description;
+    }
     if (reportsContainer) {
         reportsContainer.replaceChildren();
         if (reports.length) {
@@ -203,9 +222,9 @@ function updateRouteMeta(route, index) {
 
 function cameraForRoute(map, route) {
     const mapHeight = map.getContainer?.().clientHeight || 360;
-    const horizontalPadding = Math.max(28, Math.round(mapHeight * 0.09));
+    const horizontalPadding = Math.max(28, Math.round(mapHeight * 0.08));
     const topPadding = Math.max(26, Math.round(mapHeight * 0.08));
-    const bottomPadding = Math.max(124, Math.round(mapHeight * 0.38));
+    const bottomPadding = Math.max(36, Math.round(mapHeight * 0.12));
     const camera = map.cameraForBounds(route.bounds, {
         padding: {
             top: topPadding,
@@ -303,6 +322,7 @@ export function renderIntelligentsiaRoutes(container) {
                 <div class="intelligentsia-route-caption">
                     <div class="intelligentsia-route-meta">
                         <div id="intelligentsiaRouteTitle" class="intelligentsia-route-title"></div>
+                        <div id="intelligentsiaRouteDescription" class="intelligentsia-route-description"></div>
                         <div id="intelligentsiaRouteReports" class="intelligentsia-route-reports"></div>
                     </div>
                     <div id="intelligentsiaRouteCounter" class="intelligentsia-route-counter"></div>
