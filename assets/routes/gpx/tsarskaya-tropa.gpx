@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Клуб интеллигенции" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata><name>Царская тропа</name><desc>отчёт о хайке</desc></metadata>
+  <trk><name>Царская тропа</name><trkseg>
+    <trkpt lat="44.46733" lon="34.14366"/>
+    <trkpt lat="44.46709" lon="34.14222"/>
+    <trkpt lat="44.46632" lon="34.14238"/>
+    <trkpt lat="44.46514" lon="34.14069"/>
+    <trkpt lat="44.46429" lon="34.13884"/>
+    <trkpt lat="44.46267" lon="34.13756"/>
+    <trkpt lat="44.46096" lon="34.13758"/>
+    <trkpt lat="44.46016" lon="34.13698"/>
+    <trkpt lat="44.45989" lon="34.13552"/>
+    <trkpt lat="44.4593" lon="34.13514"/>
+    <trkpt lat="44.45826" lon="34.13584"/>
+    <trkpt lat="44.45724" lon="34.13533"/>
+    <trkpt lat="44.45669" lon="34.13449"/>
+    <trkpt lat="44.4559" lon="34.13281"/>
+    <trkpt lat="44.45522" lon="34.1317"/>
+    <trkpt lat="44.45469" lon="34.1314"/>
+    <trkpt lat="44.45459" lon="34.1312"/>
+    <trkpt lat="44.45417" lon="34.13041"/>
+    <trkpt lat="44.45356" lon="34.12907"/>
+    <trkpt lat="44.45249" lon="34.12836"/>
+    <trkpt lat="44.4512" lon="34.12683"/>
+    <trkpt lat="44.45016" lon="34.12752"/>
+    <trkpt lat="44.44817" lon="34.12767"/>
+    <trkpt lat="44.44696" lon="34.12643"/>
+    <trkpt lat="44.44608" lon="34.12683"/>
+    <trkpt lat="44.4452" lon="34.12684"/>
+    <trkpt lat="44.44448" lon="34.12721"/>
+    <trkpt lat="44.44368" lon="34.12709"/>
+    <trkpt lat="44.44295" lon="34.1272"/>
+    <trkpt lat="44.44169" lon="34.12736"/>
+    <trkpt lat="44.44096" lon="34.12796"/>
+    <trkpt lat="44.43928" lon="34.12804"/>
+    <trkpt lat="44.43844" lon="34.12776"/>
+    <trkpt lat="44.43802" lon="34.12661"/>
+    <trkpt lat="44.43783" lon="34.12505"/>
+    <trkpt lat="44.43791" lon="34.12329"/>
+    <trkpt lat="44.43724" lon="34.12123"/>
+    <trkpt lat="44.43647" lon="34.12052"/>
+    <trkpt lat="44.43572" lon="34.1181"/>
+    <trkpt lat="44.43502" lon="34.11657"/>
+    <trkpt lat="44.43539" lon="34.1147"/>
+    <trkpt lat="44.43485" lon="34.11348"/>
+    <trkpt lat="44.43449" lon="34.11174"/>
+    <trkpt lat="44.43523" lon="34.11107"/>
+    <trkpt lat="44.43508" lon="34.10994"/>
+    <trkpt lat="44.43536" lon="34.10814"/>
+    <trkpt lat="44.4363" lon="34.10785"/>
+    <trkpt lat="44.43616" lon="34.10547"/>
+    <trkpt lat="44.43579" lon="34.10494"/>
+    <trkpt lat="44.43544" lon="34.10363"/>
+    <trkpt lat="44.43523" lon="34.10269"/>
+    <trkpt lat="44.43434" lon="34.10449"/>
+    <trkpt lat="44.43414" lon="34.10537"/>
+    <trkpt lat="44.4342" lon="34.10432"/>
+    <trkpt lat="44.43383" lon="34.10269"/>
+    <trkpt lat="44.43379" lon="34.10194"/>
+    <trkpt lat="44.43352" lon="34.10296"/>
+    <trkpt lat="44.43336" lon="34.10163"/>
+    <trkpt lat="44.43318" lon="34.10217"/>
+    <trkpt lat="44.43258" lon="34.1022"/>
+  </trkseg></trk>
+</gpx>
