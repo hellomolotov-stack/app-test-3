@@ -250,7 +250,7 @@ function cameraForRoute(map, route) {
             (route.bounds[0][1] + route.bounds[1][1]) / 2
         ],
         zoom: Math.min(camera.zoom || 12, 14.2),
-        pitch: 52,
+        pitch: 46,
         bearing: 0
     };
 }
@@ -471,7 +471,7 @@ export function renderIntelligentsiaRoutes(container) {
                 encoding: 'terrarium',
                 maxzoom: 15
             });
-            currentMap.setTerrain({ source: 'dem', exaggeration: 1.65 });
+            currentMap.setTerrain({ source: 'dem', exaggeration: 1 });
             currentMap.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#151515', 'fog-color': '#0A0B09' });
             currentMap.addSource('intelligentsia-routes', { type: 'geojson', data: routesFeatureCollection(0) });
             currentMap.addLayer({
