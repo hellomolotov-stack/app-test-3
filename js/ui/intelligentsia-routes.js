@@ -95,16 +95,16 @@ function injectStyles() {
     const style = document.createElement('style');
     style.id = 'intelligentsiaRoutesStyles';
     style.textContent = `
-        .intelligentsia-routes-card { padding-bottom: 96px; }
+        .intelligentsia-routes-card { padding-bottom: 16px; }
         .intelligentsia-routes-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 16px 14px 16px; }
         .intelligentsia-routes-header .section-title { margin: 0 !important; line-height: 1.1; }
         .intelligentsia-routes-nav { display: inline-flex; gap: 8px; flex-shrink: 0; }
-        .intelligentsia-route-map-wrap { margin: 0 16px; }
-        .intelligentsia-route-map { width: 100%; aspect-ratio: 5 / 6; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
+        .intelligentsia-route-map-wrap { position: relative; aspect-ratio: 1 / 1; margin: 0 16px; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
+        .intelligentsia-route-map { width: 100%; height: 100%; background: #0A0B09; }
         .intelligentsia-route-map .maplibregl-ctrl-bottom-left, .intelligentsia-route-map .maplibregl-ctrl-bottom-right { display: none; }
-        .intelligentsia-route-caption { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 12px; margin-top: 10px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.76); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); }
+        .intelligentsia-route-caption { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.68); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); cursor: pointer; }
+        .intelligentsia-route-caption:active { background: rgba(10, 11, 9, 0.84); }
         .intelligentsia-route-meta { min-width: 0; }
-        .intelligentsia-route-description { margin-top: 8px; color: rgba(255,255,255,0.82); font-size: 13px; line-height: 1.4; }
         .intelligentsia-route-reports { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 5px; color: rgba(255,255,255,0.54); font-size: 12px; line-height: 1.25; }
         .intelligentsia-route-report { display: inline-block; color: rgba(255,255,255,0.78); text-decoration: underline; text-underline-offset: 2px; }
         .intelligentsia-route-report:active { opacity: 0.72; }
@@ -112,6 +112,9 @@ function injectStyles() {
         .intelligentsia-route-title { color: #ffffff; font-size: 18px; line-height: 1.12; font-weight: 800; }
         .intelligentsia-route-counter { flex-shrink: 0; color: #0A0B09; background: #D9FD19; border-radius: 999px; padding: 5px 9px; font-size: 12px; line-height: 1; font-weight: 800; white-space: nowrap; }
         .intelligentsia-map-fallback { height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.68); font-size: 14px; }
+        .intelligentsia-route-modal .modal-content { max-width: 420px; max-height: min(72vh, 560px); padding: 24px; background: rgba(10, 11, 9, 0.92); }
+        .intelligentsia-route-modal .modal-title { padding-right: 40px; margin-bottom: 14px; color: #D9FD19; }
+        .intelligentsia-route-modal .modal-text { margin: 0; overflow-y: auto; overscroll-behavior: contain; padding-right: 4px; font-size: 15px; line-height: 1.5; }
     `;
     document.head.appendChild(style);
 }
@@ -184,14 +187,11 @@ function routeReports(route) {
 function updateRouteMeta(route, index) {
     const reportsContainer = document.getElementById('intelligentsiaRouteReports');
     const title = document.getElementById('intelligentsiaRouteTitle');
-    const description = document.getElementById('intelligentsiaRouteDescription');
+    const caption = document.getElementById('intelligentsiaRouteCaption');
     const counter = document.getElementById('intelligentsiaRouteCounter');
     const reports = routeReports(route);
     if (title) title.textContent = route.title;
-    if (description) {
-        description.textContent = route.description || '';
-        description.hidden = !route.description;
-    }
+    if (caption) caption.setAttribute('aria-label', `${route.title}: открыть описание`);
     if (reportsContainer) {
         reportsContainer.replaceChildren();
         if (reports.length) {
@@ -224,7 +224,7 @@ function cameraForRoute(map, route) {
     const mapHeight = map.getContainer?.().clientHeight || 360;
     const horizontalPadding = Math.max(28, Math.round(mapHeight * 0.08));
     const topPadding = Math.max(26, Math.round(mapHeight * 0.08));
-    const bottomPadding = Math.max(36, Math.round(mapHeight * 0.12));
+    const bottomPadding = Math.max(124, Math.round(mapHeight * 0.38));
     const camera = map.cameraForBounds(route.bounds, {
         padding: {
             top: topPadding,
@@ -284,6 +284,42 @@ function flyToRoute(index, instant = false) {
     }, 540);
 }
 
+function openRouteDescription(route) {
+    if (!route?.description) return;
+    document.querySelector('.intelligentsia-route-modal')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay animated intelligentsia-route-modal';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', `Описание маршрута ${route.title}`);
+    overlay.innerHTML = `
+        <div class="modal-content animated">
+            <button class="modal-close" type="button" aria-label="закрыть">&times;</button>
+            <div class="modal-title"></div>
+            <div class="modal-text"></div>
+        </div>
+    `;
+    overlay.querySelector('.modal-title').textContent = route.title;
+    overlay.querySelector('.modal-text').textContent = route.description;
+
+    const close = () => {
+        overlay.classList.remove('visible');
+        window.setTimeout(() => overlay.remove(), 200);
+        document.removeEventListener('keydown', onKeyDown);
+    };
+    const onKeyDown = event => {
+        if (event.key === 'Escape') close();
+    };
+    overlay.querySelector('.modal-close').addEventListener('click', close);
+    overlay.addEventListener('click', event => {
+        if (event.target === overlay) close();
+    });
+    document.addEventListener('keydown', onKeyDown);
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('visible'));
+}
+
 function trackRouteSwitch(direction, fromIndex, toIndex) {
     const fromRoute = INTELLIGENTSIA_ROUTES[fromIndex];
     const toRoute = INTELLIGENTSIA_ROUTES[toIndex];
@@ -319,10 +355,9 @@ export function renderIntelligentsiaRoutes(container) {
             </div>
             <div class="intelligentsia-route-map-wrap">
                 <div id="intelligentsiaRoutesMap" class="intelligentsia-route-map"></div>
-                <div class="intelligentsia-route-caption">
+                <div id="intelligentsiaRouteCaption" class="intelligentsia-route-caption" role="button" tabindex="0">
                     <div class="intelligentsia-route-meta">
                         <div id="intelligentsiaRouteTitle" class="intelligentsia-route-title"></div>
-                        <div id="intelligentsiaRouteDescription" class="intelligentsia-route-description"></div>
                         <div id="intelligentsiaRouteReports" class="intelligentsia-route-reports"></div>
                     </div>
                     <div id="intelligentsiaRouteCounter" class="intelligentsia-route-counter"></div>
@@ -359,6 +394,16 @@ export function renderIntelligentsiaRoutes(container) {
             report_date: reportDate,
             report_url: reportUrl
         });
+    });
+    const routeCaption = document.getElementById('intelligentsiaRouteCaption');
+    routeCaption?.addEventListener('click', event => {
+        if (event.target.closest('.intelligentsia-route-report')) return;
+        openRouteDescription(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
+    });
+    routeCaption?.addEventListener('keydown', event => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+        openRouteDescription(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
     });
     updateRouteMeta(INTELLIGENTSIA_ROUTES[0], 0);
 
