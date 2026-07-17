@@ -1,4 +1,4 @@
-import { haptic, openLink } from '../utils.js';
+import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { INTELLIGENTSIA_ROUTES as ROUTE_DATA } from './intelligentsia-routes-data.js';
@@ -35,48 +35,6 @@ let resizeTimer = null;
 let mapResizeObserver = null;
 let stylesInjected = false;
 
-const ROUTE_REPORTS = {
-    'biyuk-isar': [
-        { date: '27.07.2025', url: 'https://t.me/yaltahiking/119' }
-    ],
-    'alupka-isar': [
-        { date: '09.11.2025', url: 'https://t.me/yaltahiking/192' },
-        { date: '25.05.2025', url: 'https://t.me/yaltahiking/45' }
-    ],
-    evrejskaya: [
-        { date: '26.04.2026', url: 'https://t.me/yaltahiking/353' }
-    ],
-    'uch-kosh': [
-        { date: '19.10.2025', url: 'https://t.me/yaltahiking/157' }
-    ],
-    massandra: [
-        { date: '14.12.2025', url: 'https://t.me/yaltahiking/250' }
-    ],
-    biruzovoe: [
-        { date: '25.06.2026', url: 'https://t.me/yaltahiking/399' }
-    ],
-    pallasa: [
-        { date: '16.11.2025', url: 'https://t.me/yaltahiking/195' },
-        { date: '22.06.2025', url: 'https://t.me/yaltahiking/75' }
-    ]
-};
-const REPORT_KEYWORDS = {
-    'biyuk-isar': ['биюк'],
-    'alupka-isar': ['алупка', 'крестов'],
-    evrejskaya: ['еврейск', 'жидовск'],
-    'uch-kosh': ['уч-кош', 'уч кош'],
-    massandra: ['массандр'],
-    biruzovoe: ['бирюзов'],
-    pallasa: ['паллас'],
-    tsarskaya: ['царск'],
-    'chernaya-rechka': ['черная реч', 'чёрная реч'],
-    'ilyas-kaya': ['ильяс'],
-    paragilmen: ['парагильмен'],
-    'ayu-dag': ['аю-даг', 'аю даг'],
-    'foros-kant': ['форосск', 'кант'],
-    'kush-kaya': ['куш-кая', 'куш кая']
-};
-
 function ensureMapLibre() {
     if (window.maplibregl) return Promise.resolve();
     if (maplibreLoading) return maplibreLoading;
@@ -112,10 +70,6 @@ function injectStyles() {
         .intelligentsia-route-caption:active { background: rgba(10, 11, 9, 0.84); }
         .intelligentsia-route-meta { min-width: 0; }
         .intelligentsia-route-preview { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: 7px; color: rgba(255,255,255,0.78); font-size: 12.5px; line-height: 1.36; mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); }
-        .intelligentsia-route-reports { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin-top: 5px; color: rgba(255,255,255,0.54); font-size: 12px; line-height: 1.25; }
-        .intelligentsia-route-report { display: inline-block; color: rgba(255,255,255,0.78); text-decoration: underline; text-underline-offset: 2px; }
-        .intelligentsia-route-report:active { opacity: 0.72; }
-        .intelligentsia-route-no-reports { color: rgba(255,255,255,0.48); }
         .intelligentsia-route-title { color: #ffffff; font-size: 18px; line-height: 1.12; font-weight: 800; }
         .intelligentsia-route-counter { flex-shrink: 0; color: #0A0B09; background: #D9FD19; border-radius: 999px; padding: 5px 9px; font-size: 12px; line-height: 1; font-weight: 800; white-space: nowrap; }
         .intelligentsia-map-fallback { height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.68); font-size: 14px; }
@@ -144,88 +98,14 @@ function routesFeatureCollection(activeIndex) {
     };
 }
 
-function normalizeText(value) {
-    return String(value || '')
-        .toLowerCase()
-        .replaceAll('ё', 'е')
-        .replace(/[^a-zа-я0-9]+/g, ' ')
-        .trim();
-}
-
-function normalizeReportUrl(value) {
-    const url = String(value || '').trim();
-    return /^t\.me\//i.test(url) ? `https://${url}` : url;
-}
-
-function reportDateKey(value) {
-    const date = String(value || '').trim();
-    const isoMatch = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (isoMatch) return `${isoMatch[1]}${isoMatch[2]}${isoMatch[3]}`;
-    const displayMatch = date.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-    return displayMatch ? `${displayMatch[3]}${displayMatch[2]}${displayMatch[1]}` : '';
-}
-
-function formatReportDate(value) {
-    const date = String(value || '').trim();
-    const match = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    return match ? `${match[3]}.${match[2]}.${match[1]}` : date;
-}
-
-function routeReports(route) {
-    const keywords = REPORT_KEYWORDS[route.id] || [route.title];
-    const normalizedKeywords = keywords.map(normalizeText).filter(Boolean);
-    const dynamicReports = [...(state.hikesWithTitle || [])]
-        .filter(item => /^(https?:\/\/|tg:\/\/|t\.me\/)/i.test(String(item.report_link || '').trim()))
-        .filter(item => {
-            const title = normalizeText(item.title);
-            return normalizedKeywords.some(keyword => title.includes(keyword));
-        })
-        .map(item => ({ date: formatReportDate(item.date), url: normalizeReportUrl(item.report_link) }));
-    const seen = new Set();
-    return [...(ROUTE_REPORTS[route.id] || []), ...dynamicReports]
-        .filter(report => {
-            if (!report.url || seen.has(report.url)) return false;
-            seen.add(report.url);
-            return true;
-        })
-        .sort((a, b) => reportDateKey(b.date).localeCompare(reportDateKey(a.date)));
-}
-
 function updateRouteMeta(route, index) {
-    const reportsContainer = document.getElementById('intelligentsiaRouteReports');
     const title = document.getElementById('intelligentsiaRouteTitle');
     const preview = document.getElementById('intelligentsiaRoutePreview');
     const caption = document.getElementById('intelligentsiaRouteCaption');
     const counter = document.getElementById('intelligentsiaRouteCounter');
-    const reports = routeReports(route);
     if (title) title.textContent = route.title;
     if (preview) preview.textContent = route.description || '';
     if (caption) caption.setAttribute('aria-label', `${route.title}: открыть описание`);
-    if (reportsContainer) {
-        reportsContainer.replaceChildren();
-        if (reports.length) {
-            const label = document.createElement('span');
-            label.textContent = reports.length > 1 ? 'отчёты:' : 'отчёт:';
-            reportsContainer.appendChild(label);
-            reports.forEach(report => {
-                const link = document.createElement('a');
-                link.className = 'intelligentsia-route-report';
-                link.href = report.url;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-                link.textContent = report.date || 'открыть ↗';
-                link.dataset.reportUrl = report.url;
-                link.dataset.reportDate = report.date || '';
-                link.setAttribute('aria-label', `${route.title}: отчёт за ${report.date || 'хайк'}`);
-                reportsContainer.appendChild(link);
-            });
-        } else {
-            const empty = document.createElement('span');
-            empty.className = 'intelligentsia-route-no-reports';
-            empty.textContent = 'заметки пока не опубликованы';
-            reportsContainer.appendChild(empty);
-        }
-    }
     if (counter) counter.textContent = `${index + 1} / ${INTELLIGENTSIA_ROUTES.length}`;
 }
 
@@ -250,7 +130,7 @@ function cameraForRoute(map, route) {
             (route.bounds[0][1] + route.bounds[1][1]) / 2
         ],
         zoom: Math.min(camera.zoom || 12, 14.2),
-        pitch: 46,
+        pitch: 50,
         bearing: 0
     };
 }
@@ -369,7 +249,6 @@ export function renderIntelligentsiaRoutes(container) {
                     <div class="intelligentsia-route-meta">
                         <div id="intelligentsiaRouteTitle" class="intelligentsia-route-title"></div>
                         <div id="intelligentsiaRoutePreview" class="intelligentsia-route-preview"></div>
-                        <div id="intelligentsiaRouteReports" class="intelligentsia-route-reports"></div>
                     </div>
                     <div id="intelligentsiaRouteCounter" class="intelligentsia-route-counter"></div>
                 </div>
@@ -391,24 +270,8 @@ export function renderIntelligentsiaRoutes(container) {
         flyToRoute(toIndex);
         trackRouteSwitch('next', fromIndex, toIndex);
     });
-    document.getElementById('intelligentsiaRouteReports')?.addEventListener('click', event => {
-        const reportLink = event.target.closest('.intelligentsia-route-report');
-        if (!reportLink) return;
-        event.preventDefault();
-        const route = INTELLIGENTSIA_ROUTES[currentRouteIndex];
-        const reportUrl = reportLink.dataset.reportUrl;
-        const reportDate = reportLink.dataset.reportDate;
-        if (!reportUrl) return;
-        openLink(reportUrl, `отчёт: ${route.title}`, state.userCard.status !== 'active');
-        log('карта хайков отчёт', state.userCard.status !== 'active', state.user, {
-            route: route.id,
-            report_date: reportDate,
-            report_url: reportUrl
-        });
-    });
     const routeCaption = document.getElementById('intelligentsiaRouteCaption');
     routeCaption?.addEventListener('click', event => {
-        if (event.target.closest('.intelligentsia-route-report')) return;
         openRouteDescription(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
     });
     routeCaption?.addEventListener('keydown', event => {
@@ -473,6 +336,16 @@ export function renderIntelligentsiaRoutes(container) {
             });
             currentMap.setTerrain({ source: 'dem', exaggeration: 1 });
             currentMap.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#151515', 'fog-color': '#0A0B09' });
+            currentMap.addLayer({
+                id: 'terrain-hillshade',
+                type: 'hillshade',
+                source: 'dem',
+                paint: {
+                    'hillshade-exaggeration': 0.34,
+                    'hillshade-shadow-color': '#111111',
+                    'hillshade-highlight-color': '#bfc4bd'
+                }
+            });
             currentMap.addSource('intelligentsia-routes', { type: 'geojson', data: routesFeatureCollection(0) });
             currentMap.addLayer({
                 id: 'intelligentsia-routes-muted',
