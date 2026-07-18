@@ -1841,41 +1841,35 @@ function updateFloatingSheetButtons() {
     }
 
     if (isPast || isCompletedToday) {
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.gap = '12px';
-        row.style.justifyContent = 'center';
-        row.style.width = '100%';
+        const glassBase = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; text-align: center; color: #ffffff; font-weight: 600;';
 
-        const completedBtn = document.createElement('a');
-        completedBtn.href = '#';
-        completedBtn.className = 'btn btn-outline';
-        completedBtn.textContent = (isCity || isBookClub) ? 'событие завершено' : 'хайк завершён';
-        completedBtn.style.pointerEvents = 'none';
-        row.appendChild(completedBtn);
+        const completedMsg = document.createElement('div');
+        completedMsg.className = 'availability-floating';
+        completedMsg.style.cssText = glassBase + ' background: rgba(73, 138, 176, 0.15);';
+        completedMsg.textContent = (isCity || isBookClub) ? '✓ событие завершено' : '✓ хайк завершён';
+        container.appendChild(completedMsg);
 
         if (hasReportLink(hike)) {
-            const reportBtn = document.createElement('a');
-            reportBtn.href = '#';
-            reportBtn.className = 'btn btn-yellow';
-            if (isBookClub) reportBtn.style.backgroundColor = '#FFF1B2';
-            else if (isCity) reportBtn.style.backgroundColor = '#41B5ED';
-            else if (isWoman) reportBtn.style.backgroundColor = '#FB5EB0';
-            else reportBtn.style.backgroundColor = 'var(--yellow)';
-            reportBtn.style.color = isCity ? '#ffffff' : '#000000';
-            reportBtn.textContent = 'отчёт';
+            let tint;
+            if (isBookClub) tint = 'rgba(255, 241, 178, 0.25)';
+            else if (isCity) tint = 'rgba(65, 181, 237, 0.25)';
+            else if (isWoman) tint = 'rgba(251, 94, 176, 0.25)';
+            else tint = 'rgba(255, 220, 50, 0.25)';
+
+            const reportBtn = document.createElement('div');
+            reportBtn.className = 'availability-floating';
+            reportBtn.style.cssText = glassBase + ` background: ${tint}; cursor: pointer;`;
+            reportBtn.textContent = '📷 отчёт';
             reportBtn.addEventListener('click', e => {
                 e.preventDefault();
                 e.stopPropagation();
                 haptic();
                 const url = hike.report_link.trim();
                 if (url) openLink(url, 'отчёт хайка', state.userCard.status !== 'active');
-                return false;
             });
-            row.appendChild(reportBtn);
+            container.appendChild(reportBtn);
         }
-        container.appendChild(row);
-        container.style.pointerEvents = 'none';
+        container.style.pointerEvents = hasReportLink(hike) ? 'auto' : 'none';
         return;
     }
 
