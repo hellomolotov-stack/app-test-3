@@ -1,6 +1,8 @@
 import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
+import { setRouteFavorite } from '../firebase.js';
+import { isLumenPilotUser } from '../lumen/config.js';
 import { INTELLIGENTSIA_ROUTES as ROUTE_DATA } from './intelligentsia-routes-data.js';
 import { EXTRA_INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-extra-data.js';
 import { ROUTE_DESCRIPTIONS } from './intelligentsia-routes-catalog.js';
@@ -78,6 +80,7 @@ let flightTimer = null;
 let resizeTimer = null;
 let mapResizeObserver = null;
 let stylesInjected = false;
+let routeFavorites = {};
 
 function ensureMapLibre() {
     if (window.maplibregl) return Promise.resolve();
@@ -116,6 +119,15 @@ function injectStyles() {
         .intelligentsia-route-preview { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: 7px; color: rgba(255,255,255,0.78); font-size: 12.5px; line-height: 1.36; mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); }
         .intelligentsia-route-title { color: #ffffff; font-size: 18px; line-height: 1.12; font-weight: 800; }
         .intelligentsia-route-counter { flex-shrink: 0; color: #0A0B09; background: #D9FD19; border-radius: 999px; padding: 5px 9px; font-size: 12px; line-height: 1; font-weight: 800; white-space: nowrap; }
+        .intelligentsia-route-favorite-area { min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 16px 0; }
+        .intelligentsia-route-favorite-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 38px; padding: 8px 12px; border: 1px solid rgba(217,253,25,0.62); border-radius: 8px; background: rgba(217,253,25,0.10); color: #D9FD19; font: inherit; font-size: 13px; font-weight: 750; cursor: pointer; }
+        .intelligentsia-route-favorite-button.is-active { background: #D9FD19; color: #0A0B09; }
+        .intelligentsia-route-favorite-button:disabled { opacity: 0.55; cursor: wait; }
+        .intelligentsia-route-favorite-icon { font-size: 16px; line-height: 1; }
+        .intelligentsia-route-fans { min-width: 0; display: flex; align-items: center; justify-content: flex-end; }
+        .intelligentsia-route-fan-stack { display: flex; flex-direction: row-reverse; padding-left: 5px; }
+        .intelligentsia-route-fan-avatar { box-sizing: border-box; width: 30px; height: 30px; margin-left: -6px; border: 2px solid #0A0B09; border-radius: 50%; background: #30342d; object-fit: cover; color: #D9FD19; font-size: 11px; font-weight: 800; line-height: 26px; text-align: center; }
+        .intelligentsia-route-fan-count { margin-left: 8px; color: rgba(255,255,255,0.62); font-size: 12px; white-space: nowrap; }
         .intelligentsia-map-fallback { height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.68); font-size: 14px; }
         .intelligentsia-route-modal .modal-content { max-width: 420px; max-height: min(72vh, 560px); padding: 24px; background: rgba(10, 11, 9, 0.92); }
         .intelligentsia-route-modal .modal-title { padding-right: 40px; margin-bottom: 14px; color: #D9FD19; }
@@ -151,6 +163,91 @@ function updateRouteMeta(route, index) {
     if (preview) preview.textContent = route.description || '';
     if (caption) caption.setAttribute('aria-label', `${route.title}: открыть описание`);
     if (counter) counter.textContent = `${index + 1} / ${INTELLIGENTSIA_ROUTES.length}`;
+    renderRouteFavorites(route);
+}
+
+function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    })[char]);
+}
+
+function favoriteUserIds(routeId) {
+    return Object.entries(routeFavorites?.[routeId] || {})
+        .filter(([, favorite]) => favorite !== false && favorite !== null)
+        .sort(([, a], [, b]) => (b?.addedAt || 0) - (a?.addedAt || 0))
+        .map(([userId]) => userId);
+}
+
+function isFavoritesPilot() {
+    return isLumenPilotUser(state.user);
+}
+
+function renderRouteFavorites(route) {
+    const area = document.getElementById('intelligentsiaRouteFavoriteArea');
+    if (!area || !route || !isFavoritesPilot()) return;
+
+    const userIds = favoriteUserIds(route.id);
+    const currentUserId = String(state.user?.id || '');
+    const isFavorite = Boolean(currentUserId && userIds.includes(currentUserId));
+    const canFavorite = state.userCard?.status === 'active' && Boolean(currentUserId);
+    const visibleUsers = userIds.slice(0, 4);
+    const avatars = visibleUsers.map(userId => {
+        const profile = state.profiles?.[userId] || {};
+        const name = profile.name || 'участник клуба';
+        const photoUrl = profile.avatarUrl || profile.photoUrl || '';
+        const initial = escapeHtml(name.charAt(0).toUpperCase() || '•');
+        return photoUrl
+            ? `<img class="intelligentsia-route-fan-avatar" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" title="${escapeHtml(name)}" onerror="this.remove()">`
+            : `<span class="intelligentsia-route-fan-avatar" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}">${initial}</span>`;
+    }).join('');
+    const fans = userIds.length
+        ? `<div class="intelligentsia-route-fans" aria-label="${userIds.length} добавили маршрут в любимые"><div class="intelligentsia-route-fan-stack">${avatars}</div><span class="intelligentsia-route-fan-count">${userIds.length}</span></div>`
+        : '<div class="intelligentsia-route-fans"></div>';
+    const button = canFavorite
+        ? `<button type="button" class="intelligentsia-route-favorite-button ${isFavorite ? 'is-active' : ''}" id="intelligentsiaRouteFavoriteButton" aria-pressed="${isFavorite}"><span class="intelligentsia-route-favorite-icon" aria-hidden="true">${isFavorite ? '♥' : '♡'}</span>${isFavorite ? 'в любимых' : 'в любимые'}</button>`
+        : '';
+
+    area.innerHTML = `${button}${fans}`;
+    const favoriteButton = document.getElementById('intelligentsiaRouteFavoriteButton');
+    favoriteButton?.addEventListener('click', async () => {
+        const nextValue = !isFavorite;
+        favoriteButton.disabled = true;
+        const previousFavorites = routeFavorites;
+        const nextFavorites = { ...routeFavorites, [route.id]: { ...(routeFavorites[route.id] || {}) } };
+        if (nextValue) nextFavorites[route.id][currentUserId] = { addedAt: Date.now() };
+        else delete nextFavorites[route.id][currentUserId];
+        routeFavorites = nextFavorites;
+        state.routeFavorites = nextFavorites;
+        renderRouteFavorites(route);
+        try {
+            await setRouteFavorite(route.id, currentUserId, nextValue);
+            haptic();
+            const trackingTag = nextValue ? 'hike_map_route_favorite_add' : 'hike_map_route_favorite_remove';
+            log(trackingTag, false, state.user, { tracking_tag: trackingTag, route_id: route.id });
+        } catch (error) {
+            routeFavorites = previousFavorites;
+            state.routeFavorites = previousFavorites;
+            renderRouteFavorites(route);
+            console.error('Could not update route favorite', error);
+        }
+    });
+}
+
+export function setIntelligentsiaRouteFavorites(favorites) {
+    routeFavorites = favorites && typeof favorites === 'object' ? favorites : {};
+    state.routeFavorites = routeFavorites;
+    renderRouteFavorites(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
+}
+
+export function refreshIntelligentsiaRouteFavorites() {
+    renderRouteFavorites(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
+}
+
+export function getFavoriteRoutesForUser(userId) {
+    const id = String(userId || '');
+    if (!id) return [];
+    return INTELLIGENTSIA_ROUTES.filter(route => favoriteUserIds(route.id).includes(id));
 }
 
 function cameraForRoute(map, route) {
@@ -297,6 +394,7 @@ export function renderIntelligentsiaRoutes(container) {
                     <div id="intelligentsiaRouteCounter" class="intelligentsia-route-counter"></div>
                 </div>
             </div>
+            <div id="intelligentsiaRouteFavoriteArea" class="intelligentsia-route-favorite-area"></div>
         </div>
     `;
 

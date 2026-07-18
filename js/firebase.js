@@ -68,6 +68,31 @@ export function subscribeToRoutes(callback) {
     return () => routesRef.off('value', listener);
 }
 
+export function subscribeToRouteFavorites(callback) {
+    if (!database) {
+        callback({});
+        return () => {};
+    }
+    const favoritesRef = database.ref('routeFavorites');
+    const listener = favoritesRef.on('value', (snapshot) => {
+        callback(snapshot.val() || {});
+    });
+    return () => favoritesRef.off('value', listener);
+}
+
+export async function loadRouteFavorites() {
+    if (!database) return {};
+    const snapshot = await database.ref('routeFavorites').once('value');
+    return snapshot.val() || {};
+}
+
+export async function setRouteFavorite(routeId, userId, isFavorite) {
+    if (!database || !routeId || !userId) return Promise.reject('No route or user');
+    const ref = database.ref(`routeFavorites/${routeId}/${userId}`);
+    if (!isFavorite) return ref.remove();
+    return ref.set({ addedAt: firebase.database.ServerValue.TIMESTAMP });
+}
+
 export async function loadUserData(userId) {
     if (!database || !userId) return { status: 'inactive', hikes: 0, cardUrl: '' };
     try {

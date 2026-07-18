@@ -15,6 +15,7 @@ export const state = {
     passInfo: { content: '', buttonLink: '' },
     profiles: {},
     myProfile: null,
+    routeFavorites: {},
     registrationsPopup: {},
     popupConfig: {
         text: 'чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента',

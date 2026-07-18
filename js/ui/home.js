@@ -6,7 +6,7 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes } from './intelligentsia-routes.js';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -584,6 +584,7 @@ function renderGuestHome() {
     // аватарки членов клуба (лениво)
     loadAllProfiles().then(profiles => {
         state.profiles = profiles;
+        refreshIntelligentsiaRouteFavorites();
         const arr = Object.values(profiles || {}).filter(p => p && (p.avatarUrl || p.photoUrl));
         for (let i = arr.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));

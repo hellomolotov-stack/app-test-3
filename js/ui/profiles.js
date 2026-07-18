@@ -3,8 +3,9 @@ import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay } from '.
 import { state } from '../state.js';
 import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
-    loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations,
+    loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations, loadRouteFavorites,
 } from '../firebase.js';
+import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
 import { showGuestBookingPopup } from './calendar.js';
@@ -14,9 +15,12 @@ let myProfile = null;
 const userHikesCache = {};
 
 async function loadProfilesData() {
-    const [allProfiles, myProf] = await Promise.all([loadAllProfiles(), loadMyProfile(state.user?.id)]);
+    const [allProfiles, myProf, routeFavorites] = await Promise.all([
+        loadAllProfiles(), loadMyProfile(state.user?.id), loadRouteFavorites(),
+    ]);
     profiles = allProfiles; myProfile = myProf;
-    state.profiles = profiles; state.myProfile = myProfile;
+    state.profiles = profiles; state.myProfile = myProfile; state.routeFavorites = routeFavorites;
+    setIntelligentsiaRouteFavorites(routeFavorites);
 }
 
 async function getNextHikeForUser(userId) {
@@ -50,6 +54,11 @@ async function renderProfileCard(profile, isBlurred = false) {
         else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
     } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
+    const favoriteRoutes = !isBlurred && profile.userId ? getFavoriteRoutesForUser(profile.userId) : [];
+    const favoritesHtml = favoriteRoutes.length
+        ? `<div class="profile-section-title" style="color:var(--yellow);">любимые маршруты</div><div class="profile-section-text">${favoriteRoutes.map(route => escapeHtml(route.title)).join(' · ')}</div>`
+        : '';
+
     const contactButtons = (!isBlurred && profile.userId) ? `
         <div class="profile-contact-row">
             ${profile.allowMessages !== false ? `<button class="profile-contact-btn" data-action="chat" data-username="${profile.username || profile.userId}">💬</button>` : ''}
@@ -57,7 +66,7 @@ async function renderProfileCard(profile, isBlurred = false) {
         </div>
     ` : '';
 
-    return `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${contactButtons}</div>`;
+    return `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${contactButtons}</div>`;
 }
 
 function getRandomProfile() {
