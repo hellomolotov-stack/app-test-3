@@ -2245,7 +2245,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                     карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе
                 </div>
 
-                <div class="booking-popup-economy">билет на один хайк – 1000 ₽. карта окупается к пятому хайку. дальше каждый хайк – в подарок</div>
+                <div class="booking-popup-economy">билет на один хайк – 1000 ₽. карта окупается к пятому хайку</div>
 
                 <div class="booking-card-option">
                     <div class="booking-card-name">бессрочная – <span style="opacity:0.45; text-decoration:line-through; font-weight:600; margin-right:2px;">7500</span> ${config.seasonCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">навсегда</span></div>
