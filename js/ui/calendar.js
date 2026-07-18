@@ -2072,11 +2072,10 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
             <button class="modal-close" id="cityPopupClose">&times;</button>
             <div style="text-align: center; padding: 8px 0 20px;">
                 <div style="font-size: 18px; font-weight: 900; color: #41B5ED; margin-bottom: 10px; line-height: 1.3;">${hikeTitle || 'городское событие'}</div>
-                <div style="color: rgba(255,255,255,0.85); font-size: 15px; line-height: 1.55;">первое событие — бесплатно.<br>приходи, познакомимся.</div>
+                <div style="color: rgba(255,255,255,0.85); font-size: 15px; line-height: 1.55;">городские события – только для членов клуба.<br>оформи карту и приходи.</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <button id="cityFreeBtn" style="width:100%; padding:14px; background:#41B5ED; color:#fff; border:none; border-radius:40px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:0.01em;">буду впервые</button>
-                <button id="cityCardBtn" style="width:100%; padding:14px; background:transparent; color:#41B5ED; border:2px solid rgba(65,181,237,0.5); border-radius:40px; font-size:15px; font-weight:700; cursor:pointer;">оформить карту</button>
+                <button id="cityCardBtn" style="width:100%; padding:14px; background:#41B5ED; color:#fff; border:none; border-radius:40px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:0.01em;">оформить карту</button>
                 <button id="cityChatBtn" style="width:100%; padding:12px; background:transparent; color:rgba(255,255,255,0.45); border:none; border-radius:40px; font-size:14px; cursor:pointer;">познакомиться с клубом</button>
             </div>
         </div>
@@ -2091,40 +2090,6 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
 
     document.getElementById('cityPopupClose').addEventListener('click', () => { haptic(); closePopup(); });
     overlay.addEventListener('click', e => { if (e.target === overlay) { haptic(); closePopup(); } });
-
-    document.getElementById('cityFreeBtn').addEventListener('click', e => {
-        e.preventDefault();
-        if (e.target.dataset.processing === 'true') return;
-        e.target.dataset.processing = 'true';
-        haptic();
-        tgw?.HapticFeedback?.impactOccurred('heavy');
-        setTimeout(() => tgw?.HapticFeedback?.impactOccurred('heavy'), 70);
-
-        const userId = state.user?.id;
-        addParticipant(hikeDate, userId, {
-            first_name: state.user?.first_name,
-            photo_url: state.user?.photo_url,
-        })
-            .then(() => setUserRegistrationStatus(userId, hikeDate, true))
-            .then(() => {
-                const hikeIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
-                if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
-                if (state.userCard.status !== 'active') saveBookingStatusToLocal();
-                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'free_first', state.user, false);
-                sendBookingNotification(hikeDate, hikeTitle, state.user);
-                closePopup(false); // не сбрасывать свайп — он уже в позиции «записан»
-                updateFloatingSheetButtons();
-                renderUserBookings(document.getElementById('userBookingsContainer'));
-                const cal = document.getElementById('calendarContainer');
-                if (cal) renderCalendar(cal);
-            })
-            .catch(err => {
-                console.error(err);
-                e.target.dataset.processing = 'false';
-                alert('Ошибка при регистрации. Попробуй ещё раз.');
-            });
-        log('городское событие — буду впервые', true, state.user, { hike_date: hikeDate });
-    });
 
     document.getElementById('cityCardBtn').addEventListener('click', () => {
         haptic();
@@ -2194,8 +2159,8 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
 
     const hikeReturningHtml = `
         <div class="bpu-text">
-            <div class="bpu-line bpu-title">рады знакомству с тобой, ${firstName || 'друг'}</div>
-            <div class="bpu-line">один хайк позади – и обычным походом это уже не назовёшь</div>
+            <div class="bpu-line bpu-title">рады снова видеть тебя, ${firstName || 'друг'}</div>
+            <div class="bpu-line">один хайк позади – и обычным хайком это уже не назовёшь</div>
             <div class="bpu-divider"></div>
             <div class="bpu-line">мы ждём тебя в клубе</div>
             <div class="bpu-line">карта интеллигента – твой вход в закрытое окружение</div>
@@ -2204,12 +2169,12 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
     `;
     const hikeNewHtml = `
         <div class="bpu-text">
-            <div class="bpu-line">мы не продаём разовые билеты – <em>принципиально</em></div>
-            <div class="bpu-line bpu-accent">клуб не для всех. и это честно</div>
-            <div class="bpu-line">сюда идут за тишиной, горами и своими людьми – не за толпой</div>
+            <div class="bpu-line bpu-title">запись на хайк</div>
+            <div class="bpu-line">билет на хайк – 1000 ₽ 🎟️</div>
+            <div class="bpu-line">купил – идёшь. один раз, без обязательств</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">первый хайк – за наш счёт</div>
-            <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
+            <div class="bpu-line">хочешь ходить постоянно и быть частью клуба?</div>
+            <div class="bpu-line bpu-accent">карта открывает всё – и хайки, и людей</div>
         </div>
     `;
 
@@ -2265,10 +2230,12 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             ${socialProofHtml}
 
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
-                ${!isReturning ? (isHikeContext
-                    ? `<button class="btn btn-outline" id="freeRegistrationBtn" style="width: 100%; margin: 0;">первый хайк – бесплатно 🎟️</button>`
-                    : `<button class="btn btn-outline" id="pickHikeBtn" style="width: 100%; margin: 0;">выбрать первый хайк – бесплатно 🎟️</button>`
-                ) : ''}
+                ${!isReturning && isHikeContext
+                    ? `<button class="btn btn-outline" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет · 1000 ₽ 🎟️</button>`
+                    : ''}
+                ${!isReturning && !isHikeContext
+                    ? `<button class="btn btn-outline" id="pickHikeBtn" style="width: 100%; margin: 0;">выбрать хайк</button>`
+                    : ''}
                 <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">${isReturning ? 'хочу карту' : 'вступить в клуб'}</button>
             </div>
 
@@ -2278,7 +2245,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                     карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе
                 </div>
 
-                <div class="booking-popup-economy">один хайк по разовому билету стоил 1500 ₽. карта окупается к пятому. дальше каждый поход – бесплатно</div>
+                <div class="booking-popup-economy">билет на один хайк – 1000 ₽. карта окупается к пятому хайку. дальше каждый хайк – в подарок</div>
 
                 <div class="booking-card-option">
                     <div class="booking-card-name">бессрочная – <span style="opacity:0.45; text-decoration:line-through; font-weight:600; margin-right:2px;">7500</span> ${config.seasonCardPrice} ₽ <span style="font-size:11px; font-weight:700; color:#000; background:var(--yellow); padding:2px 8px; border-radius:9px; vertical-align:middle; margin-left:6px;">навсегда</span></div>
@@ -2425,40 +2392,12 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
     }
 
     if (!isReturning && isHikeContext) {
-        document.getElementById('freeRegistrationBtn').addEventListener('click', e => {
+        document.getElementById('buyTicketBtn')?.addEventListener('click', e => {
             e.preventDefault();
-            if (e.target.dataset.processing === 'true') return;
-            e.target.dataset.processing = 'true';
-
             haptic();
-            tg?.HapticFeedback?.impactOccurred('heavy');
-            setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
-
-            const userId = state.user?.id;
-            addParticipant(hikeDate, userId, {
-                first_name: state.user?.first_name,
-                photo_url: state.user?.photo_url,
-            })
-                .then(() => setUserRegistrationStatus(userId, hikeDate, true))
-                .then(() => {
-                    const hikeIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
-                    if (hikeIndex !== -1) state.hikeBookingStatus[hikeIndex] = true;
-                    if (state.userCard.status !== 'active') saveBookingStatusToLocal();
-                    updateFloatingSheetButtons();
-                    renderUserBookings(document.getElementById('userBookingsContainer'));
-                    const calendarContainer = document.getElementById('calendarContainer');
-                    if (calendarContainer) renderCalendar(calendarContainer);
-                    updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'free_first', state.user, false);
-                    sendBookingNotification(hikeDate, hikeTitle, state.user);
-                    closePopup();
-                    showRegistrationSuccess(hikeDate, hikeTitle);
-                })
-                .catch(error => {
-                    console.error(error);
-                    alert('Ошибка при регистрации. Попробуйте ещё раз.');
-                });
-
-            log('первый хайк бесплатно', true, state.user);
+            closePopup();
+            openLink('https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ', 'купить билет на хайк', true);
+            log('купить билет на хайк', true, state.user, { hike_date: hikeDate });
         });
     }
 
