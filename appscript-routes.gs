@@ -50,6 +50,7 @@ function syncRoutes() {
   if (errors.length) throw new Error('Синхронизация отменена.\n' + errors.join('\n'));
   if (!Object.keys(routes).length) throw new Error('Не найдено ни одного активного маршрута с GPX-треком.');
 
+  ensureRoutesAreReadable_();
   putFirebase_(ROUTES_FIREBASE_PATH, routes);
   SpreadsheetApp.getActive().toast('Синхронизировано маршрутов: ' + Object.keys(routes).length, 'Маршруты', 6);
   Logger.log('Routes synced: ' + Object.keys(routes).length);
@@ -136,13 +137,9 @@ function parseGpxPoints_(xml) {
 }
 
 function putFirebase_(path, data) {
-  var props = PropertiesService.getScriptProperties();
-  // Reuse the existing Firebase constants in this project's «Файрбейс.gs».
-  var existingUrl = typeof FIREBASE_URL !== 'undefined' ? FIREBASE_URL : '';
-  var existingSecret = typeof FIREBASE_SECRET !== 'undefined' ? FIREBASE_SECRET : '';
-  var baseUrl = asText_(props.getProperty('FIREBASE_DATABASE_URL') || existingUrl).replace(/\/$/, '');
-  var authToken = asText_(props.getProperty('FIREBASE_AUTH_TOKEN') || existingSecret);
-  if (!baseUrl) throw new Error('В Script Properties не задан FIREBASE_DATABASE_URL.');
+  var connection = firebaseConnection_();
+  var baseUrl = connection.baseUrl;
+  var authToken = connection.authToken;
   var url = baseUrl + '/' + path + '.json' + (authToken ? '?auth=' + encodeURIComponent(authToken) : '');
   var response = UrlFetchApp.fetch(url, {
     method: 'put',
@@ -151,4 +148,34 @@ function putFirebase_(path, data) {
     muteHttpExceptions: true
   });
   if (response.getResponseCode() >= 300) throw new Error('Firebase вернул ' + response.getResponseCode() + ': ' + response.getContentText());
+}
+
+function ensureRoutesAreReadable_() {
+  var connection = firebaseConnection_();
+  var url = connection.baseUrl + '/.settings/rules.json' + (connection.authToken ? '?auth=' + encodeURIComponent(connection.authToken) : '');
+  var current = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (current.getResponseCode() >= 300) throw new Error('Не удалось прочитать правила Firebase: ' + current.getResponseCode());
+  var ruleConfig = JSON.parse(current.getContentText() || '{}');
+  var rules = ruleConfig.rules || ruleConfig;
+  rules.routes = rules.routes || {};
+  if (rules.routes['.read'] === true) return;
+  rules.routes['.read'] = true;
+  var response = UrlFetchApp.fetch(url, {
+    method: 'put',
+    contentType: 'application/json',
+    payload: JSON.stringify({ rules: rules }),
+    muteHttpExceptions: true
+  });
+  if (response.getResponseCode() >= 300) throw new Error('Не удалось обновить правила Firebase: ' + response.getResponseCode());
+}
+
+function firebaseConnection_() {
+  var props = PropertiesService.getScriptProperties();
+  // Reuse the existing Firebase constants in this project's «Файрбейс.gs».
+  var existingUrl = typeof FIREBASE_URL !== 'undefined' ? FIREBASE_URL : '';
+  var existingSecret = typeof FIREBASE_SECRET !== 'undefined' ? FIREBASE_SECRET : '';
+  var baseUrl = asText_(props.getProperty('FIREBASE_DATABASE_URL') || existingUrl).replace(/\/$/, '');
+  var authToken = asText_(props.getProperty('FIREBASE_AUTH_TOKEN') || existingSecret);
+  if (!baseUrl) throw new Error('В Script Properties не задан FIREBASE_DATABASE_URL.');
+  return { baseUrl: baseUrl, authToken: authToken };
 }
