@@ -401,21 +401,13 @@ function renderGuestHome() {
     );
     const nextHike = nextHikeIdx >= 0 ? state.hikesWithTitle[nextHikeIdx] : null;
 
-    const cardsLeft = getAvailableCardsCount();
-    const months = ['январе','феврале','марте','апреле','мае','июне','июле','августе','сентябре','октябре','ноябре','декабре'];
-    let badgeText = '🔒 карта интеллигента';
-    if (cardsLeft > 0) {
-        const word = cardsLeft === 1 ? 'карта' : cardsLeft < 5 ? 'карты' : 'карт';
-        badgeText = `🔒 осталось ${cardsLeft} ${word} в ${months[new Date().getMonth()]}`;
-    }
-
     const cardHtml = `
         <div class="card-container" id="cardBlock">
             <div class="card-image-wrap">
                 <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
                 <div class="card-badge" id="cardBadge">
-                    <span class="card-badge-label">${badgeText}</span>
-                    <button class="card-badge-btn" id="cardBadgeBtn">как получить?</button>
+                    <span class="card-badge-label">🔒 карта интеллигента</span>
+                    <button class="card-badge-btn" id="cardBadgeBtn">оформить</button>
                 </div>
             </div>
         </div>
