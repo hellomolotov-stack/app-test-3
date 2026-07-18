@@ -85,7 +85,7 @@ export function renderCalendar(container) {
         const isPlaceholder = isHikeExist && (!hike.title || hike.title.trim() === '');
         const isFullHike = isHikeExist && hike.title && hike.title.trim() !== '';
         const isPast = isFullHike && new Date(dateStr) < todayMidnight;
-        const isCancelled = isFullHike && hike.cancelled === true;
+        const isCancelled = isFullHike && (hike.cancelled === true || hike.date === '2026-07-19');
         const isWoman = isFullHike && hike.woman === 'yes';
         const isCity = isFullHike && (hike.city === true || hike.city === 'yes');
         const isBookClub = isFullHike && hike.book_club === true;
@@ -610,7 +610,7 @@ export function showBottomSheet(index) {
             contentWrapper.classList.add('city-sheet');
         }
 
-        const isCancelled = hike.cancelled === true;
+        const isCancelled = hike.cancelled === true || hike.date === '2026-07-19';
         const isPlaceholder = !hike.title || hike.title.trim() === '';
 
         const monthNamesArr = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -1386,7 +1386,7 @@ function updateFloatingSheetButtons() {
     if (!hike) return;
 
     const isPlaceholder = !hike.title || hike.title.trim() === '';
-    const isCancelled = hike.cancelled === true;
+    const isCancelled = hike.cancelled === true || hike.date === '2026-07-19';
     const isCity = (hike.city === true || hike.city === 'yes');
     const isBookClub = hike.book_club === true;
     const isGuest = state.userCard.status !== 'active';
