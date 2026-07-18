@@ -12,7 +12,7 @@ const ROUTE_ORDER = [
     'tsarskaya', 'uch-kosh', 'massandra', 'pallasa', 'ayu-dag', 'paragilmen'
 ];
 const ROUTES_BY_ID = new Map([...ROUTE_DATA, ...EXTRA_INTELLIGENTSIA_ROUTES].map(route => [route.id, route]));
-const INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(Boolean).map(route => {
+let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(Boolean).map(route => {
     const routeWithExactTrack = route.id === 'chernaya-rechka'
         ? {
         ...route,
@@ -26,6 +26,50 @@ const INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter
         description: ROUTE_DESCRIPTIONS[route.id] || route.description || route.subtitle || ''
     };
 });
+
+function normaliseRoute(route) {
+    if (!route || typeof route !== 'object' || !route.id || !route.title) return null;
+    const segments = (Array.isArray(route.segments) ? route.segments : [])
+        .map(segment => (Array.isArray(segment) ? segment : [])
+            .map(point => Array.isArray(point) ? [Number(point[0]), Number(point[1])] : null)
+            .filter(point => point && Number.isFinite(point[0]) && Number.isFinite(point[1])))
+        .filter(segment => segment.length > 1);
+    if (!segments.length) return null;
+
+    const allPoints = segments.flat();
+    const calculatedBounds = [
+        [Math.min(...allPoints.map(point => point[1])), Math.min(...allPoints.map(point => point[0]))],
+        [Math.max(...allPoints.map(point => point[1])), Math.max(...allPoints.map(point => point[0]))]
+    ];
+    const bounds = Array.isArray(route.bounds) && route.bounds.length === 2
+        && route.bounds.every(point => Array.isArray(point) && Number.isFinite(Number(point[0])) && Number.isFinite(Number(point[1])))
+        ? route.bounds.map(point => [Number(point[0]), Number(point[1])])
+        : calculatedBounds;
+    return {
+        ...route,
+        id: String(route.id),
+        title: String(route.title),
+        description: String(route.description || route.subtitle || ''),
+        segments,
+        bounds,
+        pointCount: Number(route.pointCount) || allPoints.length,
+        order: Number(route.order) || 0
+    };
+}
+
+export function setIntelligentsiaRoutes(routes) {
+    const syncedRoutes = (Array.isArray(routes) ? routes : [])
+        .filter(route => route && route.active !== false && route.active !== 'false' && route.active !== 'no')
+        .map(normaliseRoute)
+        .filter(Boolean)
+        .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, 'ru'));
+
+    // A failed or not-yet-configured sync must never make the card disappear.
+    if (!syncedRoutes.length) return;
+    INTELLIGENTSIA_ROUTES = syncedRoutes;
+    const container = document.getElementById('intelligentsiaRoutesContainer');
+    if (container) renderIntelligentsiaRoutes(container);
+}
 
 let maplibreLoading = null;
 let currentMap = null;

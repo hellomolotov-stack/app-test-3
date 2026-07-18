@@ -55,6 +55,19 @@ export function subscribeToHikes(callback) {
     return () => hikesRef.off('value', listener);
 }
 
+export function subscribeToRoutes(callback) {
+    if (!database) {
+        callback([]);
+        return () => {};
+    }
+    const routesRef = database.ref('routes');
+    const listener = routesRef.on('value', (snapshot) => {
+        const routes = snapshot.val() || {};
+        callback(Array.isArray(routes) ? routes : Object.values(routes));
+    });
+    return () => routesRef.off('value', listener);
+}
+
 export async function loadUserData(userId) {
     if (!database || !userId) return { status: 'inactive', hikes: 0, cardUrl: '' };
     try {
