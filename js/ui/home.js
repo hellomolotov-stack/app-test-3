@@ -460,7 +460,7 @@ function renderGuestHome() {
     document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
     document.getElementById('cardBadgeBtn')?.addEventListener('click', () => {
         haptic();
-        log('как получить карту', true, state.user);
+        log('оформить карту', true, state.user);
         showGuestBookingPopup(nextHike?.date, nextHike?.title);
     });
 
