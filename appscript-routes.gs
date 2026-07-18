@@ -5,13 +5,6 @@
 var ROUTES_SHEET_NAME = 'Маршруты';
 var ROUTES_FIREBASE_PATH = 'routes';
 
-function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('Маршруты')
-    .addItem('Синхронизировать с приложением', 'syncRoutes')
-    .addToUi();
-}
-
 function syncRoutes() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(ROUTES_SHEET_NAME);
   if (!sheet) throw new Error('Не найден лист «' + ROUTES_SHEET_NAME + '».');
@@ -144,8 +137,11 @@ function parseGpxPoints_(xml) {
 
 function putFirebase_(path, data) {
   var props = PropertiesService.getScriptProperties();
-  var baseUrl = asText_(props.getProperty('FIREBASE_DATABASE_URL')).replace(/\/$/, '');
-  var authToken = asText_(props.getProperty('FIREBASE_AUTH_TOKEN'));
+  // Reuse the existing Firebase constants in this project's «Файрбейс.gs».
+  var existingUrl = typeof FIREBASE_URL !== 'undefined' ? FIREBASE_URL : '';
+  var existingSecret = typeof FIREBASE_SECRET !== 'undefined' ? FIREBASE_SECRET : '';
+  var baseUrl = asText_(props.getProperty('FIREBASE_DATABASE_URL') || existingUrl).replace(/\/$/, '');
+  var authToken = asText_(props.getProperty('FIREBASE_AUTH_TOKEN') || existingSecret);
   if (!baseUrl) throw new Error('В Script Properties не задан FIREBASE_DATABASE_URL.');
   var url = baseUrl + '/' + path + '.json' + (authToken ? '?auth=' + encodeURIComponent(authToken) : '');
   var response = UrlFetchApp.fetch(url, {
