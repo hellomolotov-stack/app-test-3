@@ -455,10 +455,9 @@ export function renderIntelligentsiaRoutes(container) {
                     type: 'raster',
                     source: 'satellite',
                     paint: {
-                        'raster-brightness-max': 0.72,
-                        'raster-brightness-min': 0.05,
-                        'raster-contrast': 0.2,
-                        'raster-saturation': -0.5,
+                        'raster-brightness-max': 0.7,
+                        'raster-contrast': 0.15,
+                        'raster-saturation': -1,
                         'raster-resampling': 'linear'
                     }
                 }]

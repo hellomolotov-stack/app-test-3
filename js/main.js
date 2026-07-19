@@ -13,7 +13,7 @@ import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js?v=20260719mono';
 
 window.userInteracted = false;
 window.isPrivPage = false;
