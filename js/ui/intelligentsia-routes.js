@@ -2,7 +2,7 @@ import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { setRouteFavorite } from '../firebase.js';
-import { isLumenPilotUser } from '../lumen/config.js';
+import { isRouteFavoritesPilotUser } from '../lumen/config.js';
 import { INTELLIGENTSIA_ROUTES as ROUTE_DATA } from './intelligentsia-routes-data.js';
 import { EXTRA_INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-extra-data.js';
 import { ROUTE_DESCRIPTIONS } from './intelligentsia-routes-catalog.js';
@@ -180,7 +180,7 @@ function favoriteUserIds(routeId) {
 }
 
 function isFavoritesPilot() {
-    return isLumenPilotUser(state.user);
+    return isRouteFavoritesPilotUser(state.user);
 }
 
 function renderRouteFavorites(route) {
