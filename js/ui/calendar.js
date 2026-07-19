@@ -2120,11 +2120,11 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
             <button class="modal-close" id="cityPopupClose">&times;</button>
             <div style="text-align: center; padding: 8px 0 20px;">
                 <div style="font-size: 18px; font-weight: 900; color: #41B5ED; margin-bottom: 10px; line-height: 1.3;">${hikeTitle || 'городское событие'}</div>
-                <div style="color: rgba(255,255,255,0.85); font-size: 15px; line-height: 1.55;">городские события – только для членов клуба.<br>оформи карту и приходи.</div>
+                <div style="color: rgba(255,255,255,0.85); font-size: 15px; line-height: 1.55;">городские события – только для членов клуба<br>оформи карту и приходи</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <button id="cityCardBtn" style="width:100%; padding:14px; background:#41B5ED; color:#fff; border:none; border-radius:40px; font-size:16px; font-weight:800; cursor:pointer; letter-spacing:0.01em;">оформить карту</button>
-                <button id="cityChatBtn" style="width:100%; padding:12px; background:transparent; color:rgba(255,255,255,0.45); border:none; border-radius:40px; font-size:14px; cursor:pointer;">познакомиться с клубом</button>
+                <button id="cityCardBtn" class="btn btn-yellow" style="width:100%; margin:0; background:#41B5ED; color:#fff; font-weight:800;">оформить карту</button>
+                <button id="cityChatBtn" class="btn btn-outline" style="width:100%; margin:0; color:rgba(255,255,255,0.55); font-size:14px;">познакомиться с клубом</button>
             </div>
         </div>
     `;
