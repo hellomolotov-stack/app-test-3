@@ -2222,6 +2222,21 @@ body::before {
     text-decoration: underline;
 }
 
+.organizer-profile-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    vertical-align: middle;
+}
+
+.organizer-telegram-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
 .bottom-sheet-section-content.woman-content a,
 .info-row.woman-row a {
     color: #FB5EB0 !important;

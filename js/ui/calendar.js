@@ -1032,9 +1032,12 @@ export function showBottomSheet(index) {
                 const leaderLinks = hike.leaders.map(leaderUsername => {
                     const username = String(leaderUsername || '').replace(/^@/, '');
                     const leaderData = state.leaders[username] || state.leaders[`@${username}`];
-                    const displayName = leaderData?.name?.split(' ')[0] || `@${username}`;
+                    const organizerProfile = Object.values(state.profiles || {}).find(profile =>
+                        String(profile?.username || '').replace(/^@/, '').toLowerCase() === username.toLowerCase()
+                    );
+                    const displayName = organizerProfile?.name?.split(' ')[0] || leaderData?.name?.split(' ')[0] || `@${username}`;
                     return isCity
-                        ? `<a href="#" class="organizer-profile-link" data-organizer-username="${username}" data-organizer-name="${displayName}">${displayName}</a>`
+                        ? `<a href="#" class="organizer-profile-link" data-organizer-username="${username}" data-organizer-name="${displayName}"><span>${displayName}</span><img class="organizer-telegram-avatar" src="https://t.me/i/userpic/320/${username}.jpg" alt="" onerror="this.remove()"></a>`
                         : `<a href="#" class="leader-name">${displayName}</a>`;
                 });
                 let leaderText = '';
