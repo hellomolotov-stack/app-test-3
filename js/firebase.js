@@ -76,14 +76,19 @@ export function subscribeToRouteFavorites(callback) {
     const favoritesRef = database.ref('routeFavorites');
     const listener = favoritesRef.on('value', (snapshot) => {
         callback(snapshot.val() || {});
-    });
+    }, () => callback({}));
     return () => favoritesRef.off('value', listener);
 }
 
 export async function loadRouteFavorites() {
     if (!database) return {};
-    const snapshot = await database.ref('routeFavorites').once('value');
-    return snapshot.val() || {};
+    try {
+        const snapshot = await database.ref('routeFavorites').once('value');
+        return snapshot.val() || {};
+    } catch (error) {
+        console.error('Could not load route favorites', error);
+        return {};
+    }
 }
 
 export async function setRouteFavorite(routeId, userId, isFavorite) {
