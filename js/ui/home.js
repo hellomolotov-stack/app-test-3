@@ -30,15 +30,8 @@ export function removeStickyHikeCta() {
     document.getElementById('stickyHikeCta')?.remove();
 }
 
-// Приветствие по времени суток (по локальному времени устройства)
-function timeGreeting(firstName) {
-    const h = new Date().getHours();
-    let word, emoji;
-    if (h >= 5 && h < 12) { word = 'доброе утро'; emoji = '🌤️'; }
-    else if (h >= 12 && h < 17) { word = 'хорошего дня'; emoji = '☀️'; }
-    else if (h >= 17 && h < 23) { word = 'уютного вечера'; emoji = '😌'; }
-    else { word = 'доброй ночи'; emoji = '🌙'; }
-    return `${emoji} ${word}, ${firstName}!`;
+function greeting(firstName) {
+    return `👋🏻 привет, ${firstName}!`;
 }
 
 function mountStickyHikeCta() {
@@ -389,7 +382,7 @@ function renderGuestHome() {
     clearTimeout(_ctaTimer);
     cleanupProfileOverlays();
     const firstName = state.user?.first_name || 'друг';
-    subtitle().textContent = timeGreeting(firstName);
+    subtitle().textContent = greeting(firstName);
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
@@ -440,6 +433,7 @@ function renderGuestHome() {
         </div>
         ` : ''}
         <div class="card-container" id="calendarContainer"></div>
+        <div id="intelligentsiaRoutesContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
         <div class="card-container">
@@ -452,7 +446,6 @@ function renderGuestHome() {
             </div>
         </div>
         ${renderTestimonialsBlock()}
-        <div id="intelligentsiaRoutesContainer"></div>
         ${renderUpdatesBlock()}
     `;
 
@@ -632,7 +625,7 @@ function renderOwnerHome() {
     cleanupProfileOverlays();
     const user = state.user;
     const firstName = user?.first_name || 'друг';
-    subtitle().textContent = timeGreeting(firstName);
+    subtitle().textContent = greeting(firstName);
     subtitle().classList.remove('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
@@ -648,6 +641,7 @@ function renderOwnerHome() {
         </div>
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
+        <div id="intelligentsiaRoutesContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
         ${!isLumenPilotUser(state.user) ? `
@@ -668,7 +662,6 @@ function renderOwnerHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
-        <div id="intelligentsiaRoutesContainer"></div>
         ${renderUpdatesBlock()}
     `;
 
