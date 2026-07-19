@@ -128,7 +128,7 @@ function injectStyles() {
         .intelligentsia-route-map { width: 100%; height: 100%; background: #0A0B09; }
         .intelligentsia-route-map .maplibregl-ctrl-bottom-left, .intelligentsia-route-map .maplibregl-ctrl-bottom-right { display: none; }
         .intelligentsia-route-overlay { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: grid; gap: 8px; }
-        .intelligentsia-route-caption { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.68); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); cursor: pointer; }
+        .intelligentsia-route-overlay .intelligentsia-route-caption { position: static; left: auto; right: auto; bottom: auto; z-index: auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.68); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); cursor: pointer; }
         .intelligentsia-route-caption:active { background: rgba(10, 11, 9, 0.84); }
         .intelligentsia-route-meta { min-width: 0; }
         .intelligentsia-route-preview { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: 7px; color: rgba(255,255,255,0.78); font-size: 12.5px; line-height: 1.36; mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); }
