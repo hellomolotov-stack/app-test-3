@@ -84,10 +84,11 @@ export const LUMEN_POSES = {
     default: 'peek',
 };
 
-const LUMEN_PILOT_USERNAME = 'hellointelligent';
+const LUMEN_PILOT_USERNAMES = new Set(['hellointelligent', 'maxmolotov']);
 
 export function isLumenPilotUser(user) {
-    return String(user?.username || '').replace(/^@/, '').toLowerCase() === LUMEN_PILOT_USERNAME;
+    const username = String(user?.username || '').replace(/^@/, '').toLowerCase();
+    return LUMEN_PILOT_USERNAMES.has(username);
 }
 
 export function getLumenScenario(context = {}) {
