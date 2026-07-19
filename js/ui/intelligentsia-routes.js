@@ -119,19 +119,15 @@ function injectStyles() {
         .intelligentsia-route-preview { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: 7px; color: rgba(255,255,255,0.78); font-size: 12.5px; line-height: 1.36; mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); }
         .intelligentsia-route-title { color: #ffffff; font-size: 18px; line-height: 1.12; font-weight: 800; }
         .intelligentsia-route-counter { flex-shrink: 0; color: #0A0B09; background: #D9FD19; border-radius: 999px; padding: 5px 9px; font-size: 12px; line-height: 1; font-weight: 800; white-space: nowrap; }
-        .intelligentsia-route-favorite-area { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 16px 0; padding: 8px 10px; border: 1px solid var(--glass-border); border-radius: 8px; background: var(--glass-bg); backdrop-filter: var(--glass-blur-md); -webkit-backdrop-filter: var(--glass-blur-md); box-shadow: var(--glass-highlight), 0 6px 18px rgba(0,0,0,0.16); }
-        .intelligentsia-route-favorite-action { min-width: 0; display: inline-flex; align-items: center; gap: 9px; }
-        .intelligentsia-route-favorite-button { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; flex: 0 0 38px; padding: 0; border: 1px solid rgba(217,253,25,0.62); border-radius: 50%; background: rgba(217,253,25,0.10); color: #D9FD19; font: inherit; cursor: pointer; }
-        .intelligentsia-route-favorite-button.is-active { background: #D9FD19; color: #0A0B09; }
+        .intelligentsia-route-favorite-area { position: absolute; top: 12px; right: 12px; z-index: 3; }
+        .intelligentsia-route-favorite-button { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.20); border-radius: 30px; background: rgba(0,0,0,0.60); color: #D9FD19; backdrop-filter: blur(8px) saturate(120%); -webkit-backdrop-filter: blur(8px) saturate(120%); box-sizing: border-box; font: inherit; cursor: pointer; }
+        .intelligentsia-route-favorite-button.is-active { background: rgba(217,253,25,0.18); border-color: rgba(217,253,25,0.72); }
         .intelligentsia-route-favorite-button:disabled { opacity: 0.55; cursor: wait; }
-        .intelligentsia-route-favorite-icon { font-size: 20px; line-height: 1; }
-        .intelligentsia-route-favorite-copy { display: grid; gap: 1px; color: #ffffff; font-size: 12px; line-height: 1.2; white-space: nowrap; }
-        .intelligentsia-route-favorite-copy strong { color: #D9FD19; font-size: 13px; font-weight: 800; }
-        .intelligentsia-route-favorite-copy span { color: rgba(255,255,255,0.5); }
-        .intelligentsia-route-fans { min-width: 0; display: flex; align-items: center; justify-content: flex-end; }
-        .intelligentsia-route-fan-stack { display: flex; flex-direction: row-reverse; padding-left: 5px; }
-        .intelligentsia-route-fan-avatar { box-sizing: border-box; width: 30px; height: 30px; margin-left: -6px; border: 2px solid #0A0B09; border-radius: 50%; background: #30342d; object-fit: cover; color: #D9FD19; font-size: 11px; font-weight: 800; line-height: 26px; text-align: center; }
-        .intelligentsia-route-fan-count { margin-left: 8px; color: rgba(255,255,255,0.62); font-size: 12px; white-space: nowrap; }
+        .intelligentsia-route-favorite-icon { font-size: 18px; line-height: 1; }
+        .intelligentsia-route-favorite-label, .intelligentsia-route-fan-count { color: #D9FD19; font-size: 14px; line-height: 1; font-weight: 900; font-style: italic; white-space: nowrap; }
+        .intelligentsia-route-fan-stack { display: flex; align-items: center; height: 28px; margin-left: 4px; }
+        .intelligentsia-route-fan-avatar { box-sizing: border-box; width: 25px; height: 25px; margin-left: -7px; border: 0; border-radius: 50%; background: #30342d; box-shadow: 0 0 0 2px rgba(0,0,0,0.60); object-fit: cover; color: #D9FD19; font-size: 10px; font-weight: 800; line-height: 25px; text-align: center; }
+        .intelligentsia-route-fan-avatar:first-child { margin-left: 0; }
         .intelligentsia-map-fallback { height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.68); font-size: 14px; }
         .intelligentsia-route-modal .modal-content { max-width: 420px; max-height: min(72vh, 560px); padding: 24px; background: rgba(10, 11, 9, 0.92); }
         .intelligentsia-route-modal .modal-title { padding-right: 40px; margin-bottom: 14px; color: #D9FD19; }
@@ -205,14 +201,10 @@ function renderRouteFavorites(route) {
             ? `<img class="intelligentsia-route-fan-avatar" src="${escapeHtml(photoUrl)}" alt="${escapeHtml(name)}" title="${escapeHtml(name)}" onerror="this.remove()">`
             : `<span class="intelligentsia-route-fan-avatar" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}">${initial}</span>`;
     }).join('');
-    const fans = userIds.length
-        ? `<div class="intelligentsia-route-fans" aria-label="${userIds.length} добавили маршрут в любимые"><div class="intelligentsia-route-fan-stack">${avatars}</div><span class="intelligentsia-route-fan-count">сохранили ${userIds.length}</span></div>`
-        : '<div class="intelligentsia-route-fans"><span class="intelligentsia-route-fan-count">ещё не сохраняли</span></div>';
-    const button = canFavorite
-        ? `<div class="intelligentsia-route-favorite-action"><button type="button" class="intelligentsia-route-favorite-button ${isFavorite ? 'is-active' : ''}" id="intelligentsiaRouteFavoriteButton" aria-label="${isFavorite ? 'убрать маршрут из любимых' : 'добавить маршрут в любимые'}" title="${isFavorite ? 'убрать из любимых' : 'добавить в любимые'}" aria-pressed="${isFavorite}"><span class="intelligentsia-route-favorite-icon" aria-hidden="true">${isFavorite ? '♥' : '♡'}</span></button><div class="intelligentsia-route-favorite-copy"><strong>${isFavorite ? 'в любимых' : 'сохранить'}</strong><span>любимый маршрут</span></div></div>`
-        : '';
-
-    area.innerHTML = `${button}${fans}`;
+    const chipContent = `<span class="intelligentsia-route-favorite-icon" aria-hidden="true">${isFavorite ? '♥' : '♡'}</span><span class="intelligentsia-route-favorite-label">любимый</span><span class="intelligentsia-route-fan-count">${userIds.length}</span>${avatars ? `<div class="intelligentsia-route-fan-stack" aria-label="${userIds.length} добавили маршрут в любимые">${avatars}</div>` : ''}`;
+    area.innerHTML = canFavorite
+        ? `<button type="button" class="intelligentsia-route-favorite-button ${isFavorite ? 'is-active' : ''}" id="intelligentsiaRouteFavoriteButton" aria-label="${isFavorite ? 'убрать маршрут из любимых' : 'добавить маршрут в любимые'}" title="${isFavorite ? 'убрать из любимых' : 'добавить в любимые'}" aria-pressed="${isFavorite}">${chipContent}</button>`
+        : `<div class="intelligentsia-route-favorite-button" aria-label="${userIds.length} добавили маршрут в любимые">${chipContent}</div>`;
     const favoriteButton = document.getElementById('intelligentsiaRouteFavoriteButton');
     favoriteButton?.addEventListener('click', async () => {
         const nextValue = !isFavorite;
@@ -390,6 +382,7 @@ export function renderIntelligentsiaRoutes(container) {
             </div>
             <div class="intelligentsia-route-map-wrap">
                 <div id="intelligentsiaRoutesMap" class="intelligentsia-route-map"></div>
+                <div id="intelligentsiaRouteFavoriteArea" class="intelligentsia-route-favorite-area"></div>
                 <div id="intelligentsiaRouteCaption" class="intelligentsia-route-caption" role="button" tabindex="0">
                     <div class="intelligentsia-route-meta">
                         <div id="intelligentsiaRouteTitle" class="intelligentsia-route-title"></div>
@@ -398,7 +391,6 @@ export function renderIntelligentsiaRoutes(container) {
                     <div id="intelligentsiaRouteCounter" class="intelligentsia-route-counter"></div>
                 </div>
             </div>
-            <div id="intelligentsiaRouteFavoriteArea" class="intelligentsia-route-favorite-area"></div>
         </div>
     `;
 
