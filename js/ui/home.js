@@ -450,7 +450,11 @@ function renderGuestHome() {
     `;
 
     wireSafetyBanner();
-    document.getElementById('guestCardImage')?.addEventListener('click', () => { haptic(); showGuestPopup(); });
+    document.getElementById('guestCardImage')?.addEventListener('click', () => {
+        haptic();
+        log('оформить карту с заглушки', true, state.user);
+        showGuestBookingPopup(nextHike?.date, nextHike?.title);
+    });
     document.getElementById('cardBadgeBtn')?.addEventListener('click', () => {
         haptic();
         log('оформить карту', true, state.user);
@@ -613,12 +617,6 @@ function renderGuestHome() {
     }
 
     setupBottomNav();
-}
-
-async function showGuestPopup() {
-    haptic();
-    log('попап гостя', true, state.user);
-    showGuestBookingPopup(null, null, null, 'generic');
 }
 
 function renderOwnerHome() {
