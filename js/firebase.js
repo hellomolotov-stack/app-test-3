@@ -3,6 +3,10 @@ import { FIREBASE_CONFIG } from './config.js';
 
 let database = null;
 
+function isYes(value) {
+    return value === true || String(value ?? '').trim().toLowerCase() === 'yes';
+}
+
 export function initFirebase() {
     try {
         firebase.initializeApp(FIREBASE_CONFIG);
@@ -46,8 +50,8 @@ export function subscribeToHikes(callback) {
             letter_link: data.letter_link || '',
             half_image: data.half_image || '',
             cancelled: data.cancelled === true || data.cancelled === 'yes' || data.cancelled === '1',
-            city: data.city === 'yes' || data.city === true,
-            book_club: data.book_club === 'yes' || data.book_club === true,
+            city: isYes(data.city),
+            book_club: isYes(data.book_club),
             emoji: data.emoji || ''
         })).sort((a, b) => a.date.localeCompare(b.date));
         callback(list);

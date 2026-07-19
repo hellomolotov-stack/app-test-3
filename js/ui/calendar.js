@@ -1030,12 +1030,17 @@ export function showBottomSheet(index) {
             }
             if (hike.leaders && hike.leaders.length) {
                 const leaderLinks = hike.leaders.map(leaderUsername => {
-                    const leaderData = state.leaders[leaderUsername];
-                    const displayName = leaderData ? leaderData.name.split(' ')[0] : leaderUsername;
-                    return `<a href="#" class="leader-name dynamic-link" data-leader-username="${leaderUsername}">${displayName}</a>`;
+                    const username = String(leaderUsername || '').replace(/^@/, '');
+                    const leaderData = state.leaders[username] || state.leaders[`@${username}`];
+                    const displayName = leaderData?.name?.split(' ')[0] || `@${username}`;
+                    return isCity
+                        ? `<a href="#" class="organizer-profile-link" data-organizer-username="${username}" data-organizer-name="${displayName}">${displayName}</a>`
+                        : `<a href="#" class="leader-name">${displayName}</a>`;
                 });
                 let leaderText = '';
-                const leaderVerb = hike.leaders.length === 1 ? 'ведёт' : 'ведут';
+                const leaderLabel = isCity
+                    ? (hike.leaders.length === 1 ? 'организатор' : 'организаторы')
+                    : (hike.leaders.length === 1 ? 'ведёт' : 'ведут');
                 if (leaderLinks.length === 1) leaderText = leaderLinks[0];
                 else if (leaderLinks.length === 2) leaderText = `${leaderLinks[0]} <span style="color: white;">и</span> ${leaderLinks[1]}`;
                 else {
@@ -1047,7 +1052,7 @@ export function showBottomSheet(index) {
                         <span class="info-icon" style="color: ${accentColor};">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M5 20v-2a7 7 0 0 1 14 0v2"/></svg>
                         </span>
-                        <span><strong>${leaderVerb}:</strong> ${leaderText}</span>
+                        <span><strong>${leaderLabel}:</strong> ${leaderText}</span>
                     </div>
                 `;
             }
@@ -1100,6 +1105,46 @@ export function showBottomSheet(index) {
                 log('поделиться хайком', isGuest, state.user, { hike_date: hike.date });
             });
         }
+
+        contentWrapper.querySelectorAll('.organizer-profile-link').forEach(link => {
+            link.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                haptic();
+
+                const username = link.dataset.organizerUsername;
+                const fallbackName = link.dataset.organizerName || username;
+                if (!username) return;
+
+                if (Object.keys(state.profiles || {}).length === 0) {
+                    state.profiles = await loadAllProfiles();
+                }
+
+                const profile = Object.values(state.profiles || {}).find(item =>
+                    String(item?.username || '').replace(/^@/, '').toLowerCase() === username.toLowerCase()
+                );
+
+                state.pendingProfileClick = {
+                    userId: profile?.userId || profile?.id || '',
+                    name: profile?.name || fallbackName,
+                    photoUrl: profile?.avatarUrl || profile?.photoUrl || null
+                };
+                log('профиль организатора события', isGuest, state.user, { hike_date: hike.date, username });
+                closeBottomSheet();
+                renderProfiles();
+
+                if (profile?.userId) {
+                    setTimeout(() => {
+                        const profileCard = document.querySelector(`.profile-card[data-user-id="${profile.userId}"]`);
+                        if (profileCard) {
+                            profileCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            profileCard.classList.add('highlight-pulse');
+                            setTimeout(() => profileCard.classList.remove('highlight-pulse'), 2000);
+                        }
+                    }, 500);
+                }
+            });
+        });
 
         if (!isCancelled && !isPlaceholder) {
             const updateAvatars = async (participants, totalCount) => {
