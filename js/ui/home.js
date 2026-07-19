@@ -266,7 +266,6 @@ function renderMastermindSummaries() {
         <div class="card-container" id="mastermindSummariesCard">
             <h2 class="section-title" style="margin: 0 16px 16px 16px;">
                 🧠 саммари мастермайнда
-                <span class="new-badge">новое</span>
             </h2>
             <p style="margin: -8px 16px 16px; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.55);">здесь собраны записи всех ценных мыслей, которые были озвучены участниками на мастермайнд сессиях во время хайков на вершинах гор южного берега. материал записан Plaud Note Pro и обработан с помощью последних моделей ChatGPT и Claude</p>
             ${innerHtml}
