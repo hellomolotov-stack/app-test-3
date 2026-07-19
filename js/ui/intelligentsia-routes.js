@@ -27,7 +27,21 @@ let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(B
         ...routeWithExactTrack,
         description: ROUTE_DESCRIPTIONS[route.id] || route.description || route.subtitle || ''
     };
-});
+}).sort(sortRoutesWestToEast);
+
+function routeCenterLongitude(route) {
+    const bounds = route?.bounds;
+    if (!Array.isArray(bounds) || bounds.length !== 2) return Number.POSITIVE_INFINITY;
+    const west = Number(bounds[0]?.[0]);
+    const east = Number(bounds[1]?.[0]);
+    return Number.isFinite(west) && Number.isFinite(east) ? (west + east) / 2 : Number.POSITIVE_INFINITY;
+}
+
+function sortRoutesWestToEast(a, b) {
+    const longitudeDifference = routeCenterLongitude(a) - routeCenterLongitude(b);
+    if (Math.abs(longitudeDifference) > 0.0001) return longitudeDifference;
+    return String(a?.title || '').localeCompare(String(b?.title || ''), 'ru');
+}
 
 function normaliseRoute(route) {
     if (!route || typeof route !== 'object' || !route.id || !route.title) return null;
@@ -64,7 +78,7 @@ export function setIntelligentsiaRoutes(routes) {
         .filter(route => route && route.active !== false && route.active !== 'false' && route.active !== 'no')
         .map(normaliseRoute)
         .filter(Boolean)
-        .sort((a, b) => a.order - b.order || a.title.localeCompare(b.title, 'ru'));
+        .sort(sortRoutesWestToEast);
 
     // A failed or not-yet-configured sync must never make the card disappear.
     if (!syncedRoutes.length) return;
