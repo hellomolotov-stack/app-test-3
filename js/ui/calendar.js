@@ -2142,7 +2142,7 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
     document.getElementById('cityCardBtn').addEventListener('click', () => {
         haptic();
         closePopup();
-        setTimeout(() => showGuestBookingPopup(hikeDate, hikeTitle, null, 'generic'), 200);
+        setTimeout(() => showGuestBookingPopup(hikeDate, hikeTitle, null, 'city'), 200);
         log('городское событие — оформить карту', true, state.user, { hike_date: hikeDate });
     });
 
@@ -2190,6 +2190,12 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                 <div class="bpu-divider"></div>
                 <div class="bpu-line">работает с теми, кто ещё не знаком – но уже прошёл первый подъём вместе</div>
                 <div class="bpu-line bpu-accent">карта – вход в этот круг и возможность читать саммари</div>
+            </div>
+        `,
+        city: `
+            <div class="bpu-text">
+                <div class="bpu-line bpu-title">событие в городе и на море – для своих</div>
+                <div class="bpu-line">закрытый чат с членами клуба, привилегии у десятка партнёров в городе, безлимитный VPN, саммари мастермайндов, профили членов клуба, одна карта – все двери открыты</div>
             </div>
         `,
         generic: `
