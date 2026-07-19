@@ -455,10 +455,10 @@ export function renderIntelligentsiaRoutes(container) {
                     type: 'raster',
                     source: 'satellite',
                     paint: {
-                        'raster-brightness-max': 0.9,
-                        'raster-brightness-min': 0.03,
-                        'raster-contrast': 0.1,
-                        'raster-saturation': 0.28,
+                        'raster-brightness-max': 0.72,
+                        'raster-brightness-min': 0.05,
+                        'raster-contrast': 0.2,
+                        'raster-saturation': -0.5,
                         'raster-resampling': 'linear'
                     }
                 }]
@@ -488,15 +488,15 @@ export function renderIntelligentsiaRoutes(container) {
                 bounds: [32.15, 44.05, 36.85, 46.45]
             });
             currentMap.setTerrain({ source: 'dem', exaggeration: 0.9 });
-            currentMap.setSky({ 'sky-color': '#84C5E8', 'horizon-color': '#C8E5F3', 'fog-color': '#D9ECF1' });
+            currentMap.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#151515', 'fog-color': '#0A0B09' });
             currentMap.addLayer({
                 id: 'terrain-hillshade',
                 type: 'hillshade',
                 source: 'dem',
                 paint: {
                     'hillshade-exaggeration': 0.46,
-                    'hillshade-shadow-color': '#2F4E3E',
-                    'hillshade-highlight-color': '#E7D4A3'
+                    'hillshade-shadow-color': '#111111',
+                    'hillshade-highlight-color': '#bfc4bd'
                 }
             });
             currentMap.addSource('intelligentsia-routes', { type: 'geojson', data: routesFeatureCollection(0) });
