@@ -265,14 +265,14 @@ function cameraForRoute(map, route) {
             bottom: bottomPadding,
             left: horizontalPadding
         },
-        maxZoom: 13.8
+        maxZoom: 14.6
     }) || {};
     return {
         center: camera.center || [
             (route.bounds[0][0] + route.bounds[1][0]) / 2,
             (route.bounds[0][1] + route.bounds[1][1]) / 2
         ],
-        zoom: Math.min(camera.zoom || 12, 13.8),
+        zoom: Math.min(camera.zoom || 12, 14.6),
         pitch: 46,
         bearing: 0
     };
@@ -446,7 +446,7 @@ export function renderIntelligentsiaRoutes(container) {
                         type: 'raster',
                         tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
                         tileSize: 256,
-                        maxzoom: 14,
+                        maxzoom: 18,
                         bounds: [32.15, 44.05, 36.85, 46.45]
                     }
                 },
@@ -455,10 +455,11 @@ export function renderIntelligentsiaRoutes(container) {
                     type: 'raster',
                     source: 'satellite',
                     paint: {
-                        'raster-brightness-max': 0.58,
-                        'raster-brightness-min': 0.02,
-                        'raster-contrast': 0.12,
-                        'raster-saturation': -1
+                        'raster-brightness-max': 0.72,
+                        'raster-brightness-min': 0.05,
+                        'raster-contrast': 0.2,
+                        'raster-saturation': -0.5,
+                        'raster-resampling': 'linear'
                     }
                 }]
             },
@@ -468,7 +469,7 @@ export function renderIntelligentsiaRoutes(container) {
             bearing: 0,
             maxBounds: [[32.15, 44.05], [36.85, 46.45]],
             minZoom: 7.4,
-            maxZoom: 14,
+            maxZoom: 15,
             maxPitch: 70,
             renderWorldCopies: false,
             attributionControl: false,
@@ -483,17 +484,17 @@ export function renderIntelligentsiaRoutes(container) {
                 tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
                 tileSize: 256,
                 encoding: 'terrarium',
-                maxzoom: 14,
+                maxzoom: 15,
                 bounds: [32.15, 44.05, 36.85, 46.45]
             });
-            currentMap.setTerrain({ source: 'dem', exaggeration: 0.82 });
+            currentMap.setTerrain({ source: 'dem', exaggeration: 0.9 });
             currentMap.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#151515', 'fog-color': '#0A0B09' });
             currentMap.addLayer({
                 id: 'terrain-hillshade',
                 type: 'hillshade',
                 source: 'dem',
                 paint: {
-                    'hillshade-exaggeration': 0.34,
+                    'hillshade-exaggeration': 0.46,
                     'hillshade-shadow-color': '#111111',
                     'hillshade-highlight-color': '#bfc4bd'
                 }
