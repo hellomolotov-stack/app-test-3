@@ -1037,7 +1037,7 @@ export function showBottomSheet(index) {
                     );
                     const displayName = organizerProfile?.name?.split(' ')[0] || leaderData?.name?.split(' ')[0] || `@${username}`;
                     return isCity
-                        ? `<a href="#" class="organizer-profile-link" data-organizer-username="${username}" data-organizer-name="${displayName}"><span>${displayName}</span><img class="organizer-telegram-avatar" src="https://t.me/i/userpic/320/${username}.jpg" alt="" onerror="this.remove()"></a>`
+                        ? `<a href="#" class="organizer-profile-link" data-organizer-username="${username}" data-organizer-name="${displayName}"><img class="organizer-telegram-avatar" src="https://t.me/i/userpic/320/${username}.jpg" alt="" onerror="this.remove()"><span>${displayName}</span></a>`
                         : `<a href="#" class="leader-name">${displayName}</a>`;
                 });
                 let leaderText = '';
