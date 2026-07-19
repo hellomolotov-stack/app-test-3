@@ -299,10 +299,10 @@ function handleDeepLink(startParam) {
         return;
     }
     if (startParam.startsWith('hike_')) {
-        const targetDate = normalizeDate(startParam.substring(5));
+        const targetDate = normalizeDate(decodeURIComponent(startParam.substring(5)).split('T')[0]);
         console.log('Deep link hike target:', targetDate);
         const tryShow = () => {
-            const targetIndex = state.hikesWithTitle.findIndex(h => h.date === targetDate);
+            const targetIndex = state.hikesWithTitle.findIndex(h => normalizeDate(h.date) === targetDate);
             if (targetIndex !== -1) {
                 setTimeout(() => showBottomSheet(targetIndex), 200);
                 return true;
@@ -458,7 +458,12 @@ async function loadAppData() {
         try { const sc = localStorage.getItem('safetyCache'); if (sc) state.safety = JSON.parse(sc); } catch (e) {}
 
         // deep-link из поста Telegram — читаем сразу, чтобы выполнить как можно раньше
-        const startParam = tg?.initDataUnsafe?.start_param || tg?.initData?.start_param || '';
+        const urlParams = new URLSearchParams(window.location.search);
+        const startParam = tg?.initDataUnsafe?.start_param
+            || tg?.initData?.start_param
+            || urlParams.get('startapp')
+            || urlParams.get('start_param')
+            || '';
         let firstRenderDone = false;
         let deepLinkHandled = false;
         const ensureDeepLink = () => {
