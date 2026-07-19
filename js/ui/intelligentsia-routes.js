@@ -127,27 +127,13 @@ function injectStyles() {
         .intelligentsia-route-map-wrap { position: relative; aspect-ratio: 4 / 5; margin: 0 16px; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
         .intelligentsia-route-map { width: 100%; height: 100%; background: #0A0B09; }
         .intelligentsia-route-map .maplibregl-ctrl-bottom-left, .intelligentsia-route-map .maplibregl-ctrl-bottom-right { display: none; }
-        .intelligentsia-route-overlay { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; display: grid; gap: 8px; }
+        .intelligentsia-route-overlay { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; }
         .intelligentsia-route-overlay .intelligentsia-route-caption { position: static; left: auto; right: auto; bottom: auto; z-index: auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.68); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); cursor: pointer; }
         .intelligentsia-route-caption:active { background: rgba(10, 11, 9, 0.84); }
         .intelligentsia-route-meta { min-width: 0; }
         .intelligentsia-route-preview { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; margin-top: 7px; color: rgba(255,255,255,0.78); font-size: 12.5px; line-height: 1.36; mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 72%, transparent 100%); }
         .intelligentsia-route-title { color: #ffffff; font-size: 18px; line-height: 1.12; font-weight: 800; }
         .intelligentsia-route-counter { flex-shrink: 0; color: #0A0B09; background: #D9FD19; border-radius: 999px; padding: 5px 9px; font-size: 12px; line-height: 1; font-weight: 800; white-space: nowrap; }
-        .intelligentsia-route-details { min-height: 42px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 8px; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(10, 11, 9, 0.62); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); }
-        .intelligentsia-route-tags { min-width: 0; display: flex; flex-wrap: wrap; gap: 5px; }
-        .intelligentsia-route-tag { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 7px; border: 1px solid rgba(255,255,255,0.18); border-radius: 8px; background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.78); font-size: 11px; font-weight: 700; line-height: 1.15; white-space: nowrap; }
-        .intelligentsia-route-favorite-area { flex: 0 1 auto; display: flex; align-items: center; justify-content: flex-end; gap: 7px; min-width: 0; }
-        .intelligentsia-route-favorite-button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 30px; padding: 6px 8px; border: 1px solid rgba(217,253,25,0.62); border-radius: 8px; background: rgba(217,253,25,0.10); color: #D9FD19; font: inherit; font-size: 11px; font-weight: 800; line-height: 1; white-space: nowrap; cursor: pointer; }
-        .intelligentsia-route-favorite-button.is-active { background: #D9FD19; color: #0A0B09; }
-        .intelligentsia-route-favorite-button:disabled { opacity: 0.55; cursor: wait; }
-        .intelligentsia-route-favorite-icon { font-size: 15px; line-height: 1; }
-        .intelligentsia-route-fans { min-width: 0; display: flex; align-items: center; justify-content: flex-end; }
-        .intelligentsia-route-fan-stack { display: flex; flex-direction: row-reverse; padding-left: 5px; }
-        .intelligentsia-route-fan-avatar { box-sizing: border-box; width: 24px; height: 24px; margin-left: -6px; border: 2px solid #0A0B09; border-radius: 50%; background: #30342d; object-fit: cover; color: #D9FD19; font-size: 10px; font-weight: 800; line-height: 20px; text-align: center; }
-        .intelligentsia-route-fan-avatar:first-child { margin-left: 0; }
-        .intelligentsia-route-fan-count { margin-left: 8px; color: rgba(255,255,255,0.62); font-size: 12px; white-space: nowrap; }
-        @media (max-width: 350px) { .intelligentsia-route-details { gap: 5px; padding: 6px; } .intelligentsia-route-tag { padding: 4px 5px; font-size: 10px; } .intelligentsia-route-favorite-button { gap: 3px; padding: 6px; font-size: 10px; } .intelligentsia-route-fan-avatar { width: 21px; height: 21px; font-size: 9px; line-height: 17px; } .intelligentsia-route-fan-count { margin-left: 5px; font-size: 11px; } }
         .intelligentsia-map-fallback { height: 100%; min-height: 300px; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.68); font-size: 14px; }
         .intelligentsia-route-modal .modal-content { max-width: 420px; max-height: min(72vh, 560px); padding: 24px; background: rgba(10, 11, 9, 0.92); }
         .intelligentsia-route-modal .modal-title { padding-right: 40px; margin-bottom: 14px; color: #D9FD19; }
@@ -183,8 +169,6 @@ function updateRouteMeta(route, index) {
     if (preview) preview.textContent = route.description || '';
     if (caption) caption.setAttribute('aria-label', `${route.title}: открыть описание`);
     if (counter) counter.textContent = `${index + 1} / ${INTELLIGENTSIA_ROUTES.length}`;
-    renderRouteTags(route);
-    renderRouteFavorites(route);
 }
 
 function escapeHtml(value) {
@@ -202,15 +186,6 @@ function favoriteUserIds(routeId) {
 
 function isFavoritesPilot() {
     return isRouteFavoritesPilotUser(state.user);
-}
-
-function renderRouteTags(route) {
-    const tagsContainer = document.getElementById('intelligentsiaRouteTags');
-    if (!tagsContainer || !route) return;
-    const tags = Array.isArray(route.statusTags) && route.statusTags.length
-        ? route.statusTags
-        : ['временно закрыт'];
-    tagsContainer.innerHTML = tags.map(tag => `<span class="intelligentsia-route-tag">${escapeHtml(tag)}</span>`).join('');
 }
 
 function renderRouteFavorites(route) {
@@ -281,8 +256,8 @@ function cameraForRoute(map, route) {
     const mapHeight = map.getContainer?.().clientHeight || 360;
     const horizontalPadding = Math.max(28, Math.round(mapHeight * 0.08));
     const topPadding = Math.max(26, Math.round(mapHeight * 0.08));
-    const overlayHeight = document.querySelector('.intelligentsia-route-overlay')?.offsetHeight || 170;
-    const bottomPadding = Math.max(overlayHeight + 28, Math.round(mapHeight * 0.42));
+    const overlayHeight = document.querySelector('.intelligentsia-route-overlay')?.offsetHeight || 112;
+    const bottomPadding = Math.max(overlayHeight + 28, Math.round(mapHeight * 0.32));
     const camera = map.cameraForBounds(route.bounds, {
         padding: {
             top: topPadding,
@@ -420,10 +395,6 @@ export function renderIntelligentsiaRoutes(container) {
                             <div id="intelligentsiaRoutePreview" class="intelligentsia-route-preview"></div>
                         </div>
                         <div id="intelligentsiaRouteCounter" class="intelligentsia-route-counter"></div>
-                    </div>
-                    <div class="intelligentsia-route-details">
-                        <div id="intelligentsiaRouteTags" class="intelligentsia-route-tags"></div>
-                        <div id="intelligentsiaRouteFavoriteArea" class="intelligentsia-route-favorite-area"></div>
                     </div>
                 </div>
             </div>
