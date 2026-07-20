@@ -342,6 +342,9 @@ function handleDeepLink(startParam) {
         case 'card':
             scrollToWhenReady(() => document.getElementById('cardBlock'));
             break;
+        case 'routes':
+            scrollToWhenReady(() => document.getElementById('intelligentsiaRoutesContainer'));
+            break;
         case 'bookings':
             scrollToWhenReady(() => document.getElementById('userBookingsCard'));
             break;
