@@ -330,6 +330,9 @@ function handleDeepLink(startParam) {
         case 'calendar':
             scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;
+        case 'hike_map':
+            scrollToWhenReady(() => document.querySelector('.intelligentsia-routes-card'));
+            break;
         case 'updates':
             scrollToWhenReady(() => document.querySelector('.updates-container'));
             break;
