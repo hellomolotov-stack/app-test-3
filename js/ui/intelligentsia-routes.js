@@ -317,9 +317,23 @@ function flyToRoute(index, instant = false) {
     }, 540);
 }
 
-export function openFirstRouteDescription() {
-    const route = INTELLIGENTSIA_ROUTES[0];
-    if (route) openRouteDescription(route);
+export function revealAndFlyToFirstRoute(scrollOffsetPx = 76) {
+    const container = document.getElementById('intelligentsiaRoutesContainer');
+    if (container) {
+        const rect = container.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        window.scrollTo({ top: rect.top + scrollTop - scrollOffsetPx, behavior: 'smooth' });
+    }
+    // После окончания скролла (350мс) обновить размер карты и запустить анимацию
+    setTimeout(() => {
+        if (!currentMap) return;
+        currentMap.resize();
+        if (currentMap.isStyleLoaded()) {
+            flyToRoute(0);
+        } else {
+            currentMap.once('idle', () => flyToRoute(0));
+        }
+    }, 400);
 }
 
 function openRouteDescription(route) {
