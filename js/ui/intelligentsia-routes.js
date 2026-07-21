@@ -317,6 +317,11 @@ function flyToRoute(index, instant = false) {
     }, 540);
 }
 
+export function openFirstRouteDescription() {
+    const route = INTELLIGENTSIA_ROUTES[0];
+    if (route) openRouteDescription(route);
+}
+
 function openRouteDescription(route) {
     if (!route?.description) return;
     document.querySelector('.intelligentsia-route-modal')?.remove();

@@ -13,7 +13,7 @@ import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js?v=20260719mono';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, openFirstRouteDescription } from './ui/intelligentsia-routes.js?v=20260719mono';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -343,7 +343,7 @@ function handleDeepLink(startParam) {
             scrollToWhenReady(() => document.getElementById('cardBlock'));
             break;
         case 'routes':
-            scrollToWhenReady(() => document.getElementById('intelligentsiaRoutesContainer'));
+            setTimeout(() => openFirstRouteDescription(), 600);
             break;
         case 'bookings':
             scrollToWhenReady(() => document.getElementById('userBookingsCard'));
