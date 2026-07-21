@@ -6,7 +6,7 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260719mono';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260721routes';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';

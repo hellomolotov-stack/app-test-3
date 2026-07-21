@@ -95,6 +95,8 @@ let resizeTimer = null;
 let mapResizeObserver = null;
 let stylesInjected = false;
 let routeFavorites = {};
+let revealFlightRequested = false;
+let revealFlightTimer = null;
 
 function ensureMapLibre() {
     if (window.maplibregl) return Promise.resolve();
@@ -317,23 +319,38 @@ function flyToRoute(index, instant = false) {
     }, 540);
 }
 
+function startRouteRevealFlight() {
+    if (!revealFlightRequested || !currentMap || !currentMap.isStyleLoaded()) return;
+
+    revealFlightRequested = false;
+    window.clearTimeout(revealFlightTimer);
+    window.clearTimeout(flightTimer);
+    currentMap.stop();
+    currentMap.resize();
+
+    const route = INTELLIGENTSIA_ROUTES[0];
+    currentMap.jumpTo({
+        center: [
+            (route.bounds[0][0] + route.bounds[1][0]) / 2,
+            (route.bounds[0][1] + route.bounds[1][1]) / 2
+        ],
+        zoom: 8.4,
+        pitch: 14,
+        bearing: 0
+    });
+    revealFlightTimer = window.setTimeout(() => flyToRoute(0), 220);
+}
+
 export function revealAndFlyToFirstRoute(scrollOffsetPx = 76) {
+    revealFlightRequested = true;
     const container = document.getElementById('intelligentsiaRoutesContainer');
     if (container) {
         const rect = container.getBoundingClientRect();
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         window.scrollTo({ top: rect.top + scrollTop - scrollOffsetPx, behavior: 'smooth' });
     }
-    // После окончания скролла (350мс) обновить размер карты и запустить анимацию
-    setTimeout(() => {
-        if (!currentMap) return;
-        currentMap.resize();
-        if (currentMap.isStyleLoaded()) {
-            flyToRoute(0);
-        } else {
-            currentMap.once('idle', () => flyToRoute(0));
-        }
-    }, 400);
+    // Запускаем камеру после завершения плавной прокрутки страницы.
+    window.setTimeout(startRouteRevealFlight, 620);
 }
 
 function openRouteDescription(route) {
@@ -541,7 +558,10 @@ export function renderIntelligentsiaRoutes(container) {
                 layout: { 'line-cap': 'round', 'line-join': 'round' },
                 paint: { 'line-color': '#D9FD19', 'line-width': 3.2, 'line-opacity': 1 }
             });
-            currentMap.once('idle', () => flyToRoute(0, true));
+            currentMap.once('idle', () => {
+                if (revealFlightRequested) startRouteRevealFlight();
+                else flyToRoute(0, true);
+            });
         });
 
         if (window.ResizeObserver) {

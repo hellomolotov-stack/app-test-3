@@ -13,7 +13,7 @@ import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260719mono';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260721routes';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -298,7 +298,7 @@ function handleDeepLink(startParam) {
         }, 10000);
         return;
     }
-    if (startParam.startsWith('hike_')) {
+    if (startParam.startsWith('hike_') && startParam !== 'hike_map') {
         const targetDate = normalizeDate(decodeURIComponent(startParam.substring(5)).split('T')[0]);
         console.log('Deep link hike target:', targetDate);
         const tryShow = () => {
@@ -331,7 +331,8 @@ function handleDeepLink(startParam) {
             scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;
         case 'hike_map':
-            scrollToWhenReady(() => document.querySelector('.intelligentsia-routes-card'));
+        case 'routes':
+            setTimeout(() => revealAndFlyToFirstRoute(getCurrentTopOffset()), 500);
             break;
         case 'updates':
             scrollToWhenReady(() => document.querySelector('.updates-container'));
@@ -341,9 +342,6 @@ function handleDeepLink(startParam) {
             break;
         case 'card':
             scrollToWhenReady(() => document.getElementById('cardBlock'));
-            break;
-        case 'routes':
-            setTimeout(() => revealAndFlyToFirstRoute(getCurrentTopOffset()), 500);
             break;
         case 'bookings':
             scrollToWhenReady(() => document.getElementById('userBookingsCard'));
