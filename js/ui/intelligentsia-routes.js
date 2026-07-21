@@ -97,6 +97,8 @@ let stylesInjected = false;
 let routeFavorites = {};
 let revealFlightRequested = false;
 let revealFlightTimer = null;
+let revealFlightEndTimer = null;
+let isRouteRevealAnimating = false;
 
 function ensureMapLibre() {
     if (window.maplibregl) return Promise.resolve();
@@ -320,10 +322,12 @@ function flyToRoute(index, instant = false) {
 }
 
 function startRouteRevealFlight() {
-    if (!revealFlightRequested || !currentMap || !currentMap.isStyleLoaded()) return;
+    if (!revealFlightRequested || isRouteRevealAnimating || !currentMap || !currentMap.isStyleLoaded()) return;
 
     revealFlightRequested = false;
+    isRouteRevealAnimating = true;
     window.clearTimeout(revealFlightTimer);
+    window.clearTimeout(revealFlightEndTimer);
     window.clearTimeout(flightTimer);
     currentMap.stop();
     currentMap.resize();
@@ -338,7 +342,13 @@ function startRouteRevealFlight() {
         pitch: 14,
         bearing: 0
     });
-    revealFlightTimer = window.setTimeout(() => flyToRoute(0), 220);
+    revealFlightTimer = window.setTimeout(() => {
+        flyToRoute(0);
+        // Keep resize recalculations from snapping the camera during the two-stage flight.
+        revealFlightEndTimer = window.setTimeout(() => {
+            isRouteRevealAnimating = false;
+        }, 2300);
+    }, 220);
 }
 
 export function revealAndFlyToFirstRoute(scrollOffsetPx = 76) {
@@ -570,6 +580,7 @@ export function renderIntelligentsiaRoutes(container) {
                 resizeTimer = window.setTimeout(() => {
                     if (!currentMap) return;
                     currentMap.resize();
+                    if (revealFlightRequested || isRouteRevealAnimating) return;
                     flyToRoute(currentRouteIndex, true);
                 }, 80);
             });
