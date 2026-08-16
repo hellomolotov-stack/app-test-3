@@ -13,6 +13,11 @@ const ROUTE_ORDER = [
     'biyuk-isar', 'evrejskaya', 'alupka-isar', 'biruzovoe',
     'tsarskaya', 'uch-kosh', 'massandra', 'pallasa', 'ayu-dag', 'paragilmen'
 ];
+const RESERVE_CLOSURE_SOURCE_URL = 'https://zapovedcrimea.ru/documents';
+const TEMPORARILY_CLOSED_ROUTES = new Set([
+    'alupka-isar', 'biyuk-isar', 'evrejskaya', 'uch-kosh',
+    'massandra', 'biruzovoe', 'pallasa'
+]);
 const ROUTES_BY_ID = new Map([...ROUTE_DATA, ...EXTRA_INTELLIGENTSIA_ROUTES].map(route => [route.id, route]));
 let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(Boolean).map(route => {
     const routeWithExactTrack = route.id === 'chernaya-rechka'
@@ -131,6 +136,13 @@ function injectStyles() {
         .intelligentsia-route-map-wrap { position: relative; aspect-ratio: 4 / 5; margin: 0 16px; border-radius: 14px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
         .intelligentsia-route-map { width: 100%; height: 100%; background: #0A0B09; }
         .intelligentsia-route-map .maplibregl-ctrl-bottom-left, .intelligentsia-route-map .maplibregl-ctrl-bottom-right { display: none; }
+        .intelligentsia-route-status { position: absolute; top: 12px; left: 12px; z-index: 3; display: inline-flex; align-items: flex-start; gap: 7px; max-width: calc(100% - 24px); padding: 8px 11px 9px; border: 1px solid rgba(255,255,255,0.18); border-radius: 9px; color: #fff; background: rgba(12,13,11,0.72); box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 6px 18px rgba(0,0,0,0.24); backdrop-filter: blur(16px) saturate(115%); -webkit-backdrop-filter: blur(16px) saturate(115%); }
+        .intelligentsia-route-status[hidden] { display: none; }
+        .intelligentsia-route-status-lock { flex: 0 0 auto; font-size: 13px; line-height: 1; transform: translateY(1px); }
+        .intelligentsia-route-status-copy { min-width: 0; }
+        .intelligentsia-route-status-title { font-size: 12px; line-height: 1.2; font-weight: 800; }
+        .intelligentsia-route-status-reason { display: inline-block; margin-top: 4px; color: rgba(232,232,232,0.8); font-size: 11px; line-height: 1.2; font-weight: 600; text-decoration: underline; text-decoration-color: rgba(232,232,232,0.42); text-underline-offset: 2px; }
+        .intelligentsia-route-status-reason:active { color: #fff; }
         .intelligentsia-route-overlay { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 2; }
         .intelligentsia-route-overlay .intelligentsia-route-caption { position: static; left: auto; right: auto; bottom: auto; z-index: auto; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px; border-radius: 12px; background: rgba(10, 11, 9, 0.68); border: 1px solid rgba(255,255,255,0.14); backdrop-filter: blur(14px) saturate(120%); -webkit-backdrop-filter: blur(14px) saturate(120%); cursor: pointer; }
         .intelligentsia-route-caption:active { background: rgba(10, 11, 9, 0.84); }
@@ -169,10 +181,17 @@ function updateRouteMeta(route, index) {
     const preview = document.getElementById('intelligentsiaRoutePreview');
     const caption = document.getElementById('intelligentsiaRouteCaption');
     const counter = document.getElementById('intelligentsiaRouteCounter');
+    const status = document.getElementById('intelligentsiaRouteStatus');
+    const statusReason = document.getElementById('intelligentsiaRouteStatusReason');
     if (title) title.textContent = route.title;
     if (preview) preview.textContent = route.description || '';
     if (caption) caption.setAttribute('aria-label', `${route.title}: открыть описание`);
     if (counter) counter.textContent = `${index + 1} / ${INTELLIGENTSIA_ROUTES.length}`;
+    if (status) status.hidden = !TEMPORARILY_CLOSED_ROUTES.has(route.id);
+    if (statusReason) {
+        statusReason.href = RESERVE_CLOSURE_SOURCE_URL;
+        statusReason.textContent = 'ограничение заповедника';
+    }
 }
 
 function escapeHtml(value) {
@@ -434,6 +453,13 @@ export function renderIntelligentsiaRoutes(container) {
             </div>
             <div class="intelligentsia-route-map-wrap">
                 <div id="intelligentsiaRoutesMap" class="intelligentsia-route-map"></div>
+                <div id="intelligentsiaRouteStatus" class="intelligentsia-route-status" hidden>
+                    <span class="intelligentsia-route-status-lock" aria-hidden="true">🔒</span>
+                    <div class="intelligentsia-route-status-copy">
+                        <div class="intelligentsia-route-status-title">маршрут временно закрыт</div>
+                        <a id="intelligentsiaRouteStatusReason" class="intelligentsia-route-status-reason" target="_blank" rel="noopener noreferrer"></a>
+                    </div>
+                </div>
                 <div class="intelligentsia-route-overlay">
                     <div id="intelligentsiaRouteCaption" class="intelligentsia-route-caption" role="button" tabindex="0">
                         <div class="intelligentsia-route-meta">
