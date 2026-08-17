@@ -14,10 +14,14 @@ const ROUTE_ORDER = [
     'tsarskaya', 'uch-kosh', 'massandra', 'pallasa', 'ayu-dag', 'paragilmen'
 ];
 const RESERVE_CLOSURE_SOURCE_URL = 'https://zapovedcrimea.ru/documents';
-const TEMPORARILY_CLOSED_ROUTES = new Set([
+const TEMPORARILY_CLOSED_ROUTE_IDS = new Set([
     'alupka-isar', 'biyuk-isar', 'evrejskaya', 'uch-kosh',
     'massandra', 'biruzovoe', 'pallasa'
 ]);
+const TEMPORARILY_CLOSED_ROUTE_TITLES = [
+    'алупка исар', 'биюк исар', 'еврейская тропа', 'жидовская тропа',
+    'ущелье уч кош', 'уч кош', 'массандровская тропа', 'бирюзовое озеро', 'тропа палласа'
+];
 const ROUTES_BY_ID = new Map([...ROUTE_DATA, ...EXTRA_INTELLIGENTSIA_ROUTES].map(route => [route.id, route]));
 let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(Boolean).map(route => {
     const routeWithExactTrack = route.id === 'chernaya-rechka'
@@ -46,6 +50,21 @@ function sortRoutesWestToEast(a, b) {
     const longitudeDifference = routeCenterLongitude(a) - routeCenterLongitude(b);
     if (Math.abs(longitudeDifference) > 0.0001) return longitudeDifference;
     return String(a?.title || '').localeCompare(String(b?.title || ''), 'ru');
+}
+
+function normaliseRouteIdentity(value) {
+    return String(value || '')
+        .toLocaleLowerCase('ru')
+        .replace(/ё/g, 'е')
+        .replace(/[^a-zа-я0-9]+/gi, ' ')
+        .trim()
+        .replace(/\s+/g, ' ');
+}
+
+function isRouteTemporarilyClosed(route) {
+    if (TEMPORARILY_CLOSED_ROUTE_IDS.has(String(route?.id || '').trim().toLowerCase())) return true;
+    const title = normaliseRouteIdentity(route?.title);
+    return Boolean(title) && TEMPORARILY_CLOSED_ROUTE_TITLES.some(closedTitle => title.includes(closedTitle));
 }
 
 function normaliseRoute(route) {
@@ -187,7 +206,7 @@ function updateRouteMeta(route, index) {
     if (preview) preview.textContent = route.description || '';
     if (caption) caption.setAttribute('aria-label', `${route.title}: открыть описание`);
     if (counter) counter.textContent = `${index + 1} / ${INTELLIGENTSIA_ROUTES.length}`;
-    if (status) status.hidden = !TEMPORARILY_CLOSED_ROUTES.has(route.id);
+    if (status) status.hidden = !isRouteTemporarilyClosed(route);
     if (statusReason) {
         statusReason.href = RESERVE_CLOSURE_SOURCE_URL;
         statusReason.textContent = 'ограничение заповедника';
