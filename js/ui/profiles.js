@@ -5,7 +5,7 @@ import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
     loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations, loadRouteFavorites,
 } from '../firebase.js';
-import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260824ticket';
+import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260824orbit';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
 import { showGuestBookingPopup } from './calendar.js';

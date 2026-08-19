@@ -640,7 +640,45 @@ function _hvKm(a1, o1, a2, o2) {
 }
 
 let currentHikeMap = null;
+let cancelHikeMapOrbit = null;
+
+// Полный оборот камеры вокруг маршрута после прилёта: угол наклона не трогаем,
+// поэтому вид остаётся боковым и рельеф читается. Мягкий старт и мягкая остановка —
+// круг замыкается ровно на той точке, с которой начали.
+const HIKE_MAP_ORBIT_DURATION = 24000;
+function startHikeMapOrbit(map, startBearing) {
+    let rafId = null;
+    let cancelled = false;
+
+    const cancel = () => {
+        cancelled = true;
+        if (rafId) cancelAnimationFrame(rafId);
+        rafId = null;
+    };
+    cancelHikeMapOrbit = cancel;
+
+    // Если человек сам взялся крутить карту — автоповорот больше не мешает
+    ['mousedown', 'touchstart', 'wheel'].forEach(ev => map.on(ev, cancel));
+
+    const startedAt = performance.now();
+    const step = (now) => {
+        if (cancelled || map !== currentHikeMap) return;
+        const progress = Math.min((now - startedAt) / HIKE_MAP_ORBIT_DURATION, 1);
+        const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
+        try {
+            map.setBearing(startBearing + eased * 360);
+        } catch (e) {
+            cancel();
+            return;
+        }
+        if (progress < 1) rafId = requestAnimationFrame(step);
+        else rafId = null;
+    };
+    rafId = requestAnimationFrame(step);
+}
+
 function initHikeMap(el, track) {
+    try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
     try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
     const C = track.coords;
     const DEST = track.dest || track.lake;
@@ -736,6 +774,7 @@ function initHikeMap(el, track) {
                 target = { center: [cLon, cLat - latSpan * 0.45], zoom: z, pitch: 45, bearing: 0 };
             }
             map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
+            map.once('moveend', () => startHikeMapOrbit(map, target.bearing || 0));
         });
     });
 
