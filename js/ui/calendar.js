@@ -2835,7 +2835,7 @@ export function showHikePickerSheet() {
             pickerOverlay.classList.remove('visible');
             pickerOverlay.querySelector('.bottom-sheet')?.classList.remove('visible');
             setTimeout(() => pickerOverlay.remove(), 400);
-            showGuestBookingPopup(slide.dataset.date, slide.dataset.title);
+            showHikeRegisterChoicePopup(slide.dataset.date, slide.dataset.title);
             return;
         }
         if (e.target === pickerOverlay) {
@@ -2843,6 +2843,34 @@ export function showHikePickerSheet() {
             pickerOverlay.querySelector('.bottom-sheet')?.classList.remove('visible');
             setTimeout(() => pickerOverlay.remove(), 400);
         }
+    });
+}
+
+// ==================== КОРОТКИЙ БАННЕР ВЫБОРА: БИЛЕТ ИЛИ КАРТА (гость без карты) ====================
+function showHikeRegisterChoicePopup(hikeDate, hikeTitle) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:360px; text-align:center;">
+            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">пойти на хайк</div>
+            <div class="modal-text" style="text-align:center; margin-top:8px;">можешь купить разовый билет или оформить карту интеллигента, чтобы ходить безлимитно – не только на хайки, но и на события в городе</div>
+            <button class="btn btn-outline" id="choiceButBtn" style="width:100%; margin:16px 0 0;">купить билет</button>
+            <button class="btn btn-yellow" id="choiceCardBtn" style="width:100%; margin:10px 0 0;">оформить карту</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+    document.getElementById('choiceButBtn').addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+        openLink('https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ', 'купить билет на хайк', true);
+        log('купить билет на хайк из короткого баннера', true, state.user, { hike_date: hikeDate });
+    });
+    document.getElementById('choiceCardBtn').addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+        log('оформить карту из короткого баннера', true, state.user, { hike_date: hikeDate });
+        showGuestBookingPopup(hikeDate, hikeTitle);
     });
 }
 
