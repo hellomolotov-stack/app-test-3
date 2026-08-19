@@ -1571,7 +1571,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 if (isHikeCity) {
                     showCityGuestPopup(hike.date, hike.title, resetSwipe);
                 } else {
-                    showGuestBookingPopup(hike.date, hike.title, resetSwipe);
+                    showHikeRegisterChoicePopup(hike.date, hike.title, resetSwipe);
                 }
                 return;
             }
@@ -2847,7 +2847,7 @@ export function showHikePickerSheet() {
 }
 
 // ==================== КОРОТКИЙ БАННЕР ВЫБОРА: БИЛЕТ ИЛИ КАРТА (гость без карты) ====================
-function showHikeRegisterChoicePopup(hikeDate, hikeTitle) {
+function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
@@ -2859,18 +2859,24 @@ function showHikeRegisterChoicePopup(hikeDate, hikeTitle) {
         </div>
     `;
     document.body.appendChild(overlay);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); overlay.remove(); } });
+    let handedOff = false;
+    const closeBanner = () => {
+        overlay.remove();
+        if (!handedOff && onClose) onClose();
+    };
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); closeBanner(); } });
     document.getElementById('choiceButBtn').addEventListener('click', () => {
         haptic();
-        overlay.remove();
+        closeBanner();
         openLink('https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ', 'купить билет на хайк', true);
         log('купить билет на хайк из короткого баннера', true, state.user, { hike_date: hikeDate });
     });
     document.getElementById('choiceCardBtn').addEventListener('click', () => {
         haptic();
+        handedOff = true;
         overlay.remove();
         log('оформить карту из короткого баннера', true, state.user, { hike_date: hikeDate });
-        showGuestBookingPopup(hikeDate, hikeTitle);
+        showGuestBookingPopup(hikeDate, hikeTitle, onClose);
     });
 }
 
