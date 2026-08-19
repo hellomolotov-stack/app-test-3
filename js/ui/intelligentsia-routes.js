@@ -11,7 +11,7 @@ const CHERNAYA_RECHKA_COORDS = [[44.493100,33.793747],[44.492947,33.793114],[44.
 const ROUTE_ORDER = [
     'kush-kaya', 'ilyas-kaya', 'chernaya-rechka', 'foros-kant',
     'biyuk-isar', 'evrejskaya', 'alupka-isar', 'biruzovoe',
-    'tsarskaya', 'uch-kosh', 'massandra', 'pallasa', 'ayu-dag', 'paragilmen', 'ai-yuri'
+    'tsarskaya', 'uch-kosh', 'massandra', 'pallasa', 'ayu-dag', 'paragilmen'
 ];
 const RESERVE_CLOSURE_SOURCE_URL = 'https://zapovedcrimea.ru/documents';
 const TEMPORARILY_CLOSED_ROUTE_IDS = new Set([
@@ -97,17 +97,6 @@ function normaliseRoute(route) {
     };
 }
 
-function addPinnedRoutes(routes) {
-    const ids = new Set(routes.map(route => route.id));
-    const titles = new Set(routes.map(route => normaliseRouteIdentity(route.title)));
-    const pinnedRoutes = EXTRA_INTELLIGENTSIA_ROUTES
-        .filter(route => route.id === 'ai-yuri')
-        .map(normaliseRoute)
-        .filter(Boolean)
-        .filter(route => !ids.has(route.id) && !titles.has(normaliseRouteIdentity(route.title)));
-    return [...routes, ...pinnedRoutes];
-}
-
 export function setIntelligentsiaRoutes(routes) {
     const syncedRoutes = (Array.isArray(routes) ? routes : [])
         .filter(route => route && route.active !== false && route.active !== 'false' && route.active !== 'no')
@@ -115,8 +104,7 @@ export function setIntelligentsiaRoutes(routes) {
         .filter(Boolean);
     // A failed or not-yet-configured sync must never make the card disappear.
     if (!syncedRoutes.length) return;
-    const routesWithPinned = addPinnedRoutes(syncedRoutes).sort(sortRoutesWestToEast);
-    INTELLIGENTSIA_ROUTES = routesWithPinned;
+    INTELLIGENTSIA_ROUTES = syncedRoutes.sort(sortRoutesWestToEast);
     const container = document.getElementById('intelligentsiaRoutesContainer');
     if (container) renderIntelligentsiaRoutes(container);
 }
