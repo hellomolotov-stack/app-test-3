@@ -8,12 +8,12 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration } from './ui/calendar.js?v=20260824orbit';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration } from './ui/calendar.js?v=20260824orbit2';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260824orbit';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260824orbit2';
 
 window.userInteracted = false;
 window.isPrivPage = false;

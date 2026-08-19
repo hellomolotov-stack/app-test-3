@@ -642,11 +642,49 @@ function _hvKm(a1, o1, a2, o2) {
 let currentHikeMap = null;
 let cancelHikeMapOrbit = null;
 
-// Полный оборот камеры вокруг маршрута после прилёта: угол наклона не трогаем,
-// поэтому вид остаётся боковым и рельеф читается. Мягкий старт и мягкая остановка —
-// круг замыкается ровно на той точке, с которой начали.
+// Полный оборот камеры вокруг маршрута после прилёта. Базовый наклон сохраняем
+// боковым, но подмешиваем рельеф: над вершинами камера чуть приподнимается и
+// доворачивается сверху, будто облетает их по кругу. Мягкий старт и мягкая
+// остановка — круг замыкается ровно на той точке, с которой начали.
 const HIKE_MAP_ORBIT_DURATION = 24000;
-function startHikeMapOrbit(map, startBearing) {
+const ORBIT_SAMPLES = 72;
+
+// Высоты по кольцу облёта: считаем один раз, потом только интерполируем.
+function sampleOrbitRelief(map, center, radiusDeg) {
+    const raw = [];
+    const latRad = center[1] * Math.PI / 180;
+    const lonScale = Math.max(Math.cos(latRad), 0.1);
+    for (let i = 0; i < ORBIT_SAMPLES; i++) {
+        const azimuth = (i / ORBIT_SAMPLES) * 2 * Math.PI;
+        const lat = center[1] + radiusDeg * Math.cos(azimuth);
+        const lng = center[0] + (radiusDeg * Math.sin(azimuth)) / lonScale;
+        let elevation = null;
+        try { elevation = map.queryTerrainElevation({ lng, lat }); } catch (e) {}
+        raw.push(Number.isFinite(elevation) ? elevation : 0);
+    }
+
+    // Сглаживаем по кругу, чтобы камера не вздрагивала на отдельных пиках
+    const smoothed = raw.map((_, i) => {
+        let sum = 0;
+        for (let k = -5; k <= 5; k++) sum += raw[(i + k + ORBIT_SAMPLES * 2) % ORBIT_SAMPLES];
+        return sum / 11;
+    });
+
+    const min = Math.min(...smoothed);
+    const max = Math.max(...smoothed);
+    if (!Number.isFinite(min) || max - min < 1) return null;
+    return smoothed.map(v => ((v - min) / (max - min)) * 2 - 1);
+}
+
+function reliefAt(profile, azimuthDeg) {
+    const pos = ((((azimuthDeg % 360) + 360) % 360) / 360) * ORBIT_SAMPLES;
+    const i0 = Math.floor(pos) % ORBIT_SAMPLES;
+    const i1 = (i0 + 1) % ORBIT_SAMPLES;
+    const f = pos - Math.floor(pos);
+    return profile[i0] * (1 - f) + profile[i1] * f;
+}
+
+function startHikeMapOrbit(map, camera, radiusDeg) {
     let rafId = null;
     let cancelled = false;
 
@@ -660,13 +698,30 @@ function startHikeMapOrbit(map, startBearing) {
     // Если человек сам взялся крутить карту — автоповорот больше не мешает
     ['mousedown', 'touchstart', 'wheel'].forEach(ev => map.on(ev, cancel));
 
+    const startBearing = camera.bearing || 0;
+    const basePitch = Number.isFinite(camera.pitch) ? camera.pitch : 45;
+    const baseZoom = map.getZoom();
+    let profile = null;
+    try { profile = sampleOrbitRelief(map, camera.center, radiusDeg); } catch (e) {}
+
     const startedAt = performance.now();
     const step = (now) => {
         if (cancelled || map !== currentHikeMap) return;
         const progress = Math.min((now - startedAt) / HIKE_MAP_ORBIT_DURATION, 1);
         const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
+        const bearing = startBearing + eased * 360;
+
+        const view = { bearing };
+        if (profile) {
+            // Камера стоит с противоположной стороны от направления взгляда
+            const relief = reliefAt(profile, bearing + 180);
+            // Над вершиной — чуть больше сверху и чуть дальше, будто поднялись выше
+            view.pitch = Math.max(30, Math.min(70, basePitch - relief * 5));
+            view.zoom = baseZoom - relief * 0.12;
+        }
+
         try {
-            map.setBearing(startBearing + eased * 360);
+            map.jumpTo(view);
         } catch (e) {
             cancel();
             return;
@@ -750,18 +805,39 @@ function initHikeMap(el, track) {
             layout: { 'line-cap': 'round', 'line-join': 'round' }
         });
 
-        const mkDot = (sz) => { const d = document.createElement('div'); d.style.cssText = `width:${sz}px;height:${sz}px;background:#D9FD19;border-radius:50%;box-shadow:0 0 6px #D9FD19;`; return d; };
+        // Точки начала и конца рисуем слоем карты, а не DOM-маркерами: на рельефе
+        // маркеры пересчитывают высоту каждый кадр и дрожат, а слой едет вместе с треком.
+        const endpoints = [];
+        const addDot = (lat, lon, r) => endpoints.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [lon, lat] },
+            properties: { r }
+        });
         if (track.loop) {
-            new maplibregl.Marker({ element: mkDot(10) }).setLngLat([line[0][1], line[0][0]]).addTo(map);
+            addDot(line[0][0], line[0][1], 5);
             const lastPt = line[line.length - 1];
             if (_hvKm(lastPt[0], lastPt[1], line[0][0], line[0][1]) > 0.05) {
-                new maplibregl.Marker({ element: mkDot(10) }).setLngLat([lastPt[1], lastPt[0]]).addTo(map);
+                addDot(lastPt[0], lastPt[1], 5);
             }
         } else {
             const startCoord = line[line.length - 1];
-            new maplibregl.Marker({ element: mkDot(10) }).setLngLat([startCoord[1], startCoord[0]]).addTo(map);
-            new maplibregl.Marker({ element: mkDot(12) }).setLngLat([DEST[1], DEST[0]]).addTo(map);
+            addDot(startCoord[0], startCoord[1], 5);
+            addDot(DEST[0], DEST[1], 6);
         }
+        map.addSource('endpoints', { type: 'geojson', data: { type: 'FeatureCollection', features: endpoints } });
+        map.addLayer({
+            id: 'endpoints-glow', type: 'circle', source: 'endpoints',
+            paint: {
+                'circle-radius': ['*', ['get', 'r'], 2.2],
+                'circle-color': '#D9FD19',
+                'circle-opacity': 0.35,
+                'circle-blur': 1
+            }
+        });
+        map.addLayer({
+            id: 'endpoints-core', type: 'circle', source: 'endpoints',
+            paint: { 'circle-radius': ['get', 'r'], 'circle-color': '#D9FD19' }
+        });
 
         map.once('idle', () => {
             let target;
@@ -774,7 +850,8 @@ function initHikeMap(el, track) {
                 target = { center: [cLon, cLat - latSpan * 0.45], zoom: z, pitch: 45, bearing: 0 };
             }
             map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
-            map.once('moveend', () => startHikeMapOrbit(map, target.bearing || 0));
+            const orbitRadiusDeg = Math.max(maxLat - minLat, maxLon - minLon, 0.004) * 0.6;
+            map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg));
         });
     });
 
