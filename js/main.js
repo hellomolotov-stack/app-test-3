@@ -8,12 +8,12 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen } from './ui/calendar.js?v=20260622r';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration } from './ui/calendar.js?v=20260824ticket';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260824choice2';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260824ticket';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -388,6 +388,16 @@ function handleDeepLink(startParam) {
                         localStorage.removeItem('pending_reg_celebration');
                     }
                 } catch {}
+                // Билет на хайк: оплата и есть запись – дозаписываем участника и показываем экран успеха
+                const TICKET_PENDING_TTL = 6 * 60 * 60 * 1000;
+                const isFreshTicket = celebData?.type === 'ticket'
+                    && celebData.hikeDate
+                    && (!celebData.ts || Date.now() - celebData.ts < TICKET_PENDING_TTL);
+                if (isFreshTicket) {
+                    completeTicketRegistration(celebData.hikeDate, celebData.hikeTitle);
+                    return;
+                }
+
                 if (celebData?.hikeDate) {
                     showRegistrationSuccess(celebData.hikeDate, celebData.hikeTitle);
                 } else {

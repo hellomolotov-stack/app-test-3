@@ -2455,8 +2455,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             e.preventDefault();
             haptic();
             closePopup();
-            openLink('https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ', 'купить билет на хайк', true);
-            log('купить билет на хайк', true, state.user, { hike_date: hikeDate });
+            startTicketPurchase(hikeDate, hikeTitle, 'купить билет на хайк');
         });
     }
 
@@ -2846,6 +2845,58 @@ export function showHikePickerSheet() {
     });
 }
 
+// ==================== ПОКУПКА БИЛЕТА НА ХАЙК ====================
+// Для билета оплата и есть запись: перед уходом на Robokassa запоминаем хайк,
+// а после возврата по startapp=paid дозаписываем участника (см. completeTicketRegistration).
+const TICKET_INVOICE_LINK = 'https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ';
+
+function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
+    if (hikeDate) {
+        try {
+            localStorage.setItem('pending_reg_celebration', JSON.stringify({
+                hikeDate,
+                hikeTitle: hikeTitle || '',
+                type: 'ticket',
+                ts: Date.now()
+            }));
+        } catch (e) {}
+    }
+    log(logLabel, true, state.user, { hike_date: hikeDate });
+    openLink(TICKET_INVOICE_LINK, 'купить билет на хайк', true);
+}
+
+// Вызывается после успешной оплаты билета (deep link startapp=paid).
+export function completeTicketRegistration(hikeDate, hikeTitle) {
+    const userId = state.user?.id;
+    const index = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
+    const title = hikeTitle || (index >= 0 ? state.hikesWithTitle[index].title : '');
+
+    if (!userId || !hikeDate) {
+        showRegistrationSuccess(hikeDate, title);
+        return;
+    }
+
+    setUserRegistrationStatus(userId, hikeDate, true)
+        .then(() => addParticipant(hikeDate, userId, {
+            first_name: state.user?.first_name,
+            photo_url: state.user?.photo_url
+        }))
+        .then(() => {
+            if (index >= 0) {
+                state.hikeBookingStatus[index] = true;
+                saveBookingStatusToLocal();
+            }
+            updateRegistrationInSheet(hikeDate, title, 'booked', 'ticket', state.user, false);
+            sendBookingNotification(hikeDate, title, state.user);
+            renderUserBookings(document.getElementById('userBookingsContainer'));
+            const cal = document.getElementById('calendarContainer');
+            if (cal) renderCalendar(cal);
+            log('билет оплачен – запись на хайк', true, state.user, { hike_date: hikeDate });
+        })
+        .catch(error => console.error('completeTicketRegistration error:', error))
+        .finally(() => showRegistrationSuccess(hikeDate, title));
+}
+
 // ==================== КОРОТКИЙ БАННЕР ВЫБОРА: БИЛЕТ ИЛИ КАРТА (гость без карты) ====================
 function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
     const overlay = document.createElement('div');
@@ -2868,8 +2919,7 @@ function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
     document.getElementById('choiceButBtn').addEventListener('click', () => {
         haptic();
         closeBanner();
-        openLink('https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ', 'купить билет на хайк', true);
-        log('купить билет на хайк из короткого баннера', true, state.user, { hike_date: hikeDate });
+        startTicketPurchase(hikeDate, hikeTitle, 'купить билет на хайк из короткого баннера');
     });
     document.getElementById('choiceCardBtn').addEventListener('click', () => {
         haptic();
