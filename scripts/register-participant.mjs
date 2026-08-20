@@ -7,21 +7,21 @@
 //   userRegistrations/<user_id>/<дата>  – статус записи
 //   строка в Google-таблице             – status=booked, purchase_type=ticket
 //
+// Первым аргументом можно передать либо числовой user_id, либо @username —
+// тогда id ищется в userProfiles.
+//
 // Запуск (адреса берутся из js/config.js):
-//   node scripts/register-participant.mjs <user_id> <ГГГГ-ММ-ДД> ["Имя"] ["username"]
+//   node scripts/register-participant.mjs <user_id|@username> <ГГГГ-ММ-ДД> ["Имя"]
 // Например:
-//   node scripts/register-participant.mjs 123456789 2026-08-23 "Аня" anya_tg
+//   node scripts/register-participant.mjs @Dariakrandievskaya 2026-08-23
+//   node scripts/register-participant.mjs 123456789 2026-08-23 "Аня"
 
 import { FIREBASE_CONFIG, REGISTRATION_API_URL } from '../js/config.js';
 
-const [, , userId, hikeDate, firstName = '', username = ''] = process.argv;
+const [, , who, hikeDate, firstNameArg = ''] = process.argv;
 
-if (!userId || !hikeDate) {
-    console.error('Использование: node scripts/register-participant.mjs <user_id> <ГГГГ-ММ-ДД> ["Имя"] ["username"]');
-    process.exit(1);
-}
-if (!/^\d+$/.test(userId)) {
-    console.error(`user_id должен быть числом (Telegram id), получено: ${userId}`);
+if (!who || !hikeDate) {
+    console.error('Использование: node scripts/register-participant.mjs <user_id|@username> <ГГГГ-ММ-ДД> ["Имя"]');
     process.exit(1);
 }
 if (!/^\d{4}-\d{2}-\d{2}$/.test(hikeDate)) {
@@ -49,6 +49,31 @@ async function putJson(path, body) {
     });
     if (!res.ok) throw new Error(`PUT ${path}: HTTP ${res.status} ${await res.text()}`);
     return res.json();
+}
+
+// Ищем человека: либо уже дали id, либо находим его по username в профилях
+let userId = who;
+let username = '';
+let firstName = firstNameArg;
+
+if (!/^\d+$/.test(who)) {
+    username = who.replace(/^@/, '');
+    const profiles = (await getJson('userProfiles')) || {};
+    const match = Object.entries(profiles).find(([, p]) =>
+        String(p?.username || '').toLowerCase() === username.toLowerCase()
+    );
+    if (!match) {
+        console.error(`Не нашёл @${username} в userProfiles (профиль мог быть не создан).`);
+        console.error('Возьми user_id из логовой таблицы по username и передай его числом.');
+        process.exit(1);
+    }
+    userId = match[0];
+    if (!firstName) firstName = match[1]?.name || '';
+    console.log(`@${username} → user_id ${userId}${firstName ? ` (${firstName})` : ''}`);
+} else if (!username) {
+    const profile = await getJson(`userProfiles/${userId}`);
+    username = profile?.username || '';
+    if (!firstName) firstName = profile?.name || '';
 }
 
 const hike = await getJson(`hikes/${hikeDate}`);

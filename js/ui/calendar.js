@@ -2981,6 +2981,74 @@ function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
     openLink(TICKET_INVOICE_LINK, 'купить билет на хайк', true);
 }
 
+// Автоматическая запись срабатывает только при быстром возврате с оплаты.
+export const TICKET_PENDING_TTL = 6 * 60 * 60 * 1000;
+// Если Robokassa не вернула человека в приложение, предлагаем подтвердить оплату
+// при следующих заходах — иначе оплаченный билет молча теряется.
+const TICKET_RECOVERY_TTL = 72 * 60 * 60 * 1000;
+
+function readPendingTicket() {
+    try {
+        const raw = localStorage.getItem('pending_reg_celebration');
+        if (!raw) return null;
+        const pending = JSON.parse(raw);
+        return pending && pending.type === 'ticket' && pending.hikeDate ? pending : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function clearPendingTicket() {
+    try { localStorage.removeItem('pending_reg_celebration'); } catch (e) {}
+}
+
+// Подстраховка на случай, когда возврата по startapp=paid не случилось.
+export function offerPendingTicketRecovery() {
+    const pending = readPendingTicket();
+    if (!pending) return;
+
+    if (pending.ts && Date.now() - pending.ts > TICKET_RECOVERY_TTL) {
+        clearPendingTicket();
+        return;
+    }
+
+    const index = state.hikesWithTitle.findIndex(h => h.date === pending.hikeDate);
+    // Хайк прошёл или человек уже записан — след больше не нужен
+    if (index < 0 || state.hikeBookingStatus[index]) {
+        clearPendingTicket();
+        return;
+    }
+    if (document.querySelector('.modal-overlay, .bottom-sheet-overlay')) return;
+
+    const title = pending.hikeTitle || state.hikesWithTitle[index].title || '';
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:360px; text-align:center;">
+            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">билет оплачен?</div>
+            <div class="modal-text" style="text-align:center; margin-top:8px;">не получили подтверждение оплаты за «${title}». если билет куплен – запишем тебя на хайк</div>
+            <button class="btn btn-yellow" id="ticketPaidYesBtn" style="width:100%; margin:16px 0 0;">да, оплатил</button>
+            <button class="btn btn-outline" id="ticketPaidNoBtn" style="width:100%; margin:10px 0 0;">ещё нет</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    document.getElementById('ticketPaidYesBtn').addEventListener('click', () => {
+        haptic();
+        clearPendingTicket();
+        overlay.remove();
+        // Отдельное событие в логе — организатору есть что сверить с Robokassa
+        log('подтвердил оплату билета вручную', true, state.user, { hike_date: pending.hikeDate });
+        completeTicketRegistration(pending.hikeDate, title);
+    });
+    document.getElementById('ticketPaidNoBtn').addEventListener('click', () => {
+        haptic();
+        clearPendingTicket();
+        overlay.remove();
+        log('билет не оплачен – отказ от записи', true, state.user, { hike_date: pending.hikeDate });
+    });
+}
+
 // Вызывается после успешной оплаты билета (deep link startapp=paid).
 export function completeTicketRegistration(hikeDate, hikeTitle) {
     const userId = state.user?.id;

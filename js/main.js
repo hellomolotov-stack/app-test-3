@@ -8,12 +8,12 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration } from './ui/calendar.js?v=20260824orbit2';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260824recovery';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260824orbit2';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260824recovery';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -389,7 +389,6 @@ function handleDeepLink(startParam) {
                     }
                 } catch {}
                 // Билет на хайк: оплата и есть запись – дозаписываем участника и показываем экран успеха
-                const TICKET_PENDING_TTL = 6 * 60 * 60 * 1000;
                 const isFreshTicket = celebData?.type === 'ticket'
                     && celebData.hikeDate
                     && (!celebData.ts || Date.now() - celebData.ts < TICKET_PENDING_TTL);
@@ -594,6 +593,12 @@ async function loadAppData() {
 
         // #1: спрашиваем доступ к сообщениям фоном, не блокируя первый экран
         maybeRequestWriteAccess();
+
+        // Если оплата билета была, а возврата по startapp=paid не случилось —
+        // предлагаем подтвердить оплату. Ждём, пока отработает deep link.
+        setTimeout(() => {
+            try { offerPendingTicketRecovery(); } catch (e) { console.error(e); }
+        }, 2500);
 
         function updateNightBackground() {
             const now = new Date();
