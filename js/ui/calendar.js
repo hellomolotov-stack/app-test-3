@@ -2962,11 +2962,15 @@ export function showHikePickerSheet() {
 }
 
 // ==================== ПОКУПКА БИЛЕТА НА ХАЙК ====================
-// Для билета оплата и есть запись: перед уходом на Robokassa запоминаем хайк,
-// а после возврата по startapp=paid дозаписываем участника (см. completeTicketRegistration).
+// Для билета оплата и есть запись. Счёт создаётся на сервере (initPayment) — так у платежа
+// свой InvId, привязанный к user_id и дате хайка, и Robokassa на своём ResultURL записывает
+// человека сама, даже если он не вернулся в приложение. Возврат по startapp=paid показывает
+// экран успеха (см. completeTicketRegistration), localStorage — третья подстраховка.
+// Статический счёт остаётся фолбэком: если сервер недоступен, лучше дать оплатить, чем ничего.
 const TICKET_INVOICE_LINK = 'https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ';
+const TICKET_PRICE = 1000;
 
-function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
+async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
     if (hikeDate) {
         try {
             localStorage.setItem('pending_reg_celebration', JSON.stringify({
@@ -2978,7 +2982,28 @@ function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
         } catch (e) {}
     }
     log(logLabel, true, state.user, { hike_date: hikeDate });
-    openLink(TICKET_INVOICE_LINK, 'купить билет на хайк', true);
+
+    let payUrl = TICKET_INVOICE_LINK;
+    try {
+        const data = await initPayment({
+            userId: state.user?.id,
+            firstName: state.user?.first_name,
+            lastName: state.user?.last_name,
+            username: state.user?.username,
+            hikeDate, hikeTitle, cardType: 'ticket'
+        });
+        // Старая версия Apps Script не знает про билеты и выставит цену карты.
+        // Открываем серверный счёт, только если сервер подтвердил тип и сумму билета.
+        if (data?.url && data.card_type === 'ticket' && Number(data.amount) === TICKET_PRICE) {
+            payUrl = data.url;
+        } else {
+            log('билет – счёт не подтверждён, статичная ссылка', true, state.user, { hike_date: hikeDate });
+        }
+    } catch (err) {
+        console.error('initPayment (ticket) error:', err);
+        log('билет – счёт не создан, статичная ссылка', true, state.user, { hike_date: hikeDate });
+    }
+    openLink(payUrl, 'купить билет на хайк', true);
 }
 
 // Автоматическая запись срабатывает только при быстром возврате с оплаты.
