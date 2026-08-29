@@ -19,7 +19,7 @@ import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
-import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
+import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js?v=20260825b';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
