@@ -19,6 +19,7 @@ import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
+import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -331,18 +332,16 @@ export const ROUTE_TRACKS = [
   { id: 'ai-yori', label: 'Ай-Йори', keywords: ['ай-йори', 'ай йори', 'йори', 'ай-юри', 'ай юри'], coords: [[44.67799,34.38133],[44.67787,34.38051],[44.67776,34.38023],[44.67753,34.37871],[44.67720,34.37765],[44.67741,34.37713],[44.67758,34.37655],[44.67764,34.37618],[44.67748,34.37587],[44.67688,34.37412],[44.67601,34.37005],[44.67617,34.36964],[44.67613,34.36922],[44.67622,34.36894],[44.67612,34.36852],[44.67590,34.36812],[44.67576,34.36767],[44.67570,34.36736],[44.67562,34.36621],[44.67551,34.36594],[44.67538,34.36532],[44.67541,34.36447],[44.67532,34.36408],[44.67495,34.36355],[44.67472,34.36232],[44.67471,34.36183],[44.67462,34.36125],[44.67449,34.36110],[44.67432,34.36109],[44.67418,34.36095],[44.67410,34.36078],[44.67392,34.36066],[44.67344,34.36017],[44.67329,34.36014],[44.67322,34.35999],[44.67299,34.35972],[44.67292,34.35943],[44.67254,34.35915],[44.67244,34.35904],[44.67230,34.35862],[44.67183,34.35784],[44.67173,34.35759],[44.67152,34.35729],[44.67136,34.35725],[44.67125,34.35713],[44.67102,34.35620],[44.67102,34.35589],[44.67116,34.35558],[44.67122,34.35531],[44.67126,34.35492],[44.67142,34.35432],[44.67145,34.35390],[44.67121,34.35297],[44.67132,34.35265],[44.67139,34.35213],[44.67137,34.35059],[44.67145,34.34927],[44.67128,34.34839],[44.67111,34.34779],[44.67106,34.34736],[44.67110,34.34707],[44.67108,34.34674],[44.67077,34.34629],[44.67066,34.34591],[44.67065,34.34564],[44.67083,34.34510],[44.67098,34.34490],[44.67154,34.34443],[44.67182,34.34435],[44.67200,34.34379],[44.67225,34.34324],[44.67243,34.34295],[44.67250,34.34273],[44.67263,34.34253],[44.67279,34.34246],[44.67311,34.34242],[44.67317,34.34229],[44.67304,34.34183],[44.67287,34.34154],[44.67249,34.34032],[44.67237,34.33977],[44.67233,34.33920],[44.67240,34.33913],[44.67239,34.33897],[44.67282,34.33890],[44.67301,34.33912],[44.67325,34.33930],[44.67331,34.33931]] },
 ];
 
-// Карточки событий используют те же геометрии, что и общий реестр маршрутов.
-// В этом списке остаются только даты: маршрут можно обновить один раз в ROUTE_TRACKS.
-const HIKE_ROUTE_IDS = {
-    '2026-09-06': 'kant',
-    '2026-09-13': 'ai-yori',
-    '2026-09-20': 'eklizi',
-    '2026-09-26': 'demerdji'
+const HIKE_ROUTE_TITLES = {
+    '2026-09-06': ['форосский кант'],
+    '2026-09-13': ['ай-йори', 'ай йори', 'йори'],
+    '2026-09-20': ['эклизи-бурун', 'эклизи бурун', 'эклизи'],
+    '2026-09-26': ['демерджи', 'долина привидений']
 };
 
-for (const [date, routeId] of Object.entries(HIKE_ROUTE_IDS)) {
-    const route = ROUTE_TRACKS.find(item => item.id === routeId);
-    if (route) HIKE_TRACKS[date] = { loop: true, coords: route.coords };
+function getHikeTrack(hike) {
+    return HIKE_TRACKS[hike.date]
+        || getIntelligentsiaRouteTrack(HIKE_ROUTE_TITLES[hike.date]);
 }
 
 export function renderRoutesMap(container) {
@@ -750,7 +749,7 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
 function initHikeMap(el, track) {
     try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
     try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
-    const C = track.coords;
+    const C = track.coords || track.segments?.flat();
     const DEST = track.dest || track.lake;
     let line;
     if (track.loop) {
@@ -763,11 +762,19 @@ function initHikeMap(el, track) {
         }
         line = [DEST].concat(C.slice(ni));
     }
-    const geojson = { type: 'Feature', geometry: { type: 'LineString', coordinates: line.map(c => [c[1], c[0]]) } };
+    const segments = Array.isArray(track.segments) && track.segments.length
+        ? track.segments.filter(segment => Array.isArray(segment) && segment.length > 1)
+        : [line];
+    const geojson = {
+        type: 'Feature',
+        geometry: segments.length === 1
+            ? { type: 'LineString', coordinates: segments[0].map(c => [c[1], c[0]]) }
+            : { type: 'MultiLineString', coordinates: segments.map(segment => segment.map(c => [c[1], c[0]])) }
+    };
     el.style.background = '#0A0B09';
 
     let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
-    for (const c of line) { minLat = Math.min(minLat, c[0]); maxLat = Math.max(maxLat, c[0]); minLon = Math.min(minLon, c[1]); maxLon = Math.max(maxLon, c[1]); }
+    for (const c of segments.flat()) { minLat = Math.min(minLat, c[0]); maxLat = Math.max(maxLat, c[0]); minLon = Math.min(minLon, c[1]); maxLon = Math.max(maxLon, c[1]); }
     const cLon = (minLon + maxLon) / 2, cLat = (minLat + maxLat) / 2;
 
     const CRIMEA = [[32.4, 44.2], [36.7, 46.3]];
@@ -1090,7 +1097,7 @@ export function showBottomSheet(index) {
         const isPast = hikeDateObj < todayDate;
 
         let imageHtml = '';
-        const hikeTrack = HIKE_TRACKS[hike.date];
+        const hikeTrack = getHikeTrack(hike);
         if ((hikeTrack || hike.image) && !isPlaceholder) {
             const participantText = isPast
                 ? (isBookClub ? 'читали' : (isCity ? 'были' : 'ходили'))

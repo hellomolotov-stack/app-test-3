@@ -38,6 +38,24 @@ let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(B
     };
 }).sort(sortRoutesWestToEast);
 
+export function getIntelligentsiaRouteTrack(routeTitles) {
+    const titles = (Array.isArray(routeTitles) ? routeTitles : [routeTitles])
+        .map(normaliseRouteIdentity)
+        .filter(Boolean);
+    if (!titles.length) return null;
+
+    const route = INTELLIGENTSIA_ROUTES.find(item => {
+        const title = normaliseRouteIdentity(item?.title);
+        return titles.some(candidate => title === candidate || title.includes(candidate));
+    });
+    if (!route?.segments?.length) return null;
+
+    return {
+        loop: true,
+        segments: route.segments.map(segment => segment.map(([lat, lon]) => [lat, lon]))
+    };
+}
+
 function routeCenterLongitude(route) {
     const bounds = route?.bounds;
     if (!Array.isArray(bounds) || bounds.length !== 2) return Number.POSITIVE_INFINITY;
