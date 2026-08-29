@@ -600,19 +600,6 @@ async function loadAppData() {
             try { offerPendingTicketRecovery(); } catch (e) { console.error(e); }
         }, 2500);
 
-        function updateNightBackground() {
-            const now = new Date();
-            const mskTime = new Date(now.toLocaleString("en-US", {timeZone: "Europe/Moscow"}));
-            const mskHours = mskTime.getHours();
-            if (mskHours >= 22 || mskHours < 5) {
-                document.body.classList.add('night-mode');
-            } else {
-                document.body.classList.remove('night-mode');
-            }
-        }
-        updateNightBackground();
-        setInterval(updateNightBackground, 60000);
-
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
         renderHome();

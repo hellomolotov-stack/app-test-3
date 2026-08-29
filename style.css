@@ -3732,9 +3732,6 @@ body::before {
     z-index: 2;
 }
 
-body.night-mode::before {
-    background-image: url('https://i.postimg.cc/prQCHFcb/IMG-4799.jpg') !important;
-}
 .btn, .accordion-btn, .btn-newcomer, .profile-action-btn {
     transition: transform 0.1s ease;
 }
