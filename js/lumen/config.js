@@ -84,7 +84,8 @@ export const LUMEN_POSES = {
     default: 'peek',
 };
 
-const LUMEN_PILOT_USERNAMES = new Set(['hellointelligent']);
+// Пилот Люмена временно отключён: тестовый аккаунт использует обычного помощника.
+const LUMEN_PILOT_USERNAMES = new Set();
 const ROUTE_FAVORITES_PILOT_USERNAMES = new Set(['hellointelligent', 'maxmolotov']);
 
 function pilotUsername(user) {
