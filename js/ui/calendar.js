@@ -341,11 +341,12 @@ const HIKE_ROUTE_TITLES = {
 
 // Пока маршрут не добавлен/не синхронизирован в таблице «Маршруты» (Firebase),
 // используем его собственную геометрию из ROUTE_TRACKS – иначе карточка хайка
-// молча остаётся без 3D-карты.
+// молча остаётся без 3D-карты. Эклизи-Бурун сюда не включаем: локальная
+// геометрия под этим id устарела и не совпадает с маршрутом из блока «все
+// маршруты» – для 20 сентября берём только синхронизированный из таблицы.
 const HIKE_ROUTE_IDS = {
     '2026-09-06': 'kant',
     '2026-09-13': 'ai-yori',
-    '2026-09-20': 'eklizi',
     '2026-09-26': 'demerdji'
 };
 
@@ -777,7 +778,7 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
     rafId = requestAnimationFrame(step);
 }
 
-function initHikeMap(el, track) {
+function initHikeMap(el, track, instant = false) {
     try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
     try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
     const C = track.coords || track.segments?.flat();
@@ -808,6 +809,17 @@ function initHikeMap(el, track) {
     for (const c of segments.flat()) { minLat = Math.min(minLat, c[0]); maxLat = Math.max(maxLat, c[0]); minLon = Math.min(minLon, c[1]); maxLon = Math.max(maxLon, c[1]); }
     const cLon = (minLon + maxLon) / 2, cLat = (minLat + maxLat) / 2;
 
+    let target;
+    if (track.finalCamera) {
+        target = { ...track.finalCamera };
+    } else {
+        const latSpan = maxLat - minLat;
+        const span = Math.max(latSpan, maxLon - minLon);
+        const z = Math.min(14.5, 14.5 - Math.log2(span / 0.005));
+        target = { center: [cLon, cLat - latSpan * 0.45], zoom: z, pitch: 45, bearing: 0 };
+    }
+    const orbitRadiusDeg = Math.max(maxLat - minLat, maxLon - minLon, 0.004) * 0.6;
+
     const CRIMEA = [[32.4, 44.2], [36.7, 46.3]];
 
     const map = new maplibregl.Map({
@@ -826,10 +838,12 @@ function initHikeMap(el, track) {
                 paint: { 'raster-brightness-max': 0.7, 'raster-contrast': 0.15, 'raster-saturation': -1 }
             }]
         },
-        center: [cLon, cLat + 0.06],
-        zoom: 9.5,
-        pitch: 0,
-        bearing: 0,
+        // При перелистывании стрелками сразу встаём в финальный кадр – смотреть,
+        // как камера облетает пустой ландшафт до появления трека, незачем.
+        center: instant ? target.center : [cLon, cLat + 0.06],
+        zoom: instant ? target.zoom : 9.5,
+        pitch: instant ? (target.pitch ?? 45) : 0,
+        bearing: instant ? (target.bearing || 0) : 0,
         maxPitch: 85,
         maxBounds: CRIMEA,
         attributionControl: false,
@@ -893,18 +907,16 @@ function initHikeMap(el, track) {
         });
 
         map.once('idle', () => {
-            let target;
-            if (track.finalCamera) {
-                target = { ...track.finalCamera };
+            if (instant) {
+                // Камера уже стоит в целевом кадре (см. параметры создания карты) –
+                // просто уточняем позицию на случай смещения при загрузке рельефа
+                // и сразу начинаем оборот, не дожидаясь анимации перелёта.
+                map.jumpTo(target);
+                startHikeMapOrbit(map, target, orbitRadiusDeg);
             } else {
-                const latSpan = maxLat - minLat;
-                const span = Math.max(latSpan, maxLon - minLon);
-                const z = Math.min(14.5, 14.5 - Math.log2(span / 0.005));
-                target = { center: [cLon, cLat - latSpan * 0.45], zoom: z, pitch: 45, bearing: 0 };
+                map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
+                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg));
             }
-            map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
-            const orbitRadiusDeg = Math.max(maxLat - minLat, maxLon - minLon, 0.004) * 0.6;
-            map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg));
         });
     });
 
@@ -1006,7 +1018,7 @@ export function showBottomSheet(index) {
         }).catch(() => {});
     }
 
-    function updateContent() {
+    function updateContent(instant = false) {
         const hike = state.hikesWithTitle[sheetCurrentIndex];
         if (!hike) return;
 
@@ -1265,7 +1277,7 @@ export function showBottomSheet(index) {
 
         if (hikeTrack) {
             const mapBox = contentWrapper.querySelector('#hikeMapBox');
-            if (mapBox) ensureMapLibre().then(() => initHikeMap(mapBox, hikeTrack)).catch(() => {});
+            if (mapBox) ensureMapLibre().then(() => initHikeMap(mapBox, hikeTrack, instant)).catch(() => {});
         }
 
         const shareBtn = contentWrapper.querySelector('#shareEventBtn');
@@ -1412,7 +1424,7 @@ export function showBottomSheet(index) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
                 sheetCurrentIndex--;
-                updateContent();
+                updateContent(true);
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('предыдущий хайк', false, state.user);
@@ -1424,7 +1436,7 @@ export function showBottomSheet(index) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
                 sheetCurrentIndex++;
-                updateContent();
+                updateContent(true);
                 contentWrapper.scrollTop = 0;
                 haptic();
                 log('следующий хайк', false, state.user);
