@@ -661,6 +661,7 @@ let cancelHikeMapOrbit = null;
 // доворачивается сверху, будто облетает их по кругу. Мягкий старт и мягкая
 // остановка — круг замыкается ровно на той точке, с которой начали.
 const HIKE_MAP_ORBIT_DURATION = 24000;
+const RELIEF_FADE_MS = 2000;
 const ORBIT_SAMPLES = 72;
 
 // Высоты по кольцу облёта: считаем один раз, потом только интерполируем.
@@ -727,8 +728,13 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
 
         const view = { bearing };
         if (profile) {
+            // На первом кадре рельеф уже не нулевой на текущем азимуте, поэтому
+            // модуляцию наклона/зума плавно вводим за RELIEF_FADE_MS – иначе в момент
+            // передачи от flyTo к обороту камера дёргается.
+            const fadeT = Math.min(1, (now - startedAt) / RELIEF_FADE_MS);
+            const fade = fadeT * fadeT * (3 - 2 * fadeT);
             // Камера стоит с противоположной стороны от направления взгляда
-            const relief = reliefAt(profile, bearing + 180);
+            const relief = reliefAt(profile, bearing + 180) * fade;
             // Над вершиной — чуть больше сверху и чуть дальше, будто поднялись выше
             view.pitch = Math.max(30, Math.min(70, basePitch - relief * 5));
             view.zoom = baseZoom - relief * 0.12;
