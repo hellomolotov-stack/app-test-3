@@ -1648,6 +1648,12 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         height: 40px;
         border-radius: 40px;
         background: ${accentColor};
+        border: 1px solid rgba(0,0,0,0.07);
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.55),
+            inset 0 -2px 0 rgba(0,0,0,0.10),
+            0 3px 10px rgba(0,0,0,0.22),
+            0 1px 2px rgba(0,0,0,0.12);
         display: flex; align-items: center; justify-content: center;
         font-size: 14px; font-weight: 900;
         color: #000;
@@ -1657,6 +1663,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         white-space: nowrap;
         overflow: hidden;
         width: ${currentThumbWidth}px;
+        box-sizing: border-box;
     `;
     thumb.textContent = thumbText;
     thumb.style.fontWeight = '900';
@@ -2474,7 +2481,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
 
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
                 ${!isReturning && isHikeContext
-                    ? `<button class="btn btn-outline" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет · 1000 ₽ 🎟️</button>`
+                    ? `<button class="btn btn-outline" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет · 🎟️ 1000 руб.</button>`
                     : ''}
                 ${!isReturning && !isHikeContext
                     ? `<button class="btn btn-outline" id="pickHikeBtn" style="width: 100%; margin: 0;">выбрать хайк</button>`
@@ -3182,7 +3189,7 @@ function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
         <div class="modal-content" style="max-width:360px; text-align:center;">
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">пойти на хайк</div>
             <div class="modal-text" style="text-align:center; margin-top:8px;">можешь купить разовый билет или оформить карту интеллигента, чтобы ходить безлимитно – не только на хайки, но и на события в городе</div>
-            <button class="btn btn-outline" id="choiceButBtn" style="width:100%; margin:16px 0 0;">купить билет</button>
+            <button class="btn btn-outline" id="choiceButBtn" style="width:100%; margin:16px 0 0;">купить билет · 🎟️ 1000 руб.</button>
             <button class="btn btn-yellow" id="choiceCardBtn" style="width:100%; margin:10px 0 0;">оформить карту</button>
         </div>
     `;

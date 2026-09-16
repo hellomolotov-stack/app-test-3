@@ -387,19 +387,27 @@ body::before {
     max-width: calc(100% - 32px);
     width: auto;
     padding: 12px 20px;
-    background-color: #D9FD19;
+    background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%);
     color: #000000;
-    border: none;
+    border: 1px solid rgba(0,0,0,0.07);
     border-radius: 40px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     z-index: 101;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        inset 0 -2px 0 rgba(0,0,0,0.10),
+        0 3px 10px rgba(0,0,0,0.22),
+        0 1px 2px rgba(0,0,0,0.12);
     white-space: nowrap;
+    transition: box-shadow 0.12s, transform 0.1s;
 }
 .floating-share-btn:active {
-    transform: scale(0.97);
+    box-shadow:
+        inset 0 2px 5px rgba(0,0,0,0.18),
+        0 1px 2px rgba(0,0,0,0.1);
+    transform: translateY(1px);
 }
 
 .safety-banner-flash {
@@ -649,8 +657,13 @@ body::before {
 .card-badge-btn {
     padding: 6px 14px;
     border-radius: 20px;
-    border: none;
-    background: var(--yellow);
+    background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%);
+    border: 1px solid rgba(0,0,0,0.07);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        inset 0 -2px 0 rgba(0,0,0,0.10),
+        0 3px 10px rgba(0,0,0,0.22),
+        0 1px 2px rgba(0,0,0,0.12);
     color: #111;
     font-size: 13px;
     font-weight: 700;
@@ -658,10 +671,13 @@ body::before {
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
     flex-shrink: 0;
+    transition: box-shadow 0.12s, transform 0.1s;
 }
 .card-badge-btn:active {
-    opacity: 0.85;
-    transform: scale(0.97);
+    box-shadow:
+        inset 0 2px 5px rgba(0,0,0,0.18),
+        0 1px 2px rgba(0,0,0,0.1);
+    transform: translateY(1px);
 }
 .guest-card-cta {
     padding: 16px 16px 12px;
@@ -796,27 +812,30 @@ body::before {
 .gc-chip {
     padding: 7px 15px;
     border-radius: 20px;
-    border: none;
-    background: var(--yellow);
+    background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%);
+    border: 1px solid rgba(0,0,0,0.07);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        inset 0 -2px 0 rgba(0,0,0,0.10),
+        0 3px 10px rgba(0,0,0,0.22),
+        0 1px 2px rgba(0,0,0,0.12);
     color: #15170a;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent;
-    transition: opacity 0.18s, transform 0.1s;
+    transition: box-shadow 0.12s, transform 0.1s;
     animation: gcPop 0.28s cubic-bezier(0.34, 1.15, 0.5, 1) both;
 }
 .gc-chip:active {
-    opacity: 0.82;
-    transform: scale(0.96);
+    box-shadow:
+        inset 0 2px 5px rgba(0,0,0,0.18),
+        0 1px 2px rgba(0,0,0,0.1);
+    transform: translateY(1px);
 }
 .gc-chip-hike {
-    background: var(--yellow);
+    background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%);
     color: #15170a;
-    border-color: var(--yellow);
-}
-.gc-chip-hike:active {
-    opacity: 0.85;
 }
 .guest-cta-scarcity {
     font-size: 12px;
@@ -1022,12 +1041,23 @@ body::before {
 }
 
 .card-accordion .accordion-btn {
-    background-color: var(--yellow);
+    background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%);
     color: #000000;
     font-weight: 600;
     animation: none !important; /* убираем свечение */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    border: none;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.55),
+        inset 0 -2px 0 rgba(0,0,0,0.10),
+        0 3px 10px rgba(0,0,0,0.22),
+        0 1px 2px rgba(0,0,0,0.12);
+    border: 1px solid rgba(0,0,0,0.07);
+    transition: box-shadow 0.12s, transform 0.1s;
+}
+.card-accordion .accordion-btn:active {
+    box-shadow:
+        inset 0 2px 5px rgba(0,0,0,0.18),
+        0 1px 2px rgba(0,0,0,0.1);
+    transform: translateY(1px);
 }
 
 .card-accordion .accordion-btn .arrow {

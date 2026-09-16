@@ -8,12 +8,12 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260918eklizifix';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260919ticketbtn';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260918eklizifix';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260919ticketbtn';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -44,15 +44,20 @@ window.toggleShareButton = function(show) {
                 max-width: calc(100% - 32px);
                 width: auto;
                 padding: 12px 20px;
-                background-color: #D9FD19;
+                background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%);
                 color: #000000;
-                border: none;
+                border: 1px solid rgba(0,0,0,0.07);
                 border-radius: 40px;
                 font-size: 16px;
                 font-weight: 600;
                 cursor: pointer;
                 z-index: 101;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                box-shadow:
+                    inset 0 1px 0 rgba(255,255,255,0.55),
+                    inset 0 -2px 0 rgba(0,0,0,0.10),
+                    0 3px 10px rgba(0,0,0,0.22),
+                    0 1px 2px rgba(0,0,0,0.12);
+                transition: box-shadow 0.12s, transform 0.1s;
             `;
             shareBtn.addEventListener('click', () => {
                 haptic();
