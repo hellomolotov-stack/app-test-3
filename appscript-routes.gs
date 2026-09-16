@@ -47,13 +47,17 @@ function syncRoutes() {
     }
   });
 
-  if (errors.length) throw new Error('Синхронизация отменена.\n' + errors.join('\n'));
-  if (!Object.keys(routes).length) throw new Error('Не найдено ни одного активного маршрута с GPX-треком.');
+  // Плохая строка (недоступный GPX, битая ссылка и т.п.) не должна блокировать
+  // синхронизацию остальных маршрутов – пропускаем её и логируем отдельно.
+  if (errors.length) Logger.log('Routes sync – пропущены строки:\n' + errors.join('\n'));
+  if (!Object.keys(routes).length) throw new Error('Не найдено ни одного активного маршрута с GPX-треком.\n' + errors.join('\n'));
 
   ensureRoutesAreReadable_();
   putFirebase_(ROUTES_FIREBASE_PATH, routes);
-  SpreadsheetApp.getActive().toast('Синхронизировано маршрутов: ' + Object.keys(routes).length, 'Маршруты', 6);
-  Logger.log('Routes synced: ' + Object.keys(routes).length);
+  var message = 'Синхронизировано маршрутов: ' + Object.keys(routes).length
+    + (errors.length ? ' (пропущено: ' + errors.length + ', см. Logger)' : '');
+  SpreadsheetApp.getActive().toast(message, 'Маршруты', 6);
+  Logger.log('Routes synced: ' + Object.keys(routes).length + ', skipped: ' + errors.length);
 }
 
 function getRouteColumns_(headers) {
