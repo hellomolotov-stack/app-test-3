@@ -679,6 +679,9 @@ let cancelHikeMapOrbit = null;
 const HIKE_MAP_ORBIT_DURATION = 24000;
 const RELIEF_FADE_MS = 2000;
 const ORBIT_SAMPLES = 72;
+// Насколько ниже (горизонтальнее) наклон камеры во время оборота, чем в кадре
+// прилёта – горизонт опускается, и высота гор читается лучше.
+const ORBIT_PITCH_OFFSET = 15;
 
 // Высоты по кольцу облёта: считаем один раз, потом только интерполируем.
 function sampleOrbitRelief(map, center, radiusDeg) {
@@ -730,11 +733,13 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
     ['mousedown', 'touchstart', 'wheel'].forEach(ev => map.on(ev, cancel));
 
     const startBearing = camera.bearing || 0;
-    const basePitch = Number.isFinite(camera.pitch) ? camera.pitch : 45;
+    // Ниже, чем кадр прилёта: горизонт опускается, и высота гор читается лучше.
+    const basePitch = Math.min(80, (Number.isFinite(camera.pitch) ? camera.pitch : 45) + ORBIT_PITCH_OFFSET);
     const baseZoom = map.getZoom();
     let profile = null;
     try { profile = sampleOrbitRelief(map, camera.center, radiusDeg); } catch (e) {}
 
+    const startFlyToPitch = Number.isFinite(camera.pitch) ? camera.pitch : 45;
     const startedAt = performance.now();
     const step = (now) => {
         if (cancelled || map !== currentHikeMap) return;
@@ -742,19 +747,23 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
         const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
         const bearing = startBearing + eased * 360;
 
+        // На первом кадре и наклон-ниже, и рельеф уже не нулевые на текущем азимуте,
+        // поэтому обе поправки вводим плавно за RELIEF_FADE_MS – иначе в момент
+        // передачи от flyTo к обороту камера дёргается.
+        const fadeT = Math.min(1, (now - startedAt) / RELIEF_FADE_MS);
+        const fade = fadeT * fadeT * (3 - 2 * fadeT);
+
         const view = { bearing };
+        // Плавно уходим от кадра прилёта к более низкому наклону оборота
+        let pitch = startFlyToPitch + (basePitch - startFlyToPitch) * fade;
         if (profile) {
-            // На первом кадре рельеф уже не нулевой на текущем азимуте, поэтому
-            // модуляцию наклона/зума плавно вводим за RELIEF_FADE_MS – иначе в момент
-            // передачи от flyTo к обороту камера дёргается.
-            const fadeT = Math.min(1, (now - startedAt) / RELIEF_FADE_MS);
-            const fade = fadeT * fadeT * (3 - 2 * fadeT);
             // Камера стоит с противоположной стороны от направления взгляда
             const relief = reliefAt(profile, bearing + 180) * fade;
             // Над вершиной — чуть больше сверху и чуть дальше, будто поднялись выше
-            view.pitch = Math.max(30, Math.min(70, basePitch - relief * 5));
+            pitch -= relief * 5;
             view.zoom = baseZoom - relief * 0.12;
         }
+        view.pitch = Math.max(30, Math.min(82, pitch));
 
         try {
             map.jumpTo(view);
