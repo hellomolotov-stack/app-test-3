@@ -339,9 +339,25 @@ const HIKE_ROUTE_TITLES = {
     '2026-09-26': ['демерджи', 'долина привидений']
 };
 
+// Пока маршрут не добавлен/не синхронизирован в таблице «Маршруты» (Firebase),
+// используем его собственную геометрию из ROUTE_TRACKS – иначе карточка хайка
+// молча остаётся без 3D-карты.
+const HIKE_ROUTE_IDS = {
+    '2026-09-06': 'kant',
+    '2026-09-13': 'ai-yori',
+    '2026-09-20': 'eklizi',
+    '2026-09-26': 'demerdji'
+};
+
 function getHikeTrack(hike) {
-    return HIKE_TRACKS[hike.date]
-        || getIntelligentsiaRouteTrack(HIKE_ROUTE_TITLES[hike.date]);
+    if (HIKE_TRACKS[hike.date]) return HIKE_TRACKS[hike.date];
+
+    const sheetTrack = getIntelligentsiaRouteTrack(HIKE_ROUTE_TITLES[hike.date]);
+    if (sheetTrack) return sheetTrack;
+
+    const routeId = HIKE_ROUTE_IDS[hike.date];
+    const localRoute = routeId && ROUTE_TRACKS.find(item => item.id === routeId);
+    return localRoute ? { loop: true, coords: localRoute.coords } : null;
 }
 
 export function renderRoutesMap(container) {
