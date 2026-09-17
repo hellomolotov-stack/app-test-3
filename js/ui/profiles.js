@@ -5,7 +5,7 @@ import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
     loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations, loadRouteFavorites,
 } from '../firebase.js';
-import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260919ticketbtn';
+import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260920profilesgrid';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
 import { showGuestBookingPopup } from './calendar.js';
@@ -66,7 +66,19 @@ async function renderProfileCard(profile, isBlurred = false) {
         </div>
     ` : '';
 
-    return `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${contactButtons}</div>`;
+    const html = `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${contactButtons}</div>`;
+
+    // Грубая оценка высоты карточки для балансировки колонок в шахматном порядке –
+    // без неё карточки просто чередуются по индексу и «падают» не туда, где есть место.
+    const weight = 220
+        + (profile.hobbies || '—').length * 1.1
+        + (profile.profession || '—').length * 1.1
+        + statusTags.length * 0.4
+        + (nextHikeHtml ? 60 : 0)
+        + (favoritesHtml ? 40 : 0)
+        + (contactButtons ? 40 : 0);
+
+    return { html, weight };
 }
 
 function getRandomProfile() {
@@ -127,7 +139,11 @@ export async function renderProfiles() {
         html = wrapInfiniteScroll(`<div class="profiles-two-columns">${ph}${ph}</div>`);
     } else {
         const leftCards = [], rightCards = [];
-        allCards.forEach((card, i) => i % 2 === 0 ? leftCards.push(card) : rightCards.push(card));
+        let leftWeight = 0, rightWeight = 0;
+        allCards.forEach(({ html: cardHtml, weight }) => {
+            if (leftWeight <= rightWeight) { leftCards.push(cardHtml); leftWeight += weight; }
+            else { rightCards.push(cardHtml); rightWeight += weight; }
+        });
         const twoColumnsHtml = `<div class="profiles-two-columns"><div class="profiles-column">${leftCards.join('')}</div><div class="profiles-column">${rightCards.join('')}</div></div>`;
         html = shouldAnimate ? wrapInfiniteScroll(twoColumnsHtml) : `<div class="card-container">${twoColumnsHtml}</div>`;
     }
