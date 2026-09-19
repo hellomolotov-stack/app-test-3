@@ -9,7 +9,8 @@ import {
     setUserRegistrationStatus,
     subscribeToParticipantCount,
     loadAllParticipants,
-    loadAllProfiles
+    loadAllProfiles,
+    loadUserRegistrations
 } from '../firebase.js';
 import { renderHome } from './home.js';
 import { renderUserBookings } from './home.js';
@@ -3037,28 +3038,21 @@ export function showHikePickerSheet() {
 }
 
 // ==================== ПОКУПКА БИЛЕТА НА ХАЙК ====================
-// Для билета оплата и есть запись. Счёт создаётся на сервере (initPayment) — так у платежа
-// свой InvId, привязанный к user_id и дате хайка, и Robokassa на своём ResultURL записывает
-// человека сама, даже если он не вернулся в приложение. Возврат по startapp=paid показывает
-// экран успеха (см. completeTicketRegistration), localStorage — третья подстраховка.
-// Статический счёт остаётся фолбэком: если сервер недоступен, лучше дать оплатить, чем ничего.
-const TICKET_INVOICE_LINK = 'https://auth.robokassa.ru/merchant/Invoice/X43-HE1Op0y6NK9GN3LJXQ';
+// Для билета оплата и есть запись. Счёт создаётся на сервере (initPayment): у платежа свой InvId,
+// привязанный к user_id и дате хайка, и Robokassa на своём ResultURL записывает человека сама –
+// даже если он не вернулся в приложение. SuccessURL ведёт назад в приложение (startapp=paid_<дата>).
+//
+// Статического счёта здесь намеренно нет. По нему оплата приходила без user_id и без даты хайка:
+// ResultURL не понимал, кого записывать, а Robokassa не возвращала человека в приложение –
+// так остались незаписанными две участницы. Если сервер недоступен, лучше не взять деньги вовсе,
+// чем взять их без следа.
 const TICKET_PRICE = 1000;
+const TICKET_SUPPORT_LINK = 'https://t.me/hellointelligent';
 
 async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
-    if (hikeDate) {
-        try {
-            localStorage.setItem('pending_reg_celebration', JSON.stringify({
-                hikeDate,
-                hikeTitle: hikeTitle || '',
-                type: 'ticket',
-                ts: Date.now()
-            }));
-        } catch (e) {}
-    }
     log(logLabel, true, state.user, { hike_date: hikeDate });
 
-    let payUrl = TICKET_INVOICE_LINK;
+    let payUrl = '';
     try {
         const data = await initPayment({
             userId: state.user?.id,
@@ -3068,15 +3062,33 @@ async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
             hikeDate, hikeTitle, cardType: 'ticket'
         });
         // Старая версия Apps Script не знает про билеты и выставит цену карты.
-        // Открываем серверный счёт, только если сервер подтвердил тип и сумму билета.
+        // Открываем счёт, только если сервер подтвердил тип и сумму билета.
         if (data?.url && data.card_type === 'ticket' && Number(data.amount) === TICKET_PRICE) {
             payUrl = data.url;
         } else {
-            log('билет – счёт не подтверждён, статичная ссылка', true, state.user, { hike_date: hikeDate });
+            log('билет – сервер не подтвердил счёт', true, state.user, { hike_date: hikeDate });
         }
     } catch (err) {
         console.error('initPayment (ticket) error:', err);
-        log('билет – счёт не создан, статичная ссылка', true, state.user, { hike_date: hikeDate });
+        log('билет – счёт не создан', true, state.user, { hike_date: hikeDate });
+    }
+
+    if (!payUrl) {
+        alert('Не удалось открыть оплату. Проверь соединение и попробуй ещё раз – или напиши нам в поддержку: @hellointelligent');
+        return;
+    }
+
+    // Запоминаем хайк только теперь, когда счёт точно создан: это подстраховка на случай,
+    // если по возврату в приложение не придёт startapp (см. offerPendingTicketRecovery).
+    if (hikeDate) {
+        try {
+            localStorage.setItem('pending_reg_celebration', JSON.stringify({
+                hikeDate,
+                hikeTitle: hikeTitle || '',
+                type: 'ticket',
+                ts: Date.now()
+            }));
+        } catch (e) {}
     }
     openLink(payUrl, 'купить билет на хайк', true);
 }
@@ -3179,6 +3191,60 @@ export function completeTicketRegistration(hikeDate, hikeTitle) {
         })
         .catch(error => console.error('completeTicketRegistration error:', error))
         .finally(() => showRegistrationSuccess(hikeDate, title));
+}
+
+// Возврат из оплаты по ссылке startapp=paid_<дата>. Запись делает сервер по ResultURL Robokassa,
+// обычно за несколько секунд после оплаты, – ждём её и показываем экран успеха. Клиент сам никого
+// не записывает: иначе любая ручная ссылка вида ?startapp=paid_<дата> давала бы бесплатную запись.
+export async function confirmTicketPaymentReturn(hikeDate) {
+    const userId = state.user?.id;
+    const index = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
+    const title = index >= 0 ? state.hikesWithTitle[index].title : '';
+    if (!userId || !hikeDate) return;
+
+    let registered = false;
+    for (let attempt = 0; attempt < 8 && !registered; attempt++) {
+        try {
+            const regs = await loadUserRegistrations(userId);
+            registered = regs?.[hikeDate] === true;
+        } catch (e) { /* сеть моргнула – пробуем ещё */ }
+        if (!registered) await new Promise(r => setTimeout(r, 2000));
+    }
+
+    if (registered) {
+        clearPendingTicket();
+        if (index >= 0) {
+            state.hikeBookingStatus[index] = true;
+            saveBookingStatusToLocal();
+        }
+        renderUserBookings(document.getElementById('userBookingsContainer'));
+        const cal = document.getElementById('calendarContainer');
+        if (cal) renderCalendar(cal);
+        log('оплата билета подтверждена сервером', true, state.user, { hike_date: hikeDate });
+        showRegistrationSuccess(hikeDate, title);
+        return;
+    }
+
+    // Сервер запись ещё не создал. Не пугаем человека и не записываем вслепую: подсказываем,
+    // что делать. Локальная подстраховка (offerPendingTicketRecovery) остаётся на следующие заходы.
+    log('оплата билета не подтверждена сервером', true, state.user, { hike_date: hikeDate });
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:360px; text-align:center;">
+            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">оплату обрабатываем</div>
+            <div class="modal-text" style="text-align:center; margin-top:8px;">обычно это занимает меньше минуты. запись появится в приложении сама. если через пару минут её нет – напиши нам, сразу запишем</div>
+            <button class="btn btn-yellow" id="ticketWaitSupportBtn" style="width:100%; margin:16px 0 0;">написать в поддержку</button>
+            <button class="btn btn-outline" id="ticketWaitOkBtn" style="width:100%; margin:10px 0 0;">хорошо</button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById('ticketWaitSupportBtn').addEventListener('click', () => {
+        haptic();
+        overlay.remove();
+        openLink(TICKET_SUPPORT_LINK, 'оплата билета – написать в поддержку', true);
+    });
+    document.getElementById('ticketWaitOkBtn').addEventListener('click', () => { haptic(); overlay.remove(); });
 }
 
 // ==================== КОРОТКИЙ БАННЕР ВЫБОРА: БИЛЕТ ИЛИ КАРТА (гость без карты) ====================

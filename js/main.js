@@ -8,12 +8,12 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260920profilesgrid';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260920ticketreturn';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260920profilesgrid';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260920ticketreturn';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -303,6 +303,32 @@ function handleDeepLink(startParam) {
         }, 10000);
         return;
     }
+    // Возврат из оплаты билета: paid_<дата хайка>. Дата приходит в самой ссылке, поэтому возврат
+    // работает и без localStorage (другой webview, очищенный кэш). Запись делает сервер по ResultURL.
+    if (startParam.startsWith('paid_')) {
+        const paidDate = normalizeDate(startParam.substring(5));
+        log('вернулась из оплаты билета', true, state.user, { hike_date: paidDate });
+        const run = () => confirmTicketPaymentReturn(paidDate);
+        // Нужен список хайков, чтобы найти название и обновить кнопки; ждём его как в card_/hike_
+        if (state.hikesWithTitle.some(h => normalizeDate(h.date) === paidDate)) {
+            setTimeout(run, 400);
+            return;
+        }
+        let started = false;
+        const start = () => { if (!started) { started = true; run(); } };
+        const unsub = subscribeToHikes((newList) => {
+            state.hikesList = newList;
+            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
+            state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
+            saveCachedState();
+            if (state.hikesWithTitle.some(h => normalizeDate(h.date) === paidDate)) {
+                unsub();
+                start();
+            }
+        });
+        setTimeout(() => { unsub(); start(); }, 8000);
+        return;
+    }
     if (startParam.startsWith('hike_') && startParam !== 'hike_map') {
         const targetDate = normalizeDate(decodeURIComponent(startParam.substring(5)).split('T')[0]);
         console.log('Deep link hike target:', targetDate);
@@ -390,15 +416,17 @@ function handleDeepLink(startParam) {
                     const pending = localStorage.getItem('pending_reg_celebration');
                     if (pending) {
                         celebData = JSON.parse(pending);
-                        localStorage.removeItem('pending_reg_celebration');
+                        // Билет держим в localStorage, пока сервер не подтвердил запись: если оплата
+                        // ещё обрабатывается, следующий заход предложит подтвердить (offerPendingTicketRecovery).
+                        if (celebData?.type !== 'ticket') localStorage.removeItem('pending_reg_celebration');
                     }
                 } catch {}
-                // Билет на хайк: оплата и есть запись – дозаписываем участника и показываем экран успеха
+                // Билет на хайк: запись делает сервер по ResultURL Robokassa. Ждём её и показываем экран успеха.
                 const isFreshTicket = celebData?.type === 'ticket'
                     && celebData.hikeDate
                     && (!celebData.ts || Date.now() - celebData.ts < TICKET_PENDING_TTL);
                 if (isFreshTicket) {
-                    completeTicketRegistration(celebData.hikeDate, celebData.hikeTitle);
+                    confirmTicketPaymentReturn(celebData.hikeDate);
                     return;
                 }
 
