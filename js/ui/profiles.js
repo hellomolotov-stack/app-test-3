@@ -5,10 +5,11 @@ import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
     loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations, loadRouteFavorites,
 } from '../firebase.js';
-import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260920profilesgrid';
+import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260922personalmap';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
 import { showGuestBookingPopup } from './calendar.js';
+import { renderPersonalRoutesMap, isPersonalMapPilotUser } from './personal-routes-map.js';
 
 let profiles = {};
 let myProfile = null;
@@ -149,6 +150,14 @@ export async function renderProfiles() {
     }
 
     mainDiv().innerHTML = html;
+
+    // «Мой Крым» — личная карта маршрутов с туманом (пока только пилотный аккаунт).
+    if (isPersonalMapPilotUser(state.user)) {
+        const personalMapHost = document.createElement('div');
+        personalMapHost.id = 'personalMapContainer';
+        mainDiv().prepend(personalMapHost);
+        renderPersonalRoutesMap(personalMapHost).catch(error => console.error('Мой Крым:', error));
+    }
 
     mainDiv().querySelectorAll('.profile-contact-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {

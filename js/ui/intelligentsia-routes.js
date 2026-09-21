@@ -38,6 +38,10 @@ let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(B
     };
 }).sort(sortRoutesWestToEast);
 
+// Актуальный список маршрутов доступен остальным модулям через state: этот файл подключается
+// с разными ?v=…, и у каждой копии модуля свой INTELLIGENTSIA_ROUTES. state — общий для всех.
+state.intelligentsiaRoutes = INTELLIGENTSIA_ROUTES;
+
 export function getIntelligentsiaRouteTrack(routeTitles) {
     const titles = (Array.isArray(routeTitles) ? routeTitles : [routeTitles])
         .map(normaliseRouteIdentity)
@@ -123,6 +127,7 @@ export function setIntelligentsiaRoutes(routes) {
     // A failed or not-yet-configured sync must never make the card disappear.
     if (!syncedRoutes.length) return;
     INTELLIGENTSIA_ROUTES = syncedRoutes.sort(sortRoutesWestToEast);
+    state.intelligentsiaRoutes = INTELLIGENTSIA_ROUTES;
     const container = document.getElementById('intelligentsiaRoutesContainer');
     if (container) renderIntelligentsiaRoutes(container);
 }
