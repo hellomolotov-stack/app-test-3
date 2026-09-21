@@ -138,75 +138,87 @@ function routeBounds(routes) {
 
 // Рисуем туман картинкой в координатах карты: она ложится на рельеф вместе с тайлами, а мягкий
 // край получаем многократной обводкой треков (ctx.filter в iOS Safari до 18 нет).
-// Порядок важен: сначала тают пройденные маршруты, потом туман возвращается поверх непройденных
-// (иначе рядом лежащие зоны сливаются в одну открытую полосу и кажется, что открыт весь берег),
-// и в конце ядро пройденных маршрутов очищается ещё раз.
+// Плотность тумана везде одинакова, а «открытость» считаем отдельным слоем-маской:
+//   открытие = таяние вокруг пройденных × (1 − блок вокруг непройденных), плюс ядро пройденных.
+// Так рядом лежащие пройденные зоны не сливаются в полосу вдоль берега, а над непройденными
+// туман остаётся ровно той же плотности, что и вокруг (раньше слои тумана складывались и там
+// появлялись чёрные пятна).
+const FOG_ALPHA = 0.68;
+const FOG_RGB = '178, 182, 178'; // молочно-серый: туман должен читаться как дымка, а не как чёрные пятна
+
 function buildFogImage(visitedRoutes, unvisitedRoutes) {
     const [west, south, east, north] = MAP_BOUNDS;
     const width = FOG_WIDTH_PX;
     const dy = mercatorY(north) - mercatorY(south);
     const dx = ((east - west) * Math.PI) / 180;
     const height = Math.round((width * dy) / dx);
-
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
+    const pxPerKm = width / ((east - west) * 111.32 * Math.cos((44.9 * Math.PI) / 180));
     const toPx = (lon, lat) => [
         ((lon - west) / (east - west)) * width,
         ((mercatorY(north) - mercatorY(lat)) / dy) * height
     ];
-    const pxPerKm = width / ((east - west) * 111.32 * Math.cos((44.9 * Math.PI) / 180));
+    const makeLayer = () => {
+        const layer = document.createElement('canvas');
+        layer.width = width;
+        layer.height = height;
+        const layerCtx = layer.getContext('2d');
+        layerCtx.lineCap = 'round';
+        layerCtx.lineJoin = 'round';
+        return { layer, layerCtx };
+    };
+    // Серия обводок от широкой к узкой: прозрачность накапливается к центру, край получается мягким.
+    const soft = (layerCtx, routes, outerKm, innerKm, passes, alpha) => {
+        layerCtx.strokeStyle = '#000';
+        layerCtx.globalAlpha = alpha;
+        const outer = 2 * outerKm * pxPerKm;
+        const inner = 2 * innerKm * pxPerKm;
+        for (let pass = 0; pass < passes; pass++) {
+            layerCtx.lineWidth = outer - ((outer - inner) * pass) / (passes - 1);
+            routes.forEach(route => route.segments.forEach(segment => {
+                layerCtx.beginPath();
+                segment.forEach(([lat, lon], index) => {
+                    const [x, y] = toPx(lon, lat);
+                    if (index === 0) layerCtx.moveTo(x, y); else layerCtx.lineTo(x, y);
+                });
+                layerCtx.stroke();
+            }));
+        }
+        layerCtx.globalAlpha = 1;
+    };
 
-    // Основа тумана — нейтральная, под цвет фона приложения (карта чёрно-белая).
-    ctx.fillStyle = 'rgba(6, 7, 6, 0.86)';
+    // Открытие: таяние вокруг пройденных (радиус мягкого края ≈ 5.5 км, полностью открыто ≈ 1.8 км).
+    const { layer: reveal, layerCtx: revealCtx } = makeLayer();
+    soft(revealCtx, visitedRoutes, 5.5, 1.8, 14, 0.22);
+    // Блок: вокруг непройденных открытие гасится (радиус ≈ 3.2 км, в центре гасится целиком).
+    const { layer: block, layerCtx: blockCtx } = makeLayer();
+    soft(blockCtx, unvisitedRoutes, 3.2, 1.2, 12, 0.3);
+    revealCtx.globalCompositeOperation = 'destination-out';
+    revealCtx.drawImage(block, 0, 0);
+    revealCtx.globalCompositeOperation = 'source-over';
+    // Ядро пройденных маршрутов — открыто целиком, даже если рядом непройденный.
+    soft(revealCtx, visitedRoutes, 1.3, 0.7, 6, 0.6);
+
+    // Сам туман: одинаковая плотность и лёгкие клочья облаков.
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = `rgba(${FOG_RGB}, ${FOG_ALPHA})`;
     ctx.fillRect(0, 0, width, height);
-
-    // Клочья облаков поверх основы: светло-серые, низкая плотность.
     const random = seededRandom(20260922);
     for (let i = 0; i < 240; i++) {
         const x = random() * width;
         const y = random() * height;
         const radius = 70 + random() * 260;
-        const alpha = 0.015 + random() * 0.035;
+        const alpha = 0.03 + random() * 0.07;
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(130, 132, 128, ${alpha})`);
-        gradient.addColorStop(1, 'rgba(130, 132, 128, 0)');
+        gradient.addColorStop(0, `rgba(235, 237, 233, ${alpha})`);
+        gradient.addColorStop(1, 'rgba(235, 237, 233, 0)');
         ctx.fillStyle = gradient;
         ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     }
-
-    const strokeRoutes = routes => routes.forEach(route => route.segments.forEach(segment => {
-        ctx.beginPath();
-        segment.forEach(([lat, lon], index) => {
-            const [x, y] = toPx(lon, lat);
-            if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-    }));
-    // Серия обводок от широкой к узкой: прозрачность накапливается к центру, край получается мягким.
-    const soft = (routes, mode, outerKm, innerKm, passes, alpha, color) => {
-        ctx.globalCompositeOperation = mode;
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = alpha;
-        const outer = 2 * outerKm * pxPerKm;
-        const inner = 2 * innerKm * pxPerKm;
-        for (let pass = 0; pass < passes; pass++) {
-            ctx.lineWidth = outer - ((outer - inner) * pass) / (passes - 1);
-            strokeRoutes(routes);
-        }
-    };
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    // 1) Таяние вокруг пройденных: радиус мягкого края ≈ 5.5 км, полностью открыто ≈ 1.8 км.
-    soft(visitedRoutes, 'destination-out', 5.5, 1.8, 14, 0.22, '#000');
-    // 2) Туман возвращается над непройденными: чуть уже, чтобы не «съесть» соседей.
-    soft(unvisitedRoutes, 'source-over', 3.2, 1.2, 12, 0.16, 'rgb(6, 7, 6)'); // копится до плотности основного тумана
-    // 3) Ядро пройденных маршрутов — начисто.
-    soft(visitedRoutes, 'destination-out', 2, 1.2, 6, 0.6, '#000');
-
-    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.drawImage(reveal, 0, 0);
     ctx.globalCompositeOperation = 'source-over';
     return canvas;
 }
@@ -571,6 +583,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
         if (!complete) {
             registerFogProtocol();
             fogCanvas = buildFogImage(visitedRoutes, routes.filter(route => !visited.has(route.id)));
+            container.__pmapFog = fogCanvas; // для проверок в консоли
             map.addSource('fog', {
                 type: 'raster',
                 tiles: ['pmapfog://{z}/{x}/{y}'],
