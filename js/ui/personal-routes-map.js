@@ -137,8 +137,11 @@ function routeBounds(routes) {
 }
 
 // Рисуем туман картинкой в координатах карты: она ложится на рельеф вместе с тайлами, а мягкий
-// край получаем многократной обводкой треков со стиранием (ctx.filter в iOS Safari до 18 нет).
-function buildFogImage(visitedRoutes) {
+// край получаем многократной обводкой треков (ctx.filter в iOS Safari до 18 нет).
+// Порядок важен: сначала тают пройденные маршруты, потом туман возвращается поверх непройденных
+// (иначе рядом лежащие зоны сливаются в одну открытую полосу и кажется, что открыт весь берег),
+// и в конце ядро пройденных маршрутов очищается ещё раз.
+function buildFogImage(visitedRoutes, unvisitedRoutes) {
     const [west, south, east, north] = MAP_BOUNDS;
     const width = FOG_WIDTH_PX;
     const dy = mercatorY(north) - mercatorY(south);
@@ -153,46 +156,56 @@ function buildFogImage(visitedRoutes) {
         ((lon - west) / (east - west)) * width,
         ((mercatorY(north) - mercatorY(lat)) / dy) * height
     ];
+    const pxPerKm = width / ((east - west) * 111.32 * Math.cos((44.9 * Math.PI) / 180));
 
-    // Основа тумана.
-    ctx.fillStyle = 'rgba(8, 12, 19, 0.85)';
+    // Основа тумана — нейтральная, под цвет фона приложения (карта чёрно-белая).
+    ctx.fillStyle = 'rgba(6, 7, 6, 0.86)';
     ctx.fillRect(0, 0, width, height);
 
-    // Клочья облаков поверх основы: тёплый лунно-серый оттенок, низкая плотность.
+    // Клочья облаков поверх основы: светло-серые, низкая плотность.
     const random = seededRandom(20260922);
     for (let i = 0; i < 240; i++) {
         const x = random() * width;
         const y = random() * height;
         const radius = 70 + random() * 260;
-        const alpha = 0.03 + random() * 0.07;
+        const alpha = 0.015 + random() * 0.035;
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(176, 192, 214, ${alpha})`);
-        gradient.addColorStop(1, 'rgba(176, 192, 214, 0)');
+        gradient.addColorStop(0, `rgba(130, 132, 128, ${alpha})`);
+        gradient.addColorStop(1, 'rgba(130, 132, 128, 0)');
         ctx.fillStyle = gradient;
         ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     }
 
-    // «Таяние» вокруг пройденных маршрутов.
-    const pxPerKm = width / ((east - west) * 111.32 * Math.cos((44.9 * Math.PI) / 180));
-    const outerWidth = 2 * 8.5 * pxPerKm; // радиус мягкого края ≈ 8.5 км
-    const innerWidth = 2 * 2.6 * pxPerKm; // полностью открытая зона ≈ 2.6 км
-    const passes = 16;
-    ctx.globalCompositeOperation = 'destination-out';
+    const strokeRoutes = routes => routes.forEach(route => route.segments.forEach(segment => {
+        ctx.beginPath();
+        segment.forEach(([lat, lon], index) => {
+            const [x, y] = toPx(lon, lat);
+            if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }));
+    // Серия обводок от широкой к узкой: прозрачность накапливается к центру, край получается мягким.
+    const soft = (routes, mode, outerKm, innerKm, passes, alpha, color) => {
+        ctx.globalCompositeOperation = mode;
+        ctx.strokeStyle = color;
+        ctx.globalAlpha = alpha;
+        const outer = 2 * outerKm * pxPerKm;
+        const inner = 2 * innerKm * pxPerKm;
+        for (let pass = 0; pass < passes; pass++) {
+            ctx.lineWidth = outer - ((outer - inner) * pass) / (passes - 1);
+            strokeRoutes(routes);
+        }
+    };
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#000';
-    ctx.globalAlpha = 0.2;
-    for (let pass = 0; pass < passes; pass++) {
-        ctx.lineWidth = outerWidth - ((outerWidth - innerWidth) * pass) / (passes - 1);
-        visitedRoutes.forEach(route => route.segments.forEach(segment => {
-            ctx.beginPath();
-            segment.forEach(([lat, lon], index) => {
-                const [x, y] = toPx(lon, lat);
-                if (index === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-            });
-            ctx.stroke();
-        }));
-    }
+
+    // 1) Таяние вокруг пройденных: радиус мягкого края ≈ 5.5 км, полностью открыто ≈ 1.8 км.
+    soft(visitedRoutes, 'destination-out', 5.5, 1.8, 14, 0.22, '#000');
+    // 2) Туман возвращается над непройденными: чуть уже, чтобы не «съесть» соседей.
+    soft(unvisitedRoutes, 'source-over', 3.2, 1.2, 12, 0.16, 'rgb(6, 7, 6)'); // копится до плотности основного тумана
+    // 3) Ядро пройденных маршрутов — начисто.
+    soft(visitedRoutes, 'destination-out', 2, 1.2, 6, 0.6, '#000');
+
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'source-over';
     return canvas;
@@ -273,8 +286,8 @@ function buildPoster({ mapCanvas, visitedCount, total, percent, name }) {
     const font = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
     const background = ctx.createRadialGradient(W / 2, H * 0.4, 100, W / 2, H * 0.4, H * 0.75);
-    background.addColorStop(0, '#122236');
-    background.addColorStop(1, '#070a10');
+    background.addColorStop(0, '#191a18');
+    background.addColorStop(1, '#070807');
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, W, H);
 
@@ -304,13 +317,13 @@ function buildPoster({ mapCanvas, visitedCount, total, percent, name }) {
     drawCover(ctx, mapCanvas, 0, mapTop, W, mapHeight);
     ctx.restore();
     const fadeTop = ctx.createLinearGradient(0, mapTop, 0, mapTop + 170);
-    fadeTop.addColorStop(0, '#0a0f18');
-    fadeTop.addColorStop(1, 'rgba(10,15,24,0)');
+    fadeTop.addColorStop(0, '#0d0e0c');
+    fadeTop.addColorStop(1, 'rgba(13,14,12,0)');
     ctx.fillStyle = fadeTop;
     ctx.fillRect(0, mapTop, W, 170);
     const fadeBottom = ctx.createLinearGradient(0, mapTop + mapHeight - 230, 0, mapTop + mapHeight);
-    fadeBottom.addColorStop(0, 'rgba(8,11,18,0)');
-    fadeBottom.addColorStop(1, '#080b12');
+    fadeBottom.addColorStop(0, 'rgba(8,9,8,0)');
+    fadeBottom.addColorStop(1, '#080908');
     ctx.fillStyle = fadeBottom;
     ctx.fillRect(0, mapTop + mapHeight - 230, W, 230);
 
@@ -422,7 +435,7 @@ function injectStyles() {
         .pmap-wrap.pmap-complete { border-color: rgba(217,253,25,0.55); box-shadow: 0 0 26px rgba(217,253,25,0.22); }
         .pmap-map { width: 100%; height: 100%; }
         .pmap-map .maplibregl-ctrl-bottom-left, .pmap-map .maplibregl-ctrl-bottom-right { display: none; }
-        .pmap-hint { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 12px 9px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.78); background: linear-gradient(transparent, rgba(6,9,14,0.88)); pointer-events: none; }
+        .pmap-hint { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 12px 9px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.78); background: linear-gradient(transparent, rgba(6,7,6,0.88)); pointer-events: none; }
         .pmap-complete .pmap-hint { color: ${YELLOW}; font-weight: 700; }
         .pmap-legend { display: flex; justify-content: center; gap: 18px; margin: 11px 16px 13px; font-size: 12px; color: rgba(255,255,255,0.6); }
         .pmap-legend i { display: inline-block; width: 16px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
@@ -517,7 +530,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
                 id: 'satellite-layer',
                 type: 'raster',
                 source: 'satellite',
-                paint: { 'raster-brightness-max': 0.78, 'raster-contrast': 0.12, 'raster-saturation': -0.35, 'raster-resampling': 'linear' }
+                paint: { 'raster-brightness-max': 0.7, 'raster-contrast': 0.15, 'raster-saturation': -1, 'raster-resampling': 'linear' }
             }]
         },
         center: [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2],
@@ -546,18 +559,18 @@ export async function renderPersonalRoutesMap(container, options = {}) {
             maxzoom: 15,
             bounds: MAP_BOUNDS
         });
-        map.setTerrain({ source: 'dem', exaggeration: 1.15 });
+        map.setTerrain({ source: 'dem', exaggeration: 1.2 });
         map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#151515', 'fog-color': '#0A0B09' });
         map.addLayer({
             id: 'terrain-hillshade',
             type: 'hillshade',
             source: 'dem',
-            paint: { 'hillshade-exaggeration': 0.5, 'hillshade-shadow-color': '#0d0f0c', 'hillshade-highlight-color': '#cfd4c8' }
+            paint: { 'hillshade-exaggeration': 0.46, 'hillshade-shadow-color': '#111111', 'hillshade-highlight-color': '#bfc4bd' }
         });
 
         if (!complete) {
             registerFogProtocol();
-            fogCanvas = buildFogImage(visitedRoutes);
+            fogCanvas = buildFogImage(visitedRoutes, routes.filter(route => !visited.has(route.id)));
             map.addSource('fog', {
                 type: 'raster',
                 tiles: ['pmapfog://{z}/{x}/{y}'],
