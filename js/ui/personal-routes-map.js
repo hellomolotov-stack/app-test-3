@@ -7,7 +7,7 @@ import { state } from '../state.js';
 import { log } from '../api.js';
 import { loadUserRegistrations } from '../firebase.js';
 
-const PILOT_USERNAMES = new Set(['maksmolotov']);
+const PILOT_USERNAMES = new Set(['maxmolotov']);
 const MAP_BOUNDS = [32.15, 44.05, 36.85, 46.45]; // [запад, юг, восток, север] — как у остальных карт
 const FOG_WIDTH_PX = 2048;
 const YELLOW = '#D9FD19';
