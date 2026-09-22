@@ -137,21 +137,66 @@ function routeBounds(routes) {
 }
 
 // Рисуем туман картинкой в координатах карты: она ложится на рельеф вместе с тайлами, а мягкий
-// край получаем многократной обводкой треков (ctx.filter в iOS Safari до 18 нет).
-// Плотность тумана везде одинакова, а «открытость» считаем отдельным слоем-маской:
-//   открытие = таяние вокруг пройденных × (1 − блок вокруг непройденных), плюс ядро пройденных.
-// Так рядом лежащие пройденные зоны не сливаются в полосу вдоль берега, а над непройденными
-// туман остаётся ровно той же плотности, что и вокруг (раньше слои тумана складывались друг на
-// друга и там появлялись чёрные пятна). Карта цветная (единственная такая в приложении: чёрно-белый
-// рельеф под чёрно-белым туманом сливался в нечитаемое пятно), туман — классический белый, тоже не
-// плоская заливка: пушистые клочья разной плотности, лёгкая тень между ними для объёма, мелкая рябь
-// и редкие проталины, сквозь которые местами проступает цвет карты.
-const FOG_ALPHA = 0.55;
+// край получаем многократной обводкой треков (ctx.filter в iOS Safari до 18 нет). Карта цветная
+// (единственная такая в приложении: чёрно-белый рельеф под чёрно-белым туманом сливался в
+// нечитаемое пятно), туман — классический белый.
+//
+// Открытость каждой точки считаем не готовой геометрической фигурой (круг/blur), а через
+// фрактальный шум: гладкое поле «близко к пройденному маршруту» и гладкое поле «близко к
+// непройденному» шум деформирует НЕЗАВИСИМО, до того как они встретятся. Стык двух ровных
+// blur-контуров всегда читается как чёткая дуга — «укус» одного круга другим; когда оба края
+// заранее неровные, их граница выглядит как береговая линия или разрыв облаков, а не геометрия.
+const FOG_ALPHA = 0.88;
 const FOG_RGB = '250, 250, 247';
+
+// Значение на сетке cols×rows с билинейной интерполяцией между узлами — дешёвая замена Перлину,
+// её достаточно, чтобы граница тумана не была окружностью.
+function makeNoiseGrid(cols, rows, seed) {
+    const random = seededRandom(seed);
+    const grid = new Float32Array((cols + 1) * (rows + 1));
+    for (let i = 0; i < grid.length; i++) grid[i] = random();
+    return { grid, cols, rows };
+}
+function sampleNoiseGrid({ grid, cols, rows }, u, v) {
+    // Заворачиваем в [0,1): без этого координата за пределами диапазона (как у textureNoise ниже,
+    // у неё свой масштаб и сдвиг) читает элемент за границей Float32Array → undefined → NaN,
+    // и вся картинка тумана тихо становится нулевой прозрачностью (именно так и было).
+    u -= Math.floor(u);
+    v -= Math.floor(v);
+    const gx = u * cols, gy = v * rows;
+    const x0 = Math.floor(gx), y0 = Math.floor(gy);
+    const x1 = Math.min(x0 + 1, cols), y1 = Math.min(y0 + 1, rows);
+    const tx = gx - x0, ty = gy - y0;
+    const stride = cols + 1;
+    const a = grid[y0 * stride + x0], b = grid[y0 * stride + x1];
+    const c = grid[y1 * stride + x0], d = grid[y1 * stride + x1];
+    const top = a + (b - a) * tx, bottom = c + (d - c) * tx;
+    return top + (bottom - top) * ty;
+}
+// Сумма нескольких масштабов шума (fBm) — без этого получаются либо ровные крупные пятна,
+// либо однородная рябь; вместе они дают неровный, но не «шумный» край, похожий на настоящий.
+function makeFbm(aspectWidth, aspectHeight, seed) {
+    const octaves = [
+        { cols: 5, weight: 0.45 },
+        { cols: 11, weight: 0.28 },
+        { cols: 23, weight: 0.17 },
+        { cols: 47, weight: 0.1 }
+    ].map((octave, index) => {
+        const rows = Math.max(1, Math.round((octave.cols * aspectHeight) / aspectWidth));
+        return { ...octave, grid: makeNoiseGrid(octave.cols, rows, seed + index * 97) };
+    });
+    return (u, v) => octaves.reduce((sum, octave) => sum + sampleNoiseGrid(octave.grid, u, v) * octave.weight, 0);
+}
+const smoothstep = (x, lo, hi) => {
+    const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)));
+    return t * t * (3 - 2 * t);
+};
 
 function buildFogImage(visitedRoutes, unvisitedRoutes) {
     const [west, south, east, north] = MAP_BOUNDS;
-    const width = FOG_WIDTH_PX;
+    // Считаем на половинном разрешении — 3М точек с блендом шума на каждую иначе заметно тормозит,
+    // а мягкость краёв всё равно частично приходит от растяжения при финальном апскейле.
+    const width = Math.round(FOG_WIDTH_PX / 2);
     const dy = mercatorY(north) - mercatorY(south);
     const dx = ((east - west) * Math.PI) / 180;
     const height = Math.round((width * dy) / dx);
@@ -167,9 +212,10 @@ function buildFogImage(visitedRoutes, unvisitedRoutes) {
         const layerCtx = layer.getContext('2d');
         layerCtx.lineCap = 'round';
         layerCtx.lineJoin = 'round';
-        return { layer, layerCtx };
+        return layerCtx;
     };
     // Серия обводок от широкой к узкой: прозрачность накапливается к центру, край получается мягким.
+    // Это гладкое поле «потенциала» — сырьё для шумового порога ниже, не готовая форма тумана.
     const soft = (layerCtx, routes, outerKm, innerKm, passes, alpha) => {
         layerCtx.strokeStyle = '#000';
         layerCtx.globalAlpha = alpha;
@@ -189,84 +235,64 @@ function buildFogImage(visitedRoutes, unvisitedRoutes) {
         layerCtx.globalAlpha = 1;
     };
 
-    // Открытие: таяние вокруг пройденных (радиус мягкого края ≈ 5.5 км, полностью открыто ≈ 1.8 км).
-    const { layer: reveal, layerCtx: revealCtx } = makeLayer();
-    soft(revealCtx, visitedRoutes, 5.5, 1.8, 14, 0.22);
-    // Блок: вокруг непройденных открытие гасится (радиус ≈ 3.2 км, в центре гасится целиком).
-    const { layer: block, layerCtx: blockCtx } = makeLayer();
-    soft(blockCtx, unvisitedRoutes, 3.2, 1.2, 12, 0.3);
-    revealCtx.globalCompositeOperation = 'destination-out';
-    revealCtx.drawImage(block, 0, 0);
-    revealCtx.globalCompositeOperation = 'source-over';
-    // Ядро пройденных маршрутов — открыто целиком, даже если рядом непройденный.
-    soft(revealCtx, visitedRoutes, 1.3, 0.7, 6, 0.6);
+    const visitedCtx = makeLayer();
+    soft(visitedCtx, visitedRoutes, 6.5, 1.6, 16, 0.24);
+    const blockCtx = makeLayer();
+    soft(blockCtx, unvisitedRoutes, 3, 1, 12, 0.3);
+    const coreCtx = makeLayer();
+    soft(coreCtx, visitedRoutes, 1.1, 0.6, 6, 0.7); // вдоль самого трека — гарантированно открыто
 
-    // Сам туман: ровная плотная база + текстура клочьев (светлее и темнее базы вперемешку),
-    // чтобы читался как дымка с движением, а не как залитый прямоугольник.
+    const visitedData = visitedCtx.getImageData(0, 0, width, height).data;
+    const blockData = blockCtx.getImageData(0, 0, width, height).data;
+    const coreData = coreCtx.getImageData(0, 0, width, height).data;
+
+    const edgeNoise = makeFbm(width, height, 20260922);
+    const textureNoise = makeFbm(width, height, 4042026);
+
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = `rgba(${FOG_RGB}, ${FOG_ALPHA})`;
-    ctx.fillRect(0, 0, width, height);
+    const out = ctx.createImageData(width, height);
+    const outData = out.data;
+    const [fr, fg, fb] = FOG_RGB.split(',').map(Number);
 
-    const random = seededRandom(20260922);
-    // Пушистые белые клочья — «тело» тумана. Стопка полупрозрачных пятен даёт неровную плотность
-    // (в нахлёстах гуще, между ними тоньше) вместо ровной заливки — это и читается как облачность.
-    for (let i = 0; i < 130; i++) {
-        const x = random() * width;
-        const y = random() * height;
-        const radius = 110 + random() * 380;
-        const alpha = 0.06 + random() * 0.11;
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
-    // Едва заметная тень между клочьями — придаёт объём, как у настоящих кучевых облаков сверху.
-    for (let i = 0; i < 80; i++) {
-        const x = random() * width;
-        const y = random() * height;
-        const radius = 90 + random() * 260;
-        const alpha = 0.025 + random() * 0.045;
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(196, 202, 208, ${alpha})`);
-        gradient.addColorStop(1, 'rgba(196, 202, 208, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
-    // Мелкая рябь поверх — добавляет ощущение лёгкого движения.
-    for (let i = 0; i < 260; i++) {
-        const x = random() * width;
-        const y = random() * height;
-        const radius = 25 + random() * 90;
-        const alpha = 0.025 + random() * 0.05;
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
-        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
-    // Редкие проталины — цвет карты едва проступает сквозь туман неравномерно, как в разрывах облаков.
-    ctx.globalCompositeOperation = 'destination-out';
-    for (let i = 0; i < 55; i++) {
-        const x = random() * width;
-        const y = random() * height;
-        const radius = 70 + random() * 190;
-        const alpha = 0.035 + random() * 0.06;
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(0, 0, 0, ${alpha})`);
-        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-    }
-    ctx.globalCompositeOperation = 'source-over';
+    for (let y = 0; y < height; y++) {
+        const v = y / height;
+        for (let x = 0; x < width; x++) {
+            const u = x / width;
+            const idx = (y * width + x) * 4;
+            const visitedP = visitedData[idx + 3] / 255;
+            const blockP = blockData[idx + 3] / 255;
+            const coreP = coreData[idx + 3] / 255;
+            const edgeN = edgeNoise(u, v); // 0..1
 
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.drawImage(reveal, 0, 0);
-    ctx.globalCompositeOperation = 'source-over';
-    return canvas;
+            // Шум подталкивает край открытия вперёд/назад и НЕЗАВИСИМО — край блока в обратную
+            // сторону: там, где они пересекаются, получается рваная, а не дугообразная граница.
+            let openness = visitedP * (0.4 + 1.0 * edgeN) - blockP * (0.3 + 0.9 * (1 - edgeN));
+            openness = smoothstep(openness, 0.15, 0.5);
+            openness = Math.max(openness, coreP);
+
+            // Собственная плотность тумана тоже неровная — там гуще, там тоньше, как настоящая дымка.
+            const textureN = textureNoise(u * 1.6 + 3, v * 1.6 + 7);
+            const density = 0.7 + 0.34 * (textureN - 0.5);
+            const alpha = Math.max(0, Math.min(1, FOG_ALPHA * density * (1 - openness)));
+
+            outData[idx] = fr; outData[idx + 1] = fg; outData[idx + 2] = fb;
+            outData[idx + 3] = Math.round(alpha * 255);
+        }
+    }
+    ctx.putImageData(out, 0, 0);
+
+    // Апскейл до полного разрешения плавным сглаживанием — заодно чуть смягчает шумную границу.
+    const final = document.createElement('canvas');
+    final.width = FOG_WIDTH_PX;
+    final.height = Math.round((FOG_WIDTH_PX * dy) / dx);
+    const finalCtx = final.getContext('2d');
+    finalCtx.imageSmoothingEnabled = true;
+    finalCtx.imageSmoothingQuality = 'high';
+    finalCtx.drawImage(canvas, 0, 0, final.width, final.height);
+    return final;
 }
 
 // Туман отдаём карте как растровые тайлы через свой протокол: image-источник MapLibre при включённом
