@@ -141,10 +141,12 @@ function routeBounds(routes) {
 // Плотность тумана везде одинакова, а «открытость» считаем отдельным слоем-маской:
 //   открытие = таяние вокруг пройденных × (1 − блок вокруг непройденных), плюс ядро пройденных.
 // Так рядом лежащие пройденные зоны не сливаются в полосу вдоль берега, а над непройденными
-// туман остаётся ровно той же плотности, что и вокруг (раньше слои тумана складывались и там
-// появлялись чёрные пятна).
-const FOG_ALPHA = 0.68;
-const FOG_RGB = '178, 182, 178'; // молочно-серый: туман должен читаться как дымка, а не как чёрные пятна
+// туман остаётся ровно той же плотности, что и вокруг (раньше слои тумана складывались друг на
+// друга и там появлялись чёрные пятна). Туман тёмный, в тон карты, но не плоский прямоугольник:
+// текстура из множества полупрозрачных пятен разного размера и тона (светлее и темнее базы) даёт
+// эффект настоящей дымки, сквозь которую местами едва проступает рельеф.
+const FOG_ALPHA = 0.8;
+const FOG_RGB = '9, 10, 9'; // тон в цвет фона приложения (#0A0B09)
 
 function buildFogImage(visitedRoutes, unvisitedRoutes) {
     const [west, south, east, north] = MAP_BOUNDS;
@@ -198,25 +200,55 @@ function buildFogImage(visitedRoutes, unvisitedRoutes) {
     // Ядро пройденных маршрутов — открыто целиком, даже если рядом непройденный.
     soft(revealCtx, visitedRoutes, 1.3, 0.7, 6, 0.6);
 
-    // Сам туман: одинаковая плотность и лёгкие клочья облаков.
+    // Сам туман: ровная плотная база + текстура клочьев (светлее и темнее базы вперемешку),
+    // чтобы читался как дымка с движением, а не как залитый прямоугольник.
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
     ctx.fillStyle = `rgba(${FOG_RGB}, ${FOG_ALPHA})`;
     ctx.fillRect(0, 0, width, height);
+
     const random = seededRandom(20260922);
-    for (let i = 0; i < 240; i++) {
+    // Крупные светлые клочья — «тело» дымки, разной плотности, чтобы не было ровного тона.
+    for (let i = 0; i < 90; i++) {
         const x = random() * width;
         const y = random() * height;
-        const radius = 70 + random() * 260;
-        const alpha = 0.03 + random() * 0.07;
+        const radius = 140 + random() * 420;
+        const alpha = 0.05 + random() * 0.1;
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        gradient.addColorStop(0, `rgba(235, 237, 233, ${alpha})`);
-        gradient.addColorStop(1, 'rgba(235, 237, 233, 0)');
+        gradient.addColorStop(0, `rgba(150, 156, 148, ${alpha})`);
+        gradient.addColorStop(1, 'rgba(150, 156, 148, 0)');
         ctx.fillStyle = gradient;
         ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
     }
+    // Мелкая рябь поверх — добавляет ощущение глубины и лёгкого движения.
+    for (let i = 0; i < 260; i++) {
+        const x = random() * width;
+        const y = random() * height;
+        const radius = 30 + random() * 110;
+        const alpha = 0.02 + random() * 0.045;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, `rgba(170, 175, 165, ${alpha})`);
+        gradient.addColorStop(1, 'rgba(170, 175, 165, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    // Редкие тёмные проталины — рельеф едва проступает сквозь дымку неравномерно.
+    ctx.globalCompositeOperation = 'destination-out';
+    for (let i = 0; i < 70; i++) {
+        const x = random() * width;
+        const y = random() * height;
+        const radius = 60 + random() * 180;
+        const alpha = 0.05 + random() * 0.09;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, `rgba(0, 0, 0, ${alpha})`);
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
     ctx.globalCompositeOperation = 'destination-out';
     ctx.drawImage(reveal, 0, 0);
     ctx.globalCompositeOperation = 'source-over';
@@ -608,7 +640,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
             source: 'personal-routes',
             filter: ['==', ['get', 'visited'], false],
             layout: { 'line-cap': 'round', 'line-join': 'round' },
-            paint: { 'line-color': '#c7d0dc', 'line-width': 1, 'line-opacity': 0.16, 'line-dasharray': [2, 3] }
+            paint: { 'line-color': '#c7d0dc', 'line-width': 1.3, 'line-opacity': 0.34, 'line-dasharray': [2, 2.4] }
         });
         map.addLayer({
             id: 'pr-visited-glow',
