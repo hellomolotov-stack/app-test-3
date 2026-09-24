@@ -1,15 +1,13 @@
 // js/ui/personal-routes-map.js
-// «Мой Крым»: личная 3D-карта маршрутов. Пройденные маршруты светятся жёлтым, вокруг них карта
-// открыта, всё остальное скрыто туманом. Прошёл все — тумана нет. Кнопка «поделиться» собирает
-// картинку в формате сторис. Пока показывается только пилотному аккаунту (см. PILOT_USERNAMES).
+// «Мой Крым»: личная 3D-панорама южного берега. Три категории маршрутов: был (жёлтый, облака над ним
+// разошлись), идём (дата ближайшего хайка, по нажатию — слайдер с записью), в облаках (не был).
+// Кнопка «в сторис» собирает картинку 1080×1920. Пока показывается только пилотному аккаунту (см. PILOT_USERNAMES).
 import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { loadUserRegistrations } from '../firebase.js';
 
 const PILOT_USERNAMES = new Set(['maxmolotov']);
-const MAP_BOUNDS = [32.15, 44.05, 36.85, 46.45]; // [запад, юг, восток, север] — как у остальных карт
-const FOG_WIDTH_PX = 2048;
 const YELLOW = '#D9FD19';
 
 export function isPersonalMapPilotUser(user) {
@@ -91,6 +89,7 @@ export function computeVisitedRouteIds(routes, hikes, registrations, today = new
     return { visited, unmatched };
 }
 
+
 // ───────────────────────── карта ─────────────────────────
 
 let maplibreLoading = null;
@@ -113,226 +112,279 @@ function ensureMapLibre() {
     return maplibreLoading;
 }
 
-const mercatorY = lat => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+// Камера «панорама вдоль берега»: от Балаклавы на северо-восток, весь южный берег уходит к горизонту.
+const OVERVIEW = { center: [33.97, 44.555], zoom: 8.8, pitch: 66, bearing: 37 };
 
-// Детерминированный «случайный» генератор — туман выглядит одинаково при каждом открытии.
-function seededRandom(seed) {
-    let value = seed >>> 0;
-    return () => {
-        value = (value + 0x6D2B79F5) >>> 0;
-        let t = value;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
-function routeBounds(routes) {
-    let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
-    routes.forEach(route => route.segments.forEach(segment => segment.forEach(([lat, lon]) => {
-        west = Math.min(west, lon); east = Math.max(east, lon);
-        south = Math.min(south, lat); north = Math.max(north, lat);
-    })));
-    return [[west, south], [east, north]];
-}
-
-// Рисуем туман картинкой в координатах карты: она ложится на рельеф вместе с тайлами, а мягкий
-// край получаем многократной обводкой треков (ctx.filter в iOS Safari до 18 нет). Карта цветная
-// (единственная такая в приложении: чёрно-белый рельеф под чёрно-белым туманом сливался в
-// нечитаемое пятно), туман — классический белый.
-//
-// Открытость каждой точки считаем не готовой геометрической фигурой (круг/blur), а через
-// фрактальный шум: гладкое поле «близко к пройденному маршруту» и гладкое поле «близко к
-// непройденному» шум деформирует НЕЗАВИСИМО, до того как они встретятся. Стык двух ровных
-// blur-контуров всегда читается как чёткая дуга — «укус» одного круга другим; когда оба края
-// заранее неровные, их граница выглядит как береговая линия или разрыв облаков, а не геометрия.
-const FOG_ALPHA = 0.88;
-const FOG_RGB = '250, 250, 247';
-
-// Значение на сетке cols×rows с билинейной интерполяцией между узлами — дешёвая замена Перлину,
-// её достаточно, чтобы граница тумана не была окружностью.
-function makeNoiseGrid(cols, rows, seed) {
-    const random = seededRandom(seed);
-    const grid = new Float32Array((cols + 1) * (rows + 1));
-    for (let i = 0; i < grid.length; i++) grid[i] = random();
-    return { grid, cols, rows };
-}
-function sampleNoiseGrid({ grid, cols, rows }, u, v) {
-    // Заворачиваем в [0,1): без этого координата за пределами диапазона (как у textureNoise ниже,
-    // у неё свой масштаб и сдвиг) читает элемент за границей Float32Array → undefined → NaN,
-    // и вся картинка тумана тихо становится нулевой прозрачностью (именно так и было).
-    u -= Math.floor(u);
-    v -= Math.floor(v);
-    const gx = u * cols, gy = v * rows;
-    const x0 = Math.floor(gx), y0 = Math.floor(gy);
-    const x1 = Math.min(x0 + 1, cols), y1 = Math.min(y0 + 1, rows);
-    const tx = gx - x0, ty = gy - y0;
-    const stride = cols + 1;
-    const a = grid[y0 * stride + x0], b = grid[y0 * stride + x1];
-    const c = grid[y1 * stride + x0], d = grid[y1 * stride + x1];
-    const top = a + (b - a) * tx, bottom = c + (d - c) * tx;
-    return top + (bottom - top) * ty;
-}
-// Сумма нескольких масштабов шума (fBm) — без этого получаются либо ровные крупные пятна,
-// либо однородная рябь; вместе они дают неровный, но не «шумный» край, похожий на настоящий.
-function makeFbm(aspectWidth, aspectHeight, seed) {
-    const octaves = [
-        { cols: 5, weight: 0.45 },
-        { cols: 11, weight: 0.28 },
-        { cols: 23, weight: 0.17 },
-        { cols: 47, weight: 0.1 }
-    ].map((octave, index) => {
-        const rows = Math.max(1, Math.round((octave.cols * aspectHeight) / aspectWidth));
-        return { ...octave, grid: makeNoiseGrid(octave.cols, rows, seed + index * 97) };
-    });
-    return (u, v) => octaves.reduce((sum, octave) => sum + sampleNoiseGrid(octave.grid, u, v) * octave.weight, 0);
-}
-const smoothstep = (x, lo, hi) => {
-    const t = Math.min(1, Math.max(0, (x - lo) / (hi - lo)));
-    return t * t * (3 - 2 * t);
+// Облака считаем в пикселях web-mercator на z9 (~220 м/пиксель: облака мягкие, а сборка в 4 раза быстрее, чем на z10) и только над полосой южного берега —
+// там, где лежат все маршруты. Остальной Крым — фон, облака на него не тратим.
+const FOG_Z = 9, TILE = 256, WORLD = TILE * 2 ** FOG_Z;
+const lonToX = lon => ((lon + 180) / 360) * WORLD;
+const latToY = lat => {
+    const s = Math.sin((lat * Math.PI) / 180);
+    return (0.5 - Math.log((1 + s) / (1 - s)) / (4 * Math.PI)) * WORLD;
 };
+const FOG_BBOX = [33.36, 44.25, 34.72, 44.97];
+const FX0 = Math.floor(lonToX(FOG_BBOX[0])), FX1 = Math.ceil(lonToX(FOG_BBOX[2]));
+const FY0 = Math.floor(latToY(FOG_BBOX[3])), FY1 = Math.ceil(latToY(FOG_BBOX[1]));
+const FW = FX1 - FX0, FH = FY1 - FY0;
+const PX_PER_KM = 1000 / ((156543.03 * Math.cos((44.6 * Math.PI) / 180)) / 2 ** FOG_Z);
 
-function buildFogImage(visitedRoutes, unvisitedRoutes) {
-    const [west, south, east, north] = MAP_BOUNDS;
-    // Считаем на половинном разрешении — 3М точек с блендом шума на каждую иначе заметно тормозит,
-    // а мягкость краёв всё равно частично приходит от растяжения при финальном апскейле.
-    const width = Math.round(FOG_WIDTH_PX / 2);
-    const dy = mercatorY(north) - mercatorY(south);
-    const dx = ((east - west) * Math.PI) / 180;
-    const height = Math.round((width * dy) / dx);
-    const pxPerKm = width / ((east - west) * 111.32 * Math.cos((44.9 * Math.PI) / 180));
-    const toPx = (lon, lat) => [
-        ((lon - west) / (east - west)) * width,
-        ((mercatorY(north) - mercatorY(lat)) / dy) * height
-    ];
-    const makeLayer = () => {
-        const layer = document.createElement('canvas');
-        layer.width = width;
-        layer.height = height;
-        const layerCtx = layer.getContext('2d');
-        layerCtx.lineCap = 'round';
-        layerCtx.lineJoin = 'round';
-        return layerCtx;
-    };
-    // Серия обводок от широкой к узкой: прозрачность накапливается к центру, край получается мягким.
-    // Это гладкое поле «потенциала» — сырьё для шумового порога ниже, не готовая форма тумана.
-    const soft = (layerCtx, routes, outerKm, innerKm, passes, alpha) => {
-        layerCtx.strokeStyle = '#000';
-        layerCtx.globalAlpha = alpha;
-        const outer = 2 * outerKm * pxPerKm;
-        const inner = 2 * innerKm * pxPerKm;
-        for (let pass = 0; pass < passes; pass++) {
-            layerCtx.lineWidth = outer - ((outer - inner) * pass) / (passes - 1);
-            routes.forEach(route => route.segments.forEach(segment => {
-                layerCtx.beginPath();
-                segment.forEach(([lat, lon], index) => {
-                    const [x, y] = toPx(lon, lat);
-                    if (index === 0) layerCtx.moveTo(x, y); else layerCtx.lineTo(x, y);
-                });
-                layerCtx.stroke();
-            }));
-        }
-        layerCtx.globalAlpha = 1;
-    };
-
-    const visitedCtx = makeLayer();
-    soft(visitedCtx, visitedRoutes, 6.5, 1.6, 16, 0.24);
-    const blockCtx = makeLayer();
-    soft(blockCtx, unvisitedRoutes, 3, 1, 12, 0.3);
-    const coreCtx = makeLayer();
-    soft(coreCtx, visitedRoutes, 1.1, 0.6, 6, 0.7); // вдоль самого трека — гарантированно открыто
-
-    const visitedData = visitedCtx.getImageData(0, 0, width, height).data;
-    const blockData = blockCtx.getImageData(0, 0, width, height).data;
-    const coreData = coreCtx.getImageData(0, 0, width, height).data;
-
-    const edgeNoise = makeFbm(width, height, 20260922);
-    const textureNoise = makeFbm(width, height, 4042026);
-
+// Высоты нужны, чтобы облака лежали на горах, а побережье и море оставались открытыми.
+async function loadElevation() {
+    const tx0 = Math.floor(FX0 / TILE), tx1 = Math.floor((FX1 - 1) / TILE);
+    const ty0 = Math.floor(FY0 / TILE), ty1 = Math.floor((FY1 - 1) / TILE);
+    const cw = (tx1 - tx0 + 1) * TILE, ch = (ty1 - ty0 + 1) * TILE;
     const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    const out = ctx.createImageData(width, height);
-    const outData = out.data;
-    const [fr, fg, fb] = FOG_RGB.split(',').map(Number);
-
-    for (let y = 0; y < height; y++) {
-        const v = y / height;
-        for (let x = 0; x < width; x++) {
-            const u = x / width;
-            const idx = (y * width + x) * 4;
-            const visitedP = visitedData[idx + 3] / 255;
-            const blockP = blockData[idx + 3] / 255;
-            const coreP = coreData[idx + 3] / 255;
-            const edgeN = edgeNoise(u, v); // 0..1
-
-            // Шум подталкивает край открытия вперёд/назад и НЕЗАВИСИМО — край блока в обратную
-            // сторону: там, где они пересекаются, получается рваная, а не дугообразная граница.
-            let openness = visitedP * (0.4 + 1.0 * edgeN) - blockP * (0.3 + 0.9 * (1 - edgeN));
-            openness = smoothstep(openness, 0.15, 0.5);
-            openness = Math.max(openness, coreP);
-
-            // Собственная плотность тумана тоже неровная — там гуще, там тоньше, как настоящая дымка.
-            const textureN = textureNoise(u * 1.6 + 3, v * 1.6 + 7);
-            const density = 0.7 + 0.34 * (textureN - 0.5);
-            const alpha = Math.max(0, Math.min(1, FOG_ALPHA * density * (1 - openness)));
-
-            outData[idx] = fr; outData[idx + 1] = fg; outData[idx + 2] = fb;
-            outData[idx + 3] = Math.round(alpha * 255);
-        }
+    canvas.width = cw;
+    canvas.height = ch;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const jobs = [];
+    for (let x = tx0; x <= tx1; x++) for (let y = ty0; y <= ty1; y++) {
+        jobs.push(new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => { ctx.drawImage(img, (x - tx0) * TILE, (y - ty0) * TILE); resolve(); };
+            img.onerror = reject;
+            img.src = `https://s3.amazonaws.com/elevation-tiles-prod/terrarium/${FOG_Z}/${x}/${y}.png`;
+        }));
     }
-    ctx.putImageData(out, 0, 0);
-
-    // Апскейл до полного разрешения плавным сглаживанием — заодно чуть смягчает шумную границу.
-    const final = document.createElement('canvas');
-    final.width = FOG_WIDTH_PX;
-    final.height = Math.round((FOG_WIDTH_PX * dy) / dx);
-    const finalCtx = final.getContext('2d');
-    finalCtx.imageSmoothingEnabled = true;
-    finalCtx.imageSmoothingQuality = 'high';
-    finalCtx.drawImage(canvas, 0, 0, final.width, final.height);
-    return final;
+    await Promise.all(jobs);
+    const d = ctx.getImageData(0, 0, cw, ch).data;
+    const out = new Float32Array(FW * FH);
+    const ox = FX0 - tx0 * TILE, oy = FY0 - ty0 * TILE;
+    for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) {
+        const i = ((y + oy) * cw + (x + ox)) * 4;
+        out[y * FW + x] = d[i] * 256 + d[i + 1] + d[i + 2] / 256 - 32768;
+    }
+    return out;
 }
 
-// Туман отдаём карте как растровые тайлы через свой протокол: image-источник MapLibre при включённом
-// 3D-рельефе не рисуется, а обычные тайловые слои ложатся на рельеф. Тайл вырезаем из общей картинки тумана.
-let fogCanvas = null;
-let fogProtocolRegistered = false;
-function registerFogProtocol() {
-    if (fogProtocolRegistered) return;
-    fogProtocolRegistered = true;
-    maplibregl.addProtocol('pmapfog', async params => {
-        const match = /pmapfog:\/\/(\d+)\/(\d+)\/(\d+)/.exec(params.url);
+const makeFieldCanvas = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = FW;
+    canvas.height = FH;
+    return canvas;
+};
+const supportsCanvasFilter = (() => {
+    try { return typeof document.createElement('canvas').getContext('2d').filter === 'string'; } catch (e) { return false; }
+})();
+
+// Мягкое поле «близость к маршрутам»: размытая обводка. Где нет ctx.filter (старый iOS) — серия
+// обводок разной ширины даёт похожий спад.
+function strokeField(list, widthKm, blurKm, gain) {
+    const canvas = makeFieldCanvas();
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.strokeStyle = '#fff';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const draw = () => list.forEach(route => route.segments.forEach(segment => {
+        ctx.beginPath();
+        segment.forEach(([lat, lon], i) => {
+            const x = lonToX(lon) - FX0, y = latToY(lat) - FY0;
+            if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        });
+        ctx.stroke();
+    }));
+    const width = Math.max(1, widthKm * PX_PER_KM), blur = blurKm * PX_PER_KM;
+    if (supportsCanvasFilter) {
+        ctx.filter = `blur(${blur.toFixed(1)}px)`;
+        ctx.lineWidth = width;
+        draw();
+    } else {
+        const passes = 8;
+        ctx.globalAlpha = 1 / passes * 1.3;
+        for (let k = 0; k < passes; k++) { ctx.lineWidth = width + (4 * blur * k) / passes; draw(); }
+    }
+    const d = ctx.getImageData(0, 0, FW, FH).data;
+    const out = new Float32Array(FW * FH);
+    for (let i = 0; i < out.length; i++) out[i] = Math.min(1, (d[i * 4 + 3] / 255) * gain);
+    return out;
+}
+
+function blurField(arr, radiusPx) {
+    if (!supportsCanvasFilter) return arr;
+    const src = makeFieldCanvas();
+    const sctx = src.getContext('2d');
+    const img = sctx.createImageData(FW, FH);
+    for (let i = 0; i < arr.length; i++) img.data[i * 4 + 3] = Math.round(arr[i] * 255);
+    sctx.putImageData(img, 0, 0);
+    const dst = makeFieldCanvas();
+    const dctx = dst.getContext('2d', { willReadFrequently: true });
+    dctx.filter = `blur(${radiusPx}px)`;
+    dctx.drawImage(src, 0, 0);
+    const d = dctx.getImageData(0, 0, FW, FH).data;
+    const out = new Float32Array(FW * FH);
+    for (let i = 0; i < out.length; i++) out[i] = d[i * 4 + 3] / 255;
+    return out;
+}
+
+// Шум на хэшированной решётке: нет массивов — нет и выхода за их границы.
+function hash(ix, iy, seed) {
+    let h = (Math.imul(ix, 374761393) + Math.imul(iy, 668265263) + Math.imul(seed, 1442695041)) | 0;
+    h = Math.imul(h ^ (h >>> 13), 1274126177);
+    h ^= h >>> 16;
+    return (h >>> 0) / 4294967296;
+}
+function vnoise(x, y, seed) {
+    const ix = Math.floor(x), iy = Math.floor(y), fx = x - ix, fy = y - iy;
+    const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+    const a = hash(ix, iy, seed), b = hash(ix + 1, iy, seed), c = hash(ix, iy + 1, seed), d = hash(ix + 1, iy + 1, seed);
+    return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
+}
+function fbm(x, y, seed, octaves) {
+    let sum = 0, amp = 0.5, freq = 1, norm = 0;
+    for (let o = 0; o < octaves; o++) {
+        sum += amp * vnoise(x * freq, y * freq, seed + o * 17);
+        norm += amp; amp *= 0.5; freq *= 2.03;
+    }
+    return sum / norm;
+}
+const sstep = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+// Облака: сплошная шапка над горным поясом клуба. Там, где человек был, облака расходятся — и
+// расходятся по форме самих облаков (тонкие места первыми), а не кругом. Над непройденными держатся.
+// Возвращает три картинки: итоговые облака, «всё закрыто» (для анимации открытия) и тень на земле.
+const cloudCache = new Map();
+async function buildClouds(routes, visitedIds) {
+    const key = routes.map(route => route.id + (visitedIds.has(route.id) ? '+' : '-')).join('|');
+    if (cloudCache.has(key)) return cloudCache.get(key);
+
+    let elev;
+    try { elev = await loadElevation(); } catch (error) {
+        console.warn('Мой Крым: нет рельефа, облака без учёта высот', error);
+        elev = new Float32Array(FW * FH).fill(400);
+    }
+    const walked = routes.filter(route => visitedIds.has(route.id));
+    const unwalked = routes.filter(route => !visitedIds.has(route.id));
+    const land = blurField(elev.map(e => (e > 2 ? 1 : 0)), 1.5);
+    const belt = strokeField(routes, 10, 5, 1.7);
+    const reveal = strokeField(walked, 1.8, 1.9, 2.3);
+    const core = strokeField(walked, 0.9, 0.35, 1.8);
+    const keep = strokeField(unwalked, 1.4, 1.1, 2.0);
+
+    const fog = makeFieldCanvas(), full = makeFieldCanvas(), shadowSrc = makeFieldCanvas();
+    const fogImg = fog.getContext('2d').createImageData(FW, FH);
+    const fullImg = full.getContext('2d').createImageData(FW, FH);
+    const shImg = shadowSrc.getContext('2d').createImageData(FW, FH);
+    const period = 5 * PX_PER_KM;
+    for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) {
+        const i = y * FW + x, k = i * 4;
+        // Сплошная полоса над горами клуба; у самой воды облака редеют, над морем их нет.
+        const cover = Math.max(belt[i] * (0.35 + 0.65 * sstep(20, 380, elev[i])), keep[i] * 0.95) * land[i];
+        const u = x / period, v = y / period;
+        const qx = fbm(u * 0.7, v * 0.7, 11, 3), qy = fbm(u * 0.7 + 5.2, v * 0.7 + 1.3, 12, 3);
+        const wu = u + 0.55 * qx, wv = v + 0.55 * qy;
+        const n = sstep(0.28, 0.78, fbm(wu, wv, 3, 5));
+        const nl = sstep(0.28, 0.78, fbm(wu + 0.05, wv - 0.05, 3, 5)); // сдвиг к свету — объём
+        const base = cover * 1.12 + (n - 0.5) * 0.95;
+        const edgeX = Math.min(x, FW - 1 - x) / (FW * 0.05), edgeY = Math.min(y, FH - 1 - y) / (FH * 0.05);
+        const edge = Math.min(1, edgeX, edgeY);
+        const aFull = sstep(0.30, 0.64, base + keep[i] * 0.45 * land[i]) * edge;
+        const aOpen = sstep(0.30, 0.64, base - reveal[i] * 1.55 - core[i] * 2.2 + keep[i] * 0.45 * land[i]) * edge;
+        const density = 0.8 + 0.14 * n; // облако не бывает совсем глухим — сквозь него чуть видно рельеф
+        // Лёгкий голубовато-серый оттенок в тени, чтобы облака не читались как снег.
+        const shade = Math.min(1, Math.max(0, 0.6 + (n - nl) * 2.6));
+        const r = 170 + 80 * shade, g = 182 + 71 * shade, b = 200 + 55 * shade;
+        fogImg.data[k] = fullImg.data[k] = r;
+        fogImg.data[k + 1] = fullImg.data[k + 1] = g;
+        fogImg.data[k + 2] = fullImg.data[k + 2] = b;
+        fogImg.data[k + 3] = Math.round(aOpen * density * 255);
+        fullImg.data[k + 3] = Math.round(aFull * density * 255);
+        shImg.data[k] = 16; shImg.data[k + 1] = 24; shImg.data[k + 2] = 36;
+        shImg.data[k + 3] = Math.round(aOpen * 0.55 * 255);
+    }
+    fog.getContext('2d').putImageData(fogImg, 0, 0);
+    full.getContext('2d').putImageData(fullImg, 0, 0);
+    shadowSrc.getContext('2d').putImageData(shImg, 0, 0);
+    // Тень смещена на юго-восток и размыта: облако «висит» над землёй, а не лежит на ней как снег.
+    const shadow = makeFieldCanvas();
+    const shctx = shadow.getContext('2d');
+    if (supportsCanvasFilter) shctx.filter = 'blur(3px)';
+    shctx.drawImage(shadowSrc, 3, 4);
+
+    const result = { fog, full, shadow };
+    cloudCache.set(key, result);
+    return result;
+}
+
+// Облака отдаём карте растровыми тайлами через свой протокол: image-источник MapLibre при включённом
+// 3D-рельефе не рисуется, а тайловые слои ложатся на рельеф.
+const cloudLayers = {};
+let cloudProtocolRegistered = false;
+function registerCloudProtocol() {
+    if (cloudProtocolRegistered) return;
+    cloudProtocolRegistered = true;
+    maplibregl.addProtocol('pmapcloud', async params => {
+        const match = /pmapcloud:\/\/(\w+)\/(\d+)\/(\d+)\/(\d+)/.exec(params.url);
         const tile = document.createElement('canvas');
-        tile.width = 512;
-        tile.height = 512;
-        if (match && fogCanvas) {
-            const z = Number(match[1]), x = Number(match[2]), y = Number(match[3]);
-            const n = 2 ** z;
-            const [west, south, east, north] = MAP_BOUNDS;
-            const dy = mercatorY(north) - mercatorY(south);
-            const lonLeft = (x / n) * 360 - 180;
-            const lonRight = ((x + 1) / n) * 360 - 180;
-            const yTop = Math.PI * (1 - (2 * y) / n);
-            const yBottom = Math.PI * (1 - (2 * (y + 1)) / n);
-            const sx = ((lonLeft - west) / (east - west)) * fogCanvas.width;
-            const sw = ((lonRight - lonLeft) / (east - west)) * fogCanvas.width;
-            const sy = ((mercatorY(north) - yTop) / dy) * fogCanvas.height;
-            const sh = ((yTop - yBottom) / dy) * fogCanvas.height;
-            tile.getContext('2d').drawImage(fogCanvas, sx, sy, sw, sh, 0, 0, 512, 512);
+        tile.width = tile.height = TILE;
+        const source = match && cloudLayers[match[1]];
+        if (source) {
+            const z = Number(match[2]), x = Number(match[3]), y = Number(match[4]);
+            const scale = 2 ** (FOG_Z - z);
+            const tctx = tile.getContext('2d');
+            tctx.imageSmoothingEnabled = true;
+            tctx.imageSmoothingQuality = 'high';
+            tctx.drawImage(source, x * TILE * scale - FX0, y * TILE * scale - FY0, TILE * scale, TILE * scale, 0, 0, TILE, TILE);
         }
         const blob = await new Promise(resolve => tile.toBlob(resolve, 'image/png'));
         return { data: await blob.arrayBuffer() };
     });
 }
 
-function routesFeatureCollection(routes, visitedIds) {
+function isCloudyAt(lngLat) {
+    const fog = cloudLayers.fog;
+    if (!fog) return false;
+    const x = Math.round(lonToX(lngLat.lng) - FX0), y = Math.round(latToY(lngLat.lat) - FY0);
+    if (x < 0 || y < 0 || x >= FW || y >= FH) return false;
+    return fog.getContext('2d').getImageData(x, y, 1, 1).data[3] > 90;
+}
+
+// ───────────────────────── ближайшие хайки по маршрутам ─────────────────────────
+
+const WEEKDAYS = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+function shortDate(date) {
+    const [y, m, d] = String(date).split('-').map(Number);
+    const day = new Date(y, m - 1, d);
+    return `${WEEKDAYS[day.getDay()]} ${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}`;
+}
+
+// Для каждого маршрута — ближайший будущий хайк по нему (для категории «идём»).
+function upcomingHikesByRoute(routes, hikes, today = new Date()) {
+    const startOfToday = new Date(today);
+    startOfToday.setHours(0, 0, 0, 0);
+    const byRoute = new Map();
+    (hikes || [])
+        .filter(hike => hike?.date && hike.title && hike.cancelled !== true && hike.city !== true && hike.city !== 'yes' && hike.book_club !== true)
+        .filter(hike => !(new Date(hike.date) < startOfToday))
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+        .forEach(hike => {
+            const route = getRouteForHikeTitle(routes, hike.title);
+            if (route && !byRoute.has(route.id)) byRoute.set(route.id, hike);
+        });
+    return byRoute;
+}
+
+function isBookedOn(date) {
+    const index = (state.hikesWithTitle || []).findIndex(hike => hike.date === date);
+    return index >= 0 && Boolean(state.hikeBookingStatus?.[index]);
+}
+
+// Открывает слайдер хайка с записью. calendar.js подключаем по требованию: он сам импортирует
+// профили, и статический импорт отсюда замкнул бы круг.
+async function openHikeSheet(date) {
+    const index = (state.hikesWithTitle || []).findIndex(hike => hike.date === date);
+    if (index < 0) return;
+    const { showBottomSheet } = await import('./calendar.js');
+    showBottomSheet(index);
+}
+
+function routesFeatureCollection(routes, visitedIds, plannedIds) {
     return {
         type: 'FeatureCollection',
         features: routes.map(route => ({
             type: 'Feature',
-            properties: { id: route.id, visited: visitedIds.has(route.id) },
+            properties: { id: route.id, title: route.title, walked: visitedIds.has(route.id), planned: plannedIds.has(route.id) },
             geometry: {
                 type: 'MultiLineString',
                 coordinates: route.segments.map(segment => segment.map(([lat, lon]) => [lon, lat]))
@@ -341,7 +393,22 @@ function routesFeatureCollection(routes, visitedIds) {
     };
 }
 
-// ───────────────────────── картинка «поделиться» ─────────────────────────
+function labelPoint(route) {
+    const segment = route.segments.reduce((a, b) => (b.length > a.length ? b : a));
+    const point = segment[Math.floor(segment.length / 2)];
+    return [point[1], point[0]];
+}
+
+function boundsOf(routes) {
+    let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
+    routes.forEach(route => route.segments.forEach(segment => segment.forEach(([lat, lon]) => {
+        west = Math.min(west, lon); east = Math.max(east, lon);
+        south = Math.min(south, lat); north = Math.max(north, lat);
+    })));
+    return [[west, south], [east, north]];
+}
+
+// ───────────────────────── картинка для сторис ─────────────────────────
 
 function drawSpaced(ctx, text, centerX, y, spacing) {
     const chars = [...text];
@@ -433,7 +500,7 @@ function buildPoster({ mapCanvas, visitedCount, total, percent, name }) {
     ctx.textAlign = 'center';
     ctx.fillStyle = 'rgba(255,255,255,0.78)';
     ctx.font = `500 42px ${font}`;
-    ctx.fillText('маршрутов пройдено', W / 2, 1570);
+    ctx.fillText('вершин вышло из облаков', W / 2, 1570);
 
     ctx.fillStyle = '#ffffff';
     ctx.font = `700 58px ${font}`;
@@ -444,7 +511,7 @@ function buildPoster({ mapCanvas, visitedCount, total, percent, name }) {
 
     ctx.fillStyle = 'rgba(255,255,255,0.42)';
     ctx.font = `400 30px ${font}`;
-    ctx.fillText('t.me/yaltahiking_bot', W / 2, 1852);
+    ctx.fillText('а где был ты? открой свою карту → t.me/yaltahiking_bot', W / 2, 1852);
     return canvas;
 }
 
@@ -508,26 +575,44 @@ function injectStyles() {
     const style = document.createElement('style');
     style.id = 'personalMapStyles';
     style.textContent = `
-        .pmap-card { padding: 4px 0 16px; margin-bottom: 14px; }
-        .pmap-head { display: flex; align-items: baseline; justify-content: space-between; margin: 0 16px 8px; }
-        .pmap-head .section-title { margin: 0 !important; line-height: 1.1; }
-        .pmap-count { color: rgba(255,255,255,0.5); font-size: 13px; }
-        .pmap-count b { color: ${YELLOW}; font-size: 22px; font-weight: 800; }
-        .pmap-bar { height: 4px; margin: 0 16px 12px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden; }
-        .pmap-bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, ${YELLOW}, #b6dc00); box-shadow: 0 0 8px ${YELLOW}; transition: width .8s ease; }
-        .pmap-wrap { position: relative; aspect-ratio: 1.25 / 1; margin: 0 16px; border-radius: 16px; overflow: hidden; background: #0A0B09; border: 1px solid rgba(255,255,255,0.12); box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), 0 8px 24px rgba(0,0,0,0.22); }
-        .pmap-wrap.pmap-complete { border-color: rgba(217,253,25,0.55); box-shadow: 0 0 26px rgba(217,253,25,0.22); }
-        .pmap-map { width: 100%; height: 100%; }
+        .pmap-card { padding: 18px 0 16px; margin-bottom: 14px; }
+        .pmap-head { display: flex; align-items: flex-end; justify-content: space-between; margin: 0 18px; }
+        .pmap-head .section-title { margin: 0 !important; line-height: 1; }
+        .pmap-count { font-size: 30px; font-weight: 800; color: ${YELLOW}; line-height: .9; text-shadow: 0 0 18px rgba(217,253,25,.35); }
+        .pmap-count small { font-size: 15px; color: rgba(255,255,255,.42); font-weight: 600; text-shadow: none; }
+        .pmap-sub { margin: 7px 18px 11px; font-size: 12.5px; color: rgba(255,255,255,.58); }
+        .pmap-bar { height: 4px; margin: 0 18px 12px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+        .pmap-bar i { display: block; height: 100%; background: ${YELLOW}; box-shadow: 0 0 10px ${YELLOW}; border-radius: 4px; }
+        .pmap-chips { display: flex; gap: 6px; margin: 0 12px 10px; flex-wrap: wrap; }
+        .pmap-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 20px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); font: 600 12px/1 inherit; font-family: inherit; }
+        .pmap-chip.is-active { border-color: ${YELLOW}; background: rgba(217,253,25,.12); }
+        .pmap-chip i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+        .pmap-chip .w { background: ${YELLOW}; box-shadow: 0 0 6px ${YELLOW}; }
+        .pmap-chip .p { background: #fff; box-shadow: inset 0 0 0 2px ${YELLOW}; }
+        .pmap-chip .c { background: rgba(215,225,238,.9); }
+        .pmap-wrap { position: relative; aspect-ratio: 1 / 1.12; margin: 0 12px; border-radius: 18px; overflow: hidden; border: 1px solid rgba(255,255,255,.12); background: #0A0B09; }
+        .pmap-wrap.pmap-complete { border-color: rgba(217,253,25,.55); box-shadow: 0 0 26px rgba(217,253,25,.22); }
+        .pmap-wrap .pmap-map { position: absolute !important; inset: 0; width: 100%; height: 100%; }
         .pmap-map .maplibregl-ctrl-bottom-left, .pmap-map .maplibregl-ctrl-bottom-right { display: none; }
-        .pmap-hint { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 12px 9px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.78); background: linear-gradient(transparent, rgba(6,7,6,0.88)); pointer-events: none; }
-        .pmap-complete .pmap-hint { color: ${YELLOW}; font-weight: 700; }
-        .pmap-legend { display: flex; justify-content: center; gap: 18px; margin: 11px 16px 13px; font-size: 12px; color: rgba(255,255,255,0.6); }
-        .pmap-legend i { display: inline-block; width: 16px; height: 3px; margin-right: 6px; vertical-align: middle; border-radius: 2px; }
-        .pmap-legend .y { background: ${YELLOW}; box-shadow: 0 0 6px ${YELLOW}; }
-        .pmap-legend .g { background: repeating-linear-gradient(90deg, rgba(74,85,96,.8) 0 3px, transparent 3px 6px); }
-        .pmap-share { display: block; width: calc(100% - 32px); margin: 0 16px; }
+        .pmap-share { position: absolute; top: 10px; right: 10px; z-index: 3; padding: 7px 11px; border: 0; border-radius: 20px; font: 700 12px/1 inherit; font-family: inherit; color: #0A0B09; background: rgba(255,255,255,.92); box-shadow: 0 4px 14px rgba(0,0,0,.25); }
         .pmap-share[disabled] { opacity: .6; }
-        .pmap-fallback { height: 100%; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,0.68); font-size: 14px; }
+        .pmap-hint { position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; padding: 26px 12px 9px; text-align: center; font-size: 12px; color: rgba(255,255,255,.88); background: linear-gradient(transparent, rgba(6,9,14,.82)); pointer-events: none; opacity: 0; transition: opacity .8s ease; }
+        .pmap-hint.is-visible { opacity: 1; }
+        .pmap-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.6); font-size: 13px; z-index: 1; pointer-events: none; }
+        .pmap-label { font: 600 10.5px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; white-space: nowrap; padding: 5px 8px; border-radius: 10px; cursor: pointer; }
+        .pmap-label.w { color: #0A0B09; background: rgba(217,253,25,.92); box-shadow: 0 2px 8px rgba(0,0,0,.25); }
+        .pmap-label.c { color: #3a4654; background: rgba(255,255,255,.78); border: 1px solid rgba(255,255,255,.9); box-shadow: 0 2px 8px rgba(0,0,0,.18); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+        .pmap-label.p { color: #0A0B09; background: ${YELLOW}; font-weight: 800; padding: 6px 9px; box-shadow: 0 0 0 4px rgba(217,253,25,.28), 0 4px 14px rgba(0,0,0,.3); animation: pmapPulse 2.2s ease-in-out infinite; }
+        @keyframes pmapPulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(217,253,25,.28), 0 4px 14px rgba(0,0,0,.3); } 50% { box-shadow: 0 0 0 8px rgba(217,253,25,.1), 0 4px 14px rgba(0,0,0,.3); } }
+        .pmap-next { display: flex; align-items: center; gap: 12px; margin: 12px 12px 0; padding: 12px 12px 12px 14px; border-radius: 16px; background: rgba(217,253,25,.08); border: 1px solid rgba(217,253,25,.28); }
+        .pmap-next-text { flex: 1; min-width: 0; }
+        .pmap-next-kicker { font-size: 11px; color: rgba(217,253,25,.85); font-weight: 700; }
+        .pmap-next-title { margin-top: 3px; font-size: 14.5px; font-weight: 700; color: #fff; }
+        .pmap-next-meta { margin-top: 2px; font-size: 12px; color: rgba(255,255,255,.55); }
+        .pmap-next .btn { width: auto !important; margin: 0 !important; padding: 10px 14px !important; border-radius: 30px !important; font-size: 13px !important; white-space: nowrap; }
+        .pmap-popup .maplibregl-popup-content { padding: 10px 12px; border-radius: 12px; background: rgba(14,16,14,.92); color: #fff; font-size: 12.5px; line-height: 1.4; max-width: 230px; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+        .pmap-popup .maplibregl-popup-tip { display: none; }
+        .pmap-popup b { color: ${YELLOW}; }
         .pmap-modal .pmap-modal-content { max-width: 340px; padding: 16px; background: rgba(10,11,9,0.94); text-align: center; }
         .pmap-poster { display: block; width: 100%; height: auto; border-radius: 14px; margin-bottom: 10px; }
         .pmap-modal-hint { font-size: 12px; color: rgba(255,255,255,0.6); margin-bottom: 12px; }
@@ -536,12 +621,26 @@ function injectStyles() {
     document.head.appendChild(style);
 }
 
+const SEEN_KEY = 'pmapCloudsSeen';
+const escapeHtml = value => String(value || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[ch]);
+
 let currentMap = null;
 
-function cameraForRoutes(map, bounds) {
-    const camera = map.cameraForBounds(bounds, { padding: { top: 26, right: 30, bottom: 44, left: 30 }, maxZoom: 11 }) || {};
-    // Наклон «съедает» часть ширины кадра, поэтому отъезжаем на долю уровня.
-    return { center: camera.center, zoom: (camera.zoom || 8.4) - 0.12, pitch: 32, bearing: 0 };
+// Подписи не должны наезжать друг на друга: сначала «идём», потом «был», потом «в облаках».
+function declutter(map) {
+    const priority = el => (el.classList.contains('p') ? 3 : el.classList.contains('w') ? 2 : 1);
+    const labels = [...map.getContainer().querySelectorAll('.pmap-label')].sort((a, b) => priority(b) - priority(a));
+    labels.forEach(el => { el.style.visibility = 'visible'; });
+    // В общем виде пройденные видны по свечению, их названия появляются при приближении.
+    const zoomedIn = map.getZoom() >= 9.8;
+    const placed = [];
+    const box = map.getContainer().getBoundingClientRect();
+    labels.forEach(el => {
+        const r = el.getBoundingClientRect();
+        const outside = r.left < box.left + 2 || r.right > box.right - 2 || r.top < box.top + 44 || r.bottom > box.bottom - 30;
+        const hit = placed.some(p => !(r.right + 3 < p.left || r.left - 3 > p.right || r.bottom + 2 < p.top || r.top - 2 > p.bottom));
+        if ((el.classList.contains('w') && !zoomedIn) || outside || hit) el.style.visibility = 'hidden'; else placed.push(r);
+    });
 }
 
 export async function renderPersonalRoutesMap(container, options = {}) {
@@ -558,44 +657,73 @@ export async function renderPersonalRoutesMap(container, options = {}) {
         visited = result.visited;
         if (result.unmatched.length) console.info('Мой Крым: хайки без маршрута в каталоге', result.unmatched);
     }
-    const visitedRoutes = routes.filter(route => visited.has(route.id));
-    const total = routes.length;
-    const count = visitedRoutes.length;
+    const upcoming = upcomingHikesByRoute(routes, state.hikesList || []);
+    const planned = new Set(upcoming.keys());
+    const walkedRoutes = routes.filter(route => visited.has(route.id));
+    const cloudRoutes = routes.filter(route => !visited.has(route.id) && !planned.has(route.id));
+    const plannedRoutes = routes.filter(route => planned.has(route.id));
+    const total = routes.length, count = walkedRoutes.length;
     const percent = Math.round((count / total) * 100);
     const complete = count === total;
+
+    // Главный призыв: ближайший хайк, лучше — туда, где человек ещё не был.
+    const nextEntries = [...upcoming.entries()].sort((a, b) => String(a[1].date).localeCompare(String(b[1].date)));
+    const nextEntry = nextEntries.find(([id]) => !visited.has(id)) || nextEntries[0];
+    const nextRoute = nextEntry && routes.find(route => route.id === nextEntry[0]);
+    const nextHike = nextEntry && nextEntry[1];
 
     container.innerHTML = `
         <div class="card-container pmap-card">
             <div class="pmap-head">
                 <h2 class="section-title">🗺 мой Крым</h2>
-                <div class="pmap-count"><b>${count}</b> / ${total}</div>
+                <div class="pmap-count">${count}<small> / ${total}</small></div>
             </div>
+            <div class="pmap-sub">${complete ? 'весь южный берег открыт' : `маршрутов пройдено · открыто ${percent}% гор`}</div>
             <div class="pmap-bar"><i style="width:${percent}%"></i></div>
+            <div class="pmap-chips">
+                <button class="pmap-chip" data-cat="walked" type="button"><i class="w"></i>был · ${count}</button>
+                ${plannedRoutes.length ? `<button class="pmap-chip" data-cat="planned" type="button"><i class="p"></i>идём · ${plannedRoutes.length}</button>` : ''}
+                ${cloudRoutes.length ? `<button class="pmap-chip" data-cat="clouds" type="button"><i class="c"></i>в облаках · ${cloudRoutes.length}</button>` : ''}
+            </div>
             <div class="pmap-wrap ${complete ? 'pmap-complete' : ''}">
                 <div class="pmap-map" id="personalRoutesMap"></div>
-                <div class="pmap-hint">${complete ? 'весь Крым открыт' : 'туман скрывает то, где ты ещё не был'}</div>
+                <div class="pmap-loading">облака собираются…</div>
+                <button class="pmap-share" id="personalMapShare" type="button">↗ в сторис</button>
+                <div class="pmap-hint">${complete ? 'весь южный берег открыт' : 'облака расходятся там, где ты уже был'}</div>
             </div>
-            <div class="pmap-legend">
-                <span><i class="y"></i>пройден</span>
-                ${complete ? '' : '<span><i class="g"></i>в тумане</span>'}
-            </div>
-            <button class="btn btn-yellow pmap-share" id="personalMapShare" type="button">поделиться картой</button>
+            ${nextHike && nextRoute ? `
+            <div class="pmap-next">
+                <div class="pmap-next-text">
+                    <div class="pmap-next-kicker">${visited.has(nextRoute.id) ? 'идём снова' : 'ещё в облаках'}</div>
+                    <div class="pmap-next-title">${escapeHtml(nextRoute.title)}</div>
+                    <div class="pmap-next-meta">${shortDate(nextHike.date)} · ${isBookedOn(nextHike.date) ? 'ты записан' : visited.has(nextRoute.id) ? 'ты тут уже был' : 'ты тут ещё не был'}</div>
+                </div>
+                <button class="btn btn-yellow" id="personalMapNext" type="button">${isBookedOn(nextHike.date) ? 'открыть' : 'иду'}</button>
+            </div>` : ''}
         </div>`;
 
-    log('мой Крым: показан', false, state.user, { visited: count, total });
+    log('мой Крым: показан', false, state.user, { visited: count, total, planned: plannedRoutes.length });
 
-    const bounds = routeBounds(routes);
+    container.querySelector('#personalMapNext')?.addEventListener('click', () => {
+        haptic();
+        log('мой Крым: иду', false, state.user, { hike_date: nextHike.date, route_id: nextRoute.id });
+        openHikeSheet(nextHike.date);
+    });
+
+    const hint = container.querySelector('.pmap-hint');
+    const loading = container.querySelector('.pmap-loading');
     try {
         await ensureMapLibre();
     } catch (error) {
-        const holder = container.querySelector('.pmap-map');
-        if (holder) holder.innerHTML = '<div class="pmap-fallback">карта временно недоступна</div>';
+        loading.textContent = 'карта временно недоступна';
         return;
     }
-
     const el = container.querySelector('#personalRoutesMap');
     if (!el) return;
     try { currentMap?.remove(); } catch (error) { /* карта уже удалена */ }
+
+    registerCloudProtocol();
+    const cloudsReady = complete ? Promise.resolve(null) : buildClouds(routes, visited);
 
     const map = new maplibregl.Map({
         container: el,
@@ -606,107 +734,151 @@ export async function renderPersonalRoutesMap(container, options = {}) {
                     type: 'raster',
                     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
                     tileSize: 256,
-                    maxzoom: 18,
-                    bounds: MAP_BOUNDS
+                    maxzoom: 18
                 }
             },
-            layers: [{
-                id: 'satellite-layer',
-                type: 'raster',
-                source: 'satellite',
-                // В отличие от остальных карт приложения эта — цветная: чёрно-белый рельеф с чёрно-белым
-                // туманом сливались в одно нечитаемое пятно. Естественные цвета дают тумену фон, на
-                // котором он читается как настоящая дымка, а не как заливка.
-                paint: { 'raster-brightness-max': 0.92, 'raster-contrast': 0.06, 'raster-saturation': 0.05, 'raster-resampling': 'linear' }
-            }]
+            // Эта карта — единственная цветная в приложении: на чёрно-белом рельефе облака не читаются.
+            layers: [{ id: 'satellite-layer', type: 'raster', source: 'satellite', paint: { 'raster-saturation': 0.12, 'raster-contrast': 0.06 } }]
         },
-        center: [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2],
-        zoom: 8.6,
-        pitch: 34,
-        maxBounds: [[MAP_BOUNDS[0], MAP_BOUNDS[1]], [MAP_BOUNDS[2], MAP_BOUNDS[3]]],
-        minZoom: 7.4,
+        ...OVERVIEW,
+        maxPitch: 75,
+        minZoom: 7.5,
         maxZoom: 14,
-        maxPitch: 65,
-        renderWorldCopies: false,
+        maxBounds: [[32.2, 43.8], [36.4, 46.0]],
         attributionControl: false,
         keyboard: false,
         doubleClickZoom: false,
-        antialias: false,
-        preserveDrawingBuffer: true // нужен, чтобы снять картинку карты для «поделиться»
+        preserveDrawingBuffer: true // нужен, чтобы снять картинку для сторис
     });
     currentMap = map;
-    container.__pmap = map; // для отладки и проверок в консоли
 
-    map.on('load', () => {
+    const markers = [];
+    const addLabel = (route, className, text, onClick) => {
+        const label = document.createElement('div');
+        label.className = `pmap-label ${className}`;
+        label.textContent = text;
+        label.addEventListener('click', event => { event.stopPropagation(); haptic(); onClick(label); });
+        markers.push(new maplibregl.Marker({ element: label, anchor: 'bottom', offset: [0, -8] }).setLngLat(labelPoint(route)).addTo(map));
+    };
+    let popup = null;
+    const showPopup = (lngLat, html) => {
+        popup?.remove();
+        popup = new maplibregl.Popup({ className: 'pmap-popup', closeButton: false, offset: 12, maxWidth: '240px' }).setLngLat(lngLat).setHTML(html).addTo(map);
+    };
+
+    map.on('load', async () => {
         map.addSource('dem', {
             type: 'raster-dem',
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
             tileSize: 256,
             encoding: 'terrarium',
-            maxzoom: 15,
-            bounds: MAP_BOUNDS
+            maxzoom: 14
         });
-        map.setTerrain({ source: 'dem', exaggeration: 1.2 });
-        map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#151515', 'fog-color': '#0A0B09' });
-        map.addLayer({
-            id: 'terrain-hillshade',
-            type: 'hillshade',
-            source: 'dem',
-            // Тёплые тона вместо серых — подчёркивают рельеф, не забивая цвет спутникового снимка.
-            paint: { 'hillshade-exaggeration': 0.38, 'hillshade-shadow-color': '#161c11', 'hillshade-highlight-color': '#eef0df' }
-        });
+        map.setTerrain({ source: 'dem', exaggeration: 1.7 });
+        map.setSky({ 'sky-color': '#7fb0dd', 'horizon-color': '#e6eef4', 'fog-color': '#dfe7ee', 'sky-horizon-blend': 0.55, 'horizon-fog-blend': 0.65, 'fog-ground-blend': 0.2 });
 
-        if (!complete) {
-            registerFogProtocol();
-            fogCanvas = buildFogImage(visitedRoutes, routes.filter(route => !visited.has(route.id)));
-            container.__pmapFog = fogCanvas; // для проверок в консоли
-            map.addSource('fog', {
-                type: 'raster',
-                tiles: ['pmapfog://{z}/{x}/{y}'],
-                tileSize: 512,
-                minzoom: 4,
-                maxzoom: 12,
-                bounds: MAP_BOUNDS
-            });
-            map.addLayer({
-                id: 'fog-layer',
-                type: 'raster',
-                source: 'fog',
-                paint: { 'raster-opacity': 1, 'raster-fade-duration': 500, 'raster-resampling': 'linear' }
-            });
+        const clouds = await cloudsReady;
+        const animate = Boolean(clouds) && (() => {
+            const key = [...visited].sort().join(',');
+            try {
+                if (localStorage.getItem(SEEN_KEY) === key) return false;
+                localStorage.setItem(SEEN_KEY, key);
+            } catch (error) { /* без хранилища — просто без анимации повторно не узнаем */ }
+            return true;
+        })();
+        if (clouds) {
+            Object.assign(cloudLayers, clouds);
+            const cloudSource = name => ({ type: 'raster', tiles: [`pmapcloud://${name}/{z}/{x}/{y}`], tileSize: 256, bounds: FOG_BBOX, minzoom: 5, maxzoom: 12 });
+            map.addSource('cloud-shadow', cloudSource('shadow'));
+            map.addSource('clouds', cloudSource('fog'));
+            map.addLayer({ id: 'cloud-shadow', type: 'raster', source: 'cloud-shadow', paint: { 'raster-opacity': 0.7, 'raster-fade-duration': 0 } });
+            map.addLayer({ id: 'clouds', type: 'raster', source: 'clouds', paint: { 'raster-opacity': 1, 'raster-fade-duration': 0 } });
+            if (animate) {
+                // Открытие: сначала закрыто всё, потом облака расходятся над пройденными маршрутами.
+                map.addSource('clouds-full', cloudSource('full'));
+                map.addLayer({ id: 'clouds-full', type: 'raster', source: 'clouds-full', paint: { 'raster-opacity': 1, 'raster-fade-duration': 0, 'raster-opacity-transition': { duration: 2200, delay: 0 } } });
+            }
         }
+        loading.remove();
 
-        map.addSource('personal-routes', { type: 'geojson', data: routesFeatureCollection(routes, visited) });
-        // Непройденные — едва заметный пунктир: подсказка, куда идти дальше.
+        map.addSource('personal-routes', { type: 'geojson', data: routesFeatureCollection(routes, visited, planned) });
         map.addLayer({
-            id: 'pr-unvisited',
-            type: 'line',
-            source: 'personal-routes',
-            filter: ['==', ['get', 'visited'], false],
-            layout: { 'line-cap': 'round', 'line-join': 'round' },
-            // Тёмно-серый вместо светлого: на белом тумане светлая линия не читается.
-            paint: { 'line-color': '#4a5560', 'line-width': 1.3, 'line-opacity': 0.5, 'line-dasharray': [2, 2.4] }
+            id: 'pr-walked-glow', type: 'line', source: 'personal-routes', filter: ['==', ['get', 'walked'], true],
+            paint: { 'line-color': YELLOW, 'line-width': 10, 'line-opacity': 0.55, 'line-blur': 5 }
         });
         map.addLayer({
-            id: 'pr-visited-glow',
-            type: 'line',
-            source: 'personal-routes',
-            filter: ['==', ['get', 'visited'], true],
-            paint: { 'line-color': YELLOW, 'line-width': 8, 'line-opacity': 0.5, 'line-blur': 5 }
+            id: 'pr-walked', type: 'line', source: 'personal-routes', filter: ['==', ['get', 'walked'], true],
+            layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': YELLOW, 'line-width': 3 }
+        });
+        // «Идём»: маршрут поверх облаков — белая подложка и жёлтый пунктир, путь, который предстоит пройти.
+        // Пунктир статичный: анимация через setPaintProperty не даёт карте успокоиться (ломает idle).
+        map.addLayer({
+            id: 'pr-planned-base', type: 'line', source: 'personal-routes', filter: ['all', ['==', ['get', 'planned'], true], ['==', ['get', 'walked'], false]],
+            layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 5, 'line-opacity': 0.95 }
         });
         map.addLayer({
-            id: 'pr-visited',
-            type: 'line',
-            source: 'personal-routes',
-            filter: ['==', ['get', 'visited'], true],
-            layout: { 'line-cap': 'round', 'line-join': 'round' },
-            paint: { 'line-color': YELLOW, 'line-width': 2.6, 'line-opacity': 1 }
+            id: 'pr-planned-dash', type: 'line', source: 'personal-routes', filter: ['==', ['get', 'planned'], true],
+            layout: { 'line-cap': 'butt', 'line-join': 'round' }, paint: { 'line-color': '#b6d600', 'line-width': 3, 'line-dasharray': [1.4, 1.2] }
         });
-        // Рельеф подгружается позже первого кадра и сдвигает центр при наклоне — ставим камеру ещё раз.
-        const camera = cameraForRoutes(map, bounds);
-        map.jumpTo(camera);
-        map.once('idle', () => map.jumpTo(camera));
+        // Подписи трёх категорий.
+        routes.forEach(route => {
+            const hike = upcoming.get(route.id);
+            if (hike) {
+                addLabel(route, 'p', `${shortDate(hike.date)} · ${route.title}`, () => {
+                    log('мой Крым: подпись хайка', false, state.user, { hike_date: hike.date, route_id: route.id });
+                    openHikeSheet(hike.date);
+                });
+            } else if (visited.has(route.id)) {
+                addLabel(route, 'w', `✓ ${route.title}`, () => showPopup(labelPoint(route), `<b>✓ ${escapeHtml(route.title)}</b><br>ты был здесь`));
+            } else {
+                addLabel(route, 'c', `☁ ${route.title}`, () => {
+                    const text = String(route.description || '').slice(0, 140);
+                    showPopup(labelPoint(route), `<b>☁ ${escapeHtml(route.title)}</b><br>${escapeHtml(text)}${text.length === 140 ? '…' : ''}<br><span style="opacity:.6">пока не в расписании — следи за анонсами</span>`);
+                });
+            }
+        });
+
+        // Нажатие на облако объясняет механику.
+        map.on('click', event => {
+            if (event.defaultPrevented) return;
+            if (!isCloudyAt(event.lngLat)) { popup?.remove(); return; }
+            showPopup(event.lngLat, `☁ здесь ты ещё не был<br><span style="opacity:.7">${cloudRoutes.length + plannedRoutes.filter(route => !visited.has(route.id)).length} маршрутов в облаках</span>`);
+        });
+
+        // Нажатие на жёлтую линию — название пройденного маршрута.
+        map.on('click', 'pr-walked-glow', event => {
+            const title = event.features?.[0]?.properties?.title;
+            if (title) { event.preventDefault(); showPopup(event.lngLat, `<b>✓ ${escapeHtml(title)}</b><br>ты был здесь`); }
+        });
+        map.on('idle', () => declutter(map));
+        map.once('idle', () => {
+            if (animate && map.getLayer('clouds-full')) {
+                window.setTimeout(() => {
+                    map.setPaintProperty('clouds-full', 'raster-opacity', 0);
+                    window.setTimeout(() => hint.classList.add('is-visible'), 900);
+                    window.setTimeout(() => hint.classList.remove('is-visible'), 6500);
+                }, 500);
+            } else {
+                hint.classList.add('is-visible');
+                window.setTimeout(() => hint.classList.remove('is-visible'), 4500);
+            }
+        });
     });
+
+    // Счётчики-легенда: подсвечивают свою категорию — камера облетает её маршруты.
+    const categories = { walked: walkedRoutes, planned: plannedRoutes, clouds: cloudRoutes };
+    container.querySelectorAll('.pmap-chip').forEach(chip => chip.addEventListener('click', () => {
+        haptic();
+        const wasActive = chip.classList.contains('is-active');
+        container.querySelectorAll('.pmap-chip').forEach(c => c.classList.remove('is-active'));
+        log('мой Крым: легенда', false, state.user, { category: chip.dataset.cat });
+        if (wasActive) { map.flyTo({ ...OVERVIEW, duration: 1400, essential: true }); return; }
+        chip.classList.add('is-active');
+        const list = categories[chip.dataset.cat] || [];
+        if (!list.length) return;
+        const camera = map.cameraForBounds(boundsOf(list), { padding: 50, bearing: OVERVIEW.bearing, maxZoom: 11.5 });
+        if (camera) map.flyTo({ center: camera.center, zoom: Math.max(8.4, (camera.zoom || 9) - 0.5), bearing: OVERVIEW.bearing, pitch: 58, duration: 1600, essential: true });
+    }));
 
     const shareButton = container.querySelector('#personalMapShare');
     shareButton?.addEventListener('click', async () => {
@@ -714,11 +886,11 @@ export async function renderPersonalRoutesMap(container, options = {}) {
         if (shareButton.disabled) return;
         shareButton.disabled = true;
         const originalText = shareButton.textContent;
-        shareButton.textContent = 'готовлю картинку…';
+        shareButton.textContent = 'готовлю…';
         log('мой Крым: поделиться', false, state.user, { visited: count, total });
         try {
             const saved = { center: map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
-            map.jumpTo(cameraForRoutes(map, bounds));
+            map.jumpTo(OVERVIEW);
             await new Promise(resolve => map.once('idle', resolve));
             const poster = buildPoster({
                 mapCanvas: map.getCanvas(),
@@ -738,3 +910,4 @@ export async function renderPersonalRoutesMap(container, options = {}) {
         }
     });
 }
+
