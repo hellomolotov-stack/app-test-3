@@ -7,8 +7,7 @@ import { state } from '../state.js';
 import { haptic, openLink, formatDateForDisplay, tg, scrollToElement } from '../utils.js';
 import { log, registerWebAppUser } from '../api.js';
 import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages } from '../firebase.js';
-import { SEASON_CARD_LINK } from '../config.js';
-import { showBottomSheet } from './calendar.js';
+import { showBottomSheet, showGuestBookingPopup } from './calendar.js';
 import { renderHome } from './home.js';
 
 const SUPPORT = 'https://t.me/hellointelligent';
@@ -48,7 +47,7 @@ function getNextHike() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const upcoming = (state.hikesWithTitle || [])
-        .filter(h => h.date)
+        .filter(h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && h.book_club !== true)
         .map(h => ({ ...h, _d: new Date(h.date) }))
         .filter(h => !isNaN(h._d.getTime()) && h._d >= today)
         .sort((a, b) => a._d - b._d);
@@ -123,10 +122,11 @@ function welcomeText() {
 }
 
 function aboutText() {
+    const ticketLine = state.userCard?.status === 'active' ? '\n\nс картой все хайки для тебя без доплат 🤍' : '\n\nбилет на хайк – <b>1000 ₽</b> 🎟️';
     if (lumenActive) {
-        return `<b>как устроен хайк</b>\n\nкаждые выходные – новый маршрут по тропам южного берега Крыма. 3–5 часов, лёгкий или средний уровень\n\nкроссовки с цепкой подошвой есть? остальное разберём по пути\n\nпо дороге знакомимся, говорим, дышим. иногда молчим – это тоже нормально\n\n📍 <b>ближайший:</b> ${nextHikeLine()}\n\nбилет на хайк – <b>1000 ₽</b> 🎟️`;
+        return `<b>как устроен хайк</b>\n\nкаждые выходные – новый маршрут по тропам южного берега Крыма. 3–5 часов, лёгкий или средний уровень\n\nкроссовки с цепкой подошвой есть? остальное разберём по пути\n\nпо дороге знакомимся, говорим, дышим. иногда молчим – это тоже нормально\n\n📍 <b>ближайший:</b> ${nextHikeLine()}${ticketLine}`;
     }
-    return `<b>как устроен хайк</b>\n\nкаждые выходные мы собираемся на точке и идём на новый маршрут – 3–5 часов по обустроенным тропам южного берега Крыма\n\nмаршруты лёгкого и среднего уровня – без особой подготовки и снаряжения. берёшь удобные кроссовки, воду, перекус – и вперёд\n\nпо пути знакомимся, говорим, фотографируем, дышим\n\n📍 <b>ближайший:</b> ${nextHikeLine()}\n\nбилет на хайк – <b>1000 ₽</b> 🎟️`;
+    return `<b>как устроен хайк</b>\n\nкаждые выходные мы собираемся на точке и идём на новый маршрут – 3–5 часов по обустроенным тропам южного берега Крыма\n\nмаршруты лёгкого и среднего уровня – без особой подготовки и снаряжения. берёшь удобные кроссовки, воду, перекус – и вперёд\n\nпо пути знакомимся, говорим, фотографируем, дышим\n\n📍 <b>ближайший:</b> ${nextHikeLine()}${ticketLine}`;
 }
 
 const CARD_MEMBERSHIP_LINE = 'карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе';
@@ -322,8 +322,9 @@ const FLOW = {
     card: {
         msgs: [cardText],
         options: [
-            { label: 'стать своим – 5 500₽ (бессрочная)', href: SEASON_CARD_LINK, logName: 'купить бессрочную' },
-            { label: 'стать своим – 5 500₽ (сезон 2026)', href: SEASON_CARD_LINK, logName: 'купить сезонную' },
+            // Оплата только через попап приложения: там счёт создаётся на сервере и привязан к человеку.
+            // Статичная ссылка Робокассы не давала ни записи, ни возврата в приложение.
+            { label: 'стать своим – 5 500₽', action: 'buy_card' },
             { label: 'сначала попробую хайк →', next: 'try_first' },
             { label: 'написать нам →', next: 'support' },
         ],
@@ -516,22 +517,30 @@ async function onOption(opt, fromNodeId) {
         closeChat();
         return;
     }
+    if (opt.action === 'buy_card') {
+        addUserBubble(opt.label);
+        log('бот: купить карту', true, state.user);
+        closeChat();
+        setTimeout(() => showGuestBookingPopup(null, null, null, 'generic'), 450);
+        return;
+    }
     if (opt.action === 'book') {
         addUserBubble(opt.label);
         log('бот: записаться на хайк', state.userCard.status !== 'active', state.user);
-        const isGuest = state.userCard?.status !== 'active';
-        if (isGuest) {
-            closeChat();
-            setTimeout(() => {
-                const today = new Date(); today.setHours(0,0,0,0);
-                const idx = (state.hikesWithTitle || []).findIndex(
-                    h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today
-                );
-                if (idx >= 0) showBottomSheet(idx);
-            }, 450);
-        } else {
-            goToCalendar();
+        const next = getNextHike();
+        // В расписании пусто — раньше чат просто закрывался и ничего не происходило.
+        if (!next) {
+            optionsEl.innerHTML = '';
+            await streamMessages(['новый хайк ещё не в расписании – обычно анонсируем за неделю 🏔\n\nсамые свежие анонсы – на канале клуба']);
+            buildOptions({ options: [
+                { label: 'канал клуба', href: CHANNEL, logName: 'канал клуба из пустого расписания' },
+                { label: 'написать нам →', next: 'support' },
+            ] }, 'no_hikes');
+            return;
         }
+        const idx = (state.hikesWithTitle || []).findIndex(h => h.date === next.date);
+        closeChat();
+        setTimeout(() => { if (idx >= 0) showBottomSheet(idx); else goToCalendar(); }, 450);
         return;
     }
 
@@ -593,7 +602,19 @@ async function onSupportSend(text) {
     if (!text || busy) return;
     addUserBubble(text);
     optionsEl.innerHTML = '';
-    try { await sendSupportMessage(state.user, text); } catch (e) { console.error(e); }
+    try {
+        if (!state.user?.id) throw new Error('нет пользователя');
+        await sendSupportMessage(state.user, text);
+    } catch (e) {
+        console.error(e);
+        log('бот: сообщение в поддержку не ушло', state.userCard.status !== 'active', state.user);
+        await streamMessages(['не получилось отправить 😔\n\nнапиши нам напрямую – ответим в телеграме']);
+        buildOptions({ options: [
+            { label: 'написать @hellointelligent', href: SUPPORT, logName: 'поддержка после ошибки' },
+            { label: 'закрыть', action: 'close' },
+        ] }, 'support_failed');
+        return;
+    }
     await streamMessages([lumenActive ? 'передал 🤍\n\nкак только ответят – подсвечу здесь' : 'передал 🤍 как только ответят – покажу здесь']);
     buildOptions({ options: [
         { label: 'ещё вопрос', next: 'support' },

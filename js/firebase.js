@@ -347,7 +347,8 @@ export async function saveUserAvatar(userId, photoUrl) {
 }
 
 export async function sendSupportMessage(user, text) {
-    if (!database || !user?.id) return;
+    // Бросаем ошибку, а не тихо выходим: иначе чат пишет «передал», хотя сообщение никуда не ушло.
+    if (!database || !user?.id) throw new Error('support: база недоступна');
     const key = Date.now().toString();
     await database.ref(`support_messages/${user.id}/${key}`).set({
         from: 'user',
