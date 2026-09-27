@@ -1,19 +1,21 @@
 // js/ui/onboarding-chat.js
-// Встроенный чат-онбординг для новичков — выезжающая снизу шторка.
-// Сценарий перенесён из телеграм-бота @yaltahiking_bot (aiogram).
-// Контент статичный, динамика (ближайший хайк, число карт, FAQ) берётся из state.
+// Встроенный чат-помощник — выезжающая снизу шторка.
+// Первый экран — действие: карточка ближайшего хайка и короткие входы под того, кто пишет
+// (новичок, вернувшийся гость, член клуба). Тексты нейтральны по роду: пола в профиле нет.
+// Динамика (ближайший хайк, число записавшихся, FAQ, привилегии) берётся из state.
 
 import { state } from '../state.js';
 import { haptic, openLink, formatDateForDisplay, tg, scrollToElement } from '../utils.js';
 import { log, registerWebAppUser } from '../api.js';
-import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages } from '../firebase.js';
+import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages, loadAllParticipants } from '../firebase.js';
 import { showBottomSheet, showGuestBookingPopup } from './calendar.js';
 import { renderHome } from './home.js';
+import { isPersonalMapPilotUser } from './personal-routes-map.js';
 
 const SUPPORT = 'https://t.me/hellointelligent';
 const CHANNEL = 'https://t.me/yaltahiking';
 
-// Флаг режима Люмена — устанавливается при открытии чата
+// Флаг режима Люмена — устанавливается при открытии чата (сейчас пилот Люмена выключен)
 let lumenActive = false;
 
 // ──────────────────────────────────────────────
@@ -30,19 +32,21 @@ const REVIEWS = [
 
 function randomReview() {
     const [text, author] = REVIEWS[Math.floor(Math.random() * REVIEWS.length)];
-    return author
-        ? `💬 <i>«${text}»</i>\n\n<b>${author}</b>`
-        : `💬 <i>«${text}»</i>`;
+    return author ? `💬 <i>«${text}»</i>\n\n<b>${author}</b>` : `💬 <i>«${text}»</i>`;
 }
 
 // ──────────────────────────────────────────────
 // динамические данные из приложения
 // ──────────────────────────────────────────────
+const isMember = () => state.userCard?.status === 'active';
+const isGuestLog = () => !isMember();
+
 function capName(n) {
     n = (n || '').trim();
     return n ? n[0].toUpperCase() + n.slice(1) : '';
 }
 
+// Ближайший хайк: без отменённых, городских событий и книжного клуба.
 function getNextHike() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -56,38 +60,79 @@ function getNextHike() {
 
 function nextHikeLine() {
     const h = getNextHike();
-    if (h) return `${h.title} – ${formatDateForDisplay(h.date)}`;
-    return 'точное место и время – в приложении';
+    return h ? `${h.title} – ${formatDateForDisplay(h.date)}` : 'новый маршрут скоро появится в календаре';
+}
+
+const WEEKDAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+function weekday(date) {
+    const [y, m, d] = String(date).split('-').map(Number);
+    return WEEKDAYS[new Date(y, m - 1, d).getDay()];
+}
+function peopleWord(n) {
+    const a = n % 10, b = n % 100;
+    if (a === 1 && b !== 11) return 'человек';
+    if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return 'человека';
+    return 'человек';
+}
+
+// Число записавшихся подгружаем при открытии чата, чтобы карточка показала его сразу.
+let nextHikeGoing = null;
+async function prefetchGoing() {
+    nextHikeGoing = null;
+    const h = getNextHike();
+    if (!h) return;
+    try {
+        const list = await Promise.race([loadAllParticipants(h.date), new Promise(r => setTimeout(() => r(null), 1500))]);
+        if (Array.isArray(list)) nextHikeGoing = list.length;
+    } catch (e) { /* без счётчика карточка тоже работает */ }
+}
+
+// Карточка ближайшего хайка — первый экран чата. Нажатие открывает слайдер хайка с записью.
+function hikeCardHtml(kicker = 'ближайший хайк') {
+    const h = getNextHike();
+    if (!h) {
+        return `<div class="chat-hike-card is-empty"><div class="chk-kicker">${kicker}</div><div class="chk-title">скоро в календаре</div><div class="chk-meta">обычно анонсируем за неделю – свежие новости на канале клуба</div></div>`;
+    }
+    const going = nextHikeGoing ? ` · уже ${nextHikeGoing} ${peopleWord(nextHikeGoing)}` : '';
+    const time = h.start_time ? ` · ${h.start_time}` : '';
+    return `<div class="chat-hike-card" data-book="1"><div class="chk-kicker">${kicker}</div><div class="chk-title">${h.title}</div><div class="chk-meta">${weekday(h.date)}, ${formatDateForDisplay(h.date)}${time}${going}</div><div class="chk-cta">смотреть и записаться →</div></div>`;
 }
 
 // ──────────────────────────────────────────────
 // тексты
 // ──────────────────────────────────────────────
-function memberWelcomeText() {
+function welcomeText() {
     const name = capName(state.user?.first_name);
-    if (lumenActive) {
-        return name
-            ? `${name}, рад видеть тебя снова 🤍\n\nты уже свой здесь. могу подсветить, что доступно с картой, или просто помочь с вопросом`
-            : `рад видеть тебя снова 🤍\n\nты уже свой здесь. могу подсветить, что доступно с картой, или просто помочь с вопросом`;
-    }
-    const hello = name ? `привет, ${name} 🤍` : 'привет 🤍';
-    return `${hello}\n\nты член клуба – это значит, ты уже свой. могу провести по всему, что тебе доступно, или просто помочь с вопросом`;
+    return `${name ? `привет, ${name}` : 'привет'} 👋\n\nэто <b>хайкинг интеллигенция</b> – каждые выходные ходим в горы южного берега и знакомимся вживую, без экранов и масок\n\nвот куда идём дальше 👇`;
+}
+
+const WELCOME_BACK_VARIANTS = [
+    name => `с возвращением${name ? ', ' + name : ''} 🤍\n\nгоры на месте, маршрут уже выбран 👇`,
+    name => `снова здесь${name ? ', ' + name : ''} 🙌\n\nесли давно думаешь о хайке – это нормально. одна наша участница думала пять месяцев, а теперь ходит каждые выходные\n\nближайший маршрут 👇`,
+    name => `привет${name ? ', ' + name : ''} ☀️\n\nвот куда идём дальше 👇`,
+];
+const K_LAST_WB = 'botLastWbIdx';
+function welcomeBackText() {
+    const name = capName(state.user?.first_name);
+    let last = -1;
+    try { last = parseInt(localStorage.getItem(K_LAST_WB) ?? '-1', 10); } catch (e) { /* без хранилища */ }
+    let idx = Math.floor(Math.random() * WELCOME_BACK_VARIANTS.length);
+    if (idx === last) idx = (idx + 1) % WELCOME_BACK_VARIANTS.length;
+    try { localStorage.setItem(K_LAST_WB, String(idx)); } catch (e) { /* без хранилища */ }
+    return WELCOME_BACK_VARIANTS[idx](name);
+}
+
+function memberHomeText() {
+    const name = capName(state.user?.first_name);
+    return `${name ? `${name}, привет` : 'привет'} 🤍\n\nты здесь не гость – всё открыто. куда идём в эти выходные 👇`;
 }
 
 function memberPerksText() {
     const club = (state.privileges?.club || []).filter(p => p.title);
-    if (lumenActive) {
-        if (club.length > 0) {
-            const lines = club.map(p => `✦ <b>${p.title}</b>${p.description ? '\n' + p.description : ''}`).join('\n\n');
-            return `вот что открывается с картой:\n\n${lines}`;
-        }
-        return 'с картой открывается:\n\n✦ <b>все хайки и события</b> – просто приходишь\n\n✦ <b>закрытый чат</b> – свои люди, настоящее общение\n\n✦ <b>закрытые события</b> – ужины, пикники, сапы, мастермайнды\n\n✦ <b>безлимитный VPN</b> для всех устройств\n\n✦ <b>скидки у партнёров</b> в Ялте и онлайне';
-    }
     if (club.length > 0) {
-        const lines = club.map(p => `🌟 <b>${p.title}</b>${p.description ? '\n' + p.description : ''}`).join('\n\n');
-        return `<b>что тебе доступно с картой:</b>\n\n${lines}`;
+        return `<b>что тебе доступно с картой:</b>\n\n${club.map(p => `🌟 <b>${p.title}</b>${p.description ? '\n' + p.description : ''}`).join('\n\n')}`;
     }
-    return '<b>что тебе доступно с картой:</b>\n\n🌟 <b>все хайки и события</b> – просто приходишь, без доп. оплаты\n\n🌟 <b>закрытый чат</b> – свои люди, близкое общение, неформальные встречи\n\n🌟 <b>закрытые события</b> – ужины, пляжные пикники, сапы, мастермайнды\n\n🌟 <b>безлимитный VPN</b> для всех устройств\n\n🌟 <b>скидки у партнёров</b> в Ялте и онлайне';
+    return '<b>что тебе доступно с картой:</b>\n\n🌟 <b>все хайки и события</b> – просто приходишь, без доплат\n\n🌟 <b>закрытый чат</b> – свои люди, близкое общение, неформальные встречи\n\n🌟 <b>закрытые события</b> – ужины, пляжные пикники, сапы, мастермайнды\n\n🌟 <b>безлимитный VPN</b> для всех устройств\n\n🌟 <b>скидки у партнёров</b> в Ялте и онлайне';
 }
 
 function memberPartnersText() {
@@ -98,208 +143,129 @@ function memberPartnersText() {
         if (p.description) block += `\n${p.description}`;
         if (p.button_link) {
             const md = p.button_link.match(/^\[(.+?)\]\((.+?)\)$/);
-            if (md) {
-                block += `\n<a href="${md[2]}" style="color:#d9fd19;text-decoration:none">${md[1]}</a>`;
-            } else {
-                const label = p.button_text || 'перейти →';
-                block += `\n<a href="${p.button_link}" style="color:#d9fd19;text-decoration:none">${label}</a>`;
-            }
+            if (md) block += `\n<a href="${md[2]}" style="color:#d9fd19;text-decoration:none">${md[1]}</a>`;
+            else block += `\n<a href="${p.button_link}" style="color:#d9fd19;text-decoration:none">${p.button_text || 'перейти →'}</a>`;
         }
         return block;
     }).join('\n\n');
     return `<span style="color:#fff;font-weight:600">скидки у партнёров:</span>\n\n${lines}`;
 }
 
-function welcomeText() {
-    const name = capName(state.user?.first_name);
-    if (lumenActive) {
-        return name
-            ? `${name}, ты заглянул в хайкинг интеллигенцию 🤍\n\nмы ходим в горы каждые выходные, знакомимся и живём настоящую жизнь прямо сейчас – не откладывая\n\nнеобязательно видеть весь путь. для начала найдём следующий шаг. идём?`
-            : `ты заглянул в хайкинг интеллигенцию 🤍\n\nмы ходим в горы каждые выходные, знакомимся и живём настоящую жизнь прямо сейчас – не откладывая\n\nнеобязательно видеть весь путь. для начала найдём следующий шаг. идём?`;
-    }
-    const hello = name ? `привет, ${name} 👋` : 'привет 👋';
-    return `${hello}\n\nты в <b>хайкинг интеллигенции</b> – клубе молодых аутентичных личностей из Ялты, которые отдыхают продуктивно и знакомятся лично: мы ходим в горы, встречаемся в городе и живём настоящую жизнь прямо сейчас, не откладывая на вечное завтра\n\nза пару минут расскажу, как здесь всё устроено. ну что – идём?`;
+function firstTimeText() {
+    const price = isMember() ? 'с картой все хайки для тебя без доплат 🤍' : 'билет на хайк – <b>1000 ₽</b>, записаться можно прямо в приложении 🎟️';
+    return `<b>как проходит первый хайк</b>\n\n📍 встречаемся на точке старта – адрес и время в карточке хайка\n\n🥾 идём 3–5 часов по готовым тропам южного берега, лёгкий или средний уровень. никто не торопит, остановок много\n\n🤝 по пути знакомимся, говорим, фотографируем. на вершине иногда собираемся в круг – мастермайнд\n\n🎒 нужны кроссовки с цепкой подошвой, вода и перекус. подготовка не нужна\n\n${price}`;
 }
 
-function aboutText() {
-    const ticketLine = state.userCard?.status === 'active' ? '\n\nс картой все хайки для тебя без доплат 🤍' : '\n\nбилет на хайк – <b>1000 ₽</b> 🎟️';
-    if (lumenActive) {
-        return `<b>как устроен хайк</b>\n\nкаждые выходные – новый маршрут по тропам южного берега Крыма. 3–5 часов, лёгкий или средний уровень\n\nкроссовки с цепкой подошвой есть? остальное разберём по пути\n\nпо дороге знакомимся, говорим, дышим. иногда молчим – это тоже нормально\n\n📍 <b>ближайший:</b> ${nextHikeLine()}${ticketLine}`;
-    }
-    return `<b>как устроен хайк</b>\n\nкаждые выходные мы собираемся на точке и идём на новый маршрут – 3–5 часов по обустроенным тропам южного берега Крыма\n\nмаршруты лёгкого и среднего уровня – без особой подготовки и снаряжения. берёшь удобные кроссовки, воду, перекус – и вперёд\n\nпо пути знакомимся, говорим, фотографируем, дышим\n\n📍 <b>ближайший:</b> ${nextHikeLine()}${ticketLine}`;
-}
-
-const CARD_MEMBERSHIP_LINE = 'карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе';
-
+const CARD_MEMBERSHIP_LINE = 'карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждого заметили, а не растворили в толпе';
 function cardText() {
-    if (lumenActive) {
-        return `<b>карта интеллигента</b> – это когда ты больше не гость\n\nоформляешь один раз – и становишься своим:\n\n✦ <b>все хайки и события</b> – просто приходишь\n✦ <b>закрытый чат</b> – свои люди, настоящее общение\n✦ <b>закрытые события</b> – ужины, пикники, сапы, мастермайнды\n✦ <b>скидки у партнёров</b>: HOKA, Геккон, Nothomme и другие\n✦ <b>безлимитный VPN</b> для всех устройств\n\n<b>бессрочная – 5 500₽</b>\n<b>сезонная – 5 500₽</b> (весь 2026 год)\n\nна время ЧС в Крыму бессрочную карту отдаём по цене сезонной\n\n${CARD_MEMBERSHIP_LINE}`;
-    }
-    return `<b>карта интеллигента</b> – это когда ты больше не гость\n\nоформляешь один раз и становишься своим:\n\n🌟 <b>все хайки и события</b> – просто приходишь, без доп. оплаты\n🌟 <b>закрытый чат</b> – свои люди, близкое общение, неформальные встречи\n🌟 <b>закрытые события</b> – ужины, пляжные пикники, сапы, мастермайнды, посиделки у костра\n🌟 <b>скидки у партнёров</b> в Ялте и онлайне: HOKA, Геккон, Nothomme, кофейни, барбершоп и другие\n🌟 <b>безлимитный VPN</b> для всех устройств с поддержкой подключения\n🌟 привилегии растут вместе с клубом\n\n<b>бессрочная – 5 500₽</b> – действует всё время\n<b>сезонная – 5 500₽</b> – весь 2026 год\n\n🕊️ на время ЧС в Крыму бессрочную карту отдаём по цене сезонной – чтобы поддержать друг друга\n\n${CARD_MEMBERSHIP_LINE}`;
+    return `<b>карта интеллигента</b> – это когда ты больше не гость\n\nоформляешь один раз и становишься частью клуба:\n\n🌟 <b>все хайки и события</b> – просто приходишь, без доплат\n🌟 <b>закрытый чат</b> – свои люди, близкое общение, неформальные встречи\n🌟 <b>закрытые события</b> – ужины, пляжные пикники, сапы, мастермайнды\n🌟 <b>скидки у партнёров</b> в Ялте и онлайне\n🌟 <b>безлимитный VPN</b> для всех устройств\n\n<b>5 500 ₽</b> – на время ЧС в Крыму бессрочная карта по цене сезонной 🕊️\n\n${CARD_MEMBERSHIP_LINE}`;
 }
 
-const TEXT_TRY_FIRST_DEFAULT = 'отлично 🏔\n\nзаписывайся на хайк прямо в приложении – билет 1000 ₽, оплата онлайн\n\nанонсы есть в приложении и на канале. если появятся вопросы – напишем, ответим 🤍';
-const TEXT_TRY_FIRST_LUMEN = 'отлично 🤍\n\nзаписывайся на хайк в приложении – билет 1000 ₽\n\nанонсы есть в приложении и на канале. если что-то непонятно – напиши, разберёмся';
-function TEXT_TRY_FIRST() { return lumenActive ? TEXT_TRY_FIRST_LUMEN : TEXT_TRY_FIRST_DEFAULT; }
+const TEXT_TRY_FIRST = 'отличный план 🏔\n\nсходи на хайк по билету за 1000 ₽ – а карту оформишь, когда почувствуешь, что это твоё\n\nесли что-то непонятно – напиши, ответим 🤍';
 
-const K_VISITED = 'chatOnboardingVisited';
-
-const WELCOME_BACK_VARIANTS = [
-    name => `с возвращением${name ? ', ' + name : ''} 🤍\n\nвидимо, всё ещё думаешь. это нормально – наша участница думала пять месяцев, прежде чем пойти на первый хайк. теперь она в клубе\n\nчем займёмся?`,
-    name => `снова здесь${name ? ', ' + name : ''} 🙌\n\nрад видеть. что-то зацепило – значит, место своё\n\nчем могу помочь?`,
-    name => `привет${name ? ', ' + name : ''} 👋\n\nзаходишь не впервые – значит, что-то нравится. может, уже пора на хайк?\n\nчем займёмся?`,
-    name => `о, ${name ? name + ', ' : ''}ты вернулся 🤍\n\nесли уже ходил с нами – здорово, рад тебя снова видеть. если ещё нет – самое время\n\nчем могу помочь?`,
-    name => `с возвращением${name ? ', ' + name : ''} ☀️\n\nгоры никуда не делись – ближайший хайк уже скоро\n\nчем займёмся?`,
-];
-
-const K_LAST_WB = 'botLastWbIdx';
-
-const WELCOME_BACK_LUMEN = [
-    name => `снова здесь${name ? ', ' + name : ''} 🤍\n\nрад. значит, что-то зацепило\n\nчем могу помочь?`,
-    name => `${name ? name + ', ' : ''}привет 🌿\n\nгоры никуда не делись. ближайший хайк уже скоро\n\nчем займёмся?`,
-    name => `${name ? name + ', ' : ''}рад видеть снова 🤍\n\nнаша участница думала пять месяцев, потом пришла – и теперь она своя\n\nчем могу помочь?`,
-];
-
-function welcomeBackText() {
-    const name = capName(state.user?.first_name);
-    if (lumenActive) {
-        const idx = Math.floor(Math.random() * WELCOME_BACK_LUMEN.length);
-        return WELCOME_BACK_LUMEN[idx](name);
-    }
-    const last = parseInt(localStorage.getItem(K_LAST_WB) ?? '-1', 10);
-    let idx = Math.floor(Math.random() * WELCOME_BACK_VARIANTS.length);
-    if (WELCOME_BACK_VARIANTS.length > 1 && idx === last) {
-        idx = (idx + 1) % WELCOME_BACK_VARIANTS.length;
-    }
-    localStorage.setItem(K_LAST_WB, String(idx));
-    return WELCOME_BACK_VARIANTS[idx](name);
-}
-
-const DOUBTS_INTRO_DEFAULT = 'это нормально – большинство так думали перед первым хайком\n\nчто останавливает?';
-const DOUBTS_INTRO_LUMEN = 'это честно 🤍\n\nбольшинство приходили с тем же. что останавливает?';
-function DOUBTS_INTRO() { return lumenActive ? DOUBTS_INTRO_LUMEN : DOUBTS_INTRO_DEFAULT; }
-
-const TEXTS_DOUBTS_DEFAULT = {
-    d_awkward: '<b>буду чувствовать себя неловко в группе незнакомых людей</b>\n\nты прав – будет. первые 15 минут\n\nпосле – не заметишь, как ощутишь себя своим. как? в этом вся магия клуба. мы знаем, как создать такую атмосферу, будто ты вышел погулять с друзьями во дворе',
-    d_pace: '<b>вдруг мне будет тяжело и я начну отставать</b>\n\nхайкинг – не про скорость и выносливость. это не беговое сообщество и вовсе не клуб профессиональных туристов, которым подавай десятки километров\n\nхайк – это прогулка в удовольствие по уже проложенным тропам. с остановками, беседами и юмором по поводу чихнувшей белки',
-    d_gear: '<b>у меня нет правильной обуви и одежды</b>\n\nкроссовки не с плоской подошвой есть? а не жаркая одежда? ждём тебя\n\nостальное – изощрения. но вот когда влюбишься в это дело – обязательно побалуй себя хоками и альтрами 😉',
-    d_shy: '<b>я стеснительный, мне тяжело знакомиться</b>\n\nтебе и не нужно. доверься процессу – сам формат всё сделает\n\nмягко, естественно и незаметно. хайк – миниатюра приключения, внутри которого всё случается само собой в лучший для этого момент',
-    d_ordinary: '<b>все крутые, а я считаю себя обычным</b>\n\nу нас и правда можно встретить предпринимателей, специалистов, творческих личностей и новичков в профессии\n\nно хайк – не бизнес-встреча. здесь профессия не важна – в горах мы все равны, ведь оставляем важных себя внизу, в городе. а сюда, наверх, берём только своего внутреннего человека',
-};
-
-const TEXTS_DOUBTS_LUMEN = {
-    d_awkward: 'первые 15 минут – да, будет неловко\n\nпотом ты не заметишь, как станешь своим. формат так устроен: общие тропы, общие виды, общий ритм – и вдруг оказывается, что ты идёшь рядом с людьми, которых только что не знал',
-    d_pace: 'хайк – это не марафон 🌿\n\nпрогулка по готовым тропам, 3–5 часов, с остановками и разговорами. темп общий, никто не торопит\n\nесли хочется – можно просто молчать и дышать. это тоже нормально',
-    d_gear: 'кроссовки с нескользкой подошвой есть? этого достаточно\n\nостальное – детали. когда почувствуешь вкус – сам захочешь хоки 😉',
-    d_shy: 'тебе не придётся знакомиться специально\n\nформат делает всё сам: общий маршрут, общие моменты, разговор рождается естественно\n\nмягко и без усилий – просто иди рядом',
-    d_ordinary: 'в горах профессия не важна\n\nздесь встречаются очень разные люди – и все оставляют важных себя внизу, в городе. наверх берут только человека\n\nэто и есть суть',
-};
-
+const DOUBTS_INTRO = 'это нормально – почти все сомневались перед первым хайком\n\nчто останавливает?';
 const TEXTS_DOUBTS = {
-    get d_awkward() { return lumenActive ? TEXTS_DOUBTS_LUMEN.d_awkward : TEXTS_DOUBTS_DEFAULT.d_awkward; },
-    get d_pace()    { return lumenActive ? TEXTS_DOUBTS_LUMEN.d_pace    : TEXTS_DOUBTS_DEFAULT.d_pace; },
-    get d_gear()    { return lumenActive ? TEXTS_DOUBTS_LUMEN.d_gear    : TEXTS_DOUBTS_DEFAULT.d_gear; },
-    get d_shy()     { return lumenActive ? TEXTS_DOUBTS_LUMEN.d_shy     : TEXTS_DOUBTS_DEFAULT.d_shy; },
-    get d_ordinary(){ return lumenActive ? TEXTS_DOUBTS_LUMEN.d_ordinary: TEXTS_DOUBTS_DEFAULT.d_ordinary; },
-};
-
-const TEXTS_EXP_DEFAULT = {
-    exp_nature: 'отличный выбор – горы южного берега Крыма это что-то особенное\n\nкрымские тропы, виды на море с высоты, аромат хвои, чистейший воздух и 3–5 часов настоящей жизни без экрана – именно это мы и делаем каждые выходные\n\nи кстати – никакой подготовки не нужно. берём всех 🙌',
-    exp_social: 'вот это по-нашему – знакомиться вживую, а не в тиндере, чувствуя себя словно на рынке\n\nна хайке всё иначе: люди рядом, впечатления общие, разговоры настоящие. уже после первого маршрута – ощущение, что знал этих людей давно\n\nа с картой интеллигента открывается доступ в закрытый чат клуба 🤍',
-    exp_curious: 'сейчас всё расскажу – кратко и по делу\n\n<b>хайкинг интеллигенция</b> – это не просто прогулки. это сообщество людей, которые решили жить интересно: горы, события, знакомства, смыслы\n\nсуществуем с мая 2025, уже сделали больше 20 маршрутов и кучу событий в Ялте',
-};
-
-const TEXTS_EXP_LUMEN = {
-    exp_nature: 'понимаю. горы южного берега – это виды на море с высоты, аромат хвои и 3–5 часов без экрана\n\nименно туда мы и ходим каждые выходные. подготовка не нужна – просто приходи 🌿',
-    exp_social: 'знакомиться вживую – это по-нашему\n\nна хайке всё случается само: общий путь, общие виды, настоящие разговоры. после первого маршрута кажется, что знал этих людей давно\n\nздесь можно не казаться интересным. можно просто быть 🤍',
-    exp_curious: 'расскажу, что знаю\n\n<b>хайкинг интеллигенция</b> – это люди, которые решили жить интересно: горы, события, знакомства, смыслы\n\nклуб живёт с мая 2025 – больше 20 маршрутов и много событий в Ялте',
+    d_awkward: '<b>неловко в группе незнакомых людей</b>\n\nпервые 15 минут – да, бывает\n\nпотом неловкость уходит сама: общий путь, общие виды, общий ритм. через час кажется, что вышли погулять с давними друзьями – в этом и магия клуба',
+    d_pace: '<b>вдруг будет тяжело и получится отстать</b>\n\nхайкинг – не про скорость и выносливость. мы не беговое сообщество и не клуб профессиональных туристов\n\nхайк – прогулка в удовольствие по проложенным тропам. с остановками, беседами и шутками про чихнувшую белку. темп общий, никого не оставляем',
+    d_gear: '<b>нет подходящей обуви и одежды</b>\n\nкроссовки не с плоской подошвой и не жаркая одежда есть? этого достаточно\n\nостальное – детали. а когда влюбишься в это дело – побалуй себя хоками и альтрами 😉',
+    d_shy: '<b>сложно знакомиться первым</b>\n\nи не нужно. формат всё сделает сам: общий маршрут, общие моменты – и разговор рождается естественно\n\nможно просто идти рядом и слушать. это тоже участие',
+    d_ordinary: '<b>кажется, там все очень крутые</b>\n\nу нас правда встречаются предприниматели, специалисты, творческие люди и те, кто только ищет своё дело\n\nно в горах профессия не важна: важных себя оставляем внизу, в городе. наверх берём только человека',
 };
 
 const TEXTS_EXP = {
-    get exp_nature() { return lumenActive ? TEXTS_EXP_LUMEN.exp_nature : TEXTS_EXP_DEFAULT.exp_nature; },
-    get exp_social() { return lumenActive ? TEXTS_EXP_LUMEN.exp_social : TEXTS_EXP_DEFAULT.exp_social; },
-    get exp_curious() { return lumenActive ? TEXTS_EXP_LUMEN.exp_curious : TEXTS_EXP_DEFAULT.exp_curious; },
+    exp_nature: 'горы южного берега – это что-то особенное\n\nвиды на море с высоты, аромат хвои, чистый воздух и 3–5 часов без экрана – именно это мы и делаем каждые выходные. подготовка не нужна 🙌',
+    exp_social: 'знакомиться вживую, а не в приложениях – это по-нашему\n\nна хайке люди рядом, впечатления общие, разговоры настоящие. уже после первого маршрута кажется, что знакомы давно\n\nа с картой интеллигента открывается закрытый чат клуба 🤍',
+    exp_curious: 'кратко: <b>хайкинг интеллигенция</b> – сообщество людей, которые решили жить интересно: горы, события, знакомства, смыслы\n\nклуб живёт с мая 2025 – больше 20 маршрутов и много событий в Ялте',
 };
 
 // ──────────────────────────────────────────────
 // дерево диалога
 // ──────────────────────────────────────────────
+const START_NODES = new Set(['welcome', 'welcome_back', 'member_welcome']);
+const BOOK = { label: 'записаться на хайк 🏔', action: 'book' };
+const QUESTION = { label: 'у меня вопрос 💬', next: 'support' };
+
 const AFTER_DOUBT = [
     { label: 'отпустило 😮‍💨', next: 'relieved' },
-    { label: 'ещё думаю', next: 'doubts' },
-    { label: 'записаться на хайк 🏔', action: 'book' },
+    { label: 'есть ещё сомнение', next: 'doubts' },
+    BOOK,
 ];
 
 const FLOW = {
-    member_welcome: {
-        msgs: [memberWelcomeText],
+    // новичок: сразу карточка хайка и короткие входы, сомнения — на первом экране
+    welcome: {
+        msgs: [welcomeText, () => hikeCardHtml()],
         options: [
-            { label: 'о клубе →', next: 'about' },
-            { label: 'что мне доступно? →', next: 'member_perks' },
-            { label: 'ℹ️ как всё устроено', next: 'faq' },
-            { label: 'написать нам →', next: 'support' },
+            BOOK,
+            { label: 'первый раз – что меня ждёт?', next: 'first_time' },
+            { label: 'честно – есть сомнения', next: 'doubts' },
+            QUESTION,
+        ],
+    },
+    welcome_back: {
+        msgs: [welcomeBackText, () => hikeCardHtml()],
+        options: [
+            BOOK,
+            { label: 'честно – есть сомнения', next: 'doubts' },
+            { label: '🌟 карта интеллигента', next: 'card' },
+            QUESTION,
+        ],
+    },
+    // член клуба: своё меню
+    member_welcome: {
+        msgs: [memberHomeText, () => hikeCardHtml('в эти выходные')],
+        options: () => [
+            { label: 'открыть хайк 🏔', action: 'book' },
+            ...(isPersonalMapPilotUser(state.user) ? [{ label: '🗺 мой Крым', action: 'my_crimea' }] : []),
+            { label: 'привилегии и партнёры', next: 'member_perks' },
+            { label: 'как всё устроено', next: 'faq' },
+            QUESTION,
         ],
     },
     member_perks: {
         msgs: [memberPerksText],
         options: [
             { label: 'скидки у партнёров →', next: 'member_partners' },
-            { label: 'написать нам →', next: 'support' },
+            QUESTION,
         ],
     },
     member_partners: {
-        msgs: [() => memberPartnersText() || (lumenActive ? 'здесь пока тихо – скоро подсвечу новых партнёров 🤍' : 'скоро тут появятся новые партнёры 🤍')],
-        options: [
-            { label: 'записаться на хайк 🏔', action: 'book' },
-            { label: 'написать нам →', next: 'support' },
+        msgs: [() => memberPartnersText() || 'скоро тут появятся новые партнёры 🤍'],
+        options: [BOOK, QUESTION],
+    },
+    first_time: {
+        msgs: [firstTimeText, randomReview],
+        options: () => [
+            BOOK,
+            { label: 'честно – есть сомнения', next: 'doubts' },
+            isMember() ? { label: 'привилегии участника →', next: 'member_perks' } : { label: 'а что за карта интеллигента?', next: 'card' },
+            { label: 'все вопросы и ответы', next: 'faq' },
         ],
     },
-    welcome: {
-        msgs: [welcomeText],
-        options: [{ label: 'идём →', next: 'experience', onSelect: () => localStorage.setItem(K_VISITED, '1') }],
-    },
-    welcome_back: {
-        msgs: [welcomeBackText],
-        options: [
-            { label: 'записаться на хайк 🏔', action: 'book' },
-            { label: '🌟 карта интеллигента', next: 'card' },
-            { label: 'ℹ️ как всё устроено', next: 'faq' },
-            { label: 'написать нам →', next: 'support' },
-        ],
+    // старое имя узла: на него ссылаются снаружи и сценарий «о клубе»
+    about: {
+        msgs: [firstTimeText, randomReview],
+        options: () => FLOW.first_time.options(),
     },
     experience: {
-        msgs: [() => lumenActive ? 'расскажи – что тебя сюда привело?\n\nдавай немного посветим туда' : 'расскажи – что тебя сюда привело?'],
+        msgs: ['расскажи – что тебя сюда привело?'],
         options: [
             { label: '🏔 горы и природа', next: 'exp_nature' },
-            { label: '🤝 хочу познакомиться с людьми', next: 'exp_social' },
+            { label: '🤝 хочу знакомиться вживую', next: 'exp_social' },
             { label: '🔍 просто интересно, что за клуб', next: 'exp_curious' },
         ],
     },
-    exp_nature: { msgs: [() => TEXTS_EXP.exp_nature], options: [{ label: 'что происходит на хайке? →', next: 'about' }] },
-    exp_social: { msgs: [() => TEXTS_EXP.exp_social], options: [{ label: 'что происходит на хайке? →', next: 'about' }] },
-    exp_curious: { msgs: [() => TEXTS_EXP.exp_curious], options: [{ label: 'что происходит на хайке? →', next: 'about' }] },
-    about: {
-        msgs: [aboutText, randomReview],
-        options: () => {
-            const isMember = state.userCard?.status === 'active';
-            return [
-                { label: 'записаться на хайк 🏔', action: 'book' },
-                isMember
-                    ? { label: 'привилегии участника →', next: 'member_perks' }
-                    : { label: 'а что ещё есть в клубе? →', next: 'card' },
-                { label: 'ℹ️ как всё устроено', next: 'faq' },
-                { label: 'честно – есть сомнения...', next: 'doubts' },
-            ];
-        },
-    },
+    exp_nature: { msgs: [() => TEXTS_EXP.exp_nature], options: [{ label: 'как проходит хайк? →', next: 'first_time' }, BOOK] },
+    exp_social: { msgs: [() => TEXTS_EXP.exp_social], options: [{ label: 'как проходит хайк? →', next: 'first_time' }, BOOK] },
+    exp_curious: { msgs: [() => TEXTS_EXP.exp_curious], options: [{ label: 'как проходит хайк? →', next: 'first_time' }, BOOK] },
     doubts: {
-        msgs: [DOUBTS_INTRO],  // function — evaluated at render time
+        msgs: [DOUBTS_INTRO],
         options: [
-            { label: '😬 буду чувствовать себя неловко', next: 'd_awkward' },
-            { label: '😮‍💨 вдруг не смогу идти в темпе', next: 'd_pace' },
-            { label: '👟 нет нужной обуви и одежды', next: 'd_gear' },
-            { label: '🫣 я стеснительный', next: 'd_shy' },
-            { label: '🤔 все крутые, а я – обычный', next: 'd_ordinary' },
+            { label: '😬 будет неловко с незнакомыми', next: 'd_awkward' },
+            { label: '😮‍💨 вдруг не выдержу темп', next: 'd_pace' },
+            { label: '👟 нет подходящей обуви и одежды', next: 'd_gear' },
+            { label: '🫣 сложно знакомиться первым', next: 'd_shy' },
+            { label: '🤔 кажется, там все очень крутые', next: 'd_ordinary' },
         ],
     },
     d_awkward: { msgs: [() => TEXTS_DOUBTS.d_awkward], options: AFTER_DOUBT },
@@ -308,16 +274,11 @@ const FLOW = {
     d_shy: { msgs: [() => TEXTS_DOUBTS.d_shy], options: AFTER_DOUBT },
     d_ordinary: { msgs: [() => TEXTS_DOUBTS.d_ordinary], options: AFTER_DOUBT },
     relieved: {
-        msgs: [() => lumenActive ? 'вот и хорошо 🤍\n\nзаписывайся на хайк в приложении – билет 1000 ₽' : 'вот и славно 🤍 тогда не откладывай – записывайся на хайк в приложении'],
-        options: () => {
-            const isMember = state.userCard?.status === 'active';
-            return [
-                { label: 'записаться на хайк 🏔', action: 'book' },
-                isMember
-                    ? { label: 'привилегии участника →', next: 'member_perks' }
-                    : { label: 'а что ещё есть в клубе? →', next: 'card' },
-            ];
-        },
+        msgs: [() => 'вот и славно 🤍 тогда не откладывай – выбери хайк и запишись', () => hikeCardHtml()],
+        options: () => [
+            BOOK,
+            isMember() ? { label: 'привилегии участника →', next: 'member_perks' } : { label: 'а что за карта интеллигента?', next: 'card' },
+        ],
     },
     card: {
         msgs: [cardText],
@@ -325,33 +286,25 @@ const FLOW = {
             // Оплата только через попап приложения: там счёт создаётся на сервере и привязан к человеку.
             // Статичная ссылка Робокассы не давала ни записи, ни возврата в приложение.
             { label: 'стать своим – 5 500₽', action: 'buy_card' },
-            { label: 'сначала попробую хайк →', next: 'try_first' },
-            { label: 'написать нам →', next: 'support' },
+            { label: 'сначала схожу на хайк →', next: 'try_first' },
+            QUESTION,
         ],
     },
     try_first: {
         msgs: [TEXT_TRY_FIRST],
-        options: [
-            { label: 'смотреть маршруты 🏔', action: 'book' },
-            { label: 'канал клуба', href: CHANNEL, logName: 'канал клуба' },
-            { label: 'написать нам →', next: 'support' },
-        ],
+        options: [BOOK, { label: 'канал клуба', href: CHANNEL, logName: 'канал клуба' }],
     },
     support: {
-        msgs: [() => lumenActive ? 'напиши вопрос – передам 🤍\n\nкак только ответят, покажу здесь' : 'напиши вопрос – передам организаторам. как только ответят, покажу здесь 🤍'],
+        msgs: ['напиши вопрос – передам организаторам. как только ответят, покажу здесь 🤍'],
         dynamic: 'support_input',
     },
     safety_report: {
-        msgs: [() => lumenActive
-            ? 'спасибо, что делишься – это важно 🤍\n\nнапиши прямо сюда, я сразу передам организаторам'
-            : 'спасибо, что решил поделиться важной информацией! можешь прислать её прямо сюда – я сразу передам её организаторам 🤍'],
+        msgs: ['спасибо, что делишься – это важно 🤍\n\nнапиши прямо сюда, я сразу передам организаторам'],
         dynamic: 'support_input',
     },
-    // faq — динамический узел, options строятся в renderNode
+    // faq — динамический узел, options строятся в buildOptions
     faq: {
-        msgs: [() => lumenActive
-            ? '<b>как всё устроено</b>\n\nвыбери, что интересно – подсвечу 👇'
-            : '<b>как всё устроено</b>\n\nвыбери, что интересно – расскажу 👇'],
+        msgs: ['<b>как всё устроено</b>\n\nвыбери тему 👇'],
         dynamic: 'faq_list',
     },
 
@@ -359,22 +312,42 @@ const FLOW = {
     lumen_greet_name: {
         msgs: [() => {
             const name = capName(state.user?.first_name);
-            return name
-                ? `рад знакомству с тобой, ${name}! 🤍\n\nдавай за пару минут расскажу, как здесь всё устроено`
-                : `рад знакомству! 🤍\n\nдавай за пару минут расскажу, как здесь всё устроено`;
+            return `рад знакомству${name ? `, ${name}` : ''}! 🤍\n\nдавай за пару минут расскажу, как здесь всё устроено`;
         }],
         options: [{ label: 'давай 👋', next: 'experience' }],
     },
-
     // Люмен: рассказывает о себе
     lumen_about: {
-        msgs: ['я Люмен — не турист, не робот и не сказочный персонаж.\n\nэто художественное воплощение состояния, которое ты можешь найти внутри клуба: живости, открытости, тепла и способности снова удивляться.\n\nмой свет не приходит извне — я просто подсвечиваю следующий шаг, когда это нужно 🌿'],
-        options: [
-            { label: 'расскажи про клуб →', next: 'experience' },
-            { label: 'записаться на хайк 🏔', action: 'book' },
-        ],
+        msgs: ['я Люмен – не турист, не робот и не сказочный персонаж.\n\nэто художественное воплощение состояния, которое можно найти внутри клуба: живости, открытости, тепла и способности снова удивляться.\n\nмой свет не приходит извне – я просто подсвечиваю следующий шаг, когда это нужно 🌿'],
+        options: [{ label: 'расскажи про клуб →', next: 'experience' }, BOOK],
     },
 };
+
+function startNodeFor() {
+    if (isMember()) return 'member_welcome';
+    try { if (localStorage.getItem(K_VISITED)) return 'welcome_back'; } catch (e) { /* без хранилища */ }
+    return 'welcome';
+}
+const K_VISITED = 'chatOnboardingVisited';
+
+const CHAT_STYLES_ID = 'botChatExtraStyles';
+function injectChatStyles() {
+    if (document.getElementById(CHAT_STYLES_ID)) return;
+    const style = document.createElement('style');
+    style.id = CHAT_STYLES_ID;
+    style.textContent = `
+        .chat-bubble.bot.has-card { padding: 0; background: none; border: 0; box-shadow: none; max-width: 100%; width: 100%; }
+        .chat-hike-card { padding: 14px 16px; border-radius: 18px; background: linear-gradient(135deg, rgba(217,253,25,.16), rgba(217,253,25,.05)); border: 1px solid rgba(217,253,25,.35); cursor: pointer; white-space: normal; }
+        .chat-hike-card.is-empty { cursor: default; background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.12); }
+        .chat-hike-card .chk-kicker { font-size: 11px; font-weight: 700; color: #D9FD19; letter-spacing: .02em; }
+        .chat-hike-card.is-empty .chk-kicker { color: rgba(255,255,255,.55); }
+        .chat-hike-card .chk-title { margin-top: 4px; font-size: 17px; font-weight: 800; color: #fff; line-height: 1.2; }
+        .chat-hike-card .chk-meta { margin-top: 4px; font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.35; }
+        .chat-hike-card .chk-cta { margin-top: 10px; font-size: 13px; font-weight: 700; color: #D9FD19; }
+        .chat-option-btn.is-home { opacity: .6; }
+    `;
+    document.head.appendChild(style);
+}
 
 // ──────────────────────────────────────────────
 // состояние шторки
@@ -415,6 +388,13 @@ function addBotBubble(html) {
     b.className = 'chat-bubble bot';
     b.style.whiteSpace = 'pre-line';
     b.innerHTML = html;
+    const card = b.querySelector('.chat-hike-card[data-book]');
+    if (card) {
+        b.classList.add('has-card');
+        card.addEventListener('click', () => { if (!busy) onOption({ label: 'смотреть хайк', action: 'book', fromCard: true }); });
+    } else if (b.querySelector('.chat-hike-card')) {
+        b.classList.add('has-card');
+    }
     messagesEl.appendChild(b);
     scrollToTop(b);
 }
@@ -493,9 +473,11 @@ function buildOptions(node, nodeId) {
         return;
     }
 
+    if (!START_NODES.has(nodeId)) opts = [...opts, { label: '↩ в начало', action: 'home' }];
+
     opts.forEach(opt => {
         const btn = document.createElement('button');
-        btn.className = 'chat-option-btn';
+        btn.className = 'chat-option-btn' + (opt.action === 'home' ? ' is-home' : '');
         btn.textContent = opt.label;
         if (opt.next) btn.dataset.next = opt.next;
         btn.addEventListener('click', () => onOption(opt, nodeId));
@@ -517,6 +499,19 @@ async function onOption(opt, fromNodeId) {
         closeChat();
         return;
     }
+    if (opt.action === 'home') {
+        optionsEl.innerHTML = '';
+        log('бот: в начало', isGuestLog(), state.user);
+        await renderNode(startNodeFor());
+        return;
+    }
+    if (opt.action === 'my_crimea') {
+        addUserBubble(opt.label);
+        log('бот: мой Крым', false, state.user);
+        closeChat();
+        setTimeout(async () => { const { renderProfiles } = await import('./profiles.js'); renderProfiles(); }, 450);
+        return;
+    }
     if (opt.action === 'buy_card') {
         addUserBubble(opt.label);
         log('бот: купить карту', true, state.user);
@@ -525,8 +520,8 @@ async function onOption(opt, fromNodeId) {
         return;
     }
     if (opt.action === 'book') {
-        addUserBubble(opt.label);
-        log('бот: записаться на хайк', state.userCard.status !== 'active', state.user);
+        if (!opt.fromCard) addUserBubble(opt.label);
+        log(opt.fromCard ? 'бот: карточка хайка' : 'бот: записаться на хайк', isGuestLog(), state.user);
         const next = getNextHike();
         // В расписании пусто — раньше чат просто закрывался и ничего не происходило.
         if (!next) {
@@ -594,7 +589,7 @@ async function showSupportHistory(history) {
     }
     buildOptions({ options: [
         { label: 'написать ещё →', next: 'support' },
-        { label: 'к клубу →', next: 'welcome_back' },
+        { label: '↩ в начало', action: 'home' },
     ]}, 'support_history');
 }
 
@@ -644,6 +639,8 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
         lumen_route_id: lumenContext.route?.id || ''
     } : {});
 
+    injectChatStyles();
+    const goingReady = prefetchGoing();
     overlay = document.createElement('div');
     overlay.className = 'bottom-sheet-overlay bot-chat-overlay';
     if (lumenContext) overlay.dataset.lumenScreen = lumenContext.screen || '';
@@ -753,14 +750,9 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
         }
     }
 
-    const isMember = state.userCard?.status === 'active';
-    let startNode;
-    if (isMember) startNode = 'member_welcome';
-    else if (localStorage.getItem(K_VISITED)) startNode = 'welcome_back';
-    else {
-        localStorage.setItem(K_VISITED, '1');
-        startNode = 'welcome';
-    }
+    await goingReady;
+    const startNode = startNodeFor();
+    try { localStorage.setItem(K_VISITED, '1'); } catch (e) { /* без хранилища */ }
     if (autoNext) {
         await renderNode(autoNext);
     } else {
