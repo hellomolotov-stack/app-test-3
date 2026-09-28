@@ -4827,3 +4827,15 @@ body.adm-open { overflow: hidden; }
 .intelligentsia-route-overlay > * { pointer-events: auto; }
 .intelligentsia-route-overlay .intelligentsia-route-caption { position: relative; left: auto; right: auto; bottom: auto; align-self: stretch; }
 .intelligentsia-route-overlay .intelligentsia-routes-nav .calendar-nav-arrow { width: 36px; height: 36px; background: rgba(10, 11, 9, 0.62); border: 1px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+
+/* карточка ближайшего хайка: только главное – название, «через N дней», кто идёт, записаться */
+.ef-next-body .ef-next-title { margin: 0 0 2px; font-size: 19px; }
+.ef-next-body .ef-next-when { margin-bottom: 12px; font-size: 13px; }
+.ef-going { display: flex; align-items: center; gap: 8px; }
+.ef-ava { display: inline-flex; flex: none; }
+.ef-ava img, .ef-ava i { width: 28px; height: 28px; margin-left: -8px; border-radius: 50%; border: 2px solid #121820; object-fit: cover; background: linear-gradient(135deg, #3b4a5a, #1d2630); display: inline-flex; align-items: center; justify-content: center; color: #fff; font-style: normal; font-size: 12px; font-weight: 700; }
+.ef-ava > :first-child { margin-left: 0; }
+.ef-going-text { font-size: 13px; color: rgba(255, 255, 255, 0.85); white-space: nowrap; }
+
+/* «+ предложить событие» – слоем ниже, под внутренним блоком календаря */
+.ef-suggest { display: flex; justify-content: flex-end; margin: 0 16px; }

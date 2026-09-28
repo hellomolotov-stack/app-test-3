@@ -331,13 +331,10 @@ function feedNearestCard(h) {
     if (!h) {
         return `<div class="ef-next ef-next-empty"><div class="ef-next-title">⛰️ следующий хайк скоро в календаре</div><div class="ef-next-sub">обычно анонсируем за неделю</div></div>`;
     }
-    const d = feedDate(h.date);
-    const when = `${FEED_WD_FULL[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}${h.start_time ? ' · ' + h.start_time : ''} · ${feedWhen(h.date)}`;
     const button = `<button class="btn btn-yellow ef-book" data-book="${h.date}">записаться</button>`;
     if (!h.title || !h.title.trim()) {
-        return `<div class="ef-next ef-next-teaser"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${when}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}</div>`;
+        return `<div class="ef-next ef-next-teaser"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}</div>`;
     }
-    const tags = feedTags(h).map(t => `<span class="ef-chip">${t}</span>`).join('');
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     // есть трек – живая 3D-карта (крутится пальцами), иначе картинка маршрута
     const media = getHikeTrack(h)
@@ -346,9 +343,8 @@ function feedNearestCard(h) {
     return `<div class="ef-next${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
         ${media}
         <div class="ef-next-body">
-            <div class="ef-next-when">${when}</div>
             <div class="ef-next-title">${h.title}</div>
-            ${tags ? `<div class="ef-chips">${tags}</div>` : ''}
+            <div class="ef-next-when">${feedWhen(h.date)}</div>
             <div class="ef-next-row"><div class="ef-going" data-going-for="${h.date}"></div>${button}</div>
         </div>
     </div>`;
@@ -428,14 +424,14 @@ function renderEventsFeed(container) {
     }).join('');
 
     const monthEvents = events.filter(h => h.date.startsWith(feedMonth));
-    const future = monthEvents.filter(h => h.date >= today && (!nearest || h.date !== nearest.date));
+    const future = monthEvents.filter(h => h.date >= today);
     const past = monthEvents.filter(h => h.date < today).reverse();
     const count = monthEvents.filter(h => h.title && h.title.trim() && h.cancelled !== true).length;
     const monthName = FEED_MONTHS[Number(feedMonth.slice(5)) - 1];
     const countWord = count % 10 === 1 && count % 100 !== 11 ? 'событие' : (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) ? 'события' : 'событий';
     const listHtml = (future.length || past.length)
         ? future.map(feedRow).join('') + past.map(feedRow).join('')
-        : `<div class="ef-row-sub ef-empty-month">${feedMonth > nowMonth || (nearest && feedMonth === nearest.date.slice(0, 7)) ? 'всё самое интересное – в карточке выше' : 'в этом месяце событий не было'}</div>`;
+        : `<div class="ef-row-sub ef-empty-month">${feedMonth >= nowMonth ? 'планируем хайки и события' : 'в этом месяце событий не было'}</div>`;
 
     container.innerHTML = `
         <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь событий</h2>
@@ -446,10 +442,8 @@ function renderEventsFeed(container) {
             <div class="ef-strip">${strip}</div>
             <div class="ef-month-title">${monthName}${count ? `: ${count} ${countWord}` : ''}</div>
             <div class="ef-list">${listHtml}</div>
-            <div style="display: flex; justify-content: flex-end; padding: 8px 4px 4px 4px;">
-                <button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button>
-            </div>
-        </div>`;
+        </div>
+        <div class="ef-suggest"><button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button></div>`;
 
     const stripEl = container.querySelector('.ef-strip');
     const onEl = stripEl && stripEl.querySelector('.ef-mcol.is-on');
@@ -576,18 +570,35 @@ function feedOpenHike(date, logName) {
 }
 
 // Счётчики «идут N» / «N человек» подгружаем после отрисовки, чтобы лента не ждала базу.
+// Кто уже идёт: в карточке ближайшего – аватарки и число (социальное доказательство),
+// в строках месяца – просто «· N человек».
+const feedGoingList = {};
+const feedEsc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+function feedGoingHtml(list) {
+    const n = list.length;
+    if (!n) return '<span class="ef-going-text">места есть</span>';
+    const faces = list.slice(0, 4).map(p => p.photoUrl
+        ? `<img src="${feedEsc(p.photoUrl)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+        : `<i>${feedEsc((p.name || '?').slice(0, 1))}</i>`).join('');
+    return `<span class="ef-ava">${faces}</span><span class="ef-going-text">${n === 1 ? 'уже идёт 1' : `уже идут ${n}`}</span>`;
+}
+
 function feedFillGoing(container) {
     container.querySelectorAll('[data-going-for]').forEach(el => {
         const date = el.dataset.goingFor;
         if (!date) return;
-        const paint = n => {
-            if (!n) return;
-            el.textContent = el.classList.contains('ef-going') ? `идут ${n} ${feedPeople(n)}` : ` · ${n} ${feedPeople(n)}`;
+        const isCard = el.classList.contains('ef-going');
+        const paint = list => {
+            const n = list.length;
+            if (isCard) el.innerHTML = feedGoingHtml(list);
+            else if (n) el.textContent = ` · ${n} ${feedPeople(n)}`;
         };
-        if (date in feedGoing) return paint(feedGoing[date]);
+        if (feedGoingList[date]) return paint(feedGoingList[date]);
         loadAllParticipants(date).then(list => {
-            feedGoing[date] = Array.isArray(list) ? list.length : 0;
-            paint(feedGoing[date]);
+            feedGoingList[date] = Array.isArray(list) ? list : [];
+            feedGoing[date] = feedGoingList[date].length;
+            paint(feedGoingList[date]);
         }).catch(() => {});
     });
 }
@@ -1239,7 +1250,8 @@ function initHikeMap(el, track, instant = false, standalone = false) {
                 'satellite': {
                     type: 'raster',
                     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-                    tileSize: 256, maxzoom: 18
+                    // в карточке календаря – тайлы на уровень детальнее: на ретине снимок не «мылится»
+                    tileSize: standalone ? 128 : 256, maxzoom: 18
                 }
             },
             layers: [{
