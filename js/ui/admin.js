@@ -33,6 +33,7 @@ let view = { tab: 'hikes' };
 let draft = null;       // редактируемый хайк
 let bc = null;          // черновик рассылки
 let pastLimit = 8;
+let audience = null;     // { counts: {all, guests, members}, at }
 
 export function isAdminUser() {
     return ADMIN_USERNAMES.has(String(state.user?.username || '').replace(/^@/, '').toLowerCase());
@@ -204,6 +205,7 @@ function renderEditor(body) {
         <button class="adm-back">‹ все хайки</button>
         <div class="adm-h1">${d.original ? esc(d.title || 'заглушка ' + dateLabel(d.original)) : 'новый хайк'}</div>
         ${field('date', 'дата', 'type="date"')}
+        <div id="admDateNote">${dateNoteHtml()}</div>
         ${field('title', 'название', 'placeholder="хайк на Ай-Петри"')}
         <div class="adm-hint">без названия событие показывается заглушкой:</div>
         <div class="adm-chips">${PLACEHOLDER_EMOJI.map(([e, l]) => `<button class="adm-chip${d.emoji === e ? ' is-on' : ''}" data-emoji="${e}">${l}</button>`).join('')}</div>
@@ -232,16 +234,25 @@ function renderEditor(body) {
         <div class="adm-checks">${check('cancelled', 'отменён')}${check('woman', 'женский хайк')}${check('city', 'городское событие')}</div>
 
         <button class="btn btn-yellow adm-primary adm-save" id="admSave">сохранить</button>
+        <div class="adm-error" id="admSaveError" hidden></div>
         ${d.original ? `<div class="adm-label">участники</div><div id="admPeople" class="adm-hint">загружаю…</div>` : ''}`;
 
     body.querySelector('.adm-back').addEventListener('click', () => { haptic(); view = { tab: 'hikes' }; render(); });
     body.querySelectorAll('[data-k]').forEach(inp => {
         const k = inp.dataset.k;
-        inp.addEventListener(inp.type === 'checkbox' ? 'change' : 'input', () => {
+        // iOS для даты шлёт только change, поэтому слушаем оба события
+        const sync = () => {
             d[k] = inp.type === 'checkbox' ? inp.checked : inp.value;
-        });
+            if (k === 'date') {
+                const note = body.querySelector('#admDateNote');
+                if (note) { note.innerHTML = dateNoteHtml(); bindDateNote(note); }
+            }
+        };
+        inp.addEventListener('input', sync);
+        inp.addEventListener('change', sync);
         if (k === 'image') inp.addEventListener('change', () => render());
     });
+    bindDateNote(body.querySelector('#admDateNote'));
     body.querySelectorAll('[data-emoji]').forEach(b => b.addEventListener('click', () => {
         haptic();
         d.emoji = d.emoji === b.dataset.emoji ? '' : b.dataset.emoji;
@@ -265,6 +276,32 @@ function renderEditor(body) {
     if (d.original) loadPeople(body.querySelector('#admPeople'), d.original);
 }
 
+// Что уже стоит на выбранной дате: заглушку новый хайк заменит, настоящий хайк – предлагаем открыть.
+function dateNoteHtml() {
+    const d = draft;
+    if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d.date) || d.date === d.original) return '';
+    const existing = state.hikesData && state.hikesData[d.date];
+    if (!existing) return '';
+    if (existing.title && String(existing.title).trim()) {
+        return `<div class="adm-note is-warn">на эту дату уже есть «${esc(existing.title)}» <button class="adm-link" data-open-date="${d.date}">открыть его</button></div>`;
+    }
+    return `<div class="adm-note">на эту дату стоит заглушка ${esc(existing.emoji || '⛰️')} – хайк её заменит</div>`;
+}
+
+function bindDateNote(el) {
+    el?.querySelector('[data-open-date]')?.addEventListener('click', e => {
+        haptic();
+        openEditor(e.currentTarget.dataset.openDate);
+    });
+}
+
+function showSaveError(text) {
+    const el = root?.querySelector('#admSaveError');
+    if (!el) return toast(text, true);
+    el.textContent = text;
+    el.hidden = false;
+}
+
 async function onGpxFile(file) {
     if (!file) return;
     try {
@@ -282,8 +319,14 @@ async function onGpxFile(file) {
 
 async function saveHike() {
     const d = draft;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) return toast('укажите дату', true);
-    if (d.start_time && !/^\d{1,2}:\d{2}$/.test(d.start_time.trim())) return toast('время – в формате 12:00', true);
+    const errEl = root.querySelector('#admSaveError');
+    if (errEl) errEl.hidden = true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(d.date)) return showSaveError('укажите дату');
+    if (d.start_time && !/^\d{1,2}:\d{2}$/.test(d.start_time.trim())) return showSaveError('время – в формате 12:00');
+    const clash = state.hikesData && state.hikesData[d.date];
+    if (d.date !== d.original && clash && clash.title && String(clash.title).trim()) {
+        return showSaveError(`на ${dateLabel(d.date)} уже есть «${clash.title}» – откройте его из списка или выберите другую дату`);
+    }
     const btn = root.querySelector('#admSave');
     btn.disabled = true;
     btn.textContent = 'сохраняю…';
@@ -306,14 +349,15 @@ async function saveHike() {
     try {
         await adminCall('adminSaveHike', { date: d.date, original_date: d.original, fields: JSON.stringify(fields) });
         // Firebase-подписка обновит хайки сама; подставляем локально, чтобы список сразу был свежим
-        const local = { ...(state.hikesData[d.original] || {}), ...fields, track: d.trackChanged ? d.track : (state.hikesData[d.original] || {}).track };
+        const base = state.hikesData[d.original] || {};
+        const local = { ...base, ...fields, track: d.trackChanged ? d.track : base.track };
         if (d.original && d.original !== d.date) delete state.hikesData[d.original];
         state.hikesData[d.date] = local;
         toast('сохранено ✓');
         view = { tab: 'hikes' };
         render();
     } catch (err) {
-        toast(err.message, true);
+        showSaveError('не сохранилось: ' + err.message);
         btn.disabled = false;
         btn.textContent = 'сохранить';
     }
@@ -437,7 +481,9 @@ function renderBroadcast(body) {
     const hikeOptions = sel => [...upcoming, ...recent].map(h => `<option value="${h.date}" ${sel === h.date ? 'selected' : ''}>${dateLabel(h.date)} – ${esc(h.title)}</option>`).join('');
     if (bc.segment === 'hike' && !bc.hikeDate) bc.hikeDate = (upcoming[0] || recent[0] || {}).date || '';
     if (bc.btnType === 'app' && bc.section === 'hike' && !bc.btnHike) bc.btnHike = (upcoming[0] || recent[0] || {}).date || '';
-    const segs = [['all', 'всем'], ['guests', 'гостям'], ['members', 'владельцам карт'], ['hike', 'участникам хайка']];
+    const c = audience && audience.counts;
+    const n = k => c ? ` · ${c[k]}` : '';
+    const segs = [['all', 'всем' + n('all')], ['guests', 'гостям' + n('guests')], ['members', 'владельцам карт' + n('members')], ['hike', 'участникам хайка']];
 
     body.innerHTML = `
         <div class="adm-label">кому</div>
@@ -462,7 +508,12 @@ function renderBroadcast(body) {
         <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`;
 
     const update = () => { renderPreview(); updateSendLabel(); };
-    body.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => { haptic(); bc.segment = b.dataset.seg; bc.count = null; render(); }));
+    body.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        bc.segment = b.dataset.seg;
+        bc.count = bc.segment !== 'hike' && audience ? audience.counts[bc.segment] : null;
+        render();
+    }));
     body.querySelectorAll('[data-btn]').forEach(b => b.addEventListener('click', () => { haptic(); bc.btnType = b.dataset.btn; render(); }));
     body.querySelector('#admBcHike')?.addEventListener('change', e => { bc.hikeDate = e.target.value; bc.count = null; render(); });
     body.querySelector('#admBcSection')?.addEventListener('change', e => { bc.section = e.target.value; render(); });
@@ -474,6 +525,14 @@ function renderBroadcast(body) {
     body.querySelector('#admBcSend').addEventListener('click', () => sendBroadcast(false));
     update();
     if (bc.count == null) refreshCount();
+}
+
+// Цифры по группам грузим одним запросом и держим минуту – переключение групп мгновенное.
+async function loadAudience(force = false) {
+    if (!force && audience && Date.now() - audience.at < 60000) return audience.counts;
+    const { counts } = await adminCall('adminAudience');
+    audience = { counts, at: Date.now() };
+    return counts;
 }
 
 function buttonPayload() {
@@ -505,17 +564,30 @@ function updateSendLabel() {
 let countSeq = 0;
 async function refreshCount() {
     const seq = ++countSeq;
+    const hadAudience = !!audience;
+    let failed = '';
     try {
-        const { count } = await adminCall('adminBroadcastCount', { segment: bc.segment, hike_date: bc.hikeDate });
-        if (seq !== countSeq) return;
-        bc.count = count;
+        if (bc.segment === 'hike') {
+            const { count } = await adminCall('adminBroadcastCount', { segment: 'hike', hike_date: bc.hikeDate });
+            if (seq !== countSeq) return;
+            bc.count = count;
+        } else {
+            const counts = await loadAudience();
+            if (seq !== countSeq) return;
+            bc.count = counts[bc.segment] ?? 0;
+        }
     } catch (err) {
         if (seq !== countSeq) return;
-        bc.count = 0;
-        toast(err.message, true);
+        bc.count = null;
+        failed = err.message;
     }
+    // первая загрузка цифр – перерисуем, чтобы они появились и на кнопках групп
+    if (!hadAudience && audience && root && view.tab === 'broadcast' && !view.sub) return render();
     const el = root?.querySelector('#admCount');
-    if (el) el.innerHTML = `получат: <b>${bc.count}</b> чел.`;
+    if (el) el.innerHTML = failed
+        ? `<span class="adm-error-inline">не удалось посчитать: ${esc(failed)}</span> <button class="adm-link" id="admRecount">ещё раз</button>`
+        : `получат: <b>${bc.count}</b> чел.`;
+    el?.querySelector('#admRecount')?.addEventListener('click', () => { el.textContent = 'считаю получателей…'; refreshCount(); });
     updateSendLabel();
 }
 
@@ -544,6 +616,7 @@ async function sendBroadcast(test) {
         if (test) toast(res.sent ? 'пришло вам в бот ✓' : 'не дошло – откройте бота и нажмите /start', !res.sent);
         else {
             toast(`доставлено ${res.sent} из ${res.total}`);
+            audience = null;
             bc = { ...newBroadcast(), count: null };
             render();
             return;

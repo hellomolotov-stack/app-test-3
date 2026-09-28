@@ -4620,14 +4620,15 @@ body::after {
 /* ==================== АДМИНКА ==================== */
 .adm-entry { display: block; margin: 0 0 12px auto; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(217,253,25,.45); background: rgba(10,11,9,.55); color: var(--yellow); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; backdrop-filter: var(--glass-blur-sm); -webkit-backdrop-filter: var(--glass-blur-sm); }
 body.adm-open { overflow: hidden; }
-.adm { position: fixed; inset: 0; z-index: 3000; overflow-y: auto; -webkit-overflow-scrolling: touch; background: #0A0B09; color: #fff; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 40px); }
+.adm { position: fixed; inset: 0; z-index: 3000; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; background: #0A0B09; color: #fff; padding: calc(env(safe-area-inset-top, 0px) + 12px) 16px calc(env(safe-area-inset-bottom, 0px) + 40px); }
 .adm-head { display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto 12px; }
 .adm-title { font-size: 22px; font-weight: 800; }
 .adm-close { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; font-size: 16px; cursor: pointer; }
 .adm-tabs { display: flex; gap: 4px; max-width: 600px; margin: 0 auto 14px; padding: 3px; border-radius: 30px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); }
 .adm-tab { flex: 1; padding: 9px 10px; border: 0; border-radius: 30px; background: none; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .adm-tab.is-on { background: var(--yellow); color: #000; }
-.adm-body { max-width: 600px; margin: 0 auto; }
+.adm-body { width: 100%; max-width: 600px; margin: 0 auto; min-width: 0; }
+.adm-body > * { max-width: 100%; }
 .adm-label { display: flex; align-items: center; gap: 8px; margin: 22px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.55); }
 .adm-label::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.12); }
 .adm .adm-primary { width: 100%; margin: 14px 0 0; border-radius: 30px; padding: 14px 16px; font-family: inherit; font-size: 16px; }
@@ -4655,7 +4656,11 @@ body.adm-open { overflow: hidden; }
 .adm-h1 { margin-bottom: 14px; font-size: 20px; font-weight: 800; }
 .adm-field { display: block; margin-bottom: 12px; }
 .adm-field > span { display: block; margin-bottom: 5px; font-size: 12.5px; color: rgba(255,255,255,.65); }
-.adm-field input, .adm-field textarea, .adm-field select { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 15px; line-height: 1.4; }
+/* 16px – чтобы iPhone не увеличивал страницу при вводе; min-width – поле даты на iOS шире контейнера */
+.adm-field input, .adm-field textarea, .adm-field select { display: block; width: 100%; min-width: 0; max-width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 16px; line-height: 1.4; }
+.adm-field input[type="date"] { -webkit-appearance: none; appearance: none; min-height: 46px; text-align: left; }
+.adm-field input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+.adm-field select { -webkit-appearance: none; appearance: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,.6) 50%), linear-gradient(135deg, rgba(255,255,255,.6) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
 .adm-field textarea { resize: vertical; }
 .adm-field input:focus, .adm-field textarea:focus, .adm-field select:focus { outline: none; border-color: rgba(217,253,25,.6); }
 .adm-field select option { color: #000; }
@@ -4688,3 +4693,10 @@ body.adm-open { overflow: hidden; }
 
 .adm-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 24px); z-index: 3100; transform: translateX(-50%); max-width: calc(100% - 32px); padding: 11px 18px; border-radius: 30px; background: var(--yellow); color: #000; font-size: 14px; font-weight: 600; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
 .adm-toast.is-error { background: #ff3b30; color: #fff; }
+
+.adm-note { margin: -4px 0 12px; padding: 9px 12px; border-radius: 12px; background: rgba(217,253,25,.08); border: 1px solid rgba(217,253,25,.25); font-size: 13px; line-height: 1.4; color: rgba(255,255,255,.85); }
+.adm-note.is-warn { background: rgba(255,159,10,.1); border-color: rgba(255,159,10,.4); }
+.adm-note .adm-link { padding: 0; margin-left: 4px; }
+.adm-error { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(255,59,48,.14); border: 1px solid rgba(255,59,48,.45); color: #ffb4ae; font-size: 14px; line-height: 1.4; }
+.adm-error-inline { color: #ffb4ae; }
+.adm-row-date, .adm-person-name, .adm-bubble, .adm-bubble-btn { overflow-wrap: anywhere; }

@@ -180,6 +180,8 @@ export async function trackAppUser(user, event, canMessage = '') {
     if (!user?.id || !REGISTRATION_API_URL) return null;
     const params = new URLSearchParams({
         action: 'trackAppUser',
+        // сервер берёт id только из подписанных данных Telegram
+        init_data: window.Telegram?.WebApp?.initData || '',
         user_id: String(user.id),
         first_name: user.first_name || '',
         username: user.username || '',
