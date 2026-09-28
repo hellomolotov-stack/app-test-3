@@ -4851,3 +4851,5 @@ body.adm-open { overflow: hidden; }
 .ef-next-head .ef-next-when { margin: 0; font-size: 13px; }
 .ef-next-head .ef-going:not(:empty) { margin-top: 8px; }
 .ef-next-head .ef-book { flex: none; }
+/* компактная кнопка в строке с названием – чтобы название чаще помещалось в одну строку */
+.events-feed .ef-next-head .ef-book { padding: 9px 16px; font-size: 14px; }

@@ -344,7 +344,7 @@ function feedNearestCard(h) {
         ${media}
         <div class="ef-next-body ef-next-head">
             <div class="ef-next-info">
-                <div class="ef-next-title">${h.title}</div>
+                <div class="ef-next-title">${String(h.title).replace(/-/g, '\u2011')}</div>
                 <div class="ef-next-when">${feedWhen(h.date)}</div>
                 <div class="ef-going" data-going-for="${h.date}"></div>
             </div>
