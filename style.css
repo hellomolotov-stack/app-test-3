@@ -4618,7 +4618,7 @@ body::after {
 .ef-report { flex: none; padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(217,253,25,.35); background: rgba(217,253,25,.1); color: var(--yellow); font-family: inherit; font-size: 12.5px; font-weight: 600; white-space: nowrap; cursor: pointer; }
 
 /* ==================== АДМИНКА ==================== */
-.adm-entry { display: block; margin: 0 0 12px auto; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(217,253,25,.45); background: rgba(10,11,9,.55); color: var(--yellow); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; backdrop-filter: var(--glass-blur-sm); -webkit-backdrop-filter: var(--glass-blur-sm); }
+.adm-entry { display: block; flex: none; margin: 4px 16px 0 0; padding: 6px 14px; white-space: nowrap; border-radius: 20px; border: 1px solid rgba(217,253,25,.45); background: rgba(10,11,9,.55); color: var(--yellow); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; backdrop-filter: var(--glass-blur-sm); -webkit-backdrop-filter: var(--glass-blur-sm); }
 body.adm-open { overflow: hidden; }
 .adm { position: fixed; inset: 0; z-index: 3000; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; background: #0A0B09; color: #fff; padding: calc(env(safe-area-inset-top, 0px) + 60px) 16px calc(env(safe-area-inset-bottom, 0px) + 40px); } /* как у .app – шапка не уходит под кнопки Telegram */
 .adm-head { display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto 12px; }
@@ -4706,3 +4706,17 @@ body.adm-open { overflow: hidden; }
 .ef-bell { flex: none; min-width: 40px; height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid rgba(217,253,25,.4); background: rgba(217,253,25,.1); color: var(--yellow); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .ef-bell.is-on { background: var(--yellow); color: #000; border-color: var(--yellow); }
 .ef-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); z-index: 3100; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); padding: 11px 18px; border-radius: 30px; background: var(--yellow); color: #000; font-size: 14px; font-weight: 600; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
+
+/* приветствие слева, «⚙️ админка» справа – в одну строку */
+.header.has-adm { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.header.has-adm #subtitle { flex: 1; min-width: 0; line-height: 1.2; }
+
+/* кнопки ленты и админки – всегда в одну строку */
+.events-feed .ef-book, .events-feed .ef-notify-on, .ef-bell, .ef-report,
+.adm .adm-primary, .adm-ghost, .adm-chip, .adm-tab, .adm-link { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* карточка ближайшего хайка: живая 3D-карта маршрута */
+.ef-next-map { position: relative; height: 220px; overflow: hidden; background: #0A0B09; touch-action: none; }
+.ef-next-map .maplibregl-map, .ef-next-map .maplibregl-canvas-container { position: absolute !important; inset: 0; }
+.ef-next-map .ef-badge { position: absolute; left: 12px; top: 12px; z-index: 3; pointer-events: none; }
+.ef-map-hint { position: absolute; right: 10px; bottom: 10px; z-index: 3; pointer-events: none; padding: 3px 9px; border-radius: 12px; background: rgba(10,11,9,.6); color: rgba(255,255,255,.75); font-size: 11px; }

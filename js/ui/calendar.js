@@ -19,6 +19,7 @@ import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges }
 import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { maybeAskNotifications, ensureCanMessage } from './notify-optin.js';
+import { getRouteForHikeTitle } from './personal-routes-map.js';
 import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
 import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js?v=20260825b';
@@ -236,6 +237,7 @@ const FEED_WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 const FEED_WD_FULL = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
 const feedGoing = {};
 let feedMonth = null;
+let feedMap = null;
 const FEED_WAITLIST_KEY = 'hikeWaitlist';
 
 // На какие даты-заглушки человек попросил сообщить об открытии записи (локально, сервер – источник рассылки).
@@ -256,11 +258,11 @@ function feedTeaserLabel(h) {
 function feedNotifyButton(date, compact = false) {
     const on = !!feedWaitlist()[date];
     if (compact) {
-        return `<button class="ef-bell${on ? ' is-on' : ''}" data-notify="${date}" aria-label="${on ? 'не сообщать' : 'сообщить, когда откроется запись'}">${on ? '✓ 🔔' : '🔔'}</button>`;
+        return `<button class="ef-bell${on ? ' is-on' : ''}" data-notify="${date}" aria-label="${on ? 'не сообщать' : 'сообщить, когда откроется запись'}">${on ? '✓ сообщим' : '🔔 сообщить'}</button>`;
     }
     return on
-        ? `<button class="ef-notify-on" data-notify="${date}">✓ сообщим в боте, как откроется запись</button>`
-        : `<button class="btn btn-yellow ef-book" data-notify="${date}">🔔 сообщить, когда откроется запись</button>`;
+        ? `<button class="ef-notify-on" data-notify="${date}">✓ сообщим</button>`
+        : `<button class="btn btn-yellow ef-book" data-notify="${date}">🔔 сообщить мне</button>`;
 }
 
 function isEventsFeedUser() {
@@ -337,8 +339,12 @@ function feedNearestCard(h) {
     }
     const tags = feedTags(h).map(t => `<span class="ef-chip">${t}</span>`).join('');
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
+    // есть трек – живая 3D-карта (крутится пальцами), иначе картинка маршрута
+    const media = getHikeTrack(h)
+        ? `<div class="ef-next-map" data-feed-map="${h.date}">${feedDateBadge(h.date)}<span class="ef-map-hint">покрутите карту</span></div>`
+        : `<div class="ef-next-img${h.image ? '' : ' no-img'}"${img}>${feedDateBadge(h.date)}</div>`;
     return `<div class="ef-next${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
-        <div class="ef-next-img${h.image ? '' : ' no-img'}"${img}>${feedDateBadge(h.date)}</div>
+        ${media}
         <div class="ef-next-body">
             <div class="ef-next-when">${when}</div>
             <div class="ef-next-title">${h.title}</div>
@@ -396,6 +402,9 @@ function feedMonthList(events) {
 }
 
 function renderEventsFeed(container) {
+    // перерисовка ленты – освобождаем прежнюю карту (WebGL-контекстов у телефона немного)
+    try { if (feedMap) feedMap.remove(); } catch (e) {}
+    feedMap = null;
     const events = feedEvents();
     const today = feedTodayStr();
     const nowMonth = today.slice(0, 7);
@@ -471,6 +480,19 @@ function renderEventsFeed(container) {
     }));
     bindSuggestEventButton();
     feedFillGoing(container);
+    feedMountMap(container, nearest);
+}
+
+function feedMountMap(container, hike) {
+    const el = container.querySelector('[data-feed-map]');
+    if (!el || !hike) return;
+    // жесты на карте – только для карты, слайдер открывают кнопка и текст карточки
+    ['click', 'touchstart', 'pointerdown'].forEach(ev => el.addEventListener(ev, e => e.stopPropagation()));
+    const track = getHikeTrack(hike);
+    ensureMapLibre().then(() => {
+        if (!el.isConnected) return;
+        feedMap = initHikeMap(el, track, true, true);
+    }).catch(() => {});
 }
 
 // «Сообщить, когда откроется запись»: нужно разрешение боту писать, затем подписка на сервере.
@@ -705,9 +727,30 @@ const HIKE_ROUTE_IDS = {
     '2026-09-26': 'demerdji'
 };
 
+// Маршрут каталога (18 маршрутов с Google Диска) для хайка: сначала явный route_id из админки,
+// иначе – по названию хайка («хайк на Кант» → «Форосский кант»).
+export function findCatalogRoute(hike) {
+    const routes = state.intelligentsiaRoutes || [];
+    if (!hike) return null;
+    if (hike.route_id) {
+        const byId = routes.find(r => String(r.id) === String(hike.route_id));
+        if (byId) return byId;
+    }
+    return hike.title ? getRouteForHikeTitle(routes, hike.title) : null;
+}
+
+export function catalogRouteTrack(route) {
+    if (!route || !Array.isArray(route.segments) || !route.segments.length) return null;
+    return { loop: true, segments: route.segments.map(seg => seg.map(([lat, lon]) => [lat, lon])) };
+}
+
 function getHikeTrack(hike) {
-    // трек, загруженный через админку (GPX), важнее захардкоженных
+    // трек, загруженный через админку (GPX), важнее всего; затем маршрут из каталога по route_id
     if (hike.track && Array.isArray(hike.track.coords) && hike.track.coords.length > 1) return hike.track;
+    if (hike.route_id) {
+        const byId = catalogRouteTrack(findCatalogRoute({ route_id: hike.route_id }));
+        if (byId) return byId;
+    }
     if (HIKE_TRACKS[hike.date]) return HIKE_TRACKS[hike.date];
 
     const sheetTrack = getIntelligentsiaRouteTrack(HIKE_ROUTE_TITLES[hike.date]);
@@ -715,7 +758,8 @@ function getHikeTrack(hike) {
 
     const routeId = HIKE_ROUTE_IDS[hike.date];
     const localRoute = routeId && ROUTE_TRACKS.find(item => item.id === routeId);
-    return localRoute ? { loop: true, coords: localRoute.coords } : null;
+    if (localRoute) return { loop: true, coords: localRoute.coords };
+    return catalogRouteTrack(findCatalogRoute({ title: hike.title }));
 }
 
 export function renderRoutesMap(container) {
@@ -1076,7 +1120,7 @@ function reliefAt(profile, azimuthDeg) {
     return profile[i0] * (1 - f) + profile[i1] * f;
 }
 
-function startHikeMapOrbit(map, camera, radiusDeg) {
+function startHikeMapOrbit(map, camera, radiusDeg, standalone = false) {
     let rafId = null;
     let cancelled = false;
 
@@ -1085,7 +1129,7 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
         if (rafId) cancelAnimationFrame(rafId);
         rafId = null;
     };
-    cancelHikeMapOrbit = cancel;
+    if (!standalone) cancelHikeMapOrbit = cancel;
 
     // Если человек сам взялся крутить карту — автоповорот больше не мешает
     ['mousedown', 'touchstart', 'wheel'].forEach(ev => map.on(ev, cancel));
@@ -1100,7 +1144,7 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
     const startFlyToPitch = Number.isFinite(camera.pitch) ? camera.pitch : 45;
     const startedAt = performance.now();
     const step = (now) => {
-        if (cancelled || map !== currentHikeMap) return;
+        if (cancelled || (!standalone && map !== currentHikeMap) || map._removed) return;
         const progress = Math.min((now - startedAt) / HIKE_MAP_ORBIT_DURATION, 1);
         const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
         const bearing = startBearing + eased * 360;
@@ -1140,9 +1184,12 @@ export function previewHikeTrack(el, track) {
     return ensureMapLibre().then(() => initHikeMap(el, track, true));
 }
 
-function initHikeMap(el, track, instant = false) {
-    try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
-    try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
+// standalone – отдельная карта (карточка в календаре): не трогает карту слайдера и её облёт.
+function initHikeMap(el, track, instant = false, standalone = false) {
+    if (!standalone) {
+        try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
+        try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
+    }
     const C = track.coords || track.segments?.flat();
     const DEST = track.dest || track.lake;
     let line;
@@ -1212,7 +1259,7 @@ function initHikeMap(el, track, instant = false) {
         keyboard: false,
         doubleClickZoom: false
     });
-    currentHikeMap = map;
+    if (!standalone) currentHikeMap = map;
 
     map.on('load', () => {
         map.addSource('dem', {
@@ -1274,10 +1321,10 @@ function initHikeMap(el, track, instant = false) {
                 // просто уточняем позицию на случай смещения при загрузке рельефа
                 // и сразу начинаем оборот, не дожидаясь анимации перелёта.
                 map.jumpTo(target);
-                startHikeMapOrbit(map, target, orbitRadiusDeg);
+                startHikeMapOrbit(map, target, orbitRadiusDeg, standalone);
             } else {
                 map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
-                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg));
+                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone));
             }
         });
     });
@@ -1287,6 +1334,7 @@ function initHikeMap(el, track, instant = false) {
     hint.innerHTML = '<div class="mh-dot mh-l"></div><div class="mh-dot mh-r"></div><div class="mh-dot mh-cw"></div><div class="mh-dot mh-ccw"></div>';
     el.appendChild(hint);
     setTimeout(() => { hint.remove(); }, 4500);
+    return map;
 }
 
 let sheetCurrentIndex = 0;

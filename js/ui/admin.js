@@ -5,7 +5,7 @@ import { state } from '../state.js';
 import { haptic, tg } from '../utils.js';
 import { REGISTRATION_API_URL } from '../config.js';
 import { loadAllParticipants } from '../firebase.js';
-import { previewHikeTrack } from './calendar.js';
+import { previewHikeTrack, findCatalogRoute, catalogRouteTrack } from './calendar.js';
 
 const ADMIN_USERNAMES = new Set(['maxmolotov', 'hellointelligent']);
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
@@ -34,25 +34,32 @@ let draft = null;       // редактируемый хайк
 let bc = null;          // черновик рассылки
 let pastLimit = 8;
 let audience = null;     // { counts: {all, guests, members}, at }
+let templates = null;    // route_templates с сервера: { route_id: {поля хайка} }
+let templatesLoading = null;
 
 export function isAdminUser() {
     return ADMIN_USERNAMES.has(String(state.user?.username || '').replace(/^@/, '').toLowerCase());
 }
 
 // Полоска «⚙️ админка» сверху главной – только для админов.
-export function mountAdminEntry(container) {
-    if (!container || !isAdminUser() || container.querySelector('.adm-entry')) return;
+// Кнопка «⚙️ админка» справа от приветствия, в одной строке с ним.
+export function mountAdminEntry() {
+    const header = document.querySelector('.header');
+    if (!header || !isAdminUser()) return;
+    header.classList.add('has-adm');
+    if (header.querySelector('.adm-entry')) return;
     const btn = document.createElement('button');
     btn.className = 'adm-entry';
     btn.textContent = '⚙️ админка';
     btn.addEventListener('click', () => { haptic(); openAdmin(); });
-    container.prepend(btn);
+    header.appendChild(btn);
 }
 
 export function openAdmin(tab = 'hikes') {
     if (!isAdminUser()) return;
     closeAdmin();
     view = { tab };
+    loadTemplates().catch(() => {});
     root = document.createElement('div');
     root.className = 'adm';
     document.body.appendChild(root);
@@ -164,6 +171,121 @@ function renderHikeList(body) {
     });
 }
 
+// ---------- маршруты каталога и шаблоны ----------
+function catalogRoutes() {
+    return (state.intelligentsiaRoutes || []).slice().sort((a, b) => String(a.title).localeCompare(String(b.title), 'ru'));
+}
+
+function routeById(id) {
+    return (state.intelligentsiaRoutes || []).find(r => String(r.id) === String(id)) || null;
+}
+
+function routeKm(route) {
+    let m = 0;
+    (route?.segments || []).forEach(seg => { for (let i = 1; i < seg.length; i++) m += haversine(seg[i - 1], seg[i]); });
+    return m ? Math.round(m / 100) / 10 : null;
+}
+
+function loadTemplates(force = false) {
+    if (templates && !force) return Promise.resolve(templates);
+    if (!templatesLoading || force) {
+        templatesLoading = adminCall('adminTemplates')
+            .then(res => (templates = res.templates || {}))
+            .finally(() => { templatesLoading = null; });
+    }
+    return templatesLoading;
+}
+
+// Последний хайк на этот маршрут (если шаблона ещё нет): по route_id или по названию.
+function latestHikeFor(routeId) {
+    return allHikes()
+        .filter(h => h.title && String(h.title).trim() && findCatalogRoute(h)?.id === routeId)
+        .pop() || null;
+}
+
+// Шаблон маршрута: сохранённый в админке → последний хайк на маршрут → данные каталога.
+function templateFor(routeId) {
+    const route = routeById(routeId);
+    const saved = templates && templates[routeId];
+    if (saved) return { source: 'шаблон', from: saved.from_date, data: saved };
+    const last = latestHikeFor(routeId);
+    if (last) return { source: 'прошлый хайк', from: last.date, data: last };
+    const km = routeKm(route);
+    return {
+        source: 'каталог',
+        data: { title: route ? `хайк на ${route.title}` : '', features: route?.description || '', tags: km ? [`${km} км`] : [], start_time: '12:00' }
+    };
+}
+
+function applyTemplate(routeId) {
+    const t = templateFor(routeId);
+    const v = t.data || {};
+    const d = draft;
+    d.title = v.title || '';
+    d.emoji = '';
+    d.start_time = v.start_time || d.start_time || '12:00';
+    d.tags = Array.isArray(v.tags) ? v.tags.join(', ') : String(v.tags || '');
+    d.image = v.image || '';
+    d.features = v.features || '';
+    d.access = v.access || '';
+    d.details = v.details || '';
+    d.location_link = v.location_link || '';
+    d.woman = isYes(v.woman);
+    d.city = isYes(v.city);
+    d.templateNote = t.source === 'каталог'
+        ? 'подставлено из каталога маршрутов – это первый хайк на маршрут'
+        : `подставлено: ${t.source}${t.from ? ' от ' + dateLabel(t.from) : ''}. после сохранения эти поля станут шаблоном маршрута`;
+}
+
+async function onRouteChange(value) {
+    const d = draft;
+    if (value === '__gpx') {
+        d.routeMode = 'gpx';
+        d.route_id = '';
+        d.templateNote = '';
+        return render();
+    }
+    if (!value) {
+        d.routeMode = d.track ? 'gpx' : 'none';
+        d.route_id = '';
+        return render();
+    }
+    d.routeMode = 'catalog';
+    d.route_id = value;
+    if (d.track) { d.track = null; d.trackStats = null; d.trackChanged = true; } // трек возьмём из каталога
+    // у нового хайка подставляем сразу; у существующего – спрашиваем, чтобы не затереть тексты
+    const fill = !d.original || await confirmAsync('Подставить тексты и поля из шаблона этого маршрута? Текущие заменятся.');
+    if (fill) {
+        d.templateNote = 'загружаю шаблон…';
+        render();
+        try { await loadTemplates(); } catch (e) {}
+        applyTemplate(value);
+    }
+    render();
+}
+
+function trackSectionHtml(d) {
+    if (d.routeMode === 'catalog') {
+        const route = routeById(d.route_id);
+        const km = routeKm(route);
+        return `<div class="adm-track">
+            <div class="adm-track-stats"><b>${esc(route?.title || 'маршрут')}</b>${km ? ` · ${km} км` : ''} · трек из каталога</div>
+            <div class="adm-map" id="admMap"></div>
+            <div class="adm-hint">другой трек? выберите «свой маршрут (GPX)» в списке маршрутов</div>
+        </div>`;
+    }
+    const stats = d.trackStats;
+    return `<div class="adm-track">
+        ${stats ? `<div class="adm-track-stats"><b>${stats.km ?? '–'} км</b>${stats.gain != null ? ` · набор ${stats.gain} м` : ''} · ${stats.points} точек${d.trackChanged ? ' · <span class="adm-new">новый, не сохранён</span>' : ''}</div>
+            <div class="adm-map" id="admMap"></div>` : `<div class="adm-hint">${d.routeMode === 'gpx' ? 'загрузите GPX – в календаре и слайдере хайка появится 3D-карта' : 'выберите маршрут из списка выше или загрузите GPX нового маршрута'}</div>`}
+        <div class="adm-track-actions">
+            <label class="adm-ghost adm-file">${stats ? 'заменить GPX' : 'загрузить GPX'}<input type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" id="admGpx" hidden></label>
+            ${stats ? '<button class="adm-link is-danger" id="admTrackRemove">убрать трек</button>' : ''}
+            ${stats && stats.km && !/\d\s*км/.test(d.tags) ? `<button class="adm-link" id="admKmTag">+ «${stats.km} км» в теги</button>` : ''}
+        </div>
+    </div>`;
+}
+
 // ---------- редактор хайка ----------
 function openEditor(date) {
     const h = date ? { ...(state.hikesData[date] || {}), date } : null;
@@ -185,11 +307,16 @@ function openEditor(date) {
         city: isYes(h.city),
         track: h.track || null,
         trackChanged: false,
-        trackStats: h.track ? { km: h.track.km, gain: h.track.gain, points: h.track.coords.length } : null
+        trackStats: h.track ? { km: h.track.km, gain: h.track.gain, points: h.track.coords.length } : null,
+        // свой GPX важнее; иначе явный route_id или угаданный по названию маршрут каталога
+        route_id: h.track ? '' : (h.route_id || findCatalogRoute(h)?.id || ''),
+        routeMode: h.track ? 'gpx' : ((h.route_id || findCatalogRoute(h)) ? 'catalog' : 'none'),
+        templateNote: ''
     } : {
         original: '', date: '', title: '', emoji: '', start_time: '12:00', tags: '', image: '',
         features: '', access: '', details: '', location_link: '', report_link: '',
-        cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null
+        cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null,
+        route_id: '', routeMode: 'none', templateNote: ''
     };
     view = { tab: 'hikes', sub: 'edit' };
     render();
@@ -204,6 +331,12 @@ function renderEditor(body) {
     body.innerHTML = `
         <button class="adm-back">‹ все хайки</button>
         <div class="adm-h1">${d.original ? esc(d.title || 'заглушка ' + dateLabel(d.original)) : 'новый хайк'}</div>
+        <label class="adm-field"><span>маршрут</span><select id="admRoute">
+            <option value="">— выберите маршрут —</option>
+            ${catalogRoutes().map(r => `<option value="${esc(r.id)}" ${d.routeMode === 'catalog' && String(d.route_id) === String(r.id) ? 'selected' : ''}>${esc(r.title)}</option>`).join('')}
+            <option value="__gpx" ${d.routeMode === 'gpx' ? 'selected' : ''}>свой маршрут (GPX)</option>
+        </select></label>
+        ${d.templateNote ? `<div class="adm-note">${esc(d.templateNote)}</div>` : ''}
         ${field('date', 'дата', 'type="date"')}
         <div id="admDateNote">${dateNoteHtml()}</div>
         ${field('title', 'название', 'placeholder="хайк на Ай-Петри"')}
@@ -213,15 +346,7 @@ function renderEditor(body) {
         ${field('tags', 'теги через запятую', 'placeholder="умеренно, 10 км, 4-5 часов, без пропуска"')}
 
         <div class="adm-label">🗺 трек маршрута</div>
-        <div class="adm-track">
-            ${stats ? `<div class="adm-track-stats"><b>${stats.km ?? '–'} км</b>${stats.gain != null ? ` · набор ${stats.gain} м` : ''} · ${stats.points} точек${d.trackChanged ? ' · <span class="adm-new">новый, не сохранён</span>' : ''}</div>
-                <div class="adm-map" id="admMap"></div>` : '<div class="adm-hint">загрузите GPX – в слайдере хайка появится 3D-карта маршрута</div>'}
-            <div class="adm-track-actions">
-                <label class="adm-ghost adm-file">${stats ? 'заменить GPX' : 'загрузить GPX'}<input type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" id="admGpx" hidden></label>
-                ${stats ? '<button class="adm-link is-danger" id="admTrackRemove">убрать трек</button>' : ''}
-                ${stats && stats.km && !/\d\s*км/.test(d.tags) ? `<button class="adm-link" id="admKmTag">+ «${stats.km} км» в теги</button>` : ''}
-            </div>
-        </div>
+        ${trackSectionHtml(d)}
 
         <div class="adm-label">описание</div>
         ${field('image', 'картинка (ссылка)', 'placeholder="https://i.postimg.cc/…"')}
@@ -258,7 +383,8 @@ function renderEditor(body) {
         d.emoji = d.emoji === b.dataset.emoji ? '' : b.dataset.emoji;
         render();
     }));
-    body.querySelector('#admGpx').addEventListener('change', e => onGpxFile(e.target.files && e.target.files[0]));
+    body.querySelector('#admRoute').addEventListener('change', e => onRouteChange(e.target.value));
+    body.querySelector('#admGpx')?.addEventListener('change', e => onGpxFile(e.target.files && e.target.files[0]));
     body.querySelector('#admTrackRemove')?.addEventListener('click', () => {
         haptic();
         d.track = null; d.trackStats = null; d.trackChanged = true;
@@ -272,7 +398,8 @@ function renderEditor(body) {
     });
     body.querySelector('#admSave').addEventListener('click', saveHike);
     const mapEl = body.querySelector('#admMap');
-    if (mapEl && d.track) previewHikeTrack(mapEl, d.track).catch(() => { mapEl.textContent = 'карта не загрузилась'; });
+    const previewTrack = d.routeMode === 'catalog' ? catalogRouteTrack(routeById(d.route_id)) : d.track;
+    if (mapEl && previewTrack) previewHikeTrack(mapEl, previewTrack).catch(() => { mapEl.textContent = 'карта не загрузилась'; });
     if (d.original) loadPeople(body.querySelector('#admPeople'), d.original);
 }
 
@@ -310,6 +437,8 @@ async function onGpxFile(file) {
         draft.track = track;
         draft.trackStats = stats;
         draft.trackChanged = true;
+        draft.routeMode = 'gpx';
+        draft.route_id = '';
         haptic();
         render();
     } catch (err) {
@@ -345,10 +474,12 @@ async function saveHike() {
         woman: d.woman,
         city: d.city
     };
-    if (d.trackChanged) fields.track = d.track;
+    fields.route_id = d.routeMode === 'catalog' ? String(d.route_id) : '';
+    if (d.trackChanged) fields.track = d.routeMode === 'catalog' ? null : d.track;
     try {
         const res = await adminCall('adminSaveHike', { date: d.date, original_date: d.original, fields: JSON.stringify(fields) });
         // Firebase-подписка обновит хайки сама; подставляем локально, чтобы список сразу был свежим
+        if (fields.route_id && templates) templates[fields.route_id] = { ...fields, from_date: d.date };
         const base = state.hikesData[d.original] || {};
         const local = { ...base, ...fields, track: d.trackChanged ? d.track : base.track };
         if (d.original && d.original !== d.date) delete state.hikesData[d.original];
