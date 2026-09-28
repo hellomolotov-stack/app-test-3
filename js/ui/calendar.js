@@ -784,7 +784,17 @@ export function catalogRouteTrack(route) {
     return { loop: true, segments: route.segments.map(seg => seg.map(([lat, lon]) => [lat, lon])) };
 }
 
+// Маршруты, у которых рельеф с усилением 1.8 выглядит остриём (плато Ильяс-Кая в данных высот узкое)
+const ROUTE_TERRAIN_EXAGGERATION = { 'ilyas-kaya': 0.8 };
+
 function getHikeTrack(hike) {
+    const track = getHikeTrackRaw(hike);
+    const route = track && findCatalogRoute(hike);
+    const exaggeration = route && ROUTE_TERRAIN_EXAGGERATION[route.id];
+    return exaggeration ? { ...track, exaggeration } : track;
+}
+
+function getHikeTrackRaw(hike) {
     // трек, загруженный через админку (GPX), важнее всего; затем маршрут из каталога по route_id
     if (hike.track && Array.isArray(hike.track.coords) && hike.track.coords.length > 1) return hike.track;
     if (hike.route_id) {
@@ -1308,7 +1318,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
             tileSize: 256, encoding: 'terrarium', maxzoom: 15
         });
-        map.setTerrain({ source: 'dem', exaggeration: 1.8 });
+        map.setTerrain({ source: 'dem', exaggeration: track.exaggeration || 1.8 });
         map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
 
         map.addSource('route', { type: 'geojson', data: geojson });
