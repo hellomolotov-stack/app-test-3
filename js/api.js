@@ -196,3 +196,18 @@ export async function trackAppUser(user, event, canMessage = '') {
         return null;
     }
 }
+
+// Лист ожидания «сообщить, когда откроется запись» на дату-заглушку. on=false – отписаться.
+export async function setHikeWaitlist(hikeDate, on) {
+    if (!REGISTRATION_API_URL) throw new Error('нет адреса сервера');
+    const params = new URLSearchParams({
+        action: 'hikeWaitlist',
+        init_data: window.Telegram?.WebApp?.initData || '',
+        date: hikeDate,
+        on: on ? 'yes' : 'no'
+    });
+    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params });
+    const data = JSON.parse(await resp.text());
+    if (data.status !== 'ok') throw new Error(data.message || 'не получилось');
+    return data;
+}

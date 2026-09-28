@@ -347,13 +347,13 @@ async function saveHike() {
     };
     if (d.trackChanged) fields.track = d.track;
     try {
-        await adminCall('adminSaveHike', { date: d.date, original_date: d.original, fields: JSON.stringify(fields) });
+        const res = await adminCall('adminSaveHike', { date: d.date, original_date: d.original, fields: JSON.stringify(fields) });
         // Firebase-подписка обновит хайки сама; подставляем локально, чтобы список сразу был свежим
         const base = state.hikesData[d.original] || {};
         const local = { ...base, ...fields, track: d.trackChanged ? d.track : base.track };
         if (d.original && d.original !== d.date) delete state.hikesData[d.original];
         state.hikesData[d.date] = local;
-        toast('сохранено ✓');
+        toast(res.notified ? `сохранено ✓ · уведомили о записи: ${res.notified}` : 'сохранено ✓');
         view = { tab: 'hikes' };
         render();
     } catch (err) {
@@ -366,12 +366,17 @@ async function saveHike() {
 async function loadPeople(el, date) {
     if (!el) return;
     try {
-        const { participants } = await adminCall('adminParticipants', { date });
+        const { participants, waitlist = [] } = await adminCall('adminParticipants', { date });
         if (!root || !el.isConnected) return;
         const booked = participants.filter(p => p.in_app || p.status === 'booked');
-        if (!booked.length) { el.textContent = 'пока никто не записался'; return; }
+        const waiting = waitlist.filter(w => !w.notified);
+        // кто просил сообщить об открытии записи – для заглушки это главное
+        const waitHtml = waitlist.length
+            ? `<div class="adm-note">🔔 ждут открытия записи: <b>${waiting.length}</b>${waitlist.length > waiting.length ? ` (уже уведомили: ${waitlist.length - waiting.length})` : ''}${waiting.length ? '<br>как только дадите название и сохраните, им придёт сообщение с кнопкой на этот хайк' : ''}</div>`
+            : '';
+        if (!booked.length) { el.className = 'adm-people'; el.innerHTML = waitHtml + '<div class="adm-hint">пока никто не записался</div>'; return; }
         el.className = 'adm-people';
-        el.innerHTML = `<div class="adm-hint">записались: ${booked.length}</div>` + booked.map(p => {
+        el.innerHTML = waitHtml + `<div class="adm-hint">записались: ${booked.length}</div>` + booked.map(p => {
             const kind = /^(yes|true|да|1)$/i.test(String(p.has_card || '').trim()) || /card|карт/i.test(p.purchase) ? 'карта' : /ticket|билет/i.test(p.purchase) ? 'билет' : '';
             return `<div class="adm-person">
                 <span class="adm-person-name">${esc(p.name || 'без имени')}${kind ? ` <span class="adm-flag">${kind}</span>` : ''}</span>

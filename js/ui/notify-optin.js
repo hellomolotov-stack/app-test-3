@@ -116,3 +116,23 @@ export async function maybeAskNotifications(reason = 'home', delay = 0) {
         log('сообщения: не сейчас', state.userCard?.status !== 'active', state.user, { reason });
     });
 }
+
+// Можно ли боту писать человеку; если неизвестно – сразу просим разрешение окном Telegram
+// (без своей карточки: человек только что сам нажал «сообщить»). reason – для журнала.
+export function ensureCanMessage(reason = 'waitlist') {
+    if (allowsFromInitData() || readAsk().ok) return Promise.resolve(true);
+    if (!state.user?.id || !tg?.requestWriteAccess) return Promise.resolve(false);
+    return new Promise(resolve => {
+        try {
+            tg.requestWriteAccess(granted => {
+                writeAsk(granted ? { ok: true } : {});
+                trackAppUser(state.user, granted ? 'grant' : 'deny', granted ? 'yes' : 'no');
+                if (granted) registerWebAppUser(state.user);
+                log(granted ? 'сообщения: разрешил' : 'сообщения: отказал', state.userCard?.status !== 'active', state.user, { reason });
+                resolve(!!granted);
+            });
+        } catch (e) {
+            resolve(false);
+        }
+    });
+}

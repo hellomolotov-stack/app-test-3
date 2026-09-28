@@ -1,7 +1,7 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
-import { log, updateRegistrationInSheet, initPayment, sendBookingNotification } from '../api.js';
+import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist } from '../api.js';
 import {
     getDatabase,
     addParticipant,
@@ -18,7 +18,7 @@ import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
-import { maybeAskNotifications } from './notify-optin.js';
+import { maybeAskNotifications, ensureCanMessage } from './notify-optin.js';
 import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
 import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js?v=20260825b';
@@ -228,7 +228,7 @@ function bindSuggestEventButton() {
 // ==================== ЛЕНТА СОБЫТИЙ (вместо сетки месяца) ====================
 // Пилот: ближайший хайк крупной карточкой, полоса активности по месяцам и список
 // событий выбранного месяца. Остальные пользователи видят обычный календарь.
-const EVENTS_FEED_USERNAMES = new Set(['hellointelligent']);
+const EVENTS_FEED_USERNAMES = new Set(['hellointelligent', 'maxmolotov']);
 const FEED_MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const FEED_MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
 const FEED_MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -236,6 +236,32 @@ const FEED_WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 const FEED_WD_FULL = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
 const feedGoing = {};
 let feedMonth = null;
+const FEED_WAITLIST_KEY = 'hikeWaitlist';
+
+// На какие даты-заглушки человек попросил сообщить об открытии записи (локально, сервер – источник рассылки).
+function feedWaitlist() {
+    try { return JSON.parse(localStorage.getItem(FEED_WAITLIST_KEY) || '{}') || {}; } catch (e) { return {}; }
+}
+
+function setFeedWaitlist(date, on) {
+    const w = feedWaitlist();
+    if (on) w[date] = true; else delete w[date];
+    try { localStorage.setItem(FEED_WAITLIST_KEY, JSON.stringify(w)); } catch (e) {}
+}
+
+function feedTeaserLabel(h) {
+    return /🏄/.test(h.emoji || '') ? 'готовим событие' : 'готовим хайк';
+}
+
+function feedNotifyButton(date, compact = false) {
+    const on = !!feedWaitlist()[date];
+    if (compact) {
+        return `<button class="ef-bell${on ? ' is-on' : ''}" data-notify="${date}" aria-label="${on ? 'не сообщать' : 'сообщить, когда откроется запись'}">${on ? '✓ 🔔' : '🔔'}</button>`;
+    }
+    return on
+        ? `<button class="ef-notify-on" data-notify="${date}">✓ сообщим в боте, как откроется запись</button>`
+        : `<button class="btn btn-yellow ef-book" data-notify="${date}">🔔 сообщить, когда откроется запись</button>`;
+}
 
 function isEventsFeedUser() {
     return EVENTS_FEED_USERNAMES.has(String(state.user?.username || '').replace(/^@/, '').toLowerCase());
@@ -307,7 +333,7 @@ function feedNearestCard(h) {
     const when = `${FEED_WD_FULL[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}${h.start_time ? ' · ' + h.start_time : ''} · ${feedWhen(h.date)}`;
     const button = `<button class="btn btn-yellow ef-book" data-book="${h.date}">записаться</button>`;
     if (!h.title || !h.title.trim()) {
-        return `<div class="ef-next ef-next-teaser"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} готовим хайк</div><div class="ef-next-sub">${when}. маршрут скоро объявим</div></div></div>${button}</div>`;
+        return `<div class="ef-next ef-next-teaser"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${when}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}</div>`;
     }
     const tags = feedTags(h).map(t => `<span class="ef-chip">${t}</span>`).join('');
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
@@ -333,7 +359,7 @@ function feedRow(h) {
     const km = feedKm(h);
     let sub = FEED_WD[d.getDay()];
     if (cancelled) sub += ' · отменили';
-    else if (isTeaser) sub += ' · маршрут скоро объявим';
+    else if (isTeaser) sub += ' · запись скоро откроется';
     else {
         if (isCity) sub += ' · <span class="ef-city">клубный вечер</span>';
         else if (km) sub += ` · ${km} км`;
@@ -341,12 +367,13 @@ function feedRow(h) {
     }
     let action = '';
     if (!cancelled && isPast && hasReportLink(h)) action = `<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
+    else if (!cancelled && !isPast && isTeaser) action = feedNotifyButton(h.date, true);
     else if (!cancelled && !isPast) action = `<button class="btn btn-yellow ef-book ef-book-sm" data-book="${h.date}">записаться</button>`;
     const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}`;
     const img = h.image && !cancelled ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     return `<div class="ef-row${cancelled ? ' is-off' : ''}${isPast ? '' : ' is-future'}"${isTeaser ? '' : ` data-open="${h.date}"`}>
         <div class="${thumbCls}"${img}>${img ? '' : icon}<span class="ef-thumb-date">${d.getDate()} ${FEED_MONTHS_SHORT[d.getMonth()]}</span></div>
-        <div class="ef-row-mid"><div class="ef-row-title">${isTeaser ? 'готовим хайк' : h.title}</div><div class="ef-row-sub">${sub}<span data-going-for="${isPast && !cancelled && !isTeaser ? h.date : ''}"></span></div></div>
+        <div class="ef-row-mid"><div class="ef-row-title">${isTeaser ? feedTeaserLabel(h) : h.title}</div><div class="ef-row-sub">${sub}<span data-going-for="${isPast && !cancelled && !isTeaser ? h.date : ''}"></span></div></div>
         ${action}
     </div>`;
 }
@@ -429,6 +456,10 @@ function renderEventsFeed(container) {
         haptic();
         feedOpenHike(el.dataset.book, 'записаться из ленты');
     }));
+    container.querySelectorAll('[data-notify]').forEach(el => el.addEventListener('click', e => {
+        e.stopPropagation();
+        feedToggleNotify(el.dataset.notify, container);
+    }));
     container.querySelectorAll('[data-report]').forEach(el => el.addEventListener('click', e => {
         e.stopPropagation();
         const h = state.hikesData[el.dataset.report];
@@ -440,6 +471,61 @@ function renderEventsFeed(container) {
     }));
     bindSuggestEventButton();
     feedFillGoing(container);
+}
+
+// «Сообщить, когда откроется запись»: нужно разрешение боту писать, затем подписка на сервере.
+async function feedToggleNotify(date, container) {
+    haptic();
+    const on = !feedWaitlist()[date];
+    if (!on && !(await feedConfirm('Больше не сообщать об открытии записи?'))) return;
+    if (on && !(await ensureCanMessage('waitlist'))) {
+        feedModal('🔔', 'нужно разрешение', 'без него бот не сможет написать вам, когда откроется запись. нажмите «сообщить» ещё раз и разрешите сообщения');
+        return;
+    }
+    setFeedWaitlist(date, on);
+    renderEventsFeed(container);
+    try {
+        await setHikeWaitlist(date, on);
+        log(on ? 'лист ожидания: подписался' : 'лист ожидания: отписался', state.userCard.status !== 'active', state.user, { date });
+        if (on) feedToast('готово – сообщим в боте, как только откроется запись');
+    } catch (err) {
+        setFeedWaitlist(date, !on);
+        renderEventsFeed(container);
+        feedToast('не получилось, попробуйте ещё раз');
+    }
+}
+
+function feedConfirm(text) {
+    return new Promise(resolve => {
+        if (tg?.showConfirm) {
+            try { tg.showConfirm(text, ok => resolve(!!ok)); return; } catch (e) {}
+        }
+        resolve(window.confirm(text));
+    });
+}
+
+function feedToast(text) {
+    const el = document.createElement('div');
+    el.className = 'ef-toast';
+    el.textContent = text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3200);
+}
+
+function feedModal(icon, title, text) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:360px; text-align:center;">
+            <div style="font-size:52px; margin-bottom:12px;">${icon}</div>
+            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">${title}</div>
+            <div class="modal-text" style="text-align:center; margin-top:8px;">${text}</div>
+            <button class="btn btn-yellow" data-close style="margin-top:16px;">понятно</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    const close = () => { haptic(); overlay.remove(); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelector('[data-close]').addEventListener('click', close);
 }
 
 function feedOpenHike(date, logName) {
