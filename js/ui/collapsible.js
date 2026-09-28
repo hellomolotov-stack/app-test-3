@@ -1,6 +1,6 @@
 // js/ui/collapsible.js – сворачиваемые блоки главной.
 // У каждого блока (кроме карты интеллигента, помощника и календаря) справа от названия кнопка
-// «свернуть»; свёрнутый блок – одна строка с названием и «развернуть». Состояние помнится.
+// «свернуть»; свёрнутый блок – одна строка с названием и «раскрыть». Состояние помнится.
 // Блоки перерисовываются сами по себе (погода, календарь, маршруты), поэтому следим за DOM
 // и докручиваем кнопки к новым блокам, не трогая код каждого блока.
 import { haptic } from '../utils.js';
@@ -39,7 +39,7 @@ function blockKey(card, head) {
 
 function setState(card, button, collapsed) {
     card.classList.toggle('is-collapsed', collapsed);
-    button.textContent = collapsed ? 'развернуть' : 'свернуть';
+    button.textContent = collapsed ? 'раскрыть' : 'свернуть';
     button.setAttribute('aria-expanded', String(!collapsed));
 }
 
