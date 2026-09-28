@@ -4843,3 +4843,11 @@ body.adm-open { overflow: hidden; }
 /* подписи ленты календаря («ближайший хайк», «активность клуба») – строчными, без полосок */
 .events-feed .ef-label { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 700; }
 .events-feed .ef-label::after { display: none; }
+
+/* карточка ближайшего хайка: название и «через N дней» слева, «записаться» справа на одной линии */
+.ef-next-head { display: flex; align-items: center; gap: 12px; }
+.ef-next-head .ef-next-info { flex: 1; min-width: 0; }
+.ef-next-head .ef-next-title { margin: 0 0 2px; font-size: 17px; line-height: 1.25; }
+.ef-next-head .ef-next-when { margin: 0; font-size: 13px; }
+.ef-next-head .ef-going:not(:empty) { margin-top: 8px; }
+.ef-next-head .ef-book { flex: none; }

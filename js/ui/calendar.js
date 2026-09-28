@@ -338,14 +338,17 @@ function feedNearestCard(h) {
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     // есть трек – живая 3D-карта (крутится пальцами), иначе картинка маршрута
     const media = getHikeTrack(h)
-        ? `<div class="ef-next-map" data-feed-map="${h.date}">${feedDateBadge(h.date)}<span class="ef-map-hint">покрутите карту</span></div>`
+        ? `<div class="ef-next-map" data-feed-map="${h.date}">${feedDateBadge(h.date)}<span class="ef-map-hint">покрути карту</span></div>`
         : `<div class="ef-next-img${h.image ? '' : ' no-img'}"${img}>${feedDateBadge(h.date)}</div>`;
     return `<div class="ef-next${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
         ${media}
-        <div class="ef-next-body">
-            <div class="ef-next-title">${h.title}</div>
-            <div class="ef-next-when">${feedWhen(h.date)}</div>
-            <div class="ef-next-row"><div class="ef-going" data-going-for="${h.date}"></div>${button}</div>
+        <div class="ef-next-body ef-next-head">
+            <div class="ef-next-info">
+                <div class="ef-next-title">${h.title}</div>
+                <div class="ef-next-when">${feedWhen(h.date)}</div>
+                <div class="ef-going" data-going-for="${h.date}"></div>
+            </div>
+            ${button}
         </div>
     </div>`;
 }
@@ -577,7 +580,7 @@ const feedEsc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;'
 
 function feedGoingHtml(list) {
     const n = list.length;
-    if (!n) return '<span class="ef-going-text">места есть</span>';
+    if (!n) return '';
     const faces = list.slice(0, 4).map(p => p.photoUrl
         ? `<img src="${feedEsc(p.photoUrl)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
         : `<i>${feedEsc((p.name || '?').slice(0, 1))}</i>`).join('');
