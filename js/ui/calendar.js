@@ -779,9 +779,32 @@ export function findCatalogRoute(hike) {
     return hike.title ? getRouteForHikeTitle(routes, hike.title) : null;
 }
 
+// В GPX Ильяс-Кая спуск с вершины идёт по краю обрыва: на карте трек «сползает» по скале.
+// Участок между точкой у развилки и вершиной заменяем линией по плато.
+const ROUTE_TRACK_FIXES = {
+    'ilyas-kaya': [[44.405218, 33.739439], [44.405218, 33.739345], [44.405295, 33.739207], [44.405386, 33.739139], [44.405646, 33.739001], [44.405787, 33.73852], [44.40589, 33.738314], [44.406039, 33.738108], [44.406119, 33.737497]]
+};
+
+function nearestIndex(seg, point) {
+    let best = 0, bestD = Infinity;
+    seg.forEach((c, i) => {
+        const d = (c[0] - point[0]) ** 2 + (c[1] - point[1]) ** 2;
+        if (d < bestD) { bestD = d; best = i; }
+    });
+    return best;
+}
+
 export function catalogRouteTrack(route) {
     if (!route || !Array.isArray(route.segments) || !route.segments.length) return null;
-    return { loop: true, segments: route.segments.map(seg => seg.map(([lat, lon]) => [lat, lon])) };
+    const segments = route.segments.map(seg => seg.map(([lat, lon]) => [lat, lon]));
+    const fix = ROUTE_TRACK_FIXES[route.id];
+    const seg = segments[0];
+    if (fix && seg.length > 20) {
+        const from = nearestIndex(seg, fix[0]);
+        const to = nearestIndex(seg, fix[fix.length - 1]);
+        if (from < to) segments[0] = seg.slice(0, from).concat(fix, seg.slice(to + 1));
+    }
+    return { loop: true, segments };
 }
 
 // Маршруты, у которых рельеф с усилением 1.8 выглядит остриём (плато Ильяс-Кая в данных высот узкое)
