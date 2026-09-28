@@ -6,7 +6,7 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260929card';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260929newcomer';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -395,6 +395,7 @@ function renderGuestHome() {
         ${renderSafetyBanner()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
+        <div class="card-container" id="calendarContainer"></div>
         ${!isLumenPilotUser(state.user) ? `
         <div class="card-container">
             <h2 class="section-title">🫖 для новичков</h2>
@@ -404,7 +405,6 @@ function renderGuestHome() {
             </div>
         </div>
         ` : ''}
-        <div class="card-container" id="calendarContainer"></div>
         <div id="intelligentsiaRoutesContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
