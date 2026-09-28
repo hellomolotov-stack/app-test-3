@@ -4853,3 +4853,13 @@ body.adm-open { overflow: hidden; }
 .ef-next-head .ef-book { flex: none; }
 /* компактная кнопка в строке с названием – чтобы название чаще помещалось в одну строку */
 .events-feed .ef-next-head .ef-book { padding: 9px 16px; font-size: 14px; }
+
+/* «активность клуба» со стрелками переключения месяцев */
+.ef-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 16px 2px 8px; }
+.ef-label-row .ef-label { margin: 0; }
+.ef-month-nav { display: inline-flex; gap: 8px; }
+.ef-month-nav .calendar-nav-arrow { width: 32px; height: 32px; }
+
+/* подсказка жестов на карте в слайдере хайка */
+.map-gesture-tip { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 5; padding: 10px 14px; border-radius: 14px; background: rgba(10, 11, 9, 0.72); border: 1px solid rgba(255, 255, 255, 0.16); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #fff; font-size: 13px; line-height: 1.35; text-align: center; pointer-events: none; transition: opacity 0.35s ease; }
+.map-gesture-tip.is-hidden { opacity: 0; }

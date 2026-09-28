@@ -237,6 +237,8 @@ const FEED_WD_FULL = ['воскресенье', 'понедельник', 'вт�
 const feedGoing = {};
 let feedMonth = null;
 let feedMap = null;
+let feedMapEl = null;   // контейнер живой карты – переносим его в новую разметку, а не пересоздаём
+let feedMapKey = '';
 const FEED_WAITLIST_KEY = 'hikeWaitlist';
 
 // На какие даты-заглушки человек попросил сообщить об открытии записи (локально, сервер – источник рассылки).
@@ -338,7 +340,7 @@ function feedNearestCard(h) {
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     // есть трек – живая 3D-карта (крутится пальцами), иначе картинка маршрута
     const media = getHikeTrack(h)
-        ? `<div class="ef-next-map" data-feed-map="${h.date}">${feedDateBadge(h.date)}<span class="ef-map-hint">покрути карту</span></div>`
+        ? `<div class="ef-next-map" data-feed-map="${h.date}">${feedDateBadge(h.date)}</div>`
         : `<div class="ef-next-img${h.image ? '' : ' no-img'}"${img}>${feedDateBadge(h.date)}</div>`;
     return `<div class="ef-next${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
         ${media}
@@ -400,9 +402,6 @@ function feedMonthList(events) {
 }
 
 function renderEventsFeed(container) {
-    // перерисовка ленты – освобождаем прежнюю карту (WebGL-контекстов у телефона немного)
-    try { if (feedMap) feedMap.remove(); } catch (e) {}
-    feedMap = null;
     const events = feedEvents();
     const today = feedTodayStr();
     const nowMonth = today.slice(0, 7);
@@ -440,7 +439,13 @@ function renderEventsFeed(container) {
         <div class="calendar-item events-feed">
             <div class="ef-label is-soon">ближайший хайк</div>
             ${feedNearestCard(nearest)}
-            <div class="ef-label">активность клуба</div>
+            <div class="ef-label-row">
+                <div class="ef-label">активность клуба</div>
+                <div class="ef-month-nav">
+                    <button class="calendar-nav-arrow" data-month-step="-1" aria-label="предыдущий месяц" ${months.indexOf(feedMonth) <= 0 ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+                    <button class="calendar-nav-arrow" data-month-step="1" aria-label="следующий месяц" ${months.indexOf(feedMonth) >= months.length - 1 ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+                </div>
+            </div>
             <div class="ef-strip">${strip}</div>
             <div class="ef-month-title">${monthName}${count ? `: ${count} ${countWord}` : ''}</div>
             <div class="ef-list">${listHtml}</div>
@@ -451,6 +456,13 @@ function renderEventsFeed(container) {
     const onEl = stripEl && stripEl.querySelector('.ef-mcol.is-on');
     if (onEl) stripEl.scrollLeft = onEl.offsetLeft - stripEl.clientWidth / 2 + onEl.offsetWidth / 2;
 
+    container.querySelectorAll('[data-month-step]').forEach(el => el.addEventListener('click', () => {
+        const next = months[months.indexOf(feedMonth) + Number(el.dataset.monthStep)];
+        if (!next) return;
+        haptic();
+        feedMonth = next;
+        renderEventsFeed(container);
+    }));
     container.querySelectorAll('.ef-mcol').forEach(el => el.addEventListener('click', () => {
         haptic();
         feedMonth = el.dataset.month;
@@ -476,18 +488,33 @@ function renderEventsFeed(container) {
     }));
     bindSuggestEventButton();
     feedFillGoing(container);
-    feedMountMap(container, nearest);
+    feedPlaceMap(container, nearest);
 }
 
-function feedMountMap(container, hike) {
-    const el = container.querySelector('[data-feed-map]');
-    if (!el || !hike) return;
+// Главная при запуске рисуется дважды (кэш, затем свежие данные), месяцы переключаются –
+// карта не должна от этого сбрасываться: если хайк и трек те же, переносим живую карту в новую
+// разметку; иначе освобождаем старую (WebGL-контекстов у телефона немного) и строим новую.
+function feedPlaceMap(container, hike) {
+    const slot = container.querySelector('[data-feed-map]');
+    const track = slot && hike ? getHikeTrack(hike) : null;
+    const key = track ? hike.date + '|' + JSON.stringify(track).length : '';
+    if (slot && feedMap && feedMapEl && key === feedMapKey) {
+        slot.replaceWith(feedMapEl);
+        try { feedMap.resize(); } catch (e) {}
+        return;
+    }
+    try { if (feedMap) feedMap.remove(); } catch (e) {}
+    feedMap = null;
+    feedMapEl = null;
+    feedMapKey = '';
+    if (!slot || !track) return;
     // жесты на карте – только для карты, слайдер открывают кнопка и текст карточки
-    ['click', 'touchstart', 'pointerdown'].forEach(ev => el.addEventListener(ev, e => e.stopPropagation()));
-    const track = getHikeTrack(hike);
+    ['click', 'touchstart', 'pointerdown'].forEach(ev => slot.addEventListener(ev, e => e.stopPropagation()));
+    feedMapEl = slot;
+    feedMapKey = key;
     ensureMapLibre().then(() => {
-        if (!el.isConnected) return;
-        feedMap = initHikeMap(el, track, true, true);
+        if (feedMapEl !== slot || feedMap) return;
+        feedMap = initHikeMap(slot, track, true, true);
     }).catch(() => {});
 }
 
@@ -1342,6 +1369,17 @@ function initHikeMap(el, track, instant = false, standalone = false) {
             }
         });
     });
+
+    // в слайдере хайка – подсказка, что карту можно крутить; исчезает при первом касании
+    if (!standalone) {
+        const tip = document.createElement('div');
+        tip.className = 'map-gesture-tip';
+        tip.textContent = 'ты можешь крутить, наклонять и увеличивать карту двумя пальцами: вверх, вниз или по кругу';
+        el.appendChild(tip);
+        const hideTip = () => { tip.classList.add('is-hidden'); setTimeout(() => tip.remove(), 400); };
+        ['touchstart', 'mousedown', 'wheel'].forEach(ev => el.addEventListener(ev, hideTip, { once: true, passive: true }));
+        setTimeout(hideTip, 9000);
+    }
 
     const hint = document.createElement('div');
     hint.className = 'map-swipe-hint';
