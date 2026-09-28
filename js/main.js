@@ -5,17 +5,18 @@ import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscri
 import { log, logAutoSendClick } from './api.js';
 import { pingAppUser, maybeAskNotifications } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
+import { initCollapsibleBlocks } from './ui/collapsible.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260928gcchip';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260928collapse';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260928gcchip';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260928collapse';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -377,7 +378,7 @@ function handleDeepLink(startParam) {
             scrollToWhenReady(() => document.getElementById('cardBlock'));
             break;
         case 'bookings':
-            scrollToWhenReady(() => document.getElementById('userBookingsCard'));
+            scrollToWhenReady(() => document.getElementById('userBookingsCard') || (state.hikesWithTitle?.length ? document.getElementById('calendarContainer') : null));
             break;
         case 'newcomer':
             scrollToWhenReady(() => document.querySelector('.btn-newcomer')?.closest('.card-container'));
@@ -650,5 +651,6 @@ document.addEventListener('focusout', (e) => {
 
 window.addEventListener('load', () => {
     state.user = tg?.initDataUnsafe?.user;
+    initCollapsibleBlocks();
     loadAppData();
 });

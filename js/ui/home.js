@@ -6,7 +6,7 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928gcchip';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928collapse';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -105,38 +105,10 @@ export function renderUserBookings(container) {
         }
     });
 
+    // нет записей – блока нет совсем (и у гостей, и у владельцев карты)
     if (bookings.length === 0) {
-        const isGuest = state.userCard?.status !== 'active';
-        if (isGuest) {
-            container.style.display = 'block';
-            container.innerHTML = `
-                <div class="card-container" id="userBookingsCard">
-                    <h2 class="section-title">🎫 мои записи</h2>
-                    <div style="margin: 0 16px 12px; padding: 14px; background: var(--surface-inner); backdrop-filter: blur(16px) saturate(110%); -webkit-backdrop-filter: blur(16px) saturate(110%); border-radius: 14px; border: 1px solid rgba(255,255,255,0.18); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);">
-                        <span style="color: #ffffff; font-size: 14px;">здесь будут твои записи на хайки и события</span>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-        const phrase = state.randomPhrases.length > 0
-            ? state.randomPhrases[Math.floor(Math.random() * state.randomPhrases.length)]
-            : 'смотреть 5 сезон глухаря или';
-        const phraseParts = phrase.split(' или');
-        const mainPart = phraseParts[0];
-        const italicPart = phraseParts.length > 1 ? ' или' : '';
-        container.style.display = 'block';
-        container.innerHTML = `
-            <div class="card-container" id="userBookingsCard">
-                <h2 class="section-title">🎫 мои записи</h2>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
-                    <div style="flex: 1; margin-right: 16px;">
-                        <span style="color: #ffffff;">${mainPart}<em style="font-style: italic;">${italicPart}</em></span>
-                    </div>
-                    <button class="btn btn-yellow booking-go-btn" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0;">пойти на хайк</button>
-                </div>
-            </div>
-        `;
+        container.innerHTML = '';
+        container.style.display = 'none';
         return;
     }
 
