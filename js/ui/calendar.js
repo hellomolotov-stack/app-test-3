@@ -36,6 +36,7 @@ function startSpinner(btn) {
 }
 
 export function renderCalendar(container) {
+    if (isEventsFeedUser()) return renderEventsFeed(container);
     const year = currentCalendarYear,
         month = currentCalendarMonth;
     const today = new Date();
@@ -192,6 +193,10 @@ export function renderCalendar(container) {
         });
     });
 
+    bindSuggestEventButton();
+}
+
+function bindSuggestEventButton() {
     const suggestBtn = document.getElementById('suggestEventBtn');
     if (suggestBtn) {
         suggestBtn.addEventListener('click', () => {
@@ -217,6 +222,265 @@ export function renderCalendar(container) {
             renderSuggestEvent();
         });
     }
+}
+
+// ==================== ЛЕНТА СОБЫТИЙ (вместо сетки месяца) ====================
+// Пилот: ближайший хайк крупной карточкой, полоса активности по месяцам и список
+// событий выбранного месяца. Остальные пользователи видят обычный календарь.
+const EVENTS_FEED_USERNAMES = new Set(['hellointelligent']);
+const FEED_MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const FEED_MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+const FEED_MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const FEED_WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const FEED_WD_FULL = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+const feedGoing = {};
+let feedMonth = null;
+
+function isEventsFeedUser() {
+    return EVENTS_FEED_USERNAMES.has(String(state.user?.username || '').replace(/^@/, '').toLowerCase());
+}
+
+function feedDate(dateStr) {
+    return new Date(dateStr + 'T12:00:00');
+}
+
+function feedTodayStr() {
+    const t = new Date();
+    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+function feedIsCity(h) { return h.city === true || h.city === 'yes'; }
+function feedIsWoman(h) { return h.woman === 'yes'; }
+
+function feedTags(h) {
+    if (Array.isArray(h.tags)) return h.tags.filter(Boolean);
+    return String(h.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+}
+
+function feedKm(h) {
+    const m = feedTags(h).join(' ').match(/(\d+(?:[.,]\d+)?)\s*км/);
+    return m ? m[1].replace(',', '.') : '';
+}
+
+function feedPeople(n) {
+    const a = n % 10, b = n % 100;
+    return (a >= 2 && a <= 4 && (b < 10 || b >= 20)) ? 'человека' : 'человек';
+}
+
+function feedWhen(dateStr) {
+    const days = Math.round((feedDate(dateStr) - feedDate(feedTodayStr())) / 864e5);
+    if (days <= 0) return 'сегодня';
+    if (days === 1) return 'завтра';
+    if (days < 5) return `через ${days} дня`;
+    if (days < 7) return `через ${days} дней`;
+    const w = Math.round(days / 7);
+    return w === 1 ? 'через неделю' : `через ${w} ${w < 5 ? 'недели' : 'недель'}`;
+}
+
+// Все события с датой: хайки с названием и будущие заглушки «готовим хайк».
+// Прошедшие заглушки (переносы из-за погоды) не показываем.
+function feedEvents() {
+    const today = feedTodayStr();
+    return Object.entries(state.hikesData || {})
+        .map(([date, h]) => ({ ...h, date }))
+        .filter(h => /^\d{4}-\d{2}-\d{2}$/.test(h.date))
+        .filter(h => (h.title && h.title.trim()) || (h.date >= today && !/🌧/.test(h.emoji || '')))
+        .sort((a, b) => a.date.localeCompare(b.date));
+}
+
+function feedNearest(events) {
+    const today = feedTodayStr();
+    return events.find(h => h.date >= today && h.cancelled !== true && !feedIsCity(h) && h.book_club !== true);
+}
+
+function feedDateBadge(dateStr) {
+    const d = feedDate(dateStr);
+    return `<div class="ef-badge"><span>${FEED_WD[d.getDay()]}</span><b>${d.getDate()}</b><span>${FEED_MONTHS_SHORT[d.getMonth()]}</span></div>`;
+}
+
+function feedNearestCard(h) {
+    if (!h) {
+        return `<div class="ef-next ef-next-empty"><div class="ef-next-title">⛰️ следующий хайк скоро в календаре</div><div class="ef-next-sub">обычно анонсируем за неделю</div></div>`;
+    }
+    const d = feedDate(h.date);
+    const when = `${FEED_WD_FULL[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}${h.start_time ? ' · ' + h.start_time : ''} · ${feedWhen(h.date)}`;
+    const button = `<button class="btn btn-yellow ef-book" data-book="${h.date}">записаться</button>`;
+    if (!h.title || !h.title.trim()) {
+        return `<div class="ef-next ef-next-teaser"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} готовим хайк</div><div class="ef-next-sub">${when}. маршрут скоро объявим</div></div></div>${button}</div>`;
+    }
+    const tags = feedTags(h).map(t => `<span class="ef-chip">${t}</span>`).join('');
+    const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
+    return `<div class="ef-next${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
+        <div class="ef-next-img${h.image ? '' : ' no-img'}"${img}>${feedDateBadge(h.date)}</div>
+        <div class="ef-next-body">
+            <div class="ef-next-when">${when}</div>
+            <div class="ef-next-title">${h.title}</div>
+            ${tags ? `<div class="ef-chips">${tags}</div>` : ''}
+            <div class="ef-next-row"><div class="ef-going" data-going-for="${h.date}"></div>${button}</div>
+        </div>
+    </div>`;
+}
+
+function feedRow(h) {
+    const d = feedDate(h.date);
+    const today = feedTodayStr();
+    const isPast = h.date < today;
+    const isCity = feedIsCity(h);
+    const cancelled = h.cancelled === true;
+    const isTeaser = !h.title || !h.title.trim();
+    const icon = isTeaser ? (h.emoji || '⛰️') : isCity ? '🥂' : h.book_club === true ? '📚' : '⛰️';
+    const km = feedKm(h);
+    let sub = FEED_WD[d.getDay()];
+    if (cancelled) sub += ' · отменили';
+    else if (isTeaser) sub += ' · маршрут скоро объявим';
+    else {
+        if (isCity) sub += ' · <span class="ef-city">клубный вечер</span>';
+        else if (km) sub += ` · ${km} км`;
+        if (!isPast && h.start_time) sub += ` · ${h.start_time}`;
+    }
+    let action = '';
+    if (!cancelled && isPast && hasReportLink(h)) action = `<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
+    else if (!cancelled && !isPast) action = `<button class="btn btn-yellow ef-book ef-book-sm" data-book="${h.date}">записаться</button>`;
+    const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}`;
+    const img = h.image && !cancelled ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
+    return `<div class="ef-row${cancelled ? ' is-off' : ''}${isPast ? '' : ' is-future'}"${isTeaser ? '' : ` data-open="${h.date}"`}>
+        <div class="${thumbCls}"${img}>${img ? '' : icon}<span class="ef-thumb-date">${d.getDate()} ${FEED_MONTHS_SHORT[d.getMonth()]}</span></div>
+        <div class="ef-row-mid"><div class="ef-row-title">${isTeaser ? 'готовим хайк' : h.title}</div><div class="ef-row-sub">${sub}<span data-going-for="${isPast && !cancelled && !isTeaser ? h.date : ''}"></span></div></div>
+        ${action}
+    </div>`;
+}
+
+function feedMonthList(events) {
+    const keys = events.map(h => h.date.slice(0, 7));
+    if (!keys.length) return [];
+    const now = feedTodayStr().slice(0, 7);
+    let [y, m] = keys[0].split('-').map(Number);
+    const last = [keys[keys.length - 1], now].sort().pop();
+    const list = [];
+    while (true) {
+        const k = `${y}-${String(m).padStart(2, '0')}`;
+        list.push(k);
+        if (k >= last || list.length > 36) break;
+        m++;
+        if (m > 12) { m = 1; y++; }
+    }
+    return list;
+}
+
+function renderEventsFeed(container) {
+    const events = feedEvents();
+    const today = feedTodayStr();
+    const nowMonth = today.slice(0, 7);
+    const months = feedMonthList(events);
+    const nearest = feedNearest(events);
+    if (!feedMonth || !months.includes(feedMonth)) {
+        const withPast = months.filter(k => k <= nowMonth && events.some(h => h.date.startsWith(k) && h.date < today));
+        feedMonth = events.some(h => h.date.startsWith(nowMonth)) ? nowMonth : (withPast.pop() || nowMonth);
+    }
+
+    const strip = months.map(k => {
+        const monthEvents = events.filter(h => h.date.startsWith(k) && h.cancelled !== true && h.title && h.title.trim());
+        const planned = events.filter(h => h.date.startsWith(k) && h.date >= today && h.cancelled !== true);
+        const segs = monthEvents.map(h => {
+            const cls = feedIsCity(h) ? 'is-city' : feedIsWoman(h) ? 'is-woman' : '';
+            return `<i class="${cls}${h.date >= today ? ' is-future' : ''}"></i>`;
+        }).join('') + planned.filter(h => !h.title || !h.title.trim()).map(() => '<i class="is-future"></i>').join('');
+        const empty = !segs;
+        const cls = `ef-mcol${k === feedMonth ? ' is-on' : ''}${k > nowMonth ? ' is-future' : ''}`;
+        return `<button class="${cls}" data-month="${k}"><span class="ef-mbar${empty ? ' is-empty' : ''}">${segs}</span><small>${FEED_MONTHS_SHORT[Number(k.slice(5)) - 1]}</small></button>`;
+    }).join('');
+
+    const monthEvents = events.filter(h => h.date.startsWith(feedMonth));
+    const future = monthEvents.filter(h => h.date >= today && (!nearest || h.date !== nearest.date));
+    const past = monthEvents.filter(h => h.date < today).reverse();
+    const count = monthEvents.filter(h => h.title && h.title.trim() && h.cancelled !== true).length;
+    const monthName = FEED_MONTHS[Number(feedMonth.slice(5)) - 1];
+    const countWord = count % 10 === 1 && count % 100 !== 11 ? 'событие' : (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) ? 'события' : 'событий';
+    const listHtml = (future.length || past.length)
+        ? future.map(feedRow).join('') + past.map(feedRow).join('')
+        : `<div class="ef-row-sub ef-empty-month">${feedMonth > nowMonth || (nearest && feedMonth === nearest.date.slice(0, 7)) ? 'всё самое интересное – в карточке выше' : 'в этом месяце событий не было'}</div>`;
+
+    container.innerHTML = `
+        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь событий</h2>
+        <div class="calendar-item events-feed">
+            <div class="ef-label is-soon">ближайший хайк</div>
+            ${feedNearestCard(nearest)}
+            <div class="ef-label">активность клуба</div>
+            <div class="ef-strip">${strip}</div>
+            <div class="ef-month-title">${monthName}${count ? `: ${count} ${countWord}` : ''}</div>
+            <div class="ef-list">${listHtml}</div>
+            <div style="display: flex; justify-content: flex-end; padding: 8px 4px 4px 4px;">
+                <button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button>
+            </div>
+        </div>`;
+
+    const stripEl = container.querySelector('.ef-strip');
+    const onEl = stripEl && stripEl.querySelector('.ef-mcol.is-on');
+    if (onEl) stripEl.scrollLeft = onEl.offsetLeft - stripEl.clientWidth / 2 + onEl.offsetWidth / 2;
+
+    container.querySelectorAll('.ef-mcol').forEach(el => el.addEventListener('click', () => {
+        haptic();
+        feedMonth = el.dataset.month;
+        renderEventsFeed(container);
+    }));
+    container.querySelectorAll('[data-book]').forEach(el => el.addEventListener('click', e => {
+        e.stopPropagation();
+        haptic();
+        feedOpenHike(el.dataset.book, 'записаться из ленты');
+    }));
+    container.querySelectorAll('[data-report]').forEach(el => el.addEventListener('click', e => {
+        e.stopPropagation();
+        const h = state.hikesData[el.dataset.report];
+        if (h && hasReportLink(h)) openLink(String(h.report_link).trim(), 'отчёт из ленты', state.userCard.status !== 'active');
+    }));
+    container.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => {
+        haptic();
+        feedOpenHike(el.dataset.open, 'выбор даты');
+    }));
+    bindSuggestEventButton();
+    feedFillGoing(container);
+}
+
+function feedOpenHike(date, logName) {
+    const index = state.hikesWithTitle.findIndex(h => h.date === date);
+    if (index !== -1) {
+        log(logName, state.userCard.status !== 'active', state.user, { date });
+        showBottomSheet(index);
+        return;
+    }
+    // Заглушка «готовим хайк»: слайдера ещё нет, объясняем когда откроется запись.
+    const d = feedDate(date);
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+        <div class="modal-content" style="max-width:360px; text-align:center;">
+            <div style="font-size:52px; margin-bottom:12px;">⛰️</div>
+            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">${FEED_WD_FULL[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}</div>
+            <div class="modal-text" style="text-align:center; margin-top:8px;">маршрут ещё готовим. запись откроется здесь, как только объявим хайк</div>
+            <button class="btn btn-yellow" id="feedTeaserOk" style="margin-top:16px;">понятно</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    log('записаться на готовящийся хайк', state.userCard.status !== 'active', state.user, { date });
+    const close = () => { haptic(); overlay.remove(); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelector('#feedTeaserOk').addEventListener('click', close);
+}
+
+// Счётчики «идут N» / «N человек» подгружаем после отрисовки, чтобы лента не ждала базу.
+function feedFillGoing(container) {
+    container.querySelectorAll('[data-going-for]').forEach(el => {
+        const date = el.dataset.goingFor;
+        if (!date) return;
+        const paint = n => {
+            if (!n) return;
+            el.textContent = el.classList.contains('ef-going') ? `идут ${n} ${feedPeople(n)}` : ` · ${n} ${feedPeople(n)}`;
+        };
+        if (date in feedGoing) return paint(feedGoing[date]);
+        loadAllParticipants(date).then(list => {
+            feedGoing[date] = Array.isArray(list) ? list.length : 0;
+            paint(feedGoing[date]);
+        }).catch(() => {});
+    });
 }
 
 function showLetterPopup(letterText, letterLink, isGuest) {
