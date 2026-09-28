@@ -18,6 +18,7 @@ import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
+import { maybeAskNotifications } from './notify-optin.js';
 import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
 import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js?v=20260825b';
@@ -3237,12 +3238,15 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
         openLink(`https://www.gismeteo.ru/weather-yalta-4843/`, 'погода из успешной регистрации', false);
     });
 
-    document.getElementById('regSuccessCloseBtn')?.addEventListener('click', () => {
+    // после закрытия поздравления – самый понятный момент попросить разрешение на сообщения
+    const closeSuccess = () => {
         haptic();
         overlay.remove();
-    });
+        maybeAskNotifications('booking', 400);
+    };
+    document.getElementById('regSuccessCloseBtn')?.addEventListener('click', closeSuccess);
     overlay.addEventListener('click', e => {
-        if (e.target === overlay) { haptic(); overlay.remove(); }
+        if (e.target === overlay) closeSuccess();
     });
 }
 

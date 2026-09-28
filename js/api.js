@@ -173,13 +173,24 @@ export function sendBookingNotification(hikeDate, hikeTitle, user) {
         .catch(e => console.error('sendBookingNotification error:', e));
 }
 
-export function syncGuestAllowMessages(userId, allow) {
-    if (!userId || !REGISTRATION_API_URL) return;
+// Аудитория приложения (Firebase app_users): кто открывал и можно ли ему писать из бота.
+// event: open | grant | deny; canMessage: 'yes' | 'no' | '' (неизвестно).
+// Отвечает последним известным can_message (true/false/null), чтобы не спрашивать тех, кому уже можно писать.
+export async function trackAppUser(user, event, canMessage = '') {
+    if (!user?.id || !REGISTRATION_API_URL) return null;
     const params = new URLSearchParams({
-        action: 'syncGuestAllowMessages',
-        user_id: userId,
-        allow_messages: allow ? 'yes' : 'no'
+        action: 'trackAppUser',
+        user_id: String(user.id),
+        first_name: user.first_name || '',
+        username: user.username || '',
+        event,
+        can_message: canMessage
     });
-    fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true })
-        .catch(e => console.error('syncGuestAllowMessages error:', e));
+    try {
+        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true });
+        const data = JSON.parse(await resp.text());
+        return data && data.status === 'ok' ? data : null;
+    } catch (e) {
+        return null;
+    }
 }

@@ -243,17 +243,6 @@ export async function loadPopups() {
     }
 }
 
-export async function loadGuestAllowMessages(userId) {
-    if (!database || !userId) return false;
-    try {
-        const snapshot = await database.ref(`guests/${userId}/allow_messages`).once('value');
-        return snapshot.val() === 'yes';
-    } catch (e) {
-        console.error('Ошибка загрузки allow_messages:', e);
-        return false;
-    }
-}
-
 export function subscribeToParticipantCount(hikeDate, callback) {
     if (!database) {
         callback(0, []);

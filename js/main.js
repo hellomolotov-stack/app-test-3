@@ -1,19 +1,20 @@
 // js/main.js
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadGuestAllowMessages, loadPopups } from './firebase.js';
-import { log, syncGuestAllowMessages, logAutoSendClick } from './api.js';
+import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups } from './firebase.js';
+import { log, logAutoSendClick } from './api.js';
+import { pingAppUser, maybeAskNotifications } from './ui/notify-optin.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260928feed';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260928optin';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260928feed';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260928optin';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -481,21 +482,6 @@ function applyOwnerBookings() {
     }
 }
 
-// #1: запрос доступа к сообщениям — фоном, ПОСЛЕ показа приложения (не блокирует первый экран)
-async function maybeRequestWriteAccess() {
-    if (localStorage.getItem('asked_write_access')) return;
-    try {
-        const allowed = await loadGuestAllowMessages(state.user?.id).catch(() => false);
-        if (!allowed && tg?.requestWriteAccess) {
-            const granted = await tg.requestWriteAccess();
-            syncGuestAllowMessages(state.user.id, !!granted);
-        }
-        localStorage.setItem('asked_write_access', 'true');
-    } catch (err) {
-        console.warn('requestWriteAccess failed:', err);
-    }
-}
-
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -624,8 +610,10 @@ async function loadAppData() {
         // если ранний рендер не случился (нет кэша и Firebase не успел) — выполняем deep-link сейчас
         ensureDeepLink();
 
-        // #1: спрашиваем доступ к сообщениям фоном, не блокируя первый экран
-        maybeRequestWriteAccess();
+        // отмечаем открытие в app_users и, если человеку ещё нельзя писать, чуть позже
+        // спрашиваем своей карточкой (не системным окном на первом экране)
+        pingAppUser();
+        if (!window._deepLinkPageChanged) maybeAskNotifications('home', 6000);
 
         // Если оплата билета была, а возврата по startapp=paid не случилось —
         // предлагаем подтвердить оплату. Ждём, пока отработает deep link.

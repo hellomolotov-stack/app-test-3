@@ -6,7 +6,7 @@
 
 import { state } from '../state.js';
 import { haptic, openLink, formatDateForDisplay, tg, scrollToElement } from '../utils.js';
-import { log, registerWebAppUser } from '../api.js';
+import { log } from '../api.js';
 import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages, loadAllParticipants } from '../firebase.js';
 import { showBottomSheet, showGuestBookingPopup } from './calendar.js';
 import { renderHome } from './home.js';
@@ -672,18 +672,6 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
 
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); closeChat(); } });
     overlay.querySelector('.bot-chat-close').addEventListener('click', () => { haptic(); closeChat(); });
-
-    // запрашиваем разрешение на отправку сообщений (один раз),
-    // чтобы бот мог прислать напоминание, если пользователь уйдёт
-    const WA_KEY = 'writeAccessRequested';
-    if (!localStorage.getItem(WA_KEY)) {
-        if (tg?.requestWriteAccess) {
-            tg.requestWriteAccess((granted) => {
-                localStorage.setItem(WA_KEY, '1');
-                if (granted) registerWebAppUser(state.user);
-            });
-        }
-    }
 
     // свайп вниз по шапке + ручке — плавное закрытие
     let startY = 0, curY = 0, dragging = false;
