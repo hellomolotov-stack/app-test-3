@@ -2,6 +2,7 @@
 import { FIREBASE_CONFIG } from './config.js';
 
 let database = null;
+let authReadyPromise = Promise.resolve(false);
 
 function isYes(value) {
     return value === true || String(value ?? '').trim().toLowerCase() === 'yes';
@@ -12,11 +13,47 @@ export function initFirebase() {
         firebase.initializeApp(FIREBASE_CONFIG);
         database = firebase.database();
         console.log('Firebase initialized');
+        signInWithTelegram();
         return database;
     } catch (e) {
         console.error('Firebase initialization failed:', e);
         return null;
     }
+}
+
+// Вход в базу по подписи Telegram: /api/tg-auth проверяет initData и выдаёт пропуск (custom token)
+// с uid = Telegram id. Правила базы пускают человека только к его записям, чату, профилю.
+// Firebase хранит сессию между запусками, поэтому сервер дёргаем, только если её нет.
+export function signInWithTelegram() {
+    const tgw = window.Telegram?.WebApp;
+    const initData = tgw?.initData;
+    const tgId = tgw?.initDataUnsafe?.user?.id;
+    if (!initData || !tgId || typeof firebase === 'undefined' || !firebase.auth) {
+        return (authReadyPromise = Promise.resolve(false));
+    }
+    authReadyPromise = (async () => {
+        const auth = firebase.auth();
+        await new Promise(resolve => { const off = auth.onAuthStateChanged(() => { off(); resolve(); }); });
+        if (auth.currentUser && auth.currentUser.uid === String(tgId)) return true;
+        const resp = await fetch('/api/tg-auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData })
+        });
+        if (!resp.ok) return false;
+        const { token } = await resp.json();
+        await auth.signInWithCustomToken(token);
+        return true;
+    })().catch(err => {
+        console.warn('tg-auth:', err);
+        return false;
+    });
+    return authReadyPromise;
+}
+
+// Перед записью и чтением личного ждём вход, но не дольше 5 с – без входа приложение не зависает.
+function authReady(ms = 5000) {
+    return Promise.race([authReadyPromise, new Promise(resolve => setTimeout(() => resolve(false), ms))]);
 }
 
 export function getDatabase() {
@@ -97,6 +134,7 @@ export async function loadRouteFavorites() {
 
 export async function setRouteFavorite(routeId, userId, isFavorite) {
     if (!database || !routeId || !userId) return Promise.reject('No route or user');
+    await authReady();
     const ref = database.ref(`routeFavorites/${routeId}/${userId}`);
     if (!isFavorite) return ref.remove();
     return ref.set({ addedAt: firebase.database.ServerValue.TIMESTAMP });
@@ -104,6 +142,7 @@ export async function setRouteFavorite(routeId, userId, isFavorite) {
 
 export async function loadUserData(userId) {
     if (!database || !userId) return { status: 'inactive', hikes: 0, cardUrl: '' };
+    await authReady();
     try {
         const snapshot = await database.ref(`members/${userId}`).once('value');
         const data = snapshot.val();
@@ -272,6 +311,7 @@ export async function loadAllParticipants(hikeDate) {
 
 export async function addParticipant(hikeDate, userId, userData) {
     if (!database || !userId) return Promise.reject('No database or user');
+    await authReady();
     const ref = database.ref(`hikeParticipants/${hikeDate}/${userId}`);
     const participantData = {
         userId: userId,
@@ -284,16 +324,19 @@ export async function addParticipant(hikeDate, userId, userData) {
 
 export async function removeParticipant(hikeDate, userId) {
     if (!database || !userId) return Promise.reject('No database or user');
+    await authReady();
     return database.ref(`hikeParticipants/${hikeDate}/${userId}`).remove();
 }
 
 export async function setUserRegistrationStatus(userId, hikeDate, status) {
     if (!database || !userId) return Promise.resolve();
+    await authReady();
     return database.ref(`userRegistrations/${userId}/${hikeDate}`).set(status);
 }
 
 export async function loadUserRegistrations(userId) {
     if (!database || !userId) return {};
+    await authReady();
     const snapshot = await database.ref(`userRegistrations/${userId}`).once('value');
     return snapshot.val() || {};
 }
@@ -312,6 +355,7 @@ export async function loadMyProfile(userId) {
 
 export async function saveProfile(userId, profileData) {
     if (!database || !userId) return Promise.reject('No user');
+    await authReady();
     const ref = database.ref(`userProfiles/${userId}`);
     const data = {
         ...profileData,
@@ -324,11 +368,13 @@ export async function saveProfile(userId, profileData) {
 
 export async function deleteProfile(userId) {
     if (!database || !userId) return Promise.reject('No user');
+    await authReady();
     return database.ref(`userProfiles/${userId}`).remove();
 }
 
 export async function saveUserAvatar(userId, photoUrl) {
     if (!database || !userId || !photoUrl) return;
+    await authReady();
     await database.ref(`userAvatars/${userId}`).set({
         photoUrl: photoUrl,
         updatedAt: firebase.database.ServerValue.TIMESTAMP
@@ -338,6 +384,7 @@ export async function saveUserAvatar(userId, photoUrl) {
 export async function sendSupportMessage(user, text) {
     // Бросаем ошибку, а не тихо выходим: иначе чат пишет «передал», хотя сообщение никуда не ушло.
     if (!database || !user?.id) throw new Error('support: база недоступна');
+    await authReady();
     const key = Date.now().toString();
     await database.ref(`support_messages/${user.id}/${key}`).set({
         from: 'user',
@@ -356,17 +403,21 @@ export function subscribeToAdminReplies(userId, afterTs, callback) {
         const msg = snapshot.val();
         if (msg && msg.from === 'admin') callback(msg, snapshot.key);
     };
-    r.on('child_added', handler);
-    return () => r.off('child_added', handler);
+    // чат читается только после входа – подписываемся, когда вход готов
+    let stopped = false;
+    authReady().then(() => { if (!stopped) r.on('child_added', handler); });
+    return () => { stopped = true; r.off('child_added', handler); };
 }
 
 export async function markSupportMessageRead(userId, msgKey) {
     if (!database || !userId || !msgKey) return;
+    await authReady();
     try { await database.ref(`support_messages/${userId}/${msgKey}/read_by_user`).set(true); } catch (e) {}
 }
 
 export async function loadSupportMessages(userId) {
     if (!database || !userId) return [];
+    await authReady();
     try {
         const snapshot = await database.ref(`support_messages/${userId}`).orderByChild('ts').once('value');
         const data = snapshot.val();

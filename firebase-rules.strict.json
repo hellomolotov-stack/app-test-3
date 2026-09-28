@@ -1,0 +1,49 @@
+{
+  "rules": {
+    "hikes": { ".read": true, ".write": false },
+    "routes": { ".read": true, ".write": false },
+    "faq": { ".read": true, ".write": false },
+    "privileges": { ".read": true, ".write": false },
+    "guestPrivileges": { ".read": true, ".write": false },
+    "gift": { ".read": true, ".write": false },
+    "leaders": { ".read": true, ".write": false },
+    "randomPhrases": { ".read": true, ".write": false },
+    "passInfo": { ".read": true, ".write": false },
+    "metrics": { ".read": true, ".write": false },
+    "registrationsPopup": { ".read": true, ".write": false },
+    "popupConfig": { ".read": true, ".write": false },
+    "popups": { ".read": true, ".write": false },
+    "updates": { ".read": true, ".write": false },
+    "mastermindSummaries": { ".read": true, ".write": false },
+    "safety": { ".read": true, ".write": false },
+    "testimonials": { ".read": true, ".write": false },
+    "partners": { ".read": true, ".write": false },
+
+    "members": { "$uid": { ".read": true } },
+
+    "hikeParticipants": {
+      "$hikeDate": {
+        ".read": true,
+        "$userId": {
+          ".write": "auth != null && auth.uid === $userId",
+          ".validate": "newData.hasChildren(['timestamp'])"
+        }
+      }
+    },
+    "userRegistrations": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$hikeDate": { ".write": "auth != null && auth.uid === $uid" }
+      }
+    },
+    "userProfiles": { ".read": true, "$uid": { ".write": "auth != null && auth.uid === $uid" } },
+    "userAvatars": { "$uid": { ".read": true, ".write": "auth != null && auth.uid === $uid" } },
+    "support_messages": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$msgId": { ".write": "auth != null && auth.uid === $uid" }
+      }
+    },
+    "routeFavorites": { ".read": true, "$routeId": { "$userId": { ".write": "auth != null && auth.uid === $userId" } } }
+  }
+}
