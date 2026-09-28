@@ -1,12 +1,12 @@
 // js/ui/home.js
-import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti } from '../utils.js';
+import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti, scrollToElement } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928contrast';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928gcchip';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -506,15 +506,18 @@ function renderGuestHome() {
             gcChips.appendChild(right);
         };
 
+        // «пойти на хайк →» есть всегда: открывает ближайший хайк, а если впереди пока только
+        // заглушка «готовим хайк» – ведёт к календарю, где можно попросить сообщить об открытии записи.
         const showHikeChip = () => {
-            if (!nextHike) return;
             const chip = document.createElement('button');
             chip.className = 'gc-chip gc-chip-hike';
             chip.textContent = 'пойти на хайк →';
             chip.addEventListener('click', () => {
                 haptic();
-                log('пойти на хайк из qa', true, state.user);
-                showBottomSheet(nextHikeIdx);
+                log('пойти на хайк из qa', true, state.user, { target: nextHike ? 'hike' : 'calendar' });
+                if (nextHike) { showBottomSheet(nextHikeIdx); return; }
+                const cal = document.getElementById('calendarContainer');
+                if (cal) scrollToElement(cal, 76);
             });
             gcChips.appendChild(chip);
         };
