@@ -482,14 +482,6 @@ export function renderIntelligentsiaRoutes(container) {
         <div class="card-container intelligentsia-routes-card">
             <div class="intelligentsia-routes-header">
                 <h2 class="section-title">🖇️ карта хайков</h2>
-                <div class="intelligentsia-routes-nav">
-                    <button class="calendar-nav-arrow" id="prevIntelligentsiaRoute" aria-label="предыдущий маршрут">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
-                    </button>
-                    <button class="calendar-nav-arrow" id="nextIntelligentsiaRoute" aria-label="следующий маршрут">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
-                    </button>
-                </div>
             </div>
             <div class="intelligentsia-route-map-wrap">
                 <div id="intelligentsiaRoutesMap" class="intelligentsia-route-map"></div>
@@ -501,6 +493,14 @@ export function renderIntelligentsiaRoutes(container) {
                     </div>
                 </div>
                 <div class="intelligentsia-route-overlay">
+                    <div class="intelligentsia-routes-nav">
+                        <button class="calendar-nav-arrow" id="prevIntelligentsiaRoute" aria-label="предыдущий маршрут">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <button class="calendar-nav-arrow" id="nextIntelligentsiaRoute" aria-label="следующий маршрут">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                        </button>
+                    </div>
                     <div id="intelligentsiaRouteCaption" class="intelligentsia-route-caption" role="button" tabindex="0">
                         <div class="intelligentsia-route-meta">
                             <div id="intelligentsiaRouteTitle" class="intelligentsia-route-title"></div>

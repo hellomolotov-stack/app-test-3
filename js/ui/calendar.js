@@ -229,7 +229,6 @@ function bindSuggestEventButton() {
 // ==================== ЛЕНТА СОБЫТИЙ (вместо сетки месяца) ====================
 // Пилот: ближайший хайк крупной карточкой, полоса активности по месяцам и список
 // событий выбранного месяца. Остальные пользователи видят обычный календарь.
-const EVENTS_FEED_USERNAMES = new Set(['hellointelligent', 'maxmolotov']);
 const FEED_MONTHS_SHORT = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const FEED_MONTHS = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь', 'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
 const FEED_MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -265,8 +264,9 @@ function feedNotifyButton(date, compact = false) {
         : `<button class="btn btn-yellow ef-book" data-notify="${date}">🔔 сообщить мне</button>`;
 }
 
+// Лента событий включена всем (28.09.2026); старая сетка месяца остаётся в коде как запасной вариант.
 function isEventsFeedUser() {
-    return EVENTS_FEED_USERNAMES.has(String(state.user?.username || '').replace(/^@/, '').toLowerCase());
+    return true;
 }
 
 function feedDate(dateStr) {

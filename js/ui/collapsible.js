@@ -37,9 +37,12 @@ function blockKey(card, head) {
     return 'title:' + title.replace(/\s+/g, ' ').trim().slice(0, 40);
 }
 
+// «свернуть ˅» / «раскрыть ›»: шеврон смотрит вниз у раскрытого блока и вправо у свёрнутого
+const CHEVRON = '<svg class="blk-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+
 function setState(card, button, collapsed) {
     card.classList.toggle('is-collapsed', collapsed);
-    button.textContent = collapsed ? 'раскрыть' : 'свернуть';
+    button.innerHTML = `<span>${collapsed ? 'раскрыть' : 'свернуть'}</span>${CHEVRON}`;
     button.setAttribute('aria-expanded', String(!collapsed));
 }
 
