@@ -4720,3 +4720,87 @@ body.adm-open { overflow: hidden; }
 .ef-next-map .maplibregl-map, .ef-next-map .maplibregl-canvas-container { position: absolute !important; inset: 0; }
 .ef-next-map .ef-badge { position: absolute; left: 12px; top: 12px; z-index: 3; pointer-events: none; }
 .ef-map-hint { position: absolute; right: 10px; bottom: 10px; z-index: 3; pointer-events: none; padding: 3px 9px; border-radius: 12px; background: rgba(10,11,9,.6); color: rgba(255,255,255,.75); font-size: 11px; }
+
+/* ==================== КОНТРАСТ: вариант B (28.09.2026) ====================
+   Блоки – тёмная дымка сверху вниз, строки внутри – плотные тёмные плашки,
+   второстепенный текст ярче. Так интерфейс читается и на светлом небе фона. */
+:root {
+    --glass-bg: linear-gradient(180deg, rgba(10, 24, 40, 0.62) 0%, rgba(10, 24, 40, 0.38) 100%);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --surface-inner: rgba(0, 0, 0, 0.28);
+    --surface-inner-strong: rgba(0, 0, 0, 0.36);
+    --text-muted: rgba(255, 255, 255, 0.8);
+}
+
+/* большие блоки */
+.card-container,
+.extra-links {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+}
+.card-container h2,
+.card-container .section-title,
+.card-container h3 { text-shadow: 0 1px 8px rgba(0, 0, 0, 0.25); }
+.card-container p { color: var(--text-muted); }
+
+/* строки и плашки внутри блоков */
+.calendar-item,
+.gc-inner,
+.update-item,
+.metric-item,
+.weather-day,
+.intelligentsia-route-caption {
+    background: var(--surface-inner);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+/* карточка ближайшего хайка сохраняет жёлтую обводку */
+.ef-next,
+.ef-next-teaser { background: var(--surface-inner); }
+.weather-day--today { background: rgba(255, 255, 255, 0.14); }
+.gc-bub.gc-in { background: var(--surface-inner-strong); }
+.btn-newcomer { background-color: var(--surface-inner); }
+
+/* второстепенный текст */
+.weekdays span,
+.weather-day-name,
+.weather-zone-label,
+.weather-mountain-label,
+.ef-row-sub,
+.ef-next-sub,
+.ef-going,
+.ef-mcol small { color: var(--text-muted); }
+.weather-temp-min { color: rgba(255, 255, 255, 0.72); }
+.events-feed .ef-label { color: rgba(255, 255, 255, 0.72); }
+.events-feed .ef-label.is-soon { color: var(--yellow); }
+.ef-month-title { color: rgba(255, 255, 255, 0.85); }
+
+/* кнопки-обводки на тёмном */
+.btn-suggest-event,
+.calendar-nav-arrow { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.22); color: #ffffff; }
+
+/* нижнее меню – в тон блокам */
+.bottom-nav { background: rgba(10, 24, 40, 0.55); border-color: var(--glass-border); }
+.nav-label { color: rgba(255, 255, 255, 0.8); }
+
+/* панели поверх экрана: всплывающие окна, меню, баннеры */
+.modal-content,
+.nav-popup,
+.letter-popup-content,
+.profile-preview-banner {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+}
+
+/* карточки и строки внутри разделов */
+.profile-card,
+.partner-item,
+.safety-cat,
+.tst-card,
+.booking-faq-item,
+.accordion-btn,
+.profile-field,
+.reg-success-card,
+.booking-card-care {
+    background: var(--surface-inner);
+    border-color: rgba(255, 255, 255, 0.08);
+}

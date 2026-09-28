@@ -6,7 +6,7 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928routes';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928contrast';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
@@ -112,7 +112,7 @@ export function renderUserBookings(container) {
             container.innerHTML = `
                 <div class="card-container" id="userBookingsCard">
                     <h2 class="section-title">🎫 мои записи</h2>
-                    <div style="margin: 0 16px 12px; padding: 14px; background: rgba(255,255,255,0.08); backdrop-filter: blur(16px) saturate(110%); -webkit-backdrop-filter: blur(16px) saturate(110%); border-radius: 14px; border: 1px solid rgba(255,255,255,0.18); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);">
+                    <div style="margin: 0 16px 12px; padding: 14px; background: var(--surface-inner); backdrop-filter: blur(16px) saturate(110%); -webkit-backdrop-filter: blur(16px) saturate(110%); border-radius: 14px; border: 1px solid rgba(255,255,255,0.18); box-shadow: inset 0 1px 0 rgba(255,255,255,0.25);">
                         <span style="color: #ffffff; font-size: 14px;">здесь будут твои записи на хайки и события</span>
                     </div>
                 </div>
@@ -129,7 +129,7 @@ export function renderUserBookings(container) {
         container.innerHTML = `
             <div class="card-container" id="userBookingsCard">
                 <h2 class="section-title">🎫 мои записи</h2>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
                     <div style="flex: 1; margin-right: 16px;">
                         <span style="color: #ffffff;">${mainPart}<em style="font-style: italic;">${italicPart}</em></span>
                     </div>
@@ -192,7 +192,7 @@ export function renderUserBookings(container) {
         }
         
         html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1; margin-right: 16px;">
                     <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${displayTitle}</span>
@@ -223,7 +223,7 @@ function renderMastermindSummaries() {
     let innerHtml = '';
     if (summaries.length === 0) {
         innerHtml = `
-            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1;">
                     <span style="color: #ffffff;">скоро здесь появится первая запись</span>
                 </div>
@@ -249,10 +249,10 @@ function renderMastermindSummaries() {
                 }
             }
             const readBtn = isGuest
-                ? `<button class="btn guest-read-btn" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.5); border-radius: 20px; font-size: 13px;">🔒</button>`
-                : `<a href="${item.link}" target="_blank" class="mastermind-read-link" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; text-decoration: none; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.25); color: rgba(255,255,255,0.7); border-radius: 20px; font-size: 13px; white-space: nowrap;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
+                ? `<button class="btn guest-read-btn" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: rgba(255,255,255,0.85); border-radius: 20px; font-size: 13px;">🔒</button>`
+                : `<a href="${item.link}" target="_blank" class="mastermind-read-link" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; text-decoration: none; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: #ffffff; border-radius: 20px; font-size: 13px; white-space: nowrap;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
-                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: rgba(255,255,255,0.1); border-radius: 12px; backdrop-filter: blur(4px);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
                     <div style="flex: 1; margin-right: 16px;">
                         <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
                         <span style="color: #ffffff; margin-left: 8px;">${item.title || 'Без названия'}</span>

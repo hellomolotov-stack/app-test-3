@@ -5,7 +5,7 @@ import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
     loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations, loadRouteFavorites,
 } from '../firebase.js';
-import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928routes';
+import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928contrast';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
 import { showGuestBookingPopup } from './calendar.js';
@@ -256,7 +256,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     if (previewProfile) {
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
-        banner.style.cssText = 'position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%); width: 90% !important; max-width: 520px !important; margin-top: -100px !important; z-index: 101 !important; pointer-events: none !important; background: rgba(255,255,255,0.1) !important; border-radius: 28px !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important; padding: 16px !important; display: flex !important; flex-direction: row !important; align-items: center !important; gap: 14px !important; box-sizing: border-box !important;';
+        banner.style.cssText = 'position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%); width: 90% !important; max-width: 520px !important; margin-top: -100px !important; z-index: 101 !important; pointer-events: none !important; background: var(--glass-bg) !important; border: 1px solid var(--glass-border) !important; border-radius: 28px !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important; padding: 16px !important; display: flex !important; flex-direction: row !important; align-items: center !important; gap: 14px !important; box-sizing: border-box !important;';
 
         const avatarContainer = document.createElement('div');
         avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
