@@ -4839,3 +4839,7 @@ body.adm-open { overflow: hidden; }
 
 /* «+ предложить событие» – слоем ниже, под внутренним блоком календаря */
 .ef-suggest { display: flex; justify-content: flex-end; margin: 0 16px; }
+
+/* подписи ленты календаря («ближайший хайк», «активность клуба») – строчными, без полосок */
+.events-feed .ef-label { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 700; }
+.events-feed .ef-label::after { display: none; }
