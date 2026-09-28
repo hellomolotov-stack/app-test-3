@@ -6,13 +6,14 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928optin';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260928admin';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
+import { mountAdminEntry } from './admin.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -740,4 +741,5 @@ export function renderHome() {
     } else {
         renderGuestHome();
     }
+    mountAdminEntry(mainDiv());
 }

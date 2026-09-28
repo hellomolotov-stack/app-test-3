@@ -620,6 +620,8 @@ const HIKE_ROUTE_IDS = {
 };
 
 function getHikeTrack(hike) {
+    // трек, загруженный через админку (GPX), важнее захардкоженных
+    if (hike.track && Array.isArray(hike.track.coords) && hike.track.coords.length > 1) return hike.track;
     if (HIKE_TRACKS[hike.date]) return HIKE_TRACKS[hike.date];
 
     const sheetTrack = getIntelligentsiaRouteTrack(HIKE_ROUTE_TITLES[hike.date]);
@@ -1045,6 +1047,11 @@ function startHikeMapOrbit(map, camera, radiusDeg) {
         else rafId = null;
     };
     rafId = requestAnimationFrame(step);
+}
+
+// Предпросмотр 3D-карты трека (админка): та же карта, что в слайдере хайка.
+export function previewHikeTrack(el, track) {
+    return ensureMapLibre().then(() => initHikeMap(el, track, true));
 }
 
 function initHikeMap(el, track, instant = false) {
