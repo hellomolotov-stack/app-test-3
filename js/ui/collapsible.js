@@ -72,11 +72,30 @@ function enhance(card) {
         const collapsed = !card.classList.contains('is-collapsed');
         setState(card, button, collapsed);
         writeCollapsed(key, collapsed);
+        fitHead(head);
         // карты внутри блока (маршруты) должны пересчитать размер после раскрытия
         if (!collapsed) requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     });
     head.appendChild(button);
     setState(card, button, !!readCollapsed()[key]);
+}
+
+// Шапка должна уместиться в одну строку: сначала «свернуть» становится просто стрелкой,
+// затем прячутся необязательные слова («смотреть отчёты» → «отчёты»).
+function overflows(head) {
+    if (head.scrollWidth > head.clientWidth + 1) return true;
+    return [...head.children].some(c => c.scrollWidth > c.clientWidth + 1);
+}
+
+function fitHead(head) {
+    head.classList.remove('blk-compact', 'blk-tight');
+    if (!head.clientWidth || !overflows(head)) return;
+    head.classList.add('blk-compact');
+    if (overflows(head)) head.classList.add('blk-tight');
+}
+
+function fitAll() {
+    document.querySelectorAll('#mainContent .blk-has-toggle').forEach(fitHead);
 }
 
 function scan() {
@@ -85,6 +104,7 @@ function scan() {
     // только главная: там всегда есть блок карты интеллигента
     if (!main || !main.querySelector('#cardBlock')) return;
     main.querySelectorAll('.card-container').forEach(enhance);
+    fitAll();
 }
 
 export function initCollapsibleBlocks() {
@@ -96,5 +116,7 @@ export function initCollapsibleBlocks() {
         requestAnimationFrame(scan);
     });
     observer.observe(main, { childList: true, subtree: true });
+    window.addEventListener('resize', () => requestAnimationFrame(fitAll));
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitAll);
     scan();
 }

@@ -4891,3 +4891,7 @@ body.adm-open { overflow: hidden; }
     .metrics-title, .card-container h2, .card-container .section-title { font-size: 17px; }
     .ef-next-info .ef-next-title { font-size: 14px; }
 }
+.blk-compact > .blk-toggle > span { display: none; }
+.blk-compact > .blk-toggle { padding-left: 8px; }
+.blk-tight .ml-long { display: none; }
+.metrics-link { white-space: nowrap; flex: none; }
