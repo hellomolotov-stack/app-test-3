@@ -6,10 +6,10 @@ import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStat
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
-import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260930log3';
+import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
-import { renderWeatherBlock, initWeatherBlock } from './weather.js?v=20260930sky2';
+import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
@@ -59,7 +59,8 @@ function mountStickyHikeCta() {
     document.getElementById('stickyHikeBtn').addEventListener('click', () => {
         haptic();
         log('sticky cta', true, state.user);
-        showBottomSheet(nextHikeIndex);
+        const i = state.hikesWithTitle.findIndex(h => h.date === hike.date);
+        showBottomSheet(i !== -1 ? i : nextHikeIndex);
     });
 }
 
@@ -169,7 +170,7 @@ export function renderUserBookings(container) {
                     <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${displayTitle}</span>
                 </div>
-                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
+                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
             </div>
         `;
     });
@@ -180,8 +181,8 @@ export function renderUserBookings(container) {
         btn.addEventListener('click', () => {
             haptic();
             log('детали бронирования из главной', false, state.user);
-            const index = parseInt(btn.dataset.index, 10);
-            showBottomSheet(index);
+            const byDate = btn.dataset.date ? state.hikesWithTitle.findIndex(h => h.date === btn.dataset.date) : -1;
+            showBottomSheet(byDate !== -1 ? byDate : parseInt(btn.dataset.index, 10));
         });
     });
 }
@@ -487,7 +488,7 @@ function renderGuestHome() {
             chip.addEventListener('click', () => {
                 haptic();
                 log('пойти на хайк из qa', true, state.user, { target: nextHike ? 'hike' : 'calendar' });
-                if (nextHike) { showBottomSheet(nextHikeIdx); return; }
+                if (nextHike) { const i = state.hikesWithTitle.findIndex(h => h.date === nextHike.date); showBottomSheet(i !== -1 ? i : nextHikeIdx); return; }
                 const cal = document.getElementById('calendarContainer');
                 if (cal) scrollToElement(cal, 76);
             });

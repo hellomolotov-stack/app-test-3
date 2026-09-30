@@ -22,7 +22,7 @@ import { maybeAskNotifications, ensureCanMessage } from './notify-optin.js';
 import { getRouteForHikeTitle } from './personal-routes-map.js';
 import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
-import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js?v=20260825b';
+import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -1440,6 +1440,20 @@ function initHikeMap(el, track, instant = false, standalone = false) {
 }
 
 let sheetCurrentIndex = 0;
+// Слайдер помнит хайк по дате: список хайков приходит из базы в несколько приёмов,
+// и номер в нём может сдвинуться – тогда по старому номеру открылся бы чужой хайк.
+let sheetCurrentDate = null;
+function setSheetIndex(index) {
+    sheetCurrentIndex = index;
+    sheetCurrentDate = state.hikesWithTitle[index]?.date || null;
+}
+function curSheetIndex() {
+    if (sheetCurrentDate) {
+        const i = state.hikesWithTitle.findIndex(h => h.date === sheetCurrentDate);
+        if (i !== -1) sheetCurrentIndex = i;
+    }
+    return sheetCurrentIndex;
+}
 let sheetLastOpenedAt = 0;
 let sheetScrollListener = null;
 let dragStartY = 0;
@@ -1475,7 +1489,7 @@ export function getTotalCardsCount() {
 }
 
 export function showBottomSheet(index) {
-    if (!state.hikesWithTitle.length) return;
+    if (!state.hikesWithTitle.length || !state.hikesWithTitle[index]) return;
 
     sheetLastOpenedAt = Date.now();
     const selectedHike = state.hikesWithTitle[index];
@@ -1517,7 +1531,7 @@ export function showBottomSheet(index) {
     sheet.style.height = `${maxHeight}px`;
     overlay.style.paddingTop = safeTop + 'px';
 
-    sheetCurrentIndex = index;
+    setSheetIndex(index);
     const isGuest = state.userCard.status !== 'active';
     if (currentUnsubscribe) {
         currentUnsubscribe();
@@ -1531,7 +1545,7 @@ export function showBottomSheet(index) {
     }
 
     function updateContent(instant = false) {
-        const hike = state.hikesWithTitle[sheetCurrentIndex];
+        const hike = state.hikesWithTitle[curSheetIndex()];
         if (!hike) return;
 
         const isWoman = hike.woman === 'yes';
@@ -1569,8 +1583,8 @@ export function showBottomSheet(index) {
             } else formattedDate = hike.date;
         }
 
-        const hasPrev = sheetCurrentIndex > 0;
-        const hasNext = sheetCurrentIndex < state.hikesWithTitle.length - 1;
+        const hasPrev = curSheetIndex() > 0;
+        const hasNext = curSheetIndex() < state.hikesWithTitle.length - 1;
 
         let tagsHtml = '';
         if (hike.tags && hike.tags.length > 0) {
@@ -1932,10 +1946,10 @@ export function showBottomSheet(index) {
 
         document.getElementById('prevHike')?.addEventListener('click', e => {
             e.stopPropagation();
-            if (sheetCurrentIndex > 0) {
+            if (curSheetIndex() > 0) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
-                sheetCurrentIndex--;
+                setSheetIndex(curSheetIndex() - 1);
                 updateContent(true);
                 contentWrapper.scrollTop = 0;
                 haptic();
@@ -1944,10 +1958,10 @@ export function showBottomSheet(index) {
         });
         document.getElementById('nextHike')?.addEventListener('click', e => {
             e.stopPropagation();
-            if (sheetCurrentIndex < state.hikesWithTitle.length - 1) {
+            if (curSheetIndex() < state.hikesWithTitle.length - 1) {
                 closeParticipantDropdown();
                 closeLeaderDropdown();
-                sheetCurrentIndex++;
+                setSheetIndex(curSheetIndex() + 1);
                 updateContent(true);
                 contentWrapper.scrollTop = 0;
                 haptic();
@@ -1960,7 +1974,7 @@ export function showBottomSheet(index) {
 
     function participantCounterHandler(e) {
         e.stopPropagation();
-        const hike = state.hikesWithTitle[sheetCurrentIndex];
+        const hike = state.hikesWithTitle[curSheetIndex()];
         if (!hike) return;
         toggleParticipantDropdown(e.currentTarget, hike.date);
     }
@@ -2060,7 +2074,7 @@ export function refreshBottomSheetIfOpen() {
     if (document.getElementById('hikeBottomSheet')) {
         // Пропускаем если шит только что открылся (например, из deeplink) — иначе будет двойное открытие
         if (Date.now() - sheetLastOpenedAt < 2000) return;
-        showBottomSheet(sheetCurrentIndex);
+        showBottomSheet(curSheetIndex());
     }
 }
 
@@ -2297,7 +2311,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             const userId = state.user?.id;
             setUserRegistrationStatus(userId, hikeDate, true)
                 .then(() => {
-                    state.hikeBookingStatus[sheetCurrentIndex] = true;
+                    state.hikeBookingStatus[curSheetIndex()] = true;
                     return addParticipant(hikeDate, userId, {
                         first_name: state.user?.first_name,
                         photo_url: state.user?.photo_url,
@@ -2333,7 +2347,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             if (isGuest) {
                 removeParticipant(hikeDate, userId)
                     .then(() => {
-                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        delete state.hikeBookingStatus[curSheetIndex()];
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
                         updateFloatingSheetButtons();
@@ -2344,7 +2358,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
                     .then(() => {
-                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        delete state.hikeBookingStatus[curSheetIndex()];
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
                         renderUserBookings(document.getElementById('userBookingsContainer'));
@@ -2392,7 +2406,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 function updateFloatingSheetButtons() {
     const container = document.querySelector('.floating-sheet-buttons');
     if (!container) return;
-    const hike = state.hikesWithTitle[sheetCurrentIndex];
+    const hike = state.hikesWithTitle[curSheetIndex()];
     if (!hike) return;
 
     const isPlaceholder = !hike.title || hike.title.trim() === '';
@@ -2456,7 +2470,7 @@ function updateFloatingSheetButtons() {
             // Городские события: и гости, и владельцы карт видят свайп-контрол
             const isWoman = hike.woman === 'yes';
             const accentColor = isBookClub ? '#FFF1B2' : (isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)'));
-            const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+            const isBooked = state.hikeBookingStatus[curSheetIndex()] || false;
 
             // Счётчик участников
             const cityBookedCount = window._participantCount || 0;
@@ -2499,7 +2513,7 @@ function updateFloatingSheetButtons() {
                 if (isBooked) {
                     Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
                         .then(() => {
-                            delete state.hikeBookingStatus[sheetCurrentIndex];
+                            delete state.hikeBookingStatus[curSheetIndex()];
                             updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
                             updateFloatingSheetButtons();
                             renderUserBookings(document.getElementById('userBookingsContainer'));
@@ -2509,7 +2523,7 @@ function updateFloatingSheetButtons() {
                 } else {
                     setUserRegistrationStatus(userId, hikeDate, true)
                         .then(() => {
-                            state.hikeBookingStatus[sheetCurrentIndex] = true;
+                            state.hikeBookingStatus[curSheetIndex()] = true;
                             return addParticipant(hikeDate, userId, {
                                 first_name: state.user?.first_name,
                                 photo_url: state.user?.photo_url,
@@ -2562,7 +2576,7 @@ function updateFloatingSheetButtons() {
     } else {
         accentColor = 'var(--yellow)';
     }
-    const isBooked = state.hikeBookingStatus[sheetCurrentIndex] || false;
+    const isBooked = state.hikeBookingStatus[curSheetIndex()] || false;
     const MAX_TICKETS = 12;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
@@ -2685,7 +2699,7 @@ function updateFloatingSheetButtons() {
             if (isGuest) {
                 removeParticipant(hikeDate, userId)
                     .then(() => {
-                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        delete state.hikeBookingStatus[curSheetIndex()];
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
                         updateFloatingSheetButtons();
@@ -2696,7 +2710,7 @@ function updateFloatingSheetButtons() {
             } else {
                 Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
                     .then(() => {
-                        delete state.hikeBookingStatus[sheetCurrentIndex];
+                        delete state.hikeBookingStatus[curSheetIndex()];
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
                         renderUserBookings(document.getElementById('userBookingsContainer'));
@@ -2773,7 +2787,7 @@ function updateFloatingSheetButtons() {
         const hikeTitle = hike.title;
         setUserRegistrationStatus(userId, hikeDate, true)
             .then(() => {
-                state.hikeBookingStatus[sheetCurrentIndex] = true;
+                state.hikeBookingStatus[curSheetIndex()] = true;
                 return addParticipant(hikeDate, userId, {
                     first_name: state.user?.first_name,
                     photo_url: state.user?.photo_url,
