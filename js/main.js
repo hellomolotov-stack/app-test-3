@@ -5,18 +5,19 @@ import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscri
 import { log, logAutoSendClick } from './api.js';
 import { pingAppUser, maybeAskNotifications } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
-import { initCollapsibleBlocks } from './ui/collapsible.js?v=20260930menu';
+import { initClickLog } from './ui/click-log.js?v=20260930log';
+import { initCollapsibleBlocks } from './ui/collapsible.js?v=20260930log';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260930menu';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260930log';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260930menu';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260930log';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -687,5 +688,6 @@ document.addEventListener('focusout', (e) => {
 window.addEventListener('load', () => {
     state.user = tg?.initDataUnsafe?.user;
     initCollapsibleBlocks();
+    initClickLog();
     loadAppData();
 });

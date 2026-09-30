@@ -40,8 +40,8 @@ function confirmTelegramLeave(url, go) {
             <div class="tg-leave-title">переходим в Telegram</div>
             <div class="tg-leave-text">откроем <b>${telegramPlace(url)}</b>. приложение может свернуться – вернуться можно в любой момент через бота клуба</div>
             <div class="tg-leave-actions">
-                <button type="button" class="btn btn-outline" data-act="stay">остаться</button>
-                <button type="button" class="btn btn-yellow" data-act="go">перейти</button>
+                <button type="button" class="btn btn-outline" data-act="stay" data-log-label="остался в приложении (${telegramPlace(url)})">остаться</button>
+                <button type="button" class="btn btn-yellow" data-act="go" data-log-label="перешёл в Telegram (${telegramPlace(url)})">перейти</button>
             </div>
         </div>`;
     const close = () => overlay.remove();

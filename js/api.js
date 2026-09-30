@@ -1,8 +1,12 @@
 // js/api.js
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
 
+// Счётчик явных логов: общий логгер кликов (ui/click-log.js) не дублирует уже залогированное нажатие.
+export let logSeq = 0;
+
 export function log(action, isGuest = false, user, meta = {}) {
     if (!user?.id) return;
+    logSeq++;
     const finalAction = isGuest ? `${action}_guest` : action;
     const params = new URLSearchParams({
         user_id: user.id,
@@ -12,7 +16,13 @@ export function log(action, isGuest = false, user, meta = {}) {
         action: finalAction,
         ...meta
     });
-    new Image().src = `${GUEST_API_URL}?${params}`;
+    const url = `${GUEST_API_URL}?${params}`;
+    // keepalive: запрос уходит, даже если приложение тут же свернётся (переход в Telegram)
+    try {
+        fetch(url, { mode: 'no-cors', keepalive: true, credentials: 'omit' }).catch(() => { new Image().src = url; });
+    } catch (e) {
+        new Image().src = url;
+    }
 }
 
 // Привязка клика по авто-сообщению (auto_sends): шлёт в основной скрипт, тот ставит clicked_at.

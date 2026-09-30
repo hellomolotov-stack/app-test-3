@@ -1257,6 +1257,18 @@ export function previewHikeTrack(el, track) {
     return ensureMapLibre().then(() => initHikeMap(el, track, true));
 }
 
+// Карту показываем только когда рельеф и снимки уже загрузились: иначе при входе
+// сначала видна плоская подложка, а потом горы «выпрыгивают». До этого – тёмный фон контейнера.
+function hideUntilReady(map) {
+    const canvas = map.getCanvas();
+    canvas.style.opacity = '0';
+    canvas.style.transition = 'opacity .6s ease';
+    let shown = false;
+    const show = () => { if (shown) return; shown = true; requestAnimationFrame(() => { canvas.style.opacity = '1'; }); };
+    const fallback = setTimeout(show, 6000);
+    return () => { clearTimeout(fallback); show(); };
+}
+
 // standalone – отдельная карта (карточка в календаре): не трогает карту слайдера и её облёт.
 function initHikeMap(el, track, instant = false, standalone = false) {
     if (!standalone) {
@@ -1334,6 +1346,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
         doubleClickZoom: false
     });
     if (!standalone) currentHikeMap = map;
+    const reveal = hideUntilReady(map);
 
     map.on('load', () => {
         map.addSource('dem', {
@@ -1390,6 +1403,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
         });
 
         map.once('idle', () => {
+            reveal();
             if (instant) {
                 // Камера уже стоит в целевом кадре (см. параметры создания карты) –
                 // просто уточняем позицию на случай смещения при загрузке рельефа
