@@ -12,10 +12,45 @@ export function openLink(url, action, isGuest) {
     const tg = window.Telegram?.WebApp;
     if (!tg) return window.open(url, '_blank');
     if (url.startsWith('https://t.me/')) {
-        tg.openTelegramLink(url);
+        // переход в Telegram сворачивает приложение – сначала предупреждаем
+        if (/^https:\/\/t\.me\/(share\/|[^?]*\?startapp)/.test(url)) return tg.openTelegramLink(url);
+        confirmTelegramLeave(url, () => tg.openTelegramLink(url));
     } else {
         tg.openLink(url);
     }
+}
+
+function telegramPlace(url) {
+    const path = url.replace(/^https:\/\/t\.me\//, '').split(/[?#]/)[0].toLowerCase();
+    const [name, post] = path.split('/');
+    if (name === 'yaltahiking') return post ? 'пост в канале клуба' : 'канал клуба';
+    if (name === 'yaltahikingchat') return 'чат клуба';
+    if (name === 'hellointelligent') return 'чат с организатором';
+    if (name.endsWith('bot')) return 'бота в Telegram';
+    return 'Telegram';
+}
+
+function confirmTelegramLeave(url, go) {
+    document.querySelector('.tg-leave')?.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay tg-leave';
+    overlay.innerHTML = `
+        <div class="modal-content">
+            <div class="tg-leave-icon">🧭</div>
+            <div class="tg-leave-title">переходим в Telegram</div>
+            <div class="tg-leave-text">откроем <b>${telegramPlace(url)}</b>. приложение может свернуться – вернуться можно в любой момент через бота клуба</div>
+            <div class="tg-leave-actions">
+                <button type="button" class="btn btn-outline" data-act="stay">остаться</button>
+                <button type="button" class="btn btn-yellow" data-act="go">перейти</button>
+            </div>
+        </div>`;
+    const close = () => overlay.remove();
+    overlay.addEventListener('click', e => {
+        const act = e.target.closest('[data-act]')?.dataset.act;
+        if (e.target === overlay || act === 'stay') { haptic(); close(); }
+        if (act === 'go') { haptic(); close(); go(); }
+    });
+    document.body.appendChild(overlay);
 }
 
 export function normalizeDate(dateStr) {

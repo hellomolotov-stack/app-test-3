@@ -25,7 +25,7 @@
     <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
     <link rel="preload" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" as="script">
     <link rel="preload" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" as="style">
-    <link rel="stylesheet" href="style.css?v=20260930hd">
+    <link rel="stylesheet" href="style.css?v=20260930menu">
 </head>
 <body>
     <!-- Верхний плавный блюр -->
@@ -79,18 +79,34 @@
         </div>
     </div>
 
-    <!-- Выпадающее меню -->
-    <div class="nav-popup" id="navPopup">
-        <a href="#" class="popup-item popup-item-safety" id="popupSafety" style="display:none;">🆘 на случай ЧП</a>
-        <a href="#" class="popup-item" id="popupChat">💬 чат</a>
-        <a href="#" class="popup-item" id="popupChannel">📰 канал клуба</a>
-        <a href="#" class="popup-item" id="popupGift">💳 подарить карту</a>
-        <a href="#" class="popup-item" id="popupNewcomer">🫖 для новичков</a>
-        <a href="#" class="popup-item" id="popupPass">🪪 пропуск в заповедник</a>
-        <a href="#" class="popup-item" id="popupQuestion">💬 задать вопрос</a>
+    <!-- Меню: шторка с разделами главной и ссылками клуба -->
+    <div class="nav-popup nav-sheet" id="navPopup">
+        <div class="ns-panel">
+            <div class="ns-grab"></div>
+            <div class="ns-title">перейти к разделу</div>
+            <div class="ns-grid">
+                <button type="button" class="ns-tile" data-jump="calendar"><span>🗓️</span>календарь</button>
+                <button type="button" class="ns-tile" data-jump="bookings"><span>🎟️</span>мои записи</button>
+                <button type="button" class="ns-tile" data-jump="routes"><span>🖇️</span>карта хайков</button>
+                <button type="button" class="ns-tile" data-jump="weather"><span>☁️</span>погода</button>
+                <button type="button" class="ns-tile" data-jump="mastermind"><span>🧠</span>мастер&shy;майнд</button>
+                <button type="button" class="ns-tile" data-jump="metrics"><span>🌍</span>клуб в цифрах</button>
+                <button type="button" class="ns-tile" data-jump="updates"><span>📨</span>обновления</button>
+                <a href="#" class="ns-tile" id="popupNewcomer"><span>🫖</span>новичкам</a>
+            </div>
+            <div class="ns-title">клуб</div>
+            <div class="ns-list">
+                <a href="#" class="popup-item popup-item-safety" id="popupSafety" style="display:none;">🆘 на случай ЧП</a>
+                <a href="#" class="popup-item" id="popupChat">💬 чат клуба</a>
+                <a href="#" class="popup-item" id="popupChannel">📰 канал клуба</a>
+                <a href="#" class="popup-item" id="popupGift">💳 подарить карту</a>
+                <a href="#" class="popup-item" id="popupPass">🪪 пропуск</a>
+                <a href="#" class="popup-item" id="popupQuestion">✉️ задать вопрос</a>
+            </div>
+        </div>
     </div>
 
     <div id="initial-loader" class="initial-loader"></div>
-    <script type="module" src="js/main.js?v=20260930hd"></script>
+    <script type="module" src="js/main.js?v=20260930menu"></script>
 </body>
 </html>

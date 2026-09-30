@@ -5,18 +5,18 @@ import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscri
 import { log, logAutoSendClick } from './api.js';
 import { pingAppUser, maybeAskNotifications } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
-import { initCollapsibleBlocks } from './ui/collapsible.js?v=20260930hd';
+import { initCollapsibleBlocks } from './ui/collapsible.js?v=20260930menu';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260930hd';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js?v=20260930menu';
 import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260930hd';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js?v=20260930menu';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -176,6 +176,41 @@ function setupBottomNav() {
     if (popupQuestion) {
         popupQuestion.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'написать организатору', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
     }
+
+    // плитки разделов: прокрутка к блоку главной (свёрнутый блок раскрываем)
+    const JUMP_TARGETS = {
+        calendar: () => document.getElementById('calendarContainer'),
+        bookings: () => document.getElementById('userBookingsCard'),
+        routes: () => document.getElementById('intelligentsiaRoutesContainer')?.querySelector('.card-container') || document.getElementById('intelligentsiaRoutesContainer'),
+        weather: () => document.getElementById('weatherBlock'),
+        mastermind: () => document.getElementById('mastermindSummariesCard'),
+        metrics: () => document.querySelector('.metrics-header')?.closest('.card-container'),
+        updates: () => document.querySelector('.updates-container'),
+    };
+    const closeMenu = () => { popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); };
+    popup.querySelectorAll('[data-jump]').forEach(tile => {
+        tile.addEventListener('click', () => {
+            haptic(); setUserInteracted();
+            const key = tile.dataset.jump;
+            log('меню: ' + tile.textContent.trim(), state.userCard.status !== 'active', state.user);
+            closeMenu();
+            window.toggleShareButton(false);
+            const onHome = !!document.getElementById('cardBlock');
+            if (!onHome) { cleanupProfileOverlays(); document.getElementById('floatingCardBtn')?.remove(); setManualNav('home'); renderHome(); updateActiveNav(); }
+            scrollToWhenReady(() => {
+                const el = JUMP_TARGETS[key]?.();
+                if (el && el.classList.contains('is-collapsed')) el.querySelector('.blk-toggle')?.click();
+                return el;
+            }, { delay: onHome ? 50 : 300 });
+        });
+    });
+    // в меню показываем только разделы, которые есть на главной у этого человека
+    const refreshTiles = () => popup.querySelectorAll('[data-jump]').forEach(tile => {
+        const onHome = !!document.getElementById('cardBlock');
+        tile.hidden = onHome && !JUMP_TARGETS[tile.dataset.jump]?.();
+    });
+    navMoreNew.addEventListener('click', refreshTiles);
+    popup.addEventListener('click', (e) => { if (e.target === popup) closeMenu(); });
 
     document.addEventListener('click', (e) => {
         if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
