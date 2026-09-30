@@ -66,7 +66,11 @@ function enhance(card) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'blk-toggle';
-    button.addEventListener('click', e => {
+    // сворачивает клик по всей шапке – по названию, пустому месту и «свернуть»;
+    // свои кнопки и ссылки шапки («отчёты ›», стрелки) работают как раньше
+    head.addEventListener('click', e => {
+        const own = e.target.closest('a, button, input, select, label');
+        if (own && own !== button) return;
         e.stopPropagation();
         haptic();
         const collapsed = !card.classList.contains('is-collapsed');

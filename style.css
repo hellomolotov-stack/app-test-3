@@ -4991,3 +4991,6 @@ body.adm-open { overflow: hidden; }
     .wsky-temp { font-size: 40px; }
     .wstat-val { font-size: 22px; }
 }
+/* вся шапка блока – кнопка свернуть/раскрыть */
+.blk-has-toggle { cursor: pointer; -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
+.blk-has-toggle:active .blk-toggle { color: rgba(255, 255, 255, 0.85); }

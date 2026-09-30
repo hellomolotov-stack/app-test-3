@@ -7,7 +7,7 @@ import { state } from '../state.js';
 import { log } from '../api.js';
 import { loadUserRegistrations } from '../firebase.js';
 
-const PILOT_USERNAMES = new Set(['maxmolotov']);
+const PILOT_USERNAMES = new Set(['hellointelligent']);
 const YELLOW = '#D9FD19';
 
 export function isPersonalMapPilotUser(user) {
