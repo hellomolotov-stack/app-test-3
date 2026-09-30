@@ -9,7 +9,7 @@ import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerS
 import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js?v=20260930fit';
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
-import { renderWeatherBlock, initWeatherBlock } from './weather.js';
+import { renderWeatherBlock, initWeatherBlock } from './weather.js?v=20260930sky';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
