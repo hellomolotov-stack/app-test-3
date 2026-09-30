@@ -174,7 +174,7 @@ function fmtDate(date) {
 function fmtSpan(ms) {
     const m = Math.max(0, Math.round(ms / 60000));
     const h = Math.floor(m / 60);
-    return h ? `${h} ч ${m % 60} мин` : `${m} мин`;
+    return h ? (m % 60 ? `${h} ч ${m % 60} мин` : `${h} ч`) : `${m} мин`;
 }
 
 // Восход и закат на сегодня/завтра по данным прогноза; до прихода данных – грубая оценка.
