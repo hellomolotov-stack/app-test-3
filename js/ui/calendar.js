@@ -1428,11 +1428,14 @@ function initHikeMap(el, track, instant = false, standalone = false) {
         setTimeout(hideTip, 9000);
     }
 
-    const hint = document.createElement('div');
-    hint.className = 'map-swipe-hint';
-    hint.innerHTML = '<div class="mh-dot mh-l"></div><div class="mh-dot mh-r"></div><div class="mh-dot mh-cw"></div><div class="mh-dot mh-ccw"></div>';
-    el.appendChild(hint);
-    setTimeout(() => { hint.remove(); }, 4500);
+    // подсказка жестами – когда карта уже проявилась, а не над пустым фоном
+    map.once('idle', () => {
+        const hint = document.createElement('div');
+        hint.className = 'map-swipe-hint';
+        hint.innerHTML = '<div class="mh-dot mh-l"></div><div class="mh-dot mh-r"></div><div class="mh-dot mh-cw"></div><div class="mh-dot mh-ccw"></div>';
+        el.appendChild(hint);
+        setTimeout(() => { hint.remove(); }, 4500);
+    });
     return map;
 }
 
