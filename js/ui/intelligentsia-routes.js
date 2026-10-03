@@ -132,7 +132,13 @@ function normaliseRoute(route) {
     };
 }
 
-export function setIntelligentsiaRoutes(routes) {
+const ROUTES_CACHE_KEY = 'routesCache';
+
+export function setIntelligentsiaRoutes(routes, { fromCache = false } = {}) {
+    if (!fromCache && Array.isArray(routes) && routes.length) {
+        // каталог с треками кэшируем: при следующем запуске карта хайка строится сразу, не дожидаясь базы
+        try { localStorage.setItem(ROUTES_CACHE_KEY, JSON.stringify(routes)); } catch (e) {}
+    }
     const syncedRoutes = (Array.isArray(routes) ? routes : [])
         .filter(route => route && route.active !== false && route.active !== 'false' && route.active !== 'no')
         .map(normaliseRoute)
@@ -672,3 +678,9 @@ export function renderIntelligentsiaRoutes(container) {
         if (el) el.innerHTML = '<div class="intelligentsia-map-fallback">карта временно недоступна</div>';
     });
 }
+
+// каталог с прошлого запуска – до первой отрисовки главной
+try {
+    const cached = JSON.parse(localStorage.getItem(ROUTES_CACHE_KEY) || 'null');
+    if (Array.isArray(cached) && cached.length) setIntelligentsiaRoutes(cached, { fromCache: true });
+} catch (e) {}
