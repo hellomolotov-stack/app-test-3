@@ -262,7 +262,7 @@ function feedNotifyButton(date, compact = false) {
         return `<button class="ef-bell${on ? ' is-on' : ''}" data-notify="${date}" aria-label="${on ? 'не сообщать' : 'сообщить, когда откроется запись'}">${on ? '✓ сообщим' : '🔔 сообщить'}</button>`;
     }
     return on
-        ? `<button class="ef-notify-on" data-notify="${date}">✓ сообщим</button>`
+        ? `<button class="ef-notify-on" data-notify="${date}">✓ сообщим об открытии</button>`
         : `<button class="btn btn-yellow ef-book" data-notify="${date}">🔔 сообщить мне</button>`;
 }
 
@@ -335,7 +335,11 @@ function feedNearestCard(h) {
     }
     const button = `<button class="btn btn-yellow ef-book" data-book="${h.date}">записаться</button>`;
     if (!h.title || !h.title.trim()) {
-        return `<div class="ef-next ef-next-teaser"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}</div>`;
+        const waiting = !!feedWaitlist()[h.date];
+        const note = waiting
+            ? `<div class="ef-wait-note"><span>🔔</span><div>ты в листе ожидания. <b>напишем в бота</b>, как только объявим маршрут – запишешься в пару касаний</div></div>`
+            : '';
+        return `<div class="ef-next ef-next-teaser${waiting ? ' is-waiting' : ''}"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}${note}</div>`;
     }
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     // есть трек – живая 3D-карта (крутится пальцами), иначе картинка маршрута
@@ -519,10 +523,10 @@ function feedPlaceMap(container, hike) {
 }
 
 // «Сообщить, когда откроется запись»: нужно разрешение боту писать, затем подписка на сервере.
-async function feedToggleNotify(date, container) {
+async function feedToggleNotify(date, container, { silentOff = false } = {}) {
     haptic();
     const on = !feedWaitlist()[date];
-    if (!on && !(await feedConfirm('Больше не сообщать об открытии записи?'))) return;
+    if (!on && !silentOff && !(await feedConfirm('Больше не сообщать об открытии записи?'))) return;
     if (on && !(await ensureCanMessage('waitlist'))) {
         feedModal('🔔', 'нужно разрешение', 'без него бот не сможет написать вам, когда откроется запись. нажмите «сообщить» ещё раз и разрешите сообщения');
         return;
@@ -532,7 +536,8 @@ async function feedToggleNotify(date, container) {
     try {
         await setHikeWaitlist(date, on);
         log(on ? 'лист ожидания: подписался' : 'лист ожидания: отписался', state.userCard.status !== 'active', state.user, { date });
-        if (on) feedToast('готово – сообщим в боте, как только откроется запись');
+        if (on) feedNotifyToast(date, container);
+        else if (silentOff) feedToast('ок, не будем сообщать');
     } catch (err) {
         setFeedWaitlist(date, !on);
         renderEventsFeed(container);
@@ -547,6 +552,37 @@ function feedConfirm(text) {
         }
         resolve(window.confirm(text));
     });
+}
+
+const FEED_WD_ACC = ['в воскресенье', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу'];
+
+// Подтверждение подписки: стеклянная карточка сверху, как пуш. Сама уходит через 4 с, есть «отменить».
+function feedNotifyToast(date, container) {
+    document.querySelector('.ef-push')?.remove();
+    const d = feedDate(date);
+    const hike = (state.hikesList || []).find(h => h.date === date);
+    const what = hike && /🏄/.test(hike.emoji || '') ? 'событие' : 'хайк';
+    const tgw = window.Telegram?.WebApp;
+    const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    const el = document.createElement('div');
+    el.className = 'ef-push';
+    el.style.top = (inset ? inset + 8 : 12) + 'px';
+    el.innerHTML = `
+        <div class="ef-push-ic">🔔</div>
+        <div class="ef-push-text"><b>сообщим об открытии записи</b><span>${what} ${FEED_WD_ACC[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]} · напишем в бота</span></div>
+        <button type="button" class="ef-push-undo" data-log-label="лист ожидания: отменить из уведомления">отменить</button>
+        <div class="ef-push-bar"></div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('is-on'));
+    let timer = null;
+    const hide = () => { clearTimeout(timer); el.classList.remove('is-on'); setTimeout(() => el.remove(), 300); };
+    timer = setTimeout(hide, 4000);
+    el.querySelector('.ef-push-undo').addEventListener('click', e => {
+        e.stopPropagation();
+        hide();
+        if (feedWaitlist()[date]) feedToggleNotify(date, container, { silentOff: true });
+    });
+    el.addEventListener('click', hide);
 }
 
 function feedToast(text) {
