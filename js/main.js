@@ -690,9 +690,13 @@ document.addEventListener('focusout', (e) => {
     }
 });
 
-window.addEventListener('load', () => {
+// Стартуем, как только готов DOM, а не по 'load': тот ждёт фоновую картинку и библиотеку карт,
+// и на медленном интернете приложение стояло пустым лишние 10+ секунд.
+function startApp() {
     state.user = tg?.initDataUnsafe?.user;
     initCollapsibleBlocks();
     initClickLog();
     loadAppData();
-});
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });
+else startApp();
