@@ -516,10 +516,45 @@ function feedPlaceMap(container, hike) {
     ['click', 'touchstart', 'pointerdown'].forEach(ev => slot.addEventListener(ev, e => e.stopPropagation()));
     feedMapEl = slot;
     feedMapKey = key;
+    // пока грузится живая карта – показываем её снимок с прошлого запуска (без интернета, мгновенно)
+    const snap = readFeedMapSnap(key);
+    if (snap) {
+        slot.style.backgroundImage = `url(${snap})`;
+        slot.style.backgroundSize = 'cover';
+        slot.style.backgroundPosition = 'center';
+    }
     ensureMapLibre().then(() => {
         if (feedMapEl !== slot || feedMap) return;
         feedMap = initHikeMap(slot, track, true, true);
+        saveFeedMapSnapWhenReady(feedMap, key);
     }).catch(() => {});
+}
+
+const FEED_SNAP_KEY = 'feedMapSnap';
+
+function readFeedMapSnap(key) {
+    try {
+        const s = JSON.parse(localStorage.getItem(FEED_SNAP_KEY) || 'null');
+        return s && s.key === key ? s.img : null;
+    } catch (e) { return null; }
+}
+
+// Снимок берём в момент отрисовки кадра (иначе буфер WebGL уже очищен), уменьшаем и храним один – последний.
+function saveFeedMapSnapWhenReady(map, key) {
+    map.once('idle', () => {
+        map.once('render', () => {
+            try {
+                const src = map.getCanvas();
+                const w = Math.min(720, src.width);
+                const h = Math.round(src.height * w / src.width);
+                const c = document.createElement('canvas');
+                c.width = w; c.height = h;
+                c.getContext('2d').drawImage(src, 0, 0, w, h);
+                localStorage.setItem(FEED_SNAP_KEY, JSON.stringify({ key, img: c.toDataURL('image/jpeg', 0.72) }));
+            } catch (e) {}
+        });
+        map.triggerRepaint();
+    });
 }
 
 // «Сообщить, когда откроется запись»: нужно разрешение боту писать, затем подписка на сервере.
@@ -1301,7 +1336,11 @@ function hideUntilReady(map) {
     canvas.style.transition = 'opacity .6s ease';
     let shown = false;
     const show = () => { if (shown) return; shown = true; requestAnimationFrame(() => { canvas.style.opacity = '1'; }); };
-    const fallback = setTimeout(show, 6000);
+    const fallback = setTimeout(show, 3000);
+    // проявляем, как только загрузился рельеф: снимки дорисуются на глазах, а горы уже на месте
+    map.on('sourcedata', e => {
+        if (!shown && e.sourceId === 'dem' && e.tile && map.isSourceLoaded('dem')) { clearTimeout(fallback); show(); }
+    });
     return () => { clearTimeout(fallback); show(); };
 }
 
@@ -1361,7 +1400,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
                     type: 'raster',
                     tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
                     // в карточке календаря – тайлы на уровень детальнее: на ретине снимок не «мылится»
-                    tileSize: standalone ? 128 : 256, maxzoom: 18
+                    tileSize: 256, maxzoom: 18
                 }
             },
             layers: [{
@@ -1388,7 +1427,8 @@ function initHikeMap(el, track, instant = false, standalone = false) {
         map.addSource('dem', {
             type: 'raster-dem',
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-            tileSize: 256, encoding: 'terrarium', maxzoom: 15
+            // в карточке календаря рельеф попроще – меньше загружать, на её размере разницы нет
+            tileSize: 256, encoding: 'terrarium', maxzoom: standalone ? 13 : 15
         });
         map.setTerrain({ source: 'dem', exaggeration: track.exaggeration || 1.8 });
         map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
