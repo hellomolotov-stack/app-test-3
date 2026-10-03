@@ -3455,92 +3455,142 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
     if (hikeObj && (hikeObj.city === true || hikeObj.book_club === true)) return;
 
-    const isReturning = hasPastBooking();
-    const hasCard = state.userCard.status === 'active';
-    const isExperienced = isReturning || hasCard;
-    const formattedDate = formatDateForDisplay(hikeDate);
+    const isExperienced = hasPastBooking() || state.userCard.status === 'active';
+    const d = feedDate(hikeDate);
+    const whenShort = `${FEED_WD[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_SHORT[d.getMonth()]}${hikeObj?.start_time ? ' · ' + hikeObj.start_time : ''}`;
+    const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const route = hikeObj ? findCatalogRoute(hikeObj) : null;
+    const PHONE = '+7 978 549 09 74';
 
-    const chatText = isExperienced
-        ? 'все уведомления по маршруту, обновления деталей и договорённости о такси – только там'
-        : 'там выходят обновления по маршруту и деталям, договариваются о такси и задают вопросы';
-    const chatBtn = isExperienced ? 'открыть чат' : 'вступить в чат';
-    const packText = isExperienced
-        ? 'на всякий случай – вода, перекус, удобная обувь, головной убор, санскрин'
-        : 'вода 1.5л, перекус, удобная обувь с закрытым носком, санскрин, головной убор';
+    const tgw = window.Telegram?.WebApp;
+    const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
 
     const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay reg-success-overlay';
+    overlay.className = 'reg-ticket-overlay';
+    overlay.style.paddingTop = (inset ? inset + 12 : 24) + 'px';
     overlay.innerHTML = `
-        <div class="modal-content reg-success-content">
-            <div class="reg-success-emoji">🎉</div>
-            <div class="reg-success-title">ты в деле!</div>
-            <div class="reg-success-subtitle" id="regSuccessSubtitle">«${hikeTitle}» – ${formattedDate}</div>
-            <div class="reg-success-cards">
-                <div class="reg-success-card">
-                    <div class="reg-success-card-icon">💬</div>
-                    <div class="reg-success-card-label">чат</div>
-                    <div class="reg-success-card-text">${chatText}</div>
-                    <button class="reg-success-card-btn" id="regChatBtn">${chatBtn}</button>
-                </div>
-                <div class="reg-success-card">
-                    <div class="reg-success-card-icon">🎒</div>
-                    <div class="reg-success-card-label">что взять</div>
-                    <div class="reg-success-card-text" id="regPackText">${packText}</div>
-                    <button class="reg-success-card-btn" id="regPackBtn">подробности</button>
-                </div>
-                <div class="reg-success-card">
-                    <div class="reg-success-card-icon">🌤</div>
-                    <div class="reg-success-card-label">погода</div>
-                    <div class="reg-success-card-text">погода на дату хайка</div>
-                    <button class="reg-success-card-btn" id="regWeatherBtn">открыть</button>
+        <div class="reg-ticket">
+            <div class="rt-part rt-top">
+                <div class="rt-head">
+                    <div class="rt-check">✓</div>
+                    <div class="rt-head-text">
+                        <div class="rt-title">ты в деле!</div>
+                        <div class="rt-sub"><b>${esc(hikeTitle)}</b> · ${whenShort}</div>
+                    </div>
                 </div>
             </div>
-            <div class="reg-success-phone">обязательно запиши (или сделай скрин) телефон организатора на случай, если пропадёт интернет: <b style="white-space:nowrap">+7 (978) 549 09 74 Максим</b></div>
-            <button class="btn btn-outline reg-success-close-btn" id="regSuccessCloseBtn">закрыть</button>
+            <div class="rt-part rt-bot">
+                <div class="rt-list">
+                    <div class="rt-row">
+                        <div class="rt-n is-done">✓</div>
+                        <div class="rt-text"><b>записали тебя</b><span id="rtCount">до встречи на тропе</span></div>
+                    </div>
+                    <button type="button" class="rt-row" id="rtChat">
+                        <div class="rt-n">2</div>
+                        <div class="rt-text"><b>${isExperienced ? 'загляни в чат хайка' : 'вступи в чат хайка'}</b><span>такси, детали и обновления – только там</span></div>
+                        <div class="rt-go">›</div>
+                    </button>
+                    <button type="button" class="rt-row" id="rtPack">
+                        <div class="rt-n">3</div>
+                        <div class="rt-text"><b>собери рюкзак</b><span>${isExperienced ? 'вода, перекус, удобная обувь, санскрин' : 'вода 1,5 л, перекус, обувь с закрытым носком, санскрин'}</span></div>
+                        <div class="rt-go">›</div>
+                    </button>
+                    <button type="button" class="rt-row" id="rtWeather">
+                        <div class="rt-n">4</div>
+                        <div class="rt-text"><b>погода на ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}</b><span>${route ? 'горы · ' + esc(route.title) : 'южный берег'}</span></div>
+                        <div class="rt-chip" id="rtWeatherChip">смотреть</div>
+                    </button>
+                    <button type="button" class="rt-row" id="rtPhone">
+                        <div class="rt-n">5</div>
+                        <div class="rt-text"><b>сохрани телефон организатора</b><span>${PHONE} · Максим</span></div>
+                        <div class="rt-chip" id="rtPhoneChip">скопировать</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="rt-actions">
+            <button type="button" class="btn rt-invite" id="rtInvite">пригласить друга</button>
+            <button type="button" class="btn btn-yellow rt-done" id="rtDone">готово</button>
         </div>
     `;
     document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('is-on'));
     showConfetti();
     haptic();
     tg?.HapticFeedback?.notificationOccurred?.('success');
 
     loadAllParticipants(hikeDate).then(pts => {
-        const el = document.getElementById('regSuccessSubtitle');
-        if (el && pts.length > 0) {
-            el.textContent = `ты ${pts.length}-й участник «${hikeTitle}» – ${formattedDate}`;
-        }
+        const el = document.getElementById('rtCount');
+        if (!el) return;
+        el.textContent = pts.length > 1 ? `ты ${pts.length}-й участник – до встречи на тропе` : 'ты первый – скоро подтянутся остальные';
     }).catch(() => {});
 
-    document.getElementById('regChatBtn')?.addEventListener('click', () => {
+    // погода на день хайка в горах маршрута (прогноз есть на 16 дней вперёд)
+    const chip = document.getElementById('rtWeatherChip');
+    const lat = route?.bounds ? (route.bounds[0][1] + route.bounds[1][1]) / 2 : 44.4314;
+    const lon = route?.bounds ? (route.bounds[0][0] + route.bounds[1][0]) / 2 : 34.0644;
+    const daysAhead = Math.round((d - new Date(new Date().toDateString())) / 86400000);
+    if (daysAhead >= 0 && daysAhead < 16) {
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max&timezone=Europe%2FMoscow&start_date=${hikeDate}&end_date=${hikeDate}`)
+            .then(r => r.json())
+            .then(j => {
+                const t = j?.daily?.temperature_2m_max?.[0];
+                const code = j?.daily?.weathercode?.[0];
+                if (chip && Number.isFinite(t)) chip.textContent = `${regWeatherIcon(code)} ${t > 0 ? '+' : ''}${Math.round(t)}°`;
+            }).catch(() => {});
+    }
+
+    const closeSuccess = () => {
+        haptic();
+        overlay.classList.remove('is-on');
+        setTimeout(() => overlay.remove(), 250);
+        // после поздравления – самый понятный момент попросить разрешение на сообщения
+        maybeAskNotifications('booking', 400);
+    };
+
+    document.getElementById('rtChat').addEventListener('click', () => {
         haptic();
         openLink('https://t.me/yaltahikingchat', 'чат хайка из успешной регистрации', false);
     });
-
-    document.getElementById('regPackBtn')?.addEventListener('click', () => {
+    document.getElementById('rtPack').addEventListener('click', () => {
         haptic();
         overlay.remove();
         openOnboardingChat('d_gear');
     });
-
-    document.getElementById('regWeatherBtn')?.addEventListener('click', () => {
+    document.getElementById('rtWeather').addEventListener('click', () => {
         haptic();
-        const dateObj = new Date(hikeDate);
-        const y = dateObj.getFullYear();
-        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-        const d = String(dateObj.getDate()).padStart(2, '0');
-        openLink(`https://www.gismeteo.ru/weather-yalta-4843/`, 'погода из успешной регистрации', false);
+        openLink('https://www.gismeteo.ru/weather-yalta-4843/', 'погода из успешной регистрации', false);
     });
-
-    // после закрытия поздравления – самый понятный момент попросить разрешение на сообщения
-    const closeSuccess = () => {
+    document.getElementById('rtPhone').addEventListener('click', () => {
         haptic();
-        overlay.remove();
-        maybeAskNotifications('booking', 400);
-    };
-    document.getElementById('regSuccessCloseBtn')?.addEventListener('click', closeSuccess);
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) closeSuccess();
+        const phoneChip = document.getElementById('rtPhoneChip');
+        const done = () => { if (phoneChip) phoneChip.textContent = 'скопировано ✓'; };
+        try {
+            navigator.clipboard.writeText(PHONE.replace(/\s/g, '')).then(done, done);
+        } catch (e) { done(); }
+        log('скопировал телефон организатора', state.userCard.status !== 'active', state.user, { hike_date: hikeDate });
     });
+    document.getElementById('rtInvite').addEventListener('click', () => {
+        haptic();
+        const link = `https://t.me/yaltahiking_bot?startapp=hike_${hikeDate}`;
+        const text = `пойдём со мной на «${hikeTitle}» ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}? 🥾`;
+        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
+        log('пригласить друга после записи', state.userCard.status !== 'active', state.user, { hike_date: hikeDate });
+        if (tg?.openTelegramLink) tg.openTelegramLink(shareUrl); else window.open(shareUrl, '_blank');
+    });
+    document.getElementById('rtDone').addEventListener('click', closeSuccess);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeSuccess(); });
+}
+
+function regWeatherIcon(code) {
+    if (code === 0) return '☀️';
+    if (code === 1 || code === 2) return '⛅';
+    if (code === 3) return '☁️';
+    if (code === 45 || code === 48) return '🌫️';
+    if (code >= 51 && code <= 67) return '🌧️';
+    if (code >= 71 && code <= 86) return '❄️';
+    if (code >= 95) return '⛈️';
+    return '🌤️';
 }
 
 // ==================== ВЫБОР ХАЙКА (для гостей без карты) ====================

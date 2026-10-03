@@ -5080,3 +5080,63 @@ body.adm-open { overflow: hidden; }
 
 /* служебные сообщения ленты – в тон приложению, а не жёлтой пилюлей */
 .ef-toast { background: rgba(17, 26, 36, 0.94); color: #fff; border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+
+/* ==================== ЭКРАН ПОСЛЕ ЗАПИСИ: БИЛЕТ ==================== */
+.reg-ticket-overlay {
+    position: fixed; inset: 0; z-index: 2000; overflow-y: auto; overscroll-behavior: contain;
+    padding: 24px 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
+    background: rgba(5, 10, 16, 0.55); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    display: flex; flex-direction: column; align-items: center;
+    opacity: 0; transition: opacity .25s ease;
+}
+.reg-ticket-overlay.is-on { opacity: 1; }
+.reg-ticket {
+    width: 100%; max-width: 420px; margin-top: 46px; /* под кнопками Telegram «Закрыть» и «•••» */
+    filter: drop-shadow(0 0 .6px rgba(255, 255, 255, .5)) drop-shadow(0 18px 30px rgba(0, 0, 0, .45));
+    transform: translateY(16px) scale(.97); transition: transform .4s cubic-bezier(.2, .9, .25, 1.15);
+}
+.reg-ticket-overlay.is-on .reg-ticket { transform: none; }
+.rt-part { background: #111a24; --r: 12px; }
+/* выемки «отрыва» вырезаны маской – сквозь них виден фон */
+.rt-top {
+    border-radius: 26px 26px 0 0;
+    -webkit-mask: radial-gradient(circle var(--r) at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--r) at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat;
+    mask: radial-gradient(circle var(--r) at 0 100%, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--r) at 100% 100%, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+.rt-bot {
+    border-radius: 0 0 26px 26px; border-top: 2px dashed rgba(255, 255, 255, .14); background-clip: padding-box;
+    -webkit-mask: radial-gradient(circle var(--r) at 0 0, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--r) at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat;
+    mask: radial-gradient(circle var(--r) at 0 0, #0000 98%, #000) left / 51% 100% no-repeat, radial-gradient(circle var(--r) at 100% 0, #0000 98%, #000) right / 51% 100% no-repeat;
+}
+.rt-head { display: flex; align-items: center; gap: 14px; padding: 18px 18px 18px; }
+.rt-check {
+    flex: none; width: 54px; height: 54px; border-radius: 50%; background: var(--yellow); color: #000;
+    display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900;
+    box-shadow: 0 0 0 7px rgba(217, 253, 25, .14), 0 0 34px rgba(217, 253, 25, .35);
+    animation: rt-pop .5s cubic-bezier(.2, .9, .25, 1.4) .15s both;
+}
+@keyframes rt-pop { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.rt-head-text { min-width: 0; }
+.rt-title { font-size: 25px; font-weight: 800; letter-spacing: -.01em; color: #fff; }
+.rt-sub { margin-top: 3px; font-size: 13.5px; line-height: 1.35; color: rgba(255, 255, 255, .72); }
+.rt-sub b { color: #fff; font-weight: 700; }
+.rt-list { display: flex; flex-direction: column; gap: 8px; padding: 16px 14px 14px; }
+.rt-row {
+    display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 13px; border-radius: 18px;
+    background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .07);
+    color: #fff; font: inherit; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+button.rt-row:active { background: rgba(255, 255, 255, .11); }
+.rt-n {
+    flex: none; width: 28px; height: 28px; border-radius: 50%; border: 2px solid rgba(217, 253, 25, .5);
+    color: var(--yellow); font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+}
+.rt-n.is-done { background: var(--yellow); border-color: var(--yellow); color: #000; }
+.rt-text { min-width: 0; flex: 1; }
+.rt-text b { display: block; font-size: 15px; font-weight: 700; }
+.rt-text span { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.3; color: rgba(255, 255, 255, .62); }
+.rt-go { flex: none; color: rgba(255, 255, 255, .4); font-size: 22px; line-height: 1; }
+.rt-chip { flex: none; padding: 6px 11px; border-radius: 14px; background: rgba(217, 253, 25, .12); color: var(--yellow); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+.rt-actions { width: 100%; max-width: 420px; display: flex; gap: 10px; margin-top: 16px; }
+.rt-actions .btn { flex: 1; margin: 0; height: 50px; white-space: nowrap; font-size: 15.5px; font-weight: 700; }
+.rt-invite { background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .2); color: #fff; }
