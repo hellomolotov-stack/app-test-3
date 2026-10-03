@@ -1377,7 +1377,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
             ? { type: 'LineString', coordinates: segments[0].map(c => [c[1], c[0]]) }
             : { type: 'MultiLineString', coordinates: segments.map(segment => segment.map(c => [c[1], c[0]])) }
     };
-    el.style.background = '#0A0B09';
+    el.style.backgroundColor = '#0A0B09'; // только цвет: картинка-снимок под картой должна остаться
 
     let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
     for (const c of segments.flat()) { minLat = Math.min(minLat, c[0]); maxLat = Math.max(maxLat, c[0]); minLon = Math.min(minLon, c[1]); maxLon = Math.max(maxLon, c[1]); }
