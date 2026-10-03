@@ -3515,7 +3515,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     `;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-on'));
-    showConfetti();
+    showConfetti({ soft: true });
     haptic();
     tg?.HapticFeedback?.notificationOccurred?.('success');
 

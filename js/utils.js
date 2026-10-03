@@ -85,7 +85,8 @@ export function parseLinks(text, isGuest) {
     });
 }
 
-export function showConfetti() {
+// soft: меньше частиц, сыплются сверху (экран после записи), иначе – взрыв по всему экрану
+export function showConfetti({ soft = false } = {}) {
     const canvas = document.createElement('canvas');
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
@@ -100,8 +101,15 @@ export function showConfetti() {
     canvas.width = width; canvas.height = height;
     const particles = [];
     const colors = ['#D9FD19', '#40a7e3', '#ffffff', '#ff69b4', '#ffa500'];
-    for (let i = 0; i < 80; i++) {
-        particles.push({
+    for (let i = 0; i < (soft ? 34 : 80); i++) {
+        particles.push(soft ? {
+            x: Math.random() * width,
+            y: -Math.random() * height * 0.25,
+            vx: Math.random() * 1.6 - 0.8,
+            vy: Math.random() * 2 + 1.5,
+            size: Math.random() * 4 + 4,
+            color: colors[Math.floor(Math.random() * colors.length)]
+        } : {
             x: Math.random() * width,
             y: Math.random() * height,
             vx: Math.random() * 6 - 3,
@@ -112,10 +120,11 @@ export function showConfetti() {
     }
     let frame = 0;
     function animate() {
-        if (frame > 120) { document.body.removeChild(canvas); return; }
+        if (frame > (soft ? 170 : 120)) { document.body.removeChild(canvas); return; }
         ctx.clearRect(0, 0, width, height);
+        if (soft && frame > 120) ctx.globalAlpha = Math.max(0, 1 - (frame - 120) / 50);
         particles.forEach(p => {
-            p.x += p.vx; p.y += p.vy; p.vy += 0.1;
+            p.x += p.vx; p.y += p.vy; p.vy += soft ? 0.03 : 0.1;
             ctx.fillStyle = p.color;
             ctx.fillRect(p.x, p.y, p.size, p.size);
         });
