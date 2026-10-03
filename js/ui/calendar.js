@@ -343,7 +343,7 @@ function feedNearestCard(h) {
     }
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     // есть трек – живая 3D-карта (крутится пальцами), иначе картинка маршрута
-    const media = getHikeTrack(h)
+    const media = (getHikeTrack(h) || hasFeedMapSnap(h.date))
         ? `<div class="ef-next-map" data-feed-map="${h.date}">${feedDateBadge(h.date)}</div>`
         : `<div class="ef-next-img${h.image ? '' : ' no-img'}"${img}>${feedDateBadge(h.date)}</div>`;
     return `<div class="ef-next${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
@@ -511,26 +511,28 @@ function feedPlaceMap(container, hike) {
     feedMap = null;
     feedMapEl = null;
     feedMapKey = '';
-    if (!slot || !track) return;
-    // жесты на карте – только для карты, слайдер открывают кнопка и текст карточки
-    ['click', 'touchstart', 'pointerdown'].forEach(ev => slot.addEventListener(ev, e => e.stopPropagation()));
-    feedMapEl = slot;
-    feedMapKey = key;
-    // пока грузится живая карта – показываем её снимок с прошлого запуска (без интернета, мгновенно)
-    const snap = readFeedMapSnap(key);
+    // пока грузится живая карта – её снимок с прошлого запуска (мгновенно и без интернета)
+    const snap = slot && hike ? readFeedMapSnap(hike.date) : null;
     if (snap) {
         slot.style.backgroundImage = `url(${snap})`;
         slot.style.backgroundSize = 'cover';
         slot.style.backgroundPosition = 'center';
     }
+    if (!slot || !track) return;
+    // жесты на карте – только для карты, слайдер открывают кнопка и текст карточки
+    ['click', 'touchstart', 'pointerdown'].forEach(ev => slot.addEventListener(ev, e => e.stopPropagation()));
+    feedMapEl = slot;
+    feedMapKey = key;
     ensureMapLibre().then(() => {
         if (feedMapEl !== slot || feedMap) return;
         feedMap = initHikeMap(slot, track, true, true);
-        saveFeedMapSnapWhenReady(feedMap, key);
+        saveFeedMapSnapWhenReady(feedMap, hike.date);
     }).catch(() => {});
 }
 
 const FEED_SNAP_KEY = 'feedMapSnap';
+
+function hasFeedMapSnap(date) { return !!readFeedMapSnap(date); }
 
 function readFeedMapSnap(key) {
     try {
@@ -549,7 +551,13 @@ function saveFeedMapSnapWhenReady(map, key) {
                 const h = Math.round(src.height * w / src.width);
                 const c = document.createElement('canvas');
                 c.width = w; c.height = h;
-                c.getContext('2d').drawImage(src, 0, 0, w, h);
+                const cx = c.getContext('2d');
+                cx.drawImage(src, 0, 0, w, h);
+                // пустой (чёрный) кадр не сохраняем – иначе вместо карты показали бы тёмный прямоугольник
+                const px = cx.getImageData(0, 0, w, h).data;
+                let sum = 0, n = 0;
+                for (let i = 0; i < px.length; i += 4 * 97) { sum += px[i] + px[i + 1] + px[i + 2]; n++; }
+                if (!n || sum / n < 45) return;
                 localStorage.setItem(FEED_SNAP_KEY, JSON.stringify({ key, img: c.toDataURL('image/jpeg', 0.72) }));
             } catch (e) {}
         });
@@ -1337,11 +1345,7 @@ function hideUntilReady(map) {
     let shown = false;
     // плавность включаем только на проявление – иначе новая карта сначала мелькнула бы и погасла
     const show = () => { if (shown) return; shown = true; requestAnimationFrame(() => { canvas.style.transition = 'opacity .6s ease'; canvas.style.opacity = '1'; }); };
-    const fallback = setTimeout(show, 3000);
-    // проявляем, как только загрузился рельеф: снимки дорисуются на глазах, а горы уже на месте
-    map.on('sourcedata', e => {
-        if (!shown && e.sourceId === 'dem' && e.tile && map.isSourceLoaded('dem')) { clearTimeout(fallback); show(); }
-    });
+    const fallback = setTimeout(show, 5000);
     return () => { clearTimeout(fallback); show(); };
 }
 
@@ -1419,7 +1423,9 @@ function initHikeMap(el, track, instant = false, standalone = false) {
         maxBounds: CRIMEA,
         attributionControl: false,
         keyboard: false,
-        doubleClickZoom: false
+        doubleClickZoom: false,
+        // в карточке календаря кадр сохраняем снимком – на iOS без этого он получался чёрным
+        preserveDrawingBuffer: standalone
     });
     if (!standalone) currentHikeMap = map;
     const reveal = hideUntilReady(map);
@@ -1428,8 +1434,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
         map.addSource('dem', {
             type: 'raster-dem',
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-            // в карточке календаря рельеф попроще – меньше загружать, на её размере разницы нет
-            tileSize: 256, encoding: 'terrarium', maxzoom: standalone ? 13 : 15
+            tileSize: 256, encoding: 'terrarium', maxzoom: 15
         });
         map.setTerrain({ source: 'dem', exaggeration: track.exaggeration || 1.8 });
         map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });

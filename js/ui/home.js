@@ -406,7 +406,6 @@ function renderGuestHome() {
             </div>
         </div>
         ` : ''}
-        <div id="intelligentsiaRoutesContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
         <div class="card-container">
@@ -579,7 +578,6 @@ function renderGuestHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
-    renderIntelligentsiaRoutes(document.getElementById('intelligentsiaRoutesContainer'));
     initWeatherBlock();
 
     const goBtn = document.querySelector('.booking-go-btn');
@@ -615,7 +613,6 @@ function renderOwnerHome() {
         </div>
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
-        <div id="intelligentsiaRoutesContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
         ${!isLumenPilotUser(state.user) ? `
@@ -669,7 +666,6 @@ function renderOwnerHome() {
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
-    renderIntelligentsiaRoutes(document.getElementById('intelligentsiaRoutesContainer'));
     initWeatherBlock();
 
     const goBtn = document.querySelector('.booking-go-btn');

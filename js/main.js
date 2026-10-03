@@ -17,7 +17,7 @@ import { mountBotTab } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites, revealAndFlyToFirstRoute } from './ui/intelligentsia-routes.js';
+import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -185,7 +185,6 @@ function setupBottomNav() {
         const JUMP_TARGETS = {
             calendar: () => document.getElementById('calendarContainer'),
             bookings: () => document.getElementById('userBookingsCard'),
-            routes: () => document.getElementById('intelligentsiaRoutesContainer')?.querySelector('.card-container') || document.getElementById('intelligentsiaRoutesContainer'),
             weather: () => document.getElementById('weatherBlock'),
             mastermind: () => document.getElementById('mastermindSummariesCard'),
             metrics: () => document.querySelector('.metrics-header')?.closest('.card-container'),
@@ -407,7 +406,8 @@ function handleDeepLink(startParam) {
             break;
         case 'hike_map':
         case 'routes':
-            setTimeout(() => revealAndFlyToFirstRoute(getCurrentTopOffset()), 500);
+            // блока «карта хайков» на главной больше нет – ведём к календарю с картой ближайшего хайка
+            scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;
         case 'updates':
             scrollToWhenReady(() => document.querySelector('.updates-container'));
