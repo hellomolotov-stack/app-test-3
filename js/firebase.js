@@ -89,7 +89,10 @@ export function subscribeToHikes(callback) {
             cancelled: data.cancelled === true || data.cancelled === 'yes' || data.cancelled === '1',
             city: isYes(data.city),
             book_club: isYes(data.book_club),
-            emoji: data.emoji || ''
+            emoji: data.emoji || '',
+            // маршрут из каталога и GPX-трек, заданные в админке, – для 3D-карты хайка
+            route_id: data.route_id || '',
+            track: data.track || null
         })).sort((a, b) => a.date.localeCompare(b.date));
         callback(list);
     });
