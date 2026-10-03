@@ -2687,8 +2687,8 @@ function updateFloatingSheetButtons() {
     }
 
 
-    // Плашку показываем только когда есть хотя бы одна запись — иначе ничего
-    if (!isSoldOut && bookedCount > 0) {
+    // «уже идут N» показываем от 5 записавшихся: 1–4 человека выглядят как «никто не идёт»
+    if (!isSoldOut && bookedCount >= 5) {
         const MAX_SPOTS = 12;
         const spotsLeft = Math.max(0, MAX_SPOTS - bookedCount);
         const chipRow = document.createElement('div');
@@ -3555,11 +3555,21 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     document.getElementById('rtPack').addEventListener('click', () => {
         haptic();
         overlay.remove();
-        openOnboardingChat('d_gear');
+        openOnboardingChat('pack');
     });
+    // погода – наш блок на главной: закрываем билет и слайдер хайка и прокручиваем к нему
     document.getElementById('rtWeather').addEventListener('click', () => {
         haptic();
-        openLink('https://www.gismeteo.ru/weather-yalta-4843/', 'погода из успешной регистрации', false);
+        log('погода из успешной регистрации', state.userCard.status !== 'active', state.user, { hike_date: hikeDate });
+        overlay.remove();
+        closeBottomSheet();
+        setTimeout(() => {
+            const block = document.getElementById('weatherBlock');
+            if (!block) return;
+            if (block.classList.contains('is-collapsed')) block.querySelector('.blk-toggle')?.click();
+            const top = block.getBoundingClientRect().top + window.scrollY - ((tgw?.contentSafeAreaInset?.top || 0) + 60);
+            window.scrollTo({ top, behavior: 'smooth' });
+        }, 350);
     });
     document.getElementById('rtPhone').addEventListener('click', () => {
         haptic();

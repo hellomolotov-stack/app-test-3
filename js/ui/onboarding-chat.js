@@ -182,6 +182,7 @@ const TEXTS_EXP = {
 // дерево диалога
 // ──────────────────────────────────────────────
 const START_NODES = new Set(['welcome', 'welcome_back', 'member_welcome']);
+const TEXT_PACK = '<b>что взять на хайк</b>\n\n🎒 небольшой рюкзак – чтобы руки были свободны\n💧 вода – 1–1,5 л\n🥪 перекус: бутерброды, орехи, фрукты, шоколад\n👟 кроссовки или ботинки с цепкой подошвой и закрытым носком\n🧥 одежда слоями: футболка и лёгкая кофта или ветровка – на вершине ветрено\n🧢 головной убор и санскрин – солнце в горах сильнее\n🔋 заряженный телефон, лучше с пауэрбанком\n\nв прохладные месяцы добавь тёплый слой и шапку. остальное – по желанию: палки, термос с чаем, коврик посидеть на вершине';
 const BOOK = { label: 'записаться на хайк 🏔', action: 'book' };
 const QUESTION = { label: 'у меня вопрос 💬', next: 'support' };
 
@@ -271,6 +272,8 @@ const FLOW = {
     d_awkward: { msgs: [() => TEXTS_DOUBTS.d_awkward], options: AFTER_DOUBT },
     d_pace: { msgs: [() => TEXTS_DOUBTS.d_pace], options: AFTER_DOUBT },
     d_gear: { msgs: [() => TEXTS_DOUBTS.d_gear], options: AFTER_DOUBT },
+    // «собери рюкзак» с экрана после записи
+    pack: { msgs: [() => TEXT_PACK], options: [{ label: 'как проходит хайк? →', next: 'first_time' }, QUESTION] },
     d_shy: { msgs: [() => TEXTS_DOUBTS.d_shy], options: AFTER_DOUBT },
     d_ordinary: { msgs: [() => TEXTS_DOUBTS.d_ordinary], options: AFTER_DOUBT },
     relieved: {
