@@ -1332,10 +1332,11 @@ export function previewHikeTrack(el, track) {
 // сначала видна плоская подложка, а потом горы «выпрыгивают». До этого – тёмный фон контейнера.
 function hideUntilReady(map) {
     const canvas = map.getCanvas();
+    canvas.style.transition = 'none';
     canvas.style.opacity = '0';
-    canvas.style.transition = 'opacity .6s ease';
     let shown = false;
-    const show = () => { if (shown) return; shown = true; requestAnimationFrame(() => { canvas.style.opacity = '1'; }); };
+    // плавность включаем только на проявление – иначе новая карта сначала мелькнула бы и погасла
+    const show = () => { if (shown) return; shown = true; requestAnimationFrame(() => { canvas.style.transition = 'opacity .6s ease'; canvas.style.opacity = '1'; }); };
     const fallback = setTimeout(show, 3000);
     // проявляем, как только загрузился рельеф: снимки дорисуются на глазах, а горы уже на месте
     map.on('sourcedata', e => {
