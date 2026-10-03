@@ -26,6 +26,34 @@
     <link rel="preload" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" as="script">
     <link rel="preload" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" as="style">
     <link rel="stylesheet" href="style.css?v=20261003ticket">
+    <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
+    <link rel="modulepreload" href="js/config.js">
+    <link rel="modulepreload" href="js/api.js">
+    <link rel="modulepreload" href="js/state.js">
+    <link rel="modulepreload" href="js/utils.js">
+    <link rel="modulepreload" href="js/firebase.js">
+    <link rel="modulepreload" href="js/ui/notify-optin.js">
+    <link rel="modulepreload" href="js/ui/common.js">
+    <link rel="modulepreload" href="js/lumen/config.js">
+    <link rel="modulepreload" href="js/ui/intelligentsia-routes-data.js">
+    <link rel="modulepreload" href="js/ui/intelligentsia-routes-extra-data.js">
+    <link rel="modulepreload" href="js/ui/intelligentsia-routes-catalog.js">
+    <link rel="modulepreload" href="js/ui/intelligentsia-routes.js">
+    <link rel="modulepreload" href="js/ui/personal-routes-map.js">
+    <link rel="modulepreload" href="js/ui/onboarding-chat.js">
+    <link rel="modulepreload" href="js/ui/privileges.js">
+    <link rel="modulepreload" href="js/ui/profiles.js">
+    <link rel="modulepreload" href="js/ui/weather.js">
+    <link rel="modulepreload" href="js/lumen/state.js">
+    <link rel="modulepreload" href="js/ui/lumen.js">
+    <link rel="modulepreload" href="js/ui/home.js">
+    <link rel="modulepreload" href="js/ui/suggest-event.js">
+    <link rel="modulepreload" href="js/ui/calendar.js">
+    <link rel="modulepreload" href="js/ui/admin.js">
+    <link rel="modulepreload" href="js/ui/click-log.js">
+    <link rel="modulepreload" href="js/ui/collapsible.js">
+    <link rel="modulepreload" href="js/ui/bot-nudge.js">
+    <!-- modulepreload:end -->
 </head>
 <body>
     <!-- Верхний плавный блюр -->
@@ -107,6 +135,6 @@
     </div>
 
     <div id="initial-loader" class="initial-loader"></div>
-    <script type="module" src="js/main.js?v=20261003fast2"></script>
+    <script type="module" src="js/main.js?v=20261003fast3"></script>
 </body>
 </html>
