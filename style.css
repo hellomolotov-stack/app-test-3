@@ -5144,3 +5144,5 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 /* строки месяца: вместо второй жёлтой «записаться» */
 .events-feed .ef-near { flex: none; font-size: 12.5px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
 .events-feed .ef-go { flex: none; font-size: 22px; line-height: 1; color: rgba(255, 255, 255, 0.45); padding: 0 2px; }
+/* название в строке месяца – до двух строк, без обрезки «хайк на Деме…» */
+.events-feed .ef-row-title { white-space: normal; overflow: hidden; text-overflow: clip; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.25; }
