@@ -358,7 +358,7 @@ function feedNearestCard(h) {
     </div>`;
 }
 
-function feedRow(h) {
+function feedRow(h, nearestDate = '') {
     const d = feedDate(h.date);
     const today = feedTodayStr();
     const isPast = h.date < today;
@@ -378,7 +378,9 @@ function feedRow(h) {
     let action = '';
     if (!cancelled && isPast && hasReportLink(h)) action = `<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
     else if (!cancelled && !isPast && isTeaser) action = feedNotifyButton(h.date, true);
-    else if (!cancelled && !isPast) action = `<button class="btn btn-yellow ef-book ef-book-sm" data-book="${h.date}">записаться</button>`;
+    // жёлтая «записаться» одна – в карточке ближайшего; в списке строка сама открывает хайк
+    else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">↑ ближайший</span>`;
+    else if (!cancelled && !isPast) action = `<span class="ef-go" aria-hidden="true">›</span>`;
     const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}`;
     const img = h.image && !cancelled ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     return `<div class="ef-row${cancelled ? ' is-off' : ''}${isPast ? '' : ' is-future'}"${isTeaser ? '' : ` data-open="${h.date}"`}>
@@ -435,7 +437,7 @@ function renderEventsFeed(container) {
     const monthName = FEED_MONTHS[Number(feedMonth.slice(5)) - 1];
     const countWord = count % 10 === 1 && count % 100 !== 11 ? 'событие' : (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) ? 'события' : 'событий';
     const listHtml = (future.length || past.length)
-        ? future.map(feedRow).join('') + past.map(feedRow).join('')
+        ? future.map(h => feedRow(h, nearest?.date)).join('') + past.map(h => feedRow(h)).join('')
         : `<div class="ef-row-sub ef-empty-month">${feedMonth >= nowMonth ? 'планируем хайки и события' : 'в этом месяце событий не было'}</div>`;
 
     container.innerHTML = `

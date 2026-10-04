@@ -5140,3 +5140,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .rt-actions { width: 100%; max-width: 420px; display: flex; gap: 10px; margin-top: 16px; }
 .rt-actions .btn { flex: 1; margin: 0; height: 50px; white-space: nowrap; font-size: 15.5px; font-weight: 700; }
 .rt-invite { background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .2); color: #fff; }
+
+/* строки месяца: вместо второй жёлтой «записаться» */
+.events-feed .ef-near { flex: none; font-size: 12.5px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+.events-feed .ef-go { flex: none; font-size: 22px; line-height: 1; color: rgba(255, 255, 255, 0.45); padding: 0 2px; }
