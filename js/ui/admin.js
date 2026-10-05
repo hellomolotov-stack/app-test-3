@@ -659,10 +659,10 @@ function renderNewcomers(body) {
         const name = esc(p.name || 'без имени') + (p.username ? ` <span class="adm-muted">@${esc(p.username)}</span>` : '');
         const n = p.hikes.length;
         const hk = `${n} ${n === 1 ? 'хайк' : n < 5 ? 'хайка' : 'хайков'} · последний ${dateLabel(p.last)}${p.hikes[p.hikes.length - 1].title ? ' – ' + esc(p.hikes[p.hikes.length - 1].title) : ''}`;
-        return `<label class="adm-person${nc.selected.has(p.id) ? ' is-on' : ''}">
+        return `<label class="adm-nc-person${nc.selected.has(p.id) ? ' is-on' : ''}">
             <input type="checkbox" data-id="${esc(p.id)}" ${nc.selected.has(p.id) ? 'checked' : ''}>
-            <div class="adm-person-info"><div class="adm-person-name">${name}</div><div class="adm-person-sub">${hk}</div>
-            <div class="adm-person-badges">${p.ticket ? '<span class="adm-badge">по билету</span>' : ''}${ncOfferBadge(p)}${p.can_message === false ? '<span class="adm-badge is-off">закрыл сообщения от бота</span>' : ''}</div></div>
+            <div class="adm-nc-info"><div class="adm-nc-name">${name}</div><div class="adm-nc-sub">${hk}</div>
+            <div class="adm-nc-badges">${p.ticket ? '<span class="adm-badge">по билету</span>' : ''}${ncOfferBadge(p)}${p.can_message === false ? '<span class="adm-badge is-off">закрыл сообщения от бота</span>' : ''}</div></div>
         </label>`;
     };
     body.innerHTML = `
@@ -672,7 +672,7 @@ function renderNewcomers(body) {
             <button class="adm-chip${nc.filter === 'all' ? ' is-on' : ''}" data-f="all">все, кто ходил · ${all.length}</button>
         </div>
         <div class="adm-row-btns"><button class="adm-ghost" id="ncAll">выбрать всех в списке</button><button class="adm-ghost" id="ncNone">снять выбор</button></div>
-        <div class="adm-people">${list.length ? list.map(row).join('') : '<div class="adm-muted" style="padding:12px 4px">пока никого</div>'}</div>
+        <div class="adm-nc-list">${list.length ? list.map(row).join('') : '<div class="adm-muted" style="padding:12px 4px">пока никого</div>'}</div>
 
         <label class="adm-field"><span>сообщение</span><textarea id="ncText" rows="7">${esc(nc.text)}</textarea></label>
         <div class="adm-hint">[имя] заменится именем. под сообщением – кнопка «посмотреть предложение»</div>
@@ -688,7 +688,7 @@ function renderNewcomers(body) {
     body.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { haptic(); nc.filter = b.dataset.f; render(); }));
     body.querySelector('#ncAll').addEventListener('click', () => { haptic(); list.forEach(p => { if (p.can_message !== false) nc.selected.add(p.id); }); render(); });
     body.querySelector('#ncNone').addEventListener('click', () => { haptic(); nc.selected.clear(); render(); });
-    body.querySelectorAll('.adm-person input').forEach(cb => cb.addEventListener('change', () => {
+    body.querySelectorAll('.adm-nc-person input').forEach(cb => cb.addEventListener('change', () => {
         haptic();
         if (cb.checked) nc.selected.add(cb.dataset.id); else nc.selected.delete(cb.dataset.id);
         render();
