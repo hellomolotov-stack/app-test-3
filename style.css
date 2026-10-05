@@ -5251,11 +5251,11 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .sc-text span { display: block; margin-top: 2px; font-size: 13px; line-height: 1.3; color: rgba(255, 255, 255, .72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sc-text b { white-space: nowrap; }
 /* кнопка как у владельцев карты: прямоугольная, с объёмной тенью */
-.sc-btn.btn { flex: none; width: auto; height: 46px; margin: 0; padding: 0 18px; border-radius: 12px; font-size: 15.5px; font-weight: 700; white-space: nowrap; }
-.sc-btn.is-pulse { animation: sc-pulse 1.4s ease-in-out 3; }
+.sc-btn.btn { flex: none; width: auto; height: 38px; margin: 0; padding: 0 20px; border-radius: 12px; font-size: 15.5px; font-weight: 700; white-space: nowrap; }
+.sc-btn.is-pulse { animation: sc-pulse 3.2s ease-in-out 2; }
 @keyframes sc-pulse {
-    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.10), 0 3px 10px rgba(0,0,0,.22); transform: none; }
-    50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 0 0 6px rgba(217,253,25,.25), 0 0 24px rgba(217,253,25,.55); transform: scale(1.04); }
+    0%, 100% { box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.10), 0 3px 10px rgba(0,0,0,.22), 0 0 0 rgba(217,253,25,0); }
+    50% { box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.10), 0 3px 10px rgba(0,0,0,.22), 0 0 14px rgba(217,253,25,.22); }
 }
 
 /* шторка карты: «уже у 20+ интеллигентов» */
