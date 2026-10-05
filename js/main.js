@@ -14,7 +14,7 @@ import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
 import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js';
-import { mountBotTab } from './ui/bot-nudge.js';
+import { mountBotTab, showBotTabHint } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/onboarding-chat.js';
@@ -456,8 +456,14 @@ function handleDeepLink(startParam) {
             window._deepLinkPageChanged = true;
             renderGift(isGuest);
             break;
-        case 'bot':
+        case 'support':
+            // ответ организаторов в чате поддержки (ссылка из бота «прочитать 💬»)
             setTimeout(() => openOnboardingChat(), 600);
+            break;
+        case 'bot':
+            // старые ссылки из постов («помощник»): раньше сразу открывали чат во весь экран –
+            // люди закрывали его и уходили. Теперь главная и подсказка язычка помощника сбоку.
+            setTimeout(() => { if (!showBotTabHint()) openOnboardingChat(); }, 1500);
             break;
         case 'admin':
             setTimeout(() => openAdmin(), 400);
@@ -534,6 +540,8 @@ function applyOwnerBookings() {
         });
     }
 }
+
+const APP_T0 = Date.now();
 
 async function loadAppData() {
     showAnimatedLoader();
@@ -647,7 +655,14 @@ async function loadAppData() {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
         }
 
-        log('открыл приложение', state.userCard.status !== 'active', state.user);
+        const isGuestNow = state.userCard.status !== 'active';
+        log('открыл приложение', isGuestNow, state.user);
+        // Лист guests хранит только текст действия, поэтому источник и медленную загрузку
+        // пишем отдельными событиями – они попадут в ежечасный отчёт.
+        const src = tg?.initDataUnsafe?.start_param || '';
+        if (src) log(`пришёл по ссылке: ${src.replace(/^(hike|card|paid)_.*/, '$1_<дата>')}`, isGuestNow, state.user);
+        const loadSec = Math.round((Date.now() - APP_T0) / 1000);
+        if (loadSec >= 5) log(`долгая загрузка: ${loadSec >= 20 ? '20+' : loadSec >= 10 ? '10–20' : '5–10'} с`, isGuestNow, state.user);
         saveCachedState();
 
         if (tg) {

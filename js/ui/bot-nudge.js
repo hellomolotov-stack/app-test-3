@@ -195,6 +195,15 @@ export function mountBotTab() {
     setTimeout(() => schedule('returning_guest'), 8000);
 }
 
+// Подсказка язычка без открытия чата (для входа по старой ссылке startapp=bot).
+// false – язычка нет (например, Lumen-пилот), тогда вызывающий откроет чат сам.
+export function showBotTabHint() {
+    if (!wrap || !bubble) return false;
+    // reaction 'bot_link' – в журнале «язычок: реакция bot_link», нажатие откроет чат
+    showBubble('привет 👋 я помощник клуба – отвечу на вопросы про хайки и карту. нажми, чтобы начать', null, 'bot_link');
+    return true;
+}
+
 export function unmountBotTab() {
     cancelPending();
     window.removeEventListener('club:act', onAct);
