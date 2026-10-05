@@ -3,7 +3,7 @@ import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, main
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups } from './firebase.js';
 import { log, logAutoSendClick, markPaymentSeen } from './api.js';
-import { pingAppUser, maybeAskNotifications } from './ui/notify-optin.js';
+import { pingAppUser } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
 import { initClickLog } from './ui/click-log.js';
 import { initSheetDrag } from './ui/sheet-drag.js';
@@ -663,10 +663,10 @@ async function loadAppData() {
         // если ранний рендер не случился (нет кэша и Firebase не успел) — выполняем deep-link сейчас
         ensureDeepLink();
 
-        // отмечаем открытие в app_users и, если человеку ещё нельзя писать, чуть позже
-        // спрашиваем своей карточкой (не системным окном на первом экране)
+        // отмечаем открытие в app_users. Разрешение на сообщения при входе не спрашиваем – это
+        // перебивало первое впечатление (9 из 16 нажимали «не сейчас»). Спрашиваем после
+        // просмотра хайка и после записи (calendar.js).
         pingAppUser();
-        if (!window._deepLinkPageChanged) maybeAskNotifications('home', 6000);
 
         // Если оплата билета была, а возврата по startapp=paid не случилось —
         // предлагаем подтвердить оплату. Ждём, пока отработает deep link.

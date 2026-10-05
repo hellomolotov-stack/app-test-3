@@ -2,7 +2,7 @@
 // партнёры, клуб в цифрах и выбор карты. Открывается кнопкой «узнать» на главной.
 import { state } from '../state.js';
 import { haptic, openLink, tg } from '../utils.js';
-import { log, initPayment, getCardOffer } from '../api.js';
+import { log, initPayment, getCardOffer, paymentErrorText } from '../api.js';
 
 const CARD_IMG = 'assets/card-front.jpg';
 const TICKET_PRICE = 1000;
@@ -176,7 +176,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             console.error('initPayment error:', err);
             buyBtn.textContent = label;
             delete buyBtn.dataset.busy;
-            alert(/предложение/.test(err?.message || '') ? 'Срок спецпредложения закончился – карта доступна по обычной цене.' : 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.');
+            alert(paymentErrorText(err, 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.'));
         }
     });
 

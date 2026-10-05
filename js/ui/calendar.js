@@ -2,7 +2,7 @@
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
-import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist, markPaymentSeen } from '../api.js';
+import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist, markPaymentSeen, paymentErrorText } from '../api.js';
 import {
     getDatabase,
     addParticipant,
@@ -351,7 +351,10 @@ function feedNearestCard(h) {
             <div class="ef-tk-info">
                 <div class="ef-tk-title">${String(h.title).replace(/-/g, '\u2011')}</div>
                 <div class="ef-tk-sub">${sub}</div>
-                <button class="btn btn-yellow ef-tk-go">детали маршрута</button>
+                <div class="ef-tk-foot">
+                    <button class="btn btn-yellow ef-tk-go">детали маршрута</button>
+                    <div class="ef-going ef-tk-going" data-going-for="${h.date}"></div>
+                </div>
             </div>
         </div>
     </div>`;
@@ -2139,6 +2142,8 @@ export function closeBottomSheet() {
         sheetActHike = null;
         const registered = h.registered || state._userRegs?.[h.date] === true || !!state.hikeBookingStatus?.[state.hikesWithTitle.findIndex(x => x.date === h.date)];
         window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_close', date: h.date, ms: Date.now() - h.at, registered } }));
+        // посмотрел хайк и не записался – самое понятное место предложить анонсы маршрутов
+        if (!registered && Date.now() - h.at > 8000) maybeAskNotifications('hike', 800);
     }
     closeParticipantDropdown();
     closeLeaderDropdown();
@@ -3248,7 +3253,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             console.error('initPayment error:', err);
             btn.textContent = origText;
             btn.dataset.processing = 'false';
-            alert('Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.');
+            alert(paymentErrorText(err, 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.'));
         }
     });
 
@@ -3278,7 +3283,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
             console.error('initPayment error:', err);
             btn.textContent = origText;
             btn.dataset.processing = 'false';
-            alert('Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.');
+            alert(paymentErrorText(err, 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.'));
         }
     });
 
@@ -3692,7 +3697,7 @@ async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
     if (sheetActHike) sheetActHike.registered = true;
     window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
 
-    let payUrl = '';
+    let payUrl = '', payErr = null;
     try {
         const data = await initPayment({
             userId: state.user?.id,
@@ -3709,12 +3714,13 @@ async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
             log('билет – сервер не подтвердил счёт', true, state.user, { hike_date: hikeDate });
         }
     } catch (err) {
+        payErr = err;
         console.error('initPayment (ticket) error:', err);
         log('билет – счёт не создан', true, state.user, { hike_date: hikeDate });
     }
 
     if (!payUrl) {
-        alert('Не удалось открыть оплату. Проверь соединение и попробуй ещё раз – или напиши нам в поддержку: @hellointelligent');
+        alert(paymentErrorText(payErr, 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз – или напиши нам в поддержку: @hellointelligent'));
         return;
     }
 
@@ -3731,6 +3737,44 @@ async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
         } catch (e) {}
     }
     openLink(payUrl, 'купить билет на хайк', true);
+    watchTicketReturn(hikeDate);
+}
+
+// Банки (TinkoffPay, SberPay) часто не возвращают в приложение по SuccessURL – человек просто
+// переключается обратно в Telegram. Ловим возврат сами: когда приложение снова на экране, тихо
+// проверяем запись; как только сервер её создал – показываем экран «ты записан».
+let ticketWatch = null;
+function watchTicketReturn(hikeDate) {
+    if (!hikeDate || !state.user?.id) return;
+    if (ticketWatch) ticketWatch.stop();
+    const started = Date.now();
+    let timer = null, busy = false;
+    const check = async () => {
+        if (busy || document.visibilityState !== 'visible') return;
+        if (Date.now() - started > 30 * 60 * 1000 || !readPendingTicket()) return stop();
+        busy = true;
+        try {
+            const regs = await loadUserRegistrations(state.user.id);
+            if (regs?.[hikeDate] === true) {
+                stop();
+                log('вернулся из оплаты сам (без ссылки возврата)', true, state.user, { hike_date: hikeDate });
+                confirmTicketPaymentReturn(hikeDate);
+                return;
+            }
+        } catch (e) { /* сеть – попробуем на следующем тике */ }
+        busy = false;
+    };
+    const onShow = () => { if (document.visibilityState === 'visible') check(); };
+    function stop() {
+        clearInterval(timer);
+        document.removeEventListener('visibilitychange', onShow);
+        window.Telegram?.WebApp?.offEvent?.('activated', onShow);
+        ticketWatch = null;
+    }
+    document.addEventListener('visibilitychange', onShow);
+    window.Telegram?.WebApp?.onEvent?.('activated', onShow);
+    timer = setInterval(check, 5000);
+    ticketWatch = { stop };
 }
 
 // Автоматическая запись срабатывает только при быстром возврате с оплаты.
@@ -3837,6 +3881,7 @@ export function completeTicketRegistration(hikeDate, hikeTitle) {
 // обычно за несколько секунд после оплаты, – ждём её и показываем экран успеха. Клиент сам никого
 // не записывает: иначе любая ручная ссылка вида ?startapp=paid_<дата> давала бы бесплатную запись.
 export async function confirmTicketPaymentReturn(hikeDate) {
+    if (ticketWatch) ticketWatch.stop(); // вернулся по ссылке – автопроверка больше не нужна
     const userId = state.user?.id;
     const index = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
     const title = index >= 0 ? state.hikesWithTitle[index].title : '';
@@ -4005,7 +4050,11 @@ document.addEventListener('click', function(e) {
         const url = dynamicLink.getAttribute('data-url');
         const isGuest = dynamicLink.getAttribute('data-guest') === 'true';
         if (url) {
-            openLink(url, 'ссылка', isGuest);
+            // в журнале – текст ссылки и куда ведёт, а не просто «ссылка»
+            let where = '';
+            try { const u = new URL(url); where = u.hostname.replace(/^www\./, '') + (u.hostname === 't.me' ? u.pathname : ''); } catch (err) { where = url.slice(0, 40); }
+            const text = (dynamicLink.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+            openLink(url, `ссылка: ${text || where}${text ? ` → ${where}` : ''}`, isGuest);
         }
         return;
     }

@@ -141,7 +141,21 @@ export function registerWebAppUser(user) {
         .catch(() => {});
 }
 
+// Без id из Telegram оплату не создаём: по такому счёту деньги придут ни к кому не привязанными
+// (приложение открыто в обычном браузере или Telegram не передал пользователя).
+const NO_USER_TEXT = 'Оплата работает только в приложении внутри Telegram. Открой его через бота @yaltahiking_bot и попробуй ещё раз.';
+
+export function paymentErrorText(err, fallback) {
+    if (err?.code === 'NO_USER') return NO_USER_TEXT;
+    if (/предложение/.test(err?.message || '')) return 'Срок спецпредложения закончился – карта доступна по обычной цене.';
+    return fallback;
+}
+
 export async function initPayment({ userId, firstName, lastName, username, hikeDate, hikeTitle, cardType }) {
+    if (!/^\d+$/.test(String(userId || ''))) {
+        log('оплата без пользователя Telegram – заблокирована', true, null, { card_type: cardType });
+        const e = new Error(NO_USER_TEXT); e.code = 'NO_USER'; throw e;
+    }
     const params = new URLSearchParams({
         action: 'initPayment',
         user_id: String(userId || ''),
