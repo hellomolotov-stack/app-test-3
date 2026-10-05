@@ -25,6 +25,15 @@ function partnersHtml() {
     return `<div class="cs-sec">скидки партнёров · ${list.length} мест</div><div class="cs-parts">${chips}${more}</div>`;
 }
 
+// «уже у 20+ интеллигентов» – с настоящими аватарками участников, если они загружены
+function membersHtml() {
+    const count = state.popupConfig?.membersText || '20+';
+    const faces = Object.values(state.profiles || {}).filter(p => p && p.avatarUrl).slice(0, 4)
+        .map(p => `<img src="${esc(p.avatarUrl)}" alt="" onerror="this.remove()">`).join('');
+    const dots = faces || '<i></i><i></i><i></i>';
+    return `<div class="cs-members"><span class="cs-faces">${dots}</span>уже у ${esc(count)} интеллигентов</div>`;
+}
+
 function statsHtml() {
     const m = state.metrics || {};
     const items = [[m.hikes, 'хайков'], [m.kilometers, 'км вместе'], [m.meetings, 'встреч']].filter(([v]) => v);
@@ -71,6 +80,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     <div class="cs-stage"><div class="cs-card"><img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции"></div></div>
                     <h2>стань своим в клубе</h2>
                     <p>карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше</p>
+                    ${membersHtml()}
                 </div>
 
                 <div class="cs-sec">что внутри</div>

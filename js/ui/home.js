@@ -11,6 +11,7 @@ import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openCardSheet } from './card-sheet.js';
+import { cardScratchHtml, mountCardScratch } from './card-scratch.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
@@ -370,12 +371,10 @@ function renderGuestHome() {
 
     const cardHtml = `
         <div class="card-container" id="cardBlock">
-            <div class="card-image-wrap">
-                <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
-                <div class="card-badge" id="cardBadge">
-                    <span class="card-badge-label">🔒 карта интеллигента</span>
-                    <button class="card-badge-btn" id="cardBadgeBtn">узнать</button>
-                </div>
+            ${cardScratchHtml()}
+            <div class="sc-row">
+                <div class="sc-text"><b>карта интеллигента</b><span>сотри волны – и узнаешь, что внутри</span></div>
+                <button type="button" class="btn btn-yellow sc-btn" id="cardBadgeBtn">узнать</button>
             </div>
         </div>
         ${!isLumenPilotUser(state.user) ? `
@@ -423,11 +422,13 @@ function renderGuestHome() {
     `;
 
     wireSafetyBanner();
-    document.getElementById('guestCardImage')?.addEventListener('click', () => {
-        openCardSheet({ source: 'картинка карты', hikeDate: nextHike?.date, hikeTitle: nextHike?.title });
-    });
-    document.getElementById('cardBadgeBtn')?.addEventListener('click', () => {
+    const cardBtn = document.getElementById('cardBadgeBtn');
+    cardBtn?.addEventListener('click', () => {
         openCardSheet({ source: 'кнопка «узнать»', hikeDate: nextHike?.date, hikeTitle: nextHike?.title });
+    });
+    mountCardScratch(document.getElementById('cardBlock'), {
+        onOpen: () => openCardSheet({ source: 'касание карты', hikeDate: nextHike?.date, hikeTitle: nextHike?.title }),
+        onEnough: () => cardBtn?.classList.add('is-pulse')
     });
 
     // Q&A диалог с кнопками-ответами
