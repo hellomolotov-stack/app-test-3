@@ -1,5 +1,6 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
+import { openCardSheet } from './card-sheet.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist } from '../api.js';
 import {
@@ -2513,15 +2514,15 @@ function updateFloatingSheetButtons() {
                 <div style="font-size: 14px; line-height: 1.4;">
                     <strong style="color: #FFF1B2; font-style: italic; font-weight: 800;">вступить в клуб</strong>
                 </div>
-                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #FFF1B2; color: #000000; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">купить карту</button>
+                <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #FFF1B2; color: #000000; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">узнать о карте</button>
             `;
             const buyBtn = cardsBlock.querySelector('#buyCardFromFloatingBtn');
             if (buyBtn) {
                 buyBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     haptic();
-                    log('купить карту', true, state.user);
-                    showGuestBookingPopup(null, null, null, 'generic');
+                    log('узнать о карте: шторка хайка', true, state.user);
+                    openCardSheet({ source: 'шторка хайка', hikeDate: hike.date, hikeTitle: hike.title });
                 });
             }
             container.appendChild(cardsBlock);
@@ -2902,7 +2903,7 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
                 <div style="color: rgba(255,255,255,0.85); font-size: 15px; line-height: 1.55;">городские события – только для членов клуба<br>оформи карту и приходи</div>
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-                <button id="cityCardBtn" class="btn btn-yellow" style="width:100%; margin:0; background:#41B5ED; color:#fff; font-weight:800;">оформить карту</button>
+                <button id="cityCardBtn" class="btn btn-yellow" style="width:100%; margin:0; background:#41B5ED; color:#fff; font-weight:800;">узнать о карте</button>
                 <button id="cityChatBtn" class="btn btn-outline" style="width:100%; margin:0; color:rgba(255,255,255,0.55); font-size:14px;">познакомиться с клубом</button>
             </div>
         </div>
@@ -2921,8 +2922,8 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
     document.getElementById('cityCardBtn').addEventListener('click', () => {
         haptic();
         closePopup();
-        setTimeout(() => showGuestBookingPopup(hikeDate, hikeTitle, null, 'city'), 200);
-        log('городское событие — оформить карту', true, state.user, { hike_date: hikeDate });
+        setTimeout(() => openCardSheet({ source: 'городское событие', hikeDate, hikeTitle }), 200);
+        log('городское событие — узнать о карте', true, state.user, { hike_date: hikeDate });
     });
 
     document.getElementById('cityChatBtn').addEventListener('click', () => {
@@ -3069,7 +3070,7 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
                 ${!isReturning && !isHikeContext
                     ? `<button class="btn btn-outline" id="pickHikeBtn" style="width: 100%; margin: 0;">выбрать хайк</button>`
                     : ''}
-                <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">${isReturning ? 'хочу карту' : 'вступить в клуб'}</button>
+                <button class="btn btn-yellow" id="joinClubBtn" style="width: 100%; margin: 0;">узнать о карте</button>
             </div>
 
             <div id="clubJoinAccordion" style="display: none; margin-top: 20px;">
@@ -3173,24 +3174,13 @@ export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'h
         }
     });
 
+    // «узнать о карте» – в шторку с анимацией карты (там цены, привилегии и оплата)
     document.getElementById('joinClubBtn').addEventListener('click', (e) => {
         e.preventDefault();
         haptic();
-        const btn = e.currentTarget;
-        const accordion = document.getElementById('clubJoinAccordion');
-        if (!accordion) return;
-        const opening = accordion.style.display === 'none';
-        accordion.style.display = opening ? 'block' : 'none';
-        // при раскрытии гасим акцент кнопки – фокус уходит на «оформить»
-        btn.classList.toggle('btn-yellow', !opening);
-        btn.classList.toggle('btn-outline', opening);
-        if (opening) {
-            const content = overlay.querySelector('.booking-popup-content');
-            if (content) setTimeout(() => {
-                content.scrollTo({ top: accordion.offsetTop - 16, behavior: 'smooth' });
-            }, 60);
-        }
-        log('вступить в клуб', true, state.user);
+        log('узнать о карте: попап', true, state.user, { feature });
+        closePopup();
+        setTimeout(() => openCardSheet({ source: `попап: ${feature}`, hikeDate: hikeDate || '', hikeTitle: hikeTitle || '' }), 200);
     });
 
     // FAQ section toggle
@@ -3906,7 +3896,7 @@ function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">пойти на хайк</div>
             <div class="modal-text" style="text-align:center; margin-top:8px;">можешь купить разовый билет или оформить карту интеллигента, чтобы ходить безлимитно – не только на хайки, но и на события в городе</div>
             <button class="btn btn-outline" id="choiceButBtn" style="width:100%; margin:16px 0 0;">купить билет · 🎟️ 1000 руб.</button>
-            <button class="btn btn-yellow" id="choiceCardBtn" style="width:100%; margin:10px 0 0;">оформить карту</button>
+            <button class="btn btn-yellow" id="choiceCardBtn" style="width:100%; margin:10px 0 0;">узнать о карте</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -3925,8 +3915,8 @@ function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
         haptic();
         handedOff = true;
         overlay.remove();
-        log('оформить карту из короткого баннера', true, state.user, { hike_date: hikeDate });
-        showGuestBookingPopup(hikeDate, hikeTitle, onClose);
+        log('узнать о карте из короткого баннера', true, state.user, { hike_date: hikeDate });
+        openCardSheet({ source: 'короткий баннер', hikeDate, hikeTitle });
     });
 }
 
