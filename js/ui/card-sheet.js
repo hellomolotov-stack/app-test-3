@@ -78,13 +78,15 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             <div class="cs-scroll">
                 <div class="cs-hero">
                     <div class="cs-stage"><div class="cs-card"><img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции"></div></div>
-                    <h2>стань своим в клубе</h2>
+                    <h2>стань интеллигентом</h2>
+                    <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
                     <p>карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше</p>
                     ${membersHtml()}
                 </div>
 
                 <div class="cs-sec">что внутри</div>
                 <div class="cs-ben"><div class="cs-e">🥾</div><div><b>все хайки сезона</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
+                <div class="cs-ben"><div class="cs-e">🤝</div><div><b>свой +1 на хайк</b><span>бери с собой друга, если он ещё ни разу не был с нами</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🥂</div><div><b>клубные события в городе и на море</b><span>вечера, книжный клуб, встречи – только для своих</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🧠</div><div><b>мастермайнды на вершинах</b><span>бронируй свой запрос и получай саммари каждой встречи</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🫆</div><div><b>профили интеллигентов</b><span>заранее узнаешь, кто идёт: профессии, увлечения, с кем обсудить идею</span></div></div>

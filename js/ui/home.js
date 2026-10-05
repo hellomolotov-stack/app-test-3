@@ -373,7 +373,7 @@ function renderGuestHome() {
         <div class="card-container" id="cardBlock">
             ${cardScratchHtml()}
             <div class="sc-row">
-                <div class="sc-text"><b>карта интеллигента</b><span>сотри волны – и узнаешь, что внутри</span></div>
+                <div class="sc-text"><b>карта интеллигента</b><span>что за ней скрывается?</span></div>
                 <button type="button" class="btn btn-yellow sc-btn" id="cardBadgeBtn">узнать</button>
             </div>
         </div>

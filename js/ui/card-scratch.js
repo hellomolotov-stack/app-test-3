@@ -1,5 +1,5 @@
 // js/ui/card-scratch.js – «потри карту» на главной: серые волны лежат на холсте поверх настоящей обложки.
-// При появлении сам прорисовывается мазок пальцем через центр, дальше волны можно стирать.
+// Сначала карта закрыта полностью и по волнам ходит кружок-палец; обложка проступает, только когда человек трёт.
 // Вертикальная прокрутка страницы через карту работает (touch-action: pan-y), стирают движения в стороны.
 import { haptic } from '../utils.js';
 import { state } from '../state.js';
@@ -15,7 +15,6 @@ export function cardScratchHtml() {
             <img class="sc-front" src="${FRONT}" alt="карта члена клуба хайкинг интеллигенции">
             <canvas class="sc-canvas"></canvas>
             <div class="sc-finger" aria-hidden="true"></div>
-            <div class="sc-hint">👆 потри карту</div>
         </div>`;
 }
 
@@ -54,24 +53,6 @@ export function mountCardScratch(root, { onOpen, onEnough } = {}) {
         for (let i = 0; i <= n; i++) dab(x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n, r);
     };
 
-    // первый мазок – через «двигаюсь», но не целиком
-    const autoWipe = () => {
-        const pts = [[0.26, 0.6], [0.38, 0.52], [0.5, 0.55], [0.6, 0.47], [0.72, 0.45]];
-        const r = h * 0.12;
-        let i = 1, t0 = performance.now();
-        const step = now => {
-            if (!ready) return;
-            const k = Math.min(1, (now - t0) / 1100);
-            const upto = 1 + k * (pts.length - 1);
-            while (i <= Math.floor(upto) && i < pts.length) {
-                const [a, b] = [pts[i - 1], pts[i]];
-                stroke(a[0] * w, a[1] * h, b[0] * w, b[1] * h, r);
-                i++;
-            }
-            if (k < 1) requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
-    };
 
     const revealed = () => {
         try {
@@ -122,11 +103,8 @@ export function mountCardScratch(root, { onOpen, onEnough } = {}) {
     grey.onload = () => {
         if (!size()) return;
         ready = true;
-        // мазок прорисовывается, когда карта попала на экран
-        const io = new IntersectionObserver(entries => {
-            if (entries.some(en => en.isIntersecting)) { io.disconnect(); setTimeout(autoWipe, 250); }
-        }, { threshold: 0.5 });
-        io.observe(box);
+        // карта закрыта целиком: открывается только когда человек сам начинает тереть
+        box.classList.add('is-ready');
     };
     grey.src = GREY;
 }
