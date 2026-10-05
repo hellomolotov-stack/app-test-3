@@ -345,7 +345,7 @@ function feedNearestCard(h) {
     // под ней дата · название · круглая кнопка записи
     const d = feedDate(h.date);
     const km = feedKm(h);
-    const sub = [feedWhen(h.date), km ? `${km} км` : '', h.start_time || ''].filter(Boolean).join(' · ');
+    const sub = [feedWhen(h.date), h.start_time || (km ? `${km} км` : '')].filter(Boolean).join(' · ');
     const media = (getHikeTrack(h) || hasFeedMapSnap(h.date))
         ? `<div class="ef-next-map" data-feed-map="${h.date}"></div>`
         : (h.image ? `<div class="ef-next-img"${img}></div>` : '');
