@@ -25,13 +25,13 @@ function partnersHtml() {
     return `<div class="cs-sec">скидки партнёров · ${list.length} мест</div><div class="cs-parts">${chips}${more}</div>`;
 }
 
-// «уже у 20+ членов клуба» – с настоящими аватарками участников, если они загружены
+// «уже у 20+ владельцев карты интеллигента» – с настоящими аватарками участников, если они загружены
 function membersHtml() {
     const count = state.popupConfig?.membersText || '20+';
     const faces = Object.values(state.profiles || {}).filter(p => p && p.avatarUrl).slice(0, 4)
         .map(p => `<img src="${esc(p.avatarUrl)}" alt="" onerror="this.remove()">`).join('');
     const dots = faces || '<i></i><i></i><i></i>';
-    return `<div class="cs-members"><span class="cs-faces">${dots}</span>уже у ${esc(count)} членов клуба</div>`;
+    return `<div class="cs-members"><span class="cs-faces">${dots}</span>уже у ${esc(count)} владельцев карты интеллигента</div>`;
 }
 
 function statsHtml() {

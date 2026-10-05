@@ -1,6 +1,6 @@
 // js/ui/card-scratch.js – «потри карту» на главной: серые волны лежат на холсте поверх настоящей обложки.
 // Сначала карта закрыта полностью и по волнам ходит кружок-палец; обложка проступает, только когда человек трёт.
-// Вертикальная прокрутка страницы через карту работает (touch-action: pan-y), стирают движения в стороны.
+// Пока палец на карте, страница не листается (touch-action: none) – иначе стирать неудобно.
 import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
@@ -69,6 +69,8 @@ export function mountCardScratch(root, { onOpen, onEnough } = {}) {
     let last = null, moved = 0, checkTimer = null;
     const pos = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
     canvas.addEventListener('pointerdown', e => { last = pos(e); moved = 0; });
+    // страховка для вебвью, где touch-action игнорируется
+    canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
     canvas.addEventListener('pointermove', e => {
         if (!last || !ready) return;
         const p = pos(e);
