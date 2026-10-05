@@ -10,6 +10,7 @@ import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from 
 import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage } from './privileges.js';
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
+import { openCardSheet } from './card-sheet.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
@@ -373,7 +374,7 @@ function renderGuestHome() {
                 <img src="https://i.postimg.cc/J0GyF5Nw/fwvsvfw.png" alt="карта заглушка" class="card-image" id="guestCardImage">
                 <div class="card-badge" id="cardBadge">
                     <span class="card-badge-label">🔒 карта интеллигента</span>
-                    <button class="card-badge-btn" id="cardBadgeBtn">оформить</button>
+                    <button class="card-badge-btn" id="cardBadgeBtn">узнать</button>
                 </div>
             </div>
         </div>
@@ -423,14 +424,10 @@ function renderGuestHome() {
 
     wireSafetyBanner();
     document.getElementById('guestCardImage')?.addEventListener('click', () => {
-        haptic();
-        log('оформить карту с заглушки', true, state.user);
-        showGuestBookingPopup(nextHike?.date, nextHike?.title);
+        openCardSheet({ source: 'картинка карты', hikeDate: nextHike?.date, hikeTitle: nextHike?.title });
     });
     document.getElementById('cardBadgeBtn')?.addEventListener('click', () => {
-        haptic();
-        log('оформить карту', true, state.user);
-        showGuestBookingPopup(nextHike?.date, nextHike?.title);
+        openCardSheet({ source: 'кнопка «узнать»', hikeDate: nextHike?.date, hikeTitle: nextHike?.title });
     });
 
     // Q&A диалог с кнопками-ответами
