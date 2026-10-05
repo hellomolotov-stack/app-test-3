@@ -5194,12 +5194,6 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .cs-ben span { display: block; margin-top: 2px; font-size: 13px; line-height: 1.35; color: rgba(255, 255, 255, .66); }
 .cs-ben em { font-style: normal; font-weight: 700; color: var(--yellow); }
 
-.cs-payoff { border-radius: 20px; padding: 14px; background: rgba(217, 253, 25, .08); border: 1px solid rgba(217, 253, 25, .25); color: #fff; }
-.cs-payoff b { font-size: 16px; }
-.cs-payoff p { margin-top: 4px; font-size: 13px; color: rgba(255, 255, 255, .72); }
-.cs-boots { display: flex; gap: 6px; margin-top: 12px; }
-.cs-boots i { flex: 1; height: 34px; border-radius: 10px; background: rgba(255, 255, 255, .08); display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 14px; color: #fff; }
-.cs-boots i.on { background: var(--yellow); color: #000; font-weight: 800; font-size: 12px; }
 
 .cs-parts { display: flex; flex-wrap: wrap; gap: 8px; }
 .cs-parts span { padding: 8px 11px; border-radius: 14px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .08); font-size: 12.5px; font-weight: 600; color: #fff; }

@@ -22,16 +22,16 @@ function partnersHtml() {
     const shortName = t => String(t).replace(/^(магазин оригинальной обуви|экипировочный центр|технологичная хайкинг-одежда|кофейня|тематическое кафе|косметика и парфюмерия|конный клуб|маникюрный салон|барбершоп)\s+/i, '');
     const chips = list.slice(0, 9).map(p => `<span>${esc(shortName(p.title))}${perk(p.description) ? ` <b>${esc(perk(p.description))}</b>` : ''}</span>`).join('');
     const more = list.length > 9 ? `<span>+${list.length - 9}</span>` : '';
-    return `<div class="cs-sec">скидки партнёров · ${list.length} мест</div><div class="cs-parts">${chips}${more}</div>`;
+    return `<div class="cs-sec">скидки партнёров в Ялте и онлайне</div><div class="cs-parts">${chips}${more}</div>`;
 }
 
-// «уже у 20+ владельцев карты интеллигента» – с настоящими аватарками участников, если они загружены
+// «уже 20+ владельцев карты» – с настоящими аватарками участников, если они загружены
 function membersHtml() {
     const count = state.popupConfig?.membersText || '20+';
     const faces = Object.values(state.profiles || {}).filter(p => p && p.avatarUrl).slice(0, 4)
         .map(p => `<img src="${esc(p.avatarUrl)}" alt="" onerror="this.remove()">`).join('');
     const dots = faces || '<i></i><i></i><i></i>';
-    return `<div class="cs-members"><span class="cs-faces">${dots}</span>уже у ${esc(count)} владельцев карты интеллигента</div>`;
+    return `<div class="cs-members"><span class="cs-faces">${dots}</span>уже ${esc(count)} владельцев карты</div>`;
 }
 
 function statsHtml() {
@@ -68,7 +68,6 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     document.querySelector('.cs-overlay')?.remove();
 
     const season = state.popupConfig?.seasonCardPrice || 5500;
-    const payoffHikes = Math.ceil(season / TICKET_PRICE);
     const isReturning = Object.keys(state._userRegs || {}).some(d => state._userRegs[d] === true && new Date(d) < new Date(new Date().toDateString()));
 
     const overlay = document.createElement('div');
@@ -92,13 +91,6 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 <div class="cs-ben"><div class="cs-e">🧠</div><div><b>мастермайнды на вершинах</b><span>бронируй свой запрос и получай саммари каждой встречи</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🫆</div><div><b>профили интеллигентов</b><span>заранее узнаешь, кто идёт: профессии, увлечения, с кем обсудить идею</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🛡️</div><div><b>свободный интернет</b><span>наше приложение, чтобы телеграм работал как раньше</span></div></div>
-
-                <div class="cs-sec">окупается за ${payoffHikes} хайков</div>
-                <div class="cs-payoff">
-                    <b>${rub(season)} = ${String(season / TICKET_PRICE).replace('.', ',')} разовых билета</b>
-                    <p>дальше каждый хайк – уже без оплаты, а событий и скидок партнёров по билету нет вовсе</p>
-                    <div class="cs-boots">${Array.from({ length: payoffHikes - 1 }, (_, i) => `<i>${i + 1}</i>`).join('')}<i class="on">${payoffHikes}+</i></div>
-                </div>
 
                 ${partnersHtml()}
                 ${statsHtml()}
