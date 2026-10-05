@@ -179,6 +179,13 @@ export async function getCardOffer() {
     } catch (e) { return { active: false }; }
 }
 
+// Человек увидел экран «оплата прошла / ты записан» – сервер не станет напоминать в боте (sendPaidReminders).
+export function markPaymentSeen() {
+    const initData = window.Telegram?.WebApp?.initData || '';
+    if (!initData || !REGISTRATION_API_URL) return;
+    fetch(REGISTRATION_API_URL, { method: 'POST', keepalive: true, body: new URLSearchParams({ action: 'paymentSeen', init_data: initData }) }).catch(() => {});
+}
+
 export function sendBookingNotification(hikeDate, hikeTitle, user) {
     if (!user?.id || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams({

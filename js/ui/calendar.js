@@ -2,7 +2,7 @@
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
-import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist } from '../api.js';
+import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist, markPaymentSeen } from '../api.js';
 import {
     getDatabase,
     addParticipant,
@@ -3861,6 +3861,7 @@ export async function confirmTicketPaymentReturn(hikeDate) {
         const cal = document.getElementById('calendarContainer');
         if (cal) renderCalendar(cal);
         log('оплата билета подтверждена сервером', true, state.user, { hike_date: hikeDate });
+        markPaymentSeen();
         showRegistrationSuccess(hikeDate, title);
         return;
     }

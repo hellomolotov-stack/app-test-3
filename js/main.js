@@ -2,7 +2,7 @@
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups } from './firebase.js';
-import { log, logAutoSendClick } from './api.js';
+import { log, logAutoSendClick, markPaymentSeen } from './api.js';
 import { pingAppUser, maybeAskNotifications } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
 import { initClickLog } from './ui/click-log.js';
@@ -483,6 +483,7 @@ function handleDeepLink(startParam) {
                     return;
                 }
 
+                markPaymentSeen();
                 if (celebData?.hikeDate) {
                     showRegistrationSuccess(celebData.hikeDate, celebData.hikeTitle);
                 } else {
