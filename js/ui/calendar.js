@@ -333,7 +333,6 @@ function feedNearestCard(h) {
     if (!h) {
         return `<div class="ef-next ef-next-empty"><div class="ef-next-title">⛰️ следующий хайк скоро в календаре</div><div class="ef-next-sub">обычно анонсируем за неделю</div></div>`;
     }
-    const button = `<button class="btn btn-yellow ef-book" data-book="${h.date}">записаться</button>`;
     if (!h.title || !h.title.trim()) {
         const waiting = !!feedWaitlist()[h.date];
         const note = waiting
@@ -342,18 +341,23 @@ function feedNearestCard(h) {
         return `<div class="ef-next ef-next-teaser${waiting ? ' is-waiting' : ''}"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}${note}</div>`;
     }
     const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
-    // есть трек – живая 3D-карта (крутится пальцами), иначе картинка маршрута
+    // карточка-билет: сверху живая 3D-карта (или картинка маршрута) без плашки даты,
+    // под ней дата · название · круглая кнопка записи
+    const d = feedDate(h.date);
+    const km = feedKm(h);
+    const sub = [feedWhen(h.date), km ? `${km} км` : '', h.start_time || ''].filter(Boolean).join(' · ');
     const media = (getHikeTrack(h) || hasFeedMapSnap(h.date))
-        ? `<div class="ef-next-map" data-feed-map="${h.date}">${feedDateBadge(h.date)}</div>`
-        : `<div class="ef-next-img${h.image ? '' : ' no-img'}"${img}>${feedDateBadge(h.date)}</div>`;
-    return `<div class="ef-next${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
+        ? `<div class="ef-next-map" data-feed-map="${h.date}"></div>`
+        : (h.image ? `<div class="ef-next-img"${img}></div>` : '');
+    return `<div class="ef-next ef-ticket${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
         ${media}
-        <div class="ef-next-body ef-next-head">
-            <div class="ef-next-info">
-                <div class="ef-next-title">${String(h.title).replace(/-/g, '\u2011')}</div>
-                <div class="ef-next-when">${feedWhen(h.date)}</div>
+        <div class="ef-tk-row">
+            <div class="ef-tk-date"><b>${d.getDate()}</b><small>${FEED_MONTHS_SHORT[d.getMonth()]}, ${FEED_WD[d.getDay()]}</small></div>
+            <div class="ef-tk-info">
+                <div class="ef-tk-title">${String(h.title).replace(/-/g, '\u2011')}</div>
+                <div class="ef-tk-sub">${sub}</div>
             </div>
-            ${button}
+            <button class="btn btn-yellow ef-tk-go" data-book="${h.date}" aria-label="записаться"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         </div>
     </div>`;
 }
