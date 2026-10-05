@@ -5154,7 +5154,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 }
 .cs-overlay.is-on { background: rgba(0, 0, 0, .55); }
 .cs-sheet {
-    position: relative; height: calc(100% - 56px - var(--tg-safe-top, 0px)); max-height: 92vh;
+    position: relative; height: calc(100% - 40px);
     border-radius: 28px 28px 0 0; background: #0f161e; border-top: 1px solid rgba(255, 255, 255, .14);
     display: flex; flex-direction: column; overflow: hidden;
     transform: translateY(100%); transition: transform .38s cubic-bezier(.2, .9, .25, 1);

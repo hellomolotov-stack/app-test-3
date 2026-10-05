@@ -112,6 +112,10 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 ${isReturning ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
             </div>
         </div>`;
+    // верх шторки – ниже кнопок Telegram «Закрыть» и «•••» (в полноэкранном режиме они поверх приложения)
+    const tgw = window.Telegram?.WebApp;
+    const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    overlay.querySelector('.cs-sheet').style.height = `calc(100% - ${inset ? inset + 14 : 40}px)`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
