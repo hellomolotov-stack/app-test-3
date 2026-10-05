@@ -168,6 +168,17 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
     }
 }
 
+// Личное спецпредложение карты (после хайка по билету): сервер сверяет id по подписи Telegram.
+export async function getCardOffer() {
+    const initData = window.Telegram?.WebApp?.initData || '';
+    if (!initData || !REGISTRATION_API_URL) return { active: false };
+    try {
+        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: new URLSearchParams({ action: 'cardOffer', init_data: initData }) });
+        const data = JSON.parse(await resp.text());
+        return data.status === 'ok' ? data : { active: false };
+    } catch (e) { return { active: false }; }
+}
+
 export function sendBookingNotification(hikeDate, hikeTitle, user) {
     if (!user?.id || !REGISTRATION_API_URL) return;
     const params = new URLSearchParams({

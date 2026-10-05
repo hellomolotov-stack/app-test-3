@@ -114,7 +114,7 @@ function allHikes() {
 // ---------- каркас ----------
 function render() {
     if (!root) return;
-    const tabs = [['hikes', '🏔 хайки'], ['broadcast', '📨 рассылка']];
+    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['broadcast', '📨 рассылка']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -131,6 +131,7 @@ function render() {
     const body = root.querySelector('.adm-body');
     if (view.sub === 'edit') renderEditor(body);
     else if (view.tab === 'broadcast') renderBroadcast(body);
+    else if (view.tab === 'newcomers') renderNewcomers(body);
     else renderHikeList(body);
     root.scrollTop = 0;
 }
@@ -601,6 +602,122 @@ export function parseGpx(text) {
         track: { loop: true, closed, coords, km, gain, src: 'gpx' },
         stats: { km, gain, points: coords.length, raw: raw.length }
     };
+}
+
+// ---------- новички: спецпредложение карты ----------
+// Кто ходил с нами и без карты интеллигента. По умолчанию – пришедшие по билету; можно выбрать любых вручную.
+// Каждому, кому дошло сообщение, сервер открывает личное предложение: карта за 5000 ₽ на 3 дня.
+const OFFER_TEXT_DEFAULT = '[имя], спасибо за хайк вместе 🤍\n\nдля тех, кто уже ходил с клубом, карта интеллигента следующие три дня стоит 5 000 ₽ вместо 5 500 – бессрочная, со всеми хайками сезона и событиями для своих\n\nподробности – по кнопке ниже';
+let nc = null;
+
+function ncAgo(ts) {
+    const h = Math.floor((Date.now() / 1000 - ts) / 3600);
+    return h < 24 ? `${Math.max(1, h)} ч назад` : `${Math.floor(h / 24)} дн. назад`;
+}
+
+function ncOfferBadge(p) {
+    const o = p.offer;
+    if (!o || !o.sent_at) return '';
+    if (o.used_at) return '<span class="adm-badge is-ok">купил по предложению</span>';
+    if (o.expires_at * 1000 > Date.now()) return `<span class="adm-badge is-on">предложение отправлено ${ncAgo(o.sent_at)}</span>`;
+    return `<span class="adm-badge">предложение истекло</span>`;
+}
+
+async function loadNewcomers(force = false) {
+    if (nc && nc.people && !force) return;
+    nc = nc || { filter: 'ticket', selected: new Set(), text: OFFER_TEXT_DEFAULT, people: null };
+    nc.people = null;
+    nc.error = '';
+    try {
+        const res = await adminCall('adminNewcomers');
+        nc.people = res.people || [];
+        nc.price = res.price; nc.days = res.days;
+        // по умолчанию отмечены пришедшие по билету, кому предложение ещё не отправляли
+        nc.selected = new Set(nc.people.filter(p => p.ticket && !p.offer && p.can_message !== false).map(p => p.id));
+    } catch (e) {
+        nc.error = e.message;
+    }
+    if (root && view.tab === 'newcomers') render();
+}
+
+function renderNewcomers(body) {
+    if (!nc || (!nc.people && !nc.error)) {
+        body.innerHTML = '<div class="adm-muted" style="padding:20px 4px">собираю тех, кто ходил с нами…</div>';
+        if (!nc || !nc.loading) { nc = nc || { filter: 'ticket', selected: new Set(), text: OFFER_TEXT_DEFAULT }; nc.loading = true; loadNewcomers(true).finally(() => { if (nc) nc.loading = false; }); }
+        return;
+    }
+    if (nc.error) {
+        body.innerHTML = `<div class="adm-muted" style="padding:20px 4px">не получилось загрузить: ${esc(nc.error)}</div><button class="adm-ghost adm-wide" id="ncRetry">ещё раз</button>`;
+        body.querySelector('#ncRetry').addEventListener('click', () => { nc.error = ''; nc.people = null; render(); });
+        return;
+    }
+    const all = nc.people;
+    const ticket = all.filter(p => p.ticket);
+    const list = nc.filter === 'ticket' ? ticket : all;
+    const chosen = all.filter(p => nc.selected.has(p.id));
+    const row = p => {
+        const name = esc(p.name || 'без имени') + (p.username ? ` <span class="adm-muted">@${esc(p.username)}</span>` : '');
+        const n = p.hikes.length;
+        const hk = `${n} ${n === 1 ? 'хайк' : n < 5 ? 'хайка' : 'хайков'} · последний ${dateLabel(p.last)}${p.hikes[p.hikes.length - 1].title ? ' – ' + esc(p.hikes[p.hikes.length - 1].title) : ''}`;
+        return `<label class="adm-person${nc.selected.has(p.id) ? ' is-on' : ''}">
+            <input type="checkbox" data-id="${esc(p.id)}" ${nc.selected.has(p.id) ? 'checked' : ''}>
+            <div class="adm-person-info"><div class="adm-person-name">${name}</div><div class="adm-person-sub">${hk}</div>
+            <div class="adm-person-badges">${p.ticket ? '<span class="adm-badge">по билету</span>' : ''}${ncOfferBadge(p)}${p.can_message === false ? '<span class="adm-badge is-off">закрыл сообщения от бота</span>' : ''}</div></div>
+        </label>`;
+    };
+    body.innerHTML = `
+        <div class="adm-hint" style="margin-top:0">ходили с нами, но без карты интеллигента. выбранным уйдёт сообщение с кнопкой – откроется карта по спецпредложению: <b>${(nc.price || 5000).toLocaleString('ru-RU')} ₽ вместо 5 500</b>, действует ${nc.days || 3} дня с отправки</div>
+        <div class="adm-chips">
+            <button class="adm-chip${nc.filter === 'ticket' ? ' is-on' : ''}" data-f="ticket">по билету · ${ticket.length}</button>
+            <button class="adm-chip${nc.filter === 'all' ? ' is-on' : ''}" data-f="all">все, кто ходил · ${all.length}</button>
+        </div>
+        <div class="adm-row-btns"><button class="adm-ghost" id="ncAll">выбрать всех в списке</button><button class="adm-ghost" id="ncNone">снять выбор</button></div>
+        <div class="adm-people">${list.length ? list.map(row).join('') : '<div class="adm-muted" style="padding:12px 4px">пока никого</div>'}</div>
+
+        <label class="adm-field"><span>сообщение</span><textarea id="ncText" rows="7">${esc(nc.text)}</textarea></label>
+        <div class="adm-hint">[имя] заменится именем. под сообщением – кнопка «посмотреть предложение»</div>
+        <div class="adm-label">так увидят</div>
+        <div class="adm-preview" id="ncPreview"></div>
+        <button class="btn btn-yellow adm-primary" id="ncSend" ${chosen.length ? '' : 'disabled'}>${chosen.length ? `отправить предложение · ${chosen.length} чел.` : 'выбери, кому отправить'}</button>`;
+
+    const preview = () => {
+        const el = body.querySelector('#ncPreview');
+        const name = (chosen[0]?.name || state.user?.first_name || 'друг').split(' ')[0];
+        el.innerHTML = `<div class="adm-bubble">${esc(nc.text.replace(/\[имя\]/gi, name)).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть предложение</div>`;
+    };
+    body.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { haptic(); nc.filter = b.dataset.f; render(); }));
+    body.querySelector('#ncAll').addEventListener('click', () => { haptic(); list.forEach(p => { if (p.can_message !== false) nc.selected.add(p.id); }); render(); });
+    body.querySelector('#ncNone').addEventListener('click', () => { haptic(); nc.selected.clear(); render(); });
+    body.querySelectorAll('.adm-person input').forEach(cb => cb.addEventListener('change', () => {
+        haptic();
+        if (cb.checked) nc.selected.add(cb.dataset.id); else nc.selected.delete(cb.dataset.id);
+        render();
+    }));
+    body.querySelector('#ncText').addEventListener('input', e => { nc.text = e.target.value; preview(); });
+    body.querySelector('#ncSend').addEventListener('click', () => sendCardOffer(chosen));
+    preview();
+}
+
+async function sendCardOffer(chosen) {
+    if (!chosen.length) return;
+    const ok = await new Promise(res => {
+        const q = `отправить спецпредложение ${chosen.length} чел.?`;
+        if (tg?.showConfirm) { try { tg.showConfirm(q, r => res(!!r)); return; } catch (e) {} }
+        res(window.confirm(q));
+    });
+    if (!ok) return;
+    const btn = root?.querySelector('#ncSend');
+    if (btn) { btn.disabled = true; btn.textContent = 'отправляю…'; }
+    try {
+        const names = {};
+        chosen.forEach(p => { names[p.id] = p.name || ''; });
+        const res = await adminCall('adminSendCardOffer', { user_ids: JSON.stringify(chosen.map(p => p.id)), names: JSON.stringify(names), text: nc.text });
+        toast(`отправлено: ${res.sent}${res.failed ? ` · не дошло: ${res.failed}` : ''}`);
+        await loadNewcomers(true);
+    } catch (e) {
+        toast(e.message, true);
+        if (btn) { btn.disabled = false; btn.textContent = `отправить предложение · ${chosen.length} чел.`; }
+    }
 }
 
 // ---------- рассылка ----------

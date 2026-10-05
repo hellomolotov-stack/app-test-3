@@ -401,6 +401,11 @@ function handleDeepLink(startParam) {
     }
     const isGuest = state.userCard.status !== 'active';
     switch (startParam) {
+        case 'card_offer':
+            // из рассылки «новичкам после хайка»: сразу шторка карты со спецпредложением
+            log('открыл спецпредложение карты', true, state.user);
+            setTimeout(() => import('./ui/card-sheet.js').then(m => m.openCardSheet({ source: 'рассылка' })), 600);
+            break;
         case 'calendar':
             scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;

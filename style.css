@@ -5274,3 +5274,31 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .cs-faces i:nth-child(3) { background: linear-gradient(135deg, #9ad, #468); }
 
 .cs-club { margin-top: 4px; font-size: 15px; font-weight: 700; color: var(--yellow); }
+
+/* ==================== АДМИНКА: НОВИЧКИ ==================== */
+.adm-row-btns { display: flex; gap: 8px; margin: 4px 0 10px; }
+.adm-row-btns .adm-ghost { flex: 1; }
+.adm-people { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.adm-person { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 14px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .08); cursor: pointer; }
+.adm-person.is-on { border-color: rgba(217, 253, 25, .45); background: rgba(217, 253, 25, .06); }
+.adm-person input { flex: none; width: 20px; height: 20px; margin-top: 2px; accent-color: #D9FD19; }
+.adm-person-info { min-width: 0; flex: 1; }
+.adm-person-name { font-size: 15px; font-weight: 700; color: #fff; }
+.adm-person-sub { margin-top: 2px; font-size: 12.5px; line-height: 1.35; color: rgba(255, 255, 255, .62); }
+.adm-person-badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.adm-badge { padding: 3px 8px; border-radius: 8px; background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .75); font-size: 11.5px; font-weight: 600; }
+.adm-badge.is-on { background: rgba(217, 253, 25, .14); color: #D9FD19; }
+.adm-badge.is-ok { background: rgba(80, 200, 120, .16); color: #7ee2a0; }
+.adm-badge.is-off { background: rgba(255, 90, 90, .14); color: #ff9a9a; }
+.adm-primary[disabled] { opacity: .45; }
+
+/* шторка карты: личное спецпредложение */
+.cs-offer { margin: 18px auto 0; max-width: 360px; padding: 14px 16px; border-radius: 20px; background: linear-gradient(135deg, rgba(217, 253, 25, .16), rgba(217, 253, 25, .05)); border: 1px solid rgba(217, 253, 25, .45); text-align: center; }
+.cs-offer-tag { font-size: 13px; font-weight: 800; color: var(--yellow); }
+.cs-offer-price { margin-top: 6px; color: #fff; }
+.cs-offer-price b { font-size: 28px; font-weight: 800; }
+.cs-offer-price s { margin-left: 6px; font-size: 15px; color: rgba(255, 255, 255, .45); }
+.cs-offer-sub { margin-top: 2px; font-size: 13px; color: rgba(255, 255, 255, .72); }
+.cs-offer-time { display: inline-block; margin-top: 10px; padding: 5px 12px; border-radius: 12px; background: rgba(0, 0, 0, .3); font-size: 12.5px; font-weight: 600; color: rgba(255, 255, 255, .85); }
+.cs-offer-time span { color: var(--yellow); font-weight: 800; }
+.cs-plans.is-offer { grid-template-columns: 1fr; }

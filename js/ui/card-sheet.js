@@ -2,7 +2,7 @@
 // партнёры, клуб в цифрах и выбор карты. Открывается кнопкой «узнать» на главной.
 import { state } from '../state.js';
 import { haptic, openLink, tg } from '../utils.js';
-import { log, initPayment } from '../api.js';
+import { log, initPayment, getCardOffer } from '../api.js';
 
 const CARD_IMG = 'assets/card-front.jpg';
 const TICKET_PRICE = 1000;
@@ -62,6 +62,7 @@ function wireTilt(stage, card) {
 }
 
 export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '' } = {}) {
+    let offerTimer = null;
     haptic();
     log('карта: что внутри', true, state.user, { source });
     document.querySelector('.cs-overlay')?.remove();
@@ -134,6 +135,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     wireTilt(overlay.querySelector('.cs-stage'), overlay.querySelector('.cs-card'));
 
     const close = () => {
+        clearInterval(offerTimer);
         overlay.classList.remove('is-on');
         document.body.style.overflow = '';
         setTimeout(() => overlay.remove(), 300);
@@ -170,18 +172,51 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 firstName: state.user?.first_name,
                 lastName: state.user?.last_name,
                 username: state.user?.username,
-                hikeDate, hikeTitle, cardType: 'season'
+                hikeDate, hikeTitle, cardType: plan === 'offer' ? 'offer' : 'season'
             });
             localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
             close();
-            openLink(url, plan === 'permanent' ? 'оплата бессрочной карты' : 'оплата сезонной карты', true);
+            openLink(url, plan === 'offer' ? 'оплата карты по спецпредложению' : (plan === 'permanent' ? 'оплата бессрочной карты' : 'оплата сезонной карты'), true);
         } catch (err) {
             console.error('initPayment error:', err);
             buyBtn.textContent = label;
             delete buyBtn.dataset.busy;
-            alert('Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.');
+            alert(/предложение/.test(err?.message || '') ? 'Срок спецпредложения закончился – карта доступна по обычной цене.' : 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.');
         }
     });
+
+    // личное спецпредложение: показываем, только если сервер подтвердил его для этого человека
+    if (state.userCard?.status !== 'active') {
+        getCardOffer().then(offer => {
+            if (!offer?.active || !document.body.contains(overlay)) return;
+            const price = offer.price || 5000, full = offer.full_price || 5500;
+            const left = () => {
+                const ms = offer.expires_at * 1000 - Date.now();
+                if (ms <= 0) return null;
+                const m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+                return d ? `${d} дн. ${h} ч` : (h ? `${h} ч ${m % 60} мин` : `${m % 60} мин`);
+            };
+            if (!left()) return;
+            log('карта: показали спецпредложение', true, state.user, { source });
+            overlay.querySelector('.cs-members')?.insertAdjacentHTML('afterend', `
+                <div class="cs-offer">
+                    <div class="cs-offer-tag">🎁 спецпредложение для тебя</div>
+                    <div class="cs-offer-price"><b>${rub(price)}</b> <s>${rub(full)}</s></div>
+                    <div class="cs-offer-sub">бессрочная карта для тех, кто уже ходил с нами</div>
+                    <div class="cs-offer-time">осталось <span id="csOfferLeft">${left()}</span></div>
+                </div>`);
+            const plans = overlay.querySelector('.cs-plans');
+            if (plans) plans.outerHTML = `<div class="cs-plans is-offer"><div class="cs-plan is-on"><span class="cs-hit">−${rub(full - price)}</span><small>бессрочная · спецпредложение</small><b><s>${rub(full)}</s> ${rub(price)}</b><span>действует ещё <span class="cs-left2">${left()}</span></span></div></div>`;
+            overlay.querySelector('.cs-note')?.remove();
+            plan = 'offer';
+            buyBtn.textContent = `оформить за ${rub(price)}`;
+            offerTimer = setInterval(() => {
+                const l = left();
+                if (!l) { clearInterval(offerTimer); return; }
+                overlay.querySelectorAll('#csOfferLeft, .cs-left2').forEach(el => { el.textContent = l; });
+            }, 30000);
+        });
+    }
 
     overlay.querySelector('#csTicket')?.addEventListener('click', async () => {
         haptic();
