@@ -126,8 +126,13 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     requestAnimationFrame(() => overlay.classList.add('is-on'));
     wireTilt(overlay.querySelector('.cs-stage'), overlay.querySelector('.cs-card'));
 
+    const act = (type, d = {}) => window.dispatchEvent(new CustomEvent('club:act', { detail: { type, ...d } }));
+    const openedAt = Date.now();
+    let bought = false;
+    act('card_sheet_open');
     const close = () => {
         clearInterval(offerTimer);
+        act('card_sheet_close', { bought, ms: Date.now() - openedAt });
         overlay.classList.remove('is-on');
         document.body.style.overflow = '';
         setTimeout(() => overlay.remove(), 300);
@@ -149,6 +154,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     buyBtn.addEventListener('click', async () => {
         if (buyBtn.dataset.busy) return;
         buyBtn.dataset.busy = '1';
+        bought = true;
+        act('card_buy');
         haptic();
         const label = buyBtn.textContent;
         buyBtn.textContent = 'открываем оплату…';

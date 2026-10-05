@@ -428,7 +428,10 @@ function renderGuestHome() {
     });
     mountCardScratch(document.getElementById('cardBlock'), {
         onOpen: () => openCardSheet({ source: 'касание карты', hikeDate: nextHike?.date, hikeTitle: nextHike?.title }),
-        onEnough: () => cardBtn?.classList.add('is-pulse')
+        onEnough: () => {
+            cardBtn?.classList.add('is-pulse');
+            window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'card_scratched' } }));
+        }
     });
 
     // Q&A диалог с кнопками-ответами

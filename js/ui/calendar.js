@@ -1575,6 +1575,9 @@ export function showBottomSheet(index) {
 
     sheetLastOpenedAt = Date.now();
     const selectedHike = state.hikesWithTitle[index];
+    // для язычка бота: сколько смотрел хайк и записался ли (см. bot-nudge.js)
+    sheetActHike = { date: selectedHike.date, at: Date.now(), registered: false };
+    window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_open', date: selectedHike.date } }));
     setLumenContext({
         screen: 'route',
         scenario: 'route',
@@ -2115,7 +2118,15 @@ export function refreshBottomSheetIfOpen() {
     }
 }
 
+let sheetActHike = null;
+
 export function closeBottomSheet() {
+    if (sheetActHike) {
+        const h = sheetActHike;
+        sheetActHike = null;
+        const registered = h.registered || state._userRegs?.[h.date] === true || !!state.hikeBookingStatus?.[state.hikesWithTitle.findIndex(x => x.date === h.date)];
+        window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_close', date: h.date, ms: Date.now() - h.at, registered } }));
+    }
     closeParticipantDropdown();
     closeLeaderDropdown();
     if (currentUnsubscribe) {
@@ -3453,6 +3464,8 @@ export function showLeaderDropdown(leaderElement, leaderData) {
 
 // ==================== ЭКРАН ПОСЛЕ РЕГИСТРАЦИИ ====================
 export function showRegistrationSuccess(hikeDate, hikeTitle) {
+    if (sheetActHike) sheetActHike.registered = true;
+    window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
     const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
     if (hikeObj && (hikeObj.city === true || hikeObj.book_club === true)) return;
 
@@ -3673,6 +3686,9 @@ const TICKET_SUPPORT_LINK = 'https://t.me/hellointelligent';
 
 async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
     log(logLabel, true, state.user, { hike_date: hikeDate });
+    // пошёл платить – язычку незачем потом звать на этот хайк
+    if (sheetActHike) sheetActHike.registered = true;
+    window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
 
     let payUrl = '';
     try {
