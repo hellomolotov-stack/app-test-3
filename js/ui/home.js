@@ -393,7 +393,6 @@ function renderGuestHome() {
     `;
 
     main.innerHTML = `
-        ${renderSafetyBanner()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
@@ -419,6 +418,7 @@ function renderGuestHome() {
         </div>
         ${renderTestimonialsBlock()}
         ${renderUpdatesBlock()}
+        ${renderSafetyBanner()}
     `;
 
     wireSafetyBanner();
@@ -600,7 +600,6 @@ function renderOwnerHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
-        ${renderSafetyBanner()}
         <div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
@@ -632,6 +631,7 @@ function renderOwnerHome() {
             </div>
         </div>
         ${renderUpdatesBlock()}
+        ${renderSafetyBanner()}
     `;
 
     wireSafetyBanner();
