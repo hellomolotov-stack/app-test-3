@@ -5331,3 +5331,10 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .ef-tk-sub { margin-top: 3px; font-size: 12.5px; color: rgba(255, 255, 255, .55); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .btn.ef-tk-go { display: inline-flex; align-items: center; width: auto; height: 34px; min-width: 0; padding: 0 16px; margin: 10px 0 0; border-radius: 12px; font-size: 13.5px; font-weight: 700; white-space: nowrap; }
 .ef-ticket.is-woman .btn.ef-tk-go { background: #FB5EB0; color: #fff; }
+
+/* ==================== САММАРИ МАСТЕРМАЙНДА: ТРИ ВИДНЫ, ОСТАЛЬНЫЕ ПРОКРУТКОЙ ==================== */
+.mm-scroll { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%); mask-image: linear-gradient(to bottom, #000 78%, transparent 100%); }
+.mm-scroll::-webkit-scrollbar { display: none; }
+.mm-scroll.is-end, .mm-scroll.is-all { -webkit-mask-image: none; mask-image: none; }
+.mm-scroll > div:last-child { margin-bottom: 4px !important; }

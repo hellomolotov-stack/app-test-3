@@ -244,9 +244,25 @@ function renderMastermindSummaries() {
                 🧠 саммари мастермайнда
             </h2>
             <p style="margin: -8px 16px 16px; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.55);">здесь собраны записи всех ценных мыслей, которые были озвучены участниками на мастермайнд сессиях во время хайков на вершинах гор южного берега. материал записан Plaud Note Pro и обработан с помощью последних моделей ChatGPT и Claude</p>
-            ${innerHtml}
+            <div class="mm-scroll">${innerHtml}</div>
         </div>
     `;
+}
+
+// видно ровно три последних саммари, остальные – прокруткой внутри блока; градиент внизу
+// показывает, что ниже есть ещё, и исчезает, когда долистали до конца
+function fitMastermindScroll() {
+    const box = document.querySelector('#mastermindSummariesCard .mm-scroll');
+    if (!box) return;
+    const fit = () => {
+        const items = box.children;
+        if (items.length <= 3) { box.classList.add('is-all'); return; }
+        box.style.maxHeight = `${items[2].offsetTop + items[2].offsetHeight - items[0].offsetTop}px`;
+        const edge = () => box.classList.toggle('is-end', box.scrollTop + box.clientHeight >= box.scrollHeight - 2);
+        box.addEventListener('scroll', edge, { passive: true });
+        edge();
+    };
+    requestAnimationFrame(fit);
 }
 
 function renderSafetyBanner() {
@@ -422,6 +438,7 @@ function renderGuestHome() {
     `;
 
     wireSafetyBanner();
+    fitMastermindScroll();
     const cardBtn = document.getElementById('cardBadgeBtn');
     cardBtn?.addEventListener('click', () => {
         openCardSheet({ source: 'кнопка «узнать»', hikeDate: nextHike?.date, hikeTitle: nextHike?.title });
@@ -638,6 +655,7 @@ function renderOwnerHome() {
     `;
 
     wireSafetyBanner();
+    fitMastermindScroll();
     document.getElementById('ownerCardImage')?.addEventListener('click', () => {
         haptic();
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
