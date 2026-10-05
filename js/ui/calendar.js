@@ -340,24 +340,18 @@ function feedNearestCard(h) {
             : '';
         return `<div class="ef-next ef-next-teaser${waiting ? ' is-waiting' : ''}"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}${note}</div>`;
     }
-    const img = h.image ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
-    // карточка-билет: сверху живая 3D-карта (или картинка маршрута) без плашки даты,
-    // под ней дата · название · круглая кнопка записи
+    // плашка-билет без карты: дата · название · «детали маршрута» (карта – внутри хайка)
     const d = feedDate(h.date);
     const km = feedKm(h);
     const sub = [feedWhen(h.date), h.start_time || (km ? `${km} км` : '')].filter(Boolean).join(' · ');
-    const media = (getHikeTrack(h) || hasFeedMapSnap(h.date))
-        ? `<div class="ef-next-map" data-feed-map="${h.date}"></div>`
-        : (h.image ? `<div class="ef-next-img"${img}></div>` : '');
     return `<div class="ef-next ef-ticket${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
-        ${media}
         <div class="ef-tk-row">
             <div class="ef-tk-date"><b>${d.getDate()}</b><small>${FEED_MONTHS_SHORT[d.getMonth()]}, ${FEED_WD[d.getDay()]}</small></div>
             <div class="ef-tk-info">
                 <div class="ef-tk-title">${String(h.title).replace(/-/g, '\u2011')}</div>
                 <div class="ef-tk-sub">${sub}</div>
+                <button class="btn btn-yellow ef-tk-go">детали маршрута</button>
             </div>
-            <button class="btn btn-yellow ef-tk-go" data-book="${h.date}" aria-label="записаться"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
         </div>
     </div>`;
 }
