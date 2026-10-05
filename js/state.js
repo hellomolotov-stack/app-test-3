@@ -19,7 +19,7 @@ export const state = {
     registrationsPopup: {},
     popupConfig: {
         text: 'чтобы забронировать место на хайк нужно приобрести билет или карту интеллигента',
-        ticketPrice: 1500,
+        ticketPrice: 1000,
         ticketLink: '',
         seasonCardPrice: 5500,
         seasonCardLink: '',

@@ -2897,7 +2897,7 @@ function updateFloatingSheetButtons() {
 }
 
 // «Возвращающийся» = есть хотя бы один прошедший хайк, на который человек был записан (по Firebase).
-// Серверный источник правды: админ может вернуть право на бесплатный первый хайк, удалив userRegistrations.
+// Серверный источник правды: админ может снова открыть человеку покупку разового билета, удалив userRegistrations.
 function hasPastBooking() {
     const regs = state._userRegs || {};
     const today = new Date();

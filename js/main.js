@@ -623,7 +623,7 @@ async function loadAppData() {
 
         state.userCard = userData;
 
-        // _userRegs (Firebase) нужен всем — на нём держится определение «первый хайк бесплатно».
+        // _userRegs (Firebase) нужен всем — по нему понятно, ходил ли человек уже на хайк (билет – только на первый).
         // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
         state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
         const lumenHikesCount = Object.values(state._userRegs || {}).filter(value => value === true).length;
