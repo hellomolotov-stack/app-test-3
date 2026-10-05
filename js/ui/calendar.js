@@ -362,6 +362,19 @@ function feedNearestCard(h) {
     </div>`;
 }
 
+// название в карточке-билете – всегда одной строкой: если не влезает, уменьшаем шрифт (до 12px)
+function feedFitTicketTitle(container) {
+    const t = container.querySelector('.ef-tk-title');
+    if (!t) return;
+    const fit = () => {
+        t.style.fontSize = '';
+        let size = parseFloat(getComputedStyle(t).fontSize);
+        while (t.scrollWidth > t.clientWidth + 1 && size > 12) t.style.fontSize = `${--size}px`;
+    };
+    requestAnimationFrame(fit);
+    document.fonts?.ready?.then(fit);
+}
+
 function feedRow(h, nearestDate = '') {
     const d = feedDate(h.date);
     const today = feedTodayStr();
@@ -499,6 +512,7 @@ function renderEventsFeed(container) {
     bindSuggestEventButton();
     feedFillGoing(container);
     feedPlaceMap(container, nearest);
+    feedFitTicketTitle(container);
 }
 
 // Главная при запуске рисуется дважды (кэш, затем свежие данные), месяцы переключаются –
