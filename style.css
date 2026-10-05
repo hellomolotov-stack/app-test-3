@@ -5160,12 +5160,11 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
     transform: translateY(100%); transition: transform .38s cubic-bezier(.2, .9, .25, 1);
 }
 .cs-overlay.is-on .cs-sheet { transform: none; }
-.cs-grab { flex: none; width: 100%; height: 22px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-.cs-grab::before { content: ''; width: 40px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .25); }
+.cs-grab { position: relative; flex: none; width: 100%; height: 22px; cursor: pointer; }
 .cs-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px 150px; -webkit-overflow-scrolling: touch; }
 
 .cs-hero { text-align: center; }
-.cs-stage { perspective: 900px; padding: 10px 6px 20px; touch-action: pan-y; }
+.cs-stage { perspective: 900px; padding: 30px 6px 22px; touch-action: pan-y; }
 .cs-card {
     position: relative; width: 92%; margin: 0 auto; aspect-ratio: 1900 / 1144; border-radius: 3.8% / 6.3%; overflow: hidden;
     transform-style: preserve-3d; box-shadow: 0 22px 40px rgba(0, 0, 0, .5), 0 0 0 1px rgba(255, 255, 255, .08);
@@ -5302,3 +5301,25 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .cs-offer-time { display: inline-block; margin-top: 10px; padding: 5px 12px; border-radius: 12px; background: rgba(0, 0, 0, .3); font-size: 12.5px; font-weight: 600; color: rgba(255, 255, 255, .85); }
 .cs-offer-time span { color: var(--yellow); font-weight: 800; }
 .cs-plans.is-offer { grid-template-columns: 1fr; }
+
+/* ==================== РУЧКА ШТОРКИ: ПОЛОСКА → ГАЛОЧКА ВНИЗ ====================
+   Две половинки полоски; пока шторку тянут вниз (sheet-drag.js задаёт --pull 0…1),
+   они ломаются посерединке в галочку, направленную вниз. */
+.bottom-sheet .bottom-sheet-handle { position: relative; background: transparent !important; }
+.bottom-sheet-handle::before, .bottom-sheet-handle::after,
+.cs-grab::before, .cs-grab::after {
+    content: ''; position: absolute; top: 50%; width: 22px; height: 5px; margin-top: -2.5px; border-radius: 3px;
+    background: rgba(255, 255, 255, calc(.3 + var(--pull, 0) * .4));
+    transition: transform .14s ease-out, background-color .14s ease-out;
+}
+.bottom-sheet-handle::before, .cs-grab::before {
+    left: calc(50% - 20px); transform-origin: 20px 50%;
+    transform: translateY(calc(var(--pull, 0) * 3px)) rotate(calc(var(--pull, 0) * 24deg));
+}
+.bottom-sheet-handle::after, .cs-grab::after {
+    left: calc(50% - 2px); transform-origin: 2px 50%;
+    transform: translateY(calc(var(--pull, 0) * 3px)) rotate(calc(var(--pull, 0) * -24deg));
+}
+.bottom-sheet-handle::before, .bottom-sheet-handle::after { left: auto; }
+.bottom-sheet-handle::before { left: 0; }
+.bottom-sheet-handle::after { left: 18px; }

@@ -6,6 +6,7 @@ import { log, logAutoSendClick } from './api.js';
 import { pingAppUser, maybeAskNotifications } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
 import { initClickLog } from './ui/click-log.js';
+import { initSheetDrag } from './ui/sheet-drag.js';
 import { initCollapsibleBlocks } from './ui/collapsible.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
@@ -701,6 +702,7 @@ function startApp() {
     state.user = tg?.initDataUnsafe?.user;
     initCollapsibleBlocks();
     initClickLog();
+    initSheetDrag();
     loadAppData();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });

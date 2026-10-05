@@ -25,13 +25,13 @@ function partnersHtml() {
     return `<div class="cs-sec">скидки партнёров · ${list.length} мест</div><div class="cs-parts">${chips}${more}</div>`;
 }
 
-// «уже у 20+ интеллигентов» – с настоящими аватарками участников, если они загружены
+// «уже у 20+ членов клуба» – с настоящими аватарками участников, если они загружены
 function membersHtml() {
     const count = state.popupConfig?.membersText || '20+';
     const faces = Object.values(state.profiles || {}).filter(p => p && p.avatarUrl).slice(0, 4)
         .map(p => `<img src="${esc(p.avatarUrl)}" alt="" onerror="this.remove()">`).join('');
     const dots = faces || '<i></i><i></i><i></i>';
-    return `<div class="cs-members"><span class="cs-faces">${dots}</span>уже у ${esc(count)} интеллигентов</div>`;
+    return `<div class="cs-members"><span class="cs-faces">${dots}</span>уже у ${esc(count)} членов клуба</div>`;
 }
 
 function statsHtml() {
@@ -142,12 +142,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     };
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 
-    // свайп вниз по ручке закрывает
-    const grab = overlay.querySelector('.cs-grab');
-    let y0 = null;
-    grab.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
-    grab.addEventListener('touchend', e => { if (y0 !== null && e.changedTouches[0].clientY - y0 > 40) close(); y0 = null; });
-    grab.addEventListener('click', close);
+    // свайп вниз – общий для всех шторок (sheet-drag.js), тап по ручке тоже закрывает
+    overlay.querySelector('.cs-grab').addEventListener('click', close);
 
     let plan = 'permanent';
     const buyBtn = overlay.querySelector('#csBuy');

@@ -676,46 +676,7 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); closeChat(); } });
     overlay.querySelector('.bot-chat-close').addEventListener('click', () => { haptic(); closeChat(); });
 
-    // свайп вниз по шапке + ручке — плавное закрытие
-    let startY = 0, curY = 0, dragging = false;
-    const CLOSE_THRESHOLD = 100;
-
-    const onStart = (e) => {
-        dragging = true;
-        startY = e.touches[0].clientY;
-        curY = 0;
-        sheet.style.transition = 'none';
-        overlay.style.transition = 'none';
-    };
-    const onMove = (e) => {
-        if (!dragging) return;
-        curY = e.touches[0].clientY - startY;
-        if (curY < 0) curY = 0;
-        sheet.style.transform = `translateY(${curY}px)`;
-        const progress = Math.min(curY / (sheet.offsetHeight || 500), 1);
-        overlay.style.background = `rgba(0,0,0,${0.5 * (1 - progress)})`;
-    };
-    const onEnd = () => {
-        if (!dragging) return;
-        dragging = false;
-        if (curY > CLOSE_THRESHOLD) {
-            sheet.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
-            overlay.style.transition = 'background 0.3s ease';
-            closeChat();
-        } else {
-            sheet.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            overlay.style.transition = 'background 0.35s ease';
-            sheet.style.transform = '';
-            overlay.style.background = '';
-        }
-        curY = 0;
-    };
-
-    [overlay.querySelector('.bottom-sheet-handle'), overlay.querySelector('.bot-chat-header')].forEach(el => {
-        el.addEventListener('touchstart', onStart, { passive: true });
-        el.addEventListener('touchmove', onMove, { passive: true });
-        el.addEventListener('touchend', onEnd);
-    });
+    // свайп вниз – общий для всех шторок, см. sheet-drag.js
 
     requestAnimationFrame(() => {
         overlay.classList.add('visible');

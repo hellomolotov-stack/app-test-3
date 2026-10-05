@@ -1540,8 +1540,6 @@ function curSheetIndex() {
 }
 let sheetLastOpenedAt = 0;
 let sheetScrollListener = null;
-let dragStartY = 0;
-let isDragging = false;
 let currentUnsubscribe = null;
 
 const avatarCache = new Map();
@@ -2104,52 +2102,7 @@ export function showBottomSheet(index) {
         if (e.target === overlay) closeBottomSheet();
     });
 
-    const onTouchStart = e => {
-        const target = e.target;
-        const isInteractive =
-            target.closest('.bottom-sheet-nav-arrow') ||
-            target.closest('a') ||
-            target.closest('.btn') ||
-            target.closest('.swipe-track') ||
-            target.closest('.hike-map-box') ||
-            target.closest('.bottom-sheet-handle');
-        if (isInteractive) {
-            isDragging = false;
-            return;
-        }
-        dragStartY = e.touches[0].clientY;
-        isDragging = true;
-        sheet.classList.add('dragging');
-    };
-    const onTouchMove = e => {
-        if (!isDragging) return;
-        if (contentWrapper.scrollTop > 0) {
-            isDragging = false;
-            sheet.classList.remove('dragging');
-            return;
-        }
-        const deltaY = e.touches[0].clientY - dragStartY;
-        if (deltaY > 0) {
-            e.preventDefault();
-            sheet.style.transform = `translateY(${deltaY}px)`;
-        } else {
-            isDragging = false;
-            sheet.classList.remove('dragging');
-        }
-    };
-    const onTouchEnd = e => {
-        if (!isDragging) return;
-        isDragging = false;
-        sheet.classList.remove('dragging');
-        const deltaY = e.changedTouches[0].clientY - dragStartY;
-        if (deltaY > 80) closeBottomSheet();
-        else sheet.style.transform = '';
-    };
-
-    sheet.addEventListener('touchstart', onTouchStart, { passive: false });
-    sheet.addEventListener('touchmove', onTouchMove, { passive: false });
-    sheet.addEventListener('touchend', onTouchEnd, { passive: false });
-    sheet.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    // свайп вниз – общий для всех шторок, см. sheet-drag.js
 
     log('детали хайка', false, state.user);
 }
