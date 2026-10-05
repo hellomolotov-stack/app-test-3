@@ -4,7 +4,7 @@ import { state } from '../state.js';
 import { haptic, openLink, tg } from '../utils.js';
 import { log, initPayment } from '../api.js';
 
-const CARD_IMG = 'img/card-front.jpg';
+const CARD_IMG = 'assets/card-front.jpg';
 const TICKET_PRICE = 1000;
 const PERMANENT_FULL_PRICE = 7500;
 
