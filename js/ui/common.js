@@ -77,7 +77,7 @@ export function showBottomNav(show = true) {
 let loaderInterval = null, loaderMessageTimer = null;
 // Заставка с эмодзи лежит прямо в index.html (стили там же) – видна с первого кадра,
 // ещё до загрузки скриптов и style.css. Здесь только «медленно? включи три буквы» и аккуратный уход.
-const LOADER_MIN_MS = 2800; // один полный круг из четырёх эмодзи, даже если всё прогрузилось мгновенно
+const LOADER_MIN_MS = 3000; // заставку видно минимум 3 с (два эмодзи), даже если всё прогрузилось мгновенно
 
 export function showAnimatedLoader() {
     const loader = document.getElementById('initial-loader');
