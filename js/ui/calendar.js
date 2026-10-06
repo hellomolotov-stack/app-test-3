@@ -1901,6 +1901,7 @@ export function showBottomSheet(index) {
                 </div>
                 ${tagsHtml}
             </div>
+            ${state.pendingInvite?.date === hike.date && !state.hikeBookingStatus[state.hikesWithTitle.findIndex(h => h.date === hike.date)] ? `<div class="inv-sheet-banner" id="inviteSheetBanner">🎟️ ты идёшь по приглашению ${String(state.pendingInvite.name || '').replace(/</g, '&lt;')} – <b>без билета</b>. сдвинь «иду» внизу, чтобы записаться</div>` : ''}
             ${imageHtml}
             ${extraInfoHtml}
             ${sectionsHtml}
@@ -3956,7 +3957,29 @@ export async function confirmTicketPaymentReturn(hikeDate) {
 }
 
 // ==================== КОРОТКИЙ БАННЕР ВЫБОРА: БИЛЕТ ИЛИ КАРТА (гость без карты) ====================
+// Хайк открыт из приглашения +1 (state.pendingInvite): слайдер записывает по приглашению, без билета
+async function registerByInvite(hikeDate, hikeTitle, onClose) {
+    const inv = state.pendingInvite;
+    try {
+        const { inviteApi } = await import('../api.js');
+        await inviteApi('inviteAccept', { code: inv.code });
+    } catch (e) {
+        alert(e.message || 'не получилось записаться, попробуй ещё раз');
+        if (onClose) onClose();
+        return;
+    }
+    log('+1: записался по приглашению', true, state.user, { hike_date: hikeDate });
+    state.pendingInvite = null;
+    const idx = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
+    if (idx >= 0) { state.hikeBookingStatus[idx] = true; saveBookingStatusToLocal(); }
+    document.getElementById('inviteSheetBanner')?.remove();
+    updateFloatingSheetButtons();
+    renderUserBookings(document.getElementById('userBookingsContainer'));
+    showRegistrationSuccess(hikeDate, hikeTitle);
+}
+
 function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
+    if (state.pendingInvite?.date === hikeDate) return registerByInvite(hikeDate, hikeTitle, onClose);
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `

@@ -5378,25 +5378,30 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .inv-card-link { margin: 12px auto 0; padding: 8px 14px; border: 1px solid rgba(255, 255, 255, .2); border-radius: 30px; background: rgba(255, 255, 255, .06);
     color: #fff; font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
 .inv-card-link span { color: var(--yellow); margin-left: 4px; }
-.inv-hike { position: relative; margin: 20px 0 0; min-height: 130px; border-radius: 20px; overflow: hidden; text-align: left;
-    background: var(--img, none) center / cover, rgba(255, 255, 255, .06); display: flex; align-items: flex-end; }
-.inv-hike::before { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 11, 9, 0) 20%, rgba(10, 11, 9, .85)); }
-.inv-hike-body { position: relative; padding: 14px 16px; }
-.inv-hike-body small { display: block; font-size: 12.5px; font-weight: 700; color: var(--yellow); }
-.inv-hike-body b { display: block; margin-top: 2px; font-size: 19px; font-weight: 800; }
-.inv-free { margin-top: 14px; font-size: 14px; color: rgba(255, 255, 255, .8); }
-.inv-free b { color: var(--yellow); }
 .inv-action { margin-top: 18px; }
 .inv-msg { padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, .06); font-size: 14.5px; line-height: 1.45; }
 .inv-msg.is-ok { font-weight: 700; font-size: 16px; background: rgba(217, 253, 25, .12); }
 .btn.inv-wide, .btn.inv-close { width: 100%; margin: 12px 0 0; }
-.inv-slider { position: relative; height: 58px; border-radius: 40px; background: rgba(73, 138, 176, .18); border: 1px solid rgba(255, 255, 255, .2);
-    overflow: hidden; user-select: none; -webkit-user-select: none; touch-action: none; }
-.inv-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 22px;
-    font-size: 14px; font-weight: 500; color: rgba(255, 255, 255, .7); pointer-events: none; }
-.inv-thumb { position: absolute; left: 6px; top: 50%; margin-top: -21px; width: 88px; height: 42px; border-radius: 40px; background: var(--yellow);
-    display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 900; color: #000; cursor: grab;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -2px 0 rgba(0, 0, 0, .1), 0 3px 10px rgba(0, 0, 0, .22); transition: transform .25s ease-out; }
+/* билет-карточка хайка: дата | отрывная линия | название */
+.inv-ticket { position: relative; display: flex; align-items: stretch; margin: 20px 0 0; text-align: left; border-radius: 18px;
+    background: linear-gradient(135deg, rgba(217, 253, 25, .16), rgba(217, 253, 25, .05)); border: 1px solid rgba(217, 253, 25, .35); }
+.inv-ticket-date { flex: none; width: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 0; }
+.inv-ticket-date b { font-size: 34px; font-weight: 800; line-height: 1; color: var(--yellow); }
+.inv-ticket-date small { margin-top: 4px; font-size: 12px; color: rgba(255, 255, 255, .65); }
+.inv-ticket-cut { position: relative; flex: none; width: 0; border-left: 2px dashed rgba(217, 253, 25, .35); margin: 12px 0; }
+.inv-ticket-cut::before, .inv-ticket-cut::after { content: ''; position: absolute; left: -12px; width: 22px; height: 22px; border-radius: 50%; background: #0f161e; }
+.inv-ticket-cut::before { top: -24px; border-bottom: 1px solid rgba(217, 253, 25, .35); }
+.inv-ticket-cut::after { bottom: -24px; border-top: 1px solid rgba(217, 253, 25, .35); }
+.inv-ticket-body { flex: 1; min-width: 0; padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+.inv-ticket-body b { font-size: 17px; font-weight: 800; line-height: 1.25; color: #fff; }
+.inv-ticket-body small { font-size: 12.5px; color: rgba(255, 255, 255, .65); }
+.inv-ticket-tag { align-self: flex-start; margin-top: 6px; padding: 3px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 800; color: #1d2606; background: var(--yellow); }
+.inv-note { margin-top: 10px; font-size: 12.5px; color: rgba(255, 255, 255, .55); }
+
+/* плашка в шторке хайка, открытой из приглашения */
+.inv-sheet-banner { margin: 12px 0 14px; padding: 12px 14px; border-radius: 14px; background: rgba(217, 253, 25, .12); border: 1px solid rgba(217, 253, 25, .4);
+    font-size: 14px; line-height: 1.4; color: #fff; }
+.inv-sheet-banner b { color: var(--yellow); }
 
 /* результат в админке */
 .adm-p1-result { margin-top: 16px; padding: 14px; border-radius: 16px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); }

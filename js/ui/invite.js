@@ -1,7 +1,8 @@
 // js/ui/invite.js – приглашение +1 от владельца карты (привилегия «свой +1 на хайк»).
 // Владелец карты, записанный на хайк, получает личную ссылку t.me/<бот>?startapp=inv_<код> и шлёт другу.
-// Друг видит «Имя приглашает тебя на хайк», конфетти, шторку с картой по кнопке и записывается
-// слайдером без билета. Все проверки (карта, первый раз, ссылка не занята) – на сервере (handleInvite).
+// Друг видит «Имя приглашает тебя на хайк», конфетти, билет-карточку и кнопку «открыть хайк»:
+// в шторке хайка (state.pendingInvite) он видит детали и записывается слайдером без билета.
+// Все проверки (карта, первый раз, ссылка не занята) – на сервере (handleInvite).
 import { state } from '../state.js';
 import { haptic, tg, showConfetti } from '../utils.js';
 import { log, inviteApi } from '../api.js';
@@ -78,16 +79,29 @@ export async function openInviteScreen(code) {
     }
 
     const name = esc(info.inviter_name || 'член клуба');
-    const hikeIdx = state.hikesWithTitle.findIndex(h => h.date === info.hike_date);
     const openHike = () => {
         close();
-        if (hikeIdx >= 0) import('./calendar.js').then(m => m.showBottomSheet(hikeIdx));
+        // список хайков мог ещё не прийти – ждём его до 10 секунд
+        let tries = 0;
+        const go = () => {
+            const idx = state.hikesWithTitle.findIndex(h => h.date === info.hike_date);
+            if (idx >= 0) return import('./calendar.js').then(m => m.showBottomSheet(idx));
+            if (++tries < 50) setTimeout(go, 200);
+        };
+        go();
     };
+    const d = new Date(info.hike_date + 'T12:00:00');
+    const MON = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const WDS = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+    // карточка-билет: дата | отрывная линия | название, старт, «+1 · без билета»
     const hikeCard = `
-        <div class="inv-hike"${info.image ? ` style="--img:url('${String(info.image).replace(/'/g, '%27')}')"` : ''}>
-            <div class="inv-hike-body">
-                <small>${dateRu(info.hike_date)}${info.start_time ? ` · старт в ${esc(info.start_time)}` : ''}</small>
+        <div class="inv-ticket">
+            <div class="inv-ticket-date"><b>${d.getDate()}</b><small>${MON[d.getMonth()]}, ${WDS[d.getDay()]}</small></div>
+            <div class="inv-ticket-cut"></div>
+            <div class="inv-ticket-body">
                 <b>${esc(info.hike_title || 'хайк')}</b>
+                <small>${info.start_time ? `старт в ${esc(info.start_time)}` : dateRu(info.hike_date)}</small>
+                <span class="inv-ticket-tag">+1 · без билета</span>
             </div>
         </div>`;
 
@@ -104,7 +118,8 @@ export async function openInviteScreen(code) {
     } else if (!info.eligible) {
         action = `<div class="inv-msg">по приглашению приходят только в первый раз, а ты уже не новичок в клубе 🤍 на этот хайк можно записаться как обычно</div><button class="btn btn-yellow inv-wide" data-open-hike>посмотреть хайк</button>`;
     } else {
-        action = `<div class="inv-slider" id="invSlider"><div class="inv-hint">› сдвинь, чтобы записаться</div><div class="inv-thumb">иду</div></div>`;
+        action = `<button class="btn btn-yellow inv-wide" data-open-hike data-invite="1">открыть хайк</button>
+            <div class="inv-note">в хайке – маршрут, точка сбора и время. там же и запишешься, без билета</div>`;
     }
 
     sheet.innerHTML = `
@@ -115,8 +130,7 @@ export async function openInviteScreen(code) {
             <p class="inv-sub">${name} – член клуба хайкинг интеллигенции. с картой интеллигента можно взять с собой друга, который ещё не был с нами – и сегодня это ты</p>
             <button type="button" class="inv-card-link" id="invCardLink">что такое карта интеллигента <span>›</span></button>
             ${hikeCard}
-            <div class="inv-free">🎟️ для тебя – <b>без билета</b>, по приглашению</div>
-            <div class="inv-action">${action}</div>
+                        <div class="inv-action">${action}</div>
         </div>`;
     if (!info.self && !info.used && info.available) showConfetti();
 
@@ -125,51 +139,14 @@ export async function openInviteScreen(code) {
         log('+1: узнать о карте', true, state.user);
         import('./card-sheet.js').then(m => m.openCardSheet({ source: 'приглашение +1' }));
     });
-    sheet.querySelectorAll('[data-open-hike]').forEach(b => b.addEventListener('click', () => { haptic(); openHike(); }));
-
-    const slider = sheet.querySelector('#invSlider');
-    if (slider) mountSlider(slider, async () => {
-        try {
-            await inviteApi('inviteAccept', { code });
-            log('+1: записался по приглашению', true, state.user, { hike_date: info.hike_date });
-            if (hikeIdx >= 0) { state.hikeBookingStatus[hikeIdx] = true; }
-            showConfetti();
-            sheet.querySelector('.inv-action').innerHTML = `
-                <div class="inv-msg is-ok">🎉 ты в списке участников!</div>
-                <p class="inv-sub">в деталях хайка – точка сбора, время старта и что взять с собой</p>
-                <button class="btn btn-yellow inv-wide" data-open-hike>детали хайка</button>`;
-            sheet.querySelector('[data-open-hike]').addEventListener('click', () => { haptic(); openHike(); });
-            return true;
-        } catch (e) {
-            alert(e.message || 'не получилось записаться, попробуй ещё раз');
-            return false;
+    sheet.querySelectorAll('[data-open-hike]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        if (b.dataset.invite) {
+            // шторка хайка увидит приглашение: плашка сверху и запись слайдером без билета
+            state.pendingInvite = { code, date: info.hike_date, name: info.inviter_name || '' };
+            log('+1: открыл хайк из приглашения', true, state.user, { hike_date: info.hike_date });
         }
-    });
-}
+        openHike();
+    }));
 
-// простой слайдер «сдвинь, чтобы записаться»: дотянул до конца – onDone(); вернул false – откат
-function mountSlider(track, onDone) {
-    const thumb = track.querySelector('.inv-thumb');
-    let x0 = null, left = 0, max = 0, busy = false;
-    const pad = 6;
-    const setLeft = v => { left = Math.max(0, Math.min(max, v)); thumb.style.transform = `translateX(${left}px)`; };
-    const start = x => { if (busy) return; max = track.clientWidth - thumb.offsetWidth - pad * 2; x0 = x - left; thumb.style.transition = 'none'; };
-    const move = x => { if (x0 === null) return; setLeft(x - x0); };
-    const end = async () => {
-        if (x0 === null) return;
-        x0 = null;
-        thumb.style.transition = '';
-        if (left >= max * 0.85) {
-            setLeft(max);
-            busy = true;
-            haptic();
-            thumb.textContent = '…';
-            const ok = await onDone();
-            if (!ok) { busy = false; thumb.textContent = 'иду'; setLeft(0); }
-        } else setLeft(0);
-    };
-    thumb.addEventListener('touchstart', e => start(e.touches[0].clientX), { passive: true });
-    thumb.addEventListener('touchmove', e => { e.preventDefault(); move(e.touches[0].clientX); }, { passive: false });
-    thumb.addEventListener('touchend', end);
-    thumb.addEventListener('mousedown', e => { start(e.clientX); const mm = ev => move(ev.clientX); const mu = () => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); end(); }; document.addEventListener('mousemove', mm); document.addEventListener('mouseup', mu); });
 }

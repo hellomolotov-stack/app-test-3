@@ -5,7 +5,7 @@
 // место, если содержимое прокручено в самый верх; горизонтальные жесты (слайдеры, карта) не трогаем.
 const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet';
 const HANDLE = '.bottom-sheet-handle, .cs-grab';  // .inv-grab тоже несёт класс cs-grab
-const SKIP = 'input, textarea, select, .swipe-track, .inv-slider, .hike-map-box, .bottom-sheet-nav-arrow';
+const SKIP = 'input, textarea, select, .swipe-track, .hike-map-box, .bottom-sheet-nav-arrow';
 const CLOSE_DY = 110;     // столько протянуть – и шторка свернётся
 const CLOSE_SPEED = 0.6;  // или смахнуть быстрее (px/мс)
 
