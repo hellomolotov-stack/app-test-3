@@ -1754,9 +1754,14 @@ export function showBottomSheet(index) {
                 buttonTextColor = '#000000';
                 buttonText = 'поделиться хайком';
             }
-            shareButtonHtml = `
+            // владельцу карты – скромная жёлтая ссылка (главное у него – блок «твой +1»), гостю – кнопка
+            shareButtonHtml = isGuest ? `
                 <div style="margin-top: 20px; margin-bottom: 16px;">
-                    <button class="btn btn-share" id="shareEventBtn" style="background-color: ${buttonColor} !important; color: ${buttonTextColor} !important; font-weight: 800; border-radius: 40px; padding: 12px 24px; width: auto; display: block; margin: 0 auto; border: none;">🔗 ${buttonText}</button>
+                    <button class="btn btn-share" id="shareEventBtn" style="background-color: ${buttonColor} !important; color: ${buttonTextColor} !important; font-weight: 800; border-radius: 40px; padding: 12px 24px; width: auto; display: block; margin: 0 auto; border: none;">🔗 поделиться ссылкой</button>
+                </div>
+            ` : `
+                <div style="margin-top: 16px; margin-bottom: 16px; text-align: center;">
+                    <button type="button" id="shareEventBtn" class="share-text-link" style="color: ${isCity ? '#41B5ED' : buttonColor};">🔗 ${buttonText}</button>
                 </div>
             `;
         }

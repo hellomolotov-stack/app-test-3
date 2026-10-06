@@ -5409,3 +5409,6 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
     color: var(--yellow); font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .plus1-box.is-flash { animation: plus1-flash 1.6s ease-out; }
 @keyframes plus1-flash { 0% { box-shadow: 0 0 0 4px rgba(217, 253, 25, .05); } 25% { box-shadow: 0 0 0 6px rgba(217, 253, 25, .35), 0 0 28px rgba(217, 253, 25, .35); } 100% { box-shadow: 0 0 0 4px rgba(217, 253, 25, .05); } }
+
+/* «поделиться хайком» у владельца карты – просто кликабельный текст */
+.share-text-link { background: none; border: 0; padding: 6px 8px; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
