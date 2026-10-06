@@ -287,17 +287,36 @@ function flashSafetyDownload({ delay = 450, interval = 100, timeout = 6000 } = {
 }
 
 // Ждём появления элемента и скроллим к нему. С таймаутом — без вечного setInterval (#4)
-function scrollToWhenReady(getter, { delay = 300, interval = 100, timeout = 6000 } = {}) {
-    setTimeout(() => {
-        const el0 = getter();
-        if (el0) { scrollToElement(el0, getCurrentTopOffset()); highlightElement(el0); return; }
-        const t0 = Date.now();
-        const iv = setInterval(() => {
-            const el = getter();
-            if (el) { clearInterval(iv); scrollToElement(el, getCurrentTopOffset()); highlightElement(el); }
-            else if (Date.now() - t0 > timeout) clearInterval(iv);
-        }, interval);
-    }, delay);
+// медленный плавный скролл: человек успевает увидеть, что выше есть главная
+function glideTo(targetY, duration = 1200) {
+    const y0 = window.pageYOffset, dy = targetY - y0, t0 = performance.now();
+    const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const step = now => {
+        const t = Math.min(1, (now - t0) / duration);
+        window.scrollTo(0, y0 + dy * ease(t));
+        if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+}
+const loaderGone = () => { const l = document.getElementById('initial-loader'); return !l || l.classList.contains('fade-out') || l.style.display === 'none'; };
+
+// диплинк на блок главной: после заставки сначала видно верх приложения, затем плавный доскролл к блоку
+function scrollToWhenReady(getter, { pause = 900, interval = 100, timeout = 12000 } = {}) {
+    window.scrollTo(0, 0);
+    const t0 = Date.now();
+    let goneAt = 0;
+    const iv = setInterval(() => {
+        if (Date.now() - t0 > timeout) return clearInterval(iv);
+        if (!loaderGone()) return;
+        goneAt ||= Date.now();
+        if (Date.now() - goneAt < pause) return;
+        const el = getter();
+        if (!el) return;
+        clearInterval(iv);
+        const y = el.getBoundingClientRect().top + window.pageYOffset - getCurrentTopOffset();
+        glideTo(y);
+        setTimeout(() => highlightElement(el), 1100);
+    }, interval);
 }
 
 function handleDeepLink(startParam) {

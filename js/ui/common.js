@@ -97,6 +97,7 @@ export function hideAnimatedLoader() {
     const go = () => {
         if (loaderInterval) clearInterval(loaderInterval);
         if (loaderMessageTimer) clearTimeout(loaderMessageTimer);
+        document.documentElement.classList.add('app-ready');
         loader.classList.add('fade-out');
         setTimeout(() => { loader.style.display = 'none'; loader.innerHTML = ''; }, 450);
     };

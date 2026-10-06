@@ -105,7 +105,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     <div><i>3</i><span>друг открывает её и видит, что карта от тебя</span></div>
                 </div>
                 <div class="cs-gift-price">
-                    <div><b>бессрочная карта</b><span>без продлений – клуб навсегда. дарить можно сколько угодно раз</span></div>
+                    <div><b>бессрочная карта</b><span>без продлений – клуб навсегда</span></div>
                     <div class="cs-gift-sum"><s>${rub(PERMANENT_FULL_PRICE)}</s><b>${rub(season)}</b></div>
                 </div>
                 <div class="cs-note">🕊 на время ЧС в Крыму карта интеллигента доступнее</div>
