@@ -1,7 +1,7 @@
 // js/ui/home.js
 import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti, scrollToElement } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
-import { log, updateRegistrationInSheet } from '../api.js';
+import { log, updateRegistrationInSheet, inviteApi } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
@@ -166,13 +166,22 @@ export function renderUserBookings(container) {
             buttonTextColor = '#000000';
         }
         
+        const canPlus1 = state.userCard?.status === 'active' && !isCity && !isBookClub && booking.cancelled !== true;
+        const plus1Html = canPlus1 ? `
+            <div class="bk-plus1" data-plus1-date="${booking.date}" hidden>
+                <span>🤝 можешь взять с собой друга, который ещё не был с нами</span>
+                <button type="button" class="bk-plus1-btn" data-date="${booking.date}">взять +1</button>
+            </div>` : '';
         html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
+            <div style="margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="flex: 1; margin-right: 16px;">
                     <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
                     <span style="color: #ffffff; margin-left: 8px;">${displayTitle}</span>
                 </div>
                 <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
+            </div>
+            ${plus1Html}
             </div>
         `;
     });
@@ -186,6 +195,44 @@ export function renderUserBookings(container) {
             const byDate = btn.dataset.date ? state.hikesWithTitle.findIndex(h => h.date === btn.dataset.date) : -1;
             showBottomSheet(byDate !== -1 ? byDate : parseInt(btn.dataset.index, 10));
         });
+    });
+
+    // «взять +1»: открываем хайк и прокручиваем к блоку «твой +1»
+    container.querySelectorAll('.bk-plus1-btn').forEach(btn => btn.addEventListener('click', () => {
+        haptic();
+        log('+1: кнопка из моих записей', false, state.user, { hike_date: btn.dataset.date });
+        const idx = state.hikesWithTitle.findIndex(h => h.date === btn.dataset.date);
+        if (idx < 0) return;
+        showBottomSheet(idx);
+        let tries = 0;
+        const seek = () => {
+            const box = document.querySelector('#plus1Slot .plus1-box');
+            if (!box) { if (++tries < 40) setTimeout(seek, 100); return; }
+            setTimeout(() => {
+                box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                box.classList.add('is-flash');
+                setTimeout(() => box.classList.remove('is-flash'), 1600);
+            }, 350);
+        };
+        seek();
+    }));
+    refreshPlus1Buttons(container);
+}
+
+// показываем «взять +1» только там, где друг ещё не записан (спрашиваем сервер, ответ кэшируем на сессию)
+let plus1Used = null;
+async function refreshPlus1Buttons(container) {
+    const rows = container.querySelectorAll('[data-plus1-date]');
+    if (!rows.length) return;
+    if (!plus1Used) {
+        try { plus1Used = (await inviteApi('inviteMine')).used || {}; }
+        catch (e) { plus1Used = {}; }
+    }
+    rows.forEach(r => {
+        const friend = plus1Used[r.dataset.plus1Date];
+        if (!friend) { r.hidden = false; return; }
+        r.hidden = false;
+        r.innerHTML = `<span>🤍 твой +1 – ${String(friend).replace(/</g, '&lt;')} – уже в списке</span>`;
     });
 }
 
