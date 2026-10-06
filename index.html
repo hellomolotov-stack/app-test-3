@@ -6,17 +6,36 @@
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#0A0B09">
     <title>хайкинг интеллигенция</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <!-- карта хайка в календаре: соединения и библиотека заранее, чтобы 3D-карта открывалась сразу -->
-    <link rel="preconnect" href="https://unpkg.com" crossorigin>
-    <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
-    <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
-    <link rel="preload" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js" as="script">
-    <link rel="preload" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" as="style">
-    <link rel="stylesheet" href="style.css?v=20261005ux2">
+    <!-- defer: скрипты качаются параллельно и не держат пустой экран; выполняются по порядку до main.js -->
+    <script defer src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
+    <!-- заставка: стили прямо здесь, чтобы эмодзи появились в первую долю секунды, до загрузки style.css и скриптов -->
+    <style>
+        html { background: #0A0B09; }
+        #initial-loader { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center;
+            background: #0A0B09; transition: opacity .45s ease; }
+        #initial-loader.fade-out { opacity: 0; pointer-events: none; }
+        .il-stage { position: relative; width: 260px; height: 110px; text-align: center; color: #fff;
+            font: 600 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .il-step { position: absolute; inset: 0; opacity: 0; animation: il-step 2.8s ease-in-out infinite; }
+        .il-step b { display: block; font-size: 48px; line-height: 1; margin-bottom: 14px; font-weight: 400;
+            animation: il-bob 2.8s ease-in-out infinite; }
+        .il-step:nth-child(2), .il-step:nth-child(2) b { animation-delay: .7s; }
+        .il-step:nth-child(3), .il-step:nth-child(3) b { animation-delay: 1.4s; }
+        .il-step:nth-child(4), .il-step:nth-child(4) b { animation-delay: 2.1s; }
+        @keyframes il-step { 0% { opacity: 0; transform: translateY(6px); } 5%, 22% { opacity: 1; transform: none; } 27%, 100% { opacity: 0; transform: translateY(-6px); } }
+        @keyframes il-bob { 0%, 100% { transform: scale(.92); } 12% { transform: scale(1.06); } }
+        .il-note { position: absolute; left: 0; right: 0; bottom: max(40px, env(safe-area-inset-bottom)); text-align: center;
+            color: rgba(255,255,255,.55); font: 13px -apple-system, sans-serif; opacity: 0; transition: opacity .4s; }
+        #initial-loader.is-slow .il-note { opacity: 1; }
+    </style>
+    <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
+    <link rel="preload" href="style.css?v=20261006load1" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261006load1"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -127,7 +146,15 @@
         </div>
     </div>
 
-    <div id="initial-loader" class="initial-loader"></div>
-    <script type="module" src="js/main.js?v=20261005ux2"></script>
+    <div id="initial-loader" class="initial-loader">
+        <div class="il-stage">
+            <div class="il-step"><b>🗺️</b>выбираем маршрут</div>
+            <div class="il-step"><b>🫆</b>собираем интеллигентов</div>
+            <div class="il-step"><b>📷</b>заряжаем камеру</div>
+            <div class="il-step"><b>💫</b>идём на хайк</div>
+        </div>
+        <div class="il-note">⚡️ долго грузится? включи три буквы</div>
+    </div>
+    <script type="module" src="js/main.js?v=20261006load1"></script>
 </body>
 </html>

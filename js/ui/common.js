@@ -75,49 +75,37 @@ export function showBottomNav(show = true) {
 }
 
 let loaderInterval = null, loaderMessageTimer = null;
+// Заставка с эмодзи лежит прямо в index.html (стили там же) – видна с первого кадра,
+// ещё до загрузки скриптов и style.css. Здесь только «медленно? включи три буквы» и аккуратный уход.
+const LOADER_MIN_MS = 2800; // один полный круг из четырёх эмодзи, даже если всё прогрузилось мгновенно
+
 export function showAnimatedLoader() {
     const loader = document.getElementById('initial-loader');
     if (!loader) return;
-    loader.innerHTML = `
-        <div class="loader-animation">
-            <div class="loader-emoji" id="loaderEmoji">🗺️</div>
-            <div class="loader-text" id="loaderText">выбираем маршрут</div>
-        </div>
-        <div class="loader-message" id="loaderMessage" style="display: none;">⚡️ для работы приложения включи три буквы</div>
-    `;
     loader.style.display = 'flex';
     loader.classList.remove('fade-out');
-    const steps = [
-        { emoji: '🗺️', text: 'выбираем маршрут' },
-        { emoji: '🫆', text: 'собираем интеллигентов' },
-        { emoji: '📷', text: 'заряжаем камеру' },
-        { emoji: '💫', text: 'идём на хайк' }
-    ];
-    let index = 0;
-    const emojiEl = document.getElementById('loaderEmoji');
-    const textEl = document.getElementById('loaderText');
-    const messageEl = document.getElementById('loaderMessage');
-    if (!emojiEl || !textEl || !messageEl) return;
-    loaderInterval = setInterval(() => {
-        index = (index + 1) % steps.length;
-        emojiEl.textContent = steps[index].emoji;
-        textEl.textContent = steps[index].text;
-    }, 1500);
-    loaderMessageTimer = setTimeout(() => {
-        if (loader.style.display !== 'none' && !loader.classList.contains('fade-out')) {
-            messageEl.style.display = 'block';
-        }
-    }, 1000);
+    if (loaderMessageTimer) clearTimeout(loaderMessageTimer);
+    loaderMessageTimer = setTimeout(() => loader.classList.add('is-slow'), 6000);
 }
 
+let loaderHiding = false;
 export function hideAnimatedLoader() {
-    if (loaderInterval) clearInterval(loaderInterval);
-    if (loaderMessageTimer) clearTimeout(loaderMessageTimer);
     const loader = document.getElementById('initial-loader');
-    if (loader) {
+    if (!loader || loaderHiding) return;
+    loaderHiding = true;
+    const cssReady = () => window.__cssReady || [...document.styleSheets].some(sh => /style\.css/.test(sh.href || ''));
+    const go = () => {
+        if (loaderInterval) clearInterval(loaderInterval);
+        if (loaderMessageTimer) clearTimeout(loaderMessageTimer);
         loader.classList.add('fade-out');
-        setTimeout(() => { loader.style.display = 'none'; loader.innerHTML = ''; }, 300);
-    }
+        setTimeout(() => { loader.style.display = 'none'; loader.innerHTML = ''; }, 450);
+    };
+    const wait = () => {
+        // не раньше минимума и не раньше, чем применились стили (иначе мелькнёт голая разметка)
+        if (performance.now() < LOADER_MIN_MS || (!cssReady() && performance.now() < 10000)) return setTimeout(wait, 100);
+        go();
+    };
+    wait();
 }
 
 export function showBack(callback) {

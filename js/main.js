@@ -547,6 +547,7 @@ async function loadAppData() {
     showAnimatedLoader();
     try {
         loadCachedState();
+        const hadCache = state.hikesWithTitle.length > 0;
         // Отдельный мгновенный кэш safety — чтобы баннер ЧП рисовался на первом кадре
         try { const sc = localStorage.getItem('safetyCache'); if (sc) state.safety = JSON.parse(sc); } catch (e) {}
 
@@ -574,6 +575,12 @@ async function loadAppData() {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
             hideAnimatedLoader();
             renderHome();
+            // сколько человек ждал главную: с открытия страницы, из кэша или с сети – для поиска тормозов
+            setTimeout(() => {
+                const sec = performance.now() / 1000;
+                const bucket = sec < 2 ? 'до 2 с' : sec < 5 ? '2–5 с' : sec < 10 ? '5–10 с' : 'дольше 10 с';
+                log(`загрузка: главная ${bucket} (${hadCache ? 'из кэша' : 'с сети'})`, state.userCard?.status !== 'active', state.user);
+            }, 0);
             mountAssistant();
             firstRenderDone = true;
             ensureDeepLink();
