@@ -3,9 +3,9 @@
 // (CSS берёт --pull 0…1), а отпущенная ниже порога – сворачивается через клик по своему оверлею:
 // у каждой шторки он уже закрывает её штатным способом. Тянуть можно за ручку или за любое
 // место, если содержимое прокручено в самый верх; горизонтальные жесты (слайдеры, карта) не трогаем.
-const SHEET = '.bottom-sheet, .cs-sheet';
-const HANDLE = '.bottom-sheet-handle, .cs-grab';
-const SKIP = 'input, textarea, select, .swipe-track, .hike-map-box, .bottom-sheet-nav-arrow';
+const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet';
+const HANDLE = '.bottom-sheet-handle, .cs-grab';  // .inv-grab тоже несёт класс cs-grab
+const SKIP = 'input, textarea, select, .swipe-track, .inv-slider, .hike-map-box, .bottom-sheet-nav-arrow';
 const CLOSE_DY = 110;     // столько протянуть – и шторка свернётся
 const CLOSE_SPEED = 0.6;  // или смахнуть быстрее (px/мс)
 

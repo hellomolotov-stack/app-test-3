@@ -61,7 +61,7 @@ export async function openInviteScreen(code) {
     document.querySelector('.inv-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.className = 'inv-overlay';
-    overlay.innerHTML = `<div class="inv-sheet"><div class="inv-loading">открываем приглашение…</div></div>`;
+    overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div class="inv-loading">открываем приглашение…</div></div>`;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-on'));
     const sheet = overlay.querySelector('.inv-sheet');
@@ -108,14 +108,14 @@ export async function openInviteScreen(code) {
     }
 
     sheet.innerHTML = `
-        <div class="inv-grab"></div>
+        <div class="inv-grab cs-grab"></div>
         <div class="inv-scroll">
             <div class="inv-emoji">🎉</div>
             <h2><span>${name}</span> приглашает тебя на хайк</h2>
             <p class="inv-sub">${name} – член клуба хайкинг интеллигенции. с картой интеллигента можно взять с собой друга, который ещё не был с нами – и сегодня это ты</p>
             <button type="button" class="inv-card-link" id="invCardLink">что такое карта интеллигента <span>›</span></button>
             ${hikeCard}
-            <div class="inv-free">🎟️ для тебя – <b>без билета</b>, как +1 от ${name}</div>
+            <div class="inv-free">🎟️ для тебя – <b>без билета</b>, по приглашению</div>
             <div class="inv-action">${action}</div>
         </div>`;
     if (!info.self && !info.used && info.available) showConfetti();
