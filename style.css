@@ -5350,7 +5350,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 /* ==================== ПРИГЛАШЕНИЕ +1 ==================== */
 /* блок в шторке хайка – подчёркнутая привилегия карты */
 .plus1-slot:empty { display: none; }
-.plus1-slot { margin: 18px 0 6px; }
+.plus1-slot { margin: 22px 0 6px; padding-top: 22px; border-top: 1px dashed rgba(217, 253, 25, .3); }
 .plus1-box { position: relative; padding: 16px; border-radius: 20px; background: linear-gradient(160deg, rgba(217, 253, 25, .12), rgba(217, 253, 25, .03) 60%);
     border: 1px solid rgba(217, 253, 25, .4); box-shadow: 0 0 0 4px rgba(217, 253, 25, .05); }
 .plus1-head { display: flex; align-items: center; gap: 12px; }
