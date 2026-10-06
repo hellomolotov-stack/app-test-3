@@ -1901,7 +1901,7 @@ export function showBottomSheet(index) {
                 </div>
                 ${tagsHtml}
             </div>
-            ${state.pendingInvite?.date === hike.date && !state.hikeBookingStatus[state.hikesWithTitle.findIndex(h => h.date === hike.date)] ? `<div class="inv-sheet-banner" id="inviteSheetBanner">🎟️ ты идёшь по приглашению ${String(state.pendingInvite.name || '').replace(/</g, '&lt;')} – <b>без билета</b>. сдвинь «иду» внизу, чтобы записаться</div>` : ''}
+            ${state.pendingInvite?.date === hike.date && !state.hikeBookingStatus[state.hikesWithTitle.findIndex(h => h.date === hike.date)] ? `<div class="inv-sheet-banner" id="inviteSheetBanner">🎟️ ${String(state.pendingInvite.name || 'член клуба').replace(/</g, '&lt;')} берёт тебя своим +1 – для тебя <b>без билета</b>. сдвинь «иду» внизу, чтобы записаться</div>` : ''}
             ${imageHtml}
             ${extraInfoHtml}
             ${sectionsHtml}
