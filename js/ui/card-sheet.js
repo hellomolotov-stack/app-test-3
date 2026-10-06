@@ -12,7 +12,8 @@ const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 const rub = n => `${Number(n).toLocaleString('ru-RU')} ₽`;
 
 function partnersHtml() {
-    const list = (state.guestPrivileges?.city || state.privileges?.city || []).filter(p => p && p.title);
+    // «на утро : на вечер» пока прячем – по ней непонятно, что за скидка
+    const list = (state.guestPrivileges?.city || state.privileges?.city || []).filter(p => p && p.title && !/на утро/i.test(p.title));
     if (!list.length) return '';
     // «-10% по карте интеллигента» → «−10%», «+1000 бонусов …» → «+1000 бонусов»
     const perk = d => {
@@ -91,15 +92,23 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 <div class="cs-ben"><div class="cs-e">🥂</div><div><b>клубные события в городе и на море</b><span>вечера, книжный клуб, встречи – только для своих</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🧠</div><div><b>мастермайнды на вершинах</b><span>бронируй свой запрос и получай саммари каждой встречи</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🫆</div><div><b>профили интеллигентов</b><span>заранее узнаешь, кто идёт: профессии, увлечения, с кем обсудить идею</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🛡️</div><div><b>свободный интернет</b><span>наше приложение, чтобы телеграм работал как раньше</span></div></div>
+                <div class="cs-ben"><div class="cs-e">🛡️</div><div><b>свободный интернет</b><span>наше приложение по обходу блокировок, чтобы телеграм и весь интернет работали как раньше</span></div></div>
 
                 ${partnersHtml()}
                 ${statsHtml()}
 
                 ${gift ? `
-                <div class="cs-sec">подарок</div>
-                <div class="cs-plans is-offer"><div class="cs-plan is-on"><span class="cs-hit">🎁</span><small>бессрочная карта в подарок</small><b>${rub(season)}</b><span>без продлений – клуб навсегда</span></div></div>
-                <div class="cs-note">🎁 после оплаты ты получишь ссылку-подарок. отправь её другу – он увидит, что карта от тебя, и примет её в приложении. дарить можно сколько угодно раз</div>
+                <div class="cs-sec">как подарить</div>
+                <div class="cs-gift-steps">
+                    <div><i>1</i><span>оплачиваешь карту</span></div>
+                    <div><i>2</i><span>получаешь ссылку-подарок</span></div>
+                    <div><i>3</i><span>друг открывает её и видит, что карта от тебя</span></div>
+                </div>
+                <div class="cs-gift-price">
+                    <div><b>бессрочная карта</b><span>без продлений – клуб навсегда. дарить можно сколько угодно раз</span></div>
+                    <div class="cs-gift-sum"><s>${rub(PERMANENT_FULL_PRICE)}</s><b>${rub(season)}</b></div>
+                </div>
+                <div class="cs-note">🕊 на время ЧС в Крыму карта интеллигента доступнее</div>
                 ` : `
                 <div class="cs-sec">выбери карту</div>
                 <div class="cs-plans">
@@ -120,7 +129,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 `}
             </div>
             <div class="cs-bar">
-                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить за ${rub(season)}` : 'оформить навсегда'}</button>
+                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить карту <s>${rub(PERMANENT_FULL_PRICE).replace(' ₽', '')}</s> ${rub(season)}` : 'оформить навсегда'}</button>
                 ${isReturning || gift ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
             </div>
         </div>`;
@@ -164,7 +173,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         bought = true;
         act('card_buy');
         haptic();
-        const label = buyBtn.textContent;
+        const label = buyBtn.innerHTML;
         buyBtn.textContent = 'открываем оплату…';
         log(gift ? 'подарок: клик оплатить' : (plan === 'permanent' ? 'клик бессрочная карта' : 'клик сезонная карта'), !gift, state.user, { source: 'шторка карты' });
         try {
@@ -182,7 +191,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             openLink(url, gift ? 'оплата подарочной карты' : plan === 'offer' ? 'оплата карты по спецпредложению' : (plan === 'permanent' ? 'оплата бессрочной карты' : 'оплата сезонной карты'), true);
         } catch (err) {
             console.error('initPayment error:', err);
-            buyBtn.textContent = label;
+            buyBtn.innerHTML = label;
             delete buyBtn.dataset.busy;
             alert(paymentErrorText(err, 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.'));
         }

@@ -52,7 +52,7 @@ export async function openGiftPaidScreen(inv) {
     }
     showConfetti();
     sheet.innerHTML = `<div class="inv-grab cs-grab"></div><div class="inv-scroll">
-        <div class="gift-card"><img src="${CARD_IMG}" alt="карта интеллигента"><span>🎁</span></div>
+        <div class="gift-card"><img src="${CARD_IMG}" alt="карта интеллигента"></div>
         <h2>подарок готов!</h2>
         <p class="inv-sub">${res.claimed ? `🤍 подарок уже принят${res.claimed_name ? ` – ${esc(res.claimed_name)}` : ''}` : 'отправь эту ссылку тому, кому даришь карту – он откроет её, увидит, что карта от тебя, и примет подарок в приложении'}</p>
         <div class="gift-link-box"><span>${esc(res.link)}</span></div>
@@ -88,7 +88,7 @@ export async function openGiftReceiveScreen(code) {
     else action = `<button class="btn btn-yellow inv-wide" data-claim>принять подарок</button>`;
 
     sheet.innerHTML = `<div class="inv-grab cs-grab"></div><div class="inv-scroll">
-        <div class="gift-card"><img src="${CARD_IMG}" alt="карта интеллигента"><span>🎁</span></div>
+        <div class="gift-card"><img src="${CARD_IMG}" alt="карта интеллигента"></div>
         <h2><span>${name}</span> дарит тебе карту интеллигента</h2>
         <p class="inv-sub">бессрочная карта главного хайкинг-клуба большой Ялты: все хайки сезона, закрытые события и люди, с которыми хочется идти дальше</p>
         <button type="button" class="inv-card-link" data-what>что даёт карта <span>›</span></button>
