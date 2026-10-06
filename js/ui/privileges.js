@@ -2,7 +2,6 @@
 import { haptic, openLink, mainDiv, subtitle, parseLinks, tg } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
-import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop, cleanupProfileOverlays } from './common.js';
 import { renderHome } from './home.js';
@@ -208,16 +207,13 @@ export function renderGift(isGuest = false) {
     mainDiv().innerHTML = `
         <div class="card-container">
             <div class="partner-item"><strong>как подарить карту интеллигента</strong><p style="white-space: pre-line;">${giftText}</p></div>
-            <div id="giftAccordion" class="card-accordion">
-                <button class="accordion-btn btn-yellow btn-glow">купить в подарок</button>
-                <div class="dropdown-menu">
-                    <a href="${SEASON_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'подарить сезонную', ${isGuest}); return false;" class="btn btn-outline">сезонная</a>
-                    <a href="${PERMANENT_CARD_LINK}" onclick="event.preventDefault(); openLink(this.href, 'подарить бессрочную', ${isGuest}); return false;" class="btn btn-outline">бессрочная</a>
-                </div>
-            </div>
+            <button class="btn btn-yellow btn-glow" id="giftOpenBtn" style="width: calc(100% - 32px); margin: 8px 16px 0;">🎁 подарить карту</button>
         </div>
     `;
-    setupAccordion('giftAccordion', isGuest);
+    // подарок оформляется в шторке карты: оплата, затем ссылка-подарок для друга (gift.js)
+    document.getElementById('giftOpenBtn')?.addEventListener('click', () => {
+        import('./card-sheet.js').then(m => m.openCardSheet({ source: 'раздел подарка', gift: true }));
+    });
 }
 
 export function renderPassPage(isGuest = false) {

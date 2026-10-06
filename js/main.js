@@ -349,6 +349,17 @@ function handleDeepLink(startParam) {
     }
     // Возврат из оплаты билета: paid_<дата хайка>. Дата приходит в самой ссылке, поэтому возврат
     // работает и без localStorage (другой webview, очищенный кэш). Запись делает сервер по ResultURL.
+    // подарок: даритель вернулся после оплаты / получатель открыл ссылку-подарок
+    if (startParam.startsWith('giftpaid_')) {
+        const inv = startParam.substring(9).replace(/[^0-9]/g, '');
+        setTimeout(() => import('./ui/gift.js').then(m => m.openGiftPaidScreen(inv)), 400);
+        return;
+    }
+    if (startParam.startsWith('gift_')) {
+        const code = startParam.substring(5).replace(/[^a-z0-9]/g, '');
+        setTimeout(() => import('./ui/gift.js').then(m => m.openGiftReceiveScreen(code)), 400);
+        return;
+    }
     // приглашение +1 от владельца карты
     if (startParam.startsWith('inv_')) {
         const code = startParam.substring(4).replace(/[^a-z0-9]/g, '');

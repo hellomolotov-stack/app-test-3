@@ -61,10 +61,11 @@ function wireTilt(stage, card) {
     stage.addEventListener('touchend', onEnd);
 }
 
-export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '' } = {}) {
+// gift: true – подарочный режим: «подари карту», одна цена, после оплаты дарителю приходит ссылка-подарок
+export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '', gift = false } = {}) {
     let offerTimer = null;
     haptic();
-    log('карта: что внутри', true, state.user, { source });
+    log(gift ? 'подарок: открыл шторку' : 'карта: что внутри', !gift, state.user, { source });
     document.querySelector('.cs-overlay')?.remove();
 
     const season = state.popupConfig?.seasonCardPrice || 5500;
@@ -78,9 +79,9 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             <div class="cs-scroll">
                 <div class="cs-hero">
                     <div class="cs-stage"><div class="cs-card"><img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции"></div></div>
-                    <h2>стань интеллигентом</h2>
+                    <h2>${gift ? 'подари карту интеллигента' : 'стань интеллигентом'}</h2>
                     <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
-                    <p>карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше</p>
+                    <p>${gift ? 'подари другу то, что есть у тебя: все хайки сезона, закрытые события и людей, с которыми хочется идти дальше' : 'карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше'}</p>
                     ${membersHtml()}
                 </div>
 
@@ -95,6 +96,11 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 ${partnersHtml()}
                 ${statsHtml()}
 
+                ${gift ? `
+                <div class="cs-sec">подарок</div>
+                <div class="cs-plans is-offer"><div class="cs-plan is-on"><span class="cs-hit">🎁</span><small>бессрочная карта в подарок</small><b>${rub(season)}</b><span>без продлений – клуб навсегда</span></div></div>
+                <div class="cs-note">🎁 после оплаты ты получишь ссылку-подарок. отправь её другу – он увидит, что карта от тебя, и примет её в приложении. дарить можно сколько угодно раз</div>
+                ` : `
                 <div class="cs-sec">выбери карту</div>
                 <div class="cs-plans">
                     <button type="button" class="cs-plan is-on" data-plan="permanent">
@@ -111,10 +117,11 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 </div>
                 <div class="cs-note">🕊 на время ЧС в Крыму бессрочная карта – по цене сезонной: сильное окружение сейчас самый ценный ресурс</div>
                 <button type="button" class="cs-support" id="csSupport">оплачивал билет и не успел сходить? напиши нам – зачтём его в карту</button>
+                `}
             </div>
             <div class="cs-bar">
-                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">оформить навсегда</button>
-                ${isReturning ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
+                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить за ${rub(season)}` : 'оформить навсегда'}</button>
+                ${isReturning || gift ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
             </div>
         </div>`;
     // верх шторки – ниже кнопок Telegram «Закрыть» и «•••» (в полноэкранном режиме они поверх приложения)
@@ -159,7 +166,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         haptic();
         const label = buyBtn.textContent;
         buyBtn.textContent = 'открываем оплату…';
-        log(plan === 'permanent' ? 'клик бессрочная карта' : 'клик сезонная карта', true, state.user, { source: 'шторка карты' });
+        log(gift ? 'подарок: клик оплатить' : (plan === 'permanent' ? 'клик бессрочная карта' : 'клик сезонная карта'), !gift, state.user, { source: 'шторка карты' });
         try {
             // на время ЧС бессрочная оформляется по цене и через оплату сезонной
             const { url } = await initPayment({
@@ -167,11 +174,12 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 firstName: state.user?.first_name,
                 lastName: state.user?.last_name,
                 username: state.user?.username,
-                hikeDate, hikeTitle, cardType: plan === 'offer' ? 'offer' : 'season'
+                hikeDate: gift ? '' : hikeDate, hikeTitle: gift ? '' : hikeTitle,
+                cardType: gift ? 'gift' : (plan === 'offer' ? 'offer' : 'season')
             });
-            localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
+            if (!gift) localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
             close();
-            openLink(url, plan === 'offer' ? 'оплата карты по спецпредложению' : (plan === 'permanent' ? 'оплата бессрочной карты' : 'оплата сезонной карты'), true);
+            openLink(url, gift ? 'оплата подарочной карты' : plan === 'offer' ? 'оплата карты по спецпредложению' : (plan === 'permanent' ? 'оплата бессрочной карты' : 'оплата сезонной карты'), true);
         } catch (err) {
             console.error('initPayment error:', err);
             buyBtn.textContent = label;
@@ -181,7 +189,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     });
 
     // личное спецпредложение: показываем, только если сервер подтвердил его для этого человека
-    if (state.userCard?.status !== 'active') {
+    if (!gift && state.userCard?.status !== 'active') {
         getCardOffer().then(offer => {
             if (!offer?.active || !document.body.contains(overlay)) return;
             const price = offer.price || 5000, full = offer.full_price || 5500;
@@ -221,7 +229,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         const i = (state.hikesWithTitle || []).findIndex(h => h.date === hikeDate);
         if (i !== -1) setTimeout(() => showBottomSheet(i), 320);
     });
-    overlay.querySelector('#csSupport').addEventListener('click', () => {
+    overlay.querySelector('#csSupport')?.addEventListener('click', () => {
         haptic();
         openLink('https://t.me/hellointelligent', 'карта: зачесть билет', true);
     });

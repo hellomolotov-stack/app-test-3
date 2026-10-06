@@ -3,7 +3,6 @@ import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, 
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, inviteApi } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
-import { SEASON_CARD_LINK, PERMANENT_CARD_LINK } from '../config.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
 import { renderIntelligentsiaRoutes, refreshIntelligentsiaRouteFavorites } from './intelligentsia-routes.js';
@@ -674,6 +673,7 @@ function renderOwnerHome() {
                 <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                 <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
             </div>
+            <button type="button" class="gift-text-link" id="giftCardBtn">🎁 <b>подарить карту</b> другу ›</button>
         </div>
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
@@ -703,6 +703,10 @@ function renderOwnerHome() {
 
     wireSafetyBanner();
     fitMastermindScroll();
+    document.getElementById('giftCardBtn')?.addEventListener('click', () => {
+        haptic();
+        openCardSheet({ source: 'главная владельца', gift: true });
+    });
     document.getElementById('ownerCardImage')?.addEventListener('click', () => {
         haptic();
         if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
