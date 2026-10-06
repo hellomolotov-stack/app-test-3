@@ -1,7 +1,7 @@
 // js/main.js
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups } from './firebase.js';
+import { initFirebase, getDatabase, hikesFromSnapshot, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups } from './firebase.js';
 import { log, logAutoSendClick, markPaymentSeen } from './api.js';
 import { pingAppUser } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
@@ -543,6 +543,33 @@ function applyOwnerBookings() {
 
 const APP_T0 = Date.now();
 
+// Firebase SDK подгружаем сами, после старта приложения: раньше три его файла с серверов Google
+// держали весь запуск (из Крыма без VPN – до 10+ секунд), теперь главная рисуется параллельно.
+const FIREBASE_SDK = [
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js',
+    'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js'
+];
+function loadScript(src) {
+    return new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+}
+let firebaseSdkPromise = null;
+function loadFirebaseSdk() {
+    if (window.firebase?.database && window.firebase?.auth) return Promise.resolve();
+    // app – первым (остальные к нему цепляются), database и auth – параллельно
+    firebaseSdkPromise ||= loadScript(FIREBASE_SDK[0])
+        .then(() => Promise.all([loadScript(FIREBASE_SDK[1]), loadScript(FIREBASE_SDK[2])]))
+        .catch(e => console.error('Firebase SDK load failed', e));
+    return firebaseSdkPromise;
+}
+loadFirebaseSdk(); // стартуем загрузку сразу при запуске модуля
+
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -560,8 +587,10 @@ async function loadAppData() {
             || '';
         let firstRenderDone = false;
         let deepLinkHandled = false;
+        // deep link выполняем, когда подключилась база: ему нужны хайки и записи из Firebase
+        let firebaseReady = false;
         const ensureDeepLink = () => {
-            if (deepLinkHandled || !startParam) return;
+            if (deepLinkHandled || !startParam || !firebaseReady) return;
             deepLinkHandled = true;
             handleDeepLink(startParam);
         };
@@ -586,17 +615,34 @@ async function loadAppData() {
             ensureDeepLink();
         };
 
+        let hikesFromFirebase = false;
+        const applyHikes = (newList) => {
+            state.hikesList = newList;
+            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
+            state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
+            applyOwnerBookings(); // #5: переприменить записи владельца при обновлении хайков
+            saveCachedState();
+            earlyRenderHome(); // показать экран сразу, как пришли хайки (для тех, у кого нет кэша)
+        };
+
+        // Быстрый первый запуск: список хайков с CDN (/api/hikes), запрошен ещё в index.html.
+        // Если Firebase успел раньше – ответ CDN просто игнорируем.
+        window.__hikesBoot?.then(raw => {
+            if (raw && !hikesFromFirebase && !state.hikesWithTitle.length) applyHikes(hikesFromSnapshot(raw));
+        });
+
+        // кэш есть – показываем главную сразу, не дожидаясь Firebase SDK
+        earlyRenderHome();
+        await loadFirebaseSdk();
         initFirebase();
         const database = getDatabase();
+        firebaseReady = true;
+        if (firstRenderDone) ensureDeepLink();
 
         if (database) {
             subscribeToHikes((newList) => {
-                state.hikesList = newList;
-                state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
-                state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
-                applyOwnerBookings(); // #5: переприменить записи владельца при обновлении хайков
-                saveCachedState();
-                earlyRenderHome(); // показать экран сразу, как пришли хайки (для тех, у кого нет кэша)
+                hikesFromFirebase = true;
+                applyHikes(newList);
             });
             subscribeToRoutes(setIntelligentsiaRoutes);
             subscribeToRouteFavorites((favorites) => {

@@ -6,11 +6,11 @@
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#0A0B09">
     <title>хайкинг интеллигенция</title>
+    <!-- список хайков с нашего CDN – запрашиваем в первую же миллисекунду, главная не ждёт Firebase -->
+    <script>window.__hikesBoot = fetch('/api/hikes').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });</script>
     <!-- defer: скрипты качаются параллельно и не держат пустой экран; выполняются по порядку до main.js -->
     <script defer src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <!-- Firebase SDK (~700 КБ с серверов Google) грузит main.js в фоне: главная не ждёт его -->
     <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app" crossorigin>
     <!-- заставка: стили прямо здесь, чтобы эмодзи появились в первую долю секунды, до загрузки style.css и скриптов -->
@@ -40,8 +40,8 @@
         #initial-loader.is-slow .il-note { opacity: .8; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=20261006load2" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=20261006load2"></noscript>
+    <link rel="preload" href="style.css?v=20261006fast1" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261006fast1"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -161,6 +161,6 @@
         </div>
         <div class="il-note">⚡️ долго грузится? включи три буквы</div>
     </div>
-    <script type="module" src="js/main.js?v=20261006load2"></script>
+    <script type="module" src="js/main.js?v=20261006fast1"></script>
 </body>
 </html>

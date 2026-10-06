@@ -60,15 +60,10 @@ export function getDatabase() {
     return database;
 }
 
-export function subscribeToHikes(callback) {
-    if (!database) {
-        callback([]);
-        return () => {};
-    }
-    const hikesRef = database.ref('hikes');
-    const listener = hikesRef.on('value', (snapshot) => {
-        const hikes = snapshot.val() || {};
-        const list = Object.entries(hikes).map(([date, data]) => ({
+// Разбор узла hikes в список – общий для Firebase и быстрого первого запуска (/api/hikes)
+export function hikesFromSnapshot(hikes) {
+    hikes = hikes || {};
+    return Object.entries(hikes).map(([date, data]) => ({
             date,
             title: data.title || '',
             features: data.features || '',
@@ -94,6 +89,16 @@ export function subscribeToHikes(callback) {
             route_id: data.route_id || '',
             track: data.track || null
         })).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function subscribeToHikes(callback) {
+    if (!database) {
+        callback([]);
+        return () => {};
+    }
+    const hikesRef = database.ref('hikes');
+    const listener = hikesRef.on('value', (snapshot) => {
+        const list = hikesFromSnapshot(snapshot.val());
         callback(list);
     });
     return () => hikesRef.off('value', listener);
