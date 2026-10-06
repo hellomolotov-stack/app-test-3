@@ -12,7 +12,7 @@ const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 const dateRu = s => { const d = new Date(s + 'T12:00:00'); return `${d.getDate()} ${MONTHS[d.getMonth()]}, ${WD[d.getDay()]}`; };
 
 function shareInvite(link, hikeTitle, hikeDate) {
-    const text = `зову тебя на хайк «${hikeTitle}», ${dateRu(hikeDate)} 🏔 по этой ссылке запишешься без билета – беру тебя как своего +1`;
+    const text = `зову тебя на ${hikeTitle}, ${dateRu(hikeDate)} 🏔 по этой ссылке запишешься без билета – беру тебя как своего +1`;
     const url = `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`;
     if (tg?.openTelegramLink) tg.openTelegramLink(url);
     else window.open(url, '_blank');

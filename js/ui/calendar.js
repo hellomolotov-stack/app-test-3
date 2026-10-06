@@ -1899,8 +1899,8 @@ export function showBottomSheet(index) {
             ${imageHtml}
             ${extraInfoHtml}
             ${sectionsHtml}
-            ${shareButtonHtml}
             ${inviteButtonHtml}
+            ${shareButtonHtml}
         `;
 
         if (hikeTrack) {

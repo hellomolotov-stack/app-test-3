@@ -40,8 +40,8 @@
         #initial-loader.is-slow .il-note { opacity: .8; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=20261006inv2" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=20261006inv2"></noscript>
+    <link rel="preload" href="style.css?v=20261006inv3" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261006inv3"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -76,6 +76,15 @@
     <!-- modulepreload:end -->
 </head>
 <body>
+    <div id="initial-loader" class="initial-loader">
+        <div class="il-stage">
+            <div class="il-step"><b>🗺️</b><span>выбираем маршрут</span></div>
+            <div class="il-step"><b>🫆</b><span>собираем интеллигентов</span></div>
+            <div class="il-step"><b>📷</b><span>заряжаем камеру</span></div>
+            <div class="il-step"><b>💫</b><span>идём на хайк</span></div>
+        </div>
+        <div class="il-note">⚡️ долго грузится? включи три буквы</div>
+    </div>
     <!-- Верхний плавный блюр -->
     <div class="header-blur"></div>
 
@@ -153,15 +162,6 @@
         </div>
     </div>
 
-    <div id="initial-loader" class="initial-loader">
-        <div class="il-stage">
-            <div class="il-step"><b>🗺️</b><span>выбираем маршрут</span></div>
-            <div class="il-step"><b>🫆</b><span>собираем интеллигентов</span></div>
-            <div class="il-step"><b>📷</b><span>заряжаем камеру</span></div>
-            <div class="il-step"><b>💫</b><span>идём на хайк</span></div>
-        </div>
-        <div class="il-note">⚡️ долго грузится? включи три буквы</div>
-    </div>
-    <script type="module" src="js/main.js?v=20261006inv2"></script>
+    <script type="module" src="js/main.js?v=20261006inv3"></script>
 </body>
 </html>
