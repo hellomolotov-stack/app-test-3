@@ -114,7 +114,7 @@ function allHikes() {
 // ---------- каркас ----------
 function render() {
     if (!root) return;
-    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['broadcast', '📨 рассылка']];
+    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['plus1', '🤝 +1'], ['broadcast', '📨 рассылка']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -132,6 +132,7 @@ function render() {
     if (view.sub === 'edit') renderEditor(body);
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);
+    else if (view.tab === 'plus1') renderPlus1(body);
     else renderHikeList(body);
     root.scrollTop = 0;
 }
@@ -723,6 +724,69 @@ async function sendCardOffer(chosen) {
 // ---------- рассылка ----------
 function newBroadcast() {
     return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null };
+}
+
+// ---------- приглашения +1 ----------
+// Ссылка, по которой друг владельца карты записывается на хайк без билета (см. invite.js / handleInvite).
+let p1 = null; // { members, error, member, date, result }
+
+function renderPlus1(body) {
+    if (!p1) {
+        p1 = { members: null, member: '', date: '', result: null };
+        adminCall('adminInviteMembers')
+            .then(r => { p1.members = r.members || []; })
+            .catch(e => { p1.error = e.message; })
+            .finally(() => { if (root && view.tab === 'plus1') render(); });
+    }
+    if (!p1.members && !p1.error) { body.innerHTML = '<div class="adm-muted" style="padding:20px 4px">загружаю владельцев карт…</div>'; return; }
+    if (p1.error) {
+        body.innerHTML = `<div class="adm-muted" style="padding:20px 4px">не получилось загрузить: ${esc(p1.error)}</div><button class="adm-ghost adm-wide" id="p1Retry">ещё раз</button>`;
+        body.querySelector('#p1Retry').addEventListener('click', () => { p1 = null; render(); });
+        return;
+    }
+    const today = todayStr();
+    const hikes = allHikes().filter(h => h.date >= today && h.title && !isYes(h.city) && !isYes(h.book_club) && !isYes(h.cancelled));
+    const r = p1.result;
+    body.innerHTML = `
+        <div class="adm-muted" style="margin:4px 2px 14px">ссылка-приглашение: друг владельца карты откроет её, увидит «имя приглашает тебя на хайк» и запишется без билета. один +1 на хайк, только для тех, кто ещё не ходил с нами</div>
+        <label class="adm-field"><span>владелец карты</span><select id="p1Member">
+            <option value="">— выбери —</option>
+            ${p1.members.map(m => `<option value="${esc(m.id)}"${m.id === p1.member ? ' selected' : ''}>${esc(m.name)}</option>`).join('')}
+        </select></label>
+        <label class="adm-field"><span>хайк</span><select id="p1Hike">
+            <option value="">— выбери —</option>
+            ${hikes.map(h => `<option value="${h.date}"${h.date === p1.date ? ' selected' : ''}>${esc(dateLabel(h.date))} · ${esc(h.title)}</option>`).join('')}
+        </select></label>
+        <button class="btn btn-yellow adm-primary" id="p1Create">создать ссылку</button>
+        ${r ? `
+            <div class="adm-p1-result">
+                <div style="font-weight:700;margin-bottom:6px">ссылка для ${esc(r.inviter_name || '')}</div>
+                ${r.used ? `<div class="adm-muted" style="margin-bottom:8px">уже использована${r.friend ? ` – записался(ась) ${esc(r.friend)}` : ''}</div>` : ''}
+                <label class="adm-field" style="margin:0"><input id="p1Link" readonly value="${esc(r.link)}"></label>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                    <button class="adm-ghost" id="p1Copy" style="flex:1">скопировать</button>
+                    <button class="adm-ghost" id="p1Share" style="flex:1">отправить в Telegram</button>
+                </div>
+            </div>` : ''}`;
+    body.querySelector('#p1Member').addEventListener('change', e => { p1.member = e.target.value; p1.result = null; });
+    body.querySelector('#p1Hike').addEventListener('change', e => { p1.date = e.target.value; p1.result = null; });
+    body.querySelector('#p1Create').addEventListener('click', async e => {
+        if (!p1.member || !p1.date) return toast('выбери владельца карты и хайк', true);
+        const btn = e.currentTarget;
+        btn.disabled = true; btn.textContent = 'создаю…';
+        try {
+            p1.result = await adminCall('adminInviteCreate', { user_id: p1.member, hike_date: p1.date });
+        } catch (err) { toast(err.message, true); }
+        render();
+    });
+    body.querySelector('#p1Copy')?.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(r.link); toast('скопировано'); }
+        catch (e) { const i = body.querySelector('#p1Link'); i.select(); document.execCommand('copy'); toast('скопировано'); }
+    });
+    body.querySelector('#p1Share')?.addEventListener('click', () => {
+        const url = `https://t.me/share/url?url=${encodeURIComponent(r.link)}&text=${encodeURIComponent('твоя ссылка-приглашение +1 – отправь её другу, он запишется на хайк без билета')}`;
+        if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+    });
 }
 
 function renderBroadcast(body) {

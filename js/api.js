@@ -193,6 +193,17 @@ export async function getCardOffer() {
     } catch (e) { return { active: false }; }
 }
 
+// Приглашения +1 (inviteCreate / inviteInfo / inviteAccept): id человека сервер берёт из подписи Telegram.
+export async function inviteApi(action, data = {}) {
+    if (!REGISTRATION_API_URL) throw new Error('нет связи с сервером');
+    const params = new URLSearchParams({ action, init_data: window.Telegram?.WebApp?.initData || '', ...data });
+    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params });
+    let json;
+    try { json = JSON.parse(await resp.text()); } catch (e) { throw new Error('сервер не ответил, попробуй ещё раз'); }
+    if (json.status !== 'ok') throw new Error(json.message || 'ошибка сервера');
+    return json;
+}
+
 // Человек увидел экран «оплата прошла / ты записан» – сервер не станет напоминать в боте (sendPaidReminders).
 export function markPaymentSeen() {
     const initData = window.Telegram?.WebApp?.initData || '';

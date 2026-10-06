@@ -349,6 +349,12 @@ function handleDeepLink(startParam) {
     }
     // Возврат из оплаты билета: paid_<дата хайка>. Дата приходит в самой ссылке, поэтому возврат
     // работает и без localStorage (другой webview, очищенный кэш). Запись делает сервер по ResultURL.
+    // приглашение +1 от владельца карты
+    if (startParam.startsWith('inv_')) {
+        const code = startParam.substring(4).replace(/[^a-z0-9]/g, '');
+        setTimeout(() => import('./ui/invite.js').then(m => m.openInviteScreen(code)), 400);
+        return;
+    }
     if (startParam.startsWith('paid_')) {
         const paidDate = normalizeDate(startParam.substring(5));
         log('вернулась из оплаты билета', true, state.user, { hike_date: paidDate });

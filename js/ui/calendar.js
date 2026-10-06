@@ -1882,7 +1882,8 @@ export function showBottomSheet(index) {
             ? `<div class="bottom-sheet-nav-arrow" id="nextHike"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 7 L15 12 L9 17" stroke="currentColor" stroke-width="2.2"/></svg></div>`
             : '<div class="bottom-sheet-nav-arrow hidden" id="nextHike"></div>';
 
-        let inviteButtonHtml = '';
+        // блок «твой +1» для владельца карты, записанного на хайк (заполняет fillPlus1Slot)
+        let inviteButtonHtml = `<div class="plus1-slot" id="plus1Slot"></div>`;
 
         contentWrapper.innerHTML = `
             <div class="bottom-sheet-header-block">
@@ -2469,7 +2470,23 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     return track;
 }
 
+// «Твой +1»: только владельцу карты, записанному на будущий хайк (не городское событие и не книжный клуб)
+function fillPlus1Slot() {
+    const slot = document.getElementById('plus1Slot');
+    if (!slot) return;
+    const idx = curSheetIndex();
+    const hike = state.hikesWithTitle[idx];
+    const isPast = hike && new Date(hike.date) < new Date().setHours(0, 0, 0, 0);
+    const ok = hike && state.userCard?.status === 'active' && state.hikeBookingStatus[idx]
+        && !isPast && hike.cancelled !== true && !(hike.city === true || hike.city === 'yes') && hike.book_club !== true;
+    if (!ok) { slot.innerHTML = ''; slot.dataset.date = ''; return; }
+    if (slot.dataset.date === hike.date && slot.firstChild) return;
+    slot.dataset.date = hike.date;
+    import('./invite.js').then(m => m.renderPlus1Block(slot, hike));
+}
+
 function updateFloatingSheetButtons() {
+    fillPlus1Slot();
     const container = document.querySelector('.floating-sheet-buttons');
     if (!container) return;
     const hike = state.hikesWithTitle[curSheetIndex()];
