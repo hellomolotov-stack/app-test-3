@@ -5417,3 +5417,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 
 /* «поделиться хайком» у владельца карты – просто кликабельный текст */
 .share-text-link { background: none; border: 0; padding: 6px 8px; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+
+/* карта владельца на главной – в рамке с отступами, как гостевая карта под защитным слоем */
+#cardBlock > .card-image { width: calc(100% - 32px); margin: 0 16px; aspect-ratio: 1000 / 604; object-fit: cover;
+    border-radius: 3.8% / 6.3%; box-shadow: 0 10px 24px rgba(0, 0, 0, .35); cursor: pointer; }
