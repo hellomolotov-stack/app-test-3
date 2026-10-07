@@ -341,7 +341,7 @@ function feedNearestCard(h) {
             : '';
         return `<div class="ef-next ef-next-teaser${waiting ? ' is-waiting' : ''}"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}${note}</div>`;
     }
-    // плашка-билет без карты: дата · название · «детали маршрута» (карта – внутри хайка)
+    // плашка-билет без карты: дата · название · «записаться» (открывает шторку хайка с записью)
     const d = feedDate(h.date);
     const km = feedKm(h);
     const sub = [feedWhen(h.date), h.start_time || (km ? `${km} км` : '')].filter(Boolean).join(' · ');
@@ -352,7 +352,7 @@ function feedNearestCard(h) {
                 <div class="ef-tk-title">${String(h.title).replace(/-/g, '\u2011')}</div>
                 <div class="ef-tk-sub">${sub}</div>
                 <div class="ef-tk-foot">
-                    <button class="btn btn-yellow ef-tk-go">детали маршрута</button>
+                    <button class="btn btn-yellow ef-tk-go">${state._userRegs?.[h.date] === true ? 'ты записан ✓' : 'записаться'}</button>
                     <div class="ef-going ef-tk-going" data-going-for="${h.date}"></div>
                 </div>
             </div>
