@@ -5454,7 +5454,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .maplibregl-cooperative-gesture-screen { background: transparent !important; align-items: flex-end !important; padding: 0 12px 12px !important; font-size: 13px !important; line-height: 1.35 !important; }
 .maplibregl-cooperative-gesture-screen > div { padding: 8px 14px; border-radius: 14px; background: rgba(10, 11, 9, 0.72); border: 1px solid rgba(255, 255, 255, 0.16); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #fff; text-align: center; }
 
-/* подпись мастерской внизу главной */
-.maker-credit { margin: 8px 16px 24px; padding-top: 14px; border-top: 1px dashed rgba(255, 255, 255, .3); text-align: center; }
-.maker-credit small { display: block; font-size: 11px; letter-spacing: .08em; color: rgba(255, 255, 255, .7); text-shadow: 0 1px 6px rgba(0,0,0,.6); }
-.maker-credit button { margin-top: 2px; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; color: #fff; cursor: pointer; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+/* подпись мастерской внизу главной – на плотной тёмной плашке, чтобы читалась поверх фото */
+.maker-credit { margin: 0 0 24px; padding: 12px 16px; border-radius: 18px; background: rgba(10, 11, 9, .85); border: 1px dashed rgba(255, 255, 255, .22); text-align: center; }
+.maker-credit small { display: block; font-size: 11px; letter-spacing: .08em; color: rgba(255, 255, 255, .6); }
+.maker-credit button { margin-top: 2px; padding: 0; border: 0; background: none; font: inherit; font-size: 14px; font-weight: 600; color: #fff; cursor: pointer; }
