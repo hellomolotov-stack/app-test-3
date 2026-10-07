@@ -950,6 +950,7 @@ export function renderRoutesMap(container) {
         const el = document.getElementById('routesMapEl');
         if (!el) return;
         const map = new maplibregl.Map({
+        ...MAP_TWO_FINGERS,
             container: el,
             style: {
                 version: 8,
@@ -1137,6 +1138,7 @@ export function renderIntelligentsiaRoutes(container) {
             (route.bounds[0][1] + route.bounds[1][1]) / 2
         ];
         currentIntelligentsiaMap = new maplibregl.Map({
+        ...MAP_TWO_FINGERS,
             container: el,
             style: {
                 version: 8,
@@ -1217,6 +1219,15 @@ export function renderIntelligentsiaRoutes(container) {
     });
 }
 
+// карты стоят внутри прокручиваемых экранов: одним пальцем листаем страницу, двумя – двигаем карту
+const MAP_TWO_FINGERS = {
+    cooperativeGestures: true,
+    locale: {
+        'CooperativeGesturesHandler.MobileHelpText': 'двигай карту двумя пальцами',
+        'CooperativeGesturesHandler.WindowsHelpText': 'зажми Ctrl и крути колесо, чтобы приблизить',
+        'CooperativeGesturesHandler.MacHelpText': 'зажми ⌘ и крути колесо, чтобы приблизить'
+    }
+};
 let _maplibreLoading = null;
 function ensureMapLibre() {
     if (window.maplibregl) return Promise.resolve();
@@ -1415,6 +1426,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
     const CRIMEA = [[32.4, 44.2], [36.7, 46.3]];
 
     const map = new maplibregl.Map({
+        ...MAP_TWO_FINGERS,
         container: el,
         style: {
             version: 8,
