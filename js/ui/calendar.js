@@ -1312,8 +1312,11 @@ function startHikeMapOrbit(map, camera, radiusDeg, standalone = false) {
     };
     if (!standalone) cancelHikeMapOrbit = cancel;
 
-    // Если человек сам взялся крутить карту — автоповорот больше не мешает
-    ['mousedown', 'touchstart', 'wheel'].forEach(ev => map.on(ev, cancel));
+    // Если человек сам взялся крутить карту — автоповорот больше не мешает.
+    // Одним пальцем по карте листают шторку – это не повод останавливать облёт.
+    map.on('mousedown', cancel);
+    map.on('touchstart', e => { if ((e.originalEvent?.touches?.length || 0) >= 2) cancel(); });
+    map.on('wheel', e => { const o = e.originalEvent; if (o?.ctrlKey || o?.metaKey) cancel(); });
 
     const startBearing = camera.bearing || 0;
     // Ниже, чем кадр прилёта: горизонт опускается, и высота гор читается лучше.

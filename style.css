@@ -5449,3 +5449,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .cs-gift-sum s { display: block; font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, .45); }
 .cs-gift-sum b { display: block; font-size: 24px; font-weight: 800; color: var(--yellow); white-space: nowrap; }
 .cs-buy s { font-weight: 600; opacity: .5; margin: 0 2px; }
+
+/* «двигай карту двумя пальцами» – маленькой плашкой внизу, как подсказка про жесты, без затемнения карты */
+.maplibregl-cooperative-gesture-screen { background: transparent !important; align-items: flex-end !important; padding: 0 12px 12px !important; font-size: 13px !important; line-height: 1.35 !important; }
+.maplibregl-cooperative-gesture-screen > div { padding: 8px 14px; border-radius: 14px; background: rgba(10, 11, 9, 0.72); border: 1px solid rgba(255, 255, 255, 0.16); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #fff; text-align: center; }
