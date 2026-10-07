@@ -323,7 +323,16 @@ function renderSafetyBanner() {
     `;
 }
 
+// подпись в самом низу главной: «разработано в мастерской Молотова» → личка в Telegram
+function renderMakerCredit() {
+    return `<div class="maker-credit"><small>разработано</small><button type="button" id="makerCreditBtn">в мастерской Молотова ›</button></div>`;
+}
+
 function wireSafetyBanner() {
+    document.getElementById('makerCreditBtn')?.addEventListener('click', () => {
+        haptic();
+        openLink('https://t.me/maxmolotov', 'мастерская Молотова', state.userCard.status !== 'active');
+    });
     document.getElementById('safetyBanner')?.addEventListener('click', () => {
         haptic();
         log('баннер ЧП', state.userCard.status !== 'active', state.user);
@@ -481,6 +490,7 @@ function renderGuestHome() {
         ${renderTestimonialsBlock()}
         ${renderUpdatesBlock()}
         ${renderSafetyBanner()}
+        ${renderMakerCredit()}
     `;
 
     wireSafetyBanner();
@@ -699,6 +709,7 @@ function renderOwnerHome() {
         </div>
         ${renderUpdatesBlock()}
         ${renderSafetyBanner()}
+        ${renderMakerCredit()}
     `;
 
     wireSafetyBanner();
