@@ -52,6 +52,12 @@ function normalizeUpdates(value) {
         .sort((a, b) => b.date.localeCompare(a.date));
 }
 
+function isValidRevision(value) {
+    // Firebase returns unquoted ETags, including null_etag for an empty node.
+    return typeof value === 'string' && value.length <= 256
+        && /^(?:[A-Za-z0-9_+/=-]+|"[A-Za-z0-9_+/=-]+")$/.test(value);
+}
+
 function validateValue(section, value) {
     if (section === 'metrics') {
         const metrics = {};
@@ -93,7 +99,7 @@ module.exports = async (req, res) => {
         user = verifyInitData(String(body.initData || ''), token);
         if (!user?.id) return res.status(401).json({ error: 'открой админку внутри Telegram' });
         if (!ADMIN_USERNAMES.includes(String(user.username || '').toLowerCase())) return res.status(403).json({ error: 'только для администраторов' });
-        if (!['metrics', 'updates'].includes(body.section) || typeof body.revision !== 'string' || !/^"[^"\r\n]+"$/.test(body.revision)) {
+        if (!['metrics', 'updates'].includes(body.section) || !isValidRevision(body.revision)) {
             return res.status(400).json({ error: 'обнови данные редактора' });
         }
         try { value = validateValue(body.section, body.value); }

@@ -15,6 +15,9 @@ const base = {
 };
 const overrides = {};
 let writes = 0;
+const revisionFor = section => overrides[section]
+    ? crypto.createHash('sha1').update(`${section}-${overrides[section].version}`).digest('base64')
+    : 'null_etag';
 const realFetch = global.fetch;
 global.fetch = async (url, options = {}) => {
     if (url === 'https://oauth2.googleapis.com/token') return Response.json({ access_token: 'test-token', expires_in: 3600 });
@@ -24,14 +27,14 @@ global.fetch = async (url, options = {}) => {
     if (options.method === 'PUT') {
         assert.ok(override);
         assert.equal(options.headers.Authorization, 'Bearer test-token');
-        if (options.headers['If-Match'] !== `"${section}-${overrides[section]?.version || 0}"`) return new Response('', { status: 412 });
+        if (options.headers['If-Match'] !== revisionFor(section)) return new Response('', { status: 412 });
         const data = JSON.parse(options.body);
         overrides[section] = { ...data, version: (overrides[section]?.version || 0) + 1 };
         writes++;
         return Response.json(data);
     }
     return Response.json(override ? overrides[section] || null : base[section], {
-        headers: { etag: `"${section}-${overrides[section]?.version || 0}"` },
+        headers: { etag: revisionFor(section) },
     });
 };
 
@@ -61,6 +64,7 @@ async function call(method, body) {
     let response = await call('GET');
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.metrics, base.metrics);
+    assert.deepEqual(response.body.revisions, { metrics: 'null_etag', updates: 'null_etag' }, 'Empty Firebase nodes return unquoted null_etag');
     assert.equal(response.body.updates[0].date, '2026-10-01', 'Legacy spreadsheet dates fit the date editor without changing the displayed day');
     const data = {
         section: 'metrics', value: { hikes: 150, locations: 25, kilometers: 1550.5, meetings: 500 },
@@ -74,8 +78,12 @@ async function call(method, body) {
     assert.equal((await call('POST', { ...data, initData, value: { ...data.value, hikes: -1 } })).status, 400);
     assert.equal((await call('POST', { ...data, initData, value: { ...data.value, meetings: [] } })).status, 400);
     assert.equal((await call('POST', { ...data, initData, section: '../members' })).status, 400);
+    for (const revision of [null, '', '*', '"*"', 'null_etag\r\nX-Test: injected', 'null_etag,other', ' null_etag', 'a'.repeat(257)]) {
+        assert.equal((await call('POST', { ...data, initData, revision })).status, 400, `Reject invalid revision ${JSON.stringify(revision)}`);
+    }
+    assert.equal(writes, 0, 'Invalid revisions never write');
     response = await call('POST', { ...data, initData });
-    assert.equal(response.status, 200);
+    assert.equal(response.status, 200, 'First metrics save accepts null_etag');
     assert.equal(writes, 1);
     assert.equal((await call('POST', { ...data, initData })).status, 409, 'Reject stale editor writes');
     base.metrics.hikes = '999';
@@ -88,11 +96,16 @@ async function call(method, body) {
     };
     assert.equal((await call('POST', { ...updates, value: [{ date: '2026-02-30', update: 'неверная дата' }] })).status, 400);
     assert.equal((await call('POST', { ...updates, value: [{ date: '2026-10-08', update: '  ' }] })).status, 400);
-    assert.equal((await call('POST', updates)).status, 200);
+    assert.equal((await call('POST', updates)).status, 200, 'First updates save accepts null_etag');
+    assert.equal((await call('POST', updates)).status, 409, 'Stale null_etag cannot overwrite saved updates');
     response = await call('GET');
     assert.equal(response.body.updates[0].date, '2026-10-08', 'Newest update first');
     assert.equal(response.body.updates.length, 2);
     assert.deepEqual(response.body.metrics, { hikes: '150', locations: '25', kilometers: '1550.5', meetings: '500' });
+    const metricsRevision = response.body.revisions.metrics;
+    assert.equal((await call('POST', { ...data, initData, revision: `"${metricsRevision}"` })).status, 409, 'Quoted revisions reach Firebase without normalization');
+    assert.equal((await call('POST', { ...data, initData, revision: metricsRevision })).status, 200, 'Later metrics saves accept unquoted base64 ETags');
+    assert.equal((await call('POST', { ...data, initData, revision: metricsRevision })).status, 409, 'Later saves still reject stale revisions');
     assert.equal((await call('POST', { ...updates, value: [], revision: response.body.revisions.updates })).status, 200);
     // Firebase represents an empty array by removing its property.
     delete overrides.updates.value;
