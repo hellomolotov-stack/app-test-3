@@ -129,7 +129,7 @@ async function drawStory(hike) {
     size += 6;
     if (!lines) { ctx.font = `800 ${size}px ${FONT}`; lines = wrap(ctx, name, W - PAD * 2).slice(0, 2); }
     const statsTop = H - 600;
-    let y = statsTop - 70 - (lines.length - 1) * size * 1.02;
+    let y = statsTop - 105 - (lines.length - 1) * size * 1.02;
     ctx.fillStyle = '#fff';
     lines.forEach(l => { ctx.fillText(l, PAD, y); y += size * 1.02; });
 
