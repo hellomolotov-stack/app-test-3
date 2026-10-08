@@ -5521,3 +5521,18 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .bk-plus1-btn { padding: 0; border: 0; background: none; font: inherit; font-weight: 600; color: var(--yellow); cursor: pointer; }
 .bk-story-btn { flex: none; justify-content: flex-end; font-weight: 600; color: var(--yellow); cursor: pointer; }
 .bk-story-btn.is-wide { flex: 1; justify-content: flex-start; }
+
+/* ближайший хайк: шкала мест и кнопки под билетом */
+.ef-tk-seats { padding: 0 12px; opacity: 0; transition: opacity .3s ease; }
+.ef-tk-seats.is-ready { opacity: 1; }
+.ef-tk-seats-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 12.5px; margin-bottom: 6px; }
+.ef-tk-left { font-weight: 700; color: var(--yellow); }
+.ef-tk-cap { color: rgba(255, 255, 255, .55); }
+.ef-tk-bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .14); overflow: hidden; }
+.ef-tk-bar i { display: block; width: 0; height: 100%; border-radius: 3px; background: var(--yellow); transition: width .6s ease; }
+.ef-ticket.is-woman .ef-tk-left { color: #FB5EB0; }
+.ef-ticket.is-woman .ef-tk-bar i { background: #FB5EB0; }
+.ef-tk-actions { display: flex; gap: 8px; padding: 12px; }
+.ef-tk-actions .btn.ef-tk-go { flex: 1; justify-content: center; margin: 0; height: 40px; }
+.btn.ef-tk-go.is-in { background: rgba(217, 253, 25, .12); color: var(--yellow); border: 1px solid rgba(217, 253, 25, .5); box-shadow: none; }
+.btn.ef-tk-story { flex: none; width: auto; height: 40px; margin: 0; padding: 0 14px; border-radius: 12px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .18); color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: none; }

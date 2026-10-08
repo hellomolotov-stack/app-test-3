@@ -344,18 +344,25 @@ function feedNearestCard(h) {
     // плашка-билет без карты: дата · название · «записаться» (открывает шторку хайка с записью)
     const d = feedDate(h.date);
     const km = feedKm(h);
-    const sub = [feedWhen(h.date), h.start_time || (km ? `${km} км` : '')].filter(Boolean).join(' · ');
+    const sub = [feedWhen(h.date), h.start_time, km ? `${km} км` : ''].filter(Boolean).join(' · ');
+    const registered = state._userRegs?.[h.date] === true;
+    // билет: дата | название и «когда»; ниже шкала мест (без аватарок – они долго грузятся) и кнопка
     return `<div class="ef-next ef-ticket${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
         <div class="ef-tk-row">
             <div class="ef-tk-date"><b>${d.getDate()}</b><small>${FEED_MONTHS_SHORT[d.getMonth()]}, ${FEED_WD[d.getDay()]}</small></div>
             <div class="ef-tk-info">
                 <div class="ef-tk-title">${String(h.title).replace(/-/g, '\u2011')}</div>
                 <div class="ef-tk-sub">${sub}</div>
-                <div class="ef-tk-foot">
-                    <button class="btn btn-yellow ef-tk-go">${state._userRegs?.[h.date] === true ? 'ты записан ✓' : 'записаться'}</button>
-                    <div class="ef-going ef-tk-going" data-going-for="${h.date}"></div>
-                </div>
             </div>
+        </div>
+        <div class="ef-tk-seats" data-seats-for="${h.date}">
+            <div class="ef-tk-seats-top"><span class="ef-tk-left">&nbsp;</span><span class="ef-tk-cap"></span></div>
+            <div class="ef-tk-bar"><i></i></div>
+        </div>
+        <div class="ef-tk-actions">
+            ${registered
+                ? `<button class="btn ef-tk-go is-in">ты записан ✓</button><button type="button" class="btn ef-tk-story" data-story-date="${h.date}">в сторис ↗</button>`
+                : `<button class="btn btn-yellow ef-tk-go">записаться</button>`}
         </div>
     </div>`;
 }
@@ -750,7 +757,38 @@ function feedGoingHtml(list) {
     return `<span class="ef-ava">${faces}</span><span class="ef-going-text">${n === 1 ? 'уже идёт 1' : `уже идут ${n}`}</span>`;
 }
 
+// Места на ближайшем хайке: показываем из 10, но занятыми – не больше 8,
+// чтобы всегда оставалось «2 места» в запас (кто-то может отменить запись).
+const SEATS_SHOWN = 10;
+const SEATS_TAKEN_MAX = 8;
+function feedSeatsWord(n) {
+    const a = n % 10, b = n % 100;
+    if (a === 1 && b !== 11) return 'место';
+    return (a >= 2 && a <= 4 && (b < 10 || b >= 20)) ? 'места' : 'мест';
+}
+function feedPaintSeats(el, n) {
+    const taken = Math.min(n, SEATS_TAKEN_MAX);
+    const left = SEATS_SHOWN - taken;
+    el.querySelector('.ef-tk-left').textContent = `осталось ${left} ${feedSeatsWord(left)}`;
+    el.querySelector('.ef-tk-cap').textContent = `${taken} из ${SEATS_SHOWN}`;
+    el.querySelector('.ef-tk-bar i').style.width = `${Math.round(taken / SEATS_SHOWN * 100)}%`;
+    el.classList.add('is-ready');
+}
+
 function feedFillGoing(container) {
+    container.querySelectorAll('[data-seats-for]').forEach(el => {
+        const date = el.dataset.seatsFor;
+        if (feedGoingList[date]) return feedPaintSeats(el, feedGoingList[date].length);
+        loadAllParticipants(date).then(list => {
+            feedGoingList[date] = Array.isArray(list) ? list : [];
+            feedGoing[date] = feedGoingList[date].length;
+            feedPaintSeats(el, feedGoingList[date].length);
+        }).catch(() => {});
+    });
+    container.querySelectorAll('.ef-tk-story').forEach(b => b.addEventListener('click', e => {
+        e.stopPropagation();
+        import('./story.js').then(m => m.openStoryShare(b.dataset.storyDate, 'ближайший хайк'));
+    }));
     container.querySelectorAll('[data-going-for]').forEach(el => {
         const date = el.dataset.goingFor;
         if (!date) return;
