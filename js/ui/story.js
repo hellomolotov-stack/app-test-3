@@ -184,7 +184,7 @@ export async function openStoryShare(hikeDate, source = '') {
     const overlay = document.createElement('div');
     overlay.className = 'inv-overlay story-overlay';
     overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div class="inv-scroll">
-        <h2>твоя сторис</h2>
+        <h2 class="story-title">рисуем твою сторис…</h2>
         <div class="story-preview"><div class="story-wait"><b>🗺️</b>рисуем 3D-карту маршрута…</div></div>
         <button type="button" class="btn btn-yellow inv-wide" data-share disabled>📸 поделиться в сторис</button>
         <button type="button" class="btn btn-outline inv-wide" data-save disabled>сохранить на телефон</button>
@@ -210,6 +210,7 @@ export async function openStoryShare(hikeDate, source = '') {
     }
     if (!overlay.isConnected) return;
     preview.innerHTML = `<img src="${dataUrl}" alt="сторис хайка">`;
+    overlay.querySelector('.story-title').textContent = 'твоя сторис готова';
     shareBtn.disabled = false;
     saveBtn.disabled = false;
 
