@@ -576,7 +576,7 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
             host.remove();
             resolve(c);
         };
-        const grab = () => {
+        const grab = (last = false) => {
             try {
                 const src = map.getCanvas();
                 const c = document.createElement('canvas');
@@ -587,7 +587,7 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
                 let sum = 0, n = 0;
                 for (let i = 0; i < px.length; i += 4 * 997) { sum += px[i] + px[i + 1] + px[i + 2]; n++; }
                 // кадр ещё тёмный (тайлы не догрузились) – пробуем ещё раз, пока не истечёт время
-                if (!(n && sum / n >= 30)) { setTimeout(waitTiles, 400); return; }
+                if (!(n && sum / n >= 30)) { if (last) return finish(null); setTimeout(waitTiles, 400); return; }
                 finish(c);
             } catch (e) { finish(null); }
         };
@@ -595,10 +595,11 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
         const waitTiles = () => {
             if (done) return;
             if (!(map.loaded() && map.areTilesLoaded())) { setTimeout(waitTiles, 250); return; }
-            map.once('render', grab);
+            map.once('render', () => grab());
             map.triggerRepaint();
         };
-        const timer = setTimeout(() => finish(null), timeout);
+        // время вышло: берём то, что успело нарисоваться (если кадр не пустой)
+        const timer = setTimeout(() => (map ? grab(true) : finish(null)), timeout);
         try {
             map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio, camera, colorful });
             map.once('still-ready', () => setTimeout(waitTiles, 300));
