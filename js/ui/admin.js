@@ -6,6 +6,7 @@ import { haptic, tg } from '../utils.js';
 import { REGISTRATION_API_URL } from '../config.js';
 import { loadAllParticipants } from '../firebase.js';
 import { previewHikeTrack, findCatalogRoute, catalogRouteTrack } from './calendar.js';
+import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
 
 const ADMIN_USERNAMES = new Set(['maxmolotov', 'hellointelligent']);
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
@@ -36,6 +37,10 @@ let pastLimit = 8;
 let audience = null;     // { counts: {all, guests, members}, at }
 let templates = null;    // route_templates с сервера: { route_id: {поля хайка} }
 let templatesLoading = null;
+let homepage = null;
+let homepageLoading = false;
+let updateDraft = null;
+let homepageBusy = false;
 
 export function isAdminUser() {
     return ADMIN_USERNAMES.has(String(state.user?.username || '').replace(/^@/, '').toLowerCase());
@@ -59,6 +64,8 @@ export function openAdmin(tab = 'hikes') {
     if (!isAdminUser()) return;
     closeAdmin();
     view = { tab };
+    homepage = null;
+    updateDraft = null;
     loadTemplates().catch(() => {});
     root = document.createElement('div');
     root.className = 'adm';
@@ -114,7 +121,7 @@ function allHikes() {
 // ---------- каркас ----------
 function render() {
     if (!root) return;
-    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['plus1', '🤝 +1'], ['broadcast', '📨 рассылка']];
+    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['plus1', '🤝 +1'], ['broadcast', '📨 рассылка'], ['home', 'главная']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -133,8 +140,111 @@ function render() {
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);
     else if (view.tab === 'plus1') renderPlus1(body);
+    else if (view.tab === 'home') renderHomepage(body);
     else renderHikeList(body);
     root.scrollTop = 0;
+    root.querySelector('.adm-tab.is-on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+// ---------- главная: ручные цифры и журнал обновлений ----------
+function loadHomepage() {
+    if (homepageLoading) return;
+    homepageLoading = true;
+    loadClubContent().then(data => {
+        homepage = { ...data, metrics: { ...data.metrics }, updates: data.updates.map(item => ({ ...item })) };
+        applyClubContent(data);
+    }).catch(error => { homepage = { error: error.message }; })
+        .finally(() => { homepageLoading = false; if (root && view.tab === 'home') render(); });
+}
+
+function renderHomepage(body) {
+    if (!homepage) {
+        body.innerHTML = '<div class="adm-muted" role="status">загружаю данные главной…</div>';
+        loadHomepage();
+        return;
+    }
+    if (homepage.error) {
+        body.innerHTML = `<div class="adm-error-inline">${esc(homepage.error)}</div><button class="adm-ghost adm-wide" id="admContentRetry">загрузить ещё раз</button>`;
+        body.querySelector('#admContentRetry').addEventListener('click', () => { homepage = null; render(); });
+        return;
+    }
+    updateDraft = updateDraft || { index: null, date: todayStr(), update: '' };
+    const fields = [['hikes', 'хайков'], ['locations', 'локаций'], ['kilometers', 'километров'], ['meetings', 'знакомств']];
+    body.innerHTML = `
+        <div class="adm-label">клуб в цифрах</div>
+        <form id="admMetricsForm">
+            <div class="adm-metrics-fields">${fields.map(([key, label]) => `<label class="adm-field"><span>${label}</span><input name="${key}" data-metric-key="${key}" type="number" min="0" max="1000000000" step="${key === 'kilometers' ? 'any' : '1'}" inputmode="${key === 'kilometers' ? 'decimal' : 'numeric'}" value="${esc(homepage.metrics[key])}" required></label>`).join('')}</div>
+            <button type="submit" class="btn btn-yellow adm-primary">сохранить цифры</button>
+        </form>
+        <div class="adm-label">обновления</div>
+        <form id="admUpdateForm">
+            <label class="adm-field"><span>дата</span><input id="admUpdateDate" type="date" value="${esc(updateDraft.date)}" required></label>
+            <label class="adm-field"><span>что обновилось</span><textarea id="admUpdateText" rows="4" maxlength="5000" required>${esc(updateDraft.update)}</textarea></label>
+            <button type="submit" class="btn btn-yellow adm-primary">${updateDraft.index === null ? 'добавить обновление' : 'сохранить обновление'}</button>
+            ${updateDraft.index !== null ? '<button type="button" class="adm-link" id="admUpdateCancel">отменить редактирование</button>' : ''}
+        </form>
+        <div class="adm-content-updates">${homepage.updates.length ? homepage.updates.map((item, index) => `
+            <div class="adm-content-update">
+                <div class="adm-content-update-date">${esc(dateLabel(item.date))} · ${esc(item.date.slice(0, 4))}</div>
+                <div class="adm-content-update-text">${esc(item.update)}</div>
+                <div class="adm-content-update-actions"><button class="adm-link" data-edit-update="${index}">редактировать</button><button class="adm-link is-danger" data-remove-update="${index}">убрать</button></div>
+            </div>`).join('') : '<div class="adm-empty">пока нет обновлений</div>'}</div>`;
+    body.querySelectorAll('[data-metric-key]').forEach(input => input.addEventListener('input', () => { homepage.metrics[input.dataset.metricKey] = input.value; }));
+    body.querySelector('#admUpdateDate').addEventListener('input', event => { updateDraft.date = event.target.value; });
+    body.querySelector('#admUpdateText').addEventListener('input', event => { updateDraft.update = event.target.value; });
+    body.querySelector('#admMetricsForm').addEventListener('submit', event => {
+        event.preventDefault();
+        saveHomepageSection('metrics', { ...homepage.metrics });
+    });
+    body.querySelector('#admUpdateForm').addEventListener('submit', event => {
+        event.preventDefault();
+        if (!updateDraft.update.trim()) return toast('напиши, что обновилось', true);
+        const items = homepage.updates.slice();
+        const item = { date: updateDraft.date, update: updateDraft.update.trim() };
+        if (updateDraft.index === null) items.unshift(item);
+        else items[updateDraft.index] = item;
+        saveHomepageSection('updates', items);
+    });
+    body.querySelector('#admUpdateCancel')?.addEventListener('click', () => { updateDraft = null; render(); });
+    body.querySelectorAll('[data-edit-update]').forEach(button => button.addEventListener('click', () => {
+        updateDraft = { index: Number(button.dataset.editUpdate), ...homepage.updates[Number(button.dataset.editUpdate)] };
+        render();
+        root.querySelector('#admUpdateText')?.focus();
+    }));
+    body.querySelectorAll('[data-remove-update]').forEach(button => button.addEventListener('click', async () => {
+        if (!await confirmAsync('Убрать это обновление с главной?')) return;
+        await saveHomepageSection('updates', homepage.updates.filter((_, index) => index !== Number(button.dataset.removeUpdate)));
+    }));
+    if (homepageBusy) body.querySelectorAll('input, textarea, button').forEach(element => { element.disabled = true; });
+}
+
+async function saveHomepageSection(section, value) {
+    if (homepageBusy) return;
+    const editing = homepage;
+    const draftToRestore = updateDraft;
+    homepageBusy = true;
+    render();
+    try {
+        const saved = await saveClubContent(section, value, editing.revisions[section], tg?.initData || '');
+        editing[section] = saved;
+        if (section === 'updates') updateDraft = null;
+        // Refresh only the saved section's version, preserving other unsaved fields.
+        try {
+            const fresh = await loadClubContent();
+            editing[section] = fresh[section];
+            editing.revisions[section] = fresh.revisions[section];
+        } catch {
+            homepage = { error: 'сохранено, но не удалось обновить редактор — загрузи данные ещё раз' };
+        }
+        toast(section === 'metrics' ? 'цифры сохранены' : 'обновления сохранены');
+        haptic();
+    } catch (error) {
+        updateDraft = draftToRestore;
+        toast(error.message, true);
+    } finally {
+        homepageBusy = false;
+        if (root && view.tab === 'home') render();
+    }
 }
 
 // ---------- список хайков ----------

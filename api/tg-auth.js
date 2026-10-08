@@ -66,3 +66,6 @@ module.exports = async (req, res) => {
     });
     return res.status(200).json({ token, uid: String(user.id) });
 };
+
+module.exports.verifyInitData = verifyInitData;
+module.exports.ADMIN_USERNAMES = ADMIN_USERNAMES;

@@ -1,5 +1,6 @@
 // js/firebase.js
 import { FIREBASE_CONFIG } from './config.js';
+import { loadClubContent } from './club-content.js';
 
 let database = null;
 let authReadyPromise = Promise.resolve(false);
@@ -170,6 +171,7 @@ export async function loadUserData(userId) {
 }
 
 export async function loadMetrics() {
+    try { return (await loadClubContent()).metrics; } catch (error) { console.warn('Club metrics fallback:', error.message); }
     if (!database) return null;
     const snapshot = await database.ref('metrics').once('value');
     return snapshot.val() || { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
@@ -253,6 +255,7 @@ export async function loadPopupConfig() {
 }
 
 export async function loadUpdates() {
+    try { return (await loadClubContent()).updates; } catch (error) { console.warn('Club updates fallback:', error.message); }
     if (!database) return [];
     const snapshot = await database.ref('updates').once('value');
     const data = snapshot.val();

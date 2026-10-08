@@ -382,7 +382,8 @@ function renderUpdatesBlock() {
     let itemsHtml = '';
     updates.forEach(item => {
         const formattedDate = formatDateForDisplay(item.date);
-        let text = parseLinks(item.update, state.userCard.status !== 'active');
+        const safeText = String(item.update || '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+        let text = parseLinks(safeText, state.userCard.status !== 'active');
         itemsHtml += `
             <div class="update-item">
                 <span class="update-date">${formattedDate}</span>
@@ -400,6 +401,19 @@ function renderUpdatesBlock() {
         </div>
     `;
 }
+
+window.addEventListener('club:content-updated', () => {
+    if (!mainDiv()?.querySelector('.metrics-header')) return;
+    updateMetricsUI();
+    const current = mainDiv().querySelector('.updates-container');
+    const template = document.createElement('template');
+    template.innerHTML = renderUpdatesBlock();
+    const next = template.content.firstElementChild;
+    if (current && next) {
+        current.querySelector('.updates-scroll').innerHTML = next.querySelector('.updates-scroll').innerHTML;
+    } else if (current) current.remove();
+    else if (next) mainDiv().querySelector('.maker-credit')?.before(next);
+});
 
 function handleGuestRead(e) {
     e.preventDefault();

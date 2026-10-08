@@ -4655,8 +4655,8 @@ body.adm-open { overflow: hidden; }
 .adm-head { display: flex; align-items: center; justify-content: space-between; max-width: 600px; margin: 0 auto 12px; }
 .adm-title { font-size: 22px; font-weight: 800; }
 .adm-close { width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.08); color: #fff; font-size: 16px; cursor: pointer; }
-.adm-tabs { display: flex; gap: 4px; max-width: 600px; margin: 0 auto 14px; padding: 3px; border-radius: 30px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); }
-.adm-tab { flex: 1; padding: 9px 10px; border: 0; border-radius: 30px; background: none; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.adm-tabs { display: flex; gap: 4px; max-width: 600px; margin: 0 auto 14px; padding: 3px; border-radius: 30px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); overflow-x: auto; }
+.adm-tab { flex: 1 0 auto; padding: 9px 10px; border: 0; border-radius: 30px; background: none; color: #fff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .adm-tab.is-on { background: var(--yellow); color: #000; }
 .adm-body { width: 100%; max-width: 600px; margin: 0 auto; min-width: 0; }
 .adm-body > * { max-width: 100%; }
@@ -4693,6 +4693,12 @@ body.adm-open { overflow: hidden; }
 .adm-field input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 .adm-field select { -webkit-appearance: none; appearance: none; text-overflow: ellipsis; white-space: nowrap; overflow: hidden; padding-right: 34px; background-image: linear-gradient(45deg, transparent 50%, rgba(255,255,255,.6) 50%), linear-gradient(135deg, rgba(255,255,255,.6) 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
 .adm-field textarea { resize: vertical; }
+.adm-metrics-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+.adm-content-updates { margin-top: 24px; }
+.adm-content-update { padding: 16px 0; border-top: 1px solid rgba(255,255,255,.12); }
+.adm-content-update-date { font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 6px; }
+.adm-content-update-text { font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.adm-content-update-actions { display: flex; gap: 20px; margin-top: 8px; }
 .adm-field input:focus, .adm-field textarea:focus, .adm-field select:focus { outline: none; border-color: rgba(217,253,25,.6); }
 .adm-field select option { color: #000; }
 .adm-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
