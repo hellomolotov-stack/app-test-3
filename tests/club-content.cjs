@@ -92,6 +92,11 @@ async function call(method, body) {
     assert.equal(response.body.updates[0].date, '2026-10-08', 'Newest update first');
     assert.equal(response.body.updates.length, 2);
     assert.deepEqual(response.body.metrics, { hikes: '150', locations: '25', kilometers: '1550.5', meetings: '500' });
+    assert.equal((await call('POST', { ...updates, value: [], revision: response.body.revisions.updates })).status, 200);
+    // Firebase represents an empty array by removing its property.
+    delete overrides.updates.value;
+    response = await call('GET');
+    assert.deepEqual(response.body.updates, [], 'An empty manual list must not restore old table updates');
     assert.equal((await call('DELETE')).status, 405);
     console.log('Club content tests passed: auth, validation, persistence, sync protection, concurrent edits');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { global.fetch = realFetch; });

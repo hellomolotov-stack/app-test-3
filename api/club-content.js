@@ -39,7 +39,7 @@ async function readSection(section, token) {
     });
     if (!response.ok) throw new Error('content unavailable');
     const override = await response.json();
-    if (override && Object.hasOwn(override, 'value')) return { value: override.value, revision: response.headers.get('etag') };
+    if (override && (override.hasValue === true || Object.hasOwn(override, 'value'))) return { value: override.value, revision: response.headers.get('etag') };
     const base = await fetch(`${DB}/${section}.json`, { signal: AbortSignal.timeout(10000) });
     if (!base.ok) throw new Error('content unavailable');
     return { value: await base.json(), revision: response.headers.get('etag') };
@@ -112,7 +112,7 @@ module.exports = async (req, res) => {
         const response = await fetch(`${DB}/adminContent/${body.section}.json`, {
             method: 'PUT', signal: AbortSignal.timeout(10000),
             headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'If-Match': body.revision },
-            body: JSON.stringify({ value, updatedAt: Date.now(), updatedBy: String(user.id) }),
+            body: JSON.stringify({ value, hasValue: true, updatedAt: Date.now(), updatedBy: String(user.id) }),
         });
         if (response.status === 412) return res.status(409).json({ error: 'данные уже изменились — обнови редактор перед сохранением' });
         if (!response.ok) throw new Error('write unavailable');
