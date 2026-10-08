@@ -2815,30 +2815,39 @@ function updateFloatingSheetButtons() {
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    // мест нет – но тому, кто уже записан, оставляем его кнопку (чтобы мог и отменить запись)
-    if (!isPast && !isClosedRegistration && !isCompletedToday && available === 0 && !isBooked) {
-        const availBlock = document.createElement('div');
-        availBlock.className = 'availability-floating';
-        availBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 10px 18px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; text-align: center;';
-        availBlock.innerHTML = `
-            <div style="font-size: 14px; color: rgba(255,255,255,0.9); line-height: 1.6;">
-                👀 места закончились<br>
-                но можно <a href="#" id="supportLinkSoldOut" style="color: var(--yellow); font-weight: 700; text-decoration: none;">написать нам</a> и договориться
-            </div>
-        `;
-        container.appendChild(availBlock);
-
-        setTimeout(() => {
-            const supportLink = document.getElementById('supportLinkSoldOut');
-            if (supportLink) {
-                supportLink.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    haptic();
-                    openOnboardingChat('support');
-                });
-            }
-        }, 50);
+    // мест нет – но тому, кто уже записан, оставляем его кнопку (чтобы мог и отменить запись).
+    // Владелец карты записывается и сверх мест (привилегия): над слайдером – подпись с картой.
+    // Без карты вместо слайдера – плашка с картой, по нажатию открывается шторка карты.
+    const soldOutForMe = !isPast && !isClosedRegistration && !isCompletedToday && available === 0 && !isBooked;
+    const hasCard = state.userCard?.status === 'active';
+    if (soldOutForMe && !hasCard) {
+        const plate = document.createElement('div');
+        plate.className = 'availability-floating so-card-plate is-link';
+        plate.innerHTML = `
+            <img src="assets/card-front.jpg" alt="" class="so-card-img">
+            <div class="so-card-text"><b>мест нет</b><span>но владельцы карты могут прийти</span></div>
+            <div class="so-card-arrow">›</div>`;
+        plate.addEventListener('click', e => {
+            e.preventDefault();
+            haptic();
+            log('мест нет: плашка карты', true, state.user, { hike_date: hike.date });
+            openCardSheet({ source: 'мест нет', hikeDate: hike.date, hikeTitle: hike.title });
+        });
+        container.appendChild(plate);
+        container.style.pointerEvents = 'auto';
         return; // мест нет – слайдер записи не показываем
+    }
+    if (soldOutForMe && hasCard) {
+        const note = document.createElement('div');
+        note.className = 'availability-floating so-card-plate';
+        note.innerHTML = `
+            <img src="assets/card-front.jpg" alt="" class="so-card-img is-small">
+            <div class="so-card-text"><b>набор закрыт</b><span>но не для тех, у кого карта</span></div>`;
+        const noteRow = document.createElement('div');
+        noteRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
+        noteRow.appendChild(note);
+        container.appendChild(noteRow);
+        // дальше – обычный слайдер записи
     }
 
     if (isPast || isCompletedToday) {
