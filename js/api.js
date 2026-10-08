@@ -7,7 +7,10 @@ export let logSeq = 0;
 export function log(action, isGuest = false, user, meta = {}) {
     if (!user?.id) return;
     logSeq++;
-    const finalAction = isGuest ? `${action}_guest` : action;
+    // Google Таблица считает текст с «+ = - @» в начале формулой и пишет #ERROR!
+    // («+1: взял ссылку»). Апостроф в начале – признак текста, в ячейке его не видно.
+    const safeAction = /^[=+\-@]/.test(action) ? `'${action}` : action;
+    const finalAction = isGuest ? `${safeAction}_guest` : safeAction;
     const params = new URLSearchParams({
         user_id: user.id,
         username: user.username || '',

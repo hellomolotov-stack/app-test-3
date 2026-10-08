@@ -5535,3 +5535,5 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .ef-tk-actions { display: flex; gap: 8px; padding: 12px; }
 .ef-tk-actions .btn.ef-tk-go { flex: 1; justify-content: center; margin: 0; height: 40px; }
 .btn.ef-tk-go.is-in { background: rgba(217, 253, 25, .12); color: var(--yellow); border: 1px solid rgba(217, 253, 25, .5); box-shadow: none; }
+/* шторка сторис – полупрозрачное стекло с размытием, как у шторки карты */
+.story-overlay .inv-sheet { background: rgba(18, 26, 36, 0.72); backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%); border-top-color: rgba(255, 255, 255, .2); }
