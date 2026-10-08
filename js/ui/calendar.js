@@ -565,7 +565,7 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
     if (!track) return Promise.resolve(null);
     return ensureMapLibre().then(() => new Promise(resolve => {
         const host = document.createElement('div');
-        host.style.cssText = `position:fixed;left:0;top:0;width:${width}px;height:${height}px;z-index:-1;pointer-events:none;`;
+        host.style.cssText = `position:fixed;left:-10000px;top:0;width:${width}px;height:${height}px;z-index:-1;pointer-events:none;`;
         document.body.appendChild(host);
         let map = null, done = false;
         const finish = c => {
