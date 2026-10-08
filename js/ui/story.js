@@ -13,7 +13,6 @@ const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const WD = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
 const CHANNEL_HANDLE = '@yaltahiking';
-const CHANNEL_LINK = 'https://t.me/yaltahiking';
 
 const isGuest = () => state.userCard?.status !== 'active';
 
@@ -70,20 +69,11 @@ async function trackStats(hike) {
     return { peak: Math.max(...els), gain, km: kmLength(all) };
 }
 
-// рукописный шрифт Caveat (как на сайте хэдмейта) – для «я иду на хайк с интеллигенцией»
-let handFontReady = null;
-function loadHandFont() {
-    handFontReady ||= Promise.all([
-        new FontFace('Caveat', "url('assets/fonts/caveat-cyrillic.woff2')", { weight: '400 700', unicodeRange: 'U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116' }),
-        new FontFace('Caveat', "url('assets/fonts/caveat-latin.woff2')", { weight: '400 700', unicodeRange: 'U+0000-00FF,U+0131,U+0152-0153,U+2000-206F' })
-    ].map(f => f.load().then(ff => document.fonts.add(ff)))).catch(() => null);
-    return handFontReady;
-}
-
 const fmt = n => Math.round(n).toLocaleString('ru-RU');
 const fmtKm = km => (km >= 10 ? Math.round(km) : Math.round(km * 10) / 10).toLocaleString('ru-RU');
 
-async function drawStory(hike) {
+// colorful – цветная карта (пока только для пробы)
+export async function drawStory(hike, { colorful = false } = {}) {
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const ctx = c.getContext('2d');
@@ -91,9 +81,8 @@ async function drawStory(hike) {
     ctx.fillRect(0, 0, W, H);
 
     // 1. 3D-карта на весь кадр: камера наклонена сильнее, чтобы были видны вершина и рельеф
-    const [, mapCanvas, stats] = await Promise.all([
-        loadHandFont(),
-        import('./calendar.js').then(m => m.snapshotHikeMap(hike, { width: 360, height: 640, ratio: 3, camera: { pitch: 70, zoomDelta: -0.2, centerShift: 0.1 } })).catch(() => null),
+    const [mapCanvas, stats] = await Promise.all([
+        import('./calendar.js').then(m => m.snapshotHikeMap(hike, { width: 360, height: 640, ratio: 3, camera: { pitch: 70, zoomDelta: -0.2, centerShift: 0.1 }, colorful })).catch(() => null),
         trackStats(hike).catch(() => null)
     ]);
     if (mapCanvas) {
@@ -125,13 +114,9 @@ async function drawStory(hike) {
     ctx.fillStyle = YELLOW;
     ctx.font = `700 46px ${FONT}`;
     ctx.fillText(`${d.getDate()} ${MONTHS[d.getMonth()]} · ${WD[d.getDay()]}${hike.start_time ? ` · ${hike.start_time}` : ''}`, PAD, 210);
-    ctx.save();
-    ctx.translate(PAD, 312);
-    ctx.rotate(-0.035);
-    ctx.fillStyle = '#fff';
-    ctx.font = `600 84px Caveat, ${FONT}`;
-    ctx.fillText('я иду на хайк с интеллигенцией', 0, 0);
-    ctx.restore();
+    ctx.fillStyle = 'rgba(255, 255, 255, .85)';
+    ctx.font = `500 50px ${FONT}`;
+    ctx.fillText('я иду на хайк 🏔', PAD, 292);
 
     // 4. низ: крупно локация (в одну строку, иначе уменьшаем; совсем длинную – в две)
     const name = placeName(hike.title);
@@ -250,12 +235,8 @@ export async function openStoryShare(hikeDate, source = '') {
             return;
         }
         const url = await getUrl();
-        // подпись не добавляем – место внизу картинки оставлено под текст самого человека.
-        // Кликабельную ссылку Telegram даёт прикрепить только Premium-аккаунтам, а где она встанет – решает
-        // сам Telegram (человек может передвинуть её в редакторе): ведём её в канал клуба.
-        const opts = {};
-        if (tg.initDataUnsafe?.user?.is_premium) opts.widget_link = { url: CHANNEL_LINK, name: 'хочу с вами' };
-        tg.shareToStory(url, opts);
+        // ни подписи, ни стикера-ссылки: стикер легко не заметить и опубликовать с ним
+        tg.shareToStory(url);
         log('сторис: отправил в Telegram', isGuest(), state.user, { hike_date: hikeDate });
     }));
 

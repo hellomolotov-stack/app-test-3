@@ -550,7 +550,7 @@ function feedPlaceMap(container, hike) {
 
 // Снимок 3D-карты маршрута для сторис: невидимая карта за экраном, неподвижный кадр, ждём все тайлы.
 // Возвращает canvas (width×height CSS-пикселей × ratio) или null, если трека нет или карта не успела.
-export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, timeout = 20000, camera } = {}) {
+export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, timeout = 20000, camera, colorful = false } = {}) {
     const track = hike ? getHikeTrack(hike) : null;
     if (!track) return Promise.resolve(null);
     return ensureMapLibre().then(() => new Promise(resolve => {
@@ -582,7 +582,7 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
         };
         const timer = setTimeout(() => (map ? grab() : finish(null)), timeout);
         try {
-            map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio, camera });
+            map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio, camera, colorful });
             map.once('still-ready', () => map.once('idle', () => { map.once('render', grab); map.triggerRepaint(); }));
         } catch (e) { finish(null); }
     })).catch(() => null);
@@ -1430,7 +1430,8 @@ function hideUntilReady(map) {
 // standalone – отдельная карта (карточка в календаре): не трогает карту слайдера и её облёт.
 // still – неподвижный кадр без облёта (для картинки в сторис); pixelRatio – чёткость снимка
 // camera – поправка кадра для снимка: { pitch, bearing, zoomDelta, centerShift } (centerShift – доля высоты трека к югу)
-function initHikeMap(el, track, instant = false, standalone = false, { still = false, pixelRatio, camera } = {}) {
+// colorful – цветной спутник вместо обычного приглушённого чёрно-белого
+function initHikeMap(el, track, instant = false, standalone = false, { still = false, pixelRatio, camera, colorful = false } = {}) {
     if (!standalone) {
         try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
         try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
@@ -1501,7 +1502,9 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
             },
             layers: [{
                 id: 'satellite-layer', type: 'raster', source: 'satellite',
-                paint: { 'raster-brightness-max': 0.7, 'raster-contrast': 0.15, 'raster-saturation': -1 }
+                paint: colorful
+                    ? { 'raster-brightness-max': 0.92, 'raster-contrast': 0.12, 'raster-saturation': 0.15 }
+                    : { 'raster-brightness-max': 0.7, 'raster-contrast': 0.15, 'raster-saturation': -1 }
             }]
         },
         // При перелистывании стрелками сразу встаём в финальный кадр – смотреть,
