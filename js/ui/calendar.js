@@ -25,6 +25,9 @@ import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
 import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
 
+// лимит участников хайка: столько мест показываем и после стольких запись закрывается
+const HIKE_CAPACITY = 10;
+
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
 
@@ -758,7 +761,7 @@ function feedGoingHtml(list) {
 }
 
 // Места на ближайшем хайке: сколько аккаунтов реально записано – из 10.
-const SEATS_SHOWN = 10;
+const SEATS_SHOWN = HIKE_CAPACITY;
 function feedSeatsWord(n) {
     const a = n % 10, b = n % 100;
     if (a === 1 && b !== 11) return 'место';
@@ -960,6 +963,14 @@ const ROUTE_TRACK_FIXES = {
     'ilyas-kaya': [[44.405218, 33.739439], [44.405218, 33.739345], [44.405295, 33.739207], [44.405386, 33.739139], [44.405646, 33.739001], [44.405787, 33.73852], [44.40589, 33.738314], [44.406039, 33.738108], [44.406119, 33.737497]]
 };
 
+// Дорисовка трека: в GPX Долины привидений подъём обрывается на ~1150 м, не дойдя до вершины
+// Южной Демерджи. Продолжение – по гребню (самые высокие точки рельефа SRTM) до вершины ~1237 м.
+const ROUTE_TRACK_EXTENSIONS = {
+    'dolina-privideniy': [[44.7505, 34.4142], [44.7510, 34.4136], [44.7515, 34.4135], [44.7520, 34.4135],
+        [44.7525, 34.4137], [44.7530, 34.4144], [44.7535, 34.4149], [44.7540, 34.4150], [44.7545, 34.4150],
+        [44.7550, 34.4150]]
+};
+
 function nearestIndex(seg, point) {
     let best = 0, bestD = Infinity;
     seg.forEach((c, i) => {
@@ -979,6 +990,8 @@ export function catalogRouteTrack(route) {
         const to = nearestIndex(seg, fix[fix.length - 1]);
         if (from < to) segments[0] = seg.slice(0, from).concat(fix, seg.slice(to + 1));
     }
+    const ext = ROUTE_TRACK_EXTENSIONS[route.id];
+    if (ext) segments[0] = segments[0].concat(ext);
     return { loop: true, segments };
 }
 
@@ -1707,6 +1720,8 @@ export function showBottomSheet(index) {
 
     sheetLastOpenedAt = Date.now();
     const selectedHike = state.hikesWithTitle[index];
+    // число участников – сразу из уже загруженного календаря, пока не ответила подписка (а не от прошлого хайка)
+    window._participantCount = feedGoingList[selectedHike.date]?.length || 0;
     // для язычка бота: сколько смотрел хайк и записался ли (см. bot-nudge.js)
     sheetActHike = { date: selectedHike.date, at: Date.now(), registered: false };
     window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_open', date: selectedHike.date } }));
@@ -2140,7 +2155,7 @@ export function showBottomSheet(index) {
                     }
                 }
                 const imageContainer = contentWrapper.querySelector('.image-container');
-                const isSoldOut = count >= 12;
+                const isSoldOut = count >= HIKE_CAPACITY;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
                 window._participantCount = count;
                 updateFloatingSheetButtons();
@@ -2159,7 +2174,7 @@ export function showBottomSheet(index) {
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');
-        const isSoldOut = (window._participantCount || 0) >= 12 && !isPast;
+        const isSoldOut = (window._participantCount || 0) >= HIKE_CAPACITY && !isPast;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
         const participantCounterEl = document.getElementById('participantCounter');
@@ -2249,12 +2264,10 @@ export function showBottomSheet(index) {
     log('детали хайка', false, state.user);
 }
 
+// Записи догрузились, а шторка уже открыта (например, из ссылки на хайк): обновляем только кнопки
+// записи на месте. Раньше шторка открывалась заново – и на глазах исчезала и выезжала снова.
 export function refreshBottomSheetIfOpen() {
-    if (document.getElementById('hikeBottomSheet')) {
-        // Пропускаем если шит только что открылся (например, из deeplink) — иначе будет двойное открытие
-        if (Date.now() - sheetLastOpenedAt < 2000) return;
-        showBottomSheet(curSheetIndex());
-    }
+    if (document.getElementById('hikeBottomSheet')) updateFloatingSheetButtons();
 }
 
 let sheetActHike = null;
@@ -2782,13 +2795,14 @@ function updateFloatingSheetButtons() {
         accentColor = 'var(--yellow)';
     }
     const isBooked = state.hikeBookingStatus[curSheetIndex()] || false;
-    const MAX_TICKETS = 12;
+    const MAX_TICKETS = HIKE_CAPACITY;
     const bookedCount = window._participantCount || 0;
     const available = Math.max(0, MAX_TICKETS - bookedCount);
     const isSoldOut = bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
-    if (!isPast && !isClosedRegistration && !isCompletedToday && available === 0) {
+    // мест нет – но тому, кто уже записан, оставляем его кнопку (чтобы мог и отменить запись)
+    if (!isPast && !isClosedRegistration && !isCompletedToday && available === 0 && !isBooked) {
         const availBlock = document.createElement('div');
         availBlock.className = 'availability-floating';
         availBlock.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 10px 18px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; text-align: center;';
@@ -2858,20 +2872,19 @@ function updateFloatingSheetButtons() {
 
     // «уже идут N» показываем от 5 записавшихся: 1–4 человека выглядят как «никто не идёт»
     if (!isSoldOut && bookedCount >= 5) {
-        const MAX_SPOTS = 12;
-        const spotsLeft = Math.max(0, MAX_SPOTS - bookedCount);
+        const spotsLeft = Math.max(0, HIKE_CAPACITY - bookedCount);
         const chipRow = document.createElement('div');
         chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none;';
         const chip = document.createElement('div');
         chip.className = 'spots-counter-chip';
-        if (bookedCount <= 9) {
+        if (spotsLeft > 3) {
             const w = bookedCount === 1 ? 'человек' : bookedCount < 5 ? 'человека' : 'человек';
             chip.innerHTML = `⛰️ уже идут <strong>${bookedCount}</strong> ${w}`;
         } else {
             const w = getPlaceWord(spotsLeft);
             chip.innerHTML = spotsLeft > 0
                 ? `⏳ осталось <strong>${spotsLeft}</strong> ${w}`
-                : '⏳ последние места разобраны';
+                : '⏳ места закончились';
         }
         chipRow.appendChild(chip);
         container.appendChild(chipRow);
