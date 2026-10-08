@@ -550,7 +550,7 @@ function feedPlaceMap(container, hike) {
 
 // Снимок 3D-карты маршрута для сторис: невидимая карта за экраном, неподвижный кадр, ждём все тайлы.
 // Возвращает canvas (width×height CSS-пикселей × ratio) или null, если трека нет или карта не успела.
-export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, timeout = 20000 } = {}) {
+export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, timeout = 20000, camera } = {}) {
     const track = hike ? getHikeTrack(hike) : null;
     if (!track) return Promise.resolve(null);
     return ensureMapLibre().then(() => new Promise(resolve => {
@@ -576,12 +576,29 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
                 const px = cx.getImageData(0, 0, c.width, c.height).data;
                 let sum = 0, n = 0;
                 for (let i = 0; i < px.length; i += 4 * 997) { sum += px[i] + px[i + 1] + px[i + 2]; n++; }
-                finish(n && sum / n >= 30 ? c : null);
+                if (!(n && sum / n >= 30)) return finish(null);
+                // высоты по треку из рельефа карты: вершина и набор (для подписи в сторис)
+                try {
+                    const pts = (track.coords || track.segments?.flat() || []);
+                    const step = Math.max(1, Math.floor(pts.length / 200));
+                    const ex = track.exaggeration || 1.8;
+                    const els = [];
+                    for (let i = 0; i < pts.length; i += step) {
+                        const e = map.queryTerrainElevation([pts[i][1], pts[i][0]]);
+                        if (Number.isFinite(e)) els.push(e / ex);
+                    }
+                    if (els.length > 5) {
+                        let gain = 0;
+                        for (let i = 1; i < els.length; i++) if (els[i] > els[i - 1]) gain += els[i] - els[i - 1];
+                        c.stats = { maxEle: Math.max(...els), minEle: Math.min(...els), gain };
+                    }
+                } catch (e) {}
+                finish(c);
             } catch (e) { finish(null); }
         };
         const timer = setTimeout(() => (map ? grab() : finish(null)), timeout);
         try {
-            map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio });
+            map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio, camera });
             map.once('still-ready', () => map.once('idle', () => { map.once('render', grab); map.triggerRepaint(); }));
         } catch (e) { finish(null); }
     })).catch(() => null);
@@ -1422,7 +1439,8 @@ function hideUntilReady(map) {
 
 // standalone – отдельная карта (карточка в календаре): не трогает карту слайдера и её облёт.
 // still – неподвижный кадр без облёта (для картинки в сторис); pixelRatio – чёткость снимка
-function initHikeMap(el, track, instant = false, standalone = false, { still = false, pixelRatio } = {}) {
+// camera – поправка кадра для снимка: { pitch, bearing, zoomDelta, centerShift } (centerShift – доля высоты трека к югу)
+function initHikeMap(el, track, instant = false, standalone = false, { still = false, pixelRatio, camera } = {}) {
     if (!standalone) {
         try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
         try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
@@ -1463,6 +1481,16 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         const span = Math.max(latSpan, maxLon - minLon);
         const z = Math.min(14.5, 14.5 - Math.log2(span / 0.005));
         target = { center: [cLon, cLat - latSpan * 0.45], zoom: z, pitch: 45, bearing: 0 };
+    }
+    if (camera) {
+        const latSpan = maxLat - minLat;
+        target = {
+            ...target,
+            ...(camera.pitch != null ? { pitch: camera.pitch } : {}),
+            ...(camera.bearing != null ? { bearing: camera.bearing } : {}),
+            zoom: target.zoom + (camera.zoomDelta || 0),
+            ...(camera.centerShift != null ? { center: [cLon, cLat - latSpan * camera.centerShift] } : {})
+        };
     }
     const orbitRadiusDeg = Math.max(maxLat - minLat, maxLon - minLon, 0.004) * 0.6;
 
