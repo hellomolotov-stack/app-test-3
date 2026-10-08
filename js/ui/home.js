@@ -95,6 +95,9 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = state.metrics.meetings;
 }
 
+const MON_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const WD_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+
 export function renderUserBookings(container) {
     if (!container) return;
     const today = new Date();
@@ -165,23 +168,25 @@ export function renderUserBookings(container) {
             buttonTextColor = '#000000';
         }
         
+        // билет: сверху дата, название и «детали»; под отрывной линией – +1 и сторис
         const canPlus1 = state.userCard?.status === 'active' && !isCity && !isBookClub && booking.cancelled !== true;
-        const plus1Html = canPlus1 ? `
-            <div class="bk-plus1" data-plus1-date="${booking.date}" hidden>
-                <span>🤝 можешь взять с собой друга, который ещё не был с нами</span>
-                <button type="button" class="bk-plus1-btn" data-date="${booking.date}">взять +1</button>
-            </div>` : '';
+        const canStory = !isCity && !isBookClub && booking.cancelled !== true;
+        const dObj = new Date(booking.date + 'T12:00:00');
+        const when = [`${day} ${MON_SHORT[month]}`, WD_SHORT[dObj.getDay()], booking.start_time].filter(Boolean).join(' · ');
+        const cells = [
+            canPlus1 ? `<div class="bk-cell bk-plus1" data-plus1-date="${booking.date}"><button type="button" class="bk-plus1-btn" data-date="${booking.date}">🤝 взять +1</button></div>` : '',
+            canStory ? `<button type="button" class="bk-cell bk-story-btn${canPlus1 ? '' : ' is-wide'}" data-story-date="${booking.date}">${canPlus1 ? 'в сторис ↗' : '📸 поделиться в сторис ↗'}</button>` : ''
+        ].join('');
         html += `
-            <div style="margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="flex: 1; margin-right: 16px;">
-                    <span style="color: ${accentColor}; font-weight: 900; font-style: italic;">${formattedDate}</span>
-                    <span style="color: #ffffff; margin-left: 8px;">${displayTitle}</span>
+            <div class="bk-ticket">
+                <div class="bk-top">
+                    <div class="bk-info">
+                        <div class="bk-when" style="color: ${accentColor};">${when}</div>
+                        <div class="bk-title">${displayTitle}</div>
+                    </div>
+                    <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
                 </div>
-                <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
-            </div>
-            ${plus1Html}
-            ${!isCity && !isBookClub && booking.cancelled !== true ? `<div class="bk-story"><button type="button" class="bk-story-btn" data-story-date="${booking.date}">📸 поделиться в сторис ↗</button></div>` : ''}
+                ${cells ? `<div class="bk-stub">${cells}</div>` : ''}
             </div>
         `;
     });
@@ -233,9 +238,7 @@ async function refreshPlus1Buttons(container) {
     }
     rows.forEach(r => {
         const friend = plus1Used[r.dataset.plus1Date];
-        if (!friend) { r.hidden = false; return; }
-        r.hidden = false;
-        r.innerHTML = `<span>🤍 твой +1 – ${String(friend).replace(/</g, '&lt;')} – уже в списке</span>`;
+        if (friend) r.innerHTML = `<span>🤝 твой +1: <b>${String(friend).replace(/</g, '&lt;')}</b></span>`;
     });
 }
 
