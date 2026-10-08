@@ -73,7 +73,7 @@ const fmt = n => Math.round(n).toLocaleString('ru-RU');
 const fmtKm = km => (km >= 10 ? Math.round(km) : Math.round(km * 10) / 10).toLocaleString('ru-RU');
 
 // colorful – цветная карта (пока только для пробы)
-export async function drawStory(hike, { colorful = false } = {}) {
+export async function drawStory(hike, { colorful = false, footer = true } = {}) {
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const ctx = c.getContext('2d');
@@ -152,6 +152,7 @@ export async function drawStory(hike, { colorful = false } = {}) {
     });
 
     // 6. подпись клуба в самом низу (своего текста человек может и не писать)
+    if (!footer) return c;
     const footY = H - 150;
     ctx.fillStyle = YELLOW;
     ctx.font = `700 38px ${FONT}`;
