@@ -5535,4 +5535,3 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .ef-tk-actions { display: flex; gap: 8px; padding: 12px; }
 .ef-tk-actions .btn.ef-tk-go { flex: 1; justify-content: center; margin: 0; height: 40px; }
 .btn.ef-tk-go.is-in { background: rgba(217, 253, 25, .12); color: var(--yellow); border: 1px solid rgba(217, 253, 25, .5); box-shadow: none; }
-.btn.ef-tk-story { flex: none; width: auto; height: 40px; margin: 0; padding: 0 14px; border-radius: 12px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .18); color: #fff; font-size: 13.5px; font-weight: 600; box-shadow: none; }

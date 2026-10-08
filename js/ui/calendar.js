@@ -361,7 +361,7 @@ function feedNearestCard(h) {
         </div>
         <div class="ef-tk-actions">
             ${registered
-                ? `<button class="btn ef-tk-go is-in">ты записан ✓</button><button type="button" class="btn ef-tk-story" data-story-date="${h.date}">в сторис ↗</button>`
+                ? `<button class="btn ef-tk-go is-in">ты записан ✓</button>`
                 : `<button class="btn btn-yellow ef-tk-go">записаться</button>`}
         </div>
     </div>`;
@@ -757,21 +757,18 @@ function feedGoingHtml(list) {
     return `<span class="ef-ava">${faces}</span><span class="ef-going-text">${n === 1 ? 'уже идёт 1' : `уже идут ${n}`}</span>`;
 }
 
-// Места на ближайшем хайке: показываем из 10, но занятыми – не больше 8,
-// чтобы всегда оставалось «2 места» в запас (кто-то может отменить запись).
+// Места на ближайшем хайке: сколько аккаунтов реально записано – из 10.
 const SEATS_SHOWN = 10;
-const SEATS_TAKEN_MAX = 8;
 function feedSeatsWord(n) {
     const a = n % 10, b = n % 100;
     if (a === 1 && b !== 11) return 'место';
     return (a >= 2 && a <= 4 && (b < 10 || b >= 20)) ? 'места' : 'мест';
 }
 function feedPaintSeats(el, n) {
-    const taken = Math.min(n, SEATS_TAKEN_MAX);
-    const left = SEATS_SHOWN - taken;
-    el.querySelector('.ef-tk-left').textContent = `осталось ${left} ${feedSeatsWord(left)}`;
-    el.querySelector('.ef-tk-cap').textContent = `${taken} из ${SEATS_SHOWN}`;
-    el.querySelector('.ef-tk-bar i').style.width = `${Math.round(taken / SEATS_SHOWN * 100)}%`;
+    const left = SEATS_SHOWN - n;
+    el.querySelector('.ef-tk-left').textContent = left > 0 ? `осталось ${left} ${feedSeatsWord(left)}` : 'мест не осталось';
+    el.querySelector('.ef-tk-cap').textContent = `${n} из ${SEATS_SHOWN}`;
+    el.querySelector('.ef-tk-bar i').style.width = `${Math.min(100, Math.round(n / SEATS_SHOWN * 100))}%`;
     el.classList.add('is-ready');
 }
 
@@ -797,10 +794,6 @@ function feedFillGoing(container) {
     container.querySelectorAll('[data-seats-for]').forEach(el => {
         feedLoadGoing(el.dataset.seatsFor).then(list => { if (list) feedPaintSeats(el, list.length); }).catch(() => {});
     });
-    container.querySelectorAll('.ef-tk-story').forEach(b => b.addEventListener('click', e => {
-        e.stopPropagation();
-        import('./story.js').then(m => m.openStoryShare(b.dataset.storyDate, 'ближайший хайк'));
-    }));
     container.querySelectorAll('[data-going-for]').forEach(el => {
         const date = el.dataset.goingFor;
         if (!date) return;
