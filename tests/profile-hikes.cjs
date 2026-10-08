@@ -17,11 +17,23 @@ const hikes = [
     { date: date(2), title: 'Kant' },
 ];
 let participants = { [date(10)]: ['1', '2'], [date(2)]: ['2'] };
-const reads = [], opened = [], links = [];
+const reads = [], opened = [], links = [], filters = [];
 const main = {
     _html: '',
     set innerHTML(value) {
         this._html = value;
+        if (value.includes('id="profilesResults"')) {
+            filters.length = 0;
+            for (const match of value.matchAll(/data-profile-filter="([^"]+)" aria-pressed="([^"]+)"/g)) {
+                const button = {
+                    dataset: { profileFilter: match[1] }, pressed: match[2],
+                    getAttribute() { return this.pressed; },
+                    setAttribute(_, v) { this.pressed = v; },
+                };
+                button.addEventListener = (_, handler) => { button.click = handler; };
+                filters.push(button);
+            }
+        }
         links.length = 0;
         for (const match of value.matchAll(/class="profile-hike-link" data-hike-date="([^"]+)"/g)) {
             const link = { dataset: { hikeDate: match[1] } };
@@ -30,13 +42,16 @@ const main = {
         }
     },
     get innerHTML() { return this._html; },
-    querySelectorAll(selector) { return selector === '.profile-hike-link' ? links : []; },
+    querySelectorAll(selector) {
+        return selector === '.profile-hike-link' ? links : selector === '[data-profile-filter]' ? filters : [];
+    },
 };
+const results = Object.create(main);
 const context = vm.createContext({
     console, Date, Map, Promise, setTimeout, clearTimeout,
     state: { user: { id: 1 }, userCard: { status: 'active' }, hikesWithTitle: hikes },
     window: {}, document: {
-        querySelector: () => null, getElementById: () => null,
+        querySelector: () => null, getElementById: id => id === 'profilesResults' ? results : null,
         body: { style: {}, appendChild() {} },
         createElement: () => ({ innerHTML: '', className: '' }),
     },
@@ -63,12 +78,29 @@ vm.runInContext(source, context);
     dem.click({ preventDefault() { prevented = true; }, stopPropagation() {} });
     assert.ok(prevented);
     assert.deepEqual(opened, [0], 'Open correct slider index by date');
+    assert.equal(filters[0].pressed, 'true', 'All is selected initially');
+    filters[1].click();
+    assert.equal(filters[1].pressed, 'true');
+    assert.equal(links.length, 1, 'Nearest filter excludes later bookings');
+    assert.ok(results.innerHTML.includes('Member'));
+    assert.ok(!results.innerHTML.includes('Max'));
+    links[0].click({ preventDefault() {}, stopPropagation() {} });
+    assert.deepEqual(opened, [0, 3], 'Filtered cards still open their own hike');
+    filters[0].click();
+    assert.equal(links.length, 2, 'All restores the full set');
+    filters[1].click();
+    await context.renderProfiles();
+    assert.equal(filters[0].pressed, 'true', 'Re-entering always resets to all');
     participants = {};
     await context.renderProfiles();
     assert.equal(links.length, 0, 'Reload removes cancelled registrations without stale cache');
+    filters[1].click();
+    assert.ok(results.innerHTML.includes('пока никто не записался'));
     context.loadHikeParticipantIds = async () => { throw new Error('test: offline'); };
     context.console = { error() {} };
     await context.renderProfiles();
     assert.ok(main.innerHTML.includes('не удалось загрузить записи'), 'Do not report no bookings on a network error');
+    filters[1].click();
+    assert.ok(results.innerHTML.includes('не удалось загрузить записи на хайк'));
     console.log('Profile hike regression tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });

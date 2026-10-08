@@ -15,6 +15,7 @@ let profiles = {};
 let myProfile = null;
 let nextHikesByUser = new Map();
 let participantsLoadFailed = false;
+let nearestHikeDate = null;
 
 async function loadProfilesData() {
     const [allProfiles, myProf, routeFavorites] = await Promise.all([
@@ -30,6 +31,7 @@ async function loadProfilesData() {
     const future = state.hikesWithTitle
         .filter(h => !h.cancelled && new Date(`${normalizeDate(h.date)}T00:00:00`) >= today)
         .slice().sort((a, b) => normalizeDate(a.date).localeCompare(normalizeDate(b.date)));
+    nearestHikeDate = future[0]?.date || null;
     const results = await Promise.all(future.map(async hike => {
         try { return { hike, userIds: await loadHikeParticipantIds(hike.date) }; }
         catch (error) {
@@ -106,6 +108,41 @@ function cleanupProfileOverlays() {
     document.body.style.overflow = '';
 }
 
+function wireProfileCardActions(container) {
+    container.querySelectorAll('.profile-hike-link').forEach(link => {
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const index = state.hikesWithTitle.findIndex(h => normalizeDate(h.date) === normalizeDate(link.dataset.hikeDate));
+            if (index < 0) return;
+            haptic();
+            log('хайк из профиля', state.userCard.status !== 'active', state.user, { hike_date: link.dataset.hikeDate });
+            showBottomSheet(index);
+        });
+    });
+    container.querySelectorAll('.profile-contact-btn').forEach(btn => {
+        btn.addEventListener('click', event => {
+            event.stopPropagation();
+            haptic();
+            if (btn.dataset.action === 'chat' && btn.dataset.username) {
+                openLink(`https://t.me/${btn.dataset.username}`, 'написать участнику', false);
+            } else if (btn.dataset.action === 'link' && btn.dataset.url) {
+                openLink(btn.dataset.url, 'ссылка участника', false);
+            }
+        });
+    });
+}
+
+function renderProfilesColumns(cards) {
+    const leftCards = [], rightCards = [];
+    let leftWeight = 0, rightWeight = 0;
+    cards.forEach(({ html, weight }) => {
+        if (leftWeight <= rightWeight) { leftCards.push(html); leftWeight += weight; }
+        else { rightCards.push(html); rightWeight += weight; }
+    });
+    return `<div class="profiles-two-columns"><div class="profiles-column">${leftCards.join('')}</div><div class="profiles-column">${rightCards.join('')}</div></div>`;
+}
+
 export async function renderProfiles() {
     cleanupProfileOverlays();
     document.getElementById('floatingCardBtn')?.remove();   // ← удаление кнопки
@@ -122,7 +159,10 @@ export async function renderProfiles() {
 
     const sorted = Object.entries(profiles).map(([id, profile]) => [id, { ...profile, userId: profile.userId || id }])
         .sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
-    const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
+    const allCards = await Promise.all(sorted.map(async ([,p]) => ({
+        ...await renderProfileCard(p, false),
+        hikeDate: nextHikesByUser.get(String(p.userId))?.date || null,
+    })));
 
     const shouldAnimate = !(isCardHolder && hasMyProfile);
 
@@ -147,27 +187,35 @@ export async function renderProfiles() {
         }
         html = wrapInfiniteScroll(`<div class="profiles-two-columns">${ph}${ph}</div>`);
     } else {
-        const leftCards = [], rightCards = [];
-        let leftWeight = 0, rightWeight = 0;
-        allCards.forEach(({ html: cardHtml, weight }) => {
-            if (leftWeight <= rightWeight) { leftCards.push(cardHtml); leftWeight += weight; }
-            else { rightCards.push(cardHtml); rightWeight += weight; }
-        });
-        const twoColumnsHtml = `<div class="profiles-two-columns"><div class="profiles-column">${leftCards.join('')}</div><div class="profiles-column">${rightCards.join('')}</div></div>`;
+        const twoColumnsHtml = renderProfilesColumns(allCards);
         html = shouldAnimate ? wrapInfiniteScroll(twoColumnsHtml) : `<div class="card-container">${twoColumnsHtml}</div>`;
     }
 
-    mainDiv().innerHTML = html;
+    const canFilter = isCardHolder && hasMyProfile;
+    const filtersHtml = canFilter ? `<div class="profiles-filters" role="group" aria-label="фильтр профилей">
+        <button type="button" class="profiles-filter" data-profile-filter="all" aria-pressed="true">все</button>
+        <button type="button" class="profiles-filter" data-profile-filter="nearest" aria-pressed="false">идут на ближайший хайк</button>
+    </div>` : '';
+    mainDiv().innerHTML = `${filtersHtml}<div id="profilesResults" aria-live="polite">${html}</div>`;
+    wireProfileCardActions(mainDiv());
 
-    mainDiv().querySelectorAll('.profile-hike-link').forEach(link => {
-        link.addEventListener('click', event => {
-            event.preventDefault();
-            event.stopPropagation();
-            const index = state.hikesWithTitle.findIndex(h => normalizeDate(h.date) === normalizeDate(link.dataset.hikeDate));
-            if (index < 0) return;
+    mainDiv().querySelectorAll('[data-profile-filter]').forEach(button => {
+        button.addEventListener('click', () => {
+            if (button.getAttribute('aria-pressed') === 'true') return;
             haptic();
-            log('хайк из профиля', state.userCard.status !== 'active', state.user, { hike_date: link.dataset.hikeDate });
-            showBottomSheet(index);
+            const filter = button.dataset.profileFilter;
+            const cards = filter === 'all' ? allCards : allCards.filter(card => nearestHikeDate && card.hikeDate === nearestHikeDate);
+            const results = document.getElementById('profilesResults');
+            const emptyText = participantsLoadFailed ? 'не удалось загрузить записи на хайк'
+                : !nearestHikeDate ? 'пока нет предстоящих хайков'
+                : 'пока никто не записался на ближайший хайк';
+            results.innerHTML = cards.length ? `<div class="card-container">${renderProfilesColumns(cards)}</div>`
+                : `<div class="profiles-empty" role="status">${filter === 'all' ? 'пока нет профилей' : emptyText}</div>`;
+            mainDiv().querySelectorAll('[data-profile-filter]').forEach(item => {
+                item.setAttribute('aria-pressed', String(item === button));
+            });
+            wireProfileCardActions(results);
+            log('фильтр профилей', false, state.user, { filter, hike_date: filter === 'nearest' ? nearestHikeDate : null });
         });
     });
 
@@ -178,21 +226,6 @@ export async function renderProfiles() {
         mainDiv().prepend(personalMapHost);
         renderPersonalRoutesMap(personalMapHost).catch(error => console.error('Мой Крым:', error));
     }
-
-    mainDiv().querySelectorAll('.profile-contact-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            haptic();
-            const action = btn.dataset.action;
-            if (action === 'chat') {
-                const username = btn.dataset.username;
-                if (username) openLink(`https://t.me/${username}`, 'написать участнику', false);
-            } else if (action === 'link') {
-                const url = btn.dataset.url;
-                if (url) openLink(url, 'ссылка участника', false);
-            }
-        });
-    });
 
     if (shouldAnimate) {
         const wrapper = mainDiv().querySelector('.infinite-scroll-wrapper');
