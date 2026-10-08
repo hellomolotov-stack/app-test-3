@@ -1,30 +1,25 @@
 // js/ui/story.js – «поделиться в сторис» после записи на хайк.
 // Рисуем картинку 1080×1920: на весь экран – снимок нашей 3D-карты с жёлтым треком, сверху дата и название,
-// снизу плашки (км, сложность, время, сколько идут) и подпись клуба. Показываем превью, по кнопке
+// снизу крупно локация, вершина · набор · путь и @yaltahiking, а под ними – место для подписи человека. Показываем превью, по кнопке
 // грузим картинку на /api/story (Telegram берёт сторис и сохранение только по публичной ссылке)
 // и открываем редактор сторис Telegram или сохраняем файл на телефон.
 import { state } from '../state.js';
 import { haptic, tg } from '../utils.js';
 import { log } from '../api.js';
-import { loadAllParticipants } from '../firebase.js';
 
 const W = 1080, H = 1920, PAD = 80;
 const YELLOW = '#D9FD19';
 const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const WD = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
-const BOT_LINK = 'https://t.me/yaltahiking_bot';
+const CHANNEL_HANDLE = '@yaltahiking';
+const CHANNEL_LINK = 'https://t.me/yaltahiking';
 
 const isGuest = () => state.userCard?.status !== 'active';
 
 function hikeTags(h) {
     const raw = Array.isArray(h.tags) ? h.tags : String(h.tags || '').split(',');
     return raw.map(t => String(t).trim()).filter(Boolean);
-}
-
-function peopleWord(n) {
-    const a = n % 10, b = n % 100;
-    return (a >= 2 && a <= 4 && (b < 10 || b >= 20)) ? 'человека' : 'человек';
 }
 
 // переносим текст по словам в заданную ширину
@@ -40,15 +35,43 @@ function wrap(ctx, text, maxW) {
     return lines;
 }
 
-function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
+// «хайк на Демерджи» → «Демерджи»: на постере крупно только сама локация
+function placeName(title) {
+    let t = String(title || 'хайк').trim();
+    t = t.replace(/^(хайк|тропа|маршрут|путь|восхождение)\s+(на|в|по|к|до)?\s*/i, '');
+    return t ? t.charAt(0).toUpperCase() + t.slice(1) : 'Хайк';
 }
+
+function kmLength(pts) {
+    let km = 0;
+    for (let i = 1; i < pts.length; i++) {
+        const [a, b] = pts[i - 1], [c, d] = pts[i];
+        const dLat = (c - a) * Math.PI / 180, dLon = (d - b) * Math.PI / 180;
+        const h = Math.sin(dLat / 2) ** 2 + Math.cos(a * Math.PI / 180) * Math.cos(c * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+        km += 12742 * Math.asin(Math.sqrt(h));
+    }
+    return km;
+}
+
+// вершина и набор высоты по треку: высоты точек из открытой модели рельефа (Open-Meteo, до 100 точек)
+async function trackStats(hike) {
+    const { hikeTrackPoints } = await import('./calendar.js');
+    const all = hikeTrackPoints(hike);
+    if (all.length < 2) return null;
+    const step = Math.max(1, Math.ceil(all.length / 100));
+    const pts = all.filter((_, i) => i % step === 0);
+    if (pts[pts.length - 1] !== all[all.length - 1]) pts.push(all[all.length - 1]);
+    const pick = pts.slice(0, 100);
+    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${pick.map(p => p[0].toFixed(5)).join(',')}&longitude=${pick.map(p => p[1].toFixed(5)).join(',')}`);
+    const els = (await r.json())?.elevation?.filter(Number.isFinite) || [];
+    if (els.length < 5) return null;
+    let gain = 0;
+    for (let i = 1; i < els.length; i++) if (els[i] > els[i - 1]) gain += els[i] - els[i - 1];
+    return { peak: Math.max(...els), gain, km: kmLength(all) };
+}
+
+const fmt = n => Math.round(n).toLocaleString('ru-RU');
+const fmtKm = km => (km >= 10 ? Math.round(km) : Math.round(km * 10) / 10).toLocaleString('ru-RU');
 
 async function drawStory(hike) {
     const c = document.createElement('canvas');
@@ -57,100 +80,86 @@ async function drawStory(hike) {
     ctx.fillStyle = '#0A0B09';
     ctx.fillRect(0, 0, W, H);
 
-    // 1. карта на весь кадр (или мягкое жёлтое свечение, если трека нет)
-    const [mapCanvas, participants] = await Promise.all([
-        import('./calendar.js').then(m => m.snapshotHikeMap(hike, { width: 360, height: 640, ratio: 3 })).catch(() => null),
-        loadAllParticipants(hike.date).catch(() => [])
+    // 1. 3D-карта на весь кадр: камера наклонена сильнее, чтобы были видны вершина и рельеф
+    const [mapCanvas, stats] = await Promise.all([
+        import('./calendar.js').then(m => m.snapshotHikeMap(hike, { width: 360, height: 640, ratio: 3, camera: { pitch: 70, zoomDelta: -0.2, centerShift: 0.1 } })).catch(() => null),
+        trackStats(hike).catch(() => null)
     ]);
     if (mapCanvas) {
         ctx.drawImage(mapCanvas, 0, 0, W, H);
     } else {
-        const g = ctx.createRadialGradient(W / 2, H * .55, 50, W / 2, H * .55, 900);
+        const g = ctx.createRadialGradient(W / 2, H * .45, 50, W / 2, H * .45, 900);
         g.addColorStop(0, 'rgba(217, 253, 25, .16)');
         g.addColorStop(1, 'rgba(217, 253, 25, 0)');
         ctx.fillStyle = g;
         ctx.fillRect(0, 0, W, H);
     }
 
-    // 2. затемнения сверху и снизу, чтобы текст читался на любой карте
-    let g = ctx.createLinearGradient(0, 0, 0, 820);
+    // 2. затемнения: сверху под дату, снизу под название, цифры и место для подписи человека
+    let g = ctx.createLinearGradient(0, 0, 0, 640);
     g.addColorStop(0, 'rgba(10, 11, 9, .92)');
     g.addColorStop(1, 'rgba(10, 11, 9, 0)');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, 820);
-    g = ctx.createLinearGradient(0, H - 760, 0, H);
+    ctx.fillRect(0, 0, W, 640);
+    g = ctx.createLinearGradient(0, H - 960, 0, H);
     g.addColorStop(0, 'rgba(10, 11, 9, 0)');
-    g.addColorStop(1, 'rgba(10, 11, 9, .95)');
+    g.addColorStop(.5, 'rgba(10, 11, 9, .82)');
+    g.addColorStop(1, 'rgba(10, 11, 9, .96)');
     ctx.fillStyle = g;
-    ctx.fillRect(0, H - 760, W, 760);
+    ctx.fillRect(0, H - 960, W, 960);
 
-    // 3. верх: дата, «я иду на хайк», название
+    // 3. верх: дата и «я иду на хайк»
     const d = new Date(hike.date + 'T12:00:00');
     ctx.textBaseline = 'alphabetic';
-    let y = 230;
     ctx.fillStyle = YELLOW;
     ctx.font = `700 46px ${FONT}`;
-    ctx.fillText(`${d.getDate()} ${MONTHS[d.getMonth()]} · ${WD[d.getDay()]}${hike.start_time ? ` · ${hike.start_time}` : ''}`, PAD, y);
-    y += 78;
-    ctx.fillStyle = 'rgba(255, 255, 255, .78)';
+    ctx.fillText(`${d.getDate()} ${MONTHS[d.getMonth()]} · ${WD[d.getDay()]}${hike.start_time ? ` · ${hike.start_time}` : ''}`, PAD, 210);
+    ctx.fillStyle = 'rgba(255, 255, 255, .8)';
     ctx.font = `500 48px ${FONT}`;
-    ctx.fillText('я иду на хайк 🏔', PAD, y);
+    ctx.fillText('я иду на хайк 🏔', PAD, 290);
 
-    let size = 118, lines;
+    // 4. низ: крупно локация (в одну строку, иначе уменьшаем; совсем длинную – в две)
+    const name = placeName(hike.title);
+    let size = 160, lines;
     do {
         ctx.font = `800 ${size}px ${FONT}`;
-        lines = wrap(ctx, String(hike.title || 'хайк').trim(), W - PAD * 2);
+        lines = ctx.measureText(name).width <= W - PAD * 2 ? [name] : null;
         size -= 6;
-    } while (lines.length > 3 && size > 70);
+    } while (!lines && size > 96);
     size += 6;
+    if (!lines) { ctx.font = `800 ${size}px ${FONT}`; lines = wrap(ctx, name, W - PAD * 2).slice(0, 2); }
+    const statsTop = H - 600;
+    let y = statsTop - 70 - (lines.length - 1) * size * 1.02;
     ctx.fillStyle = '#fff';
-    y += 30;
-    lines.slice(0, 3).forEach(l => { y += size * 1.04; ctx.fillText(l, PAD, y); });
+    lines.forEach(l => { ctx.fillText(l, PAD, y); y += size * 1.02; });
 
-    // 4. низ: плашки с деталями
-    const chips = hikeTags(hike).slice(0, 3);
-    const count = Array.isArray(participants) ? participants.length : 0;
-    if (count >= 2) chips.push(`👥 идут ${count} ${peopleWord(count)}`);
-    ctx.font = `600 40px ${FONT}`;
-    const chipH = 84, gap = 18;
-    const rows = [[]];
-    let rowW = 0;
-    chips.forEach(t => {
-        const w = ctx.measureText(t).width + 56;
-        if (rowW + w > W - PAD * 2 && rows[rows.length - 1].length) { rows.push([]); rowW = 0; }
-        rows[rows.length - 1].push({ t, w });
-        rowW += w + gap;
-    });
-    let cy = H - 330 - (rows.length - 1) * (chipH + gap);
-    rows.forEach(row => {
-        let cx = PAD;
-        row.forEach(({ t, w }) => {
-            roundRect(ctx, cx, cy, w, chipH, chipH / 2);
-            ctx.fillStyle = 'rgba(10, 11, 9, .72)';
-            ctx.fill();
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = 'rgba(255, 255, 255, .22)';
-            ctx.stroke();
-            ctx.fillStyle = '#fff';
-            ctx.fillText(t, cx + 28, cy + 56);
-            cx += w + gap;
-        });
-        cy += chipH + gap;
+    // 5. вершина · набор · путь
+    const km = Number(String(hikeTags(hike).join(' ').match(/(\d+(?:[.,]\d+)?)\s*км/)?.[1] || '').replace(',', '.')) || stats?.km;
+    const cells = [
+        stats ? ['вершина', `${fmt(stats.peak)} м`] : null,
+        stats ? ['набор', `↗ ${fmt(stats.gain)} м`] : null,
+        km ? ['путь', `${fmtKm(km)} км`] : null
+    ].filter(Boolean);
+    const cellW = (W - PAD * 2) / 3;
+    cells.forEach(([label, value], i) => {
+        const x = PAD + i * cellW;
+        ctx.fillStyle = 'rgba(255, 255, 255, .62)';
+        ctx.font = `500 34px ${FONT}`;
+        ctx.fillText(label, x, statsTop);
+        ctx.fillStyle = YELLOW;
+        ctx.font = `800 66px ${FONT}`;
+        ctx.fillText(value, x, statsTop + 76);
     });
 
-    // 5. подпись клуба
-    ctx.fillStyle = 'rgba(255, 255, 255, .25)';
-    ctx.fillRect(PAD, H - 200, W - PAD * 2, 2);
-    ctx.fillStyle = '#fff';
-    ctx.font = `800 44px ${FONT}`;
-    ctx.fillText('хайкинг интеллигенция', PAD, H - 128);
+    // 6. подпись клуба; ниже (≈ 400 px) – пустое место под текст, который человек допишет в Telegram
+    const footY = H - 420;
+    ctx.fillStyle = YELLOW;
+    ctx.font = `700 38px ${FONT}`;
+    ctx.fillText(CHANNEL_HANDLE, PAD, footY);
+    const hw = ctx.measureText(CHANNEL_HANDLE).width;
     ctx.fillStyle = 'rgba(255, 255, 255, .7)';
     ctx.font = `500 34px ${FONT}`;
-    ctx.fillText('главный хайкинг-клуб большой Ялты', PAD, H - 78);
-    ctx.fillStyle = YELLOW;
-    ctx.font = `700 34px ${FONT}`;
-    const handle = '@yaltahiking_bot';
-    ctx.fillText(handle, W - PAD - ctx.measureText(handle).width, H - 128);
+    ctx.fillText('хайкинг интеллигенция', PAD + hw + 24, footY);
     return c;
 }
 
@@ -226,8 +235,11 @@ export async function openStoryShare(hikeDate, source = '') {
             return;
         }
         const url = await getUrl();
-        const opts = { text: `иду на ${hike.title} с хайкинг интеллигенцией 🏔` };
-        if (tg.initDataUnsafe?.user?.is_premium) opts.widget_link = { url: `${BOT_LINK}?startapp=hike_${hikeDate}`, name: 'записаться' };
+        // подпись не добавляем – место внизу картинки оставлено под текст самого человека.
+        // Кликабельную ссылку Telegram даёт прикрепить только Premium-аккаунтам, а где она встанет – решает
+        // сам Telegram (человек может передвинуть её в редакторе): ведём её в канал клуба.
+        const opts = {};
+        if (tg.initDataUnsafe?.user?.is_premium) opts.widget_link = { url: CHANNEL_LINK, name: 'хочу с вами' };
         tg.shareToStory(url, opts);
         log('сторис: отправил в Telegram', isGuest(), state.user, { hike_date: hikeDate });
     }));

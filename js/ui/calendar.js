@@ -577,22 +577,6 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
                 let sum = 0, n = 0;
                 for (let i = 0; i < px.length; i += 4 * 997) { sum += px[i] + px[i + 1] + px[i + 2]; n++; }
                 if (!(n && sum / n >= 30)) return finish(null);
-                // высоты по треку из рельефа карты: вершина и набор (для подписи в сторис)
-                try {
-                    const pts = (track.coords || track.segments?.flat() || []);
-                    const step = Math.max(1, Math.floor(pts.length / 200));
-                    const ex = track.exaggeration || 1.8;
-                    const els = [];
-                    for (let i = 0; i < pts.length; i += step) {
-                        const e = map.queryTerrainElevation([pts[i][1], pts[i][0]]);
-                        if (Number.isFinite(e)) els.push(e / ex);
-                    }
-                    if (els.length > 5) {
-                        let gain = 0;
-                        for (let i = 1; i < els.length; i++) if (els[i] > els[i - 1]) gain += els[i] - els[i - 1];
-                        c.stats = { maxEle: Math.max(...els), minEle: Math.min(...els), gain };
-                    }
-                } catch (e) {}
                 finish(c);
             } catch (e) { finish(null); }
         };
@@ -962,6 +946,12 @@ export function catalogRouteTrack(route) {
 
 // Маршруты, у которых рельеф с усилением 1.8 выглядит остриём (плато Ильяс-Кая в данных высот узкое)
 const ROUTE_TERRAIN_EXAGGERATION = { 'ilyas-kaya': 0.8 };
+
+// точки трека [[lat, lon], …] – для подсчёта высот в сторис
+export function hikeTrackPoints(hike) {
+    const t = hike ? getHikeTrackRaw(hike) : null;
+    return t ? (t.coords || t.segments?.flat() || []) : [];
+}
 
 function getHikeTrack(hike) {
     const track = getHikeTrackRaw(hike);
