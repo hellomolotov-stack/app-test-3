@@ -5537,3 +5537,15 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .btn.ef-tk-go.is-in { background: rgba(217, 253, 25, .12); color: var(--yellow); border: 1px solid rgba(217, 253, 25, .5); box-shadow: none; }
 /* шторка сторис – полупрозрачное стекло с размытием, как у шторки карты */
 .story-overlay .inv-sheet { background: rgba(18, 26, 36, 0.72); backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%); border-top-color: rgba(255, 255, 255, .2); }
+
+/* ==================== КОМПЬЮТЕР И ПЛАНШЕТ ====================
+   Главная уже держится колонкой 600px; шторки, меню и поп-апы тоже не растягиваем на весь экран –
+   они выезжают той же колонкой по центру, как шторка хайка. */
+.cs-sheet, .inv-sheet, .ns-panel { width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; }
+.cs-stage { max-width: 420px; margin-left: auto; margin-right: auto; }
+@media (min-width: 640px) {
+    .cs-sheet, .inv-sheet, .ns-panel { border-left: 1px solid rgba(255, 255, 255, .12); border-right: 1px solid rgba(255, 255, 255, .12); }
+}
+
+/* шторка сторис: кнопки по размеру текста, а не на всю ширину */
+.story-overlay .btn.inv-wide { display: flex; align-items: center; justify-content: center; width: auto; min-width: 230px; max-width: 100%; padding: 0 28px; margin: 12px auto 0; }
