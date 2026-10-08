@@ -5192,7 +5192,9 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .cs-overlay.is-on { background: rgba(0, 0, 0, .55); }
 .cs-sheet {
     position: relative; height: calc(100% - 40px);
-    border-radius: 28px 28px 0 0; background: #0f161e; border-top: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 28px 28px 0 0; border-top: 1px solid rgba(255, 255, 255, .2);
+    /* полупрозрачное стекло с размытием – как у шторки хайка */
+    background: rgba(18, 26, 36, 0.72); backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%);
     display: flex; flex-direction: column; overflow: hidden;
     transform: translateY(100%); transition: transform .38s cubic-bezier(.2, .9, .25, 1);
 }
@@ -5251,7 +5253,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .cs-note { margin-top: 12px; font-size: 12.5px; line-height: 1.4; color: rgba(255, 255, 255, .62); }
 .cs-support { display: block; width: 100%; margin-top: 10px; padding: 10px 0; border: 0; background: none; color: rgba(255, 255, 255, .55); font: inherit; font-size: 12.5px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 
-.cs-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); background: linear-gradient(180deg, rgba(15, 22, 30, 0), #0f161e 32%); display: flex; flex-direction: column; gap: 6px; }
+.cs-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(env(safe-area-inset-bottom, 0px) + 16px); background: linear-gradient(180deg, rgba(18, 26, 36, 0), rgba(14, 20, 28, .88) 32%); display: flex; flex-direction: column; gap: 6px; }
 .cs-buy { width: 100%; height: 52px; margin: 0; font-size: 16px; font-weight: 700; }
 .cs-ticket { padding: 8px 0; border: 0; background: none; color: rgba(255, 255, 255, .7); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
 
@@ -5463,7 +5465,6 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 /* на главной владельца – спокойная текстовая ссылка под кнопками */
 .gift-text-link { display: block; margin: 2px auto 0; padding: 6px 12px; background: none; border: 0; cursor: pointer;
     font: inherit; font-size: 13.5px; font-weight: 600; color: rgba(255, 255, 255, .7); }
-.gift-text-link b { color: var(--yellow); font-weight: 700; }
 /* экраны подарка */
 .gift-card { position: relative; width: 78%; margin: 6px auto 0; aspect-ratio: 1000 / 604; border-radius: 3.8% / 6.3%; overflow: hidden;
     box-shadow: 0 18px 36px rgba(0, 0, 0, .45); animation: cs-float 7s ease-in-out infinite; }

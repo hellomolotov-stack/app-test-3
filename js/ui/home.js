@@ -701,7 +701,7 @@ function renderOwnerHome() {
                 <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                 <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
             </div>
-            <button type="button" class="gift-text-link" id="giftCardBtn">🎁 <b>подарить карту</b> другу ›</button>
+            <button type="button" class="gift-text-link" id="giftCardBtn">подарить карту другу ›</button>
         </div>
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
