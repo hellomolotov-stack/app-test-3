@@ -565,7 +565,7 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
     if (!track) return Promise.resolve(null);
     return ensureMapLibre().then(() => new Promise(resolve => {
         const host = document.createElement('div');
-        host.style.cssText = `position:fixed;left:-10000px;top:0;width:${width}px;height:${height}px;z-index:-1;pointer-events:none;`;
+        host.style.cssText = `position:fixed;left:0;top:0;opacity:0;width:${width}px;height:${height}px;z-index:-1;pointer-events:none;`;
         document.body.appendChild(host);
         let map = null, done = false;
         const finish = c => {
@@ -586,14 +586,22 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
                 const px = cx.getImageData(0, 0, c.width, c.height).data;
                 let sum = 0, n = 0;
                 for (let i = 0; i < px.length; i += 4 * 997) { sum += px[i] + px[i + 1] + px[i + 2]; n++; }
-                if (!(n && sum / n >= 30)) return finish(null);
+                // кадр ещё тёмный (тайлы не догрузились) – пробуем ещё раз, пока не истечёт время
+                if (!(n && sum / n >= 30)) { setTimeout(waitTiles, 400); return; }
                 finish(c);
             } catch (e) { finish(null); }
         };
-        const timer = setTimeout(() => (map ? grab() : finish(null)), timeout);
+        // ждём, пока карта и все тайлы (спутник и рельеф) загрузятся, и снимаем свежий кадр
+        const waitTiles = () => {
+            if (done) return;
+            if (!(map.loaded() && map.areTilesLoaded())) { setTimeout(waitTiles, 250); return; }
+            map.once('render', grab);
+            map.triggerRepaint();
+        };
+        const timer = setTimeout(() => finish(null), timeout);
         try {
             map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio, camera, colorful });
-            map.once('still-ready', () => map.once('idle', () => { map.once('render', grab); map.triggerRepaint(); }));
+            map.once('still-ready', () => setTimeout(waitTiles, 300));
         } catch (e) { finish(null); }
     })).catch(() => null);
 }
