@@ -783,6 +783,11 @@ function feedWhenDb() {
         check();
     });
 }
+// для ссылки сразу на хайк: участников подгружаем до открытия шторки, чтобы она открылась уже с ними
+export function prefetchHikeParticipants(date, timeoutMs = 2500) {
+    return Promise.race([feedLoadGoing(date).catch(() => null), new Promise(r => setTimeout(r, timeoutMs))]);
+}
+
 function feedLoadGoing(date) {
     if (feedGoingList[date]) return Promise.resolve(feedGoingList[date]);
     return feedWhenDb().then(ok => ok ? loadAllParticipants(date) : null).then(list => {

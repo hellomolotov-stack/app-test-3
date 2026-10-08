@@ -415,7 +415,9 @@ function handleDeepLink(startParam) {
         const tryShow = () => {
             const targetIndex = state.hikesWithTitle.findIndex(h => normalizeDate(h.date) === targetDate);
             if (targetIndex !== -1) {
-                setTimeout(() => showBottomSheet(targetIndex), 200);
+                const date = state.hikesWithTitle[targetIndex].date;
+                import('./ui/calendar.js').then(m => m.prefetchHikeParticipants(date)).catch(() => {})
+                    .then(() => showBottomSheet(targetIndex));
                 return true;
             }
             return false;
