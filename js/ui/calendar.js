@@ -784,7 +784,7 @@ function feedWhenDb() {
     });
 }
 // для ссылки сразу на хайк: участников подгружаем до открытия шторки, чтобы она открылась уже с ними
-export function prefetchHikeParticipants(date, timeoutMs = 2500) {
+export function prefetchHikeParticipants(date, timeoutMs = 4000) {
     return Promise.race([feedLoadGoing(date).catch(() => null), new Promise(r => setTimeout(r, timeoutMs))]);
 }
 
@@ -2829,6 +2829,7 @@ function updateFloatingSheetButtons() {
                 });
             }
         }, 50);
+        return; // мест нет – слайдер записи не показываем
     }
 
     if (isPast || isCompletedToday) {
