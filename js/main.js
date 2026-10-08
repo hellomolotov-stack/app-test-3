@@ -608,6 +608,19 @@ function loadFirebaseSdk() {
 }
 loadFirebaseSdk(); // стартуем загрузку сразу при запуске модуля
 
+// Замер запуска по шагам (в журнал, корзинами – чтобы ежечасный отчёт оставался коротким):
+// «библиотека» – скачан Firebase, «статус карты» – пришли карта и записи, «все данные» – остальное.
+function loadStageBucket(sec) {
+    return sec < 1 ? 'до 1 с' : sec < 3 ? '1–3 с' : sec < 6 ? '3–6 с' : sec < 10 ? '6–10 с' : '10+ с';
+}
+function logLoadStage(stage, isGuest) {
+    const sec = (Date.now() - APP_T0) / 1000;
+    log(`замер: ${stage} ${loadStageBucket(sec)}`, isGuest, state.user);
+}
+function isGuestGuess() {
+    return !state.userCard || state.userCard.status !== 'active';
+}
+
 async function loadAppData() {
     showAnimatedLoader();
     try {
@@ -672,6 +685,7 @@ async function loadAppData() {
         // кэш есть – показываем главную сразу, не дожидаясь Firebase SDK
         earlyRenderHome();
         await loadFirebaseSdk();
+        logLoadStage('библиотека', isGuestGuess());
         initFirebase();
         const database = getDatabase();
         firebaseReady = true;
@@ -692,29 +706,25 @@ async function loadAppData() {
         // #2: если в кэше уже есть данные — показываем главную мгновенно, сеть обновит тихо
         earlyRenderHome();
 
-        // #3: всё параллельно, включая userData
-        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,
-               randomPhrases, leaders, updates, mastermindSummaries,
-               regsPopup, popupConfig, popups, userData, testimonials, safety] = await Promise.all([
+        // Все запросы стартуют сразу, включая записи человека (раньше записи шли отдельным кругом
+        // после всех остальных). Применяем в две очереди: сначала то, от чего зависят кнопки и вид
+        // главной (карта, записи, настройки попапов, ЧС), потом остальное – как и раньше.
+        const pUserData = loadUserData(state.user?.id);
+        const pUserRegs = loadUserRegistrations(state.user?.id).catch(() => ({}));
+        const pRegsPopup = loadRegistrationsPopup();
+        const pPopupConfig = loadPopupConfig();
+        const pPopups = loadPopups().catch(() => null);
+        const pSafety = loadSafety().catch(() => null);
+        const pRest = Promise.all([
             loadMetrics(), loadFaq(), loadPrivileges(), loadGuestPrivileges(),
             loadPassInfo(), loadGiftContent(), loadRandomPhrases(), loadLeaders(),
-            loadUpdates(), loadMastermindSummaries(),
-            loadRegistrationsPopup(), loadPopupConfig(), loadPopups().catch(() => null),
-            loadUserData(state.user?.id), loadTestimonials().catch(() => []),
-            loadSafety().catch(() => null)
+            loadUpdates(), loadMastermindSummaries(), loadTestimonials().catch(() => [])
         ]);
 
-        if (metrics) state.metrics = metrics;
-        if (faq) state.faq = faq;
-        if (privileges) state.privileges = privileges;
-        if (guestPrivileges) state.guestPrivileges = guestPrivileges;
-        if (passInfo) state.passInfo = passInfo;
-        if (giftContent) state.giftContent = giftContent;
-        if (randomPhrases) state.randomPhrases = randomPhrases;
-        if (leaders) state.leaders = leaders;
-        if (updates) state.updates = updates;
-        if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
-        if (testimonials) state.testimonials = testimonials;
+        // ── очередь 1: карта, записи, настройки ──
+        const [userData, userRegs, regsPopup, popupConfig, popups, safety] = await Promise.all([
+            pUserData, pUserRegs, pRegsPopup, pPopupConfig, pPopups, pSafety
+        ]);
         if (safety) state.safety = safety;
         try { localStorage.setItem('safetyCache', JSON.stringify(state.safety)); } catch (e) {}
         const safetyMenuItem = document.getElementById('popupSafety');
@@ -731,7 +741,7 @@ async function loadAppData() {
 
         // _userRegs (Firebase) нужен всем — по нему понятно, ходил ли человек уже на хайк (билет – только на первый).
         // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
-        state._userRegs = await loadUserRegistrations(state.user?.id).catch(() => ({}));
+        state._userRegs = userRegs || {};
         const lumenHikesCount = Object.values(state._userRegs || {}).filter(value => value === true).length;
         setLumenEligibility({
             firstHikePending: lumenHikesCount === 0,
@@ -742,9 +752,30 @@ async function loadAppData() {
             applyOwnerBookings(); // #5
             saveBookingStatusToLocal(); // кэш на следующий запуск, чтобы ранний рендер видел корректный статус
             refreshBottomSheetIfOpen(); // обновить открытый шит если он уже был показан до загрузки _userRegs
+            // ранний рендер показал гостевую главную – перерисовываем для владельца карты сразу,
+            // не дожидаясь отзывов, саммари и прочего
+            if (firstRenderDone && !window._deepLinkPageChanged) renderHome();
         } else {
             state.hikeBookingStatus = loadBookingStatusFromLocal();
         }
+        logLoadStage('статус карты', state.userCard.status !== 'active');
+
+        // ── очередь 2: всё остальное ──
+        const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,
+               randomPhrases, leaders, updates, mastermindSummaries, testimonials] = await pRest;
+
+        if (metrics) state.metrics = metrics;
+        if (faq) state.faq = faq;
+        if (privileges) state.privileges = privileges;
+        if (guestPrivileges) state.guestPrivileges = guestPrivileges;
+        if (passInfo) state.passInfo = passInfo;
+        if (giftContent) state.giftContent = giftContent;
+        if (randomPhrases) state.randomPhrases = randomPhrases;
+        if (leaders) state.leaders = leaders;
+        if (updates) state.updates = updates;
+        if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
+        if (testimonials) state.testimonials = testimonials;
+        logLoadStage('все данные', state.userCard.status !== 'active');
 
         const isGuestNow = state.userCard.status !== 'active';
         log('открыл приложение', isGuestNow, state.user);
