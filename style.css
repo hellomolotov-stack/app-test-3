@@ -5548,4 +5548,4 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 }
 
 /* шторка сторис: кнопки по размеру текста, а не на всю ширину */
-.story-overlay .btn.inv-wide { display: flex; align-items: center; justify-content: center; width: auto; min-width: 230px; max-width: 100%; padding: 0 28px; margin: 12px auto 0; }
+.story-overlay .btn.inv-wide { display: block; width: auto; min-width: 260px; max-width: 100%; padding: 16px 32px; margin: 12px auto 0; }
