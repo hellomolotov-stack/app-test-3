@@ -42,8 +42,8 @@
         html:not(.app-ready) body > :not(#initial-loader) { visibility: hidden !important; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=20261008seats3" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=20261008seats3"></noscript>
+    <link rel="preload" href="style.css?v=20261008cal3" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261008cal3"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -117,7 +117,7 @@
                     <line x1="3" y1="8" x2="21" y2="8" stroke="currentColor" stroke-width="1.8"/>
                 </svg>
             </span>
-            <span class="nav-label">события</span>
+            <span class="nav-label">календарь</span>
         </div>
         <div class="nav-item" id="navProfiles">
             <span class="nav-icon">
@@ -165,6 +165,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=20261008seats3"></script>
+    <script type="module" src="js/main.js?v=20261008cal3"></script>
 </body>
 </html>

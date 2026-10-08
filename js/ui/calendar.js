@@ -57,7 +57,7 @@ export function renderCalendar(container) {
     const hasNextMonth = hasHikesInMonth(year, month + 1);
 
     let calendarHtml = `
-        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь событий</h2>
+        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
         <div class="calendar-item">
             <div class="calendar-header-with-legend">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
@@ -463,12 +463,12 @@ function renderEventsFeed(container) {
         : `<div class="ef-row-sub ef-empty-month">${feedMonth >= nowMonth ? 'планируем хайки и события' : 'в этом месяце событий не было'}</div>`;
 
     container.innerHTML = `
-        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь событий</h2>
+        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
         <div class="calendar-item events-feed">
             <div class="ef-label is-soon">ближайший хайк</div>
             ${feedNearestCard(nearest)}
             <div class="ef-label-row">
-                <div class="ef-label">активность клуба</div>
+                <div class="ef-label">события клуба</div>
                 <div class="ef-month-nav">
                     <button class="calendar-nav-arrow" data-month-step="-1" aria-label="предыдущий месяц" ${months.indexOf(feedMonth) <= 0 ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
                     <button class="calendar-nav-arrow" data-month-step="1" aria-label="следующий месяц" ${months.indexOf(feedMonth) >= months.length - 1 ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
