@@ -70,6 +70,16 @@ async function trackStats(hike) {
     return { peak: Math.max(...els), gain, km: kmLength(all) };
 }
 
+// рукописный шрифт Caveat (как на сайте хэдмейта) – для «я иду на хайк с интеллигенцией»
+let handFontReady = null;
+function loadHandFont() {
+    handFontReady ||= Promise.all([
+        new FontFace('Caveat', "url('assets/fonts/caveat-cyrillic.woff2')", { weight: '400 700', unicodeRange: 'U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116' }),
+        new FontFace('Caveat', "url('assets/fonts/caveat-latin.woff2')", { weight: '400 700', unicodeRange: 'U+0000-00FF,U+0131,U+0152-0153,U+2000-206F' })
+    ].map(f => f.load().then(ff => document.fonts.add(ff)))).catch(() => null);
+    return handFontReady;
+}
+
 const fmt = n => Math.round(n).toLocaleString('ru-RU');
 const fmtKm = km => (km >= 10 ? Math.round(km) : Math.round(km * 10) / 10).toLocaleString('ru-RU');
 
@@ -81,7 +91,8 @@ async function drawStory(hike) {
     ctx.fillRect(0, 0, W, H);
 
     // 1. 3D-карта на весь кадр: камера наклонена сильнее, чтобы были видны вершина и рельеф
-    const [mapCanvas, stats] = await Promise.all([
+    const [, mapCanvas, stats] = await Promise.all([
+        loadHandFont(),
         import('./calendar.js').then(m => m.snapshotHikeMap(hike, { width: 360, height: 640, ratio: 3, camera: { pitch: 70, zoomDelta: -0.2, centerShift: 0.1 } })).catch(() => null),
         trackStats(hike).catch(() => null)
     ]);
@@ -95,7 +106,7 @@ async function drawStory(hike) {
         ctx.fillRect(0, 0, W, H);
     }
 
-    // 2. затемнения: сверху под дату, снизу под название, цифры и место для подписи человека
+    // 2. затемнения: сверху под дату, снизу под название и цифры
     let g = ctx.createLinearGradient(0, 0, 0, 640);
     g.addColorStop(0, 'rgba(10, 11, 9, .92)');
     g.addColorStop(1, 'rgba(10, 11, 9, 0)');
@@ -114,9 +125,13 @@ async function drawStory(hike) {
     ctx.fillStyle = YELLOW;
     ctx.font = `700 46px ${FONT}`;
     ctx.fillText(`${d.getDate()} ${MONTHS[d.getMonth()]} · ${WD[d.getDay()]}${hike.start_time ? ` · ${hike.start_time}` : ''}`, PAD, 210);
-    ctx.fillStyle = 'rgba(255, 255, 255, .8)';
-    ctx.font = `500 48px ${FONT}`;
-    ctx.fillText('я иду на хайк 🏔', PAD, 290);
+    ctx.save();
+    ctx.translate(PAD, 312);
+    ctx.rotate(-0.035);
+    ctx.fillStyle = '#fff';
+    ctx.font = `600 84px Caveat, ${FONT}`;
+    ctx.fillText('я иду на хайк с интеллигенцией', 0, 0);
+    ctx.restore();
 
     // 4. низ: крупно локация (в одну строку, иначе уменьшаем; совсем длинную – в две)
     const name = placeName(hike.title);
@@ -128,7 +143,7 @@ async function drawStory(hike) {
     } while (!lines && size > 96);
     size += 6;
     if (!lines) { ctx.font = `800 ${size}px ${FONT}`; lines = wrap(ctx, name, W - PAD * 2).slice(0, 2); }
-    const statsTop = H - 600;
+    const statsTop = H - 330;
     let y = statsTop - 105 - (lines.length - 1) * size * 1.02;
     ctx.fillStyle = '#fff';
     lines.forEach(l => { ctx.fillText(l, PAD, y); y += size * 1.02; });
@@ -151,8 +166,8 @@ async function drawStory(hike) {
         ctx.fillText(value, x, statsTop + 76);
     });
 
-    // 6. подпись клуба; ниже (≈ 400 px) – пустое место под текст, который человек допишет в Telegram
-    const footY = H - 420;
+    // 6. подпись клуба в самом низу (своего текста человек может и не писать)
+    const footY = H - 150;
     ctx.fillStyle = YELLOW;
     ctx.font = `700 38px ${FONT}`;
     ctx.fillText(CHANNEL_HANDLE, PAD, footY);
