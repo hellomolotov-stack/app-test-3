@@ -775,15 +775,27 @@ function feedPaintSeats(el, n) {
     el.classList.add('is-ready');
 }
 
+// список хайков приходит раньше базы: участников спрашиваем, только когда база подключилась
+function feedWhenDb() {
+    return new Promise(resolve => {
+        const t0 = Date.now();
+        const check = () => (getDatabase() ? resolve(true) : Date.now() - t0 > 20000 ? resolve(false) : setTimeout(check, 200));
+        check();
+    });
+}
+function feedLoadGoing(date) {
+    if (feedGoingList[date]) return Promise.resolve(feedGoingList[date]);
+    return feedWhenDb().then(ok => ok ? loadAllParticipants(date) : null).then(list => {
+        if (!Array.isArray(list)) return null;
+        feedGoingList[date] = list;
+        feedGoing[date] = list.length;
+        return list;
+    });
+}
+
 function feedFillGoing(container) {
     container.querySelectorAll('[data-seats-for]').forEach(el => {
-        const date = el.dataset.seatsFor;
-        if (feedGoingList[date]) return feedPaintSeats(el, feedGoingList[date].length);
-        loadAllParticipants(date).then(list => {
-            feedGoingList[date] = Array.isArray(list) ? list : [];
-            feedGoing[date] = feedGoingList[date].length;
-            feedPaintSeats(el, feedGoingList[date].length);
-        }).catch(() => {});
+        feedLoadGoing(el.dataset.seatsFor).then(list => { if (list) feedPaintSeats(el, list.length); }).catch(() => {});
     });
     container.querySelectorAll('.ef-tk-story').forEach(b => b.addEventListener('click', e => {
         e.stopPropagation();
@@ -798,12 +810,7 @@ function feedFillGoing(container) {
             if (isCard) el.innerHTML = feedGoingHtml(list);
             else if (n) el.textContent = ` · ${n} ${feedPeople(n)}`;
         };
-        if (feedGoingList[date]) return paint(feedGoingList[date]);
-        loadAllParticipants(date).then(list => {
-            feedGoingList[date] = Array.isArray(list) ? list : [];
-            feedGoing[date] = feedGoingList[date].length;
-            paint(feedGoingList[date]);
-        }).catch(() => {});
+        feedLoadGoing(date).then(list => { if (list) paint(list); }).catch(() => {});
     });
 }
 
