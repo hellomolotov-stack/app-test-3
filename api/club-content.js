@@ -48,7 +48,7 @@ async function readSection(section, token) {
 function normalizeUpdates(value) {
     const list = Array.isArray(value) ? value : Object.values(value || {});
     return list.filter(item => item && item.date && typeof item.update === 'string')
-        .map(item => ({ date: item.date, update: item.update }))
+        .map(item => ({ date: String(item.date).slice(0, 10), update: item.update }))
         .sort((a, b) => b.date.localeCompare(a.date));
 }
 

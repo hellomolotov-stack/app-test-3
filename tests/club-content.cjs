@@ -11,7 +11,7 @@ process.env.FIREBASE_SERVICE_ACCOUNT = JSON.stringify({
 });
 const base = {
     metrics: { hikes: '100', locations: '20', kilometers: '1200', meetings: '400' },
-    updates: [{ date: '2026-10-01', update: 'старое обновление' }],
+    updates: [{ date: '2026-10-01T21:00:00.000Z', update: 'старое обновление' }],
 };
 const overrides = {};
 let writes = 0;
@@ -61,6 +61,7 @@ async function call(method, body) {
     let response = await call('GET');
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.metrics, base.metrics);
+    assert.equal(response.body.updates[0].date, '2026-10-01', 'Legacy spreadsheet dates fit the date editor without changing the displayed day');
     const data = {
         section: 'metrics', value: { hikes: 150, locations: 25, kilometers: 1550.5, meetings: 500 },
         revision: response.body.revisions.metrics,
