@@ -5498,3 +5498,18 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .maker-credit button > span > span { opacity: .65; }
 .maker-credit button:active { background: rgba(255, 255, 255, .12); }
 .maker-credit button:focus-visible { outline: 2px solid rgba(255, 255, 255, .8); outline-offset: 4px; }
+
+/* ==================== СТОРИС «ИДУ НА ХАЙК» ==================== */
+.story-overlay { z-index: 3300; }
+.story-preview { width: min(58vw, 250px); aspect-ratio: 9 / 16; margin: 14px auto 4px; border-radius: 18px; overflow: hidden;
+    background: #1a1b1d; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 14px 40px rgba(0, 0, 0, .45); }
+.story-preview img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.story-wait { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; font-size: 13px; line-height: 1.35; color: rgba(255, 255, 255, .7); }
+.story-wait b { font-size: 34px; font-weight: 400; animation: il-pulse 1.5s ease-in-out infinite; }
+@keyframes il-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: .8; } }
+.story-overlay .btn[disabled] { opacity: .45; }
+.story-note:empty { display: none; }
+.rt-story { width: 100%; max-width: 420px; height: 52px; margin: 16px 0 0; font-size: 15.5px; font-weight: 700; }
+.rt-story + .rt-actions { margin-top: 10px; }
+.bk-story { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255, 255, 255, .14); text-align: right; }
+.bk-story-btn { padding: 6px 12px; border-radius: 14px; border: 1px solid rgba(217, 253, 25, .5); background: none; color: var(--yellow); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }

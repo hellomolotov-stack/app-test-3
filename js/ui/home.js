@@ -181,12 +181,16 @@ export function renderUserBookings(container) {
                 <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
             </div>
             ${plus1Html}
+            ${!isCity && !isBookClub && booking.cancelled !== true ? `<div class="bk-story"><button type="button" class="bk-story-btn" data-story-date="${booking.date}">📸 поделиться в сторис ↗</button></div>` : ''}
             </div>
         `;
     });
     html += '</div>';
     container.innerHTML = html;
 
+    container.querySelectorAll('.bk-story-btn').forEach(btn => btn.addEventListener('click', () => {
+        import('./story.js').then(m => m.openStoryShare(btn.dataset.storyDate, 'мои записи'));
+    }));
     container.querySelectorAll('.booking-detail-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             haptic();

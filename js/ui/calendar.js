@@ -548,6 +548,45 @@ function feedPlaceMap(container, hike) {
     }).catch(() => {});
 }
 
+// Снимок 3D-карты маршрута для сторис: невидимая карта за экраном, неподвижный кадр, ждём все тайлы.
+// Возвращает canvas (width×height CSS-пикселей × ratio) или null, если трека нет или карта не успела.
+export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, timeout = 20000 } = {}) {
+    const track = hike ? getHikeTrack(hike) : null;
+    if (!track) return Promise.resolve(null);
+    return ensureMapLibre().then(() => new Promise(resolve => {
+        const host = document.createElement('div');
+        host.style.cssText = `position:fixed;left:0;top:0;width:${width}px;height:${height}px;z-index:-1;pointer-events:none;`;
+        document.body.appendChild(host);
+        let map = null, done = false;
+        const finish = c => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            try { map && map.remove(); } catch (e) {}
+            host.remove();
+            resolve(c);
+        };
+        const grab = () => {
+            try {
+                const src = map.getCanvas();
+                const c = document.createElement('canvas');
+                c.width = src.width; c.height = src.height;
+                const cx = c.getContext('2d');
+                cx.drawImage(src, 0, 0);
+                const px = cx.getImageData(0, 0, c.width, c.height).data;
+                let sum = 0, n = 0;
+                for (let i = 0; i < px.length; i += 4 * 997) { sum += px[i] + px[i + 1] + px[i + 2]; n++; }
+                finish(n && sum / n >= 30 ? c : null);
+            } catch (e) { finish(null); }
+        };
+        const timer = setTimeout(() => (map ? grab() : finish(null)), timeout);
+        try {
+            map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio });
+            map.once('still-ready', () => map.once('idle', () => { map.once('render', grab); map.triggerRepaint(); }));
+        } catch (e) { finish(null); }
+    })).catch(() => null);
+}
+
 const FEED_SNAP_KEY = 'feedMapSnap';
 
 function hasFeedMapSnap(date) { return !!readFeedMapSnap(date); }
@@ -1382,7 +1421,8 @@ function hideUntilReady(map) {
 }
 
 // standalone – отдельная карта (карточка в календаре): не трогает карту слайдера и её облёт.
-function initHikeMap(el, track, instant = false, standalone = false) {
+// still – неподвижный кадр без облёта (для картинки в сторис); pixelRatio – чёткость снимка
+function initHikeMap(el, track, instant = false, standalone = false, { still = false, pixelRatio } = {}) {
     if (!standalone) {
         try { if (cancelHikeMapOrbit) { cancelHikeMapOrbit(); cancelHikeMapOrbit = null; } } catch (e) {}
         try { if (currentHikeMap) { currentHikeMap.remove(); currentHikeMap = null; } } catch (e) {}
@@ -1458,7 +1498,8 @@ function initHikeMap(el, track, instant = false, standalone = false) {
         keyboard: false,
         doubleClickZoom: false,
         // в карточке календаря кадр сохраняем снимком – на iOS без этого он получался чёрным
-        preserveDrawingBuffer: standalone
+        preserveDrawingBuffer: standalone,
+        ...(pixelRatio ? { pixelRatio } : {})
     });
     if (!standalone) currentHikeMap = map;
     const reveal = hideUntilReady(map);
@@ -1524,6 +1565,7 @@ function initHikeMap(el, track, instant = false, standalone = false) {
                 // просто уточняем позицию на случай смещения при загрузке рельефа
                 // и сразу начинаем оборот, не дожидаясь анимации перелёта.
                 map.jumpTo(target);
+                if (still) { map.fire('still-ready'); return; }
                 startHikeMapOrbit(map, target, orbitRadiusDeg, standalone);
             } else {
                 map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
@@ -3567,9 +3609,10 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
                 </div>
             </div>
         </div>
+        <button type="button" class="btn btn-yellow rt-story" id="rtStory">📸 поделиться в сторис</button>
         <div class="rt-actions">
             <button type="button" class="btn rt-invite" id="rtInvite">пригласить друга</button>
-            <button type="button" class="btn btn-yellow rt-done" id="rtDone">готово</button>
+            <button type="button" class="btn rt-invite rt-done" id="rtDone">готово</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -3607,6 +3650,9 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
         maybeAskNotifications('booking', 400);
     };
 
+    document.getElementById('rtStory').addEventListener('click', () => {
+        import('./story.js').then(m => m.openStoryShare(hikeDate, 'после записи'));
+    });
     document.getElementById('rtChat').addEventListener('click', () => {
         haptic();
         openLink('https://t.me/yaltahikingchat', 'чат хайка из успешной регистрации', false);
