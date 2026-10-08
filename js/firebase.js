@@ -317,6 +317,14 @@ export async function loadAllParticipants(hikeDate) {
         .sort((a, b) => b.timestamp - a.timestamp);
 }
 
+export async function loadHikeParticipantIds(hikeDate) {
+    if (!database) return [];
+    const snapshot = await database.ref('hikeParticipants/' + hikeDate).once('value');
+    return Object.entries(snapshot.val() || {})
+        .filter(([, participant]) => participant && typeof participant === 'object')
+        .map(([userId]) => userId);
+}
+
 export async function addParticipant(hikeDate, userId, userData) {
     if (!database || !userId) return Promise.reject('No database or user');
     await authReady();

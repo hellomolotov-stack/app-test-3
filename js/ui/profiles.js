@@ -1,19 +1,20 @@
 // js/ui/profiles.js
-import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay } from '../utils.js';
+import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay, normalizeDate } from '../utils.js';
 import { state } from '../state.js';
 import { log, syncProfileToSheet, syncProfileDeleteToSheet } from '../api.js';
 import {
-    loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadUserRegistrations, loadRouteFavorites,
+    loadAllProfiles, loadMyProfile, saveProfile, deleteProfile, loadHikeParticipantIds, loadRouteFavorites,
 } from '../firebase.js';
 import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
-import { showGuestBookingPopup } from './calendar.js';
+import { showGuestBookingPopup, showBottomSheet } from './calendar.js';
 import { renderPersonalRoutesMap, isPersonalMapPilotUser } from './personal-routes-map.js';
 
 let profiles = {};
 let myProfile = null;
-const userHikesCache = {};
+let nextHikesByUser = new Map();
+let participantsLoadFailed = false;
 
 async function loadProfilesData() {
     const [allProfiles, myProf, routeFavorites] = await Promise.all([
@@ -22,22 +23,28 @@ async function loadProfilesData() {
     profiles = allProfiles; myProfile = myProf;
     state.profiles = profiles; state.myProfile = myProfile; state.routeFavorites = routeFavorites;
     setIntelligentsiaRouteFavorites(routeFavorites);
+    // Participant lists are shared; personal registration statuses are private.
+    nextHikesByUser = new Map();
+    participantsLoadFailed = false;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const future = state.hikesWithTitle
+        .filter(h => !h.cancelled && new Date(`${normalizeDate(h.date)}T00:00:00`) >= today)
+        .slice().sort((a, b) => normalizeDate(a.date).localeCompare(normalizeDate(b.date)));
+    const results = await Promise.all(future.map(async hike => {
+        try { return { hike, userIds: await loadHikeParticipantIds(hike.date) }; }
+        catch (error) {
+            participantsLoadFailed = true;
+            console.error('Profile hike participants:', error);
+            return { hike, userIds: [] };
+        }
+    }));
+    results.forEach(({ hike, userIds }) => userIds.forEach(userId => {
+        if (!nextHikesByUser.has(String(userId))) nextHikesByUser.set(String(userId), hike);
+    }));
 }
 
 async function getNextHikeForUser(userId) {
-    if (!userId) return null;
-    if (userHikesCache[userId] !== undefined) return userHikesCache[userId];
-    try {
-        const registrations = await loadUserRegistrations(userId);
-        if (!registrations) return null;
-        const today = new Date(); today.setHours(0,0,0,0);
-        const future = state.hikesList.filter(h => new Date(h.date) >= today && registrations[h.date] === true);
-        if (!future.length) return null;
-        future.sort((a,b) => new Date(a.date) - new Date(b.date));
-        const next = future[0];
-        userHikesCache[userId] = next;
-        return next;
-    } catch { return null; }
+    return nextHikesByUser.get(String(userId)) || null;
 }
 
 async function renderProfileCard(profile, isBlurred = false) {
@@ -52,7 +59,7 @@ async function renderProfileCard(profile, isBlurred = false) {
     if (!isBlurred && profile.userId) {
         const next = await getNextHikeForUser(profile.userId);
         if (next) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><a href="#" class="profile-hike-link" data-hike-date="${next.date}">${formatDateForDisplay(next.date)} · ${next.title}</a>`;
-        else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">пока нет записей</span>`;
+        else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">${participantsLoadFailed ? 'не удалось загрузить записи' : 'пока нет записей'}</span>`;
     } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
     const favoriteRoutes = !isBlurred && profile.userId ? getFavoriteRoutesForUser(profile.userId) : [];
@@ -113,7 +120,8 @@ export async function renderProfiles() {
     const hasMyProfile = !!myProfile;
     const placeholderCount = 6;
 
-    const sorted = Object.entries(profiles).sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
+    const sorted = Object.entries(profiles).map(([id, profile]) => [id, { ...profile, userId: profile.userId || id }])
+        .sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const allCards = await Promise.all(sorted.map(([,p])=>renderProfileCard(p, false)));
 
     const shouldAnimate = !(isCardHolder && hasMyProfile);
@@ -150,6 +158,18 @@ export async function renderProfiles() {
     }
 
     mainDiv().innerHTML = html;
+
+    mainDiv().querySelectorAll('.profile-hike-link').forEach(link => {
+        link.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const index = state.hikesWithTitle.findIndex(h => normalizeDate(h.date) === normalizeDate(link.dataset.hikeDate));
+            if (index < 0) return;
+            haptic();
+            log('хайк из профиля', state.userCard.status !== 'active', state.user, { hike_date: link.dataset.hikeDate });
+            showBottomSheet(index);
+        });
+    });
 
     // «Мой Крым» — личная карта маршрутов с туманом (пока только пилотный аккаунт).
     if (isPersonalMapPilotUser(state.user)) {
@@ -364,7 +384,6 @@ async function renderEditProfile() {
         await saveProfile(state.user?.id, data);
         syncProfileToSheet(data, state.user).catch(console.error);
         log('сохранить профиль', false, state.user);
-        delete userHikesCache[state.user?.id];
         tg.BackButton.offClick(backHandler);
         if(bottomNav) bottomNav.style.display='flex';
         showBottomNav(true); setupBottomNav(); setActiveNav('navProfiles');
@@ -379,7 +398,6 @@ async function renderEditProfile() {
                 await deleteProfile(state.user?.id);
                 syncProfileDeleteToSheet(state.user?.id).catch(console.error);
                 log('удалить профиль', false, state.user);
-                delete userHikesCache[state.user?.id];
                 tg.BackButton.offClick(backHandler);
                 if(bottomNav) bottomNav.style.display='flex';
                 showBottomNav(true); setupBottomNav(); setActiveNav('navProfiles');
