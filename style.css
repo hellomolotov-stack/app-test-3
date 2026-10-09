@@ -5711,3 +5711,6 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .adm-inner { width: auto; box-sizing: border-box; }
 .adm-inner .adm-path { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
 .adm-inner .adm-path b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* плитки-переключатели: иконка над словом, чтобы «приглашение» помещалось целиком на узких экранах */
+.adm-inner .adm-path { flex-direction: column; justify-content: center; gap: 6px; padding: 12px 6px; text-align: center; }
+.adm-inner .adm-path b { white-space: normal; overflow: visible; font-size: 14.5px; }
