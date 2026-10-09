@@ -5705,3 +5705,6 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .adm-inner .admission-entry-button { width: 100%; margin: 16px 0 0; }
 .adm-inner .adm-invite-note { margin-top: 14px; text-align: left; line-height: 1.45; }
 .adm-inner [hidden] { display: none !important; }
+.adm-inner { width: auto; box-sizing: border-box; }
+.adm-inner .adm-path { flex: 1 1 0; min-width: 0; box-sizing: border-box; }
+.adm-inner .adm-path b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
