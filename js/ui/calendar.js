@@ -2618,13 +2618,13 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         onEnd();
     }, { passive: false });
 
-    if (isAdmissionPilot() && !isBooked && admission.application?.status !== 'approved') {
+    if (isAdmissionPilot() && !isBooked && admission.application?.status !== 'approved' && state.pendingInvite?.date !== hike.date) {
         const wrapper = document.createElement('div');
         wrapper.className = 'admission-swipe-wrapper';
         wrapper.append(track);
         const note = document.createElement('p');
         note.className = 'admission-swipe-note';
-        note.textContent = 'для первой записи нужно приглашение или одобрение анкеты';
+        note.textContent = 'сначала познакомимся – по анкете или по приглашению';
         wrapper.append(note);
         return wrapper;
     }
@@ -4129,8 +4129,9 @@ async function registerByInvite(hikeDate, hikeTitle, onClose) {
 }
 
 async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
-    if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
+    // по приглашению +1 анкета не нужна – за человека ручается тот, кто его позвал
     if (state.pendingInvite?.date === hikeDate) return registerByInvite(hikeDate, hikeTitle, onClose);
+    if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
