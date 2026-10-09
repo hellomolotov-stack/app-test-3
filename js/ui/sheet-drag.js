@@ -24,7 +24,7 @@ function setPull(v) {
 }
 
 function onStart(e) {
-    if (e.touches.length !== 1) return;
+    if (e.touches.length !== 1) { onEnd({ type: 'touchcancel' }); return; }
     const sheet = e.target.closest?.(SHEET);
     if (!sheet || !sheet.querySelector(HANDLE)) return;
     if (e.target.closest(SKIP)) return;
@@ -38,18 +38,25 @@ function onStart(e) {
 
 function onMove(e) {
     if (!g) return;
+    if (e.touches.length !== 1) { onEnd({ type: 'touchcancel' }); return; }
     const t = e.touches[0];
     const dx = t.clientX - g.x0, dy = t.clientY - g.y0;
     if (!g.on) {
         if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) { g = null; return; }
         if (dy < -4) { g = null; return; }
         if (dy < 6) return;
-        if (!g.onHandle && g.scroller && g.scroller.scrollTop > 0) { g = null; return; }
+        if (!g.onHandle && g.scroller && g.scroller.scrollTop > 1) {
+            // Keep following the same gesture until native scrolling reaches the top.
+            g.y0 = t.clientY;
+            g.last = [t.clientY, e.timeStamp];
+            return;
+        }
+        if (g.scroller) g.scroller.scrollTop = 0;
         g.on = true;
         g.sheet.style.transition = 'none';
         g.sheet.classList.add('is-dragging');
     }
-    e.preventDefault();
+    if (e.cancelable) e.preventDefault();
     g.dy = Math.max(0, dy);
     const dt = e.timeStamp - g.last[1];
     if (dt > 0) g.speed = (t.clientY - g.last[0]) / dt;
@@ -58,14 +65,15 @@ function onMove(e) {
     setPull(Math.min(1, g.dy / CLOSE_DY));
 }
 
-function onEnd() {
+function onEnd(e) {
     if (!g) return;
     const s = g;
     g = null;
     if (!s.on) return;
     s.sheet.classList.remove('is-dragging');
     s.sheet.style.transition = 'transform .32s cubic-bezier(.2, .9, .25, 1)';
-    if (s.dy > CLOSE_DY || (s.speed > CLOSE_SPEED && s.dy > 30)) {
+    const recentSpeed = !e?.timeStamp || e.timeStamp - s.last[1] < 120 ? s.speed : 0;
+    if (e?.type !== 'touchcancel' && (s.dy > CLOSE_DY || (recentSpeed > CLOSE_SPEED && s.dy > 30))) {
         window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
         s.sheet.style.transform = 'translateY(100%)';
         s.overlay?.dispatchEvent(new MouseEvent('click', { bubbles: true }));

@@ -1862,7 +1862,7 @@ body::before {
     scrollbar-width: thin;
     scrollbar-color: #555 #222;
     position: relative;
-    overscroll-behavior: contain;
+    overscroll-behavior: none;
 }
 
 .bottom-sheet-content-wrapper::-webkit-scrollbar {
