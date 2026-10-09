@@ -70,7 +70,7 @@ export function mountAdmissionEntry() {
         rejected: ['ответ по анкете', 'сейчас не получится позвать тебя в клуб – подробности внутри', 'посмотреть ответ'],
     }[status];
     block.innerHTML = status === 'new' ? `<h2 class="section-title">🔑 как попасть в клуб</h2>
-        <p class="adm-lead">в горы можно пойти с кем угодно – одному, с другом или с очередным походным чатом. к нам приходят не за маршрутом, а за людьми: деятельными, близкими по духу и без социальных масок</p>
+        <p class="adm-lead">в горы можно пойти с кем угодно – одному, с другом или с очередным походным чатом. к нам приходят не за маршрутом, а за людьми</p>
         <div class="calendar-item adm-inner">
             <div class="adm-paths" role="tablist">
                 <button type="button" class="adm-path" role="tab" data-path="invite" aria-selected="false"><span class="adm-path-ico">🤝🏻</span><b>приглашение</b></button>
