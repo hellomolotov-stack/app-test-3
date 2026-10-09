@@ -2169,7 +2169,7 @@ export function showBottomSheet(index) {
                     }
                 }
                 const imageContainer = contentWrapper.querySelector('.image-container');
-                const isSoldOut = count >= HIKE_CAPACITY;
+                const isSoldOut = count >= HIKE_CAPACITY && state.pendingInvite?.date !== hike.date;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
                 window._participantCount = count;
                 updateFloatingSheetButtons();
@@ -2188,7 +2188,7 @@ export function showBottomSheet(index) {
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');
-        const isSoldOut = (window._participantCount || 0) >= HIKE_CAPACITY && !isPast;
+        const isSoldOut = (window._participantCount || 0) >= HIKE_CAPACITY && !isPast && state.pendingInvite?.date !== hike.date;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
         const participantCounterEl = document.getElementById('participantCounter');
@@ -2811,8 +2811,10 @@ function updateFloatingSheetButtons() {
     const isBooked = state.hikeBookingStatus[curSheetIndex()] || false;
     const MAX_TICKETS = HIKE_CAPACITY;
     const bookedCount = window._participantCount || 0;
-    const available = Math.max(0, MAX_TICKETS - bookedCount);
-    const isSoldOut = bookedCount >= MAX_TICKETS;
+    // по приглашению +1 записываем и сверх лимита: у приглашённого своё место
+    const hasInvite = state.pendingInvite?.date === hike.date;
+    const available = hasInvite ? Math.max(1, MAX_TICKETS - bookedCount) : Math.max(0, MAX_TICKETS - bookedCount);
+    const isSoldOut = !hasInvite && bookedCount >= MAX_TICKETS;
     const firstName = state.user?.first_name || 'друг';
 
     // мест нет – но тому, кто уже записан, оставляем его кнопку (чтобы мог и отменить запись).
@@ -2895,7 +2897,7 @@ function updateFloatingSheetButtons() {
 
 
     // «уже идут N» показываем от 5 записавшихся: 1–4 человека выглядят как «никто не идёт»
-    if (!isSoldOut && bookedCount >= 5) {
+    if (!isSoldOut && !hasInvite && bookedCount >= 5) {
         const spotsLeft = Math.max(0, HIKE_CAPACITY - bookedCount);
         const chipRow = document.createElement('div');
         chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none;';
