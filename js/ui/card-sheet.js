@@ -6,7 +6,9 @@ import { log, initPayment, getCardOffer, paymentErrorText } from '../api.js';
 
 const CARD_IMG = 'assets/card-front.jpg';
 const TICKET_PRICE = 1000;
-const PERMANENT_FULL_PRICE = 7500;
+const PERMANENT_PRICE = 7500;
+// спецпредложение после хайка (рассылка «новичкам»): бессрочная за 5 500 вместо 7 500
+const OFFER_PRICE = 5500;
 
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const rub = n => `${Number(n).toLocaleString('ru-RU')} ₽`;
@@ -70,6 +72,9 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     document.querySelector('.cs-overlay')?.remove();
 
     const season = state.popupConfig?.seasonCardPrice || 5500;
+    const permanent = state.popupConfig?.permanentCardPrice || PERMANENT_PRICE;
+    // TODO: подарок пока стоит 5 500 на сервере (Apps Script) – поднять до 7 500 там и тут вместе
+    const giftPrice = season;
     const isReturning = Object.keys(state._userRegs || {}).some(d => state._userRegs[d] === true && new Date(d) < new Date(new Date().toDateString()));
 
     const overlay = document.createElement('div');
@@ -107,16 +112,15 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 </div>
                 <div class="cs-gift-price">
                     <div><b>бессрочная карта</b><span>без продлений – клуб навсегда</span></div>
-                    <div class="cs-gift-sum"><s>${rub(PERMANENT_FULL_PRICE)}</s><b>${rub(season)}</b></div>
+                    <div class="cs-gift-sum"><b>${rub(giftPrice)}</b></div>
                 </div>
-                <div class="cs-note">🕊 на время ЧС в Крыму карта интеллигента доступнее</div>
                 ` : `
                 <div class="cs-sec">выбери карту</div>
                 <div class="cs-plans">
                     <button type="button" class="cs-plan is-on" data-plan="permanent">
                         <span class="cs-hit">навсегда</span>
                         <small>бессрочная</small>
-                        <b><s>${rub(PERMANENT_FULL_PRICE)}</s> ${rub(season)}</b>
+                        <b>${rub(permanent)}</b>
                         <span>один раз – и клуб твой без продлений</span>
                     </button>
                     <button type="button" class="cs-plan" data-plan="season">
@@ -125,12 +129,11 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                         <span>все привилегии до конца 2026</span>
                     </button>
                 </div>
-                <div class="cs-note">🕊 на время ЧС в Крыму бессрочная карта – по цене сезонной: сильное окружение сейчас самый ценный ресурс</div>
                 <button type="button" class="cs-support" id="csSupport">оплачивал билет и не успел сходить? напиши нам – зачтём его в карту</button>
                 `}
             </div>
             <div class="cs-bar">
-                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить карту <s>${rub(PERMANENT_FULL_PRICE).replace(' ₽', '')}</s> ${rub(season)}` : 'оформить навсегда'}</button>
+                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить карту за ${rub(giftPrice)}` : `оформить навсегда · ${rub(permanent)}`}</button>
                 ${isReturning || gift ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
             </div>
         </div>`;
@@ -165,7 +168,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         haptic();
         plan = btn.dataset.plan;
         overlay.querySelectorAll('.cs-plan').forEach(b => b.classList.toggle('is-on', b === btn));
-        buyBtn.textContent = plan === 'permanent' ? 'оформить навсегда' : 'взять на сезон';
+        buyBtn.textContent = plan === 'permanent' ? `оформить навсегда · ${rub(permanent)}` : `взять на сезон · ${rub(season)}`;
     }));
 
     buyBtn.addEventListener('click', async () => {
@@ -178,14 +181,13 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         buyBtn.textContent = 'открываем оплату…';
         log(gift ? 'подарок: клик оплатить' : (plan === 'permanent' ? 'клик бессрочная карта' : 'клик сезонная карта'), !gift, state.user, { source: 'шторка карты' });
         try {
-            // на время ЧС бессрочная оформляется по цене и через оплату сезонной
             const { url } = await initPayment({
                 userId: state.user?.id,
                 firstName: state.user?.first_name,
                 lastName: state.user?.last_name,
                 username: state.user?.username,
                 hikeDate: gift ? '' : hikeDate, hikeTitle: gift ? '' : hikeTitle,
-                cardType: gift ? 'gift' : (plan === 'offer' ? 'offer' : 'season')
+                cardType: gift ? 'gift' : (plan === 'offer' ? 'offer' : (plan === 'permanent' ? 'permanent' : 'season'))
             });
             if (!gift) localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
             close();
@@ -202,7 +204,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     if (!gift && state.userCard?.status !== 'active') {
         getCardOffer().then(offer => {
             if (!offer?.active || !document.body.contains(overlay)) return;
-            const price = offer.price || 5000, full = offer.full_price || 5500;
+            const price = offer.price || OFFER_PRICE, full = offer.full_price || permanent;
             const left = () => {
                 const ms = offer.expires_at * 1000 - Date.now();
                 if (ms <= 0) return null;
