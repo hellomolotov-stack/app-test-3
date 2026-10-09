@@ -40,6 +40,30 @@ assert.throws(() => context.validatePayment(payment('gift', 'season'), { cardTyp
 assert.ok(context.clubPaymentProduct_({ card_type: 'season' }).description.includes('текущий и следующий сезон'));
 console.log('Card payments passed: ticket, season, permanent, offer, both gifts, receipt totals/types, invalid data, legacy quote');
 
+if (process.env.PAYMENT_INIT_READBACK) {
+    const initBlock = fs.readFileSync(process.env.PAYMENT_INIT_READBACK, 'utf8');
+    for (const [type, giftType, amount] of [['ticket', '', 1000], ['season', '', 5500], ['permanent', '', 7500],
+        ['offer', '', 5000], ['gift', 'season', 5500], ['gift', 'permanent', 7500]]) {
+        let pending;
+        const server = vm.createContext({ CARD_OFFER_PRICE: 5000, encodeURIComponent, Date, FIREBASE_URL: 'https://test/', FIREBASE_SECRET: 'test',
+            sheet: { appendRow() {} }, timestamp: 'test', activeCardOffer_: () => true,
+            md5: input => crypto.createHash('md5').update(input).digest('hex'),
+            UrlFetchApp: { fetch: (url, options) => { pending = JSON.parse(options.payload); } },
+            ContentService: { MimeType: { JSON: 'json' }, createTextOutput: text => ({ text, setMimeType() { return this; } }) } });
+        vm.runInContext(fs.readFileSync('appscript-card-payment.gs', 'utf8') + '\nfunction runPayment(params) { const action="initPayment";\n' + initBlock + '\n}', server);
+        const data = JSON.parse(server.runPayment({ card_type: type, gift_card_type: giftType, user_id: 'test' }).text);
+        const url = new URL(data.url);
+        const receipt = JSON.parse(decodeURIComponent(url.searchParams.get('Receipt')));
+        assert.equal(data.amount, amount); assert.equal(pending.amount, amount);
+        assert.equal(receipt.items[0].sum, amount); assert.equal(Number(url.searchParams.get('OutSum')), amount);
+        const signature = crypto.createHash('md5').update(`${url.searchParams.get('MerchantLogin')}:${url.searchParams.get('OutSum')}:${url.searchParams.get('InvId')}:${url.searchParams.get('Receipt')}:test-password`).digest('hex').toUpperCase();
+        assert.equal(url.searchParams.get('SignatureValue'), signature);
+        assert.equal(data.gift_card_type, pending.gift_card_type);
+        context.validatePayment(data, { cardType: type, giftCardType: giftType || undefined, expectedAmount: amount });
+    }
+    console.log('Actual Apps Script readback passed offline: all 6 payment variants, persisted amount/type, receipt, full URL signature');
+}
+
 const initSource = api.slice(api.indexOf('export async function initPayment'), api.indexOf('// Личное спецпредложение')).replace('export ', '');
 Object.assign(context, { URLSearchParams, AbortController, setTimeout, clearTimeout, log: () => {}, REGISTRATION_API_URL: 'https://script.google.com/test' });
 vm.runInContext(initSource, context);
