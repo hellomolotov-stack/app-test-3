@@ -3141,6 +3141,7 @@ body::before {
 
 .profiles-column {
     flex: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -3198,6 +3199,22 @@ body::before {
     color: white;
     margin-bottom: 12px;
 }
+
+.profile-avatar-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border-radius: 20px;
+}
+.profile-avatar-wrap .profile-avatar,
+.profile-avatar-wrap .profile-avatar-placeholder {
+    height: 100%;
+    margin-bottom: 0;
+}
+.profile-avatar-wrap [hidden] { display: none; }
 
 .profile-name-status {
     display: flex;
@@ -3506,13 +3523,6 @@ body::before {
     text-align: center;
 }
 
-/* Блюр темнее */
-.profile-blur-overlay {
-    background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-}
-
 /* -------------------- БЛОК ОБНОВЛЕНИЙ -------------------- */
 /* ── погода ─────────────────────────────────────── */
 .weather-zone-label {
@@ -3749,9 +3759,7 @@ body::before {
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: linear-gradient(to bottom, transparent 0%, rgba(73, 138, 176, 0.4) 50%, rgba(73, 138, 176, 0.6) 100%) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+    background: rgba(7, 15, 20, 0.18);
     z-index: 99 !important;
     pointer-events: all !important;
 }
@@ -3968,21 +3976,33 @@ body::before {
 /* АНИМАЦИЯ БЕСКОНЕЧНОЙ ПРОКРУТКИ ПРОФИЛЕЙ (ГОСТИ) */
 .infinite-scroll-container {
     position: relative;
+    height: var(--profiles-preview-height);
     overflow: hidden;
+    pointer-events: none;
+    mask-image: linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 40px, black calc(100% - 60px), transparent);
 }
 .infinite-scroll-wrapper {
     animation: scrollUp 40s linear infinite;
     will-change: transform;
+    filter: blur(4px);
+    opacity: 0.75;
 }
-.infinite-scroll-container::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    height: 80px;
-    background: linear-gradient(to bottom, rgba(73,138,176,1) 0%, rgba(73,138,176,0) 100%);
-    z-index: 10;
-    pointer-events: none;
+.infinite-scroll-container .profiles-two-columns {
+    min-height: var(--profiles-preview-height);
+}
+.infinite-scroll-container .profile-card {
+    background: rgba(10, 24, 40, 0.72);
+    border-color: rgba(255, 255, 255, 0.25);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: hidden;
+}
+.infinite-scroll-container .profile-avatar-wrap {
+    filter: brightness(0.75) saturate(0.8);
+}
+@media (prefers-reduced-motion: reduce) {
+    .infinite-scroll-wrapper { animation: none; }
 }
 @keyframes scrollUp {
     0% { transform: translateY(0); }

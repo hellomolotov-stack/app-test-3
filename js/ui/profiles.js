@@ -16,6 +16,7 @@ let myProfile = null;
 let nextHikesByUser = new Map();
 let participantsLoadFailed = false;
 let nearestHikeDate = null;
+let previewResizeObserver = null;
 
 async function loadProfilesData() {
     const [allProfiles, myProf, routeFavorites] = await Promise.all([
@@ -50,9 +51,10 @@ async function getNextHikeForUser(userId) {
 }
 
 async function renderProfileCard(profile, isBlurred = false) {
+    const initial = escapeHtml((profile.name?.charAt(0) || '?').toUpperCase());
     const avatarHtml = profile.avatarUrl
-        ? `<img src="${profile.avatarUrl}" class="profile-avatar" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'profile-avatar-placeholder\'>${(profile.name?.charAt(0)||'?').toUpperCase()}</div>';">`
-        : `<div class="profile-avatar-placeholder">${(profile.name?.charAt(0)||'?').toUpperCase()}</div>`;
+        ? `<div class="profile-avatar-wrap"><img src="${escapeHtml(profile.avatarUrl)}" alt="" class="profile-avatar" onerror="this.hidden=true;this.nextElementSibling.hidden=false;"><div class="profile-avatar-placeholder" hidden>${initial}</div></div>`
+        : `<div class="profile-avatar-wrap"><div class="profile-avatar-placeholder">${initial}</div></div>`;
     const statusTags = (profile.friendshipStatuses||[]).map(s => {
         let cls = ''; if (s==='дружба') cls='status-tag-friendship'; else if (s==='отношения') cls='status-tag-romance'; else if (s==='бизнес') cls='status-tag-business';
         return `<span class="status-tag ${cls}">${s}</span>`;
@@ -76,7 +78,7 @@ async function renderProfileCard(profile, isBlurred = false) {
         </div>
     ` : '';
 
-    const html = `<div class="profile-card ${isBlurred?'blurred':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${contactButtons}</div>`;
+    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${contactButtons}</div>`;
 
     // Грубая оценка высоты карточки для балансировки колонок в шахматном порядке –
     // без неё карточки просто чередуются по индексу и «падают» не туда, где есть место.
@@ -99,6 +101,8 @@ function getRandomProfile() {
 }
 
 function cleanupProfileOverlays() {
+    previewResizeObserver?.disconnect();
+    previewResizeObserver = null;
     document.querySelector('.profile-blur-overlay')?.remove();
     document.querySelector('.guest-center-btn')?.remove();
     document.querySelector('.center-floating-btn')?.remove();
@@ -156,20 +160,19 @@ export async function renderProfiles() {
     const isCardHolder = state.userCard.status === 'active';
     const hasMyProfile = !!myProfile;
     const placeholderCount = 6;
+    const shouldAnimate = !(isCardHolder && hasMyProfile);
 
     const sorted = Object.entries(profiles).map(([id, profile]) => [id, { ...profile, userId: profile.userId || id }])
         .sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     const allCards = await Promise.all(sorted.map(async ([,p]) => ({
-        ...await renderProfileCard(p, false),
+        ...await renderProfileCard(p, shouldAnimate),
         hikeDate: nextHikesByUser.get(String(p.userId))?.date || null,
     })));
 
-    const shouldAnimate = !(isCardHolder && hasMyProfile);
-
     function wrapInfiniteScroll(content) {
-        const scrollWrapperHeight = window.innerHeight - 100;
+        const scrollWrapperHeight = Math.max(320, window.innerHeight - 160);
         return `
-            <div class="card-container infinite-scroll-container" style="height: ${scrollWrapperHeight}px;">
+            <div class="infinite-scroll-container" style="--profiles-preview-height: ${scrollWrapperHeight}px;" aria-hidden="true" inert>
                 <div class="infinite-scroll-wrapper">
                     ${content}
                     ${content}
@@ -181,11 +184,10 @@ export async function renderProfiles() {
     let html = '';
 
     if (allCards.length === 0) {
-        let ph = '';
-        for (let i = 0; i < placeholderCount; i++) {
-            ph += `<div class="profile-card blurred"><div class="profile-avatar-placeholder" style="background:rgba(255,255,255,0.1);">?</div><div class="profile-name-status"><span class="profile-name" style="color:rgba(255,255,255,0.3);">???</span><div class="profile-status-tags"><span class="status-tag status-tag-friendship" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);">дружба</span></div></div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">увлечения</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div><div class="profile-section-title" style="color:rgba(255,255,255,0.3);">профессия</div><div class="profile-section-text" style="color:rgba(255,255,255,0.3);">———</div></div>`;
-        }
-        html = wrapInfiniteScroll(`<div class="profiles-two-columns">${ph}${ph}</div>`);
+        const placeholders = await Promise.all(Array.from({ length: placeholderCount }, () =>
+            renderProfileCard({ name: 'Участник', hobbies: 'путешествия и знакомства', profession: 'своё дело' }, true)));
+        html = shouldAnimate ? wrapInfiniteScroll(renderProfilesColumns(placeholders))
+            : '<div class="profiles-empty" role="status">пока нет профилей</div>';
     } else {
         const twoColumnsHtml = renderProfilesColumns(allCards);
         html = shouldAnimate ? wrapInfiniteScroll(twoColumnsHtml) : `<div class="card-container">${twoColumnsHtml}</div>`;
@@ -220,7 +222,7 @@ export async function renderProfiles() {
     });
 
     // «Мой Крым» — личная карта маршрутов с туманом (пока только пилотный аккаунт).
-    if (isPersonalMapPilotUser(state.user)) {
+    if (isCardHolder && hasMyProfile && isPersonalMapPilotUser(state.user)) {
         const personalMapHost = document.createElement('div');
         personalMapHost.id = 'personalMapContainer';
         mainDiv().prepend(personalMapHost);
@@ -229,18 +231,16 @@ export async function renderProfiles() {
 
     if (shouldAnimate) {
         const wrapper = mainDiv().querySelector('.infinite-scroll-wrapper');
-        const container = mainDiv().querySelector('.infinite-scroll-container');
-        if (wrapper && container) {
-            let resumeTimeout;
-            container.addEventListener('touchstart', () => {
-                clearTimeout(resumeTimeout);
-                wrapper.classList.add('paused');
-            });
-            container.addEventListener('touchend', () => {
-                resumeTimeout = setTimeout(() => {
-                    wrapper.classList.remove('paused');
-                }, 2000);
-            });
+        const group = wrapper?.firstElementChild;
+        if (wrapper && group) {
+            const setSpeed = () => {
+                wrapper.style.animationDuration = `${Math.max(40, group.offsetHeight / 20)}s`;
+            };
+            setSpeed();
+            if (window.ResizeObserver) {
+                previewResizeObserver = new ResizeObserver(setSpeed);
+                previewResizeObserver.observe(group);
+            }
         }
     }
 
@@ -259,7 +259,6 @@ export async function renderProfiles() {
 
     const blurOverlay = document.createElement('div');
     blurOverlay.className = 'profile-blur-overlay';
-    blurOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:40;background: linear-gradient(to bottom, rgba(10, 11, 9, 0.35) 0%, rgba(73, 138, 176, 0.55) 60%, rgba(73, 138, 176, 0.75) 100%); backdrop-filter: blur(40px) saturate(110%); -webkit-backdrop-filter: blur(40px) saturate(110%);';
     document.body.appendChild(blurOverlay);
 
     showCenterButtonWithPreview(isCardHolder, hasMyProfile);
@@ -272,7 +271,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     const centerBtn = document.createElement('div');
     centerBtn.className = isCardHolder ? 'center-floating-btn' : 'guest-center-btn';
     centerBtn.innerHTML = `<button class="btn btn-yellow profile-action-btn" id="profileActionBtn">🔒 создать профиль</button>`;
-    centerBtn.style.cssText = 'position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; z-index: 100 !important; pointer-events: auto !important;';
+    centerBtn.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 520px; display: flex; flex-direction: column; align-items: center; gap: 16px; z-index: 100; pointer-events: auto;';
     document.body.appendChild(centerBtn);
 
     const actionBtn = document.getElementById('profileActionBtn');
@@ -309,7 +308,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
     if (previewProfile) {
         const banner = document.createElement('div');
         banner.className = 'profile-preview-banner';
-        banner.style.cssText = 'position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%); width: 90% !important; max-width: 520px !important; margin-top: -100px !important; z-index: 101 !important; pointer-events: none !important; background: var(--glass-bg) !important; border: 1px solid var(--glass-border) !important; border-radius: 28px !important; backdrop-filter: blur(8px) !important; -webkit-backdrop-filter: blur(8px) !important; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15) !important; padding: 16px !important; display: flex !important; flex-direction: row !important; align-items: center !important; gap: 14px !important; box-sizing: border-box !important;';
+        banner.style.cssText = 'width: 100%; pointer-events: none; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 28px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15); padding: 16px; display: flex; align-items: center; gap: 14px; box-sizing: border-box;';
 
         const avatarContainer = document.createElement('div');
         avatarContainer.style.cssText = 'flex-shrink: 0; width: 56px; height: 56px;';
@@ -340,7 +339,7 @@ function showCenterButtonWithPreview(isCardHolder, hasMyProfile) {
 
         banner.appendChild(avatarContainer);
         banner.appendChild(textDiv);
-        document.body.appendChild(banner);
+        centerBtn.prepend(banner);
     }
 }
 

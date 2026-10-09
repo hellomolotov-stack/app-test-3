@@ -3132,7 +3132,8 @@ async function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
 }
 
 export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'hike') {
-    if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
+    // Profile introduction is informational; admission is checked when purchasing.
+    if (feature !== 'profiles' && !await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
     haptic();
     const config = state.popupConfig;
     const isHikeContext = feature === 'hike';

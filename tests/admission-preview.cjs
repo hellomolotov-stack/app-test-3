@@ -21,13 +21,14 @@ http.createServer(async (req, res) => {
     if (url.pathname === '/api/hikes') { res.setHeader('Content-Type', 'application/json'); res.end('{}'); return; }
     if (req.method !== 'GET') { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end('{"status":"ok"}'); return; }
     let pathname = url.pathname === '/' ? '/index.html' : url.pathname;
-    if (!/^\/(index\.html|style\.css|js\/[^.].*|assets\/.*|tests\/admission-preview\.js)$/.test(pathname) || pathname.includes('..')) { res.writeHead(404); res.end(); return; }
+    if (!/^\/(index\.html|style\.css|js\/[^.].*|assets\/.*|tests\/(admission|profiles)-preview\.js)$/.test(pathname) || pathname.includes('..')) { res.writeHead(404); res.end(); return; }
     try {
         let content = fs.readFileSync(path.join(root, pathname));
         if (pathname === '/index.html') {
             const user = { id: 7845375334, username: 'HelloIntelligent', first_name: 'Макс' };
+            const screen = url.searchParams.get('screen') === 'profiles' ? 'profiles' : 'admission';
             content = content.toString().replace(/<script[^>]+src="https:\/\/telegram.org\/js\/telegram-web-app.js[^>]*><\/script>/, '')
-                .replace(/<script type="module" src="js\/main.js[^>]*><\/script>/, `<script>window.Telegram={WebApp:{initData:${JSON.stringify(fixture.signed())},initDataUnsafe:{user:${JSON.stringify(user)}},HapticFeedback:{impactOccurred(){},notificationOccurred(){}},BackButton:{hide(){},show(){},onClick(){},offClick(){}},openLink(){},openTelegramLink(){},onEvent(){},offEvent(){}}};</script><script type="module" src="/tests/admission-preview.js"></script>`);
+                .replace(/<script type="module" src="js\/main.js[^>]*><\/script>/, `<script>window.Telegram={WebApp:{initData:${JSON.stringify(fixture.signed())},initDataUnsafe:{user:${JSON.stringify(user)}},HapticFeedback:{impactOccurred(){},notificationOccurred(){}},BackButton:{hide(){},show(){},onClick(){},offClick(){}},openLink(){},openTelegramLink(){},onEvent(){},offEvent(){}}};</script><script type="module" src="/tests/${screen}-preview.js"></script>`);
         }
         res.writeHead(200, { 'Content-Type': mime[path.extname(pathname)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(content);
     } catch { res.writeHead(404); res.end(); }

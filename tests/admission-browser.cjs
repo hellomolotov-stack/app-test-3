@@ -118,7 +118,7 @@ const BASE = 'http://localhost:4185';
         await page.getByText('заявок пока нет', { exact: true }).waitFor();
         await page.locator('.adm-close').click();
         await page.evaluate(() => window.previewAdmission.showGuestBookingPopup('2026-10-18', 'Ай-Йори'));
-        await page.locator('.admission-screen').getByRole('heading', { name: 'давай познакомимся' }).waitFor();
+        await page.locator('.admission-screen').getByRole('heading', { name: 'как попасть в клуб' }).waitFor();
         await page.locator('.admission-screen').getByRole('button', { name: 'заполнить анкету' }).click();
         await page.locator('input[name="city"]').fill('Севастополь');
         await page.locator('textarea[name="about"]').fill('Хочу найти компанию для походов и городских встреч');
