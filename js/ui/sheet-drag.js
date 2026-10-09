@@ -2,10 +2,11 @@
 // Шторка едет за пальцем, полоска-ручка сверху ломается посерединке в «галочку» вниз
 // (CSS берёт --pull 0…1), а отпущенная ниже порога – сворачивается через клик по своему оверлею:
 // у каждой шторки он уже закрывает её штатным способом. Тянуть можно за ручку или за любое
-// место, если содержимое прокручено в самый верх; горизонтальные жесты (слайдеры, карта) не трогаем.
+// место, если содержимое прокручено в самый верх; по карте – с любой позиции прокрутки.
+// Горизонтальные жесты и управление картой двумя пальцами не трогаем.
 const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet';
 const HANDLE = '.bottom-sheet-handle, .cs-grab';  // .inv-grab тоже несёт класс cs-grab
-const SKIP = 'input, textarea, select, .swipe-track, .hike-map-box, .bottom-sheet-nav-arrow';
+const SKIP = 'input, textarea, select, .swipe-track, .bottom-sheet-nav-arrow';
 const CLOSE_DY = 110;     // столько протянуть – и шторка свернётся
 const CLOSE_SPEED = 0.6;  // или смахнуть быстрее (px/мс)
 
@@ -32,6 +33,7 @@ function onStart(e) {
     g = {
         sheet, handle: sheet.querySelector(HANDLE), overlay: sheet.parentElement,
         onHandle: !!e.target.closest(HANDLE), scroller: scrollerOf(e.target, sheet),
+        onMap: !!e.target.closest('.hike-map-box'),
         x0: t.clientX, y0: t.clientY, dy: 0, on: false, last: [t.clientY, e.timeStamp], speed: 0
     };
 }
@@ -45,18 +47,19 @@ function onMove(e) {
         if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) { g = null; return; }
         if (dy < -4) { g = null; return; }
         if (dy < 6) return;
-        if (!g.onHandle && g.scroller && g.scroller.scrollTop > 1) {
+        if (!g.onHandle && !g.onMap && g.scroller && g.scroller.scrollTop > 1) {
             // Keep following the same gesture until native scrolling reaches the top.
             g.y0 = t.clientY;
             g.last = [t.clientY, e.timeStamp];
             return;
         }
-        if (g.scroller) g.scroller.scrollTop = 0;
+        if (g.scroller && !g.onMap) g.scroller.scrollTop = 0;
         g.on = true;
         g.sheet.style.transition = 'none';
         g.sheet.classList.add('is-dragging');
     }
     if (e.cancelable) e.preventDefault();
+    if (g.onMap) e.stopPropagation();
     g.dy = Math.max(0, dy);
     const dt = e.timeStamp - g.last[1];
     if (dt > 0) g.speed = (t.clientY - g.last[0]) / dt;

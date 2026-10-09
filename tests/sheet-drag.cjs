@@ -78,10 +78,20 @@ async function geometry(page) {
             });
             assert.equal((await geometry(page)).transform,'','Upward scroll does not dismiss');
 
-            for(const selector of ['.hike-map-box','input']) {
+            for(const selector of ['input']) {
                 await page.evaluate(selector=>{resetSheet();touch('touchstart',200,100,true,selector);touch('touchmove',500,100,true,selector);touch('touchend',500,100,true,selector);},selector);
-                assert.equal((await geometry(page)).transform,'','Map and input gestures are excluded');
+                assert.equal((await geometry(page)).transform,'','Input gestures are excluded');
             }
+
+            await page.evaluate(()=>{
+                resetSheet();document.getElementById('bottomSheetContent').scrollTop=80;
+                touch('touchstart',200,100,true,'.hike-map-box');
+                touch('touchmove',370,100,true,'.hike-map-box');
+            });
+            assert.equal((await geometry(page)).scrollTop,80,'Map pull must not jump content to the top');
+            assert.equal((await geometry(page)).dragging,true);
+            await page.evaluate(()=>touch('touchend',370,100,true,'.hike-map-box'));
+            await page.waitForFunction(()=>!document.querySelector('.bottom-sheet-overlay'));
 
             await page.evaluate(()=>{
                 resetSheet();document.querySelector('#bottomSheetContent > div[style]').remove();
@@ -118,6 +128,6 @@ async function geometry(page) {
             assert.deepEqual(warnings,[]);
             await page.close();
         }
-        console.log('Sheet drag passed at 320/390: same-gesture scroll handoff, no gap, actual touch dismissal, short pull, cancel, horizontal/upward gestures, map/input exclusions, short content, cleanup');
+        console.log('Sheet drag passed at 320/390: scroll handoff, no gap, actual touch dismissal, map-area dismissal without content jump, short pull, cancel, horizontal/upward gestures, input exclusions, short content, cleanup');
     } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
