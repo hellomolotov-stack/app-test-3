@@ -3,6 +3,26 @@ import { state } from './state.js';
 export const RULES_VERSION = 'pilot-2026-10-09';
 export const admission = { application: null, error: '', loading: false, serverOffset: 0 };
 export const REVIEW_DURATION = 24 * 60 * 60 * 1000;
+
+// анкета входа в клуб (см. «вход в клуб – философия»): никаких вопросов про работу, доход, фото и негатив
+export const YALTA_OPTIONS = [['local', 'местный'], ['moved', 'переехал и пока ищу своих'], ['season', 'приехал на сезон']];
+export const VIEW_OPTIONS = [
+    ['alone', 'лучше пойду один, чем с кем попало'],
+    ['silence', 'мне нормально помолчать, если не о чем говорить'],
+    ['thinks', 'мне интереснее, о чём человек думает, чем кем он работает'],
+    ['irony', 'над собой я смеюсь чаще, чем над другими'],
+    ['no', '«нет» для меня полноценный ответ. и свой, и чужой'],
+    ['speaker', 'колонка в горах меня скорее раздражает'],
+];
+// ответы для показа: новая анкета и старая (город + «о себе») из первых тестов
+export function formAnswers(form = {}) {
+    const rows = [['как зовут', form.name]];
+    if (form.yalta) rows.push(['ты и Ялта', (YALTA_OPTIONS.find(([k]) => k === form.yalta) || [])[1] || form.yalta]);
+    if (Array.isArray(form.views)) rows.push(['что про тебя', form.views.length ? form.views.map(v => (VIEW_OPTIONS.find(([k]) => k === v) || [])[1] || v).join('\n') : 'ничего не отмечено']);
+    if (form.city) rows.push(['город', form.city]);
+    if (form.about) rows.push(['о себе', form.about]);
+    return rows.filter(([, v]) => v);
+}
 let loading = null;
 let generation = 0;
 

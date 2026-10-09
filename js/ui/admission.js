@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { admission, admissionRequest, isAdmissionPilot, loadAdmission, setAdmission, reviewWindow, RULES_VERSION } from '../admission.js';
+import { admission, admissionRequest, isAdmissionPilot, loadAdmission, setAdmission, reviewWindow, RULES_VERSION, YALTA_OPTIONS, VIEW_OPTIONS, formAnswers } from '../admission.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 let screen = null;
@@ -8,10 +8,10 @@ let reviewTimer = null;
 
 function reviewMarkup(application) {
     const timing = reviewWindow(application.createdAt);
-    if (!timing) return '<p class="admission-fine">на рассмотрении – ответ придёт в боте</p>';
+    if (!timing) return '<p class="admission-fine">читаем анкету – напишем тебе в боте</p>';
     return `<div class="admission-review" data-review-created="${Number(application.createdAt)}">
-        <div class="admission-review-top"><span class="admission-status-tag">на рассмотрении</span><span class="admission-review-time"><span data-review-prefix>${timing.expired ? 'срок прошёл' : 'ещё'}</span> <time data-review-countdown ${timing.expired ? 'hidden' : ''}>${timing.countdown}</time></span></div>
-        <div class="admission-review-track" role="progressbar" aria-label="прошло времени из суток на рассмотрение" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(timing.ratio * 100)}"><span class="admission-review-fill" style="animation-delay:-${timing.elapsed}ms"></span></div>
+        <div class="admission-review-top"><span class="admission-status-tag">читаем анкету</span><span class="admission-review-time"><span data-review-prefix>${timing.expired ? 'срок прошёл' : 'ещё'}</span> <time data-review-countdown ${timing.expired ? 'hidden' : ''}>${timing.countdown}</time></span></div>
+        <div class="admission-review-track" role="progressbar" aria-label="сколько прошло из суток на ответ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(timing.ratio * 100)}"><span class="admission-review-fill" style="animation-delay:-${timing.elapsed}ms"></span></div>
         <div class="admission-review-labels"><span>анкета отправлена</span><span>ответ в течение суток</span></div>
         <p class="admission-review-overdue" ${timing.expired ? '' : 'hidden'}>ответ ещё готовится – напишем в боте</p>
     </div>`;
@@ -64,28 +64,31 @@ export function mountAdmissionEntry() {
     const application = admission.application;
     const status = application?.status || 'new';
     const copy = {
-        new: ['давай познакомимся', 'в Интеллигенцию можно попасть по приглашению участника или после короткой анкеты', 'заполнить анкету'],
-        pending: ['анкета у нас', 'спасибо за знакомство! ответим в боте в течение суток', 'посмотреть анкету'],
-        approved: ['добро пожаловать в клуб', 'анкета одобрена – теперь можно записаться на хайк или оформить карту', 'продолжить'],
-        rejected: ['ответ по анкете', 'сейчас не получится принять тебя в клуб – подробности внутри', 'посмотреть ответ'],
+        new: ['давай познакомимся', '', 'заполнить анкету'],
+        pending: ['анкета у нас', 'спасибо! мы прочитаем её сами и напишем тебе в течение суток', 'посмотреть анкету'],
+        approved: ['добро пожаловать в клуб', 'мы прочитали анкету – теперь можно записаться на хайк или оформить карту', 'продолжить'],
+        rejected: ['ответ по анкете', 'сейчас не получится позвать тебя в клуб – подробности внутри', 'посмотреть ответ'],
     }[status];
     block.innerHTML = status === 'new' ? `<h2 class="section-title">🔑 как попасть в клуб</h2><div class="admission-entry-copy">
-        <p>мы растём через знакомство – поэтому в клуб приходят двумя путями</p>
+        <p>в горах всё стихает. остаются люди. поэтому мы делаем не походы, а знакомства – и в клуб входят двумя путями</p>
         <div class="adm-paths">
-            <div class="adm-path"><span class="adm-path-ico">🤝</span><b>приглашение</b></div>
-            <div class="adm-path is-main"><span class="adm-path-ico">✍️</span><b>анкета</b></div>
+            <div class="adm-path"><span class="adm-path-ico">🤝🏻</span><b>приглашение</b></div>
+            <div class="adm-path is-main"><span class="adm-path-ico">✍🏻</span><b>анкета</b></div>
         </div>
         <div class="adm-steps">
             <div><i>1</i><span>рассказываешь о себе</span></div>
-            <div><i>2</i><span>мы отвечаем в течение суток</span></div>
+            <div><i>2</i><span>мы читаем и пишем тебе в течение суток</span></div>
             <div><i>3</i><span>записываешься на хайк или оформляешь карту</span></div>
         </div>
-        </div><button type="button" class="btn btn-yellow admission-entry-button">заполнить анкету</button>` : `<h2 class="section-title">✍️ ${copy[0]}</h2><div class="admission-entry-copy"><p>${copy[1]}</p>
+        </div><button type="button" class="btn btn-yellow admission-entry-button">заполнить анкету</button>
+        <p class="adm-entry-note">меньше 20 секунд</p>
+        <button type="button" class="adm-why-row" id="admissionWhy"><span>почему вход не для всех</span><b>узнать ›</b></button>` : `<h2 class="section-title">✍️ ${copy[0]}</h2><div class="admission-entry-copy"><p>${copy[1]}</p>
         ${status === 'pending' ? reviewMarkup(application) : ''}
         ${status === 'approved' ? '<span class="admission-status-tag is-approved">заявка одобрена</span>' : ''}
         ${status === 'rejected' ? '<span class="admission-status-tag">заявка рассмотрена</span>' : ''}
         </div><button type="button" class="btn btn-yellow admission-entry-button">${copy[2]}</button>`;
-    block.querySelector('button').addEventListener('click', () => openAdmission({ view: status === 'new' ? 'form' : 'status' }));
+    block.querySelector('.btn').addEventListener('click', () => openAdmission({ view: status === 'new' ? 'form' : 'status' }));
+    block.querySelector('#admissionWhy')?.addEventListener('click', openAdmissionWhy);
     startReviewClocks();
 }
 
@@ -161,17 +164,20 @@ function render() {
     let action;
     const button = (label, id = 'admissionContinue') => `<button type="button" class="btn btn-yellow admission-primary" id="${id}">${label}</button>`;
     if (screen.view === 'form' && !admission.error) {
-        draft ||= { name: state.user?.first_name || '', city: '', about: '', respect: false };
-        title = 'расскажи о себе';
-        subtitle = 'пара слов, чтобы мы познакомились до первой встречи. ответы видят только организаторы';
+        draft ||= { name: [state.user?.first_name, state.user?.last_name].filter(Boolean).join(' '), yalta: '', views: [] };
+        title = 'давай познакомимся';
+        subtitle = 'это не экзамен – правильных ответов нет. смотрим только, совпадают ли наши взгляды';
         content = `<form id="admissionForm">
             <label class="admission-field"><span>как тебя зовут</span><input name="name" autocomplete="given-name" minlength="2" maxlength="80" value="${esc(draft.name)}" required></label>
-            <label class="admission-field"><span>откуда ты</span><input name="city" autocomplete="address-level2" minlength="2" maxlength="100" placeholder="Ялта, Москва…" value="${esc(draft.city)}" required></label>
-            <label class="admission-field"><span>чем занимаешься и что ищешь в клубе</span><textarea name="about" minlength="10" maxlength="800" rows="4" placeholder="пара предложений о себе" required>${esc(draft.about)}</textarea></label>
-            <label class="admission-check"><input name="respect" type="checkbox" ${draft.respect ? 'checked' : ''} required><span>мне близко бережное отношение к людям, личным границам и природе</span></label>
+            <fieldset class="admission-group"><legend>ты и Ялта</legend><div class="admission-chips">
+                ${YALTA_OPTIONS.map(([key, label]) => `<label class="admission-chip"><input type="radio" name="yalta" value="${key}" ${draft.yalta === key ? 'checked' : ''} required><span>${esc(label)}</span></label>`).join('')}
+            </div></fieldset>
+            <fieldset class="admission-group"><legend>что про тебя – отмечай сколько угодно</legend>
+                ${VIEW_OPTIONS.map(([key, label]) => `<label class="admission-check"><input type="checkbox" name="views" value="${key}" ${draft.views.includes(key) ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('')}
+            </fieldset>
             <p class="admission-error" id="admissionError" role="alert"></p>
-            <button class="btn btn-yellow admission-primary" type="submit">отправить анкету</button>
-            <p class="admission-fine admission-centered">ответим в боте в течение суток</p>
+            <button class="btn btn-yellow admission-primary" type="submit">отправить</button>
+            <p class="admission-fine admission-centered">мы прочитаем анкету сами и напишем тебе в течение суток</p>
         </form>`;
     } else if (admission.error) {
         title = 'не получилось загрузить'; subtitle = admission.error;
@@ -180,19 +186,19 @@ function render() {
     } else if (!application) {
         title = 'секунду'; subtitle = 'загружаем твою заявку'; content = '<div class="admission-loading" role="status">загрузка…</div>';
     } else if (application.status === 'new') {
-        title = 'как попасть в клуб'; subtitle = 'в клуб приходят по приглашению участника или по короткой анкете';
-        content = `<p class="admission-body-text">расскажи немного о себе – ответим в течение суток</p>${button('заполнить анкету')}<p class="admission-fine admission-centered">после одобрения можно будет оформить билет или карту клуба</p>`;
+        title = 'как попасть в клуб'; subtitle = 'в клуб входят по приглашению или через короткую анкету';
+        content = `<p class="admission-body-text">расскажи о себе – мы прочитаем и напишем тебе в течение суток</p>${button('заполнить анкету')}<p class="admission-fine admission-centered">меньше 20 секунд</p>`;
         action = () => { screen.view = 'form'; render(); };
     } else if (application.status === 'pending') {
-        title = 'анкета у нас'; subtitle = 'спасибо, что рассказал о себе';
+        title = 'анкета у нас'; subtitle = 'спасибо! если отметил больше двух пунктов, ты уже примерно знаешь, с кем пойдёшь';
         content = `${reviewMarkup(application)}<p class="admission-body-text">пока можно выбрать маршрут и посмотреть ближайшие встречи</p>${application.notificationStatus === 'failed' ? '<p class="admission-fine">бот пока не может написать тебе – <a class="admission-bot-link" href="https://t.me/yaltahiking_bot" target="_blank" rel="noopener">открой его и нажми «начать»</a></p>' : ''}${button('к событиям')}<button class="admission-text-button" id="admissionRefresh">обновить статус</button>`;
         action = closeAdmission;
     } else if (application.status === 'rejected') {
-        title = 'спасибо за знакомство'; subtitle = 'мы рассмотрели твою заявку и на данный момент не можем тебя принять';
-        content = `<p class="admission-body-text">возможно, ты сможешь присоединиться по приглашению одного из членов клуба</p>${button('вернуться к событиям')}`;
+        title = 'спасибо, что рассказал о себе'; subtitle = 'сейчас не получится позвать тебя в клуб';
+        content = `<p class="admission-body-text">но в клуб входят и по приглашению – если кто-то из клуба захочет взять тебя с собой, будем рады</p>${button('вернуться к событиям')}`;
         action = closeAdmission;
     } else {
-        title = 'добро пожаловать\nв Интеллигенцию'; subtitle = 'анкета одобрена – рады знакомству';
+        title = 'добро пожаловать\nв Интеллигенцию'; subtitle = 'мы прочитали анкету – рады знакомству';
         const accepted = application.rulesVersion === RULES_VERSION;
         content = `<div class="admission-rules">
             <div><span aria-hidden="true">✓</span><p>уважаем друг друга<small>бережно относимся к личным границам и разным мнениям</small></p></div>
@@ -222,7 +228,7 @@ function render() {
         };
     }
     const answers = application?.form && application.status !== 'new'
-        ? `<section class="admission-card admission-answers" aria-label="твоя анкета"><dl><div><dt>как тебя зовут</dt><dd>${esc(application.form.name)}</dd></div><div><dt>в каком городе живёшь</dt><dd>${esc(application.form.city)}</dd></div><div><dt>что привело тебя к нам</dt><dd>${esc(application.form.about)}</dd></div></dl></section>` : '';
+        ? `<section class="admission-card admission-answers" aria-label="твоя анкета"><dl>${formAnswers(application.form).map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl></section>` : '';
     root.innerHTML = `<section class="admission-screen inv-sheet"><div class="inv-grab cs-grab" role="button" aria-label="закрыть анкету"></div><div class="admission-scroll"><section class="admission-card"><h2 id="admissionTitle" tabindex="-1">${esc(title).replace('\n', '<br>')}</h2><p class="admission-lead">${esc(subtitle)}</p>${content}</section>${answers}</div></section>`;
     root.querySelector('.inv-grab').addEventListener('click', closeAdmission);
     root.querySelector('#admissionTitle')?.focus({ preventScroll: true });
@@ -230,7 +236,9 @@ function render() {
     root.querySelector('#admissionRefresh')?.addEventListener('click', () => run(() => loadAdmission()));
     const form = root.querySelector('form');
     if (form) {
-        form.addEventListener('input', () => { draft = { name: form.elements.name.value, city: form.elements.city.value, about: form.elements.about.value, respect: form.elements.respect.checked }; });
+        const readForm = () => ({ name: form.elements.name.value, yalta: form.querySelector('[name="yalta"]:checked')?.value || '', views: [...form.querySelectorAll('[name="views"]:checked')].map(i => i.value) });
+        form.addEventListener('input', () => { draft = readForm(); });
+        form.addEventListener('change', () => { draft = readForm(); });
         form.addEventListener('submit', event => {
             event.preventDefault();
             run(async () => {
@@ -266,4 +274,31 @@ async function run(action) {
         current.element.removeAttribute('aria-busy');
         current.element.querySelectorAll('button').forEach(button => { button.disabled = false; });
     }
+}
+
+// «почему вход не для всех»: шторка со смыслом входа в клуб (по документу «вход в клуб – философия»)
+export function openAdmissionWhy() {
+    document.querySelector('.adm-why-overlay')?.remove();
+    track('почему вход не для всех');
+    const overlay = document.createElement('div');
+    overlay.className = 'inv-overlay adm-why-overlay';
+    overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div class="inv-scroll adm-why">
+        <h2>в горах всё стихает. остаются личности, что рядом с тобой</h2>
+        <p>в Ялте в горы зовут все. купил билет, пришёл – а с кем идёшь, узнаёшь на старте. иногда рядом колонка с чужим плейлистом на всю тропу</p>
+        <p>на тропе нет ни музыки, ни связи, ни набережной. есть тишина и те, кто идёт рядом. на несколько часов вы принадлежите друг другу</p>
+        <blockquote>билет покупают на маршрут. анкету заполняют, чтобы попасть к людям</blockquote>
+        <div class="adm-why-two">
+            <div><b>смотрим</b><span>совпадают ли наши взгляды</span></div>
+            <div><b>не смотрим</b><span>статус, работу, доход, фото и физподготовку</span></div>
+        </div>
+        <p>группа до 10 человек – чтобы никто не был случайным. приглашение – та же анкета, только заполнил её друг</p>
+        <p class="adm-why-last">если ты привык гулять один, потому что лучше одному, чем с кем попало – кажется, ты к нам</p>
+        <button type="button" class="btn btn-yellow adm-why-btn">заполнить анкету</button>
+    </div></div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('is-on'));
+    const close = () => { overlay.classList.remove('is-on'); setTimeout(() => overlay.remove(), 300); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelector('.inv-grab').addEventListener('click', close);
+    overlay.querySelector('.adm-why-btn').addEventListener('click', () => { overlay.remove(); openAdmission({ view: 'form' }); });
 }

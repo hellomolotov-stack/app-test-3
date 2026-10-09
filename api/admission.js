@@ -26,16 +26,15 @@ async function write(token, revision, record) {
     if (!response.ok) throw failure(502, 'не удалось сохранить заявку');
 }
 
+// короткая анкета: имя (подставляется из Telegram), «ты и Ялта» одним тапом и галочки-взгляды
+const YALTA = ['local', 'moved', 'season'];
+const VIEWS = ['alone', 'silence', 'thinks', 'irony', 'no', 'speaker'];
 function validateForm(form) {
-    const fields = [['name', 2, 80], ['city', 2, 100], ['about', 10, 800]];
-    const result = {};
-    for (const [key, min, max] of fields) {
-        const value = typeof form?.[key] === 'string' ? form[key].trim() : '';
-        if (value.length < min || value.length > max) throw failure(400, 'проверь имя, город и пару слов о себе');
-        result[key] = value;
-    }
-    if (form.respect !== true) throw failure(400, 'подтверди бережное отношение к людям и природе');
-    return { ...result, respect: true };
+    const name = typeof form?.name === 'string' ? form.name.trim() : '';
+    if (name.length < 2 || name.length > 80) throw failure(400, 'проверь, как тебя зовут');
+    if (!YALTA.includes(form?.yalta)) throw failure(400, 'отметь, как ты связан с Ялтой');
+    const views = Array.isArray(form?.views) ? [...new Set(form.views.filter(v => VIEWS.includes(v)))] : [];
+    return { name, yalta: form.yalta, views };
 }
 
 function publicRecord(record) {
@@ -45,9 +44,9 @@ function publicRecord(record) {
 }
 
 function notificationText(status) {
-    if (status === 'approved') return 'Твою заявку одобрили\n\nДобро пожаловать в Интеллигенцию! Теперь ты можешь оформить билет на хайк или карту члена клуба\n\nОдобрение не означает покупку карты или запись на событие';
-    if (status === 'rejected') return 'Спасибо, что захотел присоединиться к клубу Интеллигенции\n\nМы рассмотрели твою заявку и на данный момент не можем тебя принять\n\nВозможно, ты сможешь присоединиться по приглашению одного из членов клуба';
-    return 'Анкета отправлена\n\nРассмотрим её в течение одного дня и напишем здесь, в боте\n\nПока можно посмотреть ближайшие события в приложении';
+    if (status === 'approved') return 'рады знакомству 🤍\n\nмы прочитали анкету – добро пожаловать в клуб. теперь можно записаться на хайк или оформить карту интеллигента';
+    if (status === 'rejected') return 'спасибо, что рассказал о себе 🤍\n\nсейчас не получится позвать тебя в клуб. но в него входят и по приглашению – если кто-то из клуба захочет взять тебя с собой, будем рады';
+    return 'анкета у нас 🤍\n\nмы прочитаем её сами и напишем тебе здесь в течение суток. пока можно посмотреть ближайшие хайки в приложении';
 }
 
 // A short lease prevents two admins from sending the same decision concurrently.

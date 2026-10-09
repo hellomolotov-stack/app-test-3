@@ -1,4 +1,4 @@
-import { admissionRequest, isAdmissionPilot, setAdmission } from '../admission.js';
+import { admissionRequest, isAdmissionPilot, setAdmission, formAnswers } from '../admission.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const labels = { new: 'заявок пока нет', pending: 'на рассмотрении', approved: 'одобрена', rejected: 'отклонена' };
@@ -18,9 +18,8 @@ export async function renderAdmissionAdmin(body) {
     const delivery = application.notificationStatus;
     body.innerHTML = `<div class="adm-label">заявки в клуб</div><p class="adm-muted">пилот · только @HelloIntelligent</p>
         <div class="admission-admin-status">${labels[application.status]}</div>
-        ${application.form ? `<h3 class="admission-admin-name">${esc(application.form.name)}</h3><p class="adm-muted">${esc(application.form.city)} · @${esc(application.username)}</p>
-        <div class="admission-admin-answer"><span>что привело в клуб</span><p>${esc(application.form.about)}</p></div>
-        <p class="adm-muted">бережное отношение к людям и природе: подтверждено</p>
+        ${application.form ? `<h3 class="admission-admin-name">${esc(application.form.name)}</h3><p class="adm-muted">@${esc(application.username)}</p>
+        ${formAnswers(application.form).slice(1).map(([label, value]) => `<div class="admission-admin-answer"><span>${esc(label)}</span><p>${esc(value)}</p></div>`).join('')}
         <p class="adm-muted">отправлена ${esc(new Date(application.createdAt).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }))}</p>
         ${application.context?.hikeTitle ? `<p class="adm-muted">интересует: ${esc(application.context.hikeTitle)}</p>` : ''}` : ''}
         ${application.status === 'pending' ? '<div class="admission-admin-actions"><button class="btn btn-yellow" data-action="approve">принять</button><button class="btn btn-outline" data-action="reject">отклонить</button></div>' : ''}
