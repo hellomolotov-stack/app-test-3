@@ -2839,13 +2839,13 @@ function updateFloatingSheetButtons() {
         plate.className = 'availability-floating so-card-plate is-link';
         plate.innerHTML = `
             <img src="assets/card-front.jpg" alt="" class="so-card-img">
-            <div class="so-card-text"><b>мест нет</b><span>но владельцы карты могут прийти</span></div>
+            <div class="so-card-text"><b>места закончились</b><span>но владельцы карты могут прийти</span></div>
             <div class="so-card-arrow">›</div>`;
         plate.addEventListener('click', e => {
             e.preventDefault();
             haptic();
             log('мест нет: плашка карты', true, state.user, { hike_date: hike.date });
-            openCardSheet({ source: 'мест нет', hikeDate: hike.date, hikeTitle: hike.title });
+            openCardSheet({ source: 'мест нет', hikeDate: hike.date, hikeTitle: hike.title, allowTicket: false });
         });
         container.appendChild(plate);
         container.style.pointerEvents = 'auto';

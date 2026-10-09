@@ -67,7 +67,7 @@ function wireTilt(stage, card) {
 }
 
 // gift: true – подарочный режим: «подари карту», одна цена, после оплаты дарителю приходит ссылка-подарок
-export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '', gift = false } = {}) {
+export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '', gift = false, allowTicket = true } = {}) {
     let offerTimer = null;
     haptic();
     log(gift ? 'подарок: открыл шторку' : 'карта: что внутри', !gift, state.user, { source });
@@ -136,7 +136,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             </div>
             <div class="cs-bar">
                 <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить карту за ${rub(giftPrice)}` : `оформить навсегда · ${rub(permanent)}`}</button>
-                ${isReturning || gift ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
+                ${isReturning || gift || !allowTicket ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
             </div>
         </div>`;
     // верх шторки – ниже кнопок Telegram «Закрыть» и «•••» (в полноэкранном режиме они поверх приложения)
