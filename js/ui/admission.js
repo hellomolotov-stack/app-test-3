@@ -69,19 +69,29 @@ export function mountAdmissionEntry() {
         approved: ['добро пожаловать в клуб', 'мы прочитали анкету – теперь можно записаться на хайк или оформить карту', 'продолжить'],
         rejected: ['ответ по анкете', 'сейчас не получится позвать тебя в клуб – подробности внутри', 'посмотреть ответ'],
     }[status];
-    block.innerHTML = status === 'new' ? `<h2 class="section-title">🔑 как попасть в клуб</h2><div class="admission-entry-copy">
-        <p>в горах всё стихает. остаются люди. поэтому мы делаем не походы, а знакомства – и в клуб входят двумя путями</p>
-        <div class="adm-paths">
-            <div class="adm-path"><span class="adm-path-ico">🤝🏻</span><b>приглашение</b></div>
-            <div class="adm-path is-main"><span class="adm-path-ico">✍🏻</span><b>анкета</b></div>
+    block.innerHTML = status === 'new' ? `<h2 class="section-title">🔑 как попасть в клуб</h2>
+        <p class="adm-lead">в горах всё стихает. остаются люди. поэтому мы делаем не походы, а знакомства – и в клуб входят двумя путями</p>
+        <div class="calendar-item adm-inner">
+            <div class="adm-paths" role="tablist">
+                <button type="button" class="adm-path" role="tab" data-path="invite" aria-selected="false"><span class="adm-path-ico">🤝🏻</span><b>приглашение</b></button>
+                <button type="button" class="adm-path is-on" role="tab" data-path="form" aria-selected="true"><span class="adm-path-ico">✍🏻</span><b>анкета</b></button>
+            </div>
+            <div class="adm-steps" data-for="form">
+                <div><i>1</i><span>рассказываешь о себе</span></div>
+                <div><i>2</i><span>мы читаем и пишем тебе в течение суток</span></div>
+                <div><i>3</i><span>записываешься на хайк или оформляешь карту</span></div>
+            </div>
+            <div class="adm-steps" data-for="invite" hidden>
+                <div><i>1</i><span>член клуба отправляет тебе ссылку-приглашение</span></div>
+                <div><i>2</i><span>ты переходишь по ней в приложение</span></div>
+                <div><i>3</i><span>мы сразу открываем тебе доступ – без анкеты</span></div>
+            </div>
+            <div data-for="form">
+                <button type="button" class="btn btn-yellow admission-entry-button">заполнить анкету</button>
+                <p class="adm-entry-note">меньше 20 секунд</p>
+            </div>
+            <p class="adm-entry-note adm-invite-note" data-for="invite" hidden>если тебя уже позвали – просто открой присланную ссылку</p>
         </div>
-        <div class="adm-steps">
-            <div><i>1</i><span>рассказываешь о себе</span></div>
-            <div><i>2</i><span>мы читаем и пишем тебе в течение суток</span></div>
-            <div><i>3</i><span>записываешься на хайк или оформляешь карту</span></div>
-        </div>
-        </div><button type="button" class="btn btn-yellow admission-entry-button">заполнить анкету</button>
-        <p class="adm-entry-note">меньше 20 секунд</p>
         <button type="button" class="adm-why-row" id="admissionWhy"><span>почему вход не для всех</span><b>узнать ›</b></button>` : `<h2 class="section-title">✍️ ${copy[0]}</h2><div class="admission-entry-copy"><p>${copy[1]}</p>
         ${status === 'pending' ? reviewMarkup(application) : ''}
         ${status === 'approved' ? '<span class="admission-status-tag is-approved">заявка одобрена</span>' : ''}
@@ -89,6 +99,13 @@ export function mountAdmissionEntry() {
         </div><button type="button" class="btn btn-yellow admission-entry-button">${copy[2]}</button>`;
     block.querySelector('.btn').addEventListener('click', () => openAdmission({ view: status === 'new' ? 'form' : 'status' }));
     block.querySelector('#admissionWhy')?.addEventListener('click', openAdmissionWhy);
+    // переключатель «приглашение / анкета»: по умолчанию анкета
+    block.querySelectorAll('[data-path]').forEach(tab => tab.addEventListener('click', () => {
+        const path = tab.dataset.path;
+        block.querySelectorAll('[data-path]').forEach(t => { t.classList.toggle('is-on', t === tab); t.setAttribute('aria-selected', String(t === tab)); });
+        block.querySelectorAll('[data-for]').forEach(el => { el.hidden = el.dataset.for !== path; });
+        track(path === 'invite' ? 'смотрит вход по приглашению' : 'смотрит вход по анкете');
+    }));
     startReviewClocks();
 }
 

@@ -5663,12 +5663,12 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 
 /* вход в клуб: два пути и шаги */
 .adm-paths { display: flex; gap: 10px; margin: 4px 0 16px; }
-.adm-path { flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; background: var(--surface-inner); border: 1px solid rgba(255, 255, 255, .12); }
+.adm-path { flex: 1; display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 16px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .12); font: inherit; color: #fff; cursor: pointer; text-align: left; transition: border-color .2s, background .2s; }
 .adm-path b { font-size: 15px; font-weight: 700; color: #fff; }
-.adm-path.is-main { border-color: rgba(217, 253, 25, .5); background: rgba(217, 253, 25, .08); }
-.adm-path.is-main b { color: var(--yellow); }
+.adm-path.is-on { border-color: rgba(217, 253, 25, .5); background: rgba(217, 253, 25, .08); }
+.adm-path.is-on b { color: var(--yellow); }
 .adm-path-ico { flex: none; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; font-size: 17px; background: rgba(255, 255, 255, .1); }
-.adm-path.is-main .adm-path-ico { background: rgba(217, 253, 25, .18); }
+.adm-path.is-on .adm-path-ico { background: rgba(217, 253, 25, .18); }
 .adm-steps { display: grid; gap: 10px; }
 .adm-steps div { display: flex; align-items: center; gap: 12px; font-size: 14px; color: #fff; }
 .adm-steps i { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12.5px; font-weight: 800; color: var(--yellow); border: 1.5px solid rgba(217, 253, 25, .5); }
@@ -5698,3 +5698,10 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .admission-chip input:checked + span { border-color: var(--yellow); color: var(--yellow); background: rgba(217, 253, 25, .1); }
 .admission-chip input:focus-visible + span { outline: 2px solid var(--yellow); outline-offset: 2px; }
 .admission-group .admission-check { margin: 0 0 12px; }
+
+.adm-lead { margin: 0 16px 14px; font-size: 14px; line-height: 1.55; color: rgba(255, 255, 255, .85); }
+.adm-inner { margin: 0 16px; padding: 14px; border-radius: 20px; background: var(--surface-inner); }
+.adm-inner .adm-paths { margin: 0 0 16px; }
+.adm-inner .admission-entry-button { width: 100%; margin: 16px 0 0; }
+.adm-inner .adm-invite-note { margin-top: 14px; text-align: left; line-height: 1.45; }
+.adm-inner [hidden] { display: none !important; }
