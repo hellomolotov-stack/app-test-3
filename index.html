@@ -42,8 +42,8 @@
         html:not(.app-ready) body > :not(#initial-loader) { visibility: hidden !important; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=20261009prof1" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=20261009prof1"></noscript>
+    <link rel="preload" href="style.css?v=20261009prof2" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261009prof2"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -165,6 +165,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=20261009prof1"></script>
+    <script type="module" src="js/main.js?v=20261009prof2"></script>
 </body>
 </html>

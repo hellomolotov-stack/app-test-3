@@ -234,7 +234,8 @@ export async function renderProfiles() {
         const group = wrapper?.firstElementChild;
         if (wrapper && group) {
             const setSpeed = () => {
-                wrapper.style.animationDuration = `${Math.max(40, group.offsetHeight / 20)}s`;
+                // ~35 px/с: движение заметно, но спокойно (20 px/с на длинной ленте выглядело как «стоит»)
+                wrapper.style.animationDuration = `${Math.max(30, group.offsetHeight / 35)}s`;
             };
             setSpeed();
             if (window.ResizeObserver) {
