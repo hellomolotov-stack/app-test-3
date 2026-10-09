@@ -80,7 +80,7 @@ export function saveCachedState() {
             mastermindSummaries: state.mastermindSummaries,
             testimonials: state.testimonials,
             safety: state.safety,
-            userCard: state.userCard && state.userCard.status !== 'loading' ? state.userCard : undefined,
+            userCard: state.userCard?._admissionPreview ? state._admissionRealCard : (state.userCard && state.userCard.status !== 'loading' ? state.userCard : undefined),
         };
         localStorage.setItem('hikingAppCache', JSON.stringify(toCache));
     } catch (e) {}

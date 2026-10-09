@@ -1,4 +1,6 @@
 // js/main.js
+import { applyAdmissionVisitorMode, initAdmission, isAdmissionPilot } from './admission.js';
+import { openAdmission } from './ui/admission.js';
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, hikesFromSnapshot, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups } from './firebase.js';
@@ -321,6 +323,10 @@ function scrollToWhenReady(getter, { pause = 900, interval = 100, timeout = 1200
 
 function handleDeepLink(startParam) {
     if (!startParam) return;
+    if (startParam === 'admission' && isAdmissionPilot()) {
+        openAdmission();
+        return;
+    }
     if (startParam.startsWith('nudge_')) {
         const keyMap = {
             nudge_firsthike: 'first_hike',
@@ -625,6 +631,7 @@ async function loadAppData() {
     showAnimatedLoader();
     try {
         loadCachedState();
+        applyAdmissionVisitorMode();
         const hadCache = state.hikesWithTitle.length > 0;
         // Отдельный мгновенный кэш safety — чтобы баннер ЧП рисовался на первом кадре
         try { const sc = localStorage.getItem('safetyCache'); if (sc) state.safety = JSON.parse(sc); } catch (e) {}
@@ -738,6 +745,7 @@ async function loadAppData() {
         state.popupConfig.permanentCardLink = PERMANENT_CARD_LINK;
 
         state.userCard = userData;
+        applyAdmissionVisitorMode();
 
         // _userRegs (Firebase) нужен всем — по нему понятно, ходил ли человек уже на хайк (билет – только на первый).
         // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
@@ -838,6 +846,7 @@ document.addEventListener('focusout', (e) => {
 // и на медленном интернете приложение стояло пустым лишние 10+ секунд.
 function startApp() {
     state.user = tg?.initDataUnsafe?.user;
+    initAdmission();
     initCollapsibleBlocks();
     initClickLog();
     initSheetDrag();

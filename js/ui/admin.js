@@ -7,6 +7,7 @@ import { REGISTRATION_API_URL } from '../config.js';
 import { loadAllParticipants } from '../firebase.js';
 import { previewHikeTrack, findCatalogRoute, catalogRouteTrack } from './calendar.js';
 import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
+import { renderAdmissionAdmin } from './admission-admin.js';
 
 const ADMIN_USERNAMES = new Set(['maxmolotov', 'hellointelligent']);
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
@@ -121,7 +122,7 @@ function allHikes() {
 // ---------- каркас ----------
 function render() {
     if (!root) return;
-    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['plus1', '🤝 +1'], ['broadcast', '📨 рассылка'], ['home', 'главная']];
+    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['plus1', '🤝 +1'], ['broadcast', '📨 рассылка'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -141,6 +142,7 @@ function render() {
     else if (view.tab === 'newcomers') renderNewcomers(body);
     else if (view.tab === 'plus1') renderPlus1(body);
     else if (view.tab === 'home') renderHomepage(body);
+    else if (view.tab === 'admissions') renderAdmissionAdmin(body);
     else renderHikeList(body);
     root.scrollTop = 0;
     root.querySelector('.adm-tab.is-on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });

@@ -1,4 +1,6 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
+import { requireAdmission } from './admission.js';
+import { isAdmissionPilot, admission } from '../admission.js';
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
@@ -2616,6 +2618,16 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         onEnd();
     }, { passive: false });
 
+    if (isAdmissionPilot() && !isBooked && admission.application?.status !== 'approved') {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'admission-swipe-wrapper';
+        wrapper.append(track);
+        const note = document.createElement('p');
+        note.className = 'admission-swipe-note';
+        note.textContent = 'для первой записи нужно приглашение или одобрение анкеты';
+        wrapper.append(note);
+        return wrapper;
+    }
     return track;
 }
 
@@ -3059,6 +3071,7 @@ function updateFloatingSheetButtons() {
 // «Возвращающийся» = есть хотя бы один прошедший хайк, на который человек был записан (по Firebase).
 // Серверный источник правды: админ может снова открыть человеку покупку разового билета, удалив userRegistrations.
 function hasPastBooking() {
+    if (isAdmissionPilot()) return false;
     const regs = state._userRegs || {};
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -3069,7 +3082,8 @@ function hasPastBooking() {
     });
 }
 
-function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
+async function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
+    if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
     haptic();
     const tgw = window.Telegram?.WebApp;
     const overlay = document.createElement('div');
@@ -3117,7 +3131,8 @@ function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
     });
 }
 
-export function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'hike') {
+export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'hike') {
+    if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
     haptic();
     const config = state.popupConfig;
     const isHikeContext = feature === 'hike';
@@ -4112,7 +4127,8 @@ async function registerByInvite(hikeDate, hikeTitle, onClose) {
     showRegistrationSuccess(hikeDate, hikeTitle);
 }
 
-function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
+async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
+    if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
     if (state.pendingInvite?.date === hikeDate) return registerByInvite(hikeDate, hikeTitle, onClose);
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';

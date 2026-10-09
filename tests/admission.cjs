@@ -1,0 +1,64 @@
+const assert = require('node:assert/strict');
+const { installFixture } = require('./admission-fixture.cjs');
+const fixture = installFixture();
+const handler = require('../api/admission');
+async function call(action, values = {}, user = fixture.signed()) {
+    const result = {};
+    await handler({ method: 'POST', body: { ...values, action, initData: user } }, {
+        setHeader() {}, status(code) { result.status = code; return this; }, json(data) { result.data = data; },
+    });
+    return result;
+}
+const form = { name: 'Макс', city: 'Ялта', about: 'Люблю горы и хочу познакомиться с новыми людьми', respect: true };
+(async () => {
+    assert.equal((await call('status', {}, '')).status, 401);
+    assert.equal((await call('status', {}, fixture.signed('visitor', 20))).status, 403);
+    assert.equal((await call('list', {}, fixture.signed('visitor', 20))).status, 403);
+    assert.equal((await call('status', {}, fixture.signed('HelloIntelligent', 7845375334, 8 * 86400))).status, 401);
+    assert.equal(fixture.writes, 0);
+    assert.equal((await call('status')).data.application.status, 'new');
+    assert.equal((await call('submit', { form: { ...form, respect: false } })).status, 400);
+    assert.equal((await call('submit', { form: { ...form, about: 'x'.repeat(801) } })).status, 400);
+    assert.equal((await call('payment', { payment: { cardType: 'ticket' } })).status, 403);
+    let result = await call('submit', { form, context: { hikeDate: '2026-10-18', hikeTitle: 'Ай-Йори' } });
+    assert.equal(result.status, 200);
+    assert.equal(result.data.application.status, 'pending');
+    assert.equal(result.data.application.notificationStatus, 'sent');
+    assert.equal(fixture.messages.length, 1);
+    assert.equal((await call('status', {}, fixture.signed('HelloIntelligent', 20))).status, 403, 'A different Telegram ID cannot inherit a submitted application');
+    await call('submit', { form });
+    assert.equal(fixture.messages.length, 1, 'No duplicate receipt');
+    assert.equal((await call('welcome', { accept: true })).status, 403);
+    assert.equal((await call('decide', { decision: 'approved', revision: 'old' })).status, 409);
+    const admin = fixture.signed('MaxMolotov', 163665735);
+    result = await call('decide', { decision: 'approved', revision: result.data.revision }, admin);
+    assert.equal(result.status, 200);
+    assert.equal(result.data.application.status, 'approved');
+    assert.equal(fixture.messages.length, 2);
+    assert.equal(fixture.messages[1].reply_markup.inline_keyboard[0][0].url, 'https://t.me/yaltahiking_bot?startapp=admission');
+    assert.equal((await call('payment', { payment: { cardType: 'ticket' } })).status, 403, 'Rules acknowledgement required');
+    assert.equal((await call('welcome', { accept: false })).status, 400);
+    assert.equal((await call('welcome', { accept: true })).status, 200);
+    assert.equal((await call('payment', { payment: { cardType: 'ticket', userId: 999 } })).status, 200);
+    assert.equal(fixture.payments[0].user_id, '7845375334', 'Payment identity comes from signed Telegram data');
+    assert.equal((await call('payment', { payment: { cardType: 'unknown' } })).status, 400);
+    result = await call('list', {}, admin);
+    assert.equal((await call('decide', { decision: 'rejected', revision: result.data.revision }, admin)).status, 409);
+    assert.equal((await call('reset', { revision: result.data.revision }, admin)).status, 200);
+    assert.equal((await call('status')).data.application.status, 'new');
+    fixture.telegramOk = false;
+    result = await call('submit', { form });
+    assert.equal(result.data.application.status, 'pending');
+    assert.equal(result.data.application.notificationStatus, 'failed', 'Telegram ok:false is not success');
+    result = await call('decide', { decision: 'rejected', revision: result.data.revision }, admin);
+    assert.equal(result.data.application.status, 'rejected', 'Decision persists despite Telegram failure');
+    fixture.telegramOk = true;
+    result = await call('retry', { revision: result.data.revision }, admin);
+    assert.equal(result.data.application.notificationStatus, 'sent');
+    assert.equal((await call('payment', { payment: { cardType: 'ticket' } })).status, 403);
+    await call('reset', { revision: result.data.revision }, admin);
+    const attempts = await Promise.all([call('submit', { form }), call('submit', { form })]);
+    assert.equal(attempts.filter(x => x.status === 200).length, 1);
+    assert.equal(attempts.filter(x => x.status === 409).length, 1);
+    console.log('Admission tests passed: isolated pilot, signed auth, private storage, validation, duplicates, conflicts, approval, rejection, delivery retry, rules and paid access');
+})().catch(error => { console.error(error); process.exitCode = 1; });

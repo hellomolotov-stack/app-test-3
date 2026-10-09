@@ -1,4 +1,5 @@
 // js/ui/home.js
+import { mountAdmissionEntry } from './admission.js';
 import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti, scrollToElement } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, inviteApi } from '../api.js';
@@ -816,4 +817,5 @@ export function renderHome() {
         renderGuestHome();
     }
     mountAdminEntry();
+    mountAdmissionEntry();
 }

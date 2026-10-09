@@ -1,5 +1,7 @@
 // js/ui/card-sheet.js – шторка «карта интеллигента»: карта крутится в 3D, что внутри, окупаемость,
 // партнёры, клуб в цифрах и выбор карты. Открывается кнопкой «узнать» на главной.
+import { requireAdmission } from './admission.js';
+import { isAdmissionPilot } from '../admission.js';
 import { state } from '../state.js';
 import { haptic, openLink, tg } from '../utils.js';
 import { log, initPayment, getCardOffer, paymentErrorText } from '../api.js';
@@ -75,7 +77,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     const permanent = state.popupConfig?.permanentCardPrice || PERMANENT_PRICE;
     // TODO: подарок пока стоит 5 500 на сервере (Apps Script) – поднять до 7 500 там и тут вместе
     const giftPrice = season;
-    const isReturning = Object.keys(state._userRegs || {}).some(d => state._userRegs[d] === true && new Date(d) < new Date(new Date().toDateString()));
+    const isReturning = !isAdmissionPilot() && Object.keys(state._userRegs || {}).some(d => state._userRegs[d] === true && new Date(d) < new Date(new Date().toDateString()));
 
     const overlay = document.createElement('div');
     overlay.className = 'cs-overlay';
@@ -174,6 +176,10 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     buyBtn.addEventListener('click', async () => {
         if (buyBtn.dataset.busy) return;
         buyBtn.dataset.busy = '1';
+        if (!await requireAdmission({ hikeDate, hikeTitle })) {
+            delete buyBtn.dataset.busy;
+            return;
+        }
         bought = true;
         act('card_buy');
         haptic();

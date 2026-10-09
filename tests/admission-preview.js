@@ -1,0 +1,20 @@
+import { state } from '../js/state.js';
+import { initAdmission, applyAdmissionVisitorMode, loadAdmission } from '../js/admission.js';
+import { renderHome } from '../js/ui/home.js';
+import { openAdmission } from '../js/ui/admission.js';
+import { openAdmin } from '../js/ui/admin.js';
+import { showGuestBookingPopup } from '../js/ui/calendar.js';
+import { openCardSheet } from '../js/ui/card-sheet.js';
+
+state.user = window.Telegram.WebApp.initDataUnsafe.user;
+state.userCard = { status: 'active', hikes: 14, cardUrl: 'actual-test-card' };
+applyAdmissionVisitorMode();
+state.hikesWithTitle = state.hikesList = [{ date: '2026-10-18', title: 'Ай-Йори', location: 'Виноградное', time: '10:00', tags: ['средняя сложность'], distance: 9 }];
+state.hikesData = Object.fromEntries(state.hikesList.map(hike => [hike.date, hike]));
+document.getElementById('initial-loader')?.remove();
+document.documentElement.classList.add('app-ready');
+window.toggleShareButton = () => {};
+renderHome();
+initAdmission();
+window.previewAdmission = { openAdmission, openAdmin, showGuestBookingPopup, openCardSheet, loadAdmission, state };
+if (new URLSearchParams(location.search).get('startapp') === 'admission') openAdmission();

@@ -1,4 +1,5 @@
 // js/api.js
+import { isAdmissionPilot, admissionRequest } from './admission.js';
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
 
 // Счётчик явных логов: общий логгер кликов (ui/click-log.js) не дублирует уже залогированное нажатие.
@@ -155,6 +156,7 @@ export function paymentErrorText(err, fallback) {
 }
 
 export async function initPayment({ userId, firstName, lastName, username, hikeDate, hikeTitle, cardType }) {
+    if (isAdmissionPilot()) return admissionRequest('payment', { payment: { hikeDate, hikeTitle, cardType } });
     if (!/^\d+$/.test(String(userId || ''))) {
         log('оплата без пользователя Telegram – заблокирована', true, null, { card_type: cardType });
         const e = new Error(NO_USER_TEXT); e.code = 'NO_USER'; throw e;
