@@ -3759,7 +3759,7 @@ body::before {
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: rgba(7, 15, 20, 0.18);
+    background: linear-gradient(to bottom, rgba(7, 15, 20, 0.05) 0%, rgba(7, 15, 20, 0.25) 55%, rgba(7, 15, 20, 0.5) 100%);
     z-index: 99 !important;
     pointer-events: all !important;
 }
@@ -3985,8 +3985,9 @@ body::before {
 .infinite-scroll-wrapper {
     animation: scrollUp 40s linear infinite;
     will-change: transform;
-    filter: blur(4px);
-    opacity: 0.75;
+    /* профили – только фон: плывут вверх и не читаются, читается кнопка «создать профиль» */
+    filter: blur(9px) saturate(.9);
+    opacity: 0.85;
 }
 .infinite-scroll-container .profiles-two-columns {
     min-height: var(--profiles-preview-height);
@@ -4001,9 +4002,7 @@ body::before {
 .infinite-scroll-container .profile-avatar-wrap {
     filter: brightness(0.75) saturate(0.8);
 }
-@media (prefers-reduced-motion: reduce) {
-    .infinite-scroll-wrapper { animation: none; }
-}
+/* «Уменьшение движения» на iPhone не останавливает фон: он медленный и размытый, без мелькания */
 @keyframes scrollUp {
     0% { transform: translateY(0); }
     100% { transform: translateY(-50%); }
