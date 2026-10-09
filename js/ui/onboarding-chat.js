@@ -363,11 +363,16 @@ let unsubscribeReplies = null;
 
 function closeChat() {
     if (!overlay) return;
+    const closingOverlay = overlay;
+    closingOverlay.dataset.closing = '1';
     if (unsubscribeReplies) { unsubscribeReplies(); unsubscribeReplies = null; }
     const sheet = overlay.querySelector('.bottom-sheet');
     overlay.classList.remove('visible');
     if (sheet) sheet.style.transform = 'translateY(100%)';
-    setTimeout(() => { overlay?.remove(); overlay = null; }, 400);
+    setTimeout(() => {
+        closingOverlay.remove();
+        if (overlay === closingOverlay) { overlay = null; busy = false; }
+    }, 400);
 }
 
 function goToCalendar() {
@@ -570,16 +575,19 @@ async function onOption(opt, fromNodeId) {
 
 // показывает сообщения бота по очереди с индикатором «печатает»
 async function streamMessages(msgs) {
+    const currentOverlay = overlay;
     busy = true;
     for (const m of msgs) {
+        if (overlay !== currentOverlay || currentOverlay?.dataset.closing) break;
         const text = typeof m === 'function' ? m() : m;
         const typing = showTyping();
         await delay(Math.min(900, 400 + text.length * 4));
         typing.remove();
+        if (overlay !== currentOverlay || currentOverlay?.dataset.closing) break;
         addBotBubble(text);
         await delay(180);
     }
-    busy = false;
+    if (overlay === currentOverlay) busy = false;
 }
 
 async function showSupportHistory(history) {
@@ -598,22 +606,28 @@ async function showSupportHistory(history) {
 
 async function onSupportSend(text) {
     if (!text || busy) return;
+    const currentOverlay = overlay;
+    busy = true;
     addUserBubble(text);
     optionsEl.innerHTML = '';
     try {
         if (!state.user?.id) throw new Error('нет пользователя');
         await sendSupportMessage(state.user, text);
     } catch (e) {
+        if (overlay !== currentOverlay || currentOverlay?.dataset.closing) return;
         console.error(e);
         log('бот: сообщение в поддержку не ушло', state.userCard.status !== 'active', state.user);
         await streamMessages(['не получилось отправить 😔\n\nнапиши нам напрямую – ответим в телеграме']);
+        if (overlay !== currentOverlay || currentOverlay?.dataset.closing) return;
         buildOptions({ options: [
             { label: 'написать @hellointelligent', href: SUPPORT, logName: 'поддержка после ошибки' },
             { label: 'закрыть', action: 'close' },
         ] }, 'support_failed');
         return;
     }
+    if (overlay !== currentOverlay || currentOverlay?.dataset.closing) return;
     await streamMessages([lumenActive ? 'передал 🤍\n\nкак только ответят – подсвечу здесь' : 'передал 🤍 как только ответят – покажу здесь']);
+    if (overlay !== currentOverlay || currentOverlay?.dataset.closing) return;
     buildOptions({ options: [
         { label: 'ещё вопрос', next: 'support' },
         { label: 'закрыть', action: 'close' },
@@ -630,10 +644,11 @@ async function renderNode(nodeId) {
 // ──────────────────────────────────────────────
 // открытие шторки
 // ──────────────────────────────────────────────
-export async function openOnboardingChat(autoNext = null, lumenContext = null, lumenMode = false) {
+export async function openOnboardingChat(autoNext = null, lumenContext = null, lumenMode = false, { initialSupportMessage = '' } = {}) {
     // если ссылка зависла, но узла в DOM нет — сбрасываем, чтобы можно было открыть
     if (overlay && document.body.contains(overlay)) return;
     overlay = null;
+    busy = false;
     lumenActive = lumenMode;
     if (lumenContext) window.lumenChatContext = lumenContext;
     log('открыл чат с ботом', state.userCard.status !== 'active', state.user, lumenContext ? {
@@ -643,9 +658,10 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
     } : {});
 
     injectChatStyles();
-    const goingReady = prefetchGoing();
+    const goingReady = initialSupportMessage ? Promise.resolve() : prefetchGoing();
     overlay = document.createElement('div');
     overlay.className = 'bottom-sheet-overlay bot-chat-overlay';
+    if (document.querySelector('.cs-overlay')) overlay.classList.add('bot-chat-over-card');
     if (lumenContext) overlay.dataset.lumenScreen = lumenContext.screen || '';
     overlay.innerHTML = `
         <div class="bottom-sheet bot-chat-sheet">
@@ -690,6 +706,12 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
             markSupportMessageRead(state.user.id, key);
             addBotBubble(msg.text);
         });
+    }
+
+    // A support request should be sent immediately, not replaced by welcome/history screens.
+    if (initialSupportMessage) {
+        await onSupportSend(initialSupportMessage);
+        return;
     }
 
     // если есть непрочитанные ответы — показываем историю переписки, а не приветствие

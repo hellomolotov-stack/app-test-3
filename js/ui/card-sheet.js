@@ -131,7 +131,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                         <span>все привилегии до конца 2026</span>
                     </button>
                 </div>
-                <button type="button" class="cs-support" id="csSupport">оплачивал билет и не успел сходить? напиши нам – зачтём его в карту</button>
+                <button type="button" class="cs-support" id="csSupport">оплачивал билет и не успел сходить? напиши нам – зачтём его в стоимость карты</button>
                 `}
             </div>
             <div class="cs-bar">
@@ -247,9 +247,25 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         const i = (state.hikesWithTitle || []).findIndex(h => h.date === hikeDate);
         if (i !== -1) setTimeout(() => showBottomSheet(i), 320);
     });
-    overlay.querySelector('#csSupport')?.addEventListener('click', () => {
+    overlay.querySelector('#csSupport')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        if (button.dataset.busy) return;
+        button.dataset.busy = '1';
+        button.disabled = true;
         haptic();
-        openLink('https://t.me/hellointelligent', 'карта: зачесть билет', true);
+        log('карта: зачесть билет', true, state.user, { source: 'шторка карты' });
+        try {
+            const { openOnboardingChat } = await import('./onboarding-chat.js');
+            await openOnboardingChat(null, null, false, {
+                initialSupportMessage: 'Привет, хочу учесть стоимость билета при оформлении карты'
+            });
+        } catch (err) {
+            console.error('ticket credit chat error:', err);
+            alert('Не удалось открыть чат. Попробуй ещё раз');
+        } finally {
+            delete button.dataset.busy;
+            button.disabled = false;
+        }
     });
 
     tg?.HapticFeedback?.impactOccurred?.('light');
