@@ -5,6 +5,7 @@ import { openAdmission } from '../js/ui/admission.js';
 import { openAdmin } from '../js/ui/admin.js';
 import { showGuestBookingPopup } from '../js/ui/calendar.js';
 import { openCardSheet } from '../js/ui/card-sheet.js';
+import { initCollapsibleBlocks } from '../js/ui/collapsible.js';
 
 state.user = window.Telegram.WebApp.initDataUnsafe.user;
 state.userCard = { status: 'active', hikes: 14, cardUrl: 'actual-test-card' };
@@ -14,6 +15,7 @@ state.hikesData = Object.fromEntries(state.hikesList.map(hike => [hike.date, hik
 document.getElementById('initial-loader')?.remove();
 document.documentElement.classList.add('app-ready');
 window.toggleShareButton = () => {};
+initCollapsibleBlocks();
 renderHome();
 initAdmission();
 window.previewAdmission = { openAdmission, openAdmin, showGuestBookingPopup, openCardSheet, loadAdmission, state };

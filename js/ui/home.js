@@ -1,5 +1,6 @@
 // js/ui/home.js
 import { mountAdmissionEntry } from './admission.js';
+import { isAdmissionPilot } from '../admission.js';
 import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti, scrollToElement } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, inviteApi } from '../api.js';
@@ -470,7 +471,7 @@ function renderGuestHome() {
                 <button type="button" class="btn btn-yellow sc-btn" id="cardBadgeBtn">узнать</button>
             </div>
         </div>
-        ${!isLumenPilotUser(state.user) ? `
+        ${!isLumenPilotUser(state.user) && !isAdmissionPilot() ? `
         <div class="card-container" id="chatBlock">
             <h2 class="section-title">💬 интеллигентный помощник</h2>
             <div class="guest-chat">

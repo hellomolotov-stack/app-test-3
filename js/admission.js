@@ -1,7 +1,8 @@
 import { state } from './state.js';
 
 export const RULES_VERSION = 'pilot-2026-10-09';
-export const admission = { application: null, error: '', loading: false };
+export const admission = { application: null, error: '', loading: false, serverOffset: 0 };
+export const REVIEW_DURATION = 24 * 60 * 60 * 1000;
 let loading = null;
 let generation = 0;
 
@@ -16,6 +17,7 @@ export function applyAdmissionVisitorMode() {
 }
 
 export async function admissionRequest(action, values = {}) {
+    const startedAt = Date.now();
     const response = await fetch('/api/admission', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...values, action, initData: window.Telegram?.WebApp?.initData || '' }),
@@ -24,7 +26,22 @@ export async function admissionRequest(action, values = {}) {
     let data;
     try { data = await response.json(); } catch { throw new Error('не удалось загрузить ответ клуба'); }
     if (!response.ok) throw new Error(data.error || 'не удалось связаться с клубом');
+    if (Number.isFinite(data.serverNow)) admission.serverOffset = data.serverNow - (startedAt + Date.now()) / 2;
     return data;
+}
+
+export function reviewWindow(createdAt, now = Date.now() + admission.serverOffset) {
+    const start = Number(createdAt);
+    if (!Number.isFinite(start) || start <= 0) return null;
+    const elapsed = Math.max(0, Math.min(REVIEW_DURATION, now - start));
+    const seconds = Math.ceil((REVIEW_DURATION - elapsed) / 1000);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor(seconds % 3600 / 60);
+    return {
+        elapsed, remaining: REVIEW_DURATION - elapsed, ratio: elapsed / REVIEW_DURATION,
+        expired: now >= start + REVIEW_DURATION,
+        countdown: [hours, minutes, seconds % 60].map(value => String(value).padStart(2, '0')).join(':'),
+    };
 }
 
 export function setAdmission(data) {

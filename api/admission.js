@@ -95,7 +95,7 @@ module.exports = async (req, res) => {
         const token = await getAccessToken();
         const { record, revision } = await read(token);
         if (!adminAction && record && record.userId !== String(user.id)) throw failure(403, 'заявка привязана к другому Telegram ID, обратись к администратору');
-        if (body.action === 'status' || body.action === 'list') return res.status(200).json({ application: publicRecord(record), revision });
+        if (body.action === 'status' || body.action === 'list') return res.status(200).json({ application: publicRecord(record), revision, serverNow: Date.now() });
         if (body.action === 'payment') {
             if (record?.status !== 'approved' || record.rulesVersion !== RULES_VERSION) throw failure(403, 'сначала дождись одобрения и ознакомься с правилами');
             const payment = body.payment || {};
@@ -112,7 +112,7 @@ module.exports = async (req, res) => {
             return res.status(200).json(result);
         }
         if (body.action === 'submit') {
-            if (record) return res.status(200).json({ application: publicRecord(record), revision });
+            if (record) return res.status(200).json({ application: publicRecord(record), revision, serverNow: Date.now() });
             const form = validateForm(body.form);
             const context = { hikeDate: /^\d{4}-\d{2}-\d{2}$/.test(body.context?.hikeDate || '') ? body.context.hikeDate : '',
                 hikeTitle: String(body.context?.hikeTitle || '').slice(0, 200) };
@@ -127,7 +127,7 @@ module.exports = async (req, res) => {
             if (record?.notification?.status === 'sending' && Date.now() - record.notification.startedAt < 60000) throw failure(409, 'уведомление отправляется, подожди немного');
             if (body.action === 'reset') {
                 await write(token, revision, null);
-                return res.status(200).json({ application: { status: 'new' } });
+                return res.status(200).json({ application: { status: 'new' }, serverNow: Date.now() });
             }
             if (!record) throw failure(404, 'заявки пока нет');
             if (body.action === 'decide') {
@@ -141,7 +141,7 @@ module.exports = async (req, res) => {
             try { await deliver(token); } catch { /* The durable state can be retried from admin. */ }
         }
         const latest = await read(token);
-        return res.status(200).json({ application: publicRecord(latest.record), revision: latest.revision });
+        return res.status(200).json({ application: publicRecord(latest.record), revision: latest.revision, serverNow: Date.now() });
     } catch (error) {
         return res.status(error.status || 502).json({ error: error.status ? error.message : 'не удалось связаться с клубом, попробуй ещё раз' });
     }

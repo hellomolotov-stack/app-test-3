@@ -6,7 +6,7 @@
 import { haptic } from '../utils.js';
 
 const STORAGE_KEY = 'collapsedBlocks';
-const EXCLUDED_IDS = new Set(['cardBlock', 'chatBlock', 'calendarContainer']);
+const EXCLUDED_IDS = new Set(['cardBlock', 'chatBlock', 'calendarContainer', 'admissionEntry']);
 const FLEX_HEADERS = '.metrics-header, .intelligentsia-routes-header, .weather-header';
 
 let observer = null;

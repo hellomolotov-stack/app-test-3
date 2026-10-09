@@ -10,11 +10,17 @@ Other visitors retain their existing experience. Invitation links are out of sco
 
 ## Experience
 
-- A glass entry below the calendar invites the visitor to fill out the form.
+- A glass entry immediately after the club card replaces the assistant block for
+  the pilot and explains why the visitor should fill out the form.
 - Browsing remains available; no automatic entry popup.
 - Attempting to register or buy a card opens the introduction/status screen.
 - Form: first name, city, a short answer about joining, respectful-conduct checkbox.
-- Submission: pending state, one-day review message, receipt in the bot.
+- Submission: pending state visible on the home block, an animated time bar and
+  countdown for exactly 24 hours from the stored submission timestamp, receipt
+  in the bot. Server time corrects the phone clock. Reloading does not restart
+  the countdown. Expiry keeps the application pending and displays a delay.
+- Form and status screens share the home photo background and existing glass
+  surface tokens, with one main heading and the applicant's submitted answers.
 - Admin: application details, accept/reject with confirmation, delivery status,
   explicit retry, and reset of the pilot application only.
 - Approval: bot deep link `https://t.me/yaltahiking_bot?startapp=admission` opens

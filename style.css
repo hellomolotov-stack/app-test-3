@@ -223,7 +223,7 @@ body::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('https://i.postimg.cc/CLMkCQCK/lrms-2-2.png');
+    background-image: var(--app-background-image);
     background-size: cover;
     background-position: center;
     z-index: -1;
@@ -4766,6 +4766,7 @@ body.adm-open { overflow: hidden; }
    Блоки – тёмная дымка сверху вниз, строки внутри – плотные тёмные плашки,
    второстепенный текст ярче. Так интерфейс читается и на светлом небе фона. */
 :root {
+    --app-background-image: url('https://i.postimg.cc/CLMkCQCK/lrms-2-2.png');
     --glass-bg: linear-gradient(180deg, rgba(10, 24, 40, 0.62) 0%, rgba(10, 24, 40, 0.38) 100%);
     --glass-border: rgba(255, 255, 255, 0.18);
     --surface-inner: rgba(0, 0, 0, 0.28);
@@ -5570,24 +5571,23 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .so-card-text span { display: block; color: rgba(255, 255, 255, .75); white-space: normal; }
 .so-card-arrow { flex: none; font-size: 22px; line-height: 1; color: var(--yellow); }
 /* Admission pilot: inherits the club's glass, spacing and accent tokens. */
-.admission-entry { padding: 22px !important; text-align: left; }
-.admission-entry-copy h3 { margin: 0 0 8px; font-size: 20px; font-weight: 750; line-height: 1.25; }
-.admission-entry-copy p { margin: 0; font-size: 14px; line-height: 1.55; color: rgba(255,255,255,.75); }
-.admission-entry-button { margin-top: 20px; width: 100%; min-height: 48px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 1px solid var(--glass-border); border-radius: 14px; background: rgba(255,255,255,.1); color: #fff; font: inherit; font-size: 15px; cursor: pointer; text-align: left; }
-.admission-entry-button span { font-size: 22px; line-height: 1; }
-.admission-overlay { position: fixed; inset: 0; z-index: 15000; display: flex; justify-content: center; background: rgba(0,0,0,.38); padding-top: var(--admission-top, 0px); box-sizing: border-box; }
-.admission-screen { width: 100%; max-width: 600px; min-width: 0; display: flex; flex-direction: column; background: rgba(18,26,36,.78); backdrop-filter: blur(36px) saturate(150%); -webkit-backdrop-filter: blur(36px) saturate(150%); border-inline: 1px solid rgba(255,255,255,.13); color: #fff; }
+.admission-entry { text-align: left; }
+.admission-entry-copy { padding: 0 16px; }
+.admission-entry-copy > p { margin: 0 0 12px; font-size: 14px; line-height: 1.6; }
+.admission-entry-copy > .admission-fine { font-size: 12px; }
+.admission-entry-button { margin-top: 20px; margin-bottom: 0; min-height: 48px; white-space: normal; line-height: 1.4; }
+.admission-overlay { position: fixed; inset: 0; z-index: 15000; display: flex; justify-content: center; background: #0A0B09 var(--app-background-image) center / cover no-repeat; padding-top: var(--admission-top, 0px); box-sizing: border-box; }
+.admission-screen { width: 100%; height: 100%; max-width: 600px; min-width: 0; display: flex; flex-direction: column; color: #fff; }
 .admission-screen * { box-sizing: border-box; letter-spacing: 0; }
-.admission-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; border-bottom: 1px solid rgba(255,255,255,.1); }
-.admission-head > span { font-size: 13px; color: rgba(255,255,255,.6); }
-.admission-close { width: 44px; height: 44px; border: 1px solid rgba(255,255,255,.16); border-radius: 50%; background: rgba(255,255,255,.07); color: white; font: inherit; font-size: 26px; cursor: pointer; }
-.admission-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 32px 24px max(32px, env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
-.admission-kicker { font-size: 12px; color: rgba(255,255,255,.55); margin-bottom: 12px; }
-.admission-screen h2 { margin: 0 0 12px; font-size: 28px; line-height: 1.2; font-weight: 750; overflow-wrap: anywhere; outline: none; }
-.admission-lead { margin: 0 0 28px; font-size: 16px; line-height: 1.55; color: rgba(255,255,255,.78); }
+.admission-head { flex: none; display: flex; align-items: center; justify-content: flex-end; padding: 12px 16px 8px; }
+.admission-close { width: 44px; height: 44px; border: 1px solid var(--glass-border); border-radius: 50%; background: var(--glass-bg); backdrop-filter: var(--glass-blur-sm); -webkit-backdrop-filter: var(--glass-blur-sm); box-shadow: var(--glass-highlight), var(--glass-shadow); color: white; font: inherit; font-size: 26px; cursor: pointer; }
+.admission-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 4px 16px max(32px, env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
+.admission-card { padding: 22px 16px; }
+.admission-screen h2 { margin: 0 0 12px; font-size: 20px; line-height: 1.35; font-weight: 700; overflow-wrap: anywhere; outline: none; }
+.admission-lead { margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: var(--text-muted); }
 .admission-field { display: block; margin: 0 0 20px; font-size: 14px; line-height: 1.4; }
 .admission-field > span { display: block; margin: 0 0 9px; }
-.admission-field input, .admission-field textarea { display: block; width: 100%; max-width: 100%; border: 1px solid rgba(255,255,255,.22); border-radius: 14px; background: rgba(255,255,255,.07); padding: 14px 15px; color: #fff; font: inherit; font-size: 16px; line-height: 1.5; resize: vertical; min-height: 52px; }
+.admission-field input, .admission-field textarea { display: block; width: 100%; max-width: 100%; border: 1px solid rgba(255,255,255,.18); border-radius: 16px; background: var(--surface-inner); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); padding: 14px 15px; color: #fff; font: inherit; font-size: 16px; line-height: 1.5; resize: vertical; min-height: 52px; }
 .admission-field textarea { min-height: 132px; }
 .admission-field input::placeholder, .admission-field textarea::placeholder { color: rgba(255,255,255,.45); }
 .admission-screen :is(input, textarea, button):focus-visible, .admission-entry-button:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
@@ -5597,20 +5597,32 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .admission-fine { font-size: 12px; line-height: 1.6; color: rgba(255,255,255,.57); margin: 14px 0; }
 .admission-centered { text-align: center; }
 .admission-bot-link { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
-.admission-primary { display: block; width: 100%; min-height: 52px; margin-top: 24px; border: none; border-radius: 14px; padding: 14px 18px; background: var(--yellow); color: #151710; font: inherit; font-size: 16px; line-height: 1.45; font-weight: 700; white-space: normal; cursor: pointer; }
+.admission-primary { width: 100%; min-height: 52px; margin: 24px 0 0; padding: 14px 18px; font: inherit; font-size: 16px; line-height: 1.45; font-weight: 600; white-space: normal; }
 .admission-screen button:disabled { opacity: .5; cursor: wait; }
-.admission-body-text { font-size: 16px; line-height: 1.6; margin: 20px 0; }
+.admission-body-text { font-size: 14px; line-height: 1.6; margin: 20px 0; }
 .admission-text-button { display: block; border: 0; background: none; color: rgba(255,255,255,.65); font: inherit; font-size: 14px; padding: 14px 0; margin: 8px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
 .admission-screen .admission-text-button { margin-inline: auto; }
 .admission-error { color: #ffb8aa; font-size: 14px; line-height: 1.5; margin: 14px 0; }
 .admission-error:empty { display: none; }
-.admission-status-line { display: flex; gap: 9px; align-items: center; font-size: 14px; color: var(--yellow); padding: 18px 0; border-block: 1px solid rgba(255,255,255,.13); }
-.admission-status-dot { flex: none; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.admission-rules { margin: 26px 0; border-top: 1px solid rgba(255,255,255,.14); }
-.admission-rules > div { display: flex; align-items: flex-start; gap: 16px; padding: 20px 0; border-bottom: 1px solid rgba(255,255,255,.14); }
-.admission-rules > div > span { flex: none; font-size: 12px; color: rgba(255,255,255,.4); padding-top: 4px; }
-.admission-rules p { font-size: 16px; line-height: 1.4; margin: 0; }
-.admission-rules small { display: block; font-size: 14px; line-height: 1.55; margin-top: 7px; color: rgba(255,255,255,.65); }
+.admission-status-tag { display: inline-flex; align-items: center; min-height: 28px; padding: 5px 10px; border-radius: 40px; border: 1px solid var(--glass-border); background: rgba(255,255,255,.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.2); color: #fff; font-size: 12px; line-height: 1.4; }
+.admission-status-tag.is-approved { color: var(--yellow); }
+.admission-review { margin: 20px 0 8px; }
+.admission-review-top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.admission-review-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+.admission-review-time time { font-variant-numeric: tabular-nums; color: #fff; }
+.admission-review-track { height: 6px; width: 100%; border-radius: 20px; overflow: hidden; background: rgba(0,0,0,.25); box-shadow: inset 0 1px 3px rgba(0,0,0,.16); }
+.admission-review-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: var(--yellow); transform-origin: left center; animation: admissionReviewTime 86400000ms linear both; }
+@keyframes admissionReviewTime { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.admission-review-labels { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-top: 9px; color: rgba(255,255,255,.65); font-size: 10px; line-height: 1.5; }
+.admission-review-overdue { margin: 12px 0 0; font-size: 12px; line-height: 1.5; }
+.admission-rules { display: flex; flex-direction: column; gap: 20px; margin: 24px 0; }
+.admission-rules > div { display: flex; align-items: flex-start; gap: 12px; }
+.admission-rules > div > span { flex: none; color: var(--yellow); padding-top: 2px; }
+.admission-rules p { font-size: 14px; line-height: 1.4; margin: 0; color: #fff; }
+.admission-rules small { display: block; font-size: 13px; line-height: 1.55; margin-top: 6px; color: var(--text-muted); }
+.admission-answers dl { display: flex; flex-direction: column; gap: 20px; }
+.admission-answers dt { font-size: 12px; line-height: 1.5; color: rgba(255,255,255,.65); margin-bottom: 6px; }
+.admission-answers dd { font-size: 15px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
 .admission-loading { padding: 24px 0; color: rgba(255,255,255,.6); }
 .admission-swipe-wrapper { width: 100%; min-width: 0; }
 .admission-swipe-wrapper .swipe-track { max-width: 100%; }
@@ -5624,4 +5636,3 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .admission-admin-actions > button { flex: 1; min-width: 110px; margin: 0; }
 .admission-admin-confirm { padding: 16px 0; border-block: 1px solid rgba(255,255,255,.16); margin-top: 16px; }
 .admission-admin-confirm p { font-size: 14px; line-height: 1.5; }
-@media (max-width: 350px) { .admission-scroll { padding: 24px 20px 32px; } .admission-screen h2 { font-size: 26px; } }
