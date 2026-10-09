@@ -9,6 +9,7 @@ import { haptic, openLink, formatDateForDisplay, tg, scrollToElement } from '../
 import { log } from '../api.js';
 import { sendSupportMessage, subscribeToAdminReplies, markSupportMessageRead, loadSupportMessages, loadAllParticipants } from '../firebase.js';
 import { showBottomSheet, showGuestBookingPopup } from './calendar.js';
+import { isAdmissionPilot } from '../admission.js';
 import { renderHome } from './home.js';
 import { isPersonalMapPilotUser } from './personal-routes-map.js';
 
@@ -186,6 +187,21 @@ const TEXT_PACK = '<b>что взять на хайк</b>\n\n🎒 небольш
 const BOOK = { label: 'записаться на хайк 🏔', action: 'book' };
 const QUESTION = { label: 'у меня вопрос 💬', next: 'support' };
 
+// «как вступить в клуб»: вопросы и ответы про вход по приглашению или анкете (пока только для пилота)
+const JOIN = { label: '🔑 как вступить в клуб', next: 'join' };
+const joinOption = () => (isAdmissionPilot() ? [JOIN] : []);
+const JOIN_ANSWERS = {
+    j_why: ['зачем анкета, если можно купить билет?', 'потому что в горах ты несколько часов идёшь рядом с людьми, а вокруг тишина. хочется, чтобы это были свои, а не случайные'],
+    j_closed: ['это какой-то закрытый клуб?', 'нет. мы не смотрим на статус, работу и внешность. только на то, близко ли тебе то же, что и нам: уважать чужие границы, уметь и говорить, и молчать'],
+    j_fit: ['а если я не спортивный?', 'физподготовку не проверяем. идём в темпе группы и доходим все вместе'],
+    j_reject: ['а если не возьмут?', 'если ты дочитал до этого места и тебе откликается – половину анкеты ты уже прошёл'],
+    j_invite: ['а по приглашению?', 'если тебя позвал кто-то из клуба, анкета не нужна. он лучше нас знает, что ты свой'],
+};
+const joinQuestions = () => [
+    ...Object.entries(JOIN_ANSWERS).map(([id, [q]]) => ({ label: q, next: id })),
+    { label: 'заполнить анкету ✍🏻', action: 'admission' },
+];
+
 const AFTER_DOUBT = [
     { label: 'отпустило 😮‍💨', next: 'relieved' },
     { label: 'есть ещё сомнение', next: 'doubts' },
@@ -196,8 +212,9 @@ const FLOW = {
     // новичок: сразу карточка хайка и короткие входы, сомнения — на первом экране
     welcome: {
         msgs: [welcomeText, () => hikeCardHtml()],
-        options: [
+        options: () => [
             BOOK,
+            ...joinOption(),
             { label: 'первый раз – что меня ждёт?', next: 'first_time' },
             { label: 'честно – есть сомнения', next: 'doubts' },
             QUESTION,
@@ -205,8 +222,9 @@ const FLOW = {
     },
     welcome_back: {
         msgs: [welcomeBackText, () => hikeCardHtml()],
-        options: [
+        options: () => [
             BOOK,
+            ...joinOption(),
             { label: 'честно – есть сомнения', next: 'doubts' },
             { label: '🌟 карта интеллигента', next: 'card' },
             QUESTION,
@@ -305,6 +323,14 @@ const FLOW = {
         msgs: ['спасибо, что делишься – это важно 🤍\n\nнапиши прямо сюда, я сразу передам организаторам'],
         dynamic: 'support_input',
     },
+    join: {
+        msgs: ['<b>как вступить в клуб</b>\n\nв клуб входят двумя путями: по приглашению кого-то из клуба или через короткую анкету. спрашивай 👇'],
+        options: () => [...joinQuestions(), QUESTION],
+    },
+    ...Object.fromEntries(Object.entries(JOIN_ANSWERS).map(([id, [q, a]]) => [id, {
+        msgs: [`<b>${q}</b>\n\n${a}`],
+        options: () => [{ label: '← другие вопросы', next: 'join' }, { label: 'заполнить анкету ✍🏻', action: 'admission' }],
+    }])),
     // faq — динамический узел, options строятся в buildOptions
     faq: {
         msgs: ['<b>как всё устроено</b>\n\nвыбери тему 👇'],
@@ -562,6 +588,13 @@ async function onOption(opt, fromNodeId) {
                 { label: 'записаться на хайк 🏔', action: 'book' },
             ] }, 'faq');
         }
+        return;
+    }
+
+    if (opt.action === 'admission') {
+        log('бот: заполнить анкету', true, state.user);
+        closeChat();
+        setTimeout(() => import('./admission.js').then(m => m.openAdmission({ view: 'form' })), 450);
         return;
     }
 

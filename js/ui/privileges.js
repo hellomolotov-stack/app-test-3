@@ -1,4 +1,5 @@
 // js/ui/privileges.js
+import { isAdmissionPilot } from '../admission.js';
 import { haptic, openLink, mainDiv, subtitle, parseLinks, tg } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
@@ -35,8 +36,15 @@ export function renderNewcomerPage(isGuest = false) {
         faqHtml = '<div class="partner-item"><p>Нет данных</p></div>';
     }
 
+    // письмо от клуба – дополняет «как всё устроено»; пока только для пилотного входа по анкете
+    const letterHtml = isAdmissionPilot() ? `<div class="partner-item club-letter"><strong>лучше одному, чем с кем попало</strong>
+        <p>мы знаем много людей, которые гуляют одни. в наушниках по набережной, с книжкой в кафе, одни в горах. они не против людей – просто не хотят тратить день на шумную случайную компанию</p>
+        <p>мы собрали клуб для них. чтобы можно было пойти в горы и не бояться, с кем окажешься рядом. для этого мы сначала знакомимся – ты отмечаешь пару пунктов о себе, мы читаем и пишем в течение суток</p>
+        <p>нам неважно, кем ты работаешь и как выглядишь. важно, чтобы тебе было хорошо с нами, а нам с тобой. группа маленькая, до 10 человек – здесь каждый на виду и каждого слышно</p>
+        <p>если тебе это откликается, кажется, ты к нам</p></div>` : '';
     mainDiv().innerHTML = `
         <div class="card-container newcomer-page faq-page" style="margin-bottom: 0;">
+            ${letterHtml}
             ${faqHtml}
             <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px; margin-bottom: 0;">
                 <button id="talkToBotBtn" class="btn btn-yellow" style="margin:0 16px;">💬 поговорить с ботом</button>
