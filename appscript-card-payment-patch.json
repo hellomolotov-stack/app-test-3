@@ -1,0 +1,46 @@
+[
+  {
+    "from": "      const cardType = String(params.card_type || '').trim();\n      const login",
+    "to": "      const cardType = String(params.card_type || '').trim();\n      const product = clubPaymentProduct_(params);\n      const login"
+  },
+  {
+    "from": "      let sum        = cardType === 'ticket' ? '1000.00' : (cardType === 'permanent' ? '7500.00' : '5500.00');",
+    "to": "      let sum = product.amount.toFixed(2);"
+  },
+  {
+    "from": "      const desc     = cardType === 'ticket'\n        ? ('Билет на хайк' + (params.hike_date ? ' ' + params.hike_date : ''))\n        : (cardType === 'permanent' ? 'Бессрочная карта интеллигента' : (cardType === 'offer' ? 'Бессрочная карта интеллигента – спецпредложение' : (cardType === 'gift' ? 'Подарочная карта интеллигента' : 'Сезонная карта интеллигента 2026')));",
+    "to": "      const desc = product.description;"
+  },
+  {
+    "from": "        card_type:  cardType,\n        amount:",
+    "to": "        card_type:  cardType,\n        gift_card_type: product.giftCardType,\n        amount:"
+  },
+  {
+    "from": "status: 'ok', url: robokassaUrl, amount: parseFloat(sum), card_type: cardType, inv_id: invId",
+    "to": "status: 'ok', url: robokassaUrl, amount: parseFloat(sum), card_type: cardType, gift_card_type: product.giftCardType, inv_id: invId"
+  },
+  {
+    "from": "    created_at: Math.floor(Date.now() / 1000) });\n  fbPut_('pending_payments/' + invId + '/gift_code', code);",
+    "to": "    gift_card_type: pending.gift_card_type || 'permanent', amount: pending.amount,\n    created_at: Math.floor(Date.now() / 1000) });\n  fbPut_('pending_payments/' + invId + '/gift_code', code);"
+  },
+  {
+    "from": "'\\nссылка-подарок: ' + giftLink_(code)",
+    "to": "'\\nтип: ' + (pending.gift_card_type === 'season' ? 'сезонная (текущий и следующий сезон)' : 'бессрочная') + '\\nсумма: ' + pending.amount + ' ₽\\nссылка-подарок: ' + giftLink_(code)"
+  },
+  {
+    "from": "ready: true, link: giftLink_(p.gift_code), claimed:",
+    "to": "ready: true, gift_card_type: g.gift_card_type || 'permanent', link: giftLink_(p.gift_code), claimed:"
+  },
+  {
+    "from": "status: 'ok', from_name: g.from_name || '', claimed:",
+    "to": "status: 'ok', gift_card_type: g.gift_card_type || 'permanent', from_name: g.from_name || '', claimed:"
+  },
+  {
+    "from": "'gift_card от ' + (g.from_name || g.from_id)",
+    "to": "(g.gift_card_type === 'season' ? 'gift_season_card' : 'gift_permanent_card') + ' от ' + (g.from_name || g.from_id)"
+  },
+  {
+    "from": "(g.from_name || g.from_id) + '\\n\\nвыпусти карту получателю'",
+    "to": "(g.from_name || g.from_id) + '\\nтип: ' + (g.gift_card_type === 'season' ? 'сезонная (текущий и следующий сезон)' : 'бессрочная') + '\\n\\nвыпусти карту получателю'"
+  }
+]

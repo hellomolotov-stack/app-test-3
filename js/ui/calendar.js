@@ -3289,7 +3289,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
 
                 <div class="booking-card-option" style="margin-top: 12px;">
                     <div class="booking-card-name">сезонная – ${config.seasonCardPrice} ₽</div>
-                    <div class="booking-card-desc">попробовать клуб на сезон – все привилегии до конца 2026, потом продление</div>
+                    <div class="booking-card-desc">действует начиная с текущего сезона плюс следующий</div>
                     <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">взять на сезон</button>
                 </div>
 

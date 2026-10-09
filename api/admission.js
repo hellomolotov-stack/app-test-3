@@ -100,12 +100,14 @@ module.exports = async (req, res) => {
             if (record?.status !== 'approved' || record.rulesVersion !== RULES_VERSION) throw failure(403, 'сначала дождись одобрения и ознакомься с правилами');
             const payment = body.payment || {};
             if (!['ticket', 'season', 'permanent', 'offer', 'gift'].includes(payment.cardType)) throw failure(400, 'неверный тип оплаты');
+            if (payment.cardType === 'gift' && !['season', 'permanent'].includes(payment.giftCardType)) throw failure(400, 'неверный тип подарочной карты');
             const endpoint = process.env.REGISTRATION_API_URL;
             if (!endpoint?.startsWith('https://script.google.com/')) throw failure(503, 'оплата пока не настроена');
             const response = await fetch(endpoint, { method: 'POST', signal: AbortSignal.timeout(15000), body: new URLSearchParams({
                 action: 'initPayment', user_id: String(user.id), first_name: user.first_name || '', last_name: user.last_name || '',
                 username: user.username || '', hike_date: String(payment.hikeDate || '').slice(0, 10),
                 hike_title: String(payment.hikeTitle || '').slice(0, 200), card_type: payment.cardType,
+                ...(payment.cardType === 'gift' ? { gift_card_type: payment.giftCardType } : {}),
             }) });
             const result = await response.json();
             if (!response.ok || result.status !== 'ok') throw failure(502, 'не удалось создать оплату, попробуй ещё раз');

@@ -155,8 +155,32 @@ export function paymentErrorText(err, fallback) {
     return fallback;
 }
 
-export async function initPayment({ userId, firstName, lastName, username, hikeDate, hikeTitle, cardType }) {
-    if (isAdmissionPilot()) return admissionRequest('payment', { payment: { hikeDate, hikeTitle, cardType } });
+export function validatePayment(data, { cardType, giftCardType, expectedAmount }) {
+    const invalid = () => { throw new Error('Данные оплаты не совпадают с выбранной картой. Обнови приложение или напиши организатору.'); };
+    if (data.card_type !== cardType || (cardType === 'gift' && data.gift_card_type !== giftCardType)) invalid();
+    let url, receipt;
+    try {
+        url = new URL(data.url);
+        receipt = JSON.parse(decodeURIComponent(url.searchParams.get('Receipt') || ''));
+    } catch { invalid(); }
+    const sum = Number(url.searchParams.get('OutSum'));
+    if (url.origin !== 'https://auth.robokassa.ru' || !Number.isFinite(sum) || sum <= 0 || Number(data.amount) !== sum) invalid();
+    if (expectedAmount != null && sum !== Number(expectedAmount)) invalid();
+    if (!Array.isArray(receipt.items) || receipt.items.length !== 1) invalid();
+    const item = receipt.items[0];
+    if (item.quantity !== 1 || item.sum !== sum || !item.name || !item.tax) invalid();
+    const permanent = cardType === 'permanent' || cardType === 'offer' || (cardType === 'gift' && giftCardType === 'permanent');
+    const title = permanent ? 'бессрочная' : cardType === 'ticket' ? 'билет' : 'сезонная';
+    if (!item.name.toLowerCase().includes(title) || !url.searchParams.get('SignatureValue')) invalid();
+    return data;
+}
+
+export async function initPayment({ userId, firstName, lastName, username, hikeDate, hikeTitle, cardType, giftCardType, expectedAmount }) {
+    expectedAmount ??= cardType === 'ticket' ? 1000 : cardType === 'permanent' ? 7500 : cardType === 'season' ? 5500 : cardType === 'gift' ? (giftCardType === 'permanent' ? 7500 : 5500) : undefined;
+    if (isAdmissionPilot()) {
+        const data = await admissionRequest('payment', { payment: { hikeDate, hikeTitle, cardType, giftCardType } });
+        return validatePayment(data, { cardType, giftCardType, expectedAmount });
+    }
     if (!/^\d+$/.test(String(userId || ''))) {
         log('оплата без пользователя Telegram – заблокирована', true, null, { card_type: cardType });
         const e = new Error(NO_USER_TEXT); e.code = 'NO_USER'; throw e;
@@ -171,6 +195,7 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
         hike_title: hikeTitle || '',
         card_type: cardType
     });
+    if (cardType === 'gift') params.set('gift_card_type', giftCardType || '');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);
     try {
@@ -180,7 +205,7 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
         let data;
         try { data = JSON.parse(text); } catch { throw new Error('Сервер вернул неверный ответ'); }
         if (data.status !== 'ok') throw new Error(data.message || 'initPayment failed');
-        return data;
+        return validatePayment(data, { cardType, giftCardType, expectedAmount });
     } catch (err) {
         clearTimeout(timer);
         throw err;
