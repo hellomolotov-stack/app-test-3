@@ -5638,7 +5638,7 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .admission-review-time { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 .admission-review-time time { font-variant-numeric: tabular-nums; color: #fff; }
 .admission-review-track { height: 6px; width: 100%; border-radius: 20px; overflow: hidden; background: rgba(0,0,0,.25); box-shadow: inset 0 1px 3px rgba(0,0,0,.16); }
-.admission-review-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: var(--yellow); transform-origin: left center; animation: admissionReviewTime 86400000ms linear both; }
+.admission-review-fill { display: block; width: 100%; height: 100%; border-radius: inherit; background: var(--yellow); transform-origin: left center; animation: admissionReviewTime 10800000ms linear both; }
 @keyframes admissionReviewTime { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .admission-review-labels { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 12px; margin-top: 9px; color: rgba(255,255,255,.65); font-size: 10px; line-height: 1.5; }
 .admission-review-overdue { margin: 12px 0 0; font-size: 12px; line-height: 1.5; }

@@ -11,8 +11,8 @@ function reviewMarkup(application) {
     if (!timing) return '<p class="admission-fine">читаем анкету – напишем тебе в боте</p>';
     return `<div class="admission-review" data-review-created="${Number(application.createdAt)}">
         <div class="admission-review-top"><span class="admission-status-tag">читаем анкету</span><span class="admission-review-time"><span data-review-prefix>${timing.expired ? 'срок прошёл' : 'ещё'}</span> <time data-review-countdown ${timing.expired ? 'hidden' : ''}>${timing.countdown}</time></span></div>
-        <div class="admission-review-track" role="progressbar" aria-label="сколько прошло из суток на ответ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(timing.ratio * 100)}"><span class="admission-review-fill" style="animation-delay:-${timing.elapsed}ms"></span></div>
-        <div class="admission-review-labels"><span>анкета отправлена</span><span>ответ в течение суток</span></div>
+        <div class="admission-review-track" role="progressbar" aria-label="сколько прошло из 3 часов на ответ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(timing.ratio * 100)}"><span class="admission-review-fill" style="animation-delay:-${timing.elapsed}ms"></span></div>
+        <div class="admission-review-labels"><span>анкета отправлена</span><span>ответ в течение 3 часов</span></div>
         <p class="admission-review-overdue" ${timing.expired ? '' : 'hidden'}>ответ ещё готовится – напишем в боте</p>
     </div>`;
 }
@@ -27,7 +27,7 @@ function updateReviewClocks(resume = false) {
         element.querySelector('.admission-review-overdue').hidden = !timing.expired;
         const track = element.querySelector('[role="progressbar"]');
         track.setAttribute('aria-valuenow', String(Math.round(timing.ratio * 100)));
-        track.setAttribute('aria-valuetext', timing.expired ? 'сутки прошли, ожидаем ответ' : `осталось ${timing.countdown}`);
+        track.setAttribute('aria-valuetext', timing.expired ? '3 часа прошли, ожидаем ответ' : `осталось ${timing.countdown}`);
         if (resume) {
             const fill = element.querySelector('.admission-review-fill');
             const replacement = fill.cloneNode();
@@ -65,7 +65,7 @@ export function mountAdmissionEntry() {
     const status = application?.status || 'new';
     const copy = {
         new: ['давай познакомимся', '', 'заполнить анкету'],
-        pending: ['анкета у нас', 'спасибо! мы прочитаем её сами и напишем тебе в течение суток', 'посмотреть анкету'],
+        pending: ['анкета у нас', 'спасибо! мы прочитаем её сами и напишем тебе в течение 3 часов', 'посмотреть анкету'],
         approved: ['добро пожаловать в клуб', 'мы прочитали анкету – теперь можно записаться на хайк или оформить карту', 'продолжить'],
         rejected: ['ответ по анкете', 'сейчас не получится позвать тебя в клуб – подробности внутри', 'посмотреть ответ'],
     }[status];
@@ -78,7 +78,7 @@ export function mountAdmissionEntry() {
             </div>
             <div class="adm-steps" data-for="form">
                 <div><i>1</i><span>рассказываешь о себе</span></div>
-                <div><i>2</i><span>мы читаем и пишем тебе в течение суток</span></div>
+                <div><i>2</i><span>мы читаем и пишем тебе в течение 3 часов</span></div>
                 <div><i>3</i><span>записываешься на хайк или оформляешь карту</span></div>
             </div>
             <div class="adm-steps" data-for="invite" hidden>
@@ -194,7 +194,7 @@ function render() {
             </fieldset>
             <p class="admission-error" id="admissionError" role="alert"></p>
             <button class="btn btn-yellow admission-primary" type="submit">отправить</button>
-            <p class="admission-fine admission-centered">мы прочитаем анкету сами и напишем тебе в течение суток</p>
+            <p class="admission-fine admission-centered">мы прочитаем анкету сами и напишем тебе в течение 3 часов</p>
         </form>`;
     } else if (admission.error) {
         title = 'не получилось загрузить'; subtitle = admission.error;
@@ -204,7 +204,7 @@ function render() {
         title = 'секунду'; subtitle = 'загружаем твою заявку'; content = '<div class="admission-loading" role="status">загрузка…</div>';
     } else if (application.status === 'new') {
         title = 'как попасть в клуб'; subtitle = 'в клуб входят по приглашению или через короткую анкету';
-        content = `<p class="admission-body-text">расскажи о себе – мы прочитаем и напишем тебе в течение суток</p>${button('заполнить анкету')}<p class="admission-fine admission-centered">меньше 20 секунд</p>`;
+        content = `<p class="admission-body-text">расскажи о себе – мы прочитаем и напишем тебе в течение 3 часов</p>${button('заполнить анкету')}<p class="admission-fine admission-centered">меньше 20 секунд</p>`;
         action = () => { screen.view = 'form'; render(); };
     } else if (application.status === 'pending') {
         title = 'анкета у нас'; subtitle = 'спасибо! если отметил больше двух пунктов, ты уже примерно знаешь, с кем пойдёшь';

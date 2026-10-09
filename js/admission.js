@@ -2,7 +2,7 @@ import { state } from './state.js';
 
 export const RULES_VERSION = 'pilot-2026-10-09';
 export const admission = { application: null, error: '', loading: false, serverOffset: 0 };
-export const REVIEW_DURATION = 24 * 60 * 60 * 1000;
+export const REVIEW_DURATION = 3 * 60 * 60 * 1000; // отвечаем на анкету в течение 3 часов
 
 // анкета входа в клуб (см. «вход в клуб – философия»): никаких вопросов про работу, доход, фото и негатив
 export const YALTA_OPTIONS = [['local', 'местный'], ['moved', 'переехал и пока ищу своих'], ['season', 'приехал на сезон']];
