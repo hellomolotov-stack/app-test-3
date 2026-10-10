@@ -695,6 +695,48 @@ async function loadAppData() {
             if (raw && !hikesFromFirebase && !state.hikesWithTitle.length) applyHikes(hikesFromSnapshot(raw));
         });
 
+        // Статус карты и записи: применяем один раз – из /api/me (наш домен, обычно < 1 с)
+        // или из Firebase, смотря кто ответит первым. Firebase остаётся запасным путём.
+        let userStatusFrom = '';
+        const applyUserStatus = (userData, userRegs, from) => {
+            if (userStatusFrom) return;
+            userStatusFrom = from;
+            state.userCard = userData;
+            applyAdmissionVisitorMode();
+            // _userRegs нужен всем — по нему понятно, ходил ли человек уже на хайк (билет – только на первый).
+            // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
+            state._userRegs = userRegs || {};
+            const lumenHikesCount = Object.values(state._userRegs || {}).filter(value => value === true).length;
+            setLumenEligibility({
+                firstHikePending: lumenHikesCount === 0,
+                hikesCount: lumenHikesCount,
+                status: state.userCard.status,
+            });
+            if (state.userCard.status === 'active') {
+                applyOwnerBookings(); // #5
+                saveBookingStatusToLocal(); // кэш на следующий запуск, чтобы ранний рендер видел корректный статус
+                refreshBottomSheetIfOpen(); // обновить открытый шит если он уже был показан до загрузки _userRegs
+                // ранний рендер показал гостевую главную – перерисовываем для владельца карты сразу,
+                // не дожидаясь отзывов, саммари и прочего
+                if (firstRenderDone && !window._deepLinkPageChanged) renderHome();
+            } else {
+                state.hikeBookingStatus = loadBookingStatusFromLocal();
+            }
+            saveCachedState();
+            logLoadStage(`статус карты${from === 'server' ? ' (сервер)' : ''}`, state.userCard.status !== 'active');
+        };
+        const myId = state.user?.id;
+        const pMe = (window.__meBoot || (tg?.initData && myId ? fetch('/api/me', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: tg.initData })
+        }).then(r => (r.ok ? r.json() : null)) : null) || Promise.resolve(null))
+            .catch(() => null)
+            .then(me => (me && me.card && String(me.uid) === String(myId) ? me : null));
+        pMe.then(me => {
+            if (!me) return;
+            try { applyUserStatus(me.card, me.regs, 'server'); } catch (e) { console.error('me apply', e); }
+        });
+
         // кэш есть – показываем главную сразу, не дожидаясь Firebase SDK
         earlyRenderHome();
         await loadFirebaseSdk();
@@ -722,8 +764,13 @@ async function loadAppData() {
         // Все запросы стартуют сразу, включая записи человека (раньше записи шли отдельным кругом
         // после всех остальных). Применяем в две очереди: сначала то, от чего зависят кнопки и вид
         // главной (карта, записи, настройки попапов, ЧС), потом остальное – как и раньше.
+        // Firebase-путь как раньше; ответ /api/me его просто обгоняет (сломался сервер – ждём Firebase)
         const pUserData = loadUserData(state.user?.id);
         const pUserRegs = loadUserRegistrations(state.user?.id).catch(() => ({}));
+        const pStatus = Promise.race([
+            pMe.then(me => (me ? [me.card, me.regs] : new Promise(() => {}))),
+            Promise.all([pUserData, pUserRegs])
+        ]);
         const pRegsPopup = loadRegistrationsPopup();
         const pPopupConfig = loadPopupConfig();
         const pPopups = loadPopups().catch(() => null);
@@ -735,8 +782,8 @@ async function loadAppData() {
         ]);
 
         // ── очередь 1: карта, записи, настройки ──
-        const [userData, userRegs, regsPopup, popupConfig, popups, safety] = await Promise.all([
-            pUserData, pUserRegs, pRegsPopup, pPopupConfig, pPopups, pSafety
+        const [[userData, userRegs], regsPopup, popupConfig, popups, safety] = await Promise.all([
+            pStatus, pRegsPopup, pPopupConfig, pPopups, pSafety
         ]);
         if (safety) state.safety = safety;
         try { localStorage.setItem('safetyCache', JSON.stringify(state.safety)); } catch (e) {}
@@ -750,29 +797,7 @@ async function loadAppData() {
         state.popupConfig.seasonCardLink = SEASON_CARD_LINK;
         state.popupConfig.permanentCardLink = PERMANENT_CARD_LINK;
 
-        state.userCard = userData;
-        applyAdmissionVisitorMode();
-
-        // _userRegs (Firebase) нужен всем — по нему понятно, ходил ли человек уже на хайк (билет – только на первый).
-        // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
-        state._userRegs = userRegs || {};
-        const lumenHikesCount = Object.values(state._userRegs || {}).filter(value => value === true).length;
-        setLumenEligibility({
-            firstHikePending: lumenHikesCount === 0,
-            hikesCount: lumenHikesCount,
-            status: state.userCard.status,
-        });
-        if (state.userCard.status === 'active') {
-            applyOwnerBookings(); // #5
-            saveBookingStatusToLocal(); // кэш на следующий запуск, чтобы ранний рендер видел корректный статус
-            refreshBottomSheetIfOpen(); // обновить открытый шит если он уже был показан до загрузки _userRegs
-            // ранний рендер показал гостевую главную – перерисовываем для владельца карты сразу,
-            // не дожидаясь отзывов, саммари и прочего
-            if (firstRenderDone && !window._deepLinkPageChanged) renderHome();
-        } else {
-            state.hikeBookingStatus = loadBookingStatusFromLocal();
-        }
-        logLoadStage('статус карты', state.userCard.status !== 'active');
+        applyUserStatus(userData, userRegs, 'firebase'); // если уже применено из /api/me – ничего не делает
 
         // ── очередь 2: всё остальное ──
         const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,

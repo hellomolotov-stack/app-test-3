@@ -8,6 +8,13 @@
     <title>хайкинг интеллигенция</title>
     <!-- список хайков с нашего CDN – запрашиваем в первую же миллисекунду, главная не ждёт Firebase -->
     <script>window.__hikesBoot = fetch('/api/hikes').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });</script>
+    <!-- статус карты и записи – тоже с нашего домена и тоже сразу (подпись Telegram лежит в адресе страницы) -->
+    <script>window.__meBoot = (function () { try {
+        var d = new URLSearchParams(location.hash.slice(1)).get('tgWebAppData');
+        if (!d) return null;
+        return fetch('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData: d }) })
+            .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+    } catch (e) { return null; } })();</script>
     <!-- defer: скрипты качаются параллельно и не держат пустой экран; выполняются по порядку до main.js -->
     <script defer src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- Firebase SDK (~700 КБ с серверов Google) грузит main.js в фоне: главная не ждёт его -->
@@ -42,8 +49,8 @@
         html:not(.app-ready) body > :not(#initial-loader) { visibility: hidden !important; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=20261010pass1" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=20261010pass1"></noscript>
+    <link rel="preload" href="style.css?v=20261010me1" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261010me1"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -167,6 +174,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=20261010pass1"></script>
+    <script type="module" src="js/main.js?v=20261010me1"></script>
 </body>
 </html>
