@@ -1101,6 +1101,79 @@ function bcRecipients() {
     return { base, final, bySeg, manual, byPref, exBy, prefBlocks };
 }
 
+// ---------- черновики рассылки ----------
+// Храним в облаке Telegram (CloudStorage: привязано к аккаунту админа, видно с любого устройства),
+// если его нет – в памяти устройства. Текст – отдельным ключом: у облака лимит 4096 символов на значение.
+const DRAFT_FIELDS = ['segment', 'hikeDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText'];
+const cloud = {
+    ok: () => !!(tg?.CloudStorage && tg.isVersionAtLeast?.('6.9')),
+    get: keys => new Promise(res => {
+        if (!cloud.ok()) { const o = {}; keys.forEach(k => { try { o[k] = localStorage.getItem(k) || ''; } catch (e) { o[k] = ''; } }); return res(o); }
+        tg.CloudStorage.getItems(keys, (err, vals) => res(err ? {} : (vals || {})));
+    }),
+    set: (k, v) => new Promise(res => {
+        if (!cloud.ok()) { try { localStorage.setItem(k, v); } catch (e) {} return res(true); }
+        tg.CloudStorage.setItem(k, v, err => res(!err));
+    }),
+    del: keys => new Promise(res => {
+        if (!cloud.ok()) { keys.forEach(k => { try { localStorage.removeItem(k); } catch (e) {} }); return res(true); }
+        tg.CloudStorage.removeItems(keys, () => res(true));
+    }),
+};
+let drafts = null; // [{ id, title, savedAt }]
+async function loadDrafts() {
+    const { bc_drafts: raw } = await cloud.get(['bc_drafts']);
+    try { drafts = JSON.parse(raw || '[]'); } catch (e) { drafts = []; }
+    return drafts;
+}
+async function saveDraft() {
+    const id = bc.draftId || String(Date.now());
+    const data = {};
+    DRAFT_FIELDS.forEach(k => { data[k] = bc[k]; });
+    const title = (bc.text || '').replace(/\s+/g, ' ').trim().slice(0, 60) || 'без текста';
+    const okMeta = await cloud.set('bcd_' + id, JSON.stringify(data).slice(0, 4096));
+    const okText = await cloud.set('bct_' + id, (bc.text || '').slice(0, 4096));
+    if (!okMeta || !okText) return toast('не удалось сохранить черновик', true);
+    await loadDrafts();
+    drafts = [{ id, title, seg: SEG_LABEL[bc.segment] || bc.segment, savedAt: Date.now() }, ...drafts.filter(d => d.id !== id)].slice(0, 30);
+    await cloud.set('bc_drafts', JSON.stringify(drafts));
+    bc.draftId = id;
+    haptic();
+    toast('черновик сохранён ✓');
+    const box = root?.querySelector('#admDrafts');
+    if (box) renderDraftsBox(box);
+}
+async function openDraft(id) {
+    const vals = await cloud.get(['bcd_' + id, 'bct_' + id]);
+    let data = {};
+    try { data = JSON.parse(vals['bcd_' + id] || '{}'); } catch (e) {}
+    bc = { ...newBroadcast(), ...data, text: vals['bct_' + id] || '', draftId: id, tipApplied: data.segment };
+    audience = null;
+    render();
+    toast('черновик открыт');
+}
+async function deleteDraft(id) {
+    if (!(await confirmAsync('Удалить черновик?'))) return;
+    await cloud.del(['bcd_' + id, 'bct_' + id]);
+    await loadDrafts();
+    drafts = drafts.filter(d => d.id !== id);
+    await cloud.set('bc_drafts', JSON.stringify(drafts));
+    if (bc.draftId === id) bc.draftId = null;
+    const box = root?.querySelector('#admDrafts');
+    if (box) renderDraftsBox(box);
+}
+function renderDraftsBox(box) {
+    const list = drafts || [];
+    if (!list.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<button class="adm-people-toggle" id="admDraftsToggle">черновики (${list.length}) ${bc.showDrafts ? '▴' : '▾'}</button>
+        ${bc.showDrafts ? `<div class="adm-drafts">${list.map(d => `<div class="adm-draft${bc.draftId === d.id ? ' is-on' : ''}">
+            <button class="adm-draft-open" data-draft="${d.id}"><b>${esc(d.title)}</b><small>${esc(d.seg || '')} · ${new Date(d.savedAt).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></button>
+            <button class="adm-draft-del" data-draft-del="${d.id}" aria-label="удалить черновик">×</button></div>`).join('')}</div>` : ''}`;
+    box.querySelector('#admDraftsToggle').addEventListener('click', () => { haptic(); bc.showDrafts = !bc.showDrafts; renderDraftsBox(box); });
+    box.querySelectorAll('[data-draft]').forEach(b => b.addEventListener('click', () => { haptic(); openDraft(b.dataset.draft); }));
+    box.querySelectorAll('[data-draft-del]').forEach(b => b.addEventListener('click', () => { haptic(); deleteDraft(b.dataset.draftDel); }));
+}
+
 function renderBroadcast(body) {
     bc = { ...newBroadcast(), ...(bc || {}) };
     const today = todayStr();
@@ -1114,6 +1187,8 @@ function renderBroadcast(body) {
     const chip = (k, l, attr, on) => `<button class="adm-chip${on ? ' is-on' : ''}" ${attr}="${k}">${l} <span class="adm-chip-n" data-n="${k}"></span></button>`;
 
     body.innerHTML = `
+        <div id="admDrafts" class="adm-drafts-box"></div>
+        ${bc.draftId ? '<div class="adm-hint">открыт черновик – «сохранить черновик» обновит его</div>' : ''}
         <div class="adm-label">кому</div>
         ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
             <div class="adm-chips">${list.map(([k, l]) => chip(k, l, 'data-seg', bc.segment === k)).join('')}</div>`).join('')}
@@ -1155,7 +1230,7 @@ function renderBroadcast(body) {
         <div class="adm-label">так увидят</div>
         <div class="adm-preview" id="admPreview"></div>
 
-        <button class="adm-ghost adm-wide" id="admBcTest">отправить себе</button>
+        <div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
         <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`;
 
     const update = () => { renderPreview(); updateSendLabel(); };
@@ -1207,6 +1282,9 @@ function renderBroadcast(body) {
     body.querySelector('#admBcUrl')?.addEventListener('input', e => { bc.url = e.target.value; update(); });
     body.querySelector('#admBcBtnText')?.addEventListener('input', e => { bc.btnText = e.target.value; update(); });
     body.querySelector('#admBcTest').addEventListener('click', () => sendBroadcast(true));
+    body.querySelector('#admBcDraft').addEventListener('click', () => saveDraft());
+    const draftsBox = body.querySelector('#admDrafts');
+    if (drafts) renderDraftsBox(draftsBox); else loadDrafts().then(() => { if (draftsBox.isConnected) renderDraftsBox(draftsBox); });
     body.querySelector('#admBcSend').addEventListener('click', () => sendBroadcast(false));
     update();
     if (audience) updateAudienceViews(true); else refreshAudience();
@@ -1333,6 +1411,11 @@ async function sendBroadcast(test) {
         if (test) toast(res.sent ? 'пришло вам в бот ✓' : 'не дошло – откройте бота и нажмите /start', !res.sent);
         else {
             toast(`доставлено ${res.sent} из ${res.total}`);
+            // отправленный черновик больше не нужен
+            if (bc.draftId) {
+                const id = bc.draftId;
+                cloud.del(['bcd_' + id, 'bct_' + id]).then(loadDrafts).then(list => cloud.set('bc_drafts', JSON.stringify(list.filter(d => d.id !== id)))).then(loadDrafts).catch(() => {});
+            }
             audience = null;
             bc = { ...newBroadcast(), count: null };
             render();
