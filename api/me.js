@@ -17,6 +17,26 @@ async function read(path, token) {
     return r.json();
 }
 
+// Личные ссылки «место сверх лимита», которые человек уже открывал (passlinks/<код>/opens/<id>),
+// на ещё не прошедшие хайки: { 'YYYY-MM-DD': код }. Так пропуск работает на любом устройстве,
+// а не только там, где открыли ссылку. Сбой здесь не мешает главному ответу.
+async function passesFor(id, token) {
+    try {
+        const all = (await read('passlinks', token)) || {};
+        const today = new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10); // МСК
+        const out = {};
+        Object.entries(all).forEach(([code, p]) => {
+            if (p && p.opens && p.opens[id] && /^\d{4}-\d{2}-\d{2}$/.test(p.hike_date || '') && p.hike_date >= today) {
+                out[p.hike_date] = code;
+            }
+        });
+        return out;
+    } catch (e) {
+        console.error('me passes:', e.message);
+        return {};
+    }
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -31,15 +51,16 @@ module.exports = async (req, res) => {
     try {
         const id = String(user.id);
         const token = await getAccessToken();
-        const [member, regs] = await Promise.all([
+        const [member, regs, passes] = await Promise.all([
             read(`members/${id}`, token),
             read(`userRegistrations/${id}`, token),
+            passesFor(id, token),
         ]);
         // тот же вид, что отдаёт loadUserData() в js/firebase.js
         const card = member && member.user_id
             ? { status: 'active', hikes: member.hikes_count || 0, cardUrl: member.card_image_url || '' }
             : { status: 'inactive', hikes: 0, cardUrl: '' };
-        return res.status(200).json({ uid: id, card, regs: regs || {} });
+        return res.status(200).json({ uid: id, card, regs: regs || {}, passes });
     } catch (e) {
         console.error('me:', e.message);
         return res.status(502).json({ error: 'db unavailable' });

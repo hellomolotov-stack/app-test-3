@@ -9,6 +9,7 @@ import { pingAppUser } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
 import { initClickLog } from './ui/click-log.js';
 import { initSheetDrag } from './ui/sheet-drag.js';
+import { passCodeFor, savePass } from './pass-store.js';
 import { initCollapsibleBlocks } from './ui/collapsible.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
 import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracted, setManualNav, updateActiveNav, setActiveNav, resetNavActive, cleanupProfileOverlays } from './ui/common.js';
@@ -745,6 +746,15 @@ async function loadAppData() {
         pMe.then(me => {
             if (!me) return;
             try { applyUserStatus(me.card, me.regs, 'server'); } catch (e) { console.error('me apply', e); }
+            // пропуски по личным ссылкам, открытым хоть на другом устройстве (см. pass-store.js)
+            try {
+                const fresh = Object.entries(me.passes || {}).filter(([date, code]) => passCodeFor(date) !== code);
+                fresh.forEach(([date, code]) => savePass(date, code));
+                if (fresh.length) {
+                    if (firstRenderDone && !window._deepLinkPageChanged) renderHome();
+                    refreshBottomSheetIfOpen();
+                }
+            } catch (e) { console.error('me passes', e); }
         });
 
         // Общие данные главной с CDN (/api/boot, запрошен ещё в index.html) – быстрый старт для
