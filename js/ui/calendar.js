@@ -784,6 +784,15 @@ function feedPaintSeats(el, n) {
     el.querySelector('.ef-tk-cap').textContent = `${n} из ${SEATS_SHOWN}`;
     el.querySelector('.ef-tk-bar i').style.width = `${Math.min(100, Math.round(n / SEATS_SHOWN * 100))}%`;
     el.classList.add('is-ready');
+    // мест нет: «записаться» честно только для владельцев карты (им можно сверх мест),
+    // остальным кнопка просто открывает хайк – там плашка про карту
+    const go = el.closest('.ef-next')?.querySelector('.ef-tk-go:not(.is-in)');
+    if (go) {
+        const soldOutForGuest = left <= 0 && state.userCard?.status !== 'active';
+        go.textContent = soldOutForGuest ? 'подробнее' : 'записаться';
+        go.classList.toggle('btn-yellow', !soldOutForGuest);
+        go.classList.toggle('btn-outline', soldOutForGuest);
+    }
 }
 
 // список хайков приходит раньше базы: участников спрашиваем, только когда база подключилась
