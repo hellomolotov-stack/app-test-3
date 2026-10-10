@@ -917,7 +917,7 @@ async function sendCardOffer(chosen) {
 
 // ---------- рассылка ----------
 function newBroadcast() {
-    return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null, excl: [], off: {}, showExcl: false, showPeople: false, q: '', peopleLimit: 100 };
+    return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null, excl: [], off: {}, showExcl: false, showPeople: false, q: '', peopleLimit: 100, kind: 'regular' };
 }
 
 // ---------- приглашения +1 ----------
@@ -1064,6 +1064,9 @@ function renderPass(body) {
 }
 
 const SEG_LABEL = Object.fromEntries(SEGMENT_GROUPS.flatMap(([, list]) => list));
+// что человек выбрал в боте на вопрос «как часто писать» и тип рассылки
+const PREF_LABEL = { all: 'писать обо всём', important: 'раз в неделю, самое важное', hikes: 'только анонсы хайков', none: 'не писать' };
+const KINDS = [['regular', 'обычное'], ['important', 'важное'], ['hike', 'анонс хайка']];
 // что мы знаем о человеке – коротко, для строки в списке
 function personMeta(p, now) {
     const parts = [];
@@ -1079,13 +1082,23 @@ function bcRecipients() {
     const base = segs[bc.segment] || [];
     const exBy = {};
     bc.excl.forEach(k => (segs[k] || []).forEach(id => { if (!exBy[id]) exBy[id] = k; }));
-    const final = [], bySeg = [], manual = [];
+    // настройка человека «как часто писать» (бот спрашивает после первой рассылки) против типа сообщения
+    const people = audience?.people || {};
+    const prefBlocks = id => {
+        const p = people[id]?.mp;
+        if (p === 'none') return true;
+        if (p === 'hikes') return bc.kind !== 'hike';
+        if (p === 'important') return bc.kind !== 'important';
+        return false;
+    };
+    const final = [], bySeg = [], manual = [], byPref = [];
     base.forEach(id => {
         if (exBy[id]) bySeg.push(id);
+        else if (prefBlocks(id)) byPref.push(id);
         else if (bc.off[id]) manual.push(id);
         else final.push(id);
     });
-    return { base, final, bySeg, manual, exBy };
+    return { base, final, bySeg, manual, byPref, exBy, prefBlocks };
 }
 
 function renderBroadcast(body) {
@@ -1115,6 +1128,10 @@ function renderBroadcast(body) {
             const items = list.filter(([k]) => k !== bc.segment && k !== 'hike' && k !== 'all');
             return items.length ? `<div class="adm-seg-group">${group}</div><div class="adm-chips">${items.map(([k, l]) => chip(k, l, 'data-excl', bc.excl.includes(k))).join('')}</div>` : '';
         }).join('')}</div>` : ''}
+
+        <div class="adm-label">тип сообщения</div>
+        <div class="adm-chips">${KINDS.map(([k, l]) => `<button class="adm-chip${bc.kind === k ? ' is-on' : ''}" data-kind="${k}">${l}</button>`).join('')}</div>
+        <div class="adm-hint">кто попросил писать реже, получит только «важное» или «анонс хайка» – смотря что выбрал</div>
 
         <div class="adm-sum" id="admSum">считаю получателей…</div>
         <button class="adm-people-toggle" id="admPeopleToggle">${bc.showPeople ? 'скрыть список' : 'показать людей'} <span id="admPeopleN"></span></button>
@@ -1160,6 +1177,12 @@ function renderBroadcast(body) {
         render();
     }));
     body.querySelectorAll('[data-unexcl]').forEach(b => b.addEventListener('click', () => { haptic(); bc.excl = bc.excl.filter(x => x !== b.dataset.unexcl); render(); }));
+    body.querySelectorAll('[data-kind]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        bc.kind = b.dataset.kind;
+        body.querySelectorAll('[data-kind]').forEach(x => x.classList.toggle('is-on', x === b));
+        updateAudienceViews(true);
+    }));
     body.querySelector('#admExclToggle').addEventListener('click', () => { haptic(); bc.showExcl = !bc.showExcl; render(); });
     body.querySelector('#admPeopleToggle').addEventListener('click', () => { haptic(); bc.showPeople = !bc.showPeople; render(); });
     body.querySelector('#admPeopleQ')?.addEventListener('input', e => { bc.q = e.target.value; renderPeople(); });
@@ -1220,7 +1243,7 @@ function updateAudienceViews(withList) {
     const r = bcRecipients();
     bc.count = r.final.length;
     const sum = root.querySelector('#admSum');
-    if (sum) sum.innerHTML = `получат <b>${r.final.length}</b>${r.manual.length ? ` · вручную −${r.manual.length}` : ''}${r.bySeg.length ? ` · сегментами −${r.bySeg.length}` : ''}`;
+    if (sum) sum.innerHTML = `получат <b>${r.final.length}</b>${r.manual.length ? ` · вручную −${r.manual.length}` : ''}${r.bySeg.length ? ` · сегментами −${r.bySeg.length}` : ''}${r.byPref.length ? ` · по их настройкам −${r.byPref.length}` : ''}`;
     const pn = root.querySelector('#admPeopleN');
     if (pn) pn.textContent = `(${r.base.length})`;
     if (withList) renderPeople();
@@ -1242,10 +1265,12 @@ function renderPeople() {
     box.innerHTML = shown.length ? shown.map(id => {
         const p = people[id] || {};
         const exSeg = r.exBy[id];
-        return `<label class="adm-person${exSeg || bc.off[id] ? ' is-off' : ''}">
-            <input type="checkbox" data-pid="${id}" ${exSeg ? 'disabled' : ''} ${!exSeg && !bc.off[id] ? 'checked' : ''}>
+        const byPref = !exSeg && r.prefBlocks(id);
+        const locked = exSeg || byPref;
+        return `<label class="adm-person${locked || bc.off[id] ? ' is-off' : ''}">
+            <input type="checkbox" data-pid="${id}" ${locked ? 'disabled' : ''} ${!locked && !bc.off[id] ? 'checked' : ''}>
             <span class="adm-person-main"><b>${esc(p.n || 'без имени')}</b>${p.u ? ` <i>@${esc(p.u)}</i>` : ''}
-                <small>${exSeg ? `исключён: ${esc(SEG_LABEL[exSeg] || exSeg)}` : esc(personMeta(p, audience.now))}</small></span>
+                <small>${exSeg ? `исключён: ${esc(SEG_LABEL[exSeg] || exSeg)}` : byPref ? `попросил: ${esc(PREF_LABEL[p.mp] || p.mp)}` : esc(personMeta(p, audience.now))}</small></span>
         </label>`;
     }).join('') + (list.length > shown.length ? `<button class="adm-link adm-people-more" id="admPeopleMore">показать ещё ${Math.min(100, list.length - shown.length)}</button>` : '')
         : '<div class="adm-muted" style="padding:10px 4px">никого</div>';
@@ -1301,7 +1326,7 @@ async function sendBroadcast(test) {
         const res = await adminCall('adminBroadcast', test ? {
             segment: 'test', text: bc.text.trim(), button: JSON.stringify(btn)
         } : {
-            segment: 'custom', ids: JSON.stringify(r.final), segment_label: segLabel, hike_date: bc.hikeDate,
+            segment: 'custom', ids: JSON.stringify(r.final), segment_label: segLabel, hike_date: bc.hikeDate, kind: bc.kind,
             text: bc.text.trim(), button: JSON.stringify(btn)
         });
         haptic();
