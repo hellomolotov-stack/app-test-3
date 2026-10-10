@@ -2858,17 +2858,27 @@ function updateFloatingSheetButtons() {
         // дальше – обычный слайдер записи
     }
     if (soldOutForMe && !hasCard && !viaPass) {
+        // мест нет: сверху – прийти с картой (шторка карты), снизу – написать организатору лично
         const plate = document.createElement('div');
-        plate.className = 'availability-floating so-card-plate is-link';
+        plate.className = 'availability-floating so-card-plate so-full';
         plate.innerHTML = `
-            <img src="assets/card-front.jpg" alt="" class="so-card-img">
-            <div class="so-card-text"><b>места закончились</b><span>но владельцы карты могут прийти</span></div>
-            <div class="so-card-arrow">›</div>`;
-        plate.addEventListener('click', e => {
+            <button type="button" class="so-full-top">
+                <img src="assets/card-front.jpg" alt="" class="so-card-img">
+                <div class="so-card-text"><b>места закончились</b><span>но с картой интеллигента можно прийти</span></div>
+                <div class="so-card-arrow">›</div>
+            </button>
+            <div class="so-full-ask">очень хочешь пойти? <button type="button" class="so-full-write">напиши нам</button></div>`;
+        plate.querySelector('.so-full-top').addEventListener('click', e => {
             e.preventDefault();
             haptic();
             log('мест нет: плашка карты', true, state.user, { hike_date: hike.date });
             openCardSheet({ source: 'мест нет', hikeDate: hike.date, hikeTitle: hike.title, allowTicket: false });
+        });
+        plate.querySelector('.so-full-write').addEventListener('click', e => {
+            e.preventDefault();
+            haptic();
+            log('мест нет: написать нам', true, state.user, { hike_date: hike.date });
+            openLink('https://t.me/hellointelligent', 'мест нет: написать организатору', true);
         });
         container.appendChild(plate);
         container.style.pointerEvents = 'auto';

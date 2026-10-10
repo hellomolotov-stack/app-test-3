@@ -5715,3 +5715,9 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .adm-inner .adm-path { flex-direction: column; justify-content: center; gap: 6px; padding: 12px 6px; text-align: center; }
 .adm-inner .adm-path b { white-space: normal; overflow: visible; font-size: 14.5px; }
 .club-letter p { margin: 8px 0 0; }
+
+/* мест нет: плашка из двух частей – карта и «напиши нам» */
+.availability-floating.so-card-plate.so-full { flex-direction: column; align-items: stretch; gap: 0; }
+.so-full-top { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: none; font: inherit; color: #fff; text-align: left; cursor: pointer; }
+.so-full-ask { margin-top: 10px; padding-top: 9px; border-top: 1px dashed rgba(255, 255, 255, .22); font-size: 13px; color: rgba(255, 255, 255, .75); text-align: left; }
+.so-full-write { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--yellow); cursor: pointer; }
