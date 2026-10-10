@@ -134,6 +134,8 @@ function pickPhrase() {
 
 function hideBubble() {
     if (autoHideTimer) { clearTimeout(autoHideTimer); autoHideTimer = null; }
+    // облачко с реакцией ушло непрочитанным – оставляем тихую точку на кнопке
+    if (bubbleAction?.reaction && bubble?.classList.contains('visible')) wrap?.classList.add('has-unread');
     bubbleAction = null;
     bubble?.classList.remove('visible');
     wrap?.classList.remove('open');
@@ -142,6 +144,9 @@ function hideBubble() {
 function showBubble(text, action = null, reaction = '') {
     if (!bubble) return;
     bubble.querySelector('.bot-tab-bubble-text').textContent = text || pickPhrase();
+    // кнопка ответа: у реакций с действием – «показать», иначе – «ответить» (открывает чат)
+    bubble.querySelector('.bot-tab-reply').textContent = action ? 'показать' : 'ответить';
+    wrap.classList.remove('has-unread');
     bubbleAction = action ? { run: action, reaction } : (reaction ? { run: null, reaction } : null);
     bubble.classList.add('visible');
     wrap.classList.add('open');
@@ -159,26 +164,37 @@ export function mountBotTab() {
     if (document.querySelector('.bot-tab-wrap')) return;
     wrap = document.createElement('div');
     wrap.className = 'bot-tab-wrap';
+    // тихая стеклянная кнопка справа над нижним меню; облачко вырастает над ней
     wrap.innerHTML = `
+        <div class="bot-tab-bubble" role="status">
+            <div class="bot-tab-bubble-head"><span>помощник</span><button class="bot-tab-bubble-close" aria-label="закрыть">✕</button></div>
+            <div class="bot-tab-bubble-text"></div>
+            <div class="bot-tab-bubble-actions"><button class="bot-tab-reply">ответить</button><button class="bot-tab-later">не сейчас</button></div>
+        </div>
         <button class="bot-tab" aria-label="интеллигентный помощник">
-            <span class="bot-tab-emoji">💬</span>
-            <span class="bot-tab-chevron">›</span>
-        </button>
-        <div class="bot-tab-bubble">
-            <div class="bot-tab-bubble-avatar">💬</div>
-            <div class="bot-tab-bubble-body">
-                <div class="bot-tab-bubble-name">интеллигентный помощник</div>
-                <div class="bot-tab-bubble-text"></div>
-            </div>
-            <button class="bot-tab-bubble-close" aria-label="закрыть">✕</button>
-        </div>`;
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16A2.5 2.5 0 0 1 4 13.5v-8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="9" cy="9.6" r="1" fill="currentColor"/><circle cx="12" cy="9.6" r="1" fill="currentColor"/><circle cx="15" cy="9.6" r="1" fill="currentColor"/></svg>
+            <span class="bot-tab-dot"></span>
+        </button>`;
     document.body.appendChild(wrap);
     bubble = wrap.querySelector('.bot-tab-bubble');
-    wrap.querySelector('.bot-tab').addEventListener('click', () => { haptic(); toggleBubble(); });
+    wrap.querySelector('.bot-tab').addEventListener('click', () => {
+        haptic();
+        // была непрочитанная подсказка – кнопка сразу ведёт в чат
+        if (wrap.classList.contains('has-unread')) { wrap.classList.remove('has-unread'); log('язычок → чат (точка)', true, state.user); openOnboardingChat(); return; }
+        toggleBubble();
+    });
+    bubble.querySelector('.bot-tab-later').addEventListener('click', (e) => {
+        e.stopPropagation();
+        haptic();
+        if (bubbleAction?.reaction) log(`язычок: не сейчас ${bubbleAction.reaction}`, true, state.user);
+        bubbleAction = null;
+        hideBubble();
+    });
     bubble.addEventListener('click', (e) => {
-        if (e.target.closest('.bot-tab-bubble-close')) return;
+        if (e.target.closest('.bot-tab-bubble-close, .bot-tab-later')) return;
         haptic();
         const act = bubbleAction;
+        bubbleAction = null;
         hideBubble();
         if (act?.run) { log(`язычок: нажал реакцию ${act.reaction}`, true, state.user); act.run(); return; }
         log(act?.reaction ? `язычок: нажал реакцию ${act.reaction} → чат` : 'язычок → чат с ботом', true, state.user);
@@ -188,6 +204,7 @@ export function mountBotTab() {
         e.stopPropagation();
         haptic();
         if (bubbleAction?.reaction) log(`язычок: закрыл реакцию ${bubbleAction.reaction}`, true, state.user);
+        bubbleAction = null;
         hideBubble();
     });
     window.addEventListener('club:act', onAct);

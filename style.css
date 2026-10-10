@@ -5783,3 +5783,26 @@ body.adm-open { overflow: hidden; }
 .adm-stat-text { margin-top: 4px; font-size: 12.5px; line-height: 1.4; color: rgba(255, 255, 255, .6); }
 .adm-stat-nums { display: grid; gap: 3px; margin-top: 8px; font-size: 12.5px; color: rgba(255, 255, 255, .75); }
 .adm-stat-nums b { display: inline-block; min-width: 34px; margin-right: 6px; color: var(--yellow); font-size: 14px; }
+
+/* ==================== ПОМОЩНИК: ТИХАЯ КНОПКА СПРАВА НАД МЕНЮ ====================
+   Дополнение интерфейса, а не акцент: стекло как у блоков, белый значок, облачко в тёмном стекле над кнопкой. */
+.bot-tab-wrap { left: auto; right: max(14px, calc((100vw - 600px) / 2 + 14px)); top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); transform: none;
+    flex-direction: column; align-items: flex-end; gap: 8px; }
+.bot-tab { position: relative; width: 42px; height: 42px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .2);
+    background: rgba(255, 255, 255, .1); backdrop-filter: blur(18px) saturate(160%); -webkit-backdrop-filter: blur(18px) saturate(160%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 4px 14px rgba(0, 0, 0, .22); color: rgba(255, 255, 255, .85); }
+.bot-tab:active { transform: scale(.94); background: rgba(255, 255, 255, .18); }
+.bot-tab-dot { position: absolute; top: 7px; right: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); opacity: 0; transform: scale(.4); transition: opacity .25s, transform .25s; }
+.bot-tab-wrap.has-unread .bot-tab-dot { opacity: 1; transform: none; }
+.bot-tab-bubble { display: block; width: min(72vw, 250px); max-width: none; padding: 10px 12px 10px; border-radius: 16px 16px 6px 16px;
+    background: rgba(15, 22, 30, .86); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+    transform: translateY(8px) scale(.96); transform-origin: right bottom; transition: opacity .25s ease, transform .3s cubic-bezier(.2, .9, .3, 1.1); }
+.bot-tab-bubble.visible { transform: none; }
+.bot-tab-bubble::before { display: none; }
+.bot-tab-bubble-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px; font-size: 11px; color: rgba(255, 255, 255, .45); }
+.bot-tab-bubble .bot-tab-bubble-close { position: static; width: auto; height: auto; padding: 0 0 0 8px; border: 0; background: none; color: rgba(255, 255, 255, .4); font-size: 12px; cursor: pointer; }
+.bot-tab-bubble-text { font-size: 13.5px; line-height: 1.4; color: rgba(255, 255, 255, .9); }
+.bot-tab-bubble-actions { display: flex; gap: 6px; margin-top: 9px; }
+.bot-tab-bubble-actions button { padding: 5px 11px; border-radius: 12px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.bot-tab-reply { border: 1px solid rgba(217, 253, 25, .45); background: rgba(217, 253, 25, .08); color: var(--yellow); font-weight: 600; }
+.bot-tab-later { border: 1px solid rgba(255, 255, 255, .14); background: none; color: rgba(255, 255, 255, .6); }
