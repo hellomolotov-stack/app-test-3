@@ -1210,7 +1210,7 @@ async function loadStats(box) {
     bcStats = { loading: true };
     try {
         const res = await adminCall('adminBroadcastStats');
-        bcStats = { list: res.list || [], at: Date.now() };
+        bcStats = { list: (res.list || []).filter(b => b.at > 0 && b.sent >= 0 && b.label), at: Date.now() };
     } catch (e) { bcStats = { error: e.message }; }
     if (box.isConnected) renderStatsBox(box);
 }
