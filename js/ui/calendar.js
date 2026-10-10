@@ -1,5 +1,6 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { requireAdmission } from './admission.js';
+import { passCodeFor } from '../pass-store.js';
 import { isAdmissionPilot, admission } from '../admission.js';
 import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
@@ -788,7 +789,8 @@ function feedPaintSeats(el, n) {
     // остальным кнопка просто открывает хайк – там плашка про карту
     const go = el.closest('.ef-next')?.querySelector('.ef-tk-go:not(.is-in)');
     if (go) {
-        const soldOutForGuest = left <= 0 && state.userCard?.status !== 'active';
+        const date = el.dataset.seatsFor || '';
+        const soldOutForGuest = left <= 0 && state.userCard?.status !== 'active' && !passCodeFor(date);
         go.textContent = soldOutForGuest ? 'подробнее' : 'записаться';
         go.classList.toggle('btn-yellow', !soldOutForGuest);
         go.classList.toggle('btn-outline', soldOutForGuest);
@@ -2843,7 +2845,19 @@ function updateFloatingSheetButtons() {
     // Без карты вместо слайдера – плашка с картой, по нажатию открывается шторка карты.
     const soldOutForMe = !isPast && !isClosedRegistration && !isCompletedToday && available === 0 && !isBooked;
     const hasCard = state.userCard?.status === 'active';
-    if (soldOutForMe && !hasCard) {
+    // открыл личную ссылку «место сверх лимита» на этот хайк – запись открыта (билет или карта)
+    const viaPass = !hasCard && !!passCodeFor(hike.date);
+    if (soldOutForMe && !hasCard && viaPass) {
+        const note = document.createElement('div');
+        note.className = 'availability-floating so-card-plate';
+        note.innerHTML = `<div class="so-card-text" style="text-align:center"><b>🔑 место для тебя</b><span>запись открыта по личной ссылке</span></div>`;
+        const noteRow = document.createElement('div');
+        noteRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
+        noteRow.appendChild(note);
+        container.appendChild(noteRow);
+        // дальше – обычный слайдер записи
+    }
+    if (soldOutForMe && !hasCard && !viaPass) {
         const plate = document.createElement('div');
         plate.className = 'availability-floating so-card-plate is-link';
         plate.innerHTML = `

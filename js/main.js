@@ -385,6 +385,12 @@ function handleDeepLink(startParam) {
         setTimeout(() => import('./ui/gift.js').then(m => m.openGiftReceiveScreen(code)), 400);
         return;
     }
+    // ссылка «место сверх лимита» из админки: запись на хайк открыта даже без мест
+    if (startParam.startsWith('pass_')) {
+        const code = startParam.substring(5).replace(/[^a-z0-9]/g, '');
+        setTimeout(() => import('./ui/pass-link.js').then(m => m.openPassLink(code)), 400);
+        return;
+    }
     // приглашение +1 от владельца карты
     if (startParam.startsWith('inv_')) {
         const code = startParam.substring(4).replace(/[^a-z0-9]/g, '');

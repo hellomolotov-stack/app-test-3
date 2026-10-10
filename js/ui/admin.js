@@ -122,7 +122,7 @@ function allHikes() {
 // ---------- каркас ----------
 function render() {
     if (!root) return;
-    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['plus1', '🤝 +1'], ['broadcast', '📨 рассылка'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [['hikes', '🏔 хайки'], ['newcomers', '🎟 новички'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['broadcast', '📨 рассылка'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -141,6 +141,7 @@ function render() {
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);
     else if (view.tab === 'plus1') renderPlus1(body);
+    else if (view.tab === 'pass') renderPass(body);
     else if (view.tab === 'home') renderHomepage(body);
     else if (view.tab === 'admissions') renderAdmissionAdmin(body);
     else renderHikeList(body);
@@ -899,6 +900,86 @@ function renderPlus1(body) {
         const url = `https://t.me/share/url?url=${encodeURIComponent(r.link)}&text=${encodeURIComponent('твоя ссылка-приглашение +1 – отправь её другу, он запишется на хайк без билета')}`;
         if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
     });
+}
+
+// ---------- ссылки «место сверх лимита» ----------
+// Ссылка на хайк, по которой человек записывается даже без мест (билет или карта). Видно, кто открыл и кто купил.
+let ps = null; // { links, error, date, note, result }
+
+function psTime(ts) {
+    if (!ts) return '';
+    const d = new Date(ts * 1000);
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderPass(body) {
+    if (!ps) {
+        ps = { links: null, date: '', note: '', result: null };
+        adminCall('adminPassList')
+            .then(r => { ps.links = r.links || []; })
+            .catch(e => { ps.error = e.message; })
+            .finally(() => { if (root && view.tab === 'pass') render(); });
+    }
+    const today = todayStr();
+    const hikes = allHikes().filter(h => h.date >= today && h.title && !isYes(h.cancelled));
+    if (!ps.date && hikes[0]) ps.date = hikes[0].date;
+    const r = ps.result;
+    const person = p => `${esc(p.name || 'без имени')}${p.username ? ` <a href="https://t.me/${esc(p.username)}" target="_blank" class="adm-muted">@${esc(p.username)}</a>` : ''} <span class="adm-muted">· ${psTime(p.ts)}</span>`;
+    const typeName = t => t === 'ticket' ? 'билет' : t === 'offer' ? 'карта (спецпредложение)' : 'карта';
+    body.innerHTML = `
+        <div class="adm-muted" style="margin:4px 2px 14px">личная ссылка на хайк: человек откроет её и сможет записаться, даже если мест нет – купить билет или карту. здесь видно, кто открыл и кто купил</div>
+        <label class="adm-field"><span>хайк</span><select id="psHike">
+            ${hikes.map(h => `<option value="${h.date}"${h.date === ps.date ? ' selected' : ''}>${esc(dateLabel(h.date))} · ${esc(h.title)}</option>`).join('')}
+        </select></label>
+        <label class="adm-field"><span>для кого (пометка, необязательно)</span><input id="psNote" maxlength="80" value="${esc(ps.note)}" placeholder="например: Аня из чата"></label>
+        <button class="btn btn-yellow adm-primary" id="psCreate">создать ссылку</button>
+        ${r ? `
+            <div class="adm-p1-result">
+                <div style="font-weight:700;margin-bottom:6px">ссылка на «${esc(r.hike_title)}»</div>
+                <label class="adm-field" style="margin:0"><input id="psLink" readonly value="${esc(r.link)}"></label>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                    <button class="adm-ghost" id="psCopy" style="flex:1">скопировать</button>
+                    <button class="adm-ghost" id="psShare" style="flex:1">отправить в Telegram</button>
+                </div>
+            </div>` : ''}
+        <div class="adm-label" style="margin-top:22px">созданные ссылки</div>
+        ${ps.error ? `<div class="adm-muted">не получилось загрузить: ${esc(ps.error)}</div>`
+            : !ps.links ? '<div class="adm-muted">загружаю…</div>'
+            : !ps.links.length ? '<div class="adm-muted">пока ни одной</div>'
+            : ps.links.map(l => `
+                <div class="adm-p1-result" style="margin-top:10px">
+                    <div style="font-weight:700">${esc(dateLabel(l.hike_date))} · ${esc(l.hike_title || l.hike_date)}</div>
+                    <div class="adm-muted" style="margin:2px 0 8px">${l.note ? esc(l.note) + ' · ' : ''}создана ${psTime(l.created_at)}</div>
+                    <div style="font-size:13px;margin-bottom:4px"><b>купили (${l.buys.length})</b></div>
+                    ${l.buys.length ? l.buys.map(b => `<div style="font-size:13px;margin:2px 0">✅ ${person(b)} <span class="adm-muted">· ${typeName(b.type)}${b.amount ? `, ${b.amount} ₽` : ''}</span></div>`).join('') : '<div class="adm-muted" style="font-size:13px">пока никто</div>'}
+                    <div style="font-size:13px;margin:8px 0 4px"><b>открыли (${l.opens.length})</b></div>
+                    ${l.opens.length ? l.opens.map(o => `<div style="font-size:13px;margin:2px 0">👀 ${person(o)}</div>`).join('') : '<div class="adm-muted" style="font-size:13px">пока никто</div>'}
+                    <button class="adm-ghost" data-ps-copy="${esc(l.link)}" style="margin-top:10px;width:100%">скопировать ссылку</button>
+                </div>`).join('')}`;
+    body.querySelector('#psHike')?.addEventListener('change', e => { ps.date = e.target.value; ps.result = null; });
+    body.querySelector('#psNote')?.addEventListener('input', e => { ps.note = e.target.value; });
+    body.querySelector('#psCreate').addEventListener('click', async e => {
+        if (!ps.date) return toast('выбери хайк', true);
+        const btn = e.currentTarget;
+        btn.disabled = true; btn.textContent = 'создаю…';
+        try {
+            ps.result = await adminCall('adminPassCreate', { hike_date: ps.date, note: ps.note });
+            ps.note = '';
+            const list = await adminCall('adminPassList');
+            ps.links = list.links || [];
+        } catch (err) { toast(err.message, true); }
+        render();
+    });
+    const copy = async (text, input) => {
+        try { await navigator.clipboard.writeText(text); toast('скопировано'); }
+        catch (e) { if (input) { input.select(); document.execCommand('copy'); } toast('скопировано'); }
+    };
+    body.querySelector('#psCopy')?.addEventListener('click', () => copy(r.link, body.querySelector('#psLink')));
+    body.querySelector('#psShare')?.addEventListener('click', () => {
+        const url = `https://t.me/share/url?url=${encodeURIComponent(r.link)}&text=${encodeURIComponent('держи ссылку – по ней можно записаться на хайк, даже если мест уже нет 🤍')}`;
+        if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+    });
+    body.querySelectorAll('[data-ps-copy]').forEach(b => b.addEventListener('click', () => copy(b.dataset.psCopy)));
 }
 
 function renderBroadcast(body) {

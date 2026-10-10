@@ -1,6 +1,7 @@
 // js/api.js
 import { isAdmissionPilot, admissionRequest } from './admission.js';
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
+import { passCodeFor } from './pass-store.js';
 
 // Счётчик явных логов: общий логгер кликов (ui/click-log.js) не дублирует уже залогированное нажатие.
 export let logSeq = 0;
@@ -193,7 +194,9 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
         username: username || '',
         hike_date: hikeDate || '',
         hike_title: hikeTitle || '',
-        card_type: cardType
+        card_type: cardType,
+        // открыл ссылку «место сверх лимита» на этот хайк – в админке будет видно, что купил по ней
+        pass_code: passCodeFor(hikeDate)
     });
     if (cardType === 'gift') params.set('gift_card_type', giftCardType || '');
     const controller = new AbortController();
