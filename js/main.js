@@ -457,6 +457,16 @@ function handleDeepLink(startParam) {
             log('открыл спецпредложение карты', true, state.user);
             setTimeout(() => import('./ui/card-sheet.js').then(m => m.openCardSheet({ source: 'рассылка' })), 600);
             break;
+        case 'buy_card':
+            // прямая ссылка из постов: t.me/yaltahiking_bot?startapp=buy_card – сразу шторка покупки карты.
+            // у кого карта уже есть – показываем его карту на главной
+            if (state.userCard?.status === 'active') {
+                scrollToWhenReady(() => document.getElementById('cardBlock'));
+            } else {
+                log('открыл покупку карты по ссылке', true, state.user);
+                setTimeout(() => import('./ui/card-sheet.js').then(m => m.openCardSheet({ source: 'прямая ссылка' })), 600);
+            }
+            break;
         case 'calendar':
             scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;
