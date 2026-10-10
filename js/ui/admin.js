@@ -116,7 +116,7 @@ let view = { tab: 'hikes' };
 let draft = null;       // редактируемый хайк
 let bc = null;          // черновик рассылки
 let pastLimit = 8;
-let audience = null;     // { counts: {all, guests, members}, at }
+let audience = null;     // { segments: {ключ: [id]}, people: {id: {n,u,lo,od,p,f,m}}, now, at, hikeDate }
 let templates = null;    // route_templates с сервера: { route_id: {поля хайка} }
 let templatesLoading = null;
 let homepage = null;
@@ -917,7 +917,7 @@ async function sendCardOffer(chosen) {
 
 // ---------- рассылка ----------
 function newBroadcast() {
-    return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null };
+    return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null, excl: [], off: {}, showExcl: false, showPeople: false, q: '', peopleLimit: 100 };
 }
 
 // ---------- приглашения +1 ----------
@@ -1063,8 +1063,33 @@ function renderPass(body) {
     body.querySelectorAll('[data-ps-copy]').forEach(b => b.addEventListener('click', () => copy(b.dataset.psCopy)));
 }
 
+const SEG_LABEL = Object.fromEntries(SEGMENT_GROUPS.flatMap(([, list]) => list));
+// что мы знаем о человеке – коротко, для строки в списке
+function personMeta(p, now) {
+    const parts = [];
+    if (p.lo) { const d = Math.floor((now - p.lo) / 86400); parts.push(d <= 0 ? 'заходил сегодня' : `заходил ${d} дн. назад`); }
+    parts.push(p.p ? `хайков: ${p.p}` : 'хайков не было');
+    if (p.f) parts.push('записан');
+    if (p.m) parts.push('карта');
+    return parts.join(' · ');
+}
+// итоговый список: сегмент минус сегменты-исключения минус снятые галочки
+function bcRecipients() {
+    const segs = audience?.segments || {};
+    const base = segs[bc.segment] || [];
+    const exBy = {};
+    bc.excl.forEach(k => (segs[k] || []).forEach(id => { if (!exBy[id]) exBy[id] = k; }));
+    const final = [], bySeg = [], manual = [];
+    base.forEach(id => {
+        if (exBy[id]) bySeg.push(id);
+        else if (bc.off[id]) manual.push(id);
+        else final.push(id);
+    });
+    return { base, final, bySeg, manual, exBy };
+}
+
 function renderBroadcast(body) {
-    bc = bc || newBroadcast();
+    bc = { ...newBroadcast(), ...(bc || {}) };
     const today = todayStr();
     const titled = allHikes().filter(h => h.title && h.title.trim());
     const upcoming = titled.filter(h => h.date >= today);
@@ -1072,16 +1097,29 @@ function renderBroadcast(body) {
     const hikeOptions = sel => [...upcoming, ...recent].map(h => `<option value="${h.date}" ${sel === h.date ? 'selected' : ''}>${dateLabel(h.date)} – ${esc(h.title)}</option>`).join('');
     if (bc.segment === 'hike' && !bc.hikeDate) bc.hikeDate = (upcoming[0] || recent[0] || {}).date || '';
     if (bc.btnType === 'app' && bc.section === 'hike' && !bc.btnHike) bc.btnHike = (upcoming[0] || recent[0] || {}).date || '';
-    const c = audience && audience.counts;
-    const n = k => (c && c[k] != null ? c[k] : '');
     const tip = SEGMENT_TIPS[bc.segment];
+    const chip = (k, l, attr, on) => `<button class="adm-chip${on ? ' is-on' : ''}" ${attr}="${k}">${l} <span class="adm-chip-n" data-n="${k}"></span></button>`;
 
     body.innerHTML = `
         <div class="adm-label">кому</div>
         ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
-            <div class="adm-chips">${list.map(([k, l]) => `<button class="adm-chip${bc.segment === k ? ' is-on' : ''}" data-seg="${k}">${l}${k !== 'hike' ? ` <span class="adm-chip-n" data-n="${k}">${n(k)}</span>` : ''}</button>`).join('')}</div>`).join('')}
+            <div class="adm-chips">${list.map(([k, l]) => chip(k, l, 'data-seg', bc.segment === k)).join('')}</div>`).join('')}
         ${bc.segment === 'hike' ? `<label class="adm-field"><span>хайк</span><select id="admBcHike">${hikeOptions(bc.hikeDate)}</select></label>` : ''}
-        <div class="adm-count" id="admCount">${bc.count == null ? 'считаю получателей…' : `получат: <b>${bc.count}</b> чел.`}</div>
+
+        <div class="adm-label">кроме</div>
+        <div class="adm-excl">
+            ${bc.excl.map(k => `<button class="adm-pill" data-unexcl="${k}">${esc(SEG_LABEL[k] || k)} <b>×</b></button>`).join('')}
+            <button class="adm-link" id="admExclToggle">${bc.showExcl ? 'готово' : '+ исключить сегмент'}</button>
+        </div>
+        ${bc.showExcl ? `<div class="adm-excl-pick">${SEGMENT_GROUPS.map(([group, list]) => {
+            const items = list.filter(([k]) => k !== bc.segment && k !== 'hike' && k !== 'all');
+            return items.length ? `<div class="adm-seg-group">${group}</div><div class="adm-chips">${items.map(([k, l]) => chip(k, l, 'data-excl', bc.excl.includes(k))).join('')}</div>` : '';
+        }).join('')}</div>` : ''}
+
+        <div class="adm-sum" id="admSum">считаю получателей…</div>
+        <button class="adm-people-toggle" id="admPeopleToggle">${bc.showPeople ? 'скрыть список' : 'показать людей'} <span id="admPeopleN"></span></button>
+        ${bc.showPeople ? `<input class="adm-people-search" id="admPeopleQ" placeholder="поиск по имени или @username" value="${esc(bc.q)}">
+            <div class="adm-people" id="admPeople"></div>` : ''}
 
         ${tip ? `<div class="adm-tip"><div class="adm-tip-goal"><b>что лучше написать:</b> ${esc(tip.goal)}</div>
             <div class="adm-tip-text">${esc(fillTemplate(tip.text))}</div>
@@ -1106,14 +1144,34 @@ function renderBroadcast(body) {
     const update = () => { renderPreview(); updateSendLabel(); };
     body.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
         haptic();
+        const changedHike = b.dataset.seg === 'hike' && bc.segment !== 'hike';
         bc.segment = b.dataset.seg;
-        bc.count = bc.segment !== 'hike' && audience ? (audience.counts[bc.segment] ?? null) : null;
+        bc.off = {};
+        bc.excl = bc.excl.filter(k => k !== bc.segment);
         // пустое сообщение – сразу подставляем шаблон сегмента
         if (!bc.text.trim() && SEGMENT_TIPS[bc.segment]) applyTip(bc.segment);
         render();
+        if (changedHike) refreshAudience(true);
     }));
+    body.querySelectorAll('[data-excl]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        const k = b.dataset.excl;
+        bc.excl = bc.excl.includes(k) ? bc.excl.filter(x => x !== k) : [...bc.excl, k];
+        render();
+    }));
+    body.querySelectorAll('[data-unexcl]').forEach(b => b.addEventListener('click', () => { haptic(); bc.excl = bc.excl.filter(x => x !== b.dataset.unexcl); render(); }));
+    body.querySelector('#admExclToggle').addEventListener('click', () => { haptic(); bc.showExcl = !bc.showExcl; render(); });
+    body.querySelector('#admPeopleToggle').addEventListener('click', () => { haptic(); bc.showPeople = !bc.showPeople; render(); });
+    body.querySelector('#admPeopleQ')?.addEventListener('input', e => { bc.q = e.target.value; renderPeople(); });
+    body.querySelector('#admPeople')?.addEventListener('change', e => {
+        const id = e.target.dataset?.pid;
+        if (!id) return;
+        if (e.target.checked) delete bc.off[id]; else bc.off[id] = true;
+        e.target.closest('.adm-person')?.classList.toggle('is-off', !e.target.checked);
+        updateAudienceViews(false);
+    });
     body.querySelectorAll('[data-btn]').forEach(b => b.addEventListener('click', () => { haptic(); bc.btnType = b.dataset.btn; render(); }));
-    body.querySelector('#admBcHike')?.addEventListener('change', e => { bc.hikeDate = e.target.value; bc.count = null; render(); });
+    body.querySelector('#admBcHike')?.addEventListener('change', e => { bc.hikeDate = e.target.value; bc.off = {}; refreshAudience(true); });
     body.querySelector('#admBcSection')?.addEventListener('change', e => { bc.section = e.target.value; render(); });
     body.querySelector('#admBcBtnHike')?.addEventListener('change', e => { bc.btnHike = e.target.value; update(); });
     body.querySelector('#admBcText').addEventListener('input', e => { bc.text = e.target.value; update(); });
@@ -1128,15 +1186,70 @@ function renderBroadcast(body) {
     body.querySelector('#admBcTest').addEventListener('click', () => sendBroadcast(true));
     body.querySelector('#admBcSend').addEventListener('click', () => sendBroadcast(false));
     update();
-    if (bc.count == null) refreshCount();
+    if (audience) updateAudienceViews(true); else refreshAudience();
 }
 
-// Цифры по группам грузим одним запросом и держим минуту – переключение групп мгновенное.
-async function loadAudience(force = false) {
-    if (!force && audience && Date.now() - audience.at < 60000) return audience.counts;
-    const { counts } = await adminCall('adminAudience');
-    audience = { counts, at: Date.now() };
-    return counts;
+// Списки людей по сегментам грузим одним запросом и держим минуту. Для «участников хайка» – свой хайк.
+let audSeq = 0;
+async function refreshAudience(force = false) {
+    const seq = ++audSeq;
+    const hikeDate = bc.segment === 'hike' ? bc.hikeDate : '';
+    if (!force && audience && Date.now() - audience.at < 60000 && audience.hikeDate === hikeDate) return updateAudienceViews(true);
+    const sum = root?.querySelector('#admSum');
+    if (sum) sum.textContent = 'считаю получателей…';
+    try {
+        const res = await adminCall('adminSegmentMembers', { hike_date: hikeDate });
+        if (seq !== audSeq) return;
+        audience = { segments: res.segments || {}, people: res.people || {}, now: res.now || Math.floor(Date.now() / 1000), at: Date.now(), hikeDate };
+        updateAudienceViews(true);
+    } catch (err) {
+        if (seq !== audSeq) return;
+        const el = root?.querySelector('#admSum');
+        if (el) {
+            el.innerHTML = `<span class="adm-error-inline">не удалось посчитать: ${esc(err.message)}</span> <button class="adm-link" id="admRecount">ещё раз</button>`;
+            el.querySelector('#admRecount')?.addEventListener('click', () => refreshAudience(true));
+        }
+    }
+}
+
+// Обновляем цифры, итог и список на месте – без перерисовки формы (иначе поле теряет фокус и экран прыгает)
+function updateAudienceViews(withList) {
+    if (!root || !audience) return;
+    const segs = audience.segments;
+    root.querySelectorAll('[data-n]').forEach(el => { const l = segs[el.dataset.n]; el.textContent = l ? l.length : ''; });
+    const r = bcRecipients();
+    bc.count = r.final.length;
+    const sum = root.querySelector('#admSum');
+    if (sum) sum.innerHTML = `получат <b>${r.final.length}</b>${r.manual.length ? ` · вручную −${r.manual.length}` : ''}${r.bySeg.length ? ` · сегментами −${r.bySeg.length}` : ''}`;
+    const pn = root.querySelector('#admPeopleN');
+    if (pn) pn.textContent = `(${r.base.length})`;
+    if (withList) renderPeople();
+    updateSendLabel();
+}
+
+function renderPeople() {
+    const box = root?.querySelector('#admPeople');
+    if (!box || !audience) return;
+    const r = bcRecipients();
+    const q = (bc.q || '').trim().toLowerCase().replace(/^@/, '');
+    const people = audience.people;
+    const list = r.base.filter(id => {
+        if (!q) return true;
+        const p = people[id] || {};
+        return (p.n || '').toLowerCase().includes(q) || (p.u || '').toLowerCase().includes(q);
+    });
+    const shown = list.slice(0, bc.peopleLimit || 100);
+    box.innerHTML = shown.length ? shown.map(id => {
+        const p = people[id] || {};
+        const exSeg = r.exBy[id];
+        return `<label class="adm-person${exSeg || bc.off[id] ? ' is-off' : ''}">
+            <input type="checkbox" data-pid="${id}" ${exSeg ? 'disabled' : ''} ${!exSeg && !bc.off[id] ? 'checked' : ''}>
+            <span class="adm-person-main"><b>${esc(p.n || 'без имени')}</b>${p.u ? ` <i>@${esc(p.u)}</i>` : ''}
+                <small>${exSeg ? `исключён: ${esc(SEG_LABEL[exSeg] || exSeg)}` : esc(personMeta(p, audience.now))}</small></span>
+        </label>`;
+    }).join('') + (list.length > shown.length ? `<button class="adm-link adm-people-more" id="admPeopleMore">показать ещё ${Math.min(100, list.length - shown.length)}</button>` : '')
+        : '<div class="adm-muted" style="padding:10px 4px">никого</div>';
+    box.querySelector('#admPeopleMore')?.addEventListener('click', () => { bc.peopleLimit = (bc.peopleLimit || 100) + 100; renderPeople(); });
 }
 
 function buttonPayload() {
@@ -1165,57 +1278,31 @@ function updateSendLabel() {
     if (b) b.textContent = bc.count ? `отправить (${bc.count} чел.)` : 'отправить';
 }
 
-let countSeq = 0;
-async function refreshCount() {
-    const seq = ++countSeq;
-    const hadAudience = !!audience;
-    let failed = '';
-    try {
-        if (bc.segment === 'hike') {
-            const { count } = await adminCall('adminBroadcastCount', { segment: 'hike', hike_date: bc.hikeDate });
-            if (seq !== countSeq) return;
-            bc.count = count;
-        } else {
-            const counts = await loadAudience();
-            if (seq !== countSeq) return;
-            bc.count = counts[bc.segment] ?? 0;
-        }
-    } catch (err) {
-        if (seq !== countSeq) return;
-        bc.count = null;
-        failed = err.message;
-    }
-    // первая загрузка цифр – дописываем их в кнопки групп на месте, без перерисовки формы
-    // (раньше форма перерисовывалась целиком – поле теряло фокус и страница прыгала)
-    if (!hadAudience && audience && root) root.querySelectorAll('[data-n]').forEach(el => { el.textContent = audience.counts[el.dataset.n] ?? ''; });
-    const el = root?.querySelector('#admCount');
-    if (el) el.innerHTML = failed
-        ? `<span class="adm-error-inline">не удалось посчитать: ${esc(failed)}</span> <button class="adm-link" id="admRecount">ещё раз</button>`
-        : `получат: <b>${bc.count}</b> чел.`;
-    el?.querySelector('#admRecount')?.addEventListener('click', () => { el.textContent = 'считаю получателей…'; refreshCount(); });
-    updateSendLabel();
-}
-
 async function sendBroadcast(test) {
     if (!bc.text.trim()) return toast('напишите текст', true);
     const btn = buttonPayload();
     if (btn && btn.type === 'url' && !/^https:\/\//.test(btn.url)) return toast('ссылка должна начинаться с https://', true);
     if (btn && btn.type === 'app' && !btn.startapp) return toast('выберите, куда ведёт кнопка', true);
+    const r = audience ? bcRecipients() : null;
     if (!test) {
-        if (!bc.count) return toast('некому отправлять', true);
-        const ok = await confirmAsync(`Отправить сообщение: ${bc.count} чел.? Отменить будет нельзя.`);
+        if (!r) return toast('ещё считаю получателей', true);
+        if (!r.final.length) return toast('некому отправлять', true);
+        const extra = [r.manual.length ? `вручную исключено ${r.manual.length}` : '', r.bySeg.length ? `сегментами исключено ${r.bySeg.length}` : ''].filter(Boolean).join(', ');
+        const ok = await confirmAsync(`Отправить сообщение: ${r.final.length} чел.${extra ? ` (${extra})` : ''}? Отменить будет нельзя.`);
         if (!ok) return;
     }
     const el = root.querySelector(test ? '#admBcTest' : '#admBcSend');
     const label = el.textContent;
     el.disabled = true;
     el.textContent = test ? 'отправляю…' : 'отправляю… не закрывайте';
+    const segLabel = [SEG_LABEL[bc.segment] || bc.segment, bc.segment === 'hike' ? bc.hikeDate : '',
+        ...bc.excl.map(k => '− ' + (SEG_LABEL[k] || k)), r && r.manual.length ? `− ${r.manual.length} вручную` : ''].filter(Boolean).join(' ');
     try {
-        const res = await adminCall('adminBroadcast', {
-            segment: test ? 'test' : bc.segment,
-            hike_date: bc.hikeDate,
-            text: bc.text.trim(),
-            button: JSON.stringify(btn)
+        const res = await adminCall('adminBroadcast', test ? {
+            segment: 'test', text: bc.text.trim(), button: JSON.stringify(btn)
+        } : {
+            segment: 'custom', ids: JSON.stringify(r.final), segment_label: segLabel, hike_date: bc.hikeDate,
+            text: bc.text.trim(), button: JSON.stringify(btn)
         });
         haptic();
         if (test) toast(res.sent ? 'пришло вам в бот ✓' : 'не дошло – откройте бота и нажмите /start', !res.sent);
