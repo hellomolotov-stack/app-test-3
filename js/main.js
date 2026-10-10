@@ -485,6 +485,21 @@ function handleDeepLink(startParam) {
         case 'card':
             scrollToWhenReady(() => document.getElementById('cardBlock'));
             break;
+        case 'nearest': {
+            // кнопка бота «ближайший хайк»: сразу шторка ближайшего хайка (не городского события)
+            const today = new Date().toISOString().slice(0, 10);
+            const idx = state.hikesWithTitle.findIndex(h => h.date >= today && h.cancelled !== true && h.city !== true && h.city !== 'yes' && h.book_club !== true);
+            if (idx >= 0) {
+                import('./ui/calendar.js').then(m => m.prefetchHikeParticipants(state.hikesWithTitle[idx].date)).catch(() => {})
+                    .then(() => showBottomSheet(idx));
+            } else scrollToWhenReady(() => document.getElementById('calendarContainer'));
+            break;
+        }
+        case 'ask':
+            // кнопка бота «задать вопрос»: чат с поддержкой в приложении
+            log('бот: задать вопрос', state.userCard?.status !== 'active', state.user);
+            setTimeout(() => openOnboardingChat('support'), 600);
+            break;
         case 'bookings':
             scrollToWhenReady(() => document.getElementById('userBookingsCard') || (state.hikesWithTitle?.length ? document.getElementById('calendarContainer') : null));
             break;
@@ -933,6 +948,11 @@ document.addEventListener('focusout', (e) => {
 // и на медленном интернете приложение стояло пустым лишние 10+ секунд.
 function startApp() {
     state.user = tg?.initDataUnsafe?.user;
+    // сразу на весь экран: кнопки бота открывают приложение в половину экрана, пока его не развернуть
+    try {
+        tg?.expand?.();
+        if (tg?.requestFullscreen && !tg.isFullscreen && ['ios', 'android'].includes(tg.platform) && tg.isVersionAtLeast?.('8.0')) tg.requestFullscreen();
+    } catch (e) {}
     initAdmission();
     initCollapsibleBlocks();
     initClickLog();
