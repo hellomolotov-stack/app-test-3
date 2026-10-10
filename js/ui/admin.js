@@ -1174,6 +1174,47 @@ function renderDraftsBox(box) {
     box.querySelectorAll('[data-draft-del]').forEach(b => b.addEventListener('click', () => { haptic(); deleteDraft(b.dataset.draftDel); }));
 }
 
+// ---------- история рассылок ----------
+// Telegram не сообщает ботам о прочтении, поэтому показываем честные цифры: доставлено, сколько из получателей
+// зашли в приложение после рассылки, сколько нажали кнопку (уникальные люди; для кнопки-ссылки – все нажатия).
+let bcStats = null; // { list, error, loading }
+const pct = (a, b) => (b ? Math.round(a / b * 100) : 0);
+function renderStatsBox(box) {
+    const open = bc.showStats;
+    let inner = '';
+    if (open) {
+        if (!bcStats || bcStats.loading) inner = '<div class="adm-muted" style="padding:8px 2px">загружаю…</div>';
+        else if (bcStats.error) inner = `<div class="adm-error-inline">не удалось загрузить: ${esc(bcStats.error)}</div>`;
+        else if (!bcStats.list.length) inner = '<div class="adm-muted" style="padding:8px 2px">пока пусто – статистика появится у рассылок, отправленных после 10 октября</div>';
+        else inner = `<div class="adm-stats">${bcStats.list.map(b => {
+            const clicks = b.clicks + b.url_clicks;
+            return `<div class="adm-stat">
+                <div class="adm-stat-top"><b>${esc(b.label || 'рассылка')}</b><small>${new Date(b.at * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</small></div>
+                <div class="adm-stat-text">${esc(b.text.replace(/<[^>]+>/g, '').slice(0, 120))}${b.text.length > 120 ? '…' : ''}</div>
+                <div class="adm-stat-nums">
+                    <span><b>${b.sent}</b>доставлено${b.failed ? ` · не дошло ${b.failed}` : ''}</span>
+                    <span><b>${b.opened}</b>зашли в приложение · ${pct(b.opened, b.sent)}%</span>
+                    ${b.btn ? `<span><b>${clicks}</b>нажали «${esc(b.btn)}» · ${pct(clicks, b.sent)}%</span>` : ''}
+                </div></div>`;
+        }).join('')}</div>`;
+    }
+    box.innerHTML = `<button class="adm-people-toggle" id="admStatsToggle">📊 история рассылок ${open ? '▴' : '▾'}</button>${inner}`;
+    box.querySelector('#admStatsToggle').addEventListener('click', () => {
+        haptic();
+        bc.showStats = !bc.showStats;
+        if (bc.showStats && (!bcStats || bcStats.error || Date.now() - (bcStats.at || 0) > 60000)) loadStats(box);
+        renderStatsBox(box);
+    });
+}
+async function loadStats(box) {
+    bcStats = { loading: true };
+    try {
+        const res = await adminCall('adminBroadcastStats');
+        bcStats = { list: res.list || [], at: Date.now() };
+    } catch (e) { bcStats = { error: e.message }; }
+    if (box.isConnected) renderStatsBox(box);
+}
+
 function renderBroadcast(body) {
     bc = { ...newBroadcast(), ...(bc || {}) };
     const today = todayStr();
@@ -1187,6 +1228,7 @@ function renderBroadcast(body) {
     const chip = (k, l, attr, on) => `<button class="adm-chip${on ? ' is-on' : ''}" ${attr}="${k}">${l} <span class="adm-chip-n" data-n="${k}"></span></button>`;
 
     body.innerHTML = `
+        <div id="admStats" class="adm-drafts-box"></div>
         <div id="admDrafts" class="adm-drafts-box"></div>
         ${bc.draftId ? '<div class="adm-hint">открыт черновик – «сохранить черновик» обновит его</div>' : ''}
         <div class="adm-label">кому</div>
@@ -1283,6 +1325,7 @@ function renderBroadcast(body) {
     body.querySelector('#admBcBtnText')?.addEventListener('input', e => { bc.btnText = e.target.value; update(); });
     body.querySelector('#admBcTest').addEventListener('click', () => sendBroadcast(true));
     body.querySelector('#admBcDraft').addEventListener('click', () => saveDraft());
+    renderStatsBox(body.querySelector('#admStats'));
     const draftsBox = body.querySelector('#admDrafts');
     if (drafts) renderDraftsBox(draftsBox); else loadDrafts().then(() => { if (draftsBox.isConnected) renderDraftsBox(draftsBox); });
     body.querySelector('#admBcSend').addEventListener('click', () => sendBroadcast(false));

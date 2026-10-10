@@ -670,11 +670,20 @@ async function loadAppData() {
 
         // deep-link из поста Telegram — читаем сразу, чтобы выполнить как можно раньше
         const urlParams = new URLSearchParams(window.location.search);
-        const startParam = tg?.initDataUnsafe?.start_param
+        let startParam = tg?.initDataUnsafe?.start_param
             || tg?.initData?.start_param
             || urlParams.get('startapp')
             || urlParams.get('start_param')
             || '';
+        // кнопка из рассылки админки: bc<id>_<раздел> – отмечаем нажатие для статистики и открываем раздел
+        const bcMatch = /^bc([a-z0-9]{4,16})_(.*)$/.exec(startParam);
+        if (bcMatch) {
+            startParam = bcMatch[2];
+            try {
+                fetch('/api/bc', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ b: bcMatch[1], initData: tg?.initData || '' }) }).catch(() => {});
+            } catch (e) {}
+        }
         let firstRenderDone = false;
         let deepLinkHandled = false;
         // deep link выполняем, когда подключилась база: ему нужны хайки и записи из Firebase
