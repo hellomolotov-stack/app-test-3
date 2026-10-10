@@ -6,6 +6,10 @@ import { state } from '../state.js';
 import { haptic, openLink, tg } from '../utils.js';
 import { log, initPayment, getCardOffer, paymentErrorText } from '../api.js';
 
+// Карту можно оплатить частями: Сплит включён на странице оплаты Robokassa вместе с Яндекс Пэй.
+// Значок – официальный, с split.yandex.ru (перекрашивать нельзя), текст – наш, под тёмный фон.
+export const SPLIT_NOTE = '<div class="split-note"><img src="assets/split.png" alt="" width="16" height="16">можно частями в Яндекс Сплит</div>';
+
 const CARD_IMG = 'assets/card-front.jpg';
 const TICKET_PRICE = 1000;
 const PERMANENT_PRICE = 7500;
@@ -130,6 +134,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             <div class="cs-bar">
                 <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить бессрочную · ${rub(permanent)}` : `оформить навсегда · ${rub(permanent)}`}</button>
                 ${isReturning || gift || !allowTicket ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
+                ${SPLIT_NOTE}
             </div>
         </div>`;
     // верх шторки – ниже кнопок Telegram «Закрыть» и «•••» (в полноэкранном режиме они поверх приложения)
