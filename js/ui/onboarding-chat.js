@@ -386,6 +386,7 @@ let messagesEl = null;
 let optionsEl = null;
 let busy = false;
 let unsubscribeReplies = null;
+let supportPrefix = '';   // контекст вопроса (например, «вопрос про хайк …: ») – уходит организаторам перед текстом
 
 function closeChat() {
     if (!overlay) return;
@@ -645,7 +646,7 @@ async function onSupportSend(text) {
     optionsEl.innerHTML = '';
     try {
         if (!state.user?.id) throw new Error('нет пользователя');
-        await sendSupportMessage(state.user, text);
+        await sendSupportMessage(state.user, supportPrefix ? supportPrefix + text : text);
     } catch (e) {
         if (overlay !== currentOverlay || currentOverlay?.dataset.closing) return;
         console.error(e);
@@ -677,12 +678,13 @@ async function renderNode(nodeId) {
 // ──────────────────────────────────────────────
 // открытие шторки
 // ──────────────────────────────────────────────
-export async function openOnboardingChat(autoNext = null, lumenContext = null, lumenMode = false, { initialSupportMessage = '' } = {}) {
+export async function openOnboardingChat(autoNext = null, lumenContext = null, lumenMode = false, { initialSupportMessage = '', supportTopic = null } = {}) {
     // если ссылка зависла, но узла в DOM нет — сбрасываем, чтобы можно было открыть
     if (overlay && document.body.contains(overlay)) return;
     overlay = null;
     busy = false;
     lumenActive = lumenMode;
+    supportPrefix = supportTopic?.prefix || '';
     if (lumenContext) window.lumenChatContext = lumenContext;
     log('открыл чат с ботом', state.userCard.status !== 'active', state.user, lumenContext ? {
         lumen_screen: lumenContext.screen || '',
@@ -744,6 +746,13 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
     // A support request should be sent immediately, not replaced by welcome/history screens.
     if (initialSupportMessage) {
         await onSupportSend(initialSupportMessage);
+        return;
+    }
+
+    // вопрос с контекстом (например, из шторки хайка) – сразу поле ввода, без приветствия
+    if (supportTopic) {
+        await streamMessages([supportTopic.intro || FLOW.support.msgs[0]]);
+        buildOptions(FLOW.support, 'support');
         return;
     }
 

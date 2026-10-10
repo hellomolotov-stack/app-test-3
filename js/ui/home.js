@@ -446,6 +446,53 @@ const GUEST_QA = [
     { q: 'не можешь найти своих людей?', btns: ['не могу', 'а где они?'], a: 'они уже здесь' },
 ];
 
+// ==================== СТРОКА «СПРОСИ» НАВЕРХУ ГЛАВНОЙ ====================
+// Написанное уходит организаторам сразу (через чат поддержки → бот), чипы открывают готовые ответы.
+const ASK_CHIPS = [
+    { label: 'что взять с собой', node: 'pack' },
+    { label: 'как проходит хайк', node: 'first_time' },
+    { label: 'как устроена карта', node: 'card' },
+];
+
+function askBarHtml() {
+    return `
+        <form class="ask-bar" id="askBar" autocomplete="off">
+            <div class="ask-bar-field">
+                <span class="ask-bar-spark">✦</span>
+                <input class="ask-bar-input" id="askBarInput" type="text" maxlength="500" enterkeyhint="send"
+                    placeholder="спроси про хайки, карту или клуб…">
+                <button class="ask-bar-send" type="submit" aria-label="отправить">↑</button>
+            </div>
+            <div class="ask-bar-chips">${ASK_CHIPS.map((c, i) => `<button type="button" class="ask-bar-chip" data-i="${i}">${c.label}</button>`).join('')}</div>
+        </form>`;
+}
+
+function wireAskBar() {
+    const form = document.getElementById('askBar');
+    if (!form) return;
+    const input = form.querySelector('.ask-bar-input');
+    const sync = () => form.classList.toggle('has-text', !!input.value.trim());
+    input.addEventListener('input', sync);
+    input.addEventListener('focus', () => log('строка вопроса: фокус', state.userCard.status !== 'active', state.user));
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const text = input.value.trim();
+        if (!text) { input.focus(); return; }
+        haptic();
+        input.value = '';
+        sync();
+        input.blur();
+        log('строка вопроса: отправил', state.userCard.status !== 'active', state.user);
+        openOnboardingChat(null, null, false, { initialSupportMessage: text });
+    });
+    form.querySelectorAll('.ask-bar-chip').forEach(btn => btn.addEventListener('click', () => {
+        const chip = ASK_CHIPS[+btn.dataset.i];
+        haptic();
+        log(`строка вопроса: ${chip.label}`, state.userCard.status !== 'active', state.user);
+        openOnboardingChat(chip.node);
+    }));
+}
+
 function renderGuestHome() {
     if (_hikePreviewUnsub) { _hikePreviewUnsub(); _hikePreviewUnsub = null; }
     clearTimeout(_ctaTimer);
@@ -487,6 +534,7 @@ function renderGuestHome() {
     `;
 
     main.innerHTML = `
+        ${askBarHtml()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
@@ -517,6 +565,7 @@ function renderGuestHome() {
     `;
 
     wireSafetyBanner();
+    wireAskBar();
     fitMastermindScroll();
     const cardBtn = document.getElementById('cardBadgeBtn');
     cardBtn?.addEventListener('click', () => {
@@ -699,6 +748,7 @@ function renderOwnerHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
+        ${askBarHtml()}
         <div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
@@ -736,6 +786,7 @@ function renderOwnerHome() {
     `;
 
     wireSafetyBanner();
+    wireAskBar();
     fitMastermindScroll();
     document.getElementById('giftCardBtn')?.addEventListener('click', () => {
         haptic();

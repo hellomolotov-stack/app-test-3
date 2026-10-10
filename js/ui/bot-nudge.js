@@ -1,4 +1,5 @@
-// Прежний постоянный язычок помощника для пользователей вне Lumen-пилота.
+// Помощник для пользователей вне Lumen-пилота: «островок» – строка, которая ненадолго
+// вырастает из нижнего меню (постоянной кнопки нет; спросить можно строкой сверху главной).
 // Кроме случайных фраз по нажатию, язычок сам реагирует на поведение (см. REACTIONS):
 // экраны шлют window-событие 'club:act' {type, ...}, а здесь решаем, сказать ли что-то к месту.
 import { state } from '../state.js';
@@ -6,7 +7,7 @@ import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 
-const BUBBLE_AUTO_HIDE_MS = 9000;
+const BUBBLE_AUTO_HIDE_MS = 7000;
 const K_LAST_PHRASE = 'botNudge_lastPhrase';
 
 const PHRASES_GUEST = [
@@ -134,78 +135,49 @@ function pickPhrase() {
 
 function hideBubble() {
     if (autoHideTimer) { clearTimeout(autoHideTimer); autoHideTimer = null; }
-    // облачко с реакцией ушло непрочитанным – оставляем тихую точку на кнопке
-    if (bubbleAction?.reaction && bubble?.classList.contains('visible')) wrap?.classList.add('has-unread');
     bubbleAction = null;
     bubble?.classList.remove('visible');
-    wrap?.classList.remove('open');
 }
 
+// Островок: строка вырастает из нижнего меню, ненадолго, и прячется обратно.
 function showBubble(text, action = null, reaction = '') {
     if (!bubble) return;
-    bubble.querySelector('.bot-tab-bubble-text').textContent = text || pickPhrase();
-    // кнопка ответа: у реакций с действием – «показать», иначе – «ответить» (открывает чат)
-    bubble.querySelector('.bot-tab-reply').textContent = action ? 'показать' : 'ответить';
-    wrap.classList.remove('has-unread');
-    bubbleAction = action ? { run: action, reaction } : (reaction ? { run: null, reaction } : null);
+    bubble.querySelector('.ai-island-text').textContent = text || pickPhrase();
+    bubble.querySelector('.ai-island-go').textContent = action ? 'показать ›' : 'ответить ›';
+    bubbleAction = { run: action, reaction };
     bubble.classList.add('visible');
-    wrap.classList.add('open');
     log(reaction ? `язычок: реакция ${reaction}` : 'язычок раскрыт', true, state.user);
     if (autoHideTimer) clearTimeout(autoHideTimer);
-    autoHideTimer = setTimeout(hideBubble, BUBBLE_AUTO_HIDE_MS);
-}
-
-function toggleBubble() {
-    if (bubble?.classList.contains('visible')) hideBubble();
-    else showBubble();
+    autoHideTimer = setTimeout(() => {
+        if (bubbleAction?.reaction) log(`язычок: островок скрылся ${bubbleAction.reaction}`, true, state.user);
+        hideBubble();
+    }, BUBBLE_AUTO_HIDE_MS);
 }
 
 export function mountBotTab() {
-    if (document.querySelector('.bot-tab-wrap')) return;
+    if (document.querySelector('.ai-island')) return;
     wrap = document.createElement('div');
-    wrap.className = 'bot-tab-wrap';
-    // тихая стеклянная кнопка справа над нижним меню; облачко вырастает над ней
+    wrap.className = 'ai-island';
+    wrap.setAttribute('role', 'status');
     wrap.innerHTML = `
-        <div class="bot-tab-bubble" role="status">
-            <div class="bot-tab-bubble-head"><span>помощник</span><button class="bot-tab-bubble-close" aria-label="закрыть">✕</button></div>
-            <div class="bot-tab-bubble-text"></div>
-            <div class="bot-tab-bubble-actions"><button class="bot-tab-reply">ответить</button><button class="bot-tab-later">не сейчас</button></div>
-        </div>
-        <button class="bot-tab" aria-label="интеллигентный помощник">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16A2.5 2.5 0 0 1 4 13.5v-8Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="9" cy="9.6" r="1" fill="currentColor"/><circle cx="12" cy="9.6" r="1" fill="currentColor"/><circle cx="15" cy="9.6" r="1" fill="currentColor"/></svg>
-            <span class="bot-tab-dot"></span>
-        </button>`;
+        <span class="ai-island-spark">✦</span>
+        <span class="ai-island-text"></span>
+        <span class="ai-island-go">ответить ›</span>
+        <button class="ai-island-close" aria-label="закрыть">✕</button>`;
     document.body.appendChild(wrap);
-    bubble = wrap.querySelector('.bot-tab-bubble');
-    wrap.querySelector('.bot-tab').addEventListener('click', () => {
-        haptic();
-        // была непрочитанная подсказка – кнопка сразу ведёт в чат
-        if (wrap.classList.contains('has-unread')) { wrap.classList.remove('has-unread'); log('язычок → чат (точка)', true, state.user); openOnboardingChat(); return; }
-        toggleBubble();
-    });
-    bubble.querySelector('.bot-tab-later').addEventListener('click', (e) => {
-        e.stopPropagation();
-        haptic();
-        if (bubbleAction?.reaction) log(`язычок: не сейчас ${bubbleAction.reaction}`, true, state.user);
-        bubbleAction = null;
-        hideBubble();
-    });
-    bubble.addEventListener('click', (e) => {
-        if (e.target.closest('.bot-tab-bubble-close, .bot-tab-later')) return;
+    bubble = wrap;
+    wrap.addEventListener('click', (e) => {
         haptic();
         const act = bubbleAction;
-        bubbleAction = null;
+        if (e.target.closest('.ai-island-close')) {
+            if (act?.reaction) log(`язычок: закрыл реакцию ${act.reaction}`, true, state.user);
+            hideBubble();
+            return;
+        }
         hideBubble();
         if (act?.run) { log(`язычок: нажал реакцию ${act.reaction}`, true, state.user); act.run(); return; }
         log(act?.reaction ? `язычок: нажал реакцию ${act.reaction} → чат` : 'язычок → чат с ботом', true, state.user);
         openOnboardingChat();
-    });
-    bubble.querySelector('.bot-tab-bubble-close').addEventListener('click', (e) => {
-        e.stopPropagation();
-        haptic();
-        if (bubbleAction?.reaction) log(`язычок: закрыл реакцию ${bubbleAction.reaction}`, true, state.user);
-        bubbleAction = null;
-        hideBubble();
     });
     window.addEventListener('club:act', onAct);
     // данные о прошлых хайках приходят не сразу – проверяем чуть позже

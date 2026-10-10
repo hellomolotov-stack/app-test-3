@@ -2065,7 +2065,18 @@ export function showBottomSheet(index) {
             ${sectionsHtml}
             ${inviteButtonHtml}
             ${shareButtonHtml}
+            ${!isPlaceholder && !hike.cancelled && new Date(hike.date) >= new Date().setHours(0, 0, 0, 0) ? `<button class="hike-ask-row" id="hikeAskBtn">есть вопрос про этот хайк? <b>спросить ›</b></button>` : ''}
         `;
+
+        contentWrapper.querySelector('#hikeAskBtn')?.addEventListener('click', () => {
+            haptic();
+            log(`вопрос про хайк: ${hike.title}`, state.userCard.status !== 'active', state.user);
+            const [, mo, d] = String(hike.date).split('-');
+            openOnboardingChat(null, null, false, { supportTopic: {
+                intro: `напиши вопрос про «${hike.title}» – передам организаторам. как только ответят, покажу здесь 🤍`,
+                prefix: `[хайк ${d}.${mo} «${hike.title}»] `,
+            } });
+        });
 
         if (hikeTrack) {
             const mapBox = contentWrapper.querySelector('#hikeMapBox');
