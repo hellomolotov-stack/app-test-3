@@ -26,8 +26,89 @@ const APP_SECTIONS = [
     ['routes', 'маршруты на карте'],
     ['updates', 'обновления'],
     ['profiles', 'профили'],
-    ['bot', 'чат-помощник']
+    ['bot', 'чат-помощник'],
+    ['buy_card', 'покупка карты'],
+    ['card_offer', 'спецпредложение карты'],
+    ['newcomer', 'как проходит первый хайк']
 ];
+
+// Сегменты рассылки (считает сервер, см. computeSegments_ в Apps Script) и подсказки к ним:
+// цель сообщения, рекомендуемая кнопка и шаблон текста. Шаблон – отправная точка, его правят перед отправкой.
+const SEGMENT_GROUPS = [
+    ['основные', [['all', 'всем'], ['guests', 'гостям'], ['members', 'владельцам карт'], ['hike', 'участникам хайка']]],
+    ['по свежести', [['active7', 'заходили за 7 дней'], ['new7', 'новые за неделю'], ['cold14', 'не заходили 14–30 дней'], ['gone30', 'не заходили 30+ дней']]],
+    ['по активности', [['frequent', 'часто заходят'], ['once', 'заглянули один раз'], ['engaged', 'активные'], ['skimmers', 'просто заскочили']]],
+    ['путь к хайку', [['never_booked', 'ни разу не записывались'], ['viewed_hike7', 'смотрели хайк, не записались'], ['unpaid', 'начали оплату, не закончили'], ['one_and_gone', 'были раз и пропали'], ['regular_no_card', 'ходят без карты 2+ раз'], ['upcoming', 'записаны на хайк']]],
+    ['карта', [['viewed_card', 'смотрели карту, не купили'], ['offer_unused', 'спецпредложение не использовали']]],
+    ['служебные', [['waitlist', 'в листе ожидания'], ['admission', 'анкета: ждут ответа или одобрены']]],
+];
+const ASK_URL = 'https://t.me/hellointelligent';
+const SEGMENT_TIPS = {
+    active7: { goal: 'позвать на ближайший хайк, пока интерес тёплый', btn: { type: 'app', section: 'hike', text: 'посмотреть хайк' },
+        text: '[имя], привет 🤍 [дата] идём на [название хайка]. если давно хотел выбраться в горы – это хороший повод. детали и точка сбора по кнопке' },
+    new7: { goal: 'мягко познакомить и снять страх первого раза', btn: { type: 'app', section: 'newcomer', text: 'как проходит первый хайк' },
+        text: '[имя], рады, что ты заглянул 🤍 если интересно, как проходит первый хайк и что взять с собой – собрали всё в одном месте. никаких обязательств, просто посмотри' },
+    cold14: { goal: 'вернуть через новость', btn: { type: 'app', section: 'calendar', text: 'открыть календарь' },
+        text: '[имя], давно не виделись 🤍 за это время в календаре появились новые маршруты и пара событий в городе. загляни – может, что-то откликнется' },
+    gone30: { goal: 'сильный повод вернуться', btn: { type: 'app', section: 'updates', text: 'что нового' },
+        text: '[имя], привет! мы тут немного выросли: новые маршруты, мастермайнды на вершинах и клубные вечера. если горы всё ещё зовут – мы на месте 🤍' },
+    frequent: { goal: 'превратить интерес в первый шаг', btn: { type: 'app', section: 'hike', text: 'записаться' },
+        text: '[имя], видим, что ты часто заглядываешь 🤍 похоже, пора уже не смотреть, а идти. ближайший хайк – [название хайка], [дата]. мы подождём на старте' },
+    once: { goal: 'дать второй шанс и коротко объяснить, кто мы', btn: { type: 'app', section: 'calendar', text: 'узнать о клубе' },
+        text: '[имя], ты как-то заглядывал к нам. коротко: мы не про походы, а про знакомства – с деятельными и близкими по духу людьми, на вершинах южного берега. загляни ещё раз 🤍' },
+    engaged: { goal: 'спросить, что мешает', btn: { type: 'url', url: ASK_URL, text: 'написать нам' },
+        text: '[имя], ты уже хорошо изучил приложение 🙂 если что-то останавливает перед первым хайком – напиши, ответим лично. часто всё решается одним сообщением' },
+    skimmers: { goal: 'одна простая причина зайти', btn: { type: 'app', section: 'hike', text: 'посмотреть ближайший хайк' },
+        text: '[имя], [дата] идём на [название хайка]. тишина и люди, с которыми есть о чём поговорить. детали по кнопке 🤍' },
+    never_booked: { goal: 'снять барьер первого раза', btn: { type: 'app', section: 'hike', text: 'записаться на хайк' },
+        text: '[имя], первый хайк – самый волнительный. поэтому мы идём в темпе группы, ждём каждого и знакомим на старте. ближайший – [название хайка], [дата] 🤍' },
+    viewed_hike7: { goal: 'дожать конкретный хайк', btn: { type: 'app', section: 'hike', text: 'вернуться к хайку' },
+        text: '[имя], ты смотрел [название хайка]. места ещё есть – если хочешь пойти, запись по кнопке. если остались вопросы – просто ответь на это сообщение' },
+    unpaid: { goal: 'помочь, если что-то сломалось при оплате', btn: { type: 'app', section: 'hike', text: 'завершить запись' },
+        text: '[имя], видим, что ты начал оформлять запись, но не закончил. если что-то пошло не так с оплатой – напиши, поможем. а если просто отвлёкся – кнопка ниже 🤍' },
+    one_and_gone: { goal: 'вернуть на второй хайк', btn: { type: 'app', section: 'calendar', text: 'выбрать хайк' },
+        text: '[имя], как ты после хайка с нами? второй хайк обычно ещё лучше – ты уже знаешь людей. в календаре новые маршруты, загляни 🤍' },
+    regular_no_card: { goal: 'предложить карту', btn: { type: 'app', section: 'buy_card', text: 'узнать о карте' },
+        text: '[имя], ты уже не раз ходил с нами 🤍 с картой интеллигента все хайки сезона без билетов, закрытые события и свой +1 на хайк. посмотри – возможно, она уже выгоднее' },
+    upcoming: { goal: 'напомнить и подготовить', btn: { type: 'app', section: 'bookings', text: 'детали хайка' },
+        text: '[имя], до хайка на [название хайка] осталось совсем немного 🏔 старт в [время], точка сбора и что взять – по кнопке. до встречи на тропе' },
+    members: { goal: 'новости для своих', btn: { type: 'app', section: 'privileges', text: 'привилегии' },
+        text: '[имя], для своих новости 🤍 [что нового: событие, партнёр, мастермайнд]. всё по кнопке' },
+    viewed_card: { goal: 'ответить на сомнения', btn: { type: 'url', url: ASK_URL, text: 'задать вопрос' },
+        text: '[имя], ты смотрел карту интеллигента. если есть вопросы – что входит, окупится ли, можно ли подарить – напиши, расскажем лично' },
+    offer_unused: { goal: 'мягко напомнить, без давления', btn: { type: 'app', section: 'card_offer', text: 'открыть предложение' },
+        text: '[имя], напоминаем: твоё предложение на карту интеллигента ещё действует. если не сейчас – ничего страшного, мы всё равно рады тебе на тропе 🤍' },
+    waitlist: { goal: 'сообщить, что запись открыта', btn: { type: 'app', section: 'hike', text: 'записаться' },
+        text: '[имя], открыли запись на [название хайка], [дата] 🏔 ты просил сообщить – сообщаем. мест 10, запись по кнопке' },
+    admission: { goal: 'довести до первой записи', btn: { type: 'app', section: 'hike', text: 'выбрать хайк' },
+        text: '[имя], мы прочитали анкету – рады знакомству 🤍 ближайший хайк – [название хайка], [дата]. запись по кнопке' },
+};
+const RU_MONTHS_GEN = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+// ближайший хайк для подстановки в шаблон
+function nearestTitledHike() {
+    const today = todayStr();
+    return allHikes().filter(h => h.title && h.title.trim() && h.date >= today && !isYes(h.city) && !isYes(h.cancelled)).sort((a, b) => a.date.localeCompare(b.date))[0] || null;
+}
+function fillTemplate(text) {
+    const h = nearestTitledHike();
+    if (!h) return text;
+    const d = new Date(h.date + 'T12:00:00');
+    return text.replace(/\[название хайка\]/g, h.title.trim()).replace(/\[дата\]/g, `${d.getDate()} ${RU_MONTHS_GEN[d.getMonth()]}`)
+        .replace(/\[время\]/g, h.start_time || '[время]');
+}
+function applyTip(key) {
+    const tip = SEGMENT_TIPS[key];
+    if (!tip) return;
+    bc.text = fillTemplate(tip.text);
+    bc.btnType = tip.btn.type;
+    bc.btnText = tip.btn.text;
+    if (tip.btn.type === 'url') bc.url = tip.btn.url;
+    if (tip.btn.type === 'app') {
+        bc.section = tip.btn.section;
+        if (bc.section === 'hike') bc.btnHike = nearestTitledHike()?.date || bc.btnHike;
+    }
+    bc.tipApplied = key;
+}
 const TRACK_MAX_POINTS = 400;
 
 let root = null;
@@ -992,15 +1073,20 @@ function renderBroadcast(body) {
     if (bc.segment === 'hike' && !bc.hikeDate) bc.hikeDate = (upcoming[0] || recent[0] || {}).date || '';
     if (bc.btnType === 'app' && bc.section === 'hike' && !bc.btnHike) bc.btnHike = (upcoming[0] || recent[0] || {}).date || '';
     const c = audience && audience.counts;
-    const n = k => c ? ` · ${c[k]}` : '';
-    const segs = [['all', 'всем' + n('all')], ['guests', 'гостям' + n('guests')], ['members', 'владельцам карт' + n('members')], ['hike', 'участникам хайка']];
+    const n = k => (c && c[k] != null ? c[k] : '');
+    const tip = SEGMENT_TIPS[bc.segment];
 
     body.innerHTML = `
         <div class="adm-label">кому</div>
-        <div class="adm-chips">${segs.map(([k, l]) => `<button class="adm-chip${bc.segment === k ? ' is-on' : ''}" data-seg="${k}">${l}</button>`).join('')}</div>
+        ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
+            <div class="adm-chips">${list.map(([k, l]) => `<button class="adm-chip${bc.segment === k ? ' is-on' : ''}" data-seg="${k}">${l}${k !== 'hike' ? ` <span class="adm-chip-n" data-n="${k}">${n(k)}</span>` : ''}</button>`).join('')}</div>`).join('')}
         ${bc.segment === 'hike' ? `<label class="adm-field"><span>хайк</span><select id="admBcHike">${hikeOptions(bc.hikeDate)}</select></label>` : ''}
         <div class="adm-count" id="admCount">${bc.count == null ? 'считаю получателей…' : `получат: <b>${bc.count}</b> чел.`}</div>
 
+        ${tip ? `<div class="adm-tip"><div class="adm-tip-goal"><b>что лучше написать:</b> ${esc(tip.goal)}</div>
+            <div class="adm-tip-text">${esc(fillTemplate(tip.text))}</div>
+            <div class="adm-tip-meta">кнопка: «${esc(tip.btn.text)}»</div>
+            <button class="adm-link" id="admTipApply">${bc.tipApplied === bc.segment ? 'вставить шаблон заново' : 'вставить шаблон'}</button></div>` : ''}
         <label class="adm-field"><span>текст</span><textarea id="admBcText" rows="7" placeholder="привет, [имя]! …">${esc(bc.text)}</textarea></label>
         <div class="adm-hint">[имя] заменится именем. можно &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;a href="…"&gt;ссылка&lt;/a&gt;</div>
 
@@ -1021,7 +1107,9 @@ function renderBroadcast(body) {
     body.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
         haptic();
         bc.segment = b.dataset.seg;
-        bc.count = bc.segment !== 'hike' && audience ? audience.counts[bc.segment] : null;
+        bc.count = bc.segment !== 'hike' && audience ? (audience.counts[bc.segment] ?? null) : null;
+        // пустое сообщение – сразу подставляем шаблон сегмента
+        if (!bc.text.trim() && SEGMENT_TIPS[bc.segment]) applyTip(bc.segment);
         render();
     }));
     body.querySelectorAll('[data-btn]').forEach(b => b.addEventListener('click', () => { haptic(); bc.btnType = b.dataset.btn; render(); }));
@@ -1029,6 +1117,12 @@ function renderBroadcast(body) {
     body.querySelector('#admBcSection')?.addEventListener('change', e => { bc.section = e.target.value; render(); });
     body.querySelector('#admBcBtnHike')?.addEventListener('change', e => { bc.btnHike = e.target.value; update(); });
     body.querySelector('#admBcText').addEventListener('input', e => { bc.text = e.target.value; update(); });
+    body.querySelector('#admTipApply')?.addEventListener('click', async () => {
+        haptic();
+        if (bc.text.trim() && bc.tipApplied !== bc.segment && !(await confirmAsync('Заменить текст сообщения шаблоном?'))) return;
+        applyTip(bc.segment);
+        render();
+    });
     body.querySelector('#admBcUrl')?.addEventListener('input', e => { bc.url = e.target.value; update(); });
     body.querySelector('#admBcBtnText')?.addEventListener('input', e => { bc.btnText = e.target.value; update(); });
     body.querySelector('#admBcTest').addEventListener('click', () => sendBroadcast(true));
@@ -1091,8 +1185,9 @@ async function refreshCount() {
         bc.count = null;
         failed = err.message;
     }
-    // первая загрузка цифр – перерисуем, чтобы они появились и на кнопках групп
-    if (!hadAudience && audience && root && view.tab === 'broadcast' && !view.sub) return render();
+    // первая загрузка цифр – дописываем их в кнопки групп на месте, без перерисовки формы
+    // (раньше форма перерисовывалась целиком – поле теряло фокус и страница прыгала)
+    if (!hadAudience && audience && root) root.querySelectorAll('[data-n]').forEach(el => { el.textContent = audience.counts[el.dataset.n] ?? ''; });
     const el = root?.querySelector('#admCount');
     if (el) el.innerHTML = failed
         ? `<span class="adm-error-inline">не удалось посчитать: ${esc(failed)}</span> <button class="adm-link" id="admRecount">ещё раз</button>`

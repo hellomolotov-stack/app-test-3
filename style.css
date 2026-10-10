@@ -5721,3 +5721,18 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .so-full-top { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: none; font: inherit; color: #fff; text-align: left; cursor: pointer; }
 .so-full-ask { margin-top: 10px; padding-top: 9px; border-top: 1px dashed rgba(255, 255, 255, .22); font-size: 13px; color: rgba(255, 255, 255, .75); text-align: left; }
 .so-full-write { padding: 0; border: 0; background: none; font: inherit; font-weight: 700; color: var(--yellow); cursor: pointer; }
+
+/* админка: без прыжков при вводе – фон под ней не скроллится, высота не меняется, когда выезжает клавиатура */
+body.adm-open { overflow: hidden; }
+.adm { bottom: auto; height: var(--tg-viewport-stable-height, 100%); scroll-padding-bottom: 120px; }
+.adm input, .adm textarea, .adm select { font-size: 16px; } /* меньше 16px iOS увеличивает страницу при фокусе */
+/* рассылка: группы сегментов и подсказка-шаблон */
+.adm-seg-group { margin: 12px 0 6px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .45); }
+.adm-chip-n { opacity: .6; font-weight: 500; }
+.adm-chip-n:empty { display: none; }
+.adm-tip { margin: 14px 0 4px; padding: 12px 14px; border-radius: 14px; background: rgba(217, 253, 25, .07); border: 1px solid rgba(217, 253, 25, .28); }
+.adm-tip-goal { font-size: 13px; color: rgba(255, 255, 255, .85); }
+.adm-tip-goal b { color: var(--yellow); font-weight: 600; }
+.adm-tip-text { margin-top: 8px; font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, .7); white-space: pre-wrap; }
+.adm-tip-meta { margin-top: 6px; font-size: 12px; color: rgba(255, 255, 255, .5); }
+.adm-tip .adm-link { margin-top: 8px; padding: 0; }
