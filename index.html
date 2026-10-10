@@ -8,6 +8,8 @@
     <title>хайкинг интеллигенция</title>
     <!-- список хайков с нашего CDN – запрашиваем в первую же миллисекунду, главная не ждёт Firebase -->
     <script>window.__hikesBoot = fetch('/api/hikes').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });</script>
+    <!-- общие данные главной (привилегии, вопросы, поп-апы, ЧС…) – тоже с CDN, новичок не ждёт Firebase -->
+    <script>window.__bootData = fetch('/api/boot').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });</script>
     <!-- статус карты и записи – тоже с нашего домена и тоже сразу (подпись Telegram лежит в адресе страницы) -->
     <script>window.__meBoot = (function () { try {
         var d = new URLSearchParams(location.hash.slice(1)).get('tgWebAppData');
@@ -49,8 +51,8 @@
         html:not(.app-ready) body > :not(#initial-loader) { visibility: hidden !important; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=20261010me1" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=20261010me1"></noscript>
+    <link rel="preload" href="style.css?v=20261010boot1" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261010boot1"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -174,6 +176,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=20261010me1"></script>
+    <script type="module" src="js/main.js?v=20261010boot1"></script>
 </body>
 </html>

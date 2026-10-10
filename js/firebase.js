@@ -170,48 +170,10 @@ export async function loadUserData(userId) {
     }
 }
 
-export async function loadMetrics() {
-    try { return (await loadClubContent()).metrics; } catch (error) { console.warn('Club metrics fallback:', error.message); }
-    if (!database) return null;
-    const snapshot = await database.ref('metrics').once('value');
-    return snapshot.val() || { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
-}
-
-export async function loadFaq() {
-    if (!database) return [];
-    const snapshot = await database.ref('faq').once('value');
-    return snapshot.val() || [];
-}
-
-export async function loadPrivileges() {
-    if (!database) return { club: [], city: [] };
-    const snapshot = await database.ref('privileges').once('value');
-    return snapshot.val() || { club: [], city: [] };
-}
-
-export async function loadGuestPrivileges() {
-    if (!database) return { club: [], city: [] };
-    const snapshot = await database.ref('guestPrivileges').once('value');
-    return snapshot.val() || { club: [], city: [] };
-}
-
-export async function loadPassInfo() {
-    if (!database) return { content: '', buttonLink: '' };
-    const snapshot = await database.ref('passInfo').once('value');
-    return snapshot.val() || { content: '', buttonLink: '' };
-}
-
-export async function loadGiftContent() {
-    if (!database) return '';
-    const snapshot = await database.ref('gift').once('value');
-    return snapshot.val()?.content || '';
-}
-
-export async function loadSafety() {
+// Разбор сырых узлов базы – общий для Firebase и быстрого старта (/api/boot, см. main.js)
+const toList = data => (Array.isArray(data) ? data : (data && typeof data === 'object' ? Object.values(data) : []));
+function safetyFromRaw(data) {
     const fallback = { active: false, banner: '', intro: '', page_title: '', items: [] };
-    if (!database) return fallback;
-    const snapshot = await database.ref('safety').once('value');
-    const data = snapshot.val();
     if (!data) return fallback;
     const u = data.updates && typeof data.updates === 'object' ? data.updates : {};
     const updItems = Array.isArray(u.items) ? u.items.filter(Boolean)
@@ -226,26 +188,82 @@ export async function loadSafety() {
         updates: { title: u.title || '', desc: u.desc || '', items: updItems }
     };
 }
+export const parseNode = {
+    faq: v => v || [],
+    privileges: v => v || { club: [], city: [] },
+    guestPrivileges: v => v || { club: [], city: [] },
+    passInfo: v => v || { content: '', buttonLink: '' },
+    gift: v => v?.content || '',
+    safety: safetyFromRaw,
+    randomPhrases: toList,
+    leaders: v => v || {},
+    registrationsPopup: v => v || {},
+    popupConfig: v => v,
+    mastermindSummaries: toList,
+    testimonials: v => (Array.isArray(v) ? v.filter(Boolean) : toList(v)),
+    popups: v => v || {}
+};
+
+export async function loadMetrics() {
+    try { return (await loadClubContent()).metrics; } catch (error) { console.warn('Club metrics fallback:', error.message); }
+    if (!database) return null;
+    const snapshot = await database.ref('metrics').once('value');
+    return snapshot.val() || { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
+}
+
+export async function loadFaq() {
+    if (!database) return [];
+    const snapshot = await database.ref('faq').once('value');
+    return parseNode.faq(snapshot.val());
+}
+
+export async function loadPrivileges() {
+    if (!database) return { club: [], city: [] };
+    const snapshot = await database.ref('privileges').once('value');
+    return parseNode.privileges(snapshot.val());
+}
+
+export async function loadGuestPrivileges() {
+    if (!database) return { club: [], city: [] };
+    const snapshot = await database.ref('guestPrivileges').once('value');
+    return parseNode.guestPrivileges(snapshot.val());
+}
+
+export async function loadPassInfo() {
+    if (!database) return { content: '', buttonLink: '' };
+    const snapshot = await database.ref('passInfo').once('value');
+    return parseNode.passInfo(snapshot.val());
+}
+
+export async function loadGiftContent() {
+    if (!database) return '';
+    const snapshot = await database.ref('gift').once('value');
+    return parseNode.gift(snapshot.val());
+}
+
+export async function loadSafety() {
+    const fallback = { active: false, banner: '', intro: '', page_title: '', items: [] };
+    if (!database) return fallback;
+    const snapshot = await database.ref('safety').once('value');
+    return safetyFromRaw(snapshot.val());
+}
 
 export async function loadRandomPhrases() {
     if (!database) return [];
     const snapshot = await database.ref('randomPhrases').once('value');
-    const data = snapshot.val();
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object') return Object.values(data);
-    return [];
+    return parseNode.randomPhrases(snapshot.val());
 }
 
 export async function loadLeaders() {
     if (!database) return {};
     const snapshot = await database.ref('leaders').once('value');
-    return snapshot.val() || {};
+    return parseNode.leaders(snapshot.val());
 }
 
 export async function loadRegistrationsPopup() {
     if (!database) return {};
     const snapshot = await database.ref('registrationsPopup').once('value');
-    return snapshot.val() || {};
+    return parseNode.registrationsPopup(snapshot.val());
 }
 
 export async function loadPopupConfig() {
@@ -267,26 +285,20 @@ export async function loadUpdates() {
 export async function loadMastermindSummaries() {
     if (!database) return [];
     const snapshot = await database.ref('mastermindSummaries').once('value');
-    const data = snapshot.val();
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object') return Object.values(data);
-    return [];
+    return parseNode.mastermindSummaries(snapshot.val());
 }
 
 export async function loadTestimonials() {
     if (!database) return [];
     const snapshot = await database.ref('testimonials').once('value');
-    const data = snapshot.val();
-    if (Array.isArray(data)) return data.filter(Boolean);
-    if (data && typeof data === 'object') return Object.values(data);
-    return [];
+    return parseNode.testimonials(snapshot.val());
 }
 
 export async function loadPopups() {
     if (!database) return {};
     try {
         const snapshot = await database.ref('popups').once('value');
-        return snapshot.val() || {};
+        return parseNode.popups(snapshot.val());
     } catch (e) {
         console.error('Ошибка загрузки попапов из Firebase:', e);
         return {};

@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-  "build": "node generate-config.js && node build.js"
+    "build": "node generate-config.js && node build.js"
   },
   "devDependencies": {
+    "esbuild": "^0.25.10",
     "terser": "^5.31.0"
   }
 }

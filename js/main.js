@@ -3,7 +3,7 @@ import { applyAdmissionVisitorMode, initAdmission, isAdmissionPilot } from './ad
 import { openAdmission } from './ui/admission.js';
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
-import { initFirebase, getDatabase, hikesFromSnapshot, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups } from './firebase.js';
+import { initFirebase, getDatabase, hikesFromSnapshot, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups, parseNode } from './firebase.js';
 import { log, logAutoSendClick, markPaymentSeen } from './api.js';
 import { pingAppUser } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
@@ -737,6 +737,41 @@ async function loadAppData() {
             try { applyUserStatus(me.card, me.regs, 'server'); } catch (e) { console.error('me apply', e); }
         });
 
+        // Общие данные главной с CDN (/api/boot, запрошен ещё в index.html) – быстрый старт для
+        // новичков без кэша. Применяем, только если Firebase ещё не ответил: он свежее и всё равно
+        // придёт следом. Разбор – тот же parseNode, что и для ответов Firebase.
+        let firebaseCommonApplied = false;
+        window.__bootData?.then(raw => {
+            if (!raw || firebaseCommonApplied) return;
+            try {
+                const v = key => (key in raw ? parseNode[key](raw[key]) : null);
+                const safety = v('safety');
+                if (safety) {
+                    state.safety = safety;
+                    try { localStorage.setItem('safetyCache', JSON.stringify(state.safety)); } catch (e) {}
+                    const safetyMenuItem = document.getElementById('popupSafety');
+                    if (safetyMenuItem) safetyMenuItem.style.display = state.safety?.active ? '' : 'none';
+                }
+                const regsPopup = v('registrationsPopup');
+                if (regsPopup) state.registrationsPopup = regsPopup;
+                const popupConfig = v('popupConfig');
+                if (popupConfig) state.popupConfig = { ...state.popupConfig, ...popupConfig };
+                state.popupConfig.ticketLink = ROBOKASSA_LINK;
+                state.popupConfig.seasonCardLink = SEASON_CARD_LINK;
+                state.popupConfig.permanentCardLink = PERMANENT_CARD_LINK;
+                const popups = v('popups');
+                if (popups) state.popups = popups;
+                const keys = { faq: 'faq', privileges: 'privileges', guestPrivileges: 'guestPrivileges',
+                    passInfo: 'passInfo', gift: 'giftContent', randomPhrases: 'randomPhrases', leaders: 'leaders',
+                    mastermindSummaries: 'mastermindSummaries', testimonials: 'testimonials' };
+                Object.entries(keys).forEach(([node, field]) => { const val = v(node); if (val) state[field] = val; });
+                saveCachedState();
+                // у кого был кэш – главная уже нарисована из него, лишний раз не перерисовываем
+                if (!hadCache && firstRenderDone && !window._deepLinkPageChanged) renderHome();
+                logLoadStage('общие данные (сервер)', isGuestGuess());
+            } catch (e) { console.error('boot apply', e); }
+        });
+
         // кэш есть – показываем главную сразу, не дожидаясь Firebase SDK
         earlyRenderHome();
         await loadFirebaseSdk();
@@ -785,6 +820,7 @@ async function loadAppData() {
         const [[userData, userRegs], regsPopup, popupConfig, popups, safety] = await Promise.all([
             pStatus, pRegsPopup, pPopupConfig, pPopups, pSafety
         ]);
+        firebaseCommonApplied = true;
         if (safety) state.safety = safety;
         try { localStorage.setItem('safetyCache', JSON.stringify(state.safety)); } catch (e) {}
         const safetyMenuItem = document.getElementById('popupSafety');
