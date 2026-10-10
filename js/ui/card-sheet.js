@@ -95,7 +95,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 <div class="cs-ben"><div class="cs-e">🥾</div><div><b>все хайки сезона</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
                 <div class="cs-ben"><div class="cs-e">🎟️</div><div><b>запись даже когда мест нет</b><span>набор закрыт для всех, но не для владельцев карты – место для тебя найдётся</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🤝</div><div><b>свой +1 на хайк</b><span>бери с собой друга, если он ещё ни разу не был с нами</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🥂</div><div><b>клубные события в городе и на море</b><span>вечера, книжный клуб, встречи – только для своих</span></div></div>
+                <div class="cs-ben"><div class="cs-e">🍕</div><div><b>клубные события в городе и на море</b><span>вечера, книжный клуб, встречи – только для своих</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🧠</div><div><b>мастермайнды на вершинах</b><span>бронируй свой запрос и получай саммари каждой встречи</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🫆</div><div><b>профили интеллигентов</b><span>заранее узнаешь, кто идёт: профессии, увлечения, с кем обсудить идею</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🛡️</div><div><b>свободный интернет</b><span>наше приложение по обходу блокировок, чтобы телеграм и весь интернет работали как раньше</span></div></div>
