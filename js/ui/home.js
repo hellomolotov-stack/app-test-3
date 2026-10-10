@@ -448,13 +448,27 @@ const GUEST_QA = [
 
 // ==================== СТРОКА «СПРОСИ» НАВЕРХУ ГЛАВНОЙ ====================
 // Написанное уходит организаторам сразу (через чат поддержки → бот), чипы открывают готовые ответы.
-const ASK_CHIPS = [
-    { label: 'что взять с собой', node: 'pack' },
-    { label: 'как проходит хайк', node: 'first_time' },
-    { label: 'как устроена карта', node: 'card' },
+const ASK_GROUPS = [
+    ['первый хайк', [
+        ['как проходит хайк', 'first_time'], ['что взять с собой', 'pack'], ['нужна ли подготовка', 'faq:подготовк'],
+        ['вдруг не выдержу темп', 'd_pace'], ['будет неловко с незнакомыми', 'd_awkward'], ['нет подходящей обуви', 'd_gear'],
+    ]],
+    ['клуб', [
+        ['что за клуб', 'faq:о клубе'], ['что такое хайкинг', 'faq:что такое хайкинг'], ['как вступить в клуб', 'join', 'pilot'],
+        ['что такое мастермайнд', 'faq:мастермайнд'], ['зачем звёзды в чате', 'faq:звёзд'],
+    ]],
+    ['запись и карта', [['как попасть на хайк', 'faq:как попасть'], ['что даёт карта интеллигента', 'card']]],
+    ['правила', [['как с безопасностью', 'faq:безопасност'], ['можно ли с алкоголем', 'faq:алкогол'], ['нужен ли пропуск в заповедник', 'faq:пропуск']]],
 ];
 
+function askGroups() {
+    const pilot = isAdmissionPilot(state.user);
+    return ASK_GROUPS.map(([title, qs]) => [title, qs.filter(q => q[2] !== 'pilot' || pilot)]);
+}
+
 function askBarHtml() {
+    const groups = askGroups();
+    const all = groups.flatMap(g => g[1]);
     return `
         <form class="ask-bar" id="askBar" autocomplete="off">
             <div class="ask-bar-field">
@@ -463,7 +477,16 @@ function askBarHtml() {
                     placeholder="спроси про хайки, карту или клуб…">
                 <button class="ask-bar-send" type="submit" aria-label="отправить">↑</button>
             </div>
-            <div class="ask-bar-chips">${ASK_CHIPS.map((c, i) => `<button type="button" class="ask-bar-chip" data-i="${i}">${c.label}</button>`).join('')}</div>
+            <div class="ask-bar-row">
+                <div class="ask-bar-chips">${all.map(q => `<button type="button" class="ask-bar-chip" data-node="${q[1]}">${q[0]}</button>`).join('')}</div>
+                <button type="button" class="ask-bar-more" aria-label="все вопросы" aria-expanded="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </div>
+            <div class="ask-bar-dd"><div class="ask-bar-dd-in">
+                ${groups.map(([title, qs]) => `<div class="ask-bar-g">${title}</div>${qs.map(q => `<button type="button" class="ask-bar-q" data-node="${q[1]}">${q[0]}<span>›</span></button>`).join('')}`).join('')}
+                <button type="button" class="ask-bar-own">не нашёл ответ? напиши свой вопрос ↑</button>
+            </div></div>
         </form>`;
 }
 
@@ -471,7 +494,9 @@ function wireAskBar() {
     const form = document.getElementById('askBar');
     if (!form) return;
     const input = form.querySelector('.ask-bar-input');
+    const more = form.querySelector('.ask-bar-more');
     const sync = () => form.classList.toggle('has-text', !!input.value.trim());
+    const setOpen = (open) => { form.classList.toggle('dd-open', open); more.setAttribute('aria-expanded', String(open)); };
     input.addEventListener('input', sync);
     input.addEventListener('focus', () => log('строка вопроса: фокус', state.userCard.status !== 'active', state.user));
     form.addEventListener('submit', (e) => {
@@ -482,14 +507,21 @@ function wireAskBar() {
         input.value = '';
         sync();
         input.blur();
+        setOpen(false);
         log('строка вопроса: отправил', state.userCard.status !== 'active', state.user);
         openOnboardingChat(null, null, false, { initialSupportMessage: text });
     });
-    form.querySelectorAll('.ask-bar-chip').forEach(btn => btn.addEventListener('click', () => {
-        const chip = ASK_CHIPS[+btn.dataset.i];
+    more.addEventListener('click', () => {
         haptic();
-        log(`строка вопроса: ${chip.label}`, state.userCard.status !== 'active', state.user);
-        openOnboardingChat(chip.node);
+        const open = !form.classList.contains('dd-open');
+        setOpen(open);
+        if (open) log('строка вопроса: все вопросы', state.userCard.status !== 'active', state.user);
+    });
+    form.querySelector('.ask-bar-own').addEventListener('click', () => { haptic(); setOpen(false); input.focus(); });
+    form.querySelectorAll('[data-node]').forEach(btn => btn.addEventListener('click', () => {
+        haptic();
+        log(`строка вопроса: ${btn.firstChild.textContent}`, state.userCard.status !== 'active', state.user);
+        openOnboardingChat(btn.dataset.node);
     }));
 }
 

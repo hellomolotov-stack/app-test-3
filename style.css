@@ -5813,7 +5813,22 @@ body.adm-open { overflow: hidden; }
 .ask-bar-send { flex: none; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: rgba(255, 255, 255, .45);
     font-size: 18px; font-weight: 700; cursor: pointer; transition: background .2s, color .2s; }
 .ask-bar.has-text .ask-bar-send { background: var(--yellow); color: #000; }
-.ask-bar-chips { display: flex; gap: 6px; margin-top: 8px; overflow-x: auto; scrollbar-width: none; padding: 0 2px; }
+.ask-bar-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.ask-bar-chips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 0 2px;
+    -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
+.ask-bar-more { flex: none; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .08); color: var(--yellow); cursor: pointer; transition: transform .3s; }
+.ask-bar.dd-open .ask-bar-more { transform: rotate(180deg); }
+.ask-bar-dd { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s ease; }
+.ask-bar.dd-open .ask-bar-dd { grid-template-rows: 1fr; }
+.ask-bar-dd-in { min-height: 0; overflow: hidden; }
+.ask-bar.dd-open .ask-bar-dd-in { margin-top: 10px; padding: 6px 16px 12px; border-radius: 22px; background: rgba(12, 20, 28, .82);
+    border: 1px solid rgba(255, 255, 255, .12); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); }
+.ask-bar-g { margin: 12px 0 2px; font-size: 12px; color: rgba(255, 255, 255, .45); }
+.ask-bar-q { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 10px 0; border: 0; border-bottom: 1px solid rgba(255, 255, 255, .07);
+    background: none; color: rgba(255, 255, 255, .9); font: inherit; font-size: 14.5px; text-align: left; cursor: pointer; }
+.ask-bar-q span { color: rgba(255, 255, 255, .35); }
+.ask-bar-own { display: block; width: 100%; margin-top: 12px; padding: 6px 0; border: 0; background: none; color: var(--yellow); font: inherit; font-size: 13.5px; cursor: pointer; }
 .ask-bar-chips::-webkit-scrollbar { display: none; }
 .ask-bar-chip { flex: none; padding: 6px 12px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, .16); background: rgba(255, 255, 255, .07);
     color: rgba(255, 255, 255, .78); font: inherit; font-size: 13px; cursor: pointer; }

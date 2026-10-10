@@ -769,7 +769,13 @@ export async function openOnboardingChat(autoNext = null, lumenContext = null, l
     await goingReady;
     const startNode = startNodeFor();
     try { localStorage.setItem(K_VISITED, '1'); } catch (e) { /* без хранилища */ }
-    if (autoNext) {
+    if (autoNext?.startsWith('faq:')) {
+        // ответ из «как всё устроено» по куску вопроса (строка «спроси» на главной)
+        const needle = autoNext.slice(4).toLowerCase();
+        const idx = (state.faq || []).filter(it => it && it.q && it.a).findIndex(it => it.q.toLowerCase().includes(needle));
+        if (idx >= 0) await onOption({ action: 'faq_item', idx }, 'faq');
+        else await renderNode('faq');
+    } else if (autoNext) {
         await renderNode(autoNext);
     } else {
         await renderNode(startNode);
