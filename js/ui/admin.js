@@ -43,6 +43,7 @@ const SEGMENT_GROUPS = [
     ['служебные', [['waitlist', 'в листе ожидания'], ['admission', 'анкета: ждут ответа или одобрены']]],
 ];
 const ASK_URL = 'https://t.me/hellointelligent';
+const CHAT_URL = 'https://t.me/yaltahikingchat';   // общий чат клуба – кнопка «общий чат» и сбор отзывов
 const SEGMENT_TIPS = {
     active7: { goal: 'позвать на ближайший хайк, пока интерес тёплый', btn: { type: 'app', section: 'hike', text: 'посмотреть хайк' },
         text: '[имя], привет 🤍 [дата] идём на [название хайка]. если давно хотел выбраться в горы – это хороший повод. детали и точка сбора по кнопке' },
@@ -917,7 +918,67 @@ async function sendCardOffer(chosen) {
 
 // ---------- рассылка ----------
 function newBroadcast() {
-    return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null, excl: [], off: {}, showExcl: false, showPeople: false, q: '', peopleLimit: 100, kind: 'regular' };
+    return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null, excl: [], off: {}, showExcl: false, showPeople: false, q: '', peopleLimit: 100, kind: 'regular', when: 'now', sendAt: defaultSendAt() };
+}
+// завтра 10:00 по времени телефона – в формате <input type="datetime-local">
+function defaultSendAt() {
+    const d = new Date(Date.now() + 86400000);
+    d.setHours(10, 0, 0, 0);
+    return localInputValue(d);
+}
+function localInputValue(d) {
+    const z = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+}
+const sendAtTs = () => Math.floor(new Date(bc.sendAt).getTime() / 1000);
+const fmtWhen = ts => new Date(ts * 1000).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+// сбор отзывов: участникам прошедшего хайка, кнопка ведёт в общий чат
+function applyFeedbackPreset(hike) {
+    bc.segment = 'hike';
+    bc.hikeDate = hike?.date || bc.hikeDate;
+    bc.excl = [];
+    bc.off = {};
+    bc.kind = 'regular';
+    bc.text = `[имя], спасибо, что был с нами${hike ? ` на «${hike.title.trim()}»` : ' на хайке'} 🤍\n\nподелись парой слов в общем чате клуба: как тебе маршрут, темп, люди? нам важно каждое мнение, а тем, кто только думает пойти с нами, – тем более`;
+    bc.btnType = 'chat';
+    bc.btnText = '💬 оставить отзыв в чате';
+    bc.tipApplied = 'feedback';
+}
+
+// ---------- запланированные рассылки ----------
+let bcSched = null; // { list, error, loading, at }
+const SCHED_STATUS = { pending: 'ждёт', sending: 'отправляется', sent: 'ушла', cancelled: 'отменена', error: 'ошибка' };
+function renderSchedBox(box) {
+    if (!box) return;
+    const list = (bcSched?.list || []);
+    if (!list.length) { box.innerHTML = bcSched?.error ? `<div class="adm-error-inline">запланированные: ${esc(bcSched.error)}</div>` : ''; return; }
+    const waiting = list.filter(x => x.status === 'pending').length;
+    box.innerHTML = `<button class="adm-people-toggle" id="admSchedToggle">⏰ запланированные${waiting ? ` (${waiting})` : ''} ${bc.showSched ? '▴' : '▾'}</button>
+        ${bc.showSched ? `<div class="adm-stats">${list.map(x => `<div class="adm-stat adm-sched is-${x.status}">
+            <div class="adm-stat-top"><b>${esc(fmtWhen(x.send_at))}</b><small>${SCHED_STATUS[x.status] || x.status}</small></div>
+            <div class="adm-stat-text">${esc(x.label.replace(/^⏰ /, ''))} · ${x.count} чел.</div>
+            <div class="adm-stat-text">${esc(x.text.replace(/<[^>]+>/g, '').slice(0, 120))}${x.text.length > 120 ? '…' : ''}</div>
+            ${x.status === 'sent' ? `<div class="adm-stat-nums"><span><b>${x.sent}</b>доставлено из ${x.total}</span></div>` : ''}
+            ${x.status === 'error' ? `<div class="adm-error-inline">${esc(x.error)}</div>` : ''}
+            ${x.status === 'pending' ? `<button class="adm-link" data-sched-cancel="${x.id}">отменить</button>` : ''}
+        </div>`).join('')}</div>` : ''}`;
+    box.querySelector('#admSchedToggle').addEventListener('click', () => { haptic(); bc.showSched = !bc.showSched; renderSchedBox(box); });
+    box.querySelectorAll('[data-sched-cancel]').forEach(b => b.addEventListener('click', async () => {
+        haptic();
+        if (!(await confirmAsync('Отменить запланированную рассылку?'))) return;
+        b.disabled = true;
+        try { await adminCall('adminScheduledCancel', { id: b.dataset.schedCancel }); toast('отменена'); }
+        catch (e) { toast(e.message, true); }
+        loadSched(box);
+    }));
+}
+async function loadSched(box) {
+    try {
+        const res = await adminCall('adminScheduledList');
+        bcSched = { list: res.list || [], at: Date.now() };
+    } catch (e) { bcSched = { list: [], error: e.message, at: Date.now() }; }
+    if (box?.isConnected) renderSchedBox(box);
 }
 
 // ---------- приглашения +1 ----------
@@ -1104,7 +1165,7 @@ function bcRecipients() {
 // ---------- черновики рассылки ----------
 // Храним в облаке Telegram (CloudStorage: привязано к аккаунту админа, видно с любого устройства),
 // если его нет – в памяти устройства. Текст – отдельным ключом: у облака лимит 4096 символов на значение.
-const DRAFT_FIELDS = ['segment', 'hikeDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText'];
+const DRAFT_FIELDS = ['segment', 'hikeDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText', 'when', 'sendAt'];
 const cloud = {
     ok: () => !!(tg?.CloudStorage && tg.isVersionAtLeast?.('6.9')),
     get: keys => new Promise(res => {
@@ -1229,7 +1290,9 @@ function renderBroadcast(body) {
 
     body.innerHTML = `
         <div id="admStats" class="adm-drafts-box"></div>
+        <div id="admSched" class="adm-drafts-box"></div>
         <div id="admDrafts" class="adm-drafts-box"></div>
+        ${recent[0] ? `<button class="adm-quick" id="admFeedback">📝 собрать отзывы о хайке<small>${esc(dateLabel(recent[0].date))} – ${esc(recent[0].title)} · кнопка в общий чат</small></button>` : ''}
         ${bc.draftId ? '<div class="adm-hint">открыт черновик – «сохранить черновик» обновит его</div>' : ''}
         <div class="adm-label">кому</div>
         ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
@@ -1263,14 +1326,20 @@ function renderBroadcast(body) {
         <div class="adm-hint">[имя] заменится именем. можно &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;a href="…"&gt;ссылка&lt;/a&gt;</div>
 
         <div class="adm-label">кнопка под сообщением</div>
-        <div class="adm-chips">${[['app', 'раздел приложения'], ['url', 'ссылка / пост'], ['none', 'без кнопки']].map(([k, l]) => `<button class="adm-chip${bc.btnType === k ? ' is-on' : ''}" data-btn="${k}">${l}</button>`).join('')}</div>
+        <div class="adm-chips">${[['app', 'раздел приложения'], ['chat', 'общий чат'], ['url', 'ссылка / пост'], ['none', 'без кнопки']].map(([k, l]) => `<button class="adm-chip${bc.btnType === k ? ' is-on' : ''}" data-btn="${k}">${l}</button>`).join('')}</div>
         ${bc.btnType === 'app' ? `<label class="adm-field"><span>куда ведёт</span><select id="admBcSection">${APP_SECTIONS.map(([k, l]) => `<option value="${k}" ${bc.section === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
             ${bc.section === 'hike' ? `<label class="adm-field"><span>какой хайк</span><select id="admBcBtnHike">${hikeOptions(bc.btnHike)}</select></label>` : ''}` : ''}
+        ${bc.btnType === 'chat' ? `<div class="adm-hint">кнопка откроет общий чат клуба – t.me/yaltahikingchat</div>` : ''}
         ${bc.btnType === 'url' ? `<label class="adm-field"><span>ссылка</span><input id="admBcUrl" value="${esc(bc.url)}" placeholder="https://t.me/yaltahiking/450"></label>` : ''}
         ${bc.btnType !== 'none' ? `<label class="adm-field"><span>текст кнопки</span><input id="admBcBtnText" value="${esc(bc.btnText)}"></label>` : ''}
 
         <div class="adm-label">так увидят</div>
         <div class="adm-preview" id="admPreview"></div>
+
+        <div class="adm-label">когда отправить</div>
+        <div class="adm-chips"><button class="adm-chip${bc.when !== 'later' ? ' is-on' : ''}" data-when="now">сейчас</button><button class="adm-chip${bc.when === 'later' ? ' is-on' : ''}" data-when="later">⏰ запланировать</button></div>
+        ${bc.when === 'later' ? `<label class="adm-field"><span>дата и время (по времени телефона)</span><input type="datetime-local" id="admBcAt" value="${esc(bc.sendAt)}" min="${localInputValue(new Date(Date.now() + 5 * 60000))}"></label>
+            <div class="adm-hint">список получателей фиксируется сейчас. уйдёт в течение 5 минут после выбранного времени, в бот придёт отчёт</div>` : ''}
 
         <div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
         <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`;
@@ -1324,6 +1393,22 @@ function renderBroadcast(body) {
     body.querySelector('#admBcUrl')?.addEventListener('input', e => { bc.url = e.target.value; update(); });
     body.querySelector('#admBcBtnText')?.addEventListener('input', e => { bc.btnText = e.target.value; update(); });
     body.querySelector('#admBcTest').addEventListener('click', () => sendBroadcast(true));
+    body.querySelectorAll('[data-when]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        bc.when = b.dataset.when;
+        if (bc.when === 'later' && (!bc.sendAt || new Date(bc.sendAt) < new Date())) bc.sendAt = defaultSendAt();
+        render();
+    }));
+    body.querySelector('#admBcAt')?.addEventListener('change', e => { bc.sendAt = e.target.value; updateSendLabel(); });
+    body.querySelector('#admFeedback')?.addEventListener('click', async () => {
+        haptic();
+        if (bc.text.trim() && bc.tipApplied !== 'feedback' && !(await confirmAsync('Заменить текст сообщения шаблоном отзыва?'))) return;
+        applyFeedbackPreset(recent[0]);
+        render();
+        refreshAudience(true);
+    });
+    const schedBox = body.querySelector('#admSched');
+    if (bcSched && Date.now() - bcSched.at < 60000) renderSchedBox(schedBox); else loadSched(schedBox);
     body.querySelector('#admBcDraft').addEventListener('click', () => saveDraft());
     renderStatsBox(body.querySelector('#admStats'));
     const draftsBox = body.querySelector('#admDrafts');
@@ -1402,6 +1487,7 @@ function buttonPayload() {
     if (bc.btnType === 'none') return null;
     const text = bc.btnText.trim() || '▶ открыть';
     if (bc.btnType === 'url') return { type: 'url', url: bc.url.trim(), text };
+    if (bc.btnType === 'chat') return { type: 'url', url: CHAT_URL, text };
     const startapp = bc.section === 'hike' ? (bc.btnHike ? 'hike_' + bc.btnHike : '') : bc.section;
     return { type: 'app', startapp, text };
 }
@@ -1421,7 +1507,9 @@ function renderPreview() {
 
 function updateSendLabel() {
     const b = root?.querySelector('#admBcSend');
-    if (b) b.textContent = bc.count ? `отправить (${bc.count} чел.)` : 'отправить';
+    if (!b) return;
+    const n = bc.count ? ` (${bc.count} чел.)` : '';
+    b.textContent = bc.when === 'later' && bc.sendAt ? `запланировать на ${fmtWhen(sendAtTs())}${n}` : `отправить${n}`;
 }
 
 async function sendBroadcast(test) {
@@ -1430,37 +1518,45 @@ async function sendBroadcast(test) {
     if (btn && btn.type === 'url' && !/^https:\/\//.test(btn.url)) return toast('ссылка должна начинаться с https://', true);
     if (btn && btn.type === 'app' && !btn.startapp) return toast('выберите, куда ведёт кнопка', true);
     const r = audience ? bcRecipients() : null;
+    const later = !test && bc.when === 'later';
     if (!test) {
         if (!r) return toast('ещё считаю получателей', true);
         if (!r.final.length) return toast('некому отправлять', true);
         const extra = [r.manual.length ? `вручную исключено ${r.manual.length}` : '', r.bySeg.length ? `сегментами исключено ${r.bySeg.length}` : ''].filter(Boolean).join(', ');
-        const ok = await confirmAsync(`Отправить сообщение: ${r.final.length} чел.${extra ? ` (${extra})` : ''}? Отменить будет нельзя.`);
-        if (!ok) return;
+        if (later) {
+            if (!bc.sendAt || sendAtTs() < Date.now() / 1000 + 120) return toast('выберите время хотя бы через пару минут', true);
+            const ok = await confirmAsync(`Запланировать на ${fmtWhen(sendAtTs())}: ${r.final.length} чел.${extra ? ` (${extra})` : ''}? До отправки можно отменить.`);
+            if (!ok) return;
+        } else {
+            const ok = await confirmAsync(`Отправить сообщение: ${r.final.length} чел.${extra ? ` (${extra})` : ''}? Отменить будет нельзя.`);
+            if (!ok) return;
+        }
     }
     const el = root.querySelector(test ? '#admBcTest' : '#admBcSend');
     const label = el.textContent;
     el.disabled = true;
-    el.textContent = test ? 'отправляю…' : 'отправляю… не закрывайте';
+    el.textContent = test ? 'отправляю…' : later ? 'планирую…' : 'отправляю… не закрывайте';
     const segLabel = [SEG_LABEL[bc.segment] || bc.segment, bc.segment === 'hike' ? bc.hikeDate : '',
         ...bc.excl.map(k => '− ' + (SEG_LABEL[k] || k)), r && r.manual.length ? `− ${r.manual.length} вручную` : ''].filter(Boolean).join(' ');
     try {
-        const res = await adminCall('adminBroadcast', test ? {
+        const res = await adminCall(later ? 'adminScheduleBroadcast' : 'adminBroadcast', test ? {
             segment: 'test', text: bc.text.trim(), button: JSON.stringify(btn)
         } : {
             segment: 'custom', ids: JSON.stringify(r.final), segment_label: segLabel, hike_date: bc.hikeDate, kind: bc.kind,
-            text: bc.text.trim(), button: JSON.stringify(btn)
+            text: bc.text.trim(), button: JSON.stringify(btn), ...(later ? { send_at: sendAtTs() } : {})
         });
         haptic();
         if (test) toast(res.sent ? 'пришло вам в бот ✓' : 'не дошло – откройте бота и нажмите /start', !res.sent);
         else {
-            toast(`доставлено ${res.sent} из ${res.total}`);
+            if (later) { toast(`запланировано на ${fmtWhen(sendAtTs())} ✓`); bcSched = null; }
+            else toast(`доставлено ${res.sent} из ${res.total}`);
             // отправленный черновик больше не нужен
             if (bc.draftId) {
                 const id = bc.draftId;
                 cloud.del(['bcd_' + id, 'bct_' + id]).then(loadDrafts).then(list => cloud.set('bc_drafts', JSON.stringify(list.filter(d => d.id !== id)))).then(loadDrafts).catch(() => {});
             }
             audience = null;
-            bc = { ...newBroadcast(), count: null };
+            bc = { ...newBroadcast(), count: null, showSched: later };
             render();
             return;
         }

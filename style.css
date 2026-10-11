@@ -5843,3 +5843,11 @@ body.adm-open { overflow: hidden; }
 .hike-ask-row { display: flex; justify-content: center; align-items: center; gap: 4px; width: 100%; margin: 10px 0 0; padding: 6px 0; border: 0; background: none;
     color: rgba(255, 255, 255, .6); font: inherit; font-size: 13.5px; cursor: pointer; }
 .hike-ask-row b { color: rgba(255, 255, 255, .9); font-weight: 600; }
+
+/* админка: быстрый сценарий «собрать отзывы» и запланированные рассылки */
+.adm-quick { display: flex; flex-direction: column; gap: 3px; width: 100%; margin: 4px 0 6px; padding: 12px 14px; border-radius: 16px; text-align: left;
+    border: 1px solid rgba(217, 253, 25, .35); background: rgba(217, 253, 25, .08); color: #fff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.adm-quick small { font-size: 12.5px; font-weight: 400; color: rgba(255, 255, 255, .6); }
+.adm-sched.is-cancelled, .adm-sched.is-sent { opacity: .6; }
+.adm-sched .adm-link { margin-top: 6px; padding: 0; }
+.adm input[type="datetime-local"] { color-scheme: dark; }
