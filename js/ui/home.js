@@ -449,16 +449,16 @@ const GUEST_QA = [
 // ==================== СТРОКА «СПРОСИ» НАВЕРХУ ГЛАВНОЙ ====================
 // Написанное уходит организаторам сразу (через чат поддержки → бот), чипы открывают готовые ответы.
 const ASK_GROUPS = [
-    ['первый хайк', [
+    ['🥾 первый хайк', [
         ['как проходит хайк', 'first_time'], ['что взять с собой', 'pack'], ['нужна ли подготовка', 'faq:подготовк'],
         ['вдруг не выдержу темп', 'd_pace'], ['будет неловко с незнакомыми', 'd_awkward'], ['нет подходящей обуви', 'd_gear'],
     ]],
-    ['клуб', [
+    ['🏔 клуб', [
         ['что за клуб', 'faq:о клубе'], ['что такое хайкинг', 'faq:что такое хайкинг'], ['как вступить в клуб', 'join', 'pilot'],
         ['что такое мастермайнд', 'faq:мастермайнд'], ['зачем звёзды в чате', 'faq:звёзд'],
     ]],
-    ['запись и карта', [['как попасть на хайк', 'faq:как попасть'], ['что даёт карта интеллигента', 'card']]],
-    ['правила', [['как с безопасностью', 'faq:безопасност'], ['можно ли с алкоголем', 'faq:алкогол'], ['нужен ли пропуск в заповедник', 'faq:пропуск']]],
+    ['🌟 запись и карта', [['как попасть на хайк', 'faq:как попасть'], ['что даёт карта интеллигента', 'card']]],
+    ['🛡️ правила', [['как с безопасностью', 'faq:безопасност'], ['можно ли с алкоголем', 'faq:алкогол'], ['нужен ли пропуск в заповедник', 'faq:пропуск']]],
 ];
 
 function askGroups() {
@@ -484,8 +484,9 @@ function askBarHtml() {
                 </button>
             </div>
             <div class="ask-bar-dd"><div class="ask-bar-dd-in">
-                ${groups.map(([title, qs]) => `<div class="ask-bar-g">${title}</div>${qs.map(q => `<button type="button" class="ask-bar-q" data-node="${q[1]}">${q[0]}<span>›</span></button>`).join('')}`).join('')}
-                <button type="button" class="ask-bar-own">не нашёл ответ? напиши свой вопрос ↑</button>
+                <div class="ask-bar-dd-head">вопросы, на которые уже есть ответ</div>
+                ${groups.map(([title, qs]) => `<div class="ask-bar-grp"><div class="ask-bar-g">${title}</div><div class="ask-bar-qs">${qs.map(q => `<button type="button" class="ask-bar-q" data-node="${q[1]}">${q[0]}</button>`).join('')}</div></div>`).join('')}
+                <button type="button" class="ask-bar-own">не нашёл ответ? <b>напиши свой вопрос ↑</b></button>
             </div></div>
         </form>`;
 }
@@ -520,7 +521,7 @@ function wireAskBar() {
     form.querySelector('.ask-bar-own').addEventListener('click', () => { haptic(); setOpen(false); input.focus(); });
     form.querySelectorAll('[data-node]').forEach(btn => btn.addEventListener('click', () => {
         haptic();
-        log(`строка вопроса: ${btn.firstChild.textContent}`, state.userCard.status !== 'active', state.user);
+        log(`строка вопроса: ${btn.textContent}`, state.userCard.status !== 'active', state.user);
         openOnboardingChat(btn.dataset.node);
     }));
 }
