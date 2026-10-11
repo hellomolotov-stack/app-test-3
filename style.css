@@ -5817,7 +5817,7 @@ body.adm-open { overflow: hidden; }
 .ask-bar-chips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 0 2px;
     -webkit-mask-image: linear-gradient(90deg, #000 82%, transparent); mask-image: linear-gradient(90deg, #000 82%, transparent); }
 .ask-bar-more { flex: none; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, .2); background: rgba(255, 255, 255, .08); color: var(--yellow); cursor: pointer; transition: transform .3s; }
+    border: 0; background: var(--yellow); color: #000; box-shadow: 0 4px 12px rgba(0, 0, 0, .2); cursor: pointer; transition: transform .3s; }
 .ask-bar.dd-open .ask-bar-more { transform: rotate(180deg); }
 .ask-bar-dd { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s ease; }
 .ask-bar.dd-open .ask-bar-dd { grid-template-rows: 1fr; }
@@ -5836,7 +5836,7 @@ body.adm-open { overflow: hidden; }
 .ask-bar-own b { color: var(--yellow); font-weight: 600; }
 .ask-bar-chips::-webkit-scrollbar { display: none; }
 .ask-bar-chip { flex: none; padding: 7px 13px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, .28); background: rgba(255, 255, 255, .15);
-    color: #fff; font-weight: 500; font: inherit; font-size: 13px; cursor: pointer; }
+    color: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
 .ask-bar-chip:active { background: var(--yellow); border-color: var(--yellow); color: #000; }
 
 /* вопрос про хайк в шторке */
