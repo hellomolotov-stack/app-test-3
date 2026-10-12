@@ -817,19 +817,57 @@ export function prefetchHikeParticipants(date, timeoutMs = 4000) {
     return Promise.race([feedLoadGoing(date).catch(() => null), new Promise(r => setTimeout(r, timeoutMs))]);
 }
 
+// Кто записан – сначала с нашего сервера (/api/going, ответ за доли секунды, кэш 10 с),
+// потом уточняем живыми данными Firebase (соединение телефона с базой бывает 6–10+ с).
+const feedGoingFromFb = {};      // date → true, когда пришёл ответ Firebase (он точнее серверного кэша)
+const feedGoingWaiters = {};     // date → [paint] – перерисовать, когда придут свежие данные
+function feedSetGoing(date, list, fromFb) {
+    if (!Array.isArray(list)) return;
+    if (!fromFb && feedGoingFromFb[date]) return;
+    feedGoingList[date] = list;
+    feedGoing[date] = list.length;
+    if (fromFb) feedGoingFromFb[date] = true;
+    feedGoingWaiters[date] = (feedGoingWaiters[date] || []).filter(w => w.el.isConnected);
+    feedGoingWaiters[date].forEach(w => { try { w.paint(list); } catch (e) {} });
+}
+const goingServerReq = {};       // date → Promise
+export function fetchGoingFromServer(dates, fresh = false) {
+    const need = fresh ? dates : dates.filter(d => !goingServerReq[d]);
+    if (need.length) {
+        const p = fetch(`/api/going?d=${need.join(',')}${fresh ? '&fresh=1' : ''}`, { signal: AbortSignal.timeout?.(5000) })
+            .then(r => (r.ok ? r.json() : null))
+            .then(j => { const g = j?.going || {}; if (!fresh) need.forEach(d => feedSetGoing(d, g[d], false)); return g; })
+            .catch(() => null);
+        if (!fresh) need.forEach(d => { goingServerReq[d] = p.then(g => g?.[d] || null); });
+        else return p;
+    }
+    return Promise.all(dates.map(d => goingServerReq[d]));
+}
+
 function feedLoadGoing(date) {
     if (feedGoingList[date]) return Promise.resolve(feedGoingList[date]);
-    return feedWhenDb().then(ok => ok ? loadAllParticipants(date) : null).then(list => {
-        if (!Array.isArray(list)) return null;
-        feedGoingList[date] = list;
-        feedGoing[date] = list.length;
-        return list;
+    const fromServer = fetchGoingFromServer([date]).then(([list]) => list || null);
+    const fromFb = feedWhenDb().then(ok => ok ? loadAllParticipants(date) : null).then(list => { feedSetGoing(date, list, true); return list; });
+    // кто первым вернёт список – тот и показан; Firebase потом сам перерисует (feedGoingWaiters)
+    return new Promise(resolve => {
+        let done = false;
+        const take = list => { if (!done && Array.isArray(list)) { done = true; resolve(list); } };
+        fromServer.then(take);
+        fromFb.then(take).catch(() => {});
+        Promise.allSettled([fromServer, fromFb]).then(() => { if (!done) resolve(null); });
     });
 }
 
 function feedFillGoing(container) {
+    // одним запросом на сервер – все даты ленты
+    const dates = [...new Set([...container.querySelectorAll('[data-seats-for], [data-going-for]')]
+        .map(el => el.dataset.seatsFor || el.dataset.goingFor).filter(Boolean))];
+    if (dates.length) fetchGoingFromServer(dates);
+    const watch = (date, paint, el) => { (feedGoingWaiters[date] ||= []).push({ paint, el }); };
     container.querySelectorAll('[data-seats-for]').forEach(el => {
-        feedLoadGoing(el.dataset.seatsFor).then(list => { if (list) feedPaintSeats(el, list.length); }).catch(() => {});
+        const paint = list => feedPaintSeats(el, list.length);
+        watch(el.dataset.seatsFor, paint, el);
+        feedLoadGoing(el.dataset.seatsFor).then(list => { if (list) paint(list); }).catch(() => {});
     });
     container.querySelectorAll('[data-going-for]').forEach(el => {
         const date = el.dataset.goingFor;
@@ -840,6 +878,7 @@ function feedFillGoing(container) {
             if (isCard) el.innerHTML = feedGoingHtml(list);
             else if (n) el.textContent = ` · ${n} ${feedPeople(n)}`;
         };
+        watch(date, paint, el);
         feedLoadGoing(date).then(list => { if (list) paint(list); }).catch(() => {});
     });
 }
@@ -2220,11 +2259,17 @@ export function showBottomSheet(index) {
                 updateFloatingSheetButtons();
             };
 
+            // сначала – что уже знаем (сервер /api/going или лента), живая подписка Firebase потом уточнит
+            let liveArrived = false;
+            const early = list => { if (!liveArrived && Array.isArray(list) && state.hikesWithTitle[curSheetIndex()]?.date === hike.date) updateAvatars(list); };
+            if (feedGoingList[hike.date]) early(feedGoingList[hike.date]);
+            else feedLoadGoing(hike.date).then(early).catch(() => {});
             if (isPast) {
-                loadAllParticipants(hike.date).then(updateAvatars);
+                loadAllParticipants(hike.date).then(list => { liveArrived = true; updateAvatars(list); });
             } else {
                 if (currentUnsubscribe) currentUnsubscribe();
                 currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+                    liveArrived = true;
                     updateAvatars(participants, count);
                 });
             }
@@ -4249,6 +4294,24 @@ async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
     // по приглашению +1 анкета не нужна – за человека ручается тот, кто его позвал
     if (state.pendingInvite?.date === hikeDate) return registerByInvite(hikeDate, hikeTitle, onClose);
     if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
+    // места на экране могли прийти из кэша сервера (до 10 с) – перед покупкой сверяемся без кэша.
+    // Нет ответа – не мешаем записи (как было раньше).
+    if (!passCodeFor(hikeDate)) {
+        const fresh = await fetchGoingFromServer([hikeDate], true);
+        const list = fresh?.[hikeDate];
+        if (Array.isArray(list)) {
+            feedSetGoing(hikeDate, list, true);
+            if (list.length >= HIKE_CAPACITY) {
+                log('места закончились перед покупкой билета', true, state.user, { hike_date: hikeDate });
+                window._participantCount = list.length;
+                updateFloatingSheetButtons();
+                const msg = 'места только что закончились 😔 с картой интеллигента можно прийти и сверх мест';
+                if (tg?.showAlert) tg.showAlert(msg); else alert(msg);
+                if (onClose) onClose();
+                return;
+            }
+        }
+    }
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
