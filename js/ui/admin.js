@@ -346,6 +346,7 @@ function renderHikeList(body) {
         if (h.track && h.track.coords) flags.push('<span class="adm-flag">трек</span>');
         if (h.report_link) flags.push('<span class="adm-flag">отчёт</span>');
         if (h.letter_link) flags.push('<span class="adm-flag">✉️ письмо</span>');
+        if (h.summary_link) flags.push('<span class="adm-flag">🧠 саммари</span>');
         if (isYes(h.city)) flags.push('<span class="adm-flag is-city">город</span>');
         return `<button class="adm-row" data-date="${h.date}">
             <span class="adm-row-date">${dateLabel(h.date)}</span>
@@ -502,6 +503,8 @@ function openEditor(date) {
         location_link: h.location_link || '',
         report_link: h.report_link || '',
         letter_link: h.letter_link || '',
+        summary_link: h.summary_link || '',
+        summary_title: h.summary_title || '',
         cancelled: isYes(h.cancelled),
         woman: isYes(h.woman),
         city: isYes(h.city),
@@ -514,7 +517,7 @@ function openEditor(date) {
         templateNote: ''
     } : {
         original: '', date: '', title: '', emoji: '', start_time: '12:00', tags: '', image: '',
-        features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '',
+        features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '', summary_link: '', summary_title: '',
         cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null,
         route_id: '', routeMode: 'none', templateNote: ''
     };
@@ -558,6 +561,9 @@ function renderEditor(body) {
         ${field('report_link', 'отчёт (ссылка на пост)', 'placeholder="https://t.me/yaltahiking/…"')}
         ${field('letter_link', '✉️ письмо после хайка (ссылка на сообщение в чате)', 'placeholder="https://t.me/yaltahikingchat/…"')}
         <div class="adm-hint">у прошедшего хайка появится конверт «письмо Макса» – в ленте и в шторке хайка</div>
+        ${field('summary_link', '🧠 summary мастермайнда (ссылка)', 'placeholder="https://…"')}
+        ${field('summary_title', 'название саммари', 'placeholder="как в блоке «саммари мастермайнда»"')}
+        <div class="adm-hint">плашка «summary мастермайнда» появится у прошедшего хайка, а запись – в блоке саммари на главной</div>
         <div class="adm-checks">${check('cancelled', 'отменён')}${check('woman', 'женский хайк')}${check('city', 'городское событие')}</div>
 
         <button class="btn btn-yellow adm-primary adm-save" id="admSave">сохранить</button>
@@ -673,6 +679,8 @@ async function saveHike() {
         location_link: d.location_link.trim(),
         report_link: d.report_link.trim(),
         letter_link: (d.letter_link || '').trim(),
+        summary_link: (d.summary_link || '').trim(),
+        summary_title: (d.summary_title || '').trim(),
         cancelled: d.cancelled,
         woman: d.woman,
         city: d.city

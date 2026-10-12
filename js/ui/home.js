@@ -245,7 +245,12 @@ async function refreshPlus1Buttons(container) {
 }
 
 function renderMastermindSummaries() {
-    const summaries = state.mastermindSummaries || [];
+    // саммари из листа + те, что добавлены к хайкам в админке (summary_link), без повторов по ссылке
+    const listed = state.mastermindSummaries || [];
+    const links = new Set(listed.map(s => String(s.link || '').trim()));
+    const fromHikes = (state.hikesWithTitle || []).filter(h => /^https?:\/\//.test(String(h.summary_link || '').trim()) && !links.has(String(h.summary_link).trim()))
+        .map(h => ({ date: h.date, title: String(h.summary_title || '').trim() || h.title, link: String(h.summary_link).trim() }));
+    const summaries = [...listed, ...fromHikes].sort((a, b) => String(b.date).localeCompare(String(a.date)));
     const isGuest = state.userCard.status !== 'active';
     const currentYear = new Date().getFullYear();
     const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];

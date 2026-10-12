@@ -5918,3 +5918,9 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .tg-leave-letter .btn-yellow { background: #FFF1B2; color: #000; }
 @keyframes letterFloat { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-5px); } }
 .tg-leave-sub { display: block; margin: -2px 0 10px; font-size: 13px; color: rgba(255, 241, 178, .7); }
+
+/* саммари мастермайнда – плашка на прошедшем хайке (как письмо, холодный серебристый тон) */
+.summary-plate { border-color: rgba(190, 215, 245, .35); background: rgba(190, 215, 245, .12); }
+.summary-plate .letter-plate-text b { color: #D6E6FA; }
+.summary-plate .letter-plate-go { color: rgba(214, 230, 250, .8); font-size: 18px; }
+.summary-plate-img { flex: none; width: 30px; height: 46px; margin: 0 7px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .4)); }

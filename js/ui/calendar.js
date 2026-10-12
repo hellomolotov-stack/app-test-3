@@ -894,6 +894,16 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
 
 // Отчёт (кнопка и значок 📷) показывается только если в report_link реальная
 // ссылка, а не пустое значение/заглушка/случайный текст.
+// саммари мастермайнда к хайку: ссылка из админки (summary_link) или запись из блока саммари с той же датой
+const mskDay = d => { const t = new Date(d); return isNaN(t) ? String(d || '').slice(0, 10) : t.toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' }); };
+export function hikeSummary(hike) {
+    if (!hike) return null;
+    const own = String(hike.summary_link || '').trim();
+    if (/^https?:\/\//.test(own)) return { link: own, title: String(hike.summary_title || '').trim() || hike.title };
+    const item = (state.mastermindSummaries || []).find(s => s && s.link && (String(s.date).slice(0, 10) === hike.date || mskDay(s.date) === hike.date));
+    return item ? { link: String(item.link).trim(), title: item.title || hike.title } : null;
+}
+
 function hasLetterLink(hike) {
     return /^https?:\/\//.test(String(hike?.letter_link || '').trim());
 }
@@ -2963,7 +2973,27 @@ function updateFloatingSheetButtons() {
             });
             container.insertBefore(letterRow, container.firstChild);
         }
-        container.style.pointerEvents = hasReportLink(hike) || hasLetterLink(hike) ? 'auto' : 'none';
+        const summary = hikeSummary(hike);
+        if (summary) {
+            // саммари мастермайнда с этого хайка – плашка как у письма, с диктофоном Plaud
+            const sumRow = document.createElement('div');
+            sumRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
+            sumRow.innerHTML = `<button type="button" class="letter-plate summary-plate">
+                <img class="summary-plate-img" src="assets/plaud.webp" alt="">
+                <span class="letter-plate-text"><b>summary мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
+                <span class="letter-plate-go">${state.userCard.status === 'active' ? '›' : '🔒'}</span></button>`;
+            sumRow.querySelector('.summary-plate').addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                haptic();
+                const isGuest = state.userCard.status !== 'active';
+                log(`саммари из шторки хайка: ${hike.title}`, isGuest, state.user);
+                if (isGuest) { showGuestBookingPopup(null, null, null, 'mastermind'); return; }
+                openLink(summary.link, '', false);
+            });
+            container.insertBefore(sumRow, container.firstChild);
+        }
+        container.style.pointerEvents = hasReportLink(hike) || hasLetterLink(hike) || summary ? 'auto' : 'none';
         return;
     }
 

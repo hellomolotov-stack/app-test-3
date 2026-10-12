@@ -81,6 +81,8 @@ export function hikesFromSnapshot(hikes) {
             leaders: data.leaders || [],
             letter_text: data.letter_text || '',
             letter_link: data.letter_link || '',
+            summary_link: data.summary_link || '',
+            summary_title: data.summary_title || '',
             half_image: data.half_image || '',
             cancelled: data.cancelled === true || data.cancelled === 'yes' || data.cancelled === '1',
             city: isYes(data.city),
