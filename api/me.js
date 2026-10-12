@@ -37,22 +37,29 @@ async function passesFor(id, token) {
     }
 }
 
-// Личное спецпредложение карты (card_offers/<id>, включает админка «новички») + общие настройки
-// баннера (card_offer_settings). Логика – как activeCardOffer_/cardOfferSettings_ в Apps Script.
-const OFFER_DEFAULTS = { price: 5000, full_price: 7500, days: 3, title: 'карта интеллигента за [цена]', text: 'для тех, кто уже ходил с нами · ещё [срок]' };
-async function offerFor(id, token) {
+// Спецпредложение карты (логика – как activeCardOffer_ в Apps Script): бессрочная за 5 500 вместо 7 500.
+// 1) из админки «💳 продажа карты»: card_offers/<id> с expires_at; 2) само собой – 3 дня, начиная со
+// следующего дня после хайка, на котором человек остался записан (не отменён, не городское событие).
+const OFFER = { price: 5500, full_price: 7500, days: 3, title: 'бессрочная карта за [цена]', text: 'вместо [было] · для тех, кто ходил с нами · ещё [срок]' };
+const mskDay = (ms) => new Date(ms + 3 * 3600 * 1000).toISOString().slice(0, 10);
+const addDays = (date, n) => mskDay(Date.parse(`${date}T12:00:00+03:00`) + n * 86400000);
+async function offerFor(id, token, regsP) {
     try {
         const o = await read(`card_offers/${id}`, token);
-        if (!o || o.used_at || o.closed_at || !(Number(o.expires_at) * 1000 > Date.now())) return null;
-        const s = (await read('card_offer_settings', token)) || {};
-        const num = (v, def) => { const n = Math.round(Number(v)); return n >= 100 && n <= 100000 ? n : def; };
-        return {
-            price: num(s.price, OFFER_DEFAULTS.price),
-            full_price: num(s.full_price, OFFER_DEFAULTS.full_price),
-            expires_at: Number(o.expires_at),
-            title: String(s.title || OFFER_DEFAULTS.title).slice(0, 80),
-            text: String(s.text != null ? s.text : OFFER_DEFAULTS.text).slice(0, 160),
-        };
+        if (o && o.used_at) return null; // уже купил по предложению
+        let expires = o && !o.closed_at && Number(o.expires_at) * 1000 > Date.now() ? Number(o.expires_at) : 0;
+        if (!expires) {
+            const regs = (await regsP) || {};
+            const today = mskDay(Date.now());
+            const dates = Object.keys(regs).filter(d => regs[d] === true && /^\d{4}-\d{2}-\d{2}$/.test(d)
+                && today >= addDays(d, 1) && today < addDays(d, 1 + OFFER.days)).sort().reverse();
+            for (const d of dates) {
+                const h = await read(`hikes/${d}`, token);
+                const ok = h && h.title && h.cancelled !== true && h.cancelled !== 'yes' && h.city !== true && h.city !== 'yes' && h.book_club !== true;
+                if (ok) { expires = Math.floor(Date.parse(`${addDays(d, 1 + OFFER.days)}T00:00:00+03:00`) / 1000); break; }
+            }
+        }
+        return expires ? { price: OFFER.price, full_price: OFFER.full_price, expires_at: expires, title: OFFER.title, text: OFFER.text } : null;
     } catch (e) {
         console.error('me offer:', e.message);
         return null;
@@ -73,11 +80,12 @@ module.exports = async (req, res) => {
     try {
         const id = String(user.id);
         const token = await getAccessToken();
+        const regsP = read(`userRegistrations/${id}`, token);
         const [member, regs, passes, offer] = await Promise.all([
             read(`members/${id}`, token),
-            read(`userRegistrations/${id}`, token),
+            regsP,
             passesFor(id, token),
-            offerFor(id, token),
+            offerFor(id, token, regsP.catch(() => ({}))),
         ]);
         // тот же вид, что отдаёт loadUserData() в js/firebase.js
         const card = member && member.user_id
