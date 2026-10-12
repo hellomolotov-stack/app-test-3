@@ -5903,16 +5903,16 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
     border-radius: 22px; border: 1px solid rgba(255, 241, 178, .35); background: rgba(255, 241, 178, .12);
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 4px 20px rgba(0, 0, 0, .2); color: #fff; font: inherit; text-align: left; cursor: pointer; }
 .letter-plate:active { transform: scale(.98); }
-.letter-plate-env { flex: none; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 14px;
-    background: rgba(255, 241, 178, .9); font-size: 22px; transform: rotate(-6deg); box-shadow: 0 3px 10px rgba(0, 0, 0, .25); }
+.letter-plate-env { flex: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    font-size: 36px; line-height: 1; transform: rotate(-8deg); filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .35)); }
 .letter-plate-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .letter-plate-text b { font-size: 15.5px; font-weight: 700; color: #FFF1B2; }
 .letter-plate-text small { font-size: 12.5px; color: rgba(255, 255, 255, .65); }
 .letter-plate-go { flex: none; font-size: 22px; color: rgba(255, 241, 178, .8); }
 .ef-letter { border-color: rgba(255, 241, 178, .4); background: rgba(255, 241, 178, .12); color: #FFF1B2; margin-right: 6px; }
 
-.tg-leave-letter .tg-leave-icon { width: 76px; height: 76px; margin: 2px auto 14px; display: flex; align-items: center; justify-content: center;
-    border-radius: 24px; background: rgba(255, 241, 178, .92); font-size: 40px; box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+.tg-leave-letter .tg-leave-icon { width: 80px; height: 80px; margin: 2px auto 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 64px; line-height: 1; filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .4));
     animation: letterFloat 3.2s ease-in-out infinite; }
 .tg-leave-letter .tg-leave-title { color: #FFF1B2; font-size: 21px; }
 .tg-leave-letter .btn-yellow { background: #FFF1B2; color: #000; }
