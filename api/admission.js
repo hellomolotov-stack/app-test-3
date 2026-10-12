@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { verifyInitData, ADMIN_USERNAMES } = require('./tg-auth');
+const { verifyInitData, isAdminUser } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const PILOT_PATH = 'helloIntelligent';
@@ -87,7 +87,7 @@ module.exports = async (req, res) => {
     const user = verifyInitData(String(body.initData || ''), process.env.TELEGRAM_BOT_TOKEN || '');
     if (!user?.id) return res.status(401).json({ error: 'открой приложение внутри Telegram' });
     const adminAction = ['list', 'decide', 'reset', 'retry'].includes(body.action);
-    const admin = ADMIN_USERNAMES.includes(String(user.username || '').toLowerCase());
+    const admin = isAdminUser(user);
     if (adminAction ? !admin : !isPilot(user)) return res.status(403).json({ error: 'пилот доступен только тестовому аккаунту' });
     if (!['status', 'submit', 'welcome', 'payment', 'list', 'decide', 'reset', 'retry'].includes(body.action)) return res.status(400).json({ error: 'неизвестное действие' });
     try {

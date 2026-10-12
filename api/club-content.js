@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { verifyInitData, ADMIN_USERNAMES } = require('./tg-auth');
+const { verifyInitData, isAdminUser } = require('./tg-auth');
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const METRICS = ['hikes', 'locations', 'kilometers', 'meetings'];
 let accessToken = null;
@@ -98,7 +98,7 @@ module.exports = async (req, res) => {
         if (!token) return res.status(503).json({ error: 'сервер не настроен' });
         user = verifyInitData(String(body.initData || ''), token);
         if (!user?.id) return res.status(401).json({ error: 'открой админку внутри Telegram' });
-        if (!ADMIN_USERNAMES.includes(String(user.username || '').toLowerCase())) return res.status(403).json({ error: 'только для администраторов' });
+        if (!isAdminUser(user)) return res.status(403).json({ error: 'только для администраторов' });
         if (!['metrics', 'updates'].includes(body.section) || !isValidRevision(body.revision)) {
             return res.status(400).json({ error: 'обнови данные редактора' });
         }

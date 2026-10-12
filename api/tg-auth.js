@@ -6,6 +6,9 @@ const crypto = require('crypto');
 
 const MAX_AGE_SEC = 7 * 24 * 3600; // приложение может долго висеть открытым – initData живёт неделю
 const ADMIN_USERNAMES = ['maxmolotov', 'hellointelligent'];
+// админы – по числовому Telegram id: username можно сменить, и освободившийся ник займёт кто-то другой
+const ADMIN_IDS = ['163665735', '7845375334']; // @maxmolotov, @hellointelligent
+const isAdminUser = user => !!user && ADMIN_IDS.includes(String(user.id));
 
 function verifyInitData(initData, botToken) {
     const params = new URLSearchParams(initData);
@@ -60,12 +63,13 @@ module.exports = async (req, res) => {
     const user = verifyInitData(String((body && body.initData) || ''), botToken);
     if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
 
-    const username = String(user.username || '').toLowerCase();
     const token = createCustomToken(serviceAccount, String(user.id), {
-        admin: ADMIN_USERNAMES.includes(username)
+        admin: isAdminUser(user)
     });
     return res.status(200).json({ token, uid: String(user.id) });
 };
 
 module.exports.verifyInitData = verifyInitData;
 module.exports.ADMIN_USERNAMES = ADMIN_USERNAMES;
+module.exports.ADMIN_IDS = ADMIN_IDS;
+module.exports.isAdminUser = isAdminUser;
