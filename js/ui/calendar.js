@@ -2980,7 +2980,8 @@ function updateFloatingSheetButtons() {
 
         const completedMsg = document.createElement('div');
         completedMsg.className = 'availability-floating';
-        completedMsg.style.cssText = glassBase + ' background: rgba(73, 138, 176, 0.15);';
+        // margin: 0 – с auto-отступами плашка и кнопка «отчёт» разъезжались к краям; теперь обе по центру рядом
+        completedMsg.style.cssText = glassBase + ' background: rgba(73, 138, 176, 0.15); margin: 0;';
         completedMsg.textContent = (isCity || isBookClub) ? '✓ событие завершено' : '✓ хайк завершён';
         container.appendChild(completedMsg);
 
