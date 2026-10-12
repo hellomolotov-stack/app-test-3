@@ -345,6 +345,7 @@ function renderHikeList(body) {
         if (isYes(h.cancelled)) flags.push('<span class="adm-flag is-off">отменён</span>');
         if (h.track && h.track.coords) flags.push('<span class="adm-flag">трек</span>');
         if (h.report_link) flags.push('<span class="adm-flag">отчёт</span>');
+        if (h.letter_link) flags.push('<span class="adm-flag">✉️ письмо</span>');
         if (isYes(h.city)) flags.push('<span class="adm-flag is-city">город</span>');
         return `<button class="adm-row" data-date="${h.date}">
             <span class="adm-row-date">${dateLabel(h.date)}</span>
@@ -500,6 +501,7 @@ function openEditor(date) {
         details: h.details || '',
         location_link: h.location_link || '',
         report_link: h.report_link || '',
+        letter_link: h.letter_link || '',
         cancelled: isYes(h.cancelled),
         woman: isYes(h.woman),
         city: isYes(h.city),
@@ -512,7 +514,7 @@ function openEditor(date) {
         templateNote: ''
     } : {
         original: '', date: '', title: '', emoji: '', start_time: '12:00', tags: '', image: '',
-        features: '', access: '', details: '', location_link: '', report_link: '',
+        features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '',
         cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null,
         route_id: '', routeMode: 'none', templateNote: ''
     };
@@ -554,6 +556,8 @@ function renderEditor(body) {
         ${area('details', 'детали', 3)}
         ${field('location_link', 'точка сбора (ссылка на карту)')}
         ${field('report_link', 'отчёт (ссылка на пост)', 'placeholder="https://t.me/yaltahiking/…"')}
+        ${field('letter_link', '✉️ письмо после хайка (ссылка на сообщение в чате)', 'placeholder="https://t.me/yaltahikingchat/…"')}
+        <div class="adm-hint">у прошедшего хайка появится конверт «письмо Макса» – в ленте и в шторке хайка</div>
         <div class="adm-checks">${check('cancelled', 'отменён')}${check('woman', 'женский хайк')}${check('city', 'городское событие')}</div>
 
         <button class="btn btn-yellow adm-primary adm-save" id="admSave">сохранить</button>
@@ -668,6 +672,7 @@ async function saveHike() {
         details: d.details,
         location_link: d.location_link.trim(),
         report_link: d.report_link.trim(),
+        letter_link: (d.letter_link || '').trim(),
         cancelled: d.cancelled,
         woman: d.woman,
         city: d.city

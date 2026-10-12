@@ -2,7 +2,7 @@
 import { requireAdmission } from './admission.js';
 import { passCodeFor } from '../pass-store.js';
 import { isAdmissionPilot, admission } from '../admission.js';
-import { haptic, openLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
+import { haptic, openLink, openLetterLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist, markPaymentSeen, paymentErrorText } from '../api.js';
@@ -404,7 +404,9 @@ function feedRow(h, nearestDate = '') {
         if (!isPast && h.start_time) sub += ` · ${h.start_time}`;
     }
     let action = '';
-    if (!cancelled && isPast && hasReportLink(h)) action = `<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
+    const letter = !cancelled && isPast && hasLetterLink(h) ? `<button class="ef-report ef-letter" data-letter="${h.date}" aria-label="письмо Макса">✉️</button>` : '';
+    if (!cancelled && isPast && hasReportLink(h)) action = `${letter}<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
+    else if (letter) action = letter.replace('>✉️<', '>✉️ письмо<');
     else if (!cancelled && !isPast && isTeaser) action = feedNotifyButton(h.date, true);
     // жёлтая «записаться» одна – в карточке ближайшего; в списке строка сама открывает хайк
     else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">↑ ближайший</span>`;
@@ -510,6 +512,11 @@ function renderEventsFeed(container) {
     container.querySelectorAll('[data-notify]').forEach(el => el.addEventListener('click', e => {
         e.stopPropagation();
         feedToggleNotify(el.dataset.notify, container);
+    }));
+    container.querySelectorAll('[data-letter]').forEach(el => el.addEventListener('click', e => {
+        e.stopPropagation();
+        const h = state.hikesData[el.dataset.letter];
+        if (h && hasLetterLink(h)) openLetterLink(String(h.letter_link).trim(), h.title, state.userCard.status !== 'active');
     }));
     container.querySelectorAll('[data-report]').forEach(el => el.addEventListener('click', e => {
         e.stopPropagation();
@@ -887,6 +894,10 @@ function applyImageBlurAndOverlay(container, shouldBlur, imageUrl, overlayImageU
 
 // Отчёт (кнопка и значок 📷) показывается только если в report_link реальная
 // ссылка, а не пустое значение/заглушка/случайный текст.
+function hasLetterLink(hike) {
+    return /^https?:\/\//.test(String(hike?.letter_link || '').trim());
+}
+
 function hasReportLink(hike) {
     const v = (hike && hike.report_link != null ? String(hike.report_link) : '').trim();
     return /^(https?:\/\/|tg:\/\/|t\.me\/)/i.test(v);
@@ -2937,7 +2948,22 @@ function updateFloatingSheetButtons() {
             });
             container.appendChild(reportBtn);
         }
-        container.style.pointerEvents = hasReportLink(hike) ? 'auto' : 'none';
+        if (hasLetterLink(hike)) {
+            // письмо Макса после хайка – конверт, переход к посту в чате клуба
+            const letterRow = document.createElement('div');
+            letterRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
+            letterRow.innerHTML = `<button type="button" class="letter-plate">
+                <span class="letter-plate-env">✉️</span>
+                <span class="letter-plate-text"><b>письмо Макса</b><small>после хайка · читать в чате клуба</small></span>
+                <span class="letter-plate-go">›</span></button>`;
+            letterRow.querySelector('.letter-plate').addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                openLetterLink(String(hike.letter_link).trim(), hike.title, state.userCard.status !== 'active');
+            });
+            container.insertBefore(letterRow, container.firstChild);
+        }
+        container.style.pointerEvents = hasReportLink(hike) || hasLetterLink(hike) ? 'auto' : 'none';
         return;
     }
 

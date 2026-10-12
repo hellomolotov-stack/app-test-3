@@ -30,18 +30,20 @@ function telegramPlace(url) {
     return 'Telegram';
 }
 
-function confirmTelegramLeave(url, go) {
+// opts – своё оформление окна: { cls, icon, title, text, stay, go, place }
+function confirmTelegramLeave(url, go, opts = {}) {
     document.querySelector('.tg-leave')?.remove();
+    const place = opts.place || telegramPlace(url);
     const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay tg-leave';
+    overlay.className = `modal-overlay tg-leave${opts.cls ? ' ' + opts.cls : ''}`;
     overlay.innerHTML = `
         <div class="modal-content">
-            <div class="tg-leave-icon">🧭</div>
-            <div class="tg-leave-title">переходим в Telegram</div>
-            <div class="tg-leave-text">откроем <b>${telegramPlace(url)}</b>. приложение может свернуться – вернуться можно в любой момент через бота клуба</div>
+            <div class="tg-leave-icon">${opts.icon || '🧭'}</div>
+            <div class="tg-leave-title">${opts.title || 'переходим в Telegram'}</div>
+            <div class="tg-leave-text">${opts.text || `откроем <b>${place}</b>. приложение может свернуться – вернуться можно в любой момент через бота клуба`}</div>
             <div class="tg-leave-actions">
-                <button type="button" class="btn btn-outline" data-act="stay" data-log-label="остался в приложении (${telegramPlace(url)})">остаться</button>
-                <button type="button" class="btn btn-yellow" data-act="go" data-log-label="перешёл в Telegram (${telegramPlace(url)})">перейти</button>
+                <button type="button" class="btn btn-outline" data-act="stay" data-log-label="остался в приложении (${place})">${opts.stay || 'остаться'}</button>
+                <button type="button" class="btn btn-yellow" data-act="go" data-log-label="перешёл в Telegram (${place})">${opts.go || 'перейти'}</button>
             </div>
         </div>`;
     const close = () => overlay.remove();
@@ -51,6 +53,24 @@ function confirmTelegramLeave(url, go) {
         if (act === 'go') { haptic(); close(); go(); }
     });
     document.body.appendChild(overlay);
+}
+
+// Письмо Макса после хайка: пост в чате клуба. Окно перехода – своё, тёплое: что откроется и как вернуться.
+export function openLetterLink(url, hikeTitle, isGuest) {
+    haptic();
+    log(`письмо после хайка: ${hikeTitle || ''}`, isGuest, state.user);
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return window.open(url, '_blank');
+    const go = () => (url.startsWith('https://t.me/') ? tg.openTelegramLink(url) : tg.openLink(url));
+    confirmTelegramLeave(url, go, {
+        cls: 'tg-leave-letter',
+        icon: '✉️',
+        title: 'письмо Макса',
+        place: 'письмо Макса',
+        text: `${hikeTitle ? `после хайка «${String(hikeTitle).replace(/</g, '&lt;')}». ` : ''}оно живёт в чате клуба – откроем его там. дочитаешь – возвращайся: приложение откроется через бота клуба, всё будет на месте`,
+        stay: 'позже',
+        go: 'читать письмо'
+    });
 }
 
 export function normalizeDate(dateStr) {
