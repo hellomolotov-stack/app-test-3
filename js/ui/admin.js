@@ -561,9 +561,9 @@ function renderEditor(body) {
         ${field('report_link', 'отчёт (ссылка на пост)', 'placeholder="https://t.me/yaltahiking/…"')}
         ${field('letter_link', '✉️ письмо после хайка (ссылка на сообщение в чате)', 'placeholder="https://t.me/yaltahikingchat/…"')}
         <div class="adm-hint">у прошедшего хайка появится конверт «письмо Макса» – в ленте и в шторке хайка</div>
-        ${field('summary_link', '🧠 summary мастермайнда (ссылка)', 'placeholder="https://…"')}
+        ${field('summary_link', '🧠 саммари мастермайнда (ссылка)', 'placeholder="https://…"')}
         ${field('summary_title', 'название саммари', 'placeholder="как в блоке «саммари мастермайнда»"')}
-        <div class="adm-hint">плашка «summary мастермайнда» появится у прошедшего хайка, а запись – в блоке саммари на главной</div>
+        <div class="adm-hint">плашка «саммари мастермайнда» появится у прошедшего хайка, а запись – в блоке саммари на главной</div>
         <div class="adm-checks">${check('cancelled', 'отменён')}${check('woman', 'женский хайк')}${check('city', 'городское событие')}</div>
 
         <button class="btn btn-yellow adm-primary adm-save" id="admSave">сохранить</button>

@@ -2980,7 +2980,7 @@ function updateFloatingSheetButtons() {
             sumRow.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
             sumRow.innerHTML = `<button type="button" class="letter-plate summary-plate">
                 <img class="summary-plate-img" src="assets/plaud.webp" alt="">
-                <span class="letter-plate-text"><b>summary мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
+                <span class="letter-plate-text"><b>саммари мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
                 <span class="letter-plate-go">${state.userCard.status === 'active' ? '›' : '🔒'}</span></button>`;
             sumRow.querySelector('.summary-plate').addEventListener('click', e => {
                 e.preventDefault();
