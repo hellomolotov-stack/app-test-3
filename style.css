@@ -5926,3 +5926,4 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .summary-plate-img { flex: none; width: 30px; height: 46px; margin: 0 7px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 3px 6px rgba(0, 0, 0, .4)); }
 
 .letter-plate-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.letter-plate { min-width: 0; flex-shrink: 1; box-sizing: border-box; }
