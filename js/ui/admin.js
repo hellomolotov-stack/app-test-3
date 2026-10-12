@@ -1314,6 +1314,7 @@ function renderBroadcast(body) {
         <div class="adm-hint">кто попросил писать реже, получит только «важное» или «анонс хайка» – смотря что выбрал</div>
 
         <div class="adm-sum" id="admSum">считаю получателей…</div>
+        <div id="admUnreach"></div>
         <button class="adm-people-toggle" id="admPeopleToggle">${bc.showPeople ? 'скрыть список' : 'показать людей'} <span id="admPeopleN"></span></button>
         ${bc.showPeople ? `<input class="adm-people-search" id="admPeopleQ" placeholder="поиск по имени или @username" value="${esc(bc.q)}">
             <div class="adm-people" id="admPeople"></div>` : ''}
@@ -1427,9 +1428,14 @@ async function refreshAudience(force = false) {
     const sum = root?.querySelector('#admSum');
     if (sum) sum.textContent = 'считаю получателей…';
     try {
-        const res = await adminCall('adminSegmentMembers', { hike_date: hikeDate });
+        // для участников хайка – ещё полный список записавшихся: кому бот написать не может, покажем отдельно
+        const [res, parts] = await Promise.all([
+            adminCall('adminSegmentMembers', { hike_date: hikeDate }),
+            hikeDate ? adminCall('adminParticipants', { date: hikeDate }).catch(() => null) : null,
+        ]);
         if (seq !== audSeq) return;
-        audience = { segments: res.segments || {}, people: res.people || {}, now: res.now || Math.floor(Date.now() / 1000), at: Date.now(), hikeDate };
+        audience = { segments: res.segments || {}, people: res.people || {}, now: res.now || Math.floor(Date.now() / 1000), at: Date.now(), hikeDate,
+            hikeAll: parts?.participants || null };
         updateAudienceViews(true);
     } catch (err) {
         if (seq !== audSeq) return;
@@ -1442,12 +1448,35 @@ async function refreshAudience(force = false) {
 }
 
 // Обновляем цифры, итог и список на месте – без перерисовки формы (иначе поле теряет фокус и экран прыгает)
+// участники хайка, которым бот написать не может (не запускали бота) – им писать лично
+function renderUnreach() {
+    const box = root?.querySelector('#admUnreach');
+    if (!box) return;
+    const all = bc.segment === 'hike' && audience?.hikeDate === bc.hikeDate ? audience.hikeAll : null;
+    if (!all) { box.innerHTML = ''; return; }
+    const ok = new Set((audience.segments.hike || []).map(String));
+    const list = all.filter(p => !ok.has(String(p.user_id)));
+    if (!list.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<div class="adm-unreach">
+        <div class="adm-unreach-head">бот не может написать – ${list.length}</div>
+        <div class="adm-hint">не запускали бота, Telegram не даёт написать им первым. напиши лично:</div>
+        ${list.map(p => `<div class="adm-unreach-row"><span>${esc(p.name || 'без имени')}</span>${p.username
+            ? `<button class="adm-link" data-tg-user="${esc(p.username)}">@${esc(p.username)}</button>` : '<small>нет username</small>'}</div>`).join('')}
+    </div>`;
+    box.querySelectorAll('[data-tg-user]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        const url = 'https://t.me/' + b.dataset.tgUser;
+        if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+    }));
+}
+
 function updateAudienceViews(withList) {
     if (!root || !audience) return;
     const segs = audience.segments;
     root.querySelectorAll('[data-n]').forEach(el => { const l = segs[el.dataset.n]; el.textContent = l ? l.length : ''; });
     const r = bcRecipients();
     bc.count = r.final.length;
+    renderUnreach();
     const sum = root.querySelector('#admSum');
     if (sum) sum.innerHTML = `получат <b>${r.final.length}</b>${r.manual.length ? ` · вручную −${r.manual.length}` : ''}${r.bySeg.length ? ` · сегментами −${r.bySeg.length}` : ''}${r.byPref.length ? ` · по их настройкам −${r.byPref.length}` : ''}`;
     const pn = root.querySelector('#admPeopleN');

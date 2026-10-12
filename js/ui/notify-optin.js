@@ -122,6 +122,11 @@ export async function maybeAskNotifications(reason = 'home', delay = 0) {
     });
 }
 
+// true – боту ещё нельзя писать человеку (и Telegram умеет попросить разрешение)
+export function needsWriteAccess() {
+    return !!(state.user?.id && tg?.requestWriteAccess && !allowsFromInitData() && !readAsk().ok);
+}
+
 // Можно ли боту писать человеку; если неизвестно – сразу просим разрешение окном Telegram
 // (без своей карточки: человек только что сам нажал «сообщить»). reason – для журнала.
 export function ensureCanMessage(reason = 'waitlist') {

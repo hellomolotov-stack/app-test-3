@@ -22,7 +22,7 @@ import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
 import { openOnboardingChat } from './onboarding-chat.js';
-import { maybeAskNotifications, ensureCanMessage } from './notify-optin.js';
+import { maybeAskNotifications, ensureCanMessage, needsWriteAccess } from './notify-optin.js';
 import { getRouteForHikeTitle } from './personal-routes-map.js';
 import { setLumenContext } from './lumen.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
@@ -3742,6 +3742,11 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
                         <div class="rt-n is-done">✓</div>
                         <div class="rt-text"><b>записали тебя</b><span id="rtCount">до встречи на тропе</span></div>
                     </div>
+                    ${needsWriteAccess() ? `<button type="button" class="rt-row rt-notify" id="rtNotify">
+                        <div class="rt-n">🔔</div>
+                        <div class="rt-text"><b>разреши нам написать тебе</b><span>пришлём в бот, если по хайку что-то поменяется</span></div>
+                        <div class="rt-chip">включить</div>
+                    </button>` : ''}
                     <button type="button" class="rt-row" id="rtChat">
                         <div class="rt-n">2</div>
                         <div class="rt-text"><b>${isExperienced ? 'загляни в чат хайка' : 'вступи в чат хайка'}</b><span>такси, детали и обновления – только там</span></div>
@@ -3806,6 +3811,18 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
         maybeAskNotifications('booking', 400);
     };
 
+    // разрешение писать в бот – прямо в билете: без него человек не попадёт в рассылки и напоминания
+    document.getElementById('rtNotify')?.addEventListener('click', async (e) => {
+        haptic();
+        const row = e.currentTarget;
+        const ok = await ensureCanMessage('билет после записи');
+        if (!ok) return;
+        row.disabled = true;
+        row.querySelector('.rt-n').textContent = '✓';
+        row.querySelector('.rt-n').classList.add('is-done');
+        row.querySelector('.rt-text').innerHTML = '<b>сообщения включены</b><span>напишем в бот, если что-то поменяется</span>';
+        row.querySelector('.rt-chip')?.remove();
+    });
     document.getElementById('rtStory').addEventListener('click', () => {
         import('./story.js').then(m => m.openStoryShare(hikeDate, 'после записи'));
     });

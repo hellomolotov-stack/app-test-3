@@ -5851,3 +5851,8 @@ body.adm-open { overflow: hidden; }
 .adm-sched.is-cancelled, .adm-sched.is-sent { opacity: .6; }
 .adm-sched .adm-link { margin-top: 6px; padding: 0; }
 .adm input[type="datetime-local"] { color-scheme: dark; }
+.adm-unreach { margin: 8px 0 4px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .04); border: 1px dashed rgba(255, 255, 255, .18); }
+.adm-unreach-head { font-size: 13.5px; font-weight: 600; color: rgba(255, 255, 255, .55); }
+.adm-unreach-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .5); font-size: 14px; }
+.adm-unreach-row .adm-link { padding: 0; }
+.adm-unreach-row small { color: rgba(255, 255, 255, .35); }
