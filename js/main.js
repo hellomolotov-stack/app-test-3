@@ -779,6 +779,10 @@ async function loadAppData() {
                     refreshBottomSheetIfOpen();
                 }
             } catch (e) { console.error('me passes', e); }
+            // личное спецпредложение карты (включает админка «новички») – баннер над меню
+            if (me.offer && me.card?.status !== 'active') {
+                import('./ui/offer-banner.js').then(m => m.mountOfferBanner(me.offer)).catch(e => console.error('offer banner', e));
+            }
         });
 
         // Общие данные главной с CDN (/api/boot, запрошен ещё в index.html) – быстрый старт для
@@ -923,6 +927,10 @@ async function loadAppData() {
         // перебивало первое впечатление (9 из 16 нажимали «не сейчас»). Спрашиваем после
         // просмотра хайка и после записи (calendar.js). На главной – тихая карточка над меню сразу после загрузки.
         pingAppUser();
+        // /api/me не ответил – про спецпредложение спрашиваем Apps Script напрямую
+        pMe.then(me => {
+            if (!me && state.userCard.status !== 'active') import('./ui/offer-banner.js').then(m => m.mountOfferBanner()).catch(() => {});
+        });
         maybeShowHomeBanner(1200);
 
         // Если оплата билета была, а возврата по startapp=paid не случилось —

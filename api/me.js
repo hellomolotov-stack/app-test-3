@@ -37,6 +37,28 @@ async function passesFor(id, token) {
     }
 }
 
+// Личное спецпредложение карты (card_offers/<id>, включает админка «новички») + общие настройки
+// баннера (card_offer_settings). Логика – как activeCardOffer_/cardOfferSettings_ в Apps Script.
+const OFFER_DEFAULTS = { price: 5000, full_price: 7500, days: 3, title: 'карта интеллигента за [цена]', text: 'для тех, кто уже ходил с нами · ещё [срок]' };
+async function offerFor(id, token) {
+    try {
+        const o = await read(`card_offers/${id}`, token);
+        if (!o || o.used_at || o.closed_at || !(Number(o.expires_at) * 1000 > Date.now())) return null;
+        const s = (await read('card_offer_settings', token)) || {};
+        const num = (v, def) => { const n = Math.round(Number(v)); return n >= 100 && n <= 100000 ? n : def; };
+        return {
+            price: num(s.price, OFFER_DEFAULTS.price),
+            full_price: num(s.full_price, OFFER_DEFAULTS.full_price),
+            expires_at: Number(o.expires_at),
+            title: String(s.title || OFFER_DEFAULTS.title).slice(0, 80),
+            text: String(s.text != null ? s.text : OFFER_DEFAULTS.text).slice(0, 160),
+        };
+    } catch (e) {
+        console.error('me offer:', e.message);
+        return null;
+    }
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -51,16 +73,17 @@ module.exports = async (req, res) => {
     try {
         const id = String(user.id);
         const token = await getAccessToken();
-        const [member, regs, passes] = await Promise.all([
+        const [member, regs, passes, offer] = await Promise.all([
             read(`members/${id}`, token),
             read(`userRegistrations/${id}`, token),
             passesFor(id, token),
+            offerFor(id, token),
         ]);
         // тот же вид, что отдаёт loadUserData() в js/firebase.js
         const card = member && member.user_id
             ? { status: 'active', hikes: member.hikes_count || 0, cardUrl: member.card_image_url || '' }
             : { status: 'inactive', hikes: 0, cardUrl: '' };
-        return res.status(200).json({ uid: id, card, regs: regs || {}, passes });
+        return res.status(200).json({ uid: id, card, regs: regs || {}, passes, offer: card.status === 'active' ? null : offer });
     } catch (e) {
         console.error('me:', e.message);
         return res.status(502).json({ error: 'db unavailable' });

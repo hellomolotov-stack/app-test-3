@@ -216,11 +216,14 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
 }
 
 // Личное спецпредложение карты (после хайка по билету): сервер сверяет id по подписи Telegram.
-export async function getCardOffer() {
+// seen: true – баннер спецпредложения показан, сервер запомнит первый показ (видно в админке)
+export async function getCardOffer({ seen = false } = {}) {
     const initData = window.Telegram?.WebApp?.initData || '';
     if (!initData || !REGISTRATION_API_URL) return { active: false };
     try {
-        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: new URLSearchParams({ action: 'cardOffer', init_data: initData }) });
+        const body = { action: 'cardOffer', init_data: initData };
+        if (seen) body.seen = '1';
+        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: new URLSearchParams(body) });
         const data = JSON.parse(await resp.text());
         return data.status === 'ok' ? data : { active: false };
     } catch (e) { return { active: false }; }

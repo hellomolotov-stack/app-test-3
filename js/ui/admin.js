@@ -8,6 +8,7 @@ import { loadAllParticipants } from '../firebase.js';
 import { previewHikeTrack, findCatalogRoute, catalogRouteTrack } from './calendar.js';
 import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
 import { renderAdmissionAdmin } from './admission-admin.js';
+import { fillOfferText } from './offer-banner.js';
 
 const ADMIN_USERNAMES = new Set(['maxmolotov', 'hellointelligent']);
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
@@ -801,45 +802,78 @@ export function parseGpx(text) {
 }
 
 // ---------- новички: спецпредложение карты ----------
-// Кто ходил с нами и без карты интеллигента. По умолчанию – пришедшие по билету; можно выбрать любых вручную.
-// Каждому, кому дошло сообщение, сервер открывает личное предложение: бессрочная карта за 5 500 ₽ вместо 7 500 на 3 дня.
-const OFFER_TEXT_DEFAULT = '[имя], спасибо за хайк вместе 🤍\n\nдля тех, кто уже ходил с клубом, бессрочная карта интеллигента следующие три дня стоит 5 500 ₽ вместо 7 500 – навсегда, со всеми хайками сезона и событиями для своих\n\nподробности – по кнопке ниже';
+// Кто ходил с нами и без карты интеллигента. Выбранным включаем личное предложение на N дней: в приложении
+// у них баннер над меню и спеццена в шторке карты. По желанию – ещё и сообщение от бота (тем, кому он может
+// писать); остальным – кнопка «написать лично» с готовым текстом. Цена и текст баннера – одни на всех.
+const OFFER_TEXT_DEFAULT = '[имя], спасибо за хайк вместе 🤍\n\nдля тех, кто уже ходил с клубом, бессрочная карта интеллигента сейчас стоит [цена] вместо [было] – навсегда, со всеми хайками сезона и событиями для своих. предложение действует [срок]\n\nподробности – по кнопке ниже';
 let nc = null;
-
+const ncRub = n => `${Number(n || 0).toLocaleString('ru-RU')} ₽`;
+function ncDays(n) {
+    const a = n % 10, b = n % 100;
+    return `${n} ${a === 1 && b !== 11 ? 'день' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'дня' : 'дней'}`;
+}
 function ncAgo(ts) {
     const h = Math.floor((Date.now() / 1000 - ts) / 3600);
     return h < 24 ? `${Math.max(1, h)} ч назад` : `${Math.floor(h / 24)} дн. назад`;
 }
-
-function ncOfferBadge(p) {
+function ncOfferState(p) {
     const o = p.offer;
-    if (!o || !o.sent_at) return '';
-    if (o.used_at) return '<span class="adm-badge is-ok">купил по предложению</span>';
-    if (o.expires_at * 1000 > Date.now()) return `<span class="adm-badge is-on">предложение отправлено ${ncAgo(o.sent_at)}</span>`;
-    return `<span class="adm-badge">предложение истекло</span>`;
+    if (!o || !o.sent_at) return 'none';
+    if (o.used_at) return 'used';
+    if (o.closed_at) return 'closed';
+    return o.expires_at * 1000 > Date.now() ? 'active' : 'expired';
 }
-
+function ncOfferBadge(p) {
+    const o = p.offer, st = ncOfferState(p);
+    if (st === 'none') return '';
+    if (st === 'used') return '<span class="adm-badge is-ok">купил по предложению</span>';
+    if (st === 'closed') return '<span class="adm-badge">предложение выключено</span>';
+    if (st === 'expired') return '<span class="adm-badge">предложение истекло</span>';
+    const d = new Date(o.expires_at * 1000);
+    const until = `${d.getDate()} ${MS[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+    return `<span class="adm-badge is-on">предложение до ${until}</span>${o.seen_at ? `<span class="adm-badge is-ok">видел баннер ${ncAgo(o.seen_at)}</span>` : '<span class="adm-badge">баннер ещё не видел</span>'}`;
+}
+function ncBotBadge(p) {
+    if (p.can_message === true) return '<span class="adm-badge is-ok">бот напишет</span>';
+    if (p.can_message === false) return '<span class="adm-badge is-off">бот не может писать – только лично</span>';
+    return '<span class="adm-badge">бот – не знаем, дойдёт ли</span>';
+}
+// текст для бота и для «написать лично»: [имя], [цена], [было], [срок]
+function ncMessage(p) {
+    const st = nc.st || {};
+    const name = String(p?.name || state.user?.first_name || 'друг').split(' ')[0];
+    return String(nc.text || '')
+        .replace(/\[имя\]/gi, name)
+        .replace(/\[цена\]/gi, ncRub(st.price))
+        .replace(/\[было\]/gi, ncRub(st.full_price))
+        .replace(/\[срок\]/gi, ncDays(Number(nc.days) || st.days || 3));
+}
+function ncBannerHtml() {
+    const st = nc.st || {};
+    const offer = { price: st.price, full_price: st.full_price, expires_at: Date.now() / 1000 + (Number(nc.days) || st.days || 3) * 86400, title: st.title, text: st.text };
+    return `<div class="offer-banner is-preview"><div class="ob-main"><span class="ob-icon">🎁</span><span class="ob-txt"><b>${esc(fillOfferText(offer.title, offer))}</b>${offer.text ? `<small>${esc(fillOfferText(offer.text, offer))}</small>` : ''}</span><span class="ob-go">›</span></div><span class="ob-close">×</span></div>`;
+}
 async function loadNewcomers(force = false) {
     if (nc && nc.people && !force) return;
-    nc = nc || { filter: 'ticket', selected: new Set(), text: OFFER_TEXT_DEFAULT, people: null };
+    nc = nc || { filter: 'ticket', selected: new Set(), text: OFFER_TEXT_DEFAULT, people: null, notify: true };
     nc.people = null;
     nc.error = '';
     try {
         const res = await adminCall('adminNewcomers');
         nc.people = res.people || [];
-        nc.price = res.price; nc.days = res.days;
-        // по умолчанию отмечены пришедшие по билету, кому предложение ещё не отправляли
-        nc.selected = new Set(nc.people.filter(p => p.ticket && !p.offer && p.can_message !== false).map(p => p.id));
+        nc.st = res.settings || { price: res.price || 5000, full_price: 7500, days: res.days || 3, title: 'карта интеллигента за [цена]', text: 'для тех, кто уже ходил с нами · ещё [срок]' };
+        if (!nc.days) nc.days = nc.st.days;
+        // по умолчанию отмечены пришедшие по билету, кому предложение ещё не включали
+        nc.selected = new Set(nc.people.filter(p => p.ticket && ncOfferState(p) === 'none').map(p => p.id));
     } catch (e) {
         nc.error = e.message;
     }
     if (root && view.tab === 'newcomers') render();
 }
-
 function renderNewcomers(body) {
     if (!nc || (!nc.people && !nc.error)) {
         body.innerHTML = '<div class="adm-muted" style="padding:20px 4px">собираю тех, кто ходил с нами…</div>';
-        if (!nc || !nc.loading) { nc = nc || { filter: 'ticket', selected: new Set(), text: OFFER_TEXT_DEFAULT }; nc.loading = true; loadNewcomers(true).finally(() => { if (nc) nc.loading = false; }); }
+        if (!nc || !nc.loading) { nc = nc || { filter: 'ticket', selected: new Set(), text: OFFER_TEXT_DEFAULT, notify: true }; nc.loading = true; loadNewcomers(true).finally(() => { if (nc) nc.loading = false; }); }
         return;
     }
     if (nc.error) {
@@ -847,75 +881,156 @@ function renderNewcomers(body) {
         body.querySelector('#ncRetry').addEventListener('click', () => { nc.error = ''; nc.people = null; render(); });
         return;
     }
+    const st = nc.st;
     const all = nc.people;
     const ticket = all.filter(p => p.ticket);
-    const list = nc.filter === 'ticket' ? ticket : all;
+    const withOffer = all.filter(p => ncOfferState(p) === 'active');
+    const list = nc.filter === 'ticket' ? ticket : nc.filter === 'offer' ? withOffer : all;
     const chosen = all.filter(p => nc.selected.has(p.id));
+    const botCan = chosen.filter(p => p.can_message !== false);
+    const chosenActive = chosen.filter(p => ncOfferState(p) === 'active');
     const row = p => {
         const name = esc(p.name || 'без имени') + (p.username ? ` <span class="adm-muted">@${esc(p.username)}</span>` : '');
         const n = p.hikes.length;
         const hk = `${n} ${n === 1 ? 'хайк' : n < 5 ? 'хайка' : 'хайков'} · последний ${dateLabel(p.last)}${p.hikes[p.hikes.length - 1].title ? ' – ' + esc(p.hikes[p.hikes.length - 1].title) : ''}`;
+        const personal = p.can_message !== true
+            ? (p.username ? `<button type="button" class="adm-ghost adm-nc-act" data-dm="${esc(p.id)}">написать лично</button>` : '<span class="adm-nc-note">нет @username – найти в чате хайка</span>')
+            : '';
+        const off = ncOfferState(p) === 'active' ? `<button type="button" class="adm-ghost adm-nc-act" data-off="${esc(p.id)}">выключить</button>` : '';
         return `<label class="adm-nc-person${nc.selected.has(p.id) ? ' is-on' : ''}">
             <input type="checkbox" data-id="${esc(p.id)}" ${nc.selected.has(p.id) ? 'checked' : ''}>
             <div class="adm-nc-info"><div class="adm-nc-name">${name}</div><div class="adm-nc-sub">${hk}</div>
-            <div class="adm-nc-badges">${p.ticket ? '<span class="adm-badge">по билету</span>' : ''}${ncOfferBadge(p)}${p.can_message === false ? '<span class="adm-badge is-off">закрыл сообщения от бота</span>' : ''}</div></div>
+            <div class="adm-nc-badges">${p.ticket ? '<span class="adm-badge">по билету</span>' : ''}${ncBotBadge(p)}${ncOfferBadge(p)}</div>
+            ${personal || off ? `<div class="adm-nc-acts">${personal}${off}</div>` : ''}</div>
         </label>`;
     };
     body.innerHTML = `
-        <div class="adm-hint" style="margin-top:0">ходили с нами, но без карты интеллигента. выбранным уйдёт сообщение с кнопкой – откроется карта по спецпредложению: <b>${(nc.price || 5500).toLocaleString('ru-RU')} ₽ вместо 7 500</b>, действует ${nc.days || 3} дня с отправки</div>
+        <div class="adm-hint" style="margin-top:0">ходили с нами, но без карты интеллигента. выбранным включается личное предложение: <b>баннер над меню</b> в приложении и спеццена в шторке карты. можно ещё и написать им через бота</div>
+
+        <div class="adm-label">предложение · одно на всех</div>
+        <div class="adm-metrics-fields">
+            <label class="adm-field"><span>спеццена, ₽</span><input type="number" inputmode="numeric" id="ncPrice" value="${esc(st.price)}"></label>
+            <label class="adm-field"><span>обычная цена, ₽</span><input type="number" inputmode="numeric" id="ncFull" value="${esc(st.full_price)}"></label>
+        </div>
+        <label class="adm-field"><span>заголовок баннера</span><input id="ncTitle" maxlength="80" value="${esc(st.title)}"></label>
+        <label class="adm-field"><span>подпись баннера</span><input id="ncSub" maxlength="160" value="${esc(st.text)}"></label>
+        <div class="adm-hint">[цена] – спеццена, [было] – обычная, [срок] – сколько осталось («2 дня», «5 ч»)</div>
+        <div class="adm-label">так увидят в приложении</div>
+        <div class="adm-nc-bannerbox" id="ncBanner">${ncBannerHtml()}</div>
+        <button class="adm-ghost adm-wide" id="ncSaveSt">сохранить цену и текст</button>
+
+        <div class="adm-label">кому</div>
         <div class="adm-chips">
             <button class="adm-chip${nc.filter === 'ticket' ? ' is-on' : ''}" data-f="ticket">по билету · ${ticket.length}</button>
             <button class="adm-chip${nc.filter === 'all' ? ' is-on' : ''}" data-f="all">все, кто ходил · ${all.length}</button>
+            <button class="adm-chip${nc.filter === 'offer' ? ' is-on' : ''}" data-f="offer">предложение включено · ${withOffer.length}</button>
         </div>
         <div class="adm-row-btns"><button class="adm-ghost" id="ncAll">выбрать всех в списке</button><button class="adm-ghost" id="ncNone">снять выбор</button></div>
         <div class="adm-nc-list">${list.length ? list.map(row).join('') : '<div class="adm-muted" style="padding:12px 4px">пока никого</div>'}</div>
 
-        <label class="adm-field"><span>сообщение</span><textarea id="ncText" rows="7">${esc(nc.text)}</textarea></label>
-        <div class="adm-hint">[имя] заменится именем. под сообщением – кнопка «посмотреть предложение»</div>
-        <div class="adm-label">так увидят</div>
-        <div class="adm-preview" id="ncPreview"></div>
-        <button class="btn btn-yellow adm-primary" id="ncSend" ${chosen.length ? '' : 'disabled'}>${chosen.length ? `отправить предложение · ${chosen.length} чел.` : 'выбери, кому отправить'}</button>`;
+        <div class="adm-label">включить выбранным · ${chosen.length} чел.</div>
+        <label class="adm-field"><span>сколько дней действует</span><input type="number" inputmode="numeric" id="ncDays" min="1" max="60" value="${esc(nc.days)}"></label>
+        <label class="adm-check"><input type="checkbox" id="ncNotify" ${nc.notify ? 'checked' : ''}> ещё и написать в бота – ${botCan.length} из ${chosen.length} (кому бот может писать)</label>
+        <div id="ncMsgBox" style="${nc.notify ? '' : 'display:none'}">
+            <label class="adm-field" style="margin-top:10px"><span>сообщение</span><textarea id="ncText" rows="7">${esc(nc.text)}</textarea></label>
+            <div class="adm-hint">[имя], [цена], [было], [срок] подставятся сами. под сообщением – кнопка «посмотреть предложение». этот же текст копируется для «написать лично»</div>
+            <div class="adm-preview" id="ncPreview"></div>
+        </div>
+        <button class="btn btn-yellow adm-primary" id="ncSend" ${chosen.length ? '' : 'disabled'}>${chosen.length ? `включить предложение · ${chosen.length} чел.` : 'выбери, кому включить'}</button>
+        ${chosenActive.length ? `<button class="adm-ghost adm-wide" id="ncOffAll">выключить у выбранных · ${chosenActive.length}</button>` : ''}`;
 
     const preview = () => {
         const el = body.querySelector('#ncPreview');
-        const name = (chosen[0]?.name || state.user?.first_name || 'друг').split(' ')[0];
-        el.innerHTML = `<div class="adm-bubble">${esc(nc.text.replace(/\[имя\]/gi, name)).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть предложение</div>`;
+        if (el) el.innerHTML = `<div class="adm-bubble">${esc(ncMessage(chosen[0])).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть предложение</div>`;
+        body.querySelector('#ncBanner').innerHTML = ncBannerHtml();
     };
+    const num = id => Math.round(Number(body.querySelector(id).value));
+    body.querySelector('#ncPrice').addEventListener('input', () => { st.price = num('#ncPrice'); preview(); });
+    body.querySelector('#ncFull').addEventListener('input', () => { st.full_price = num('#ncFull'); preview(); });
+    body.querySelector('#ncTitle').addEventListener('input', e => { st.title = e.target.value; preview(); });
+    body.querySelector('#ncSub').addEventListener('input', e => { st.text = e.target.value; preview(); });
+    body.querySelector('#ncDays').addEventListener('input', e => { nc.days = e.target.value; preview(); });
+    body.querySelector('#ncSaveSt').addEventListener('click', saveOfferSettings);
+    body.querySelector('#ncNotify').addEventListener('change', e => { haptic(); nc.notify = e.target.checked; body.querySelector('#ncMsgBox').style.display = nc.notify ? '' : 'none'; });
     body.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { haptic(); nc.filter = b.dataset.f; render(); }));
-    body.querySelector('#ncAll').addEventListener('click', () => { haptic(); list.forEach(p => { if (p.can_message !== false) nc.selected.add(p.id); }); render(); });
+    body.querySelector('#ncAll').addEventListener('click', () => { haptic(); list.forEach(p => nc.selected.add(p.id)); render(); });
     body.querySelector('#ncNone').addEventListener('click', () => { haptic(); nc.selected.clear(); render(); });
     body.querySelectorAll('.adm-nc-person input').forEach(cb => cb.addEventListener('change', () => {
         haptic();
         if (cb.checked) nc.selected.add(cb.dataset.id); else nc.selected.delete(cb.dataset.id);
         render();
     }));
-    body.querySelector('#ncText').addEventListener('input', e => { nc.text = e.target.value; preview(); });
-    body.querySelector('#ncSend').addEventListener('click', () => sendCardOffer(chosen));
+    body.querySelectorAll('[data-dm]').forEach(b => b.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation(); haptic();
+        const p = all.find(x => x.id === b.dataset.dm);
+        const text = ncMessage(p);
+        try { navigator.clipboard?.writeText(text); } catch (err) {}
+        toast('текст скопирован – вставь в чат');
+        const url = `https://t.me/${encodeURIComponent(p.username)}`;
+        if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+    }));
+    body.querySelectorAll('[data-off]').forEach(b => b.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        const p = all.find(x => x.id === b.dataset.off);
+        closeCardOffers([p]);
+    }));
+    body.querySelector('#ncText')?.addEventListener('input', e => { nc.text = e.target.value; preview(); });
+    body.querySelector('#ncSend').addEventListener('click', () => openCardOffers(chosen));
+    body.querySelector('#ncOffAll')?.addEventListener('click', () => closeCardOffers(chosenActive));
     preview();
 }
-
-async function sendCardOffer(chosen) {
-    if (!chosen.length) return;
-    const ok = await new Promise(res => {
-        const q = `отправить спецпредложение ${chosen.length} чел.?`;
+function admConfirm(q) {
+    return new Promise(res => {
         if (tg?.showConfirm) { try { tg.showConfirm(q, r => res(!!r)); return; } catch (e) {} }
         res(window.confirm(q));
     });
-    if (!ok) return;
+}
+async function saveOfferSettings() {
+    const st = nc.st;
+    const btn = root?.querySelector('#ncSaveSt');
+    if (btn) { btn.disabled = true; btn.textContent = 'сохраняю…'; }
+    try {
+        const res = await adminCall('adminOfferSettings', { save: 'yes', price: st.price, full_price: st.full_price, days: Number(nc.days) || st.days, title: st.title, text: st.text });
+        nc.st = res.settings;
+        toast('сохранено – баннер у всех с предложением уже такой');
+    } catch (e) {
+        toast(e.message, true);
+    }
+    if (root && view.tab === 'newcomers') render();
+}
+async function openCardOffers(chosen) {
+    if (!chosen.length) return;
+    const days = Math.round(Number(nc.days));
+    if (!(days >= 1 && days <= 60)) { toast('срок – от 1 до 60 дней', true); return; }
+    const bot = nc.notify ? chosen.filter(p => p.can_message !== false).length : 0;
+    if (!await admConfirm(`включить предложение ${chosen.length} чел. на ${ncDays(days)}${nc.notify ? `\nи написать в бота ${bot} чел.` : ''}?`)) return;
     const btn = root?.querySelector('#ncSend');
-    if (btn) { btn.disabled = true; btn.textContent = 'отправляю…'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'включаю…'; }
     try {
         const names = {};
         chosen.forEach(p => { names[p.id] = p.name || ''; });
-        const res = await adminCall('adminSendCardOffer', { user_ids: JSON.stringify(chosen.map(p => p.id)), names: JSON.stringify(names), text: nc.text });
-        toast(`отправлено: ${res.sent}${res.failed ? ` · не дошло: ${res.failed}` : ''}`);
+        // текст для бота: [имя] подставит сервер, остальное – здесь
+        const text = nc.notify ? ncMessage({ name: '[имя]' }) : '';
+        const res = await adminCall('adminOpenCardOffer', { user_ids: JSON.stringify(chosen.map(p => p.id)), names: JSON.stringify(names), days, notify: nc.notify ? 'yes' : 'no', text });
+        toast(`включено: ${res.opened}${nc.notify ? ` · бот написал: ${res.sent}${res.failed + res.skipped ? ` · не дошло: ${res.failed + res.skipped}` : ''}` : ''}`);
+        nc.selected.clear();
         await loadNewcomers(true);
     } catch (e) {
         toast(e.message, true);
-        if (btn) { btn.disabled = false; btn.textContent = `отправить предложение · ${chosen.length} чел.`; }
+        if (btn) { btn.disabled = false; btn.textContent = `включить предложение · ${chosen.length} чел.`; }
     }
 }
-
+async function closeCardOffers(people) {
+    if (!people.length) return;
+    if (!await admConfirm(people.length === 1 ? `выключить предложение для ${people[0].name || 'этого человека'}?` : `выключить предложение у ${people.length} чел.?`)) return;
+    try {
+        await adminCall('adminCloseCardOffer', { user_ids: JSON.stringify(people.map(p => p.id)) });
+        toast('выключено');
+        await loadNewcomers(true);
+    } catch (e) {
+        toast(e.message, true);
+    }
+}
 // ---------- рассылка ----------
 function newBroadcast() {
     return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null, excl: [], off: {}, showExcl: false, showPeople: false, q: '', peopleLimit: 100, kind: 'regular', when: 'now', sendAt: defaultSendAt() };
