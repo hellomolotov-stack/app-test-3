@@ -5917,3 +5917,4 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .tg-leave-letter .tg-leave-title { color: #FFF1B2; font-size: 21px; }
 .tg-leave-letter .btn-yellow { background: #FFF1B2; color: #000; }
 @keyframes letterFloat { 0%, 100% { transform: rotate(-6deg) translateY(0); } 50% { transform: rotate(4deg) translateY(-5px); } }
+.tg-leave-sub { display: block; margin: -2px 0 10px; font-size: 13px; color: rgba(255, 241, 178, .7); }

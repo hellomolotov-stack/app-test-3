@@ -67,7 +67,7 @@ export function openLetterLink(url, hikeTitle, isGuest) {
         icon: '✉️',
         title: 'письмо Макса',
         place: 'письмо Макса',
-        text: `${hikeTitle ? `после хайка «${String(hikeTitle).replace(/</g, '&lt;')}». ` : ''}оно живёт в чате клуба – откроем его там. дочитаешь – возвращайся: приложение откроется через бота клуба, всё будет на месте`,
+        text: `${hikeTitle ? `<span class="tg-leave-sub">${String(hikeTitle).replace(/</g, '&lt;')}</span>` : ''}оно живёт в чате клуба – откроем его там. дочитаешь – возвращайся: приложение откроется через бота клуба, всё будет на месте`,
         stay: 'позже',
         go: 'читать письмо'
     });

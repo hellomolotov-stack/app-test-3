@@ -2204,7 +2204,7 @@ export function showBottomSheet(index) {
                     }
                 }
                 const imageContainer = contentWrapper.querySelector('.image-container');
-                const isSoldOut = count >= HIKE_CAPACITY && state.pendingInvite?.date !== hike.date;
+                const isSoldOut = count >= HIKE_CAPACITY && !isPast && state.pendingInvite?.date !== hike.date;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
                 window._participantCount = count;
                 updateFloatingSheetButtons();
