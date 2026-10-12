@@ -123,10 +123,12 @@ export async function maybeAskNotifications(reason = 'home', delay = 0) {
 }
 
 // Карточка над нижним меню (не модальное окно – не перебивает первое впечатление): всплывает
-// через delay мс на главной, только если боту ещё нельзя писать; те же лимиты (раз в неделю, максимум 3).
-export async function maybeShowHomeBanner(delay = 18000) {
+// сразу после загрузки (delay мс после экрана загрузки) на главной, только если боту ещё нельзя писать; те же лимиты (раз в неделю, максимум 3).
+export async function maybeShowHomeBanner(delay = 1200) {
     await pingAppUser();
     await new Promise(r => setTimeout(r, delay));
+    // ждём, пока уйдёт экран загрузки
+    for (let i = 0; i < 20 && !document.documentElement.classList.contains('app-ready'); i++) await new Promise(r => setTimeout(r, 500));
     if (!shouldAsk('home_banner') || document.querySelector('.optin-banner')) return;
     // на главной и без открытых шторок/окон; иначе ещё раз попробуем позже
     const busy = () => document.querySelector('.modal-overlay, .bottom-sheet-overlay, .cs-overlay, .reg-ticket-overlay, .ai-island.visible')
