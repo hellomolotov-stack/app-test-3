@@ -268,7 +268,9 @@ function renderMastermindSummaries() {
         summaries.forEach(item => {
             let formattedDate = '';
             if (item.date) {
-                const dateStr = item.date.split('T')[0];
+                // даты из таблицы приходят как полночь по Москве в UTC (…T21:00:00Z) – берём день по Москве
+                const dt = new Date(item.date);
+                const dateStr = String(item.date).includes('T') && !isNaN(dt) ? dt.toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' }) : String(item.date).split('T')[0];
                 const parts = dateStr.split('-');
                 if (parts.length === 3) {
                     const day = parseInt(parts[2], 10);
