@@ -5,7 +5,7 @@ import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, main
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
 import { initFirebase, getDatabase, hikesFromSnapshot, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups, parseNode } from './firebase.js';
 import { log, logAutoSendClick, markPaymentSeen } from './api.js';
-import { pingAppUser } from './ui/notify-optin.js';
+import { pingAppUser, maybeShowHomeBanner } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
 import { initClickLog } from './ui/click-log.js';
 import { initSheetDrag } from './ui/sheet-drag.js';
@@ -921,8 +921,9 @@ async function loadAppData() {
 
         // отмечаем открытие в app_users. Разрешение на сообщения при входе не спрашиваем – это
         // перебивало первое впечатление (9 из 16 нажимали «не сейчас»). Спрашиваем после
-        // просмотра хайка и после записи (calendar.js).
+        // просмотра хайка и после записи (calendar.js). На главной – только тихая карточка над меню через 18 с.
         pingAppUser();
+        maybeShowHomeBanner(18000);
 
         // Если оплата билета была, а возврата по startapp=paid не случилось —
         // предлагаем подтвердить оплату. Ждём, пока отработает deep link.

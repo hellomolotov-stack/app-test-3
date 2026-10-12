@@ -5856,3 +5856,19 @@ body.adm-open { overflow: hidden; }
 .adm-unreach-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .5); font-size: 14px; }
 .adm-unreach-row .adm-link { padding: 0; }
 .adm-unreach-row small { color: rgba(255, 255, 255, .35); }
+
+/* карточка «разрешить писать» над нижним меню */
+.optin-banner { position: fixed; z-index: 99; left: 50%; bottom: 88px; width: calc(100% - 32px); max-width: 568px; padding: 14px 14px 12px; border-radius: 24px;
+    background: rgba(15, 24, 34, .9); border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+    backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%); color: #fff;
+    opacity: 0; transform: translate(-50%, 24px); transition: opacity .3s ease, transform .4s cubic-bezier(.2, .9, .3, 1.08); }
+.optin-banner.is-on { opacity: 1; transform: translate(-50%, 0); }
+.optin-banner-top { display: flex; gap: 10px; align-items: flex-start; }
+.optin-banner-ic { flex: none; font-size: 22px; line-height: 1.1; }
+.optin-banner-body { flex: 1; min-width: 0; }
+.optin-banner-title { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.optin-banner-text { font-size: 13.5px; line-height: 1.45; color: rgba(255, 255, 255, .78); }
+.optin-banner-x { flex: none; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .5); font-size: 11px; cursor: pointer; }
+.optin-banner-btns { display: flex; gap: 8px; margin-top: 12px; }
+.optin-banner-yes { flex: 1; height: 42px; border: 0; border-radius: 21px; background: var(--yellow); color: #000; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.optin-banner-no { flex: none; padding: 0 16px; height: 42px; border: 0; background: none; color: rgba(255, 255, 255, .6); font: inherit; font-size: 14.5px; cursor: pointer; }

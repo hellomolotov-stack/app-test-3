@@ -122,6 +122,49 @@ export async function maybeAskNotifications(reason = 'home', delay = 0) {
     });
 }
 
+// Карточка над нижним меню (не модальное окно – не перебивает первое впечатление): всплывает
+// через delay мс на главной, только если боту ещё нельзя писать; те же лимиты (раз в неделю, максимум 3).
+export async function maybeShowHomeBanner(delay = 18000) {
+    await pingAppUser();
+    await new Promise(r => setTimeout(r, delay));
+    if (!shouldAsk('home_banner') || document.querySelector('.optin-banner')) return;
+    // на главной и без открытых шторок/окон; иначе ещё раз попробуем позже
+    const busy = () => document.querySelector('.modal-overlay, .bottom-sheet-overlay, .cs-overlay, .reg-ticket-overlay, .ai-island.visible')
+        || document.querySelector('.nav-item.active:not(#navHome)');
+    for (let i = 0; i < 6 && busy(); i++) await new Promise(r => setTimeout(r, 10000));
+    if (busy() || !shouldAsk('home_banner')) return;
+
+    const a = readAsk();
+    writeAsk({ n: (a.n || 0) + 1, last: Date.now() });
+    log('сообщения: показали карточку на главной', state.userCard?.status !== 'active', state.user);
+
+    const el = document.createElement('div');
+    el.className = 'optin-banner';
+    el.setAttribute('role', 'dialog');
+    el.innerHTML = `
+        <div class="optin-banner-top">
+            <span class="optin-banner-ic">🌿</span>
+            <div class="optin-banner-body">
+                <div class="optin-banner-title">мы не шумим</div>
+                <div class="optin-banner-text">но если появится свободное место, закрытое событие или предложение только для своих – скажем первым. выключить можно в один тап</div>
+            </div>
+            <button class="optin-banner-x" data-optin="later" aria-label="закрыть">✕</button>
+        </div>
+        <div class="optin-banner-btns">
+            <button class="optin-banner-yes" data-optin="yes">разрешить писать</button>
+            <button class="optin-banner-no" data-optin="later">не надо</button>
+        </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-on')));
+    const close = () => { el.classList.remove('is-on'); setTimeout(() => el.remove(), 350); };
+    el.querySelectorAll('[data-optin]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        close();
+        if (b.dataset.optin === 'yes') requestAccess('home_banner');
+        else log('сообщения: карточка – не надо', state.userCard?.status !== 'active', state.user);
+    }));
+}
+
 // true – боту ещё нельзя писать человеку (и Telegram умеет попросить разрешение)
 export function needsWriteAccess() {
     return !!(state.user?.id && tg?.requestWriteAccess && !allowsFromInitData() && !readAsk().ok);
