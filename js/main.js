@@ -617,8 +617,6 @@ function applyOwnerBookings() {
     }
 }
 
-const APP_T0 = Date.now();
-
 // Firebase SDK подгружаем сами, после старта приложения: раньше три его файла с серверов Google
 // держали весь запуск (из Крыма без VPN – до 10+ секунд), теперь главная рисуется параллельно.
 const FIREBASE_SDK = [
@@ -646,18 +644,7 @@ function loadFirebaseSdk() {
 }
 loadFirebaseSdk(); // стартуем загрузку сразу при запуске модуля
 
-// Замер запуска по шагам (в журнал, корзинами – чтобы ежечасный отчёт оставался коротким):
-// «библиотека» – скачан Firebase, «статус карты» – пришли карта и записи, «все данные» – остальное.
-function loadStageBucket(sec) {
-    return sec < 1 ? 'до 1 с' : sec < 3 ? '1–3 с' : sec < 6 ? '3–6 с' : sec < 10 ? '6–10 с' : '10+ с';
-}
-function logLoadStage(stage, isGuest) {
-    const sec = (Date.now() - APP_T0) / 1000;
-    log(`замер: ${stage} ${loadStageBucket(sec)}`, isGuest, state.user);
-}
-function isGuestGuess() {
-    return !state.userCard || state.userCard.status !== 'active';
-}
+// замеры скорости запуска (08–12.10) сняты: сервер /api/me и /api/boot отвечают до 1 с у ~90% открытий
 
 async function loadAppData() {
     showAnimatedLoader();
@@ -758,7 +745,6 @@ async function loadAppData() {
                 state.hikeBookingStatus = loadBookingStatusFromLocal();
             }
             saveCachedState();
-            logLoadStage(`статус карты${from === 'server' ? ' (сервер)' : ''}`, state.userCard.status !== 'active');
         };
         const myId = state.user?.id;
         const pMe = (window.__meBoot || (tg?.initData && myId ? fetch('/api/me', {
@@ -816,14 +802,12 @@ async function loadAppData() {
                 saveCachedState();
                 // у кого был кэш – главная уже нарисована из него, лишний раз не перерисовываем
                 if (!hadCache && firstRenderDone && !window._deepLinkPageChanged) renderHome();
-                logLoadStage('общие данные (сервер)', isGuestGuess());
             } catch (e) { console.error('boot apply', e); }
         });
 
         // кэш есть – показываем главную сразу, не дожидаясь Firebase SDK
         earlyRenderHome();
         await loadFirebaseSdk();
-        logLoadStage('библиотека', isGuestGuess());
         initFirebase();
         const database = getDatabase();
         firebaseReady = true;
@@ -898,7 +882,6 @@ async function loadAppData() {
         if (updates) state.updates = updates;
         if (mastermindSummaries) state.mastermindSummaries = mastermindSummaries;
         if (testimonials) state.testimonials = testimonials;
-        logLoadStage('все данные', state.userCard.status !== 'active');
 
         const isGuestNow = state.userCard.status !== 'active';
         log('открыл приложение', isGuestNow, state.user);
@@ -906,8 +889,6 @@ async function loadAppData() {
         // пишем отдельными событиями – они попадут в ежечасный отчёт.
         const src = tg?.initDataUnsafe?.start_param || '';
         if (src) log(`пришёл по ссылке: ${src.replace(/^(hike|card|paid)_.*/, '$1_<дата>')}`, isGuestNow, state.user);
-        const loadSec = Math.round((Date.now() - APP_T0) / 1000);
-        if (loadSec >= 5) log(`долгая загрузка: ${loadSec >= 20 ? '20+' : loadSec >= 10 ? '10–20' : '5–10'} с`, isGuestNow, state.user);
         saveCachedState();
 
         if (tg) {
