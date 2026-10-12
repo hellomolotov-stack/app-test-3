@@ -2767,6 +2767,7 @@ function updateFloatingSheetButtons() {
     }
 
     container.innerHTML = '';
+    container.classList.remove('has-plates');
 
     // Городские события / книжный клуб: для гостей – баннеры (книжный клуб) или свайп (город)
     if ((isCity || isBookClub) && !isPast && !isCancelled && !isPlaceholder) {
@@ -2984,15 +2985,10 @@ function updateFloatingSheetButtons() {
         container.appendChild(completedMsg);
 
         if (hasReportLink(hike)) {
-            let tint;
-            if (isBookClub) tint = 'rgba(255, 241, 178, 0.25)';
-            else if (isCity) tint = 'rgba(65, 181, 237, 0.25)';
-            else if (isWoman) tint = 'rgba(251, 94, 176, 0.25)';
-            else tint = 'rgba(255, 220, 50, 0.25)';
-
-            const reportBtn = document.createElement('div');
-            reportBtn.className = 'availability-floating';
-            reportBtn.style.cssText = glassBase + ` background: ${tint}; cursor: pointer;`;
+            // как основные кнопки – жёлтая, с тенью, чтобы было видно, что нажимается
+            const reportBtn = document.createElement('button');
+            reportBtn.type = 'button';
+            reportBtn.className = 'btn btn-yellow report-btn';
             reportBtn.textContent = '📷 отчёт';
             reportBtn.addEventListener('click', e => {
                 e.preventDefault();
@@ -3039,6 +3035,8 @@ function updateFloatingSheetButtons() {
             container.insertBefore(sumRow, container.firstChild);
         }
         container.style.pointerEvents = hasReportLink(hike) || hasLetterLink(hike) || summary ? 'auto' : 'none';
+        // письмо и саммари лежат на размытой подложке – иначе сквозь щели между ними читается текст шторки
+        if (hasLetterLink(hike) || summary) container.classList.add('has-plates');
         return;
     }
 
