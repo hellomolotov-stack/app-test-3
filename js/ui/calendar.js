@@ -2961,7 +2961,7 @@ function updateFloatingSheetButtons() {
         if (hasLetterLink(hike)) {
             // письмо Макса после хайка – конверт, переход к посту в чате клуба
             const letterRow = document.createElement('div');
-            letterRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
+            letterRow.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
             letterRow.innerHTML = `<button type="button" class="letter-plate">
                 <span class="letter-plate-env">✉️</span>
                 <span class="letter-plate-text"><b>письмо Макса</b><small>после хайка · читать в чате клуба</small></span>
@@ -2977,7 +2977,7 @@ function updateFloatingSheetButtons() {
         if (summary) {
             // саммари мастермайнда с этого хайка – плашка как у письма, с диктофоном Plaud
             const sumRow = document.createElement('div');
-            sumRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
+            sumRow.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
             sumRow.innerHTML = `<button type="button" class="letter-plate summary-plate">
                 <img class="summary-plate-img" src="assets/plaud.webp" alt="">
                 <span class="letter-plate-text"><b>summary мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
