@@ -9,6 +9,7 @@ import { pingAppUser, maybeShowHomeBanner } from './ui/notify-optin.js';
 import { openAdmin } from './ui/admin.js';
 import { initClickLog } from './ui/click-log.js';
 import { initSheetDrag } from './ui/sheet-drag.js';
+import { initTypograph } from './typograph.js';
 import { passCodeFor, savePass } from './pass-store.js';
 import { initCollapsibleBlocks } from './ui/collapsible.js';
 import { ROBOKASSA_LINK, SEASON_CARD_LINK, PERMANENT_CARD_LINK } from './config.js';
@@ -956,6 +957,7 @@ function startApp() {
     initCollapsibleBlocks();
     initClickLog();
     initSheetDrag();
+    initTypograph(); // без висящих предлогов во всех текстах
     loadAppData();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });

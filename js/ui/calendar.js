@@ -3307,12 +3307,12 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
         `,
         mastermind: `
             <div class="bpu-text">
-                <div class="bpu-line bpu-title">мастермайнды – на вершине, не в офисе</div>
-                <div class="bpu-line">поднимаемся на вершину, садимся в круг и разбираем задачи друг друга</div>
-                <div class="bpu-line"><em>после общего подъёма разговор идёт по-настоящему</em></div>
+                <div class="bpu-line bpu-title">саммари – главное из разговора на вершине</div>
+                <div class="bpu-line">каждый мастермайнд мы записываем и превращаем в короткий конспект: какие задачи разбирали и к каким решениям пришли</div>
+                <div class="bpu-line"><em>опыт людей, которые уже прошли то, с чем ты сейчас разбираешься</em></div>
                 <div class="bpu-divider"></div>
-                <div class="bpu-line">работает с теми, кто ещё не знаком – но уже прошёл первый подъём вместе</div>
-                <div class="bpu-line bpu-accent">карта – вход в этот круг и возможность читать саммари</div>
+                <div class="bpu-line">можно прочитать за пару минут – даже если в тот день не получилось подняться с нами – и вернуться, когда понадобится</div>
+                <div class="bpu-line bpu-accent">карта открывает все саммари – прошлые и будущие</div>
             </div>
         `,
         city: `
