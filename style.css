@@ -5957,3 +5957,34 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .box-plate-img { flex: none; width: 64px; height: 64px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
 .box-plate-btn { flex: none; border: 0; border-radius: 30px; padding: 9px 15px; font: inherit; font-size: 14px; font-weight: 800; color: #000; cursor: pointer;
     background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 4px 12px rgba(0,0,0,.3); }
+
+/* hiking box – шторка «что внутри», вырастает из плашки (js/ui/hiking-box.js) */
+.hb-overlay { position: fixed; inset: 0; z-index: 2150; background: rgba(5, 8, 12, 0); transition: background .38s ease; }
+.hb-overlay.is-on { background: rgba(5, 8, 12, .55); }
+.hb-sheet { position: fixed; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box;
+    background: linear-gradient(rgba(214, 170, 110, .10), rgba(214, 170, 110, 0) 260px), #121a23; border: 1px solid rgba(214, 170, 110, .35);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, .45);
+    transition: top .38s cubic-bezier(.2, .9, .25, 1), left .38s cubic-bezier(.2, .9, .25, 1), width .38s cubic-bezier(.2, .9, .25, 1),
+        height .38s cubic-bezier(.2, .9, .25, 1), border-radius .38s ease; }
+.hb-sheet > :not(.hb-grab) { opacity: 0; transition: opacity .2s ease; }
+.hb-overlay.is-on .hb-sheet > * { opacity: 1; transition: opacity .25s ease .18s; }
+.hb-grab { margin: 10px auto 0; flex: none; }
+.hb-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .1); color: #fff; font-size: 16px; cursor: pointer; }
+.hb-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px 120px; -webkit-overflow-scrolling: touch; }
+.hb-hero { display: block; width: 210px; margin: 2px auto 0; transform: rotate(-6deg); filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .55)); }
+.hb-title { margin-top: 6px; text-align: center; font-size: 26px; font-weight: 800; color: #F3D9B1; }
+.hb-sub { margin: 6px auto 0; max-width: 330px; text-align: center; font-size: 14px; line-height: 1.45; color: rgba(255, 255, 255, .7); }
+.hb-label { margin: 22px 0 10px; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .5); }
+.hb-list { display: flex; flex-direction: column; gap: 10px; }
+.hb-item { display: flex; gap: 12px; align-items: center; padding: 10px; border-radius: 18px; background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .07); }
+.hb-pic { flex: none; width: 74px; height: 74px; border-radius: 14px; background: #f3f1ec; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.hb-pic img { max-width: 88%; max-height: 88%; object-fit: contain; }
+.hb-txt { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hb-txt b { font-size: 15px; font-weight: 700; color: #fff; }
+.hb-txt small { font-size: 12px; color: #F3D9B1; }
+.hb-txt span { margin-top: 3px; font-size: 13px; line-height: 1.4; color: rgba(255, 255, 255, .72); }
+.hb-partner { margin: 16px 0 0; text-align: center; font-size: 12.5px; color: rgba(255, 255, 255, .45); }
+.hb-bar { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+    background: linear-gradient(180deg, rgba(18, 26, 35, 0), rgb(18, 26, 35) 30%); }
+.hb-buy { width: 100%; height: 52px; margin: 0; font-size: 16px; font-weight: 700; }
+.box-plate-btn { font-size: 13px; padding: 9px 13px; }

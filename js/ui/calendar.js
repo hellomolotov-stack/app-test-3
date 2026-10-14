@@ -4,6 +4,7 @@ import { passCodeFor } from '../pass-store.js';
 import { isAdmissionPilot, admission } from '../admission.js';
 import { haptic, openLink, openLetterLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
+import { hikingBoxEnabled, mountHikingBoxPlate } from './hiking-box.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist, markPaymentSeen, paymentErrorText } from '../api.js';
 import {
@@ -2729,26 +2730,6 @@ function fillPlus1Slot() {
     import('./invite.js').then(m => m.renderPlus1Block(slot, hike));
 }
 
-// Hiking box: перекус от партнёра к хайку. Покупка – на сайте партнёра, у нас только плашка и ссылка.
-const HIKING_BOX_TEST_IDS = ['7845375334']; // @hellointelligent
-const HIKING_BOX_URL = 'https://dietcakes.ru/product-category/poleznyj-perekus/fruktovo-orehovye-batonchiki/';
-function mountHikingBoxPlate(container, hike, isGuest) {
-    const row = document.createElement('div');
-    row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
-    row.innerHTML = `<div class="letter-plate box-plate" role="button">
-        <img class="box-plate-img" src="assets/hiking-box.png" alt="">
-        <span class="letter-plate-text"><b>hiking box к хайку</b><small>доставка · самовывоз</small></span>
-        <button type="button" class="box-plate-btn">взять</button></div>`;
-    row.querySelector('.box-plate').addEventListener('click', e => {
-        e.preventDefault();
-        e.stopPropagation();
-        haptic();
-        openLink(HIKING_BOX_URL, `hiking box: ${hike.title}`, isGuest);
-    });
-    container.appendChild(row);
-    container.classList.add('has-plates');
-}
-
 function updateFloatingSheetButtons() {
     fillPlus1Slot();
     const container = document.querySelector('.floating-sheet-buttons');
@@ -2786,7 +2767,7 @@ function updateFloatingSheetButtons() {
 
     // ТЕСТ (14.10.2026): hiking box от партнёра – плашка над слайдером «иду», пока только для @hellointelligent
     if (!isPast && !isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && !isCompletedToday
-        && HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''))) {
+        && hikingBoxEnabled()) {
         mountHikingBoxPlate(container, hike, isGuest);
     }
 

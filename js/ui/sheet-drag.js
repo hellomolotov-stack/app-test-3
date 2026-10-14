@@ -4,7 +4,7 @@
 // у каждой шторки он уже закрывает её штатным способом. Тянуть можно за ручку или за любое
 // место, если содержимое прокручено в самый верх; по карте – с любой позиции прокрутки.
 // Горизонтальные жесты и управление картой двумя пальцами не трогаем.
-const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet';
+const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet, .hb-sheet';
 const HANDLE = '.bottom-sheet-handle, .cs-grab';  // .inv-grab тоже несёт класс cs-grab
 const SKIP = 'input, textarea, select, .swipe-track, .bottom-sheet-nav-arrow';
 const CLOSE_DY = 110;     // столько протянуть – и шторка свернётся
