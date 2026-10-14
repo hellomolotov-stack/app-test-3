@@ -18,6 +18,8 @@ const ITEMS = [
     { img: 'water', name: 'вода Bombbar', meta: 'минеральная, без газа · 500 мл', why: 'восполняет воду и минералы, которые уходят с потом на подъёме под солнцем' },
 ];
 
+const ITEMS_TOTAL = 902; // сумма цен состава на dietcakes.ru (14.10.2026): 366+143+112+102+129+50
+
 export function hikingBoxEnabled() {
     return HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''));
 }
@@ -56,6 +58,18 @@ export function openHikingBox(fromEl, hike, isGuest) {
                 <img class="hb-hero" src="assets/hiking-box.png" alt="">
                 <div class="hb-title">хайкинг бокс</div>
                 <div class="hb-sub">поднимаешься налегке – а на вершине уже ждёт обед, сладкое и вода. собираем к хайку: привезём или заберёшь сам</div>
+                <div class="hb-price"><span class="hb-price-k">весь бокс</span><b>до 1 000 ₽</b><small>шесть продуктов по ценам магазина – ${ITEMS_TOTAL} ₽</small></div>
+                <div class="hb-story">
+                    <div class="hb-story-h">почему бокс, а не магазин у старта</div>
+                    <p>обычно перекус берут на бегу – что было на кассе перед хайком. мы решили иначе: собираем бокс заранее</p>
+                    <p>состав нашли опытным путём – хайк за хайком смотрели, что реально съедается на вершине и что даёт силы на спуск. в коробке ровно то, что закрывает 5–6 часов в горах: обед, белок, сладкое, солёное и вода</p>
+                </div>
+                <div class="hb-label">как получить</div>
+                <div class="hb-ways">
+                    <div class="hb-way"><span>🚚</span><b>доставка по Ялте</b><small>привезём накануне</small></div>
+                    <div class="hb-way"><span>🏪</span><b>самовывоз</b><small>заберёшь в магазине</small></div>
+                    <div class="hb-way is-hl"><span>🏔</span><b>прямо на хайк</b><small>ждёт на точке сбора перед стартом</small></div>
+                </div>
                 <div class="hb-label">что внутри</div>
                 <div class="hb-list">${ITEMS.map(it => `
                     <div class="hb-item">

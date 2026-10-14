@@ -8,18 +8,20 @@ const SHORT = 'а|и|но|да|или|в|во|к|ко|с|со|у|о|об|обо|
 // слово целиком: в начале строки или после пробела/скобки/кавычки
 const RE_SHORT = new RegExp(`(^|[\\s${NBSP}(«"„“'])(${SHORT})[ \\t]+(?=\\S)`, 'gi');
 const RE_DASH = /([^\s ])[ \t]+([–—])(?=\s)/g;
-const SKIP = 'SCRIPT,STYLE,CODE,PRE,TEXTAREA,INPUT,SELECT,OPTION,NOSCRIPT';
+const RE_RUB = /(\d)[ \t]+(₽)/g; // «902 ₽» не рвётся на две строки
+const RE_THOUS = /(\d)[ \t](\d{3})(?!\d)/g; // «1 500» тоже
+const SKIP = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION', 'NOSCRIPT']);
 
 function fix(text) {
     if (text.length < 3 || !/\s/.test(text)) return text;
     // два прохода – для цепочек вроде «не в офисе»
     let out = text.replace(RE_SHORT, `$1$2${NBSP}`).replace(RE_SHORT, `$1$2${NBSP}`);
-    return out.replace(RE_DASH, `$1${NBSP}$2`);
+    return out.replace(RE_DASH, `$1${NBSP}$2`).replace(RE_RUB, `$1${NBSP}$2`).replace(RE_THOUS, `$1${NBSP}$2`);
 }
 
 function skip(el) {
     for (let e = el; e && e !== document.body; e = e.parentElement) {
-        if (SKIP.includes(e.tagName) || e.isContentEditable) return true;
+        if (SKIP.has(e.tagName) || e.isContentEditable) return true;
     }
     return false;
 }
