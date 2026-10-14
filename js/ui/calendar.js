@@ -3347,7 +3347,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
     const hikeNewHtml = `
         <div class="bpu-text">
             <div class="bpu-line bpu-title">запись на хайк</div>
-            <div class="bpu-line">билет на хайк – 1000 ₽ 🎟️</div>
+            <div class="bpu-line">билет на хайк – 1 500 ₽ 🎟️</div>
             <div class="bpu-line">купил – идёшь. один раз, без обязательств</div>
             <div class="bpu-divider"></div>
             <div class="bpu-line">хочешь ходить постоянно и быть частью клуба?</div>
@@ -3408,7 +3408,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
 
             <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 4px;">
                 ${!isReturning && isHikeContext
-                    ? `<button class="btn btn-outline" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет · 🎟️ 1000 руб.</button>`
+                    ? `<button class="btn btn-outline" id="buyTicketBtn" style="width: 100%; margin: 0;">купить билет · 🎟️ 1 500 ₽</button>`
                     : ''}
                 ${!isReturning && !isHikeContext
                     ? `<button class="btn btn-outline" id="pickHikeBtn" style="width: 100%; margin: 0;">выбрать хайк</button>`
@@ -3422,7 +3422,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
                     карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе
                 </div>
 
-                <div class="booking-popup-economy">билет на один хайк – 1000 ₽. карта окупается к пятому хайку</div>
+                <div class="booking-popup-economy">билет на один хайк – 1 500 ₽. карта окупается к пятому хайку</div>
 
                 <div class="booking-card-option">
                     <div class="booking-card-name">бессрочная – ${config.permanentCardPrice || 7500} ₽</div>
@@ -4045,7 +4045,7 @@ export function showHikePickerSheet() {
 // ResultURL не понимал, кого записывать, а Robokassa не возвращала человека в приложение –
 // так остались незаписанными две участницы. Если сервер недоступен, лучше не взять деньги вовсе,
 // чем взять их без следа.
-const TICKET_PRICE = 1000;
+const TICKET_PRICE = 1500;
 const TICKET_SUPPORT_LINK = 'https://t.me/hellointelligent';
 
 async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
@@ -4317,7 +4317,7 @@ async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
         <div class="modal-content" style="max-width:360px; text-align:center;">
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">пойти на хайк</div>
             <div class="modal-text" style="text-align:center; margin-top:8px;">можешь купить разовый билет или оформить карту интеллигента, чтобы ходить безлимитно – не только на хайки, но и на события в городе</div>
-            <button class="btn btn-outline" id="choiceButBtn" style="width:100%; margin:16px 0 0;">купить билет · 🎟️ 1000 руб.</button>
+            <button class="btn btn-outline" id="choiceButBtn" style="width:100%; margin:16px 0 0;">купить билет · 🎟️ 1 500 ₽</button>
             <button class="btn btn-yellow" id="choiceCardBtn" style="width:100%; margin:10px 0 0;">узнать о карте</button>
         </div>
     `;

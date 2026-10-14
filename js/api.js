@@ -177,7 +177,7 @@ export function validatePayment(data, { cardType, giftCardType, expectedAmount }
 }
 
 export async function initPayment({ userId, firstName, lastName, username, hikeDate, hikeTitle, cardType, giftCardType, expectedAmount }) {
-    expectedAmount ??= cardType === 'ticket' ? 1000 : cardType === 'permanent' ? 7500 : cardType === 'season' ? 5500 : cardType === 'gift' ? (giftCardType === 'permanent' ? 7500 : 5500) : undefined;
+    expectedAmount ??= cardType === 'ticket' ? 1500 : cardType === 'permanent' ? 7500 : cardType === 'season' ? 5500 : cardType === 'gift' ? (giftCardType === 'permanent' ? 7500 : 5500) : undefined;
     if (isAdmissionPilot()) {
         const data = await admissionRequest('payment', { payment: { hikeDate, hikeTitle, cardType, giftCardType } });
         return validatePayment(data, { cardType, giftCardType, expectedAmount });
