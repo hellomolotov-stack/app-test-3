@@ -404,9 +404,9 @@ function feedRow(h, nearestDate = '') {
         if (!isPast && h.start_time) sub += ` · ${h.start_time}`;
     }
     let action = '';
-    const letter = !cancelled && isPast && hasLetterLink(h) ? `<button class="ef-report ef-letter" data-letter="${h.date}" aria-label="письмо Макса">✉️</button>` : '';
-    if (!cancelled && isPast && hasReportLink(h)) action = `${letter}<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
-    else if (letter) action = letter.replace('>✉️<', '>✉️ письмо<');
+    // у прошедшего хайка одна кнопка – она открывает его шторку, где уже и отчёт, и письмо, и саммари
+    if (!cancelled && isPast && hasReportLink(h)) action = `<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
+    else if (!cancelled && isPast && hasLetterLink(h)) action = `<button class="ef-report ef-letter" data-report="${h.date}">✉️ письмо</button>`;
     else if (!cancelled && !isPast && isTeaser) action = feedNotifyButton(h.date, true);
     // жёлтая «записаться» одна – в карточке ближайшего; в списке строка сама открывает хайк
     else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">↑ ближайший</span>`;
@@ -513,15 +513,10 @@ function renderEventsFeed(container) {
         e.stopPropagation();
         feedToggleNotify(el.dataset.notify, container);
     }));
-    container.querySelectorAll('[data-letter]').forEach(el => el.addEventListener('click', e => {
-        e.stopPropagation();
-        const h = state.hikesData[el.dataset.letter];
-        if (h && hasLetterLink(h)) openLetterLink(String(h.letter_link).trim(), h.title, state.userCard.status !== 'active');
-    }));
     container.querySelectorAll('[data-report]').forEach(el => el.addEventListener('click', e => {
         e.stopPropagation();
-        const h = state.hikesData[el.dataset.report];
-        if (h && hasReportLink(h)) openLink(String(h.report_link).trim(), 'отчёт из ленты', state.userCard.status !== 'active');
+        haptic();
+        feedOpenHike(el.dataset.report, 'отчёт из ленты → шторка хайка');
     }));
     container.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => {
         haptic();
