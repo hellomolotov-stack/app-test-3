@@ -2765,9 +2765,9 @@ function updateFloatingSheetButtons() {
     container.innerHTML = '';
     container.classList.remove('has-plates');
 
-    // ТЕСТ (14.10.2026): hiking box от партнёра – плашка над слайдером «иду», пока только для @hellointelligent
-    if (!isPast && !isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && !isCompletedToday
-        && hikingBoxEnabled()) {
+    // ТЕСТ (14.10.2026): хайкинг бокс от партнёра – плашка над слайдером «иду» и на прошедших хайках
+    // (рядом с письмом и саммари), пока только для @hellointelligent
+    if (!isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && hikingBoxEnabled()) {
         mountHikingBoxPlate(container, hike, isGuest);
     }
 

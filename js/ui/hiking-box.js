@@ -28,7 +28,7 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
         <img class="box-plate-img" src="assets/hiking-box.png" alt="">
-        <span class="letter-plate-text"><b>hiking box</b><small>перекус к хайку</small></span>
+        <span class="letter-plate-text"><b>хайкинг бокс</b><small>обед на вершину</small></span>
         <button type="button" class="box-plate-btn">что внутри</button></div>`;
     const plate = row.querySelector('.box-plate');
     plate.addEventListener('click', e => {
@@ -54,8 +54,8 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
                 <img class="hb-hero" src="assets/hiking-box.png" alt="">
-                <div class="hb-title">hiking box</div>
-                <div class="hb-sub">всё, что нужно на тропе: сытно, легко в рюкзаке и почти без сахара. соберём к хайку – с доставкой или самовывозом</div>
+                <div class="hb-title">хайкинг бокс</div>
+                <div class="hb-sub">поднимаешься налегке – а на вершине уже ждёт обед, сладкое и вода. собираем к хайку: привезём или заберёшь сам</div>
                 <div class="hb-label">что внутри</div>
                 <div class="hb-list">${ITEMS.map(it => `
                     <div class="hb-item">

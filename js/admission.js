@@ -26,8 +26,11 @@ export function formAnswers(form = {}) {
 let loading = null;
 let generation = 0;
 
+// 14.10.2026: пилот анкеты временно выключен – @hellointelligent видит обычное приложение (тест hiking box).
+// включить обратно – ADMISSION_PILOT_ON = true
+const ADMISSION_PILOT_ON = false;
 export function isAdmissionPilot() {
-    return !!state.user?.id && String(state.user.username || '').replace(/^@/, '').toLowerCase() === 'hellointelligent';
+    return ADMISSION_PILOT_ON && !!state.user?.id && String(state.user.username || '').replace(/^@/, '').toLowerCase() === 'hellointelligent';
 }
 
 export function applyAdmissionVisitorMode() {
