@@ -1864,13 +1864,14 @@ function updateSendLabel() {
 function bcFlowPickHtml() {
     if (!flowsData || flowsData.loading) return '<div class="adm-muted" style="padding:8px 2px">загружаю цепочки…</div>';
     if (flowsData.error) return `<div class="adm-error-inline">цепочки не загрузились: ${esc(flowsData.error)}</div>`;
-    const list = (flowsData.list || []).filter(x => x.flow.trigger !== 'postpone' && x.flow.enabled !== false);
-    if (!list.length) return '<div class="adm-hint">своих цепочек пока нет – создай её во вкладке «🔗 цепочки»</div>';
+    const list = (flowsData.list || []).filter(x => x.flow.enabled !== false);
+    if (!list.length) return '<div class="adm-hint">включённых цепочек нет – создай или включи её во вкладке «🔗 цепочки»</div>';
     const cur = list.find(x => x.id === bc.flowId);
     const first = cur ? cur.flow.nodes?.[cur.flow.start] : null;
     return `<div class="adm-chips">${list.map(x => `<button class="adm-chip${bc.flowId === x.id ? ' is-on' : ''}" data-bc-flow="${esc(x.id)}">${esc(x.flow.title)}</button>`).join('')}</div>
         ${first ? `<div class="adm-label">первое сообщение</div><div class="adm-preview"><div class="adm-bubble">${esc(first.text).replace(/\n/g, '<br>')}</div>
             ${(first.buttons || []).map(b => `<div class="adm-bubble-btn">${esc(b.label)}</div>`).join('')}</div>
+            ${cur.flow.trigger === 'postpone' ? '<div class="adm-hint">эта цепочка обычно уходит сама, когда ставишь «🌧️ дата перенесена». отсюда её можно отправить и вручную – выбранным людям</div>' : ''}
             <div class="adm-hint">дальше бот сам ведёт по кнопкам. результат – на карте во вкладке «🔗 цепочки»</div>` : '<div class="adm-hint">выбери цепочку</div>'}`;
 }
 async function sendFlowBroadcast(test) {
