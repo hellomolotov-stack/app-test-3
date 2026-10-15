@@ -6191,3 +6191,38 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-swaps-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
 .hb-swaps-list span { padding: 6px 11px; border-radius: 14px; font-size: 12.5px; color: rgba(255, 255, 255, .85);
     background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
+
+/* хайкинг бокс: цена «без карты / с картой интеллигента −10%», «без наценки», кнопки с названием бокса и ценой */
+.hb-price-row { display: flex; align-items: stretch; gap: 8px; margin-top: 8px; }
+.hb-p-full, .hb-p-card { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 10px 6px; border-radius: 16px; }
+.hb-p-full { background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .1); }
+.hb-p-full small, .hb-p-card small { font-size: 11.5px; line-height: 1.2; color: rgba(255, 255, 255, .6); }
+.hb-price .hb-p-full b { margin: 0; font-size: 22px; color: rgba(255, 255, 255, .85); }
+.hb-p-card { background: linear-gradient(135deg, rgba(217, 253, 25, .2), rgba(217, 253, 25, .05)); border: 1px solid rgba(217, 253, 25, .55);
+    box-shadow: 0 0 24px rgba(217, 253, 25, .12); }
+.hb-p-card small { color: rgba(236, 255, 140, .85); }
+.hb-price .hb-p-card b { margin: 0; font-size: 26px; color: var(--yellow); }
+.hb-p-badge { position: absolute; top: -9px; right: -6px; padding: 3px 8px; border-radius: 10px; transform: rotate(6deg);
+    font-size: 12px; font-weight: 800; color: #000; background: var(--yellow); box-shadow: 0 3px 10px rgba(0, 0, 0, .35); }
+.hb-price-note { display: block; margin-top: 8px; font-size: 12px; color: rgba(255, 255, 255, .5); }
+.hb-price { max-width: 340px; padding: 12px; }
+.hb-fair { margin-top: 12px; padding: 10px 14px; border-radius: 16px; text-align: center; font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, .75);
+    background: rgba(214, 170, 110, .1); border: 1px solid rgba(214, 170, 110, .3); }
+.hb-fair::before { content: '🤝 '; }
+.hb-fair b { color: #F3D9B1; }
+.hb-scroll > .hb-custom { display: block; width: calc(100% - 48px); height: 46px; margin-top: 12px; border-radius: 30px; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.hb-buy-full { font-size: 15px; white-space: nowrap; padding-left: 10px; padding-right: 10px; letter-spacing: -.01em; }
+@media (max-width: 350px) { .hb-buy-full { font-size: 13.5px; } }
+.hb-buy-card { display: flex; align-items: center; gap: 10px; width: 100%; height: 56px; margin: 0; padding: 0 16px 0 8px; border-radius: 30px; cursor: pointer; font: inherit; text-align: left;
+    color: #fff; background: rgba(20, 28, 38, .85); border: 1px solid rgba(217, 253, 25, .55); box-shadow: 0 0 18px rgba(217, 253, 25, .12); }
+.hb-buy-card img { flex: none; width: 52px; height: 34px; border-radius: 6px; object-fit: cover; transform: rotate(-6deg); box-shadow: 0 3px 8px rgba(0, 0, 0, .5); }
+.hb-bc-t { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 14.5px; font-weight: 800; line-height: 1.2; }
+.hb-bc-t small { font-size: 12px; font-weight: 600; color: rgba(236, 255, 140, .85); }
+.hb-bc-p { flex: none; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+.hb-bc-p s { font-size: 12px; color: rgba(255, 255, 255, .5); }
+.hb-bc-p b { font-size: 17px; font-weight: 800; color: var(--yellow); }
+/* владелец карты: «с картой» – главная жёлтая кнопка сверху, полная цена – второстепенная */
+.hb-bar.is-member .hb-buy-card { order: -1; color: #000; background: linear-gradient(180deg, #e8ff4a, #c9ec00); border-color: transparent; }
+.hb-bar.is-member .hb-buy-card small, .hb-bar.is-member .hb-bc-p b { color: #000; }
+.hb-bar.is-member .hb-bc-p s { color: rgba(0, 0, 0, .5); }
+.hb-bar.is-member .hb-buy-full { background: rgba(255, 255, 255, .1); color: #fff; border: 1px solid rgba(255, 255, 255, .2); box-shadow: none; }

@@ -17,7 +17,7 @@ const SHOP_URL = 'https://dietcakes.ru';
 //   оптимальный 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50
 const BOXES = {
     light: {
-        tab: 'лёгкий', price: '446 ₽', priceNote: 'пять продуктов по ценам dietcakes.ru', h: 470,
+        tab: 'лёгкий', price: 446, count: 'пять продуктов', h: 470,
         items: [
             ['chips', 'height:190px; left:36px; top:66px; transform:rotate(-7deg); z-index:2'],
             ['water', 'height:162px; left:282px; top:62px; transform:rotate(6deg); z-index:1'],
@@ -37,7 +37,7 @@ const BOXES = {
         swaps: ['батончик → другой вкус', 'чипсы → палочки', 'пастила → печенье'],
     },
     optimal: {
-        tab: 'оптимальный', price: '854 ₽', priceNote: 'шесть продуктов по ценам dietcakes.ru', h: 500,
+        tab: 'оптимальный', price: 854, count: 'шесть продуктов', h: 500,
         items: [
             ['pesto', 'width:212px; left:8px; top:104px; transform:rotate(-10deg); z-index:3'],
             ['shake', 'height:168px; left:168px; top:78px; transform:rotate(6deg); z-index:4'],
@@ -61,6 +61,9 @@ const BOXES = {
     },
 };
 const DEFAULT_BOX = 'optimal';
+const CARD_DISCOUNT = 0.10; // скидка владельцам карты интеллигента
+const rub = n => `${n.toLocaleString('ru-RU')} ₽`;
+const cardPrice = n => Math.round(n * (1 - CARD_DISCOUNT));
 
 function collageHtml(b) {
     return b.items.map(([n, st]) => `<img src="assets/box/cut/${n}.png" style="${st}" alt="">`).join('')
@@ -124,7 +127,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
                 <div class="hb-title">хайкинг бокс</div>
                 <div class="hb-sub">еда и вода на весь хайк в одной коробке. получаешь перед стартом – и не думаешь, что взять с собой</div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
-                    `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${b.price}</small></button>`).join('')}</div>
+                    `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${rub(b.price)}</small></button>`).join('')}</div>
                 <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
                 <div class="hb-warn"></div>
                 <div class="hb-swaps"><span class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
@@ -134,10 +137,22 @@ export function openHikingBox(fromEl, hike, isGuest) {
                     <div class="hb-way"><span>🏪</span><b>самовывоз</b><small>из магазина</small></div>
                     <div class="hb-way is-hl"><span>🏔</span><b>на хайк</b><small>на точке сбора</small></div>
                 </div>
-                <div class="hb-price"><span class="hb-price-k"></span><b></b><small></small></div>
+                <div class="hb-price">
+                    <span class="hb-price-k"></span>
+                    <div class="hb-price-row">
+                        <div class="hb-p-full"><small>без карты</small><b></b></div>
+                        <div class="hb-p-card"><span class="hb-p-badge">−10%</span><small>с картой интеллигента</small><b></b></div>
+                    </div>
+                    <small class="hb-price-note"></small>
+                </div>
+                <div class="hb-fair"><b>без наценки</b> – по прямой цене магазина. самые заботливые цены по всей большой Ялте</div>
+                <button type="button" class="hb-buy hb-custom">настроить свой бокс</button>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
             </div>
-            <div class="hb-bar"><button type="button" class="btn btn-yellow hb-buy">взять бокс с собой</button><button type="button" class="btn hb-buy hb-custom">настроить свой бокс</button></div>
+            <div class="hb-bar">
+                <button type="button" class="btn btn-yellow hb-buy hb-buy-full"></button>
+                <button type="button" class="hb-buy hb-buy-card"><img src="assets/card-front.jpg" alt=""><span class="hb-bc-t">с картой интеллигента<small>скидка 10% на бокс</small></span><span class="hb-bc-p"><s></s><b></b></span></button>
+            </div>
         </div>`;
     const sheet = overlay.querySelector('.hb-sheet');
     const tgw = window.Telegram?.WebApp;
@@ -160,8 +175,12 @@ export function openHikingBox(fromEl, hike, isGuest) {
         warn.hidden = !b.warn;
         overlay.querySelector('.hb-swaps-list').innerHTML = b.swaps.map(s => `<span>${s}</span>`).join('');
         overlay.querySelector('.hb-price-k').textContent = `${b.tab} бокс`;
-        overlay.querySelector('.hb-price b').textContent = b.price;
-        overlay.querySelector('.hb-price small').textContent = b.priceNote;
+        overlay.querySelector('.hb-p-full b').textContent = rub(b.price);
+        overlay.querySelector('.hb-p-card b').textContent = rub(cardPrice(b.price));
+        overlay.querySelector('.hb-price-note').textContent = `${b.count} по ценам dietcakes.ru`;
+        overlay.querySelector('.hb-buy-full').textContent = `взять ${b.tab} бокс на хайк · ${rub(b.price)}`;
+        overlay.querySelector('.hb-bc-p s').textContent = rub(b.price);
+        overlay.querySelector('.hb-bc-p b').textContent = rub(cardPrice(b.price));
     };
     showBox(DEFAULT_BOX);
     overlay.querySelectorAll('.hb-tab').forEach(t => t.addEventListener('click', () => {
@@ -205,9 +224,20 @@ export function openHikingBox(fromEl, hike, isGuest) {
     };
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
     overlay.querySelector('.hb-close').addEventListener('click', () => { haptic(); close(); });
+    // у кого карта есть – главная кнопка «с картой» (жёлтая, сверху); у кого нет – она открывает шторку карты
+    const isMember = state.userCard?.status === 'active';
+    overlay.querySelector('.hb-bar').classList.toggle('is-member', isMember);
     overlay.querySelectorAll('.hb-buy').forEach(btn => btn.addEventListener('click', () => {
         haptic();
-        const custom = btn.classList.contains('hb-custom');
-        openLink(SHOP_URL, `hiking box: ${custom ? 'настроить свой' : `взять ${BOXES[current].tab}`} – ${hike.title}`, isGuest);
+        const tab = BOXES[current].tab;
+        if (btn.classList.contains('hb-buy-card') && !isMember) {
+            log(`hiking box: с картой (нет карты) → шторка карты – ${tab}`, isGuest, state.user);
+            close();
+            import('./card-sheet.js').then(m => m.openCardSheet({ source: 'хайкинг бокс' })).catch(() => {});
+            return;
+        }
+        const what = btn.classList.contains('hb-custom') ? 'настроить свой'
+            : btn.classList.contains('hb-buy-card') ? `взять ${tab} с картой` : `взять ${tab}`;
+        openLink(SHOP_URL, `hiking box: ${what} – ${hike.title}`, isGuest);
     }));
 }
