@@ -6077,3 +6077,10 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .fl-btn { padding: 7px 8px; border-radius: 12px; text-align: center; font-size: 12px; background: rgba(217, 253, 25, .12); border: 1px solid rgba(217, 253, 25, .35); color: var(--yellow); }
 .fl-btn small { display: block; margin-top: 2px; font-size: 11px; color: rgba(255, 255, 255, .7); }
 .fl-map { margin-bottom: 12px; }
+.fl-msg.is-edit { padding: 8px; }
+.fl-ta { width: 100%; box-sizing: border-box; min-height: 60px; padding: 8px 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(0,0,0,.25); color: #fff; font: inherit; font-size: 16px; line-height: 1.4; resize: vertical; }
+.fl-addbtn { margin-top: 6px; padding: 0; }
+.fl-btn.is-edit { display: flex; align-items: center; gap: 4px; padding: 4px 4px 4px 8px; }
+.fl-btn.is-edit input { flex: 1; min-width: 0; border: 0; background: none; color: var(--yellow); font: inherit; font-size: 16px; outline: none; }
+.fl-x { flex: none; width: 24px; height: 24px; border: 0; border-radius: 50%; background: rgba(255,255,255,.1); color: rgba(255,255,255,.6); cursor: pointer; }
+.fl-new { display: block; width: 100%; margin: 4px 0 10px; padding: 11px; border-radius: 14px; border: 1px dashed rgba(255,255,255,.3); background: none; color: #fff; font: inherit; font-size: 14.5px; cursor: pointer; }

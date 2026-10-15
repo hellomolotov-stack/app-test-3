@@ -1051,7 +1051,7 @@ async function loadFlows(body) {
     flowsData = { loading: true };
     try { const res = await adminCall('adminFlows'); flowsData = { list: res.flows || [] }; }
     catch (e) { flowsData = { error: e.message }; }
-    if (body.isConnected) renderFlows(body);
+    if (body.isConnected && view.tab === 'flows') renderFlows(body);
 }
 function flowNodeHtml(f, nodeId, depth, seen) {
     const node = f.flow.nodes?.[nodeId];
@@ -1072,7 +1072,104 @@ function flowNodeHtml(f, nodeId, depth, seen) {
             ${b.next ? `<div class="fl-line"></div>${flowNodeHtml(f, b.next, depth + 1, seen)}` : ''}</div>`).join('')}</div>` : ''}
     </div>`;
 }
+// редактор: дерево правится на месте; новая кнопка сразу заводит своё следующее сообщение.
+// Пустое следующее сообщение при сохранении отбрасывается – кнопка просто отмечает выбор.
+let flowEdit = null; // { id, title, enabled, start, nodes, trigger }
+const FLOW_MAX_DEPTH = 3;
+function newNodeId(nodes) { let i = 1; while (nodes['n' + i]) i++; return 'n' + i; }
+function dropSubtree(nodes, nid) {
+    const n = nodes[nid];
+    if (!n) return;
+    (n.buttons || []).forEach(b => b.next && dropSubtree(nodes, b.next));
+    delete nodes[nid];
+}
+function flowEditNodeHtml(nid, depth) {
+    const n = flowEdit.nodes[nid];
+    if (!n) return '';
+    const btns = n.buttons || [];
+    return `<div class="fl-node">
+        <div class="fl-msg is-edit">
+            <textarea class="fl-ta" data-ftext="${nid}" rows="${depth ? 3 : 5}" placeholder="${depth ? 'ответ бота на эту кнопку (можно оставить пустым)' : 'первое сообщение. [имя] заменится именем'}">${esc(n.text || '')}</textarea>
+            ${depth < FLOW_MAX_DEPTH - 1 && btns.length < 3 ? `<button class="adm-link fl-addbtn" data-faddbtn="${nid}">+ кнопка</button>` : ''}
+        </div>
+        ${btns.length ? `<div class="fl-branches" style="grid-template-columns:repeat(${btns.length},minmax(0,1fr))">${btns.map((b, i) => `<div class="fl-branch">
+            <div class="fl-line"></div>
+            <div class="fl-btn is-edit"><input data-flabel="${nid}:${i}" value="${esc(b.label || '')}" placeholder="надпись кнопки" maxlength="40"><button class="fl-x" data-fdelbtn="${nid}:${i}" aria-label="удалить кнопку">×</button></div>
+            ${b.next ? `<div class="fl-line"></div>${flowEditNodeHtml(b.next, depth + 1)}` : ''}</div>`).join('')}</div>` : ''}
+    </div>`;
+}
+function renderFlowEditor(body) {
+    body.innerHTML = `<button class="adm-back" id="flBack">‹ ${flowEdit.id ? 'к карте' : 'все цепочки'}</button>
+        <div class="adm-h1">${flowEdit.id ? 'изменить цепочку' : 'новая цепочка'}</div>
+        <label class="adm-field"><span>название</span><input id="flTitle" value="${esc(flowEdit.title || '')}" placeholder="например, «отзыв после хайка»" maxlength="60"></label>
+        <label class="adm-check"><input type="checkbox" id="flEnabled" ${flowEdit.enabled !== false ? 'checked' : ''}><span>включена</span></label>
+        <div class="fl-trigger">⚡ <b>запуск:</b> ${flowEdit.trigger === 'postpone' ? 'у события поставили «🌧️ дата перенесена»' : 'вручную – во вкладке «рассылка» выбираешь «🔗 цепочку» и людей'}</div>
+        <div class="fl-line"></div>
+        <div class="fl-map">${flowEditNodeHtml(flowEdit.start, 0)}</div>
+        <div class="adm-hint">до 3 кнопок у сообщения и до 3 шагов в глубину. кнопка без ответа просто отмечает выбор – его видно на карте</div>
+        <button class="btn btn-yellow adm-primary" id="flSave">сохранить цепочку</button>
+        ${flowEdit.id && flowEdit.trigger !== 'postpone' ? '<button class="adm-delete" id="flDelete">🗑 удалить цепочку</button>' : ''}`;
+    body.querySelector('#flBack').addEventListener('click', () => { haptic(); flowEdit = null; renderFlows(body); });
+    body.querySelector('#flTitle').addEventListener('input', e => { flowEdit.title = e.target.value; });
+    body.querySelector('#flEnabled').addEventListener('change', e => { flowEdit.enabled = e.target.checked; });
+    body.querySelectorAll('[data-ftext]').forEach(t => t.addEventListener('input', () => { flowEdit.nodes[t.dataset.ftext].text = t.value; }));
+    body.querySelectorAll('[data-flabel]').forEach(t => t.addEventListener('input', () => {
+        const [nid, i] = t.dataset.flabel.split(':');
+        flowEdit.nodes[nid].buttons[+i].label = t.value;
+    }));
+    body.querySelectorAll('[data-faddbtn]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        const n = flowEdit.nodes[b.dataset.faddbtn];
+        const child = newNodeId(flowEdit.nodes);
+        flowEdit.nodes[child] = { text: '' };
+        (n.buttons ||= []).push({ label: '', next: child });
+        renderFlowEditor(body);
+    }));
+    body.querySelectorAll('[data-fdelbtn]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        const [nid, i] = b.dataset.fdelbtn.split(':');
+        const btn = flowEdit.nodes[nid].buttons[+i];
+        if (btn.next) dropSubtree(flowEdit.nodes, btn.next);
+        flowEdit.nodes[nid].buttons.splice(+i, 1);
+        renderFlowEditor(body);
+    }));
+    body.querySelector('#flSave').addEventListener('click', async e => {
+        haptic();
+        // пустые ответы на кнопки отбрасываем – кнопка остаётся и просто считает выбор
+        const nodes = JSON.parse(JSON.stringify(flowEdit.nodes));
+        const prune = nid => {
+            const n = nodes[nid];
+            (n.buttons || []).forEach(btn => {
+                if (!btn.next) return;
+                if (!String(nodes[btn.next]?.text || '').trim()) { dropSubtree(nodes, btn.next); delete btn.next; }
+                else prune(btn.next);
+            });
+        };
+        if (!String(nodes[flowEdit.start]?.text || '').trim()) return toast('напиши первое сообщение', true);
+        prune(flowEdit.start);
+        e.target.disabled = true;
+        e.target.textContent = 'сохраняю…';
+        try {
+            const res = await adminCall('adminFlowSave', { id: flowEdit.id || '', flow: JSON.stringify({ title: flowEdit.title, enabled: flowEdit.enabled, start: flowEdit.start, nodes }) });
+            toast('цепочка сохранена ✓');
+            flowOpen = res.id;
+            flowEdit = null;
+            await loadFlows(body);
+        } catch (err) {
+            toast(err.message, true);
+            e.target.disabled = false;
+            e.target.textContent = 'сохранить цепочку';
+        }
+    });
+    body.querySelector('#flDelete')?.addEventListener('click', async () => {
+        if (!(await confirmAsync('Удалить цепочку? Цифры по ней тоже пропадут из списка.'))) return;
+        try { await adminCall('adminFlowDelete', { id: flowEdit.id }); toast('удалено'); flowOpen = ''; flowEdit = null; await loadFlows(body); }
+        catch (err) { toast(err.message, true); }
+    });
+}
+
 function renderFlows(body) {
+    if (flowEdit) return renderFlowEditor(body);
     if (!flowsData) { loadFlows(body); }
     const d = flowsData || { loading: true };
     if (d.loading) { body.innerHTML = '<div class="adm-muted" style="padding:12px 2px">загружаю цепочки…</div>'; return; }
@@ -1082,8 +1179,13 @@ function renderFlows(body) {
         body.innerHTML = `<div class="adm-hint">цепочка – несколько сообщений в боте: первое уходит само по событию, кнопки ведут к следующим. здесь видно, как каждая отработала</div>
             ${d.list.map(x => `<button class="fl-item" data-flow="${esc(x.id)}"><b>${esc(x.flow.title || x.id)} <span class="fl-state${x.flow.enabled === false ? ' is-off' : ''}">${x.flow.enabled === false ? 'выключена' : 'включена'}</span></b>
                 <small>${esc(x.flow.trigger_text || '')}</small><small>получили ${x.people} чел. · запусков ${x.runs}</small></button>`).join('') || '<div class="adm-muted">цепочек пока нет</div>'}
-            <div class="adm-hint">создавать и править цепочки самому – следующий этап, пока тексты меняет Claude</div>
+            <button class="fl-new" id="flNew">+ новая цепочка</button>
             <button class="adm-link" id="flReload">обновить цифры</button>`;
+        body.querySelector('#flNew').addEventListener('click', () => {
+            haptic();
+            flowEdit = { id: '', title: '', enabled: true, start: 'n1', trigger: 'manual', nodes: { n1: { text: '', buttons: [] } } };
+            renderFlows(body);
+        });
         body.querySelectorAll('[data-flow]').forEach(b => b.addEventListener('click', () => { haptic(); flowOpen = b.dataset.flow; renderFlows(body); }));
         body.querySelector('#flReload').addEventListener('click', () => { haptic(); loadFlows(body); });
         return;
@@ -1093,7 +1195,16 @@ function renderFlows(body) {
         <div class="fl-trigger">⚡ <b>запуск:</b> ${esc(f.flow.trigger_text || f.flow.trigger || '')}<br><small>получили ${f.people} чел. · запусков ${f.runs}</small></div>
         <div class="fl-line"></div>
         <div class="fl-map">${flowNodeHtml(f, f.flow.start, 0, new Set())}</div>
+        <button class="btn btn-yellow adm-primary" id="flEdit">✎ изменить цепочку</button>
         <button class="adm-link" id="flReload">обновить цифры</button>`;
+    body.querySelector('#flEdit').addEventListener('click', () => {
+        haptic();
+        // в редакторе у каждой кнопки есть своё следующее сообщение (пусть и пустое)
+        const nodes = JSON.parse(JSON.stringify(f.flow.nodes || {}));
+        Object.values(nodes).forEach(n => (n.buttons || []).forEach(b => { if (!b.next) { const c = newNodeId(nodes); nodes[c] = { text: '' }; b.next = c; } }));
+        flowEdit = { id: f.id, title: f.flow.title, enabled: f.flow.enabled !== false, start: f.flow.start, trigger: f.flow.trigger, nodes };
+        renderFlows(body);
+    });
     body.querySelector('#flBack').addEventListener('click', () => { haptic(); flowOpen = ''; renderFlows(body); });
     body.querySelector('#flReload').addEventListener('click', () => { haptic(); loadFlows(body); });
 }
@@ -1501,6 +1612,10 @@ function renderBroadcast(body) {
         ${bc.showPeople ? `<input class="adm-people-search" id="admPeopleQ" placeholder="поиск по имени или @username" value="${esc(bc.q)}">
             <div class="adm-people" id="admPeople"></div>` : ''}
 
+        <div class="adm-label">что отправить</div>
+        <div class="adm-chips"><button class="adm-chip${bc.mode !== 'flow' ? ' is-on' : ''}" data-mode="msg">сообщение</button><button class="adm-chip${bc.mode === 'flow' ? ' is-on' : ''}" data-mode="flow">🔗 цепочку</button></div>
+        ${bc.mode === 'flow' ? bcFlowPickHtml() : ''}
+        <div id="admMsgPart"${bc.mode === 'flow' ? ' hidden' : ''}>
         ${tip ? `<div class="adm-tip"><div class="adm-tip-goal"><b>что лучше написать:</b> ${esc(tip.goal)}</div>
             <div class="adm-tip-text">${esc(fillTemplate(tip.text))}</div>
             <div class="adm-tip-meta">кнопка: «${esc(tip.btn.text)}»</div>
@@ -1518,16 +1633,25 @@ function renderBroadcast(body) {
 
         <div class="adm-label">так увидят</div>
         <div class="adm-preview" id="admPreview"></div>
-
+        </div>
+        <div${bc.mode === 'flow' ? ' hidden' : ''}>
         <div class="adm-label">когда отправить</div>
         <div class="adm-chips"><button class="adm-chip${bc.when !== 'later' ? ' is-on' : ''}" data-when="now">сейчас</button><button class="adm-chip${bc.when === 'later' ? ' is-on' : ''}" data-when="later">⏰ запланировать</button></div>
         ${bc.when === 'later' ? `<label class="adm-field"><span>дата и время (по времени телефона)</span><input type="datetime-local" id="admBcAt" value="${esc(bc.sendAt)}" min="${localInputValue(new Date(Date.now() + 5 * 60000))}"></label>
             <div class="adm-hint">список получателей фиксируется сейчас. уйдёт в течение 5 минут после выбранного времени, в бот придёт отчёт</div>` : ''}
+        </div>
 
         <div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
         <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`;
 
     const update = () => { renderPreview(); updateSendLabel(); };
+    body.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        bc.mode = b.dataset.mode;
+        if (bc.mode === 'flow' && !flowsData) loadFlows(body).then(() => render());
+        render();
+    }));
+    body.querySelectorAll('[data-bc-flow]').forEach(b => b.addEventListener('click', () => { haptic(); bc.flowId = b.dataset.bcFlow; render(); }));
     body.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
         haptic();
         const changedHike = b.dataset.seg === 'hike' && bc.segment !== 'hike';
@@ -1723,7 +1847,43 @@ function updateSendLabel() {
     b.textContent = bc.when === 'later' && bc.sendAt ? `запланировать на ${fmtWhen(sendAtTs())}${n}` : `отправить${n}`;
 }
 
+// цепочка вместо одиночного сообщения: первый шаг уходит выбранным людям, дальше – по кнопкам
+function bcFlowPickHtml() {
+    if (!flowsData || flowsData.loading) return '<div class="adm-muted" style="padding:8px 2px">загружаю цепочки…</div>';
+    if (flowsData.error) return `<div class="adm-error-inline">цепочки не загрузились: ${esc(flowsData.error)}</div>`;
+    const list = (flowsData.list || []).filter(x => x.flow.trigger !== 'postpone' && x.flow.enabled !== false);
+    if (!list.length) return '<div class="adm-hint">своих цепочек пока нет – создай её во вкладке «🔗 цепочки»</div>';
+    const cur = list.find(x => x.id === bc.flowId);
+    const first = cur ? cur.flow.nodes?.[cur.flow.start] : null;
+    return `<div class="adm-chips">${list.map(x => `<button class="adm-chip${bc.flowId === x.id ? ' is-on' : ''}" data-bc-flow="${esc(x.id)}">${esc(x.flow.title)}</button>`).join('')}</div>
+        ${first ? `<div class="adm-label">первое сообщение</div><div class="adm-preview"><div class="adm-bubble">${esc(first.text).replace(/\n/g, '<br>')}</div>
+            ${(first.buttons || []).map(b => `<div class="adm-bubble-btn">${esc(b.label)}</div>`).join('')}</div>
+            <div class="adm-hint">дальше бот сам ведёт по кнопкам. результат – на карте во вкладке «🔗 цепочки»</div>` : '<div class="adm-hint">выбери цепочку</div>'}`;
+}
+async function sendFlowBroadcast(test) {
+    if (!bc.flowId) return toast('выбери цепочку', true);
+    const r = audience ? bcRecipients() : null;
+    if (!test) {
+        if (!r) return toast('ещё считаю получателей', true);
+        if (!r.final.length) return toast('некому отправлять', true);
+        if (!(await confirmAsync(`Запустить цепочку для ${r.final.length} чел.? Отменить будет нельзя.`))) return;
+    }
+    const el = root.querySelector(test ? '#admBcTest' : '#admBcSend');
+    const label = el.textContent;
+    el.disabled = true;
+    el.textContent = 'отправляю…';
+    try {
+        const res = await adminCall('adminFlowSend', test ? { id: bc.flowId, test: 'yes' } : { id: bc.flowId, ids: JSON.stringify(r.final) });
+        haptic();
+        toast(test ? (res.sent ? 'пришло вам в бот ✓' : 'не дошло – откройте бота и нажмите /start') : `цепочка запущена: ${res.sent} из ${res.total}`, !res.sent);
+        if (!test) flowsData = null;
+    } catch (err) { toast(err.message, true); }
+    el.disabled = false;
+    el.textContent = label;
+}
+
 async function sendBroadcast(test) {
+    if (bc.mode === 'flow') return sendFlowBroadcast(test);
     if (!bc.text.trim()) return toast('напишите текст', true);
     const btn = buttonPayload();
     if (btn && btn.type === 'url' && !/^https:\/\//.test(btn.url)) return toast('ссылка должна начинаться с https://', true);
