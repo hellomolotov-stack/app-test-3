@@ -144,6 +144,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
                         <div class="hb-p-card"><span class="hb-p-badge">−10%</span><small>с картой интеллигента</small><b></b></div>
                     </div>
                     <small class="hb-price-note"></small>
+                    <button type="button" class="hb-get-card"><img src="assets/card-front.jpg" alt="">оформить карту интеллигента</button>
                 </div>
                 <div class="hb-fair"><b>без наценки</b> – по прямой цене магазина. самые заботливые цены по всей большой Ялте</div>
                 <button type="button" class="hb-buy hb-custom">настроить свой бокс</button>
@@ -151,7 +152,6 @@ export function openHikingBox(fromEl, hike, isGuest) {
             </div>
             <div class="hb-bar">
                 <button type="button" class="btn btn-yellow hb-buy hb-buy-full"></button>
-                <button type="button" class="hb-buy hb-buy-card"><img src="assets/card-front.jpg" alt=""><span class="hb-bc-t">с картой интеллигента<small>скидка 10% на бокс</small></span><span class="hb-bc-p"><s></s><b></b></span></button>
             </div>
         </div>`;
     const sheet = overlay.querySelector('.hb-sheet');
@@ -164,6 +164,14 @@ export function openHikingBox(fromEl, hike, isGuest) {
     wrap.style.setProperty('--hc-k', k.toFixed(3));
     // вкладки «лёгкий / оптимальный»: меняем коллаж, цену, замены и пометку про сэндвич
     let current = DEFAULT_BOX;
+    const isMember = state.userCard?.status === 'active'; // владельцу карты цена на кнопке – сразу со скидкой
+    // надпись на кнопке в одну строку: если не влезает (узкий экран, цена со скидкой) – чуть уменьшаем шрифт
+    const fitBuy = () => {
+        const btn = overlay.querySelector('.hb-buy-full');
+        btn.style.fontSize = '';
+        if (!btn.isConnected) return;
+        for (let f = 15; f > 12 && btn.scrollWidth > btn.clientWidth; f -= .5) btn.style.fontSize = f + 'px';
+    };
     const showBox = (key) => {
         current = key;
         const b = BOXES[key];
@@ -178,9 +186,10 @@ export function openHikingBox(fromEl, hike, isGuest) {
         overlay.querySelector('.hb-p-full b').textContent = rub(b.price);
         overlay.querySelector('.hb-p-card b').textContent = rub(cardPrice(b.price));
         overlay.querySelector('.hb-price-note').textContent = `${b.count} по ценам dietcakes.ru`;
-        overlay.querySelector('.hb-buy-full').textContent = `взять ${b.tab} бокс на хайк · ${rub(b.price)}`;
-        overlay.querySelector('.hb-bc-p s').textContent = rub(b.price);
-        overlay.querySelector('.hb-bc-p b').textContent = rub(cardPrice(b.price));
+        // на кнопке: без карты – полная цена; с картой – полная зачёркнута и цена со скидкой
+        overlay.querySelector('.hb-buy-full').innerHTML = `взять ${b.tab} бокс на хайк · `
+            + (isMember ? `<s>${rub(b.price)}</s> ${rub(cardPrice(b.price))}` : rub(b.price));
+        fitBuy();
     };
     showBox(DEFAULT_BOX);
     overlay.querySelectorAll('.hb-tab').forEach(t => t.addEventListener('click', () => {
@@ -190,6 +199,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         showBox(t.dataset.box);
     }));
     document.body.appendChild(overlay);
+    fitBuy(); // при первом showBox шторки ещё нет в документе – подгоняем после вставки
     document.body.style.overflow = 'hidden';
 
     // трансформация «из плашки»: сдвиг + масштаб от прямоугольника плашки к итоговой шторке
@@ -224,20 +234,20 @@ export function openHikingBox(fromEl, hike, isGuest) {
     };
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
     overlay.querySelector('.hb-close').addEventListener('click', () => { haptic(); close(); });
-    // у кого карта есть – главная кнопка «с картой» (жёлтая, сверху); у кого нет – она открывает шторку карты
-    const isMember = state.userCard?.status === 'active';
-    overlay.querySelector('.hb-bar').classList.toggle('is-member', isMember);
+    // «оформить карту» в плашке цен – только тем, у кого карты нет
+    const getCard = overlay.querySelector('.hb-get-card');
+    getCard.hidden = isMember;
+    getCard.addEventListener('click', () => {
+        haptic();
+        log(`hiking box: оформить карту – ${BOXES[current].tab}`, isGuest, state.user);
+        close();
+        import('./card-sheet.js').then(m => m.openCardSheet({ source: 'хайкинг бокс' })).catch(() => {});
+    });
     overlay.querySelectorAll('.hb-buy').forEach(btn => btn.addEventListener('click', () => {
         haptic();
         const tab = BOXES[current].tab;
-        if (btn.classList.contains('hb-buy-card') && !isMember) {
-            log(`hiking box: с картой (нет карты) → шторка карты – ${tab}`, isGuest, state.user);
-            close();
-            import('./card-sheet.js').then(m => m.openCardSheet({ source: 'хайкинг бокс' })).catch(() => {});
-            return;
-        }
         const what = btn.classList.contains('hb-custom') ? 'настроить свой'
-            : btn.classList.contains('hb-buy-card') ? `взять ${tab} с картой` : `взять ${tab}`;
+            : `взять ${tab}${isMember ? ' с картой' : ''}`;
         openLink(SHOP_URL, `hiking box: ${what} – ${hike.title}`, isGuest);
     }));
 }
