@@ -42,7 +42,7 @@ const SEGMENT_GROUPS = [
     ['по активности', [['frequent', 'часто заходят'], ['once', 'заглянули один раз'], ['engaged', 'активные'], ['skimmers', 'просто заскочили']]],
     ['путь к хайку', [['never_booked', 'ни разу не записывались'], ['viewed_hike7', 'смотрели хайк, не записались'], ['unpaid', 'начали оплату, не закончили'], ['one_and_gone', 'были раз и пропали'], ['regular_no_card', 'ходят без карты 2+ раз'], ['upcoming', 'записаны на хайк']]],
     ['карта', [['viewed_card', 'смотрели карту, не купили'], ['offer_unused', 'спецпредложение не использовали']]],
-    ['служебные', [['waitlist', 'в листе ожидания'], ['admission', 'анкета: ждут ответа или одобрены']]],
+    ['служебные', [['waitlist_date', 'ждут запись на дату'], ['waitlist', 'в листе ожидания (все даты)'], ['admission', 'анкета: ждут ответа или одобрены']]],
 ];
 const ASK_URL = 'https://t.me/hellointelligent';
 const CHAT_URL = 'https://t.me/yaltahikingchat';   // общий чат клуба – кнопка «общий чат» и сбор отзывов
@@ -1508,7 +1508,7 @@ function bcRecipients() {
 // ---------- черновики рассылки ----------
 // Храним в облаке Telegram (CloudStorage: привязано к аккаунту админа, видно с любого устройства),
 // если его нет – в памяти устройства. Текст – отдельным ключом: у облака лимит 4096 символов на значение.
-const DRAFT_FIELDS = ['segment', 'hikeDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText', 'when', 'sendAt'];
+const DRAFT_FIELDS = ['segment', 'hikeDate', 'waitDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText', 'when', 'sendAt'];
 const cloud = {
     ok: () => !!(tg?.CloudStorage && tg.isVersionAtLeast?.('6.9')),
     get: keys => new Promise(res => {
@@ -1641,6 +1641,7 @@ function renderBroadcast(body) {
         ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
             <div class="adm-chips">${list.map(([k, l]) => chip(k, l, 'data-seg', bc.segment === k)).join('')}</div>`).join('')}
         ${bc.segment === 'hike' ? `<label class="adm-field"><span>хайк</span><select id="admBcHike">${hikeOptions(bc.hikeDate)}</select></label>` : ''}
+        ${bc.segment === 'waitlist_date' ? waitlistDateHtml() : ''}
 
         <div class="adm-label">кроме</div>
         <div class="adm-excl">
@@ -1704,7 +1705,7 @@ function renderBroadcast(body) {
     body.querySelectorAll('[data-bc-flow]').forEach(b => b.addEventListener('click', () => { haptic(); bc.flowId = b.dataset.bcFlow; render(); }));
     body.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
         haptic();
-        const changedHike = b.dataset.seg === 'hike' && bc.segment !== 'hike';
+        const changedHike = (b.dataset.seg === 'hike' && bc.segment !== 'hike') || (b.dataset.seg === 'waitlist_date' && bc.segment !== 'waitlist_date');
         bc.segment = b.dataset.seg;
         bc.off = {};
         bc.excl = bc.excl.filter(k => k !== bc.segment);
@@ -1738,6 +1739,7 @@ function renderBroadcast(body) {
     });
     body.querySelectorAll('[data-btn]').forEach(b => b.addEventListener('click', () => { haptic(); bc.btnType = b.dataset.btn; render(); }));
     body.querySelector('#admBcHike')?.addEventListener('change', e => { bc.hikeDate = e.target.value; bc.off = {}; refreshAudience(true); });
+    body.querySelector('#admBcWaitDate')?.addEventListener('change', e => { bc.waitDate = e.target.value; bc.off = {}; refreshAudience(true); });
     body.querySelector('#admBcSection')?.addEventListener('change', e => { bc.section = e.target.value; render(); });
     body.querySelector('#admBcBtnHike')?.addEventListener('change', e => { bc.btnHike = e.target.value; update(); });
     body.querySelector('#admBcText').addEventListener('input', e => { bc.text = e.target.value; update(); });
@@ -1777,21 +1779,49 @@ function renderBroadcast(body) {
 
 // Списки людей по сегментам грузим одним запросом и держим минуту. Для «участников хайка» – свой хайк.
 let audSeq = 0;
+// «ждут запись на дату»: даты листа ожидания с числом людей (приходят с сервера вместе с сегментами)
+let waitlistDates = null;
+function waitlistDateSelect() {
+    const dates = Object.keys(waitlistDates || {}).sort();
+    if (!dates.length) return `<select id="admBcWaitDate" disabled><option>${waitlistDates ? 'никто не ждёт' : 'загружаю даты…'}</option></select>`;
+    return `<select id="admBcWaitDate">${dates.map(d => {
+        const h = allHikes().find(x => x.date === d);
+        const name = h && h.title && h.title.trim() ? h.title.trim() : (/🌧/.test(h?.emoji || '') ? '🌧️ перенесён' : 'готовим');
+        return `<option value="${d}" ${bc.waitDate === d ? 'selected' : ''}>${dateLabel(d)} – ${esc(name)} · ждут ${waitlistDates[d]}</option>`;
+    }).join('')}</select>`;
+}
+function waitlistDateHtml() {
+    return `<label class="adm-field"><span>на какую дату ждут</span>${waitlistDateSelect()}</label>
+        <div class="adm-hint">те, кто нажал «🔔 сообщить» на этой дате</div>`;
+}
+
 async function refreshAudience(force = false) {
     const seq = ++audSeq;
     const hikeDate = bc.segment === 'hike' ? bc.hikeDate : '';
-    if (!force && audience && Date.now() - audience.at < 60000 && audience.hikeDate === hikeDate) return updateAudienceViews(true);
+    const waitDate = bc.segment === 'waitlist_date' ? (bc.waitDate || '') : '';
+    if (!force && audience && Date.now() - audience.at < 60000 && audience.hikeDate === hikeDate && (audience.waitDate || '') === waitDate) return updateAudienceViews(true);
     const sum = root?.querySelector('#admSum');
     if (sum) sum.textContent = 'считаю получателей…';
     try {
         // для участников хайка – ещё полный список записавшихся: кому бот написать не может, покажем отдельно
         const [res, parts] = await Promise.all([
-            adminCall('adminSegmentMembers', { hike_date: hikeDate }),
+            adminCall('adminSegmentMembers', { hike_date: hikeDate, waitlist_date: waitDate }),
             hikeDate ? adminCall('adminParticipants', { date: hikeDate }).catch(() => null) : null,
         ]);
         if (seq !== audSeq) return;
-        audience = { segments: res.segments || {}, people: res.people || {}, now: res.now || Math.floor(Date.now() / 1000), at: Date.now(), hikeDate,
+        audience = { segments: res.segments || {}, people: res.people || {}, now: res.now || Math.floor(Date.now() / 1000), at: Date.now(), hikeDate, waitDate,
             hikeAll: parts?.participants || null };
+        if (res.waitlist_dates) {
+            waitlistDates = res.waitlist_dates;
+            // первая дата с ожидающими – сразу выбрана
+            if (bc.segment === 'waitlist_date' && !bc.waitDate) {
+                const first = Object.keys(waitlistDates).sort()[0];
+                if (first) { bc.waitDate = first; render(); return refreshAudience(true); }
+            }
+            const sel = root?.querySelector('#admBcWaitDate');
+            if (sel && bc.segment === 'waitlist_date') sel.outerHTML = waitlistDateSelect();
+            root?.querySelector('#admBcWaitDate')?.addEventListener('change', e => { bc.waitDate = e.target.value; bc.off = {}; refreshAudience(true); });
+        }
         updateAudienceViews(true);
     } catch (err) {
         if (seq !== audSeq) return;
@@ -1958,7 +1988,7 @@ async function sendBroadcast(test) {
     const label = el.textContent;
     el.disabled = true;
     el.textContent = test ? 'отправляю…' : later ? 'планирую…' : 'отправляю… не закрывайте';
-    const segLabel = [SEG_LABEL[bc.segment] || bc.segment, bc.segment === 'hike' ? bc.hikeDate : '',
+    const segLabel = [SEG_LABEL[bc.segment] || bc.segment, bc.segment === 'hike' ? bc.hikeDate : bc.segment === 'waitlist_date' ? bc.waitDate : '',
         ...bc.excl.map(k => '− ' + (SEG_LABEL[k] || k)), r && r.manual.length ? `− ${r.manual.length} вручную` : ''].filter(Boolean).join(' ');
     try {
         const res = await adminCall(later ? 'adminScheduleBroadcast' : 'adminBroadcast', test ? {
