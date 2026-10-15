@@ -6042,3 +6042,16 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .ef-next.is-city .ef-bell, .ef-row.is-city .ef-bell { border-color: rgba(65, 181, 237, .5); background: rgba(65, 181, 237, .12); color: #7cccf3; }
 .ef-next.is-city .ef-bell.is-on, .ef-row.is-city .ef-bell.is-on { background: #41B5ED; color: #fff; border-color: #41B5ED; }
 .ef-next.is-city .btn-yellow { background: #41B5ED; color: #fff; }
+
+/* шторка карты для гостя на городском событии – приглашение в голубом стиле */
+.cs-city { margin: 4px 4px 18px; padding: 16px; border-radius: 22px; background: rgba(65, 181, 237, .12); border: 1px solid rgba(65, 181, 237, .4); color: #fff; }
+.cs-city-k { font-size: 13px; color: #7cccf3; }
+.cs-city h2 { margin: 6px 0 8px; font-size: 22px; line-height: 1.2; }
+.cs-city p { margin: 0 0 12px; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, .82); }
+.cs-city-ev { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, .07); }
+.cs-city-ev i { font-style: normal; font-size: 24px; }
+.cs-city-ev b { display: block; font-size: 15px; }
+.cs-city-ev small { font-size: 12.5px; color: #7cccf3; }
+.cs-overlay.is-city .cs-buy { background: #41B5ED; color: #fff; }
+.cs-overlay.is-city .cs-plan.is-on { border-color: #41B5ED; }
+.cs-city-note { margin-top: 8px; text-align: center; font-size: 12.5px; color: rgba(255, 255, 255, .55); }

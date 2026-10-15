@@ -71,7 +71,7 @@ function wireTilt(stage, card) {
 }
 
 // gift: true – после оплаты выбранной карты дарителю приходит ссылка-подарок
-export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '', gift = false, allowTicket = true } = {}) {
+export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '', gift = false, allowTicket = true, cityEvent = false } = {}) {
     let offerTimer = null;
     haptic();
     log(gift ? 'подарок: открыл шторку' : 'карта: что внутри', !gift, state.user, { source });
@@ -81,13 +81,28 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     const permanent = gift ? PERMANENT_PRICE : state.popupConfig?.permanentCardPrice || PERMANENT_PRICE;
     const isReturning = !isAdmissionPilot() && Object.keys(state._userRegs || {}).some(d => state._userRegs[d] === true && new Date(d) < new Date(new Date().toDateString()));
 
+    // гость сдвинул «буду» на городском событии: вместо общего заголовка – приглашение на это событие
+    const ev = cityEvent ? (state.hikesWithTitle || []).find(h => h.date === hikeDate) : null;
+    const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const evDay = ev ? `${Number(ev.date.slice(8))} ${MONTHS[Number(ev.date.slice(5, 7)) - 1]}${ev.start_time ? ' · ' + ev.start_time : ''}` : '';
+    const escT = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const cityHtml = ev ? `
+                <div class="cs-city">
+                    <div class="cs-city-k">${escT(ev.emoji || '🏙️')} ${evDay}</div>
+                    <h2>в городе мы собираемся своими</h2>
+                    <p>так за столом остаются те, с кем хочется говорить дольше, чем длится вечер. карта интеллигента – твой вход на такие встречи и на все хайки сезона</p>
+                    <div class="cs-city-ev"><i>🏙️</i><div><b>${escT(ev.title)}</b><small>${Number(ev.capacity) > 0 ? `${Number(ev.capacity)} мест · ` : ''}запишем сразу после оплаты</small></div></div>
+                </div>` : '';
+    const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `оформить навсегда · ${rub(price)}` : `взять на сезон · ${rub(price)}`;
+
     const overlay = document.createElement('div');
-    overlay.className = 'cs-overlay';
+    overlay.className = `cs-overlay${cityEvent ? ' is-city' : ''}`;
     overlay.innerHTML = `
         <div class="cs-sheet">
             <div class="cs-grab"></div>
             <div class="cs-scroll">
-                <div class="cs-hero">
+                ${cityHtml}
+                <div class="cs-hero"${ev ? ' hidden' : ''}>
                     <div class="cs-stage"><div class="cs-card"><img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции"></div></div>
                     <h2>${gift ? 'подари новый опыт' : 'стань интеллигентом'}</h2>
                     <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
@@ -132,8 +147,9 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 ${gift ? '' : '<button type="button" class="cs-support" id="csSupport">оплачивал билет и не успел сходить? напиши нам – зачтём его в стоимость карты</button>'}
             </div>
             <div class="cs-bar">
-                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить бессрочную · ${rub(permanent)}` : `оформить навсегда · ${rub(permanent)}`}</button>
-                ${isReturning || gift || !allowTicket ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
+                <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить бессрочную · ${rub(permanent)}` : buyLabel(permanent, true)}</button>
+                ${ev ? '<div class="cs-city-note">после оплаты ты сразу в списке гостей</div>' : ''}
+                ${isReturning || gift || !allowTicket || cityEvent ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
                 ${SPLIT_NOTE}
             </div>
         </div>`;
@@ -173,7 +189,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         overlay.querySelectorAll('.cs-plan').forEach(b => b.classList.toggle('is-on', b === btn));
         buyBtn.textContent = gift
             ? `подарить ${plan === 'permanent' ? 'бессрочную' : 'сезонную'} · ${rub(selectedPrice)}`
-            : plan === 'permanent' ? `оформить навсегда · ${rub(permanent)}` : `взять на сезон · ${rub(season)}`;
+            : buyLabel(selectedPrice, plan === 'permanent');
     }));
 
     buyBtn.addEventListener('click', async () => {

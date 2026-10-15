@@ -3279,6 +3279,11 @@ function hasPastBooking() {
 async function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
     if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
     haptic();
+    // приглашение «в городе мы собираемся своими» прямо в шторке карты; после оплаты сервер сам записывает на событие
+    log('городское событие — шторка карты', true, state.user, { hike_date: hikeDate });
+    if (onClose) onClose();
+    openCardSheet({ source: 'городское событие', hikeDate, hikeTitle, cityEvent: true, allowTicket: false });
+    return;
     const tgw = window.Telegram?.WebApp;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
