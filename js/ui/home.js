@@ -558,7 +558,7 @@ function renderGuestHome() {
                 <button type="button" class="btn btn-yellow sc-btn" id="cardBadgeBtn">узнать</button>
             </div>
         </div>
-        ${!isLumenPilotUser(state.user) && !isAdmissionPilot() ? `
+        ${/* блок «интеллигентный помощник» на главной гостя убран (15.10) – спросить можно строкой сверху */ false ? `
         <div class="card-container" id="chatBlock">
             <h2 class="section-title">💬 интеллигентный помощник</h2>
             <div class="guest-chat">
