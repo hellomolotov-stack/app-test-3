@@ -291,7 +291,8 @@ function feedTodayStr() {
     return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
 }
 
-function feedIsCity(h) { return h.city === true || h.city === 'yes'; }
+// городское событие – и с названием (city), и заглушка «🏄 готовим событие»: всё оформление голубое
+function feedIsCity(h) { return h.city === true || h.city === 'yes' || (!(h.title && h.title.trim()) && /🏄/.test(h.emoji || '')); }
 function feedIsWoman(h) { return h.woman === 'yes'; }
 
 function feedTags(h) {
@@ -353,7 +354,7 @@ function feedNearestCard(h) {
         const note = waiting
             ? `<div class="ef-wait-note"><span>🔔</span><div>ты в листе ожидания. <b>напишем в бота</b>, как только объявим маршрут – запишешься в пару касаний</div></div>`
             : '';
-        return `<div class="ef-next ef-next-teaser${waiting ? ' is-waiting' : ''}"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим маршрут</div></div></div>${feedNotifyButton(h.date)}${note}</div>`;
+        return `<div class="ef-next ef-next-teaser${waiting ? ' is-waiting' : ''}${feedIsCity(h) ? ' is-city' : ''}"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим ${feedIsCity(h) ? 'программу' : 'маршрут'}</div></div></div>${feedNotifyButton(h.date)}${note}</div>`;
     }
     // плашка-билет без карты: дата · название · «записаться» (открывает шторку хайка с записью)
     const d = feedDate(h.date);
@@ -361,7 +362,7 @@ function feedNearestCard(h) {
     const sub = [feedWhen(h.date), h.start_time, km ? `${km} км` : ''].filter(Boolean).join(' · ');
     const registered = state._userRegs?.[h.date] === true;
     // билет: дата | название и «когда»; ниже шкала мест (без аватарок – они долго грузятся) и кнопка
-    return `<div class="ef-next ef-ticket${feedIsWoman(h) ? ' is-woman' : ''}" data-open="${h.date}">
+    return `<div class="ef-next ef-ticket${feedIsWoman(h) ? ' is-woman' : ''}${feedIsCity(h) ? ' is-city' : ''}" data-open="${h.date}">
         <div class="ef-tk-row">
             <div class="ef-tk-date"><b>${d.getDate()}</b><small>${FEED_MONTHS_SHORT[d.getMonth()]}, ${FEED_WD[d.getDay()]}</small></div>
             <div class="ef-tk-info">
@@ -423,7 +424,7 @@ function feedRow(h, nearestDate = '') {
     else if (!cancelled && !isPast) action = `<span class="ef-go" aria-hidden="true">›</span>`;
     const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}${postponed ? ' is-rain' : ''}`;
     const img = h.image && !cancelled && !postponed ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
-    return `<div class="ef-row${cancelled ? ' is-off' : ''}${isPast ? '' : ' is-future'}"${isTeaser ? '' : ` data-open="${h.date}"`}>
+    return `<div class="ef-row${cancelled ? ' is-off' : ''}${isPast ? '' : ' is-future'}${isCity ? ' is-city' : ''}"${isTeaser ? '' : ` data-open="${h.date}"`}>
         <div class="${thumbCls}"${img}>${img ? '' : icon}<span class="ef-thumb-date">${d.getDate()} ${FEED_MONTHS_SHORT[d.getMonth()]}</span></div>
         <div class="ef-row-mid"><div class="ef-row-title">${isTeaser ? feedTeaserLabel(h) : h.title}</div><div class="ef-row-sub">${sub}<span data-going-for="${isPast && !cancelled && !isTeaser ? h.date : ''}"></span></div></div>
         ${action}
@@ -2143,7 +2144,7 @@ export function showBottomSheet(index) {
             ${sectionsHtml}
             ${inviteButtonHtml}
             ${shareButtonHtml}
-            ${!isPlaceholder && !hike.cancelled && new Date(hike.date) >= new Date().setHours(0, 0, 0, 0) ? `<button class="hike-ask-row" id="hikeAskBtn">есть вопрос про этот хайк? <b>спросить ›</b></button>` : ''}
+            ${!isPlaceholder && !hike.cancelled && new Date(hike.date) >= new Date().setHours(0, 0, 0, 0) ? `<button class="hike-ask-row" id="hikeAskBtn">есть вопрос про ${isCity || isBookClub ? 'это событие' : 'этот хайк'}? <b>спросить ›</b></button>` : ''}
         `;
 
         contentWrapper.querySelector('#hikeAskBtn')?.addEventListener('click', () => {

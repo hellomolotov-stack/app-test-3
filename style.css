@@ -6035,3 +6035,10 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
     background-size: 6px 6px, 6px 6px; background-blend-mode: screen; }
 .px-lock { display: block; margin-top: 6px; font-size: 12.5px; color: rgba(255, 255, 255, .45); }
 .px-mask.is-inline + .px-lock { display: inline; margin: 0 0 0 6px; }
+
+/* городские события – всё голубое (в ленте календаря и в карточке ближайшего) */
+.ef-next.is-city .ef-badge, .ef-row.is-future.is-city .ef-thumb-date { background: #41B5ED; color: #fff; border-color: transparent; }
+.ef-next-teaser.is-city { background: rgba(65, 181, 237, .08); border-color: rgba(65, 181, 237, .45); }
+.ef-next.is-city .ef-bell, .ef-row.is-city .ef-bell { border-color: rgba(65, 181, 237, .5); background: rgba(65, 181, 237, .12); color: #7cccf3; }
+.ef-next.is-city .ef-bell.is-on, .ef-row.is-city .ef-bell.is-on { background: #41B5ED; color: #fff; border-color: #41B5ED; }
+.ef-next.is-city .btn-yellow { background: #41B5ED; color: #fff; }
