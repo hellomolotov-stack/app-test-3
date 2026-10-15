@@ -5106,14 +5106,15 @@ body.adm-open { overflow: hidden; }
 .tg-leave-actions button { flex: 1; white-space: nowrap; margin: 0; }
 
 /* ==================== ЛИСТ ОЖИДАНИЯ: подтверждение «сообщить мне» ==================== */
-.events-feed .ef-next-teaser.is-waiting { border-style: solid; border-color: rgba(217, 253, 25, 0.55); box-shadow: 0 0 0 4px rgba(217, 253, 25, 0.08); }
+/* после «сообщить»: карточка нейтральная, жёлтая только кнопка «сообщим об открытии» */
+.events-feed .ef-next-teaser.is-waiting { border-style: solid; border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); box-shadow: none; }
 .ef-wait-note {
     display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 11px 12px; border-radius: 14px;
-    background: rgba(217, 253, 25, 0.08); border: 1px solid rgba(217, 253, 25, 0.22);
-    font-size: 13px; line-height: 1.38; color: rgba(255, 255, 255, 0.88); text-align: left;
+    background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 13px; line-height: 1.38; color: rgba(255, 255, 255, 0.7); text-align: left;
 }
 .ef-wait-note > span { flex: none; font-size: 17px; line-height: 1; }
-.ef-wait-note b { color: var(--yellow); font-weight: 700; }
+.ef-wait-note b { color: rgba(255, 255, 255, 0.92); font-weight: 700; }
 
 .ef-push {
     position: fixed; z-index: 3200; left: 12px; right: 12px; top: 12px; max-width: 460px; margin: 0 auto;
