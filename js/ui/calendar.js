@@ -31,6 +31,9 @@ import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
 
 // лимит участников хайка: столько мест показываем и после стольких запись закрывается
 const HIKE_CAPACITY = 10;
+// мест на событии: своё число из админки (capacity), иначе 10
+export const capacityFor = h => (Number(h?.capacity) > 0 ? Number(h.capacity) : HIKE_CAPACITY);
+const capacityForDate = date => capacityFor((state.hikesWithTitle || []).find(h => h.date === date));
 
 let currentCalendarYear = new Date().getFullYear();
 let currentCalendarMonth = new Date().getMonth();
@@ -786,13 +789,13 @@ function feedGoingHtml(list) {
 }
 
 // Места на ближайшем хайке: сколько аккаунтов реально записано – из 10.
-const SEATS_SHOWN = HIKE_CAPACITY;
 function feedSeatsWord(n) {
     const a = n % 10, b = n % 100;
     if (a === 1 && b !== 11) return 'место';
     return (a >= 2 && a <= 4 && (b < 10 || b >= 20)) ? 'места' : 'мест';
 }
 function feedPaintSeats(el, n) {
+    const SEATS_SHOWN = capacityForDate(el.dataset.seatsFor);
     const left = SEATS_SHOWN - n;
     el.querySelector('.ef-tk-left').textContent = left > 0 ? `осталось ${left} ${feedSeatsWord(left)}` : 'мест не осталось';
     el.querySelector('.ef-tk-cap').textContent = `${n} из ${SEATS_SHOWN}`;
@@ -2272,7 +2275,7 @@ export function showBottomSheet(index) {
                     }
                 }
                 const imageContainer = contentWrapper.querySelector('.image-container');
-                const isSoldOut = count >= HIKE_CAPACITY && !isPast && state.pendingInvite?.date !== hike.date;
+                const isSoldOut = count >= capacityFor(hike) && !isPast && state.pendingInvite?.date !== hike.date;
                 applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
                 window._participantCount = count;
                 updateFloatingSheetButtons();
@@ -2297,7 +2300,7 @@ export function showBottomSheet(index) {
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');
-        const isSoldOut = (window._participantCount || 0) >= HIKE_CAPACITY && !isPast && state.pendingInvite?.date !== hike.date;
+        const isSoldOut = (window._participantCount || 0) >= capacityFor(hike) && !isPast && state.pendingInvite?.date !== hike.date;
         applyImageBlurAndOverlay(imageContainer, isSoldOut, hike.image, 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png');
 
         const participantCounterEl = document.getElementById('participantCounter');
@@ -2832,7 +2835,20 @@ function updateFloatingSheetButtons() {
 
             // Счётчик участников
             const cityBookedCount = window._participantCount || 0;
-            if (cityBookedCount > 0) {
+            // своё число мест у события (capacity) – показываем сразу, даже когда никто ещё не записан
+            if (Number(hike.capacity) > 0) {
+                const cap = Number(hike.capacity), left = Math.max(0, cap - cityBookedCount);
+                const chipRow = document.createElement('div');
+                chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none; margin-bottom: 4px;';
+                const chip = document.createElement('div');
+                chip.className = 'spots-counter-chip city-seats-chip';
+                chip.innerHTML = left > 0
+                    ? `🏙️ мест всего <strong>${cap}</strong> · ${cityBookedCount ? `занято ${cityBookedCount}, ` : ''}осталось <strong>${left}</strong>`
+                    : `🏙️ все <strong>${cap}</strong> мест заняты`;
+                chipRow.appendChild(chip);
+                container.appendChild(chipRow);
+                if (!left && !isBooked) { container.style.pointerEvents = 'none'; return; }
+            } else if (cityBookedCount > 0) {
                 const chipRow = document.createElement('div');
                 chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none; margin-bottom: 4px;';
                 const chip = document.createElement('div');
@@ -2944,7 +2960,7 @@ function updateFloatingSheetButtons() {
         accentColor = 'var(--yellow)';
     }
     const isBooked = state.hikeBookingStatus[curSheetIndex()] || false;
-    const MAX_TICKETS = HIKE_CAPACITY;
+    const MAX_TICKETS = capacityFor(hike);
     const bookedCount = window._participantCount || 0;
     // по приглашению +1 записываем и сверх лимита: у приглашённого своё место
     const hasInvite = state.pendingInvite?.date === hike.date;
@@ -3088,7 +3104,7 @@ function updateFloatingSheetButtons() {
 
     // «уже идут N» показываем от 5 записавшихся: 1–4 человека выглядят как «никто не идёт»
     if (!isSoldOut && !hasInvite && bookedCount >= 5) {
-        const spotsLeft = Math.max(0, HIKE_CAPACITY - bookedCount);
+        const spotsLeft = Math.max(0, capacityFor(hike) - bookedCount);
         const chipRow = document.createElement('div');
         chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none;';
         const chip = document.createElement('div');
@@ -4334,7 +4350,7 @@ async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
         const list = fresh?.[hikeDate];
         if (Array.isArray(list)) {
             feedSetGoing(hikeDate, list, true);
-            if (list.length >= HIKE_CAPACITY) {
+            if (list.length >= capacityForDate(hikeDate)) {
                 log('места закончились перед покупкой билета', true, state.user, { hike_date: hikeDate });
                 window._participantCount = list.length;
                 updateFloatingSheetButtons();

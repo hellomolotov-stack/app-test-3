@@ -506,6 +506,7 @@ function openEditor(date) {
         letter_link: h.letter_link || '',
         summary_link: h.summary_link || '',
         summary_title: h.summary_title || '',
+        capacity: h.capacity ? String(h.capacity) : '',
         cancelled: isYes(h.cancelled),
         woman: isYes(h.woman),
         city: isYes(h.city),
@@ -518,7 +519,7 @@ function openEditor(date) {
         templateNote: ''
     } : {
         original: '', date: '', title: '', emoji: '', start_time: '12:00', tags: '', image: '',
-        features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '', summary_link: '', summary_title: '',
+        features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '', summary_link: '', summary_title: '', capacity: '',
         cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null,
         route_id: '', routeMode: 'none', templateNote: ''
     };
@@ -547,6 +548,7 @@ function renderEditor(body) {
         <div class="adm-hint">без названия событие показывается заглушкой. «🌧️ дата перенесена» работает и для хайка с названием – запись закрывается, в ленте дождик:</div>
         <div class="adm-chips">${PLACEHOLDER_EMOJI.map(([e, l]) => `<button class="adm-chip${d.emoji === e ? ' is-on' : ''}" data-emoji="${e}">${l}</button>`).join('')}</div>
         ${field('start_time', 'время старта', 'placeholder="12:00" inputmode="numeric"')}
+        ${field('capacity', 'мест (пусто – 10)', 'placeholder="10" inputmode="numeric"')}
         ${field('tags', 'теги через запятую', 'placeholder="умеренно, 10 км, 4-5 часов, без пропуска"')}
 
         <div class="adm-label">🗺 трек маршрута</div>
@@ -737,6 +739,7 @@ async function saveHike() {
         letter_link: (d.letter_link || '').trim(),
         summary_link: (d.summary_link || '').trim(),
         summary_title: (d.summary_title || '').trim(),
+        capacity: String(d.capacity || '').replace(/\D/g, ''),
         cancelled: d.cancelled,
         woman: d.woman,
         city: d.city
