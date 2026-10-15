@@ -10,6 +10,7 @@ const SHOP_URL = 'https://dietcakes.ru';
 
 
 
+// 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50 (цены сайта на 15.10.2026)
 export function hikingBoxEnabled() {
     return HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''));
 }
@@ -82,7 +83,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
                     <div class="hb-way"><span>🏪</span><b>самовывоз</b><small>из магазина</small></div>
                     <div class="hb-way is-hl"><span>🏔</span><b>на хайк</b><small>на точке сбора</small></div>
                 </div>
-                <div class="hb-price"><span class="hb-price-k">весь бокс</span><b>до 1 000 ₽</b></div>
+                <div class="hb-price"><span class="hb-price-k">весь бокс</span><b>854 ₽</b><small>шесть продуктов по ценам dietcakes.ru</small></div>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
             </div>
             <div class="hb-bar"><button type="button" class="btn btn-yellow hb-buy">взять бокс с собой</button><button type="button" class="btn hb-buy hb-custom">настроить свой бокс</button></div>
