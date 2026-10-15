@@ -5941,10 +5941,9 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 }
 .floating-sheet-buttons .report-btn:active { transform: scale(.97); }
 
-/* подложка под всем блоком внизу шторки (слайдер записи, места, письмо, саммари): плотный тёмный градиент
-   с размытием. при резкой прокрутке шторки backdrop-filter на мгновение пропадает – плотный цвет остаётся,
-   и слайдер/плашки не сливаются с текстом под ними */
-.floating-sheet-buttons:not(:empty)::before {
+/* подложка под плашками письма и саммари: размытый градиент от низа экрана,
+   чтобы между плашками не просвечивал текст шторки */
+.floating-sheet-buttons.has-plates::before {
     content: ''; position: absolute; z-index: -1; pointer-events: none;
     left: calc((100% - 100vw) / 2); width: 100vw; top: -60px; bottom: -40px;
     background: linear-gradient(to top, rgba(14, 20, 28, .94) 0%, rgba(14, 20, 28, .88) 65%, rgba(14, 20, 28, 0) 100%);
@@ -6089,3 +6088,16 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .adm-emoimg { display: flex; gap: 8px; align-items: center; margin: 2px 0 4px; }
 .adm-emoimg input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 22px; }
 .adm-emoimg .adm-ghost { flex: none; white-space: nowrap; }
+
+/* слайдер записи и счётчик мест – свой плотный размытый фон. при резкой прокрутке шторки backdrop-filter
+   на мгновение пропадает; плотный полупрозрачный цвет остаётся, и текст под ними не превращается в кашу.
+   !important – у слайдера фон задан прямо в разметке (calendar.js) */
+.floating-sheet-buttons .swipe-track {
+    background: linear-gradient(rgba(73, 138, 176, .18), rgba(73, 138, 176, .18)), rgba(20, 29, 40, .86) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(120%) !important; backdrop-filter: blur(14px) saturate(120%) !important;
+    transform: translateZ(0);
+}
+.floating-sheet-buttons .spots-counter-chip {
+    background: rgba(16, 23, 32, .86);
+    transform: translateZ(0);
+}
