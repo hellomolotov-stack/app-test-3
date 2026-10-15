@@ -2842,9 +2842,7 @@ function updateFloatingSheetButtons() {
                 chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none; margin-bottom: 4px;';
                 const chip = document.createElement('div');
                 chip.className = 'spots-counter-chip city-seats-chip';
-                chip.innerHTML = left > 0
-                    ? `🏙️ мест всего <strong>${cap}</strong> · ${cityBookedCount ? `занято ${cityBookedCount}, ` : ''}осталось <strong>${left}</strong>`
-                    : `🏙️ все <strong>${cap}</strong> мест заняты`;
+                chip.innerHTML = left > 0 ? `🏙️ <strong>${left}</strong> из ${cap} мест свободно` : `🏙️ мест нет`;
                 chipRow.appendChild(chip);
                 container.appendChild(chipRow);
                 if (!left && !isBooked) { container.style.pointerEvents = 'none'; return; }
