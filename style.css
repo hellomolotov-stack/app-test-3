@@ -6101,3 +6101,33 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
     background: rgba(16, 23, 32, .86);
     transform: translateZ(0);
 }
+
+/* ==================== БИЛЕТ ПОСЛЕ ЗАПИСИ НА ГОРОДСКОЕ СОБЫТИЕ ==================== */
+.city-ticket-overlay { position: fixed; inset: 0; z-index: 4000; display: flex; justify-content: center; align-items: flex-start; padding: 40px 16px 24px; overflow-y: auto;
+    background: rgba(11, 22, 32, .97); opacity: 0; transition: opacity .25s ease; }
+.city-ticket-overlay.is-on { opacity: 1; }
+.ct-wrap { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 10px; transform: translateY(14px); transition: transform .35s cubic-bezier(.2,.9,.3,1.1); }
+.city-ticket-overlay.is-on .ct-wrap { transform: none; }
+.ct-hey { text-align: center; font-size: 15px; font-weight: 600; color: #8fd4f7; margin-bottom: 2px; }
+.ct-ticket { --cut: 13px; position: relative; border-radius: 22px; background: #41B5ED; color: #fff; box-shadow: 0 14px 34px rgba(0, 0, 0, .35); }
+.ct-top { padding: 18px 18px 16px; }
+.ct-row { display: flex; justify-content: space-between; align-items: center; }
+.ct-seat { padding: 4px 10px; border-radius: 10px; background: rgba(255, 255, 255, .24); font-size: 13px; font-weight: 600; }
+.ct-emo { font-size: 30px; line-height: 1; }
+.ct-title { margin-top: 12px; font-size: 22px; font-weight: 800; line-height: 1.2; }
+.ct-when { margin-top: 4px; font-size: 14px; opacity: .9; }
+/* линия отрыва: пунктир + круглые вырезы по краям цветом подложки */
+.ct-cut { position: relative; height: 0; margin: 0 var(--cut); border-top: 2px dashed rgba(255, 255, 255, .55); }
+.ct-cut::before, .ct-cut::after { content: ''; position: absolute; top: calc(-1 * var(--cut) - 1px); width: calc(var(--cut) * 2); height: calc(var(--cut) * 2); border-radius: 50%; background: rgb(11, 22, 32); }
+.ct-cut::before { left: calc(-2 * var(--cut)); }
+.ct-cut::after { right: calc(-2 * var(--cut)); }
+.ct-bottom { display: block; width: 100%; padding: 14px 18px 16px; border: 0; background: none; color: #fff; font: inherit; font-size: 14.5px; font-weight: 600; text-align: left; cursor: pointer; }
+.ct-bottom[disabled] { opacity: .8; cursor: default; }
+.ct-line { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 18px; border: 1px solid rgba(65, 181, 237, .3);
+    background: rgba(65, 181, 237, .1); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.ct-line i { font-style: normal; font-size: 20px; }
+.ct-line span { flex: 1; min-width: 0; }
+.ct-line b { display: block; font-size: 14.5px; font-weight: 600; }
+.ct-line small { display: block; font-size: 12.5px; color: rgba(255, 255, 255, .6); }
+.ct-line em { font-style: normal; color: #8fd4f7; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.ct-ok { margin-top: 4px; background: #41B5ED; color: #fff; font-weight: 700; }

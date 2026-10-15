@@ -3860,12 +3860,75 @@ export function showLeaderDropdown(leaderElement, leaderData) {
     setTimeout(() => document.addEventListener('click', closeHandler), 0);
 }
 
+// ==================== ЭКРАН ПОСЛЕ ЗАПИСИ НА ГОРОДСКОЕ СОБЫТИЕ ====================
+// Голубой «билет на вечер»: гость №N из M, эмоджи, название, дата; линия отрыва с вырезами;
+// ниже – адрес на карте (после записи он открыт) и «добавить в календарь».
+function showCityRegistrationSuccess(h) {
+    document.querySelector('.city-ticket-overlay')?.remove();
+    const escT = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const d = feedDate(h.date);
+    const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+    const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${h.start_time ? ' · ' + h.start_time : ''}`;
+    const count = Math.max(1, (feedGoingList[h.date]?.some(p => String(p.userId) === String(state.user?.id)) ? 0 : 1) + (window._participantCount || feedGoingList[h.date]?.length || 0));
+    const cap = Number(h.capacity) > 0 ? Number(h.capacity) : 0;
+    const seat = cap ? `гость №${Math.min(count, cap)} из ${cap}` : `гость №${count}`;
+    const loc = String(h.location_link || '');
+    const locUrl = (loc.match(/\((https?:[^)\s]+)\)/) || loc.match(/https?:\/\/\S+/) || [])[1] || (loc.match(/https?:\/\/\S+/) || [])[0] || '';
+    const icsUrl = `${location.origin}/api/ics?` + new URLSearchParams({ d: h.date, t: h.start_time || '', title: h.title || 'событие клуба', url: locUrl }).toString();
+    const tgw = window.Telegram?.WebApp;
+    const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'city-ticket-overlay';
+    overlay.style.paddingTop = (inset ? inset + 16 : 40) + 'px';
+    overlay.innerHTML = `
+        <div class="ct-wrap">
+            <div class="ct-hey">🎉 место за столом твоё</div>
+            <div class="ct-ticket">
+                <div class="ct-top">
+                    <div class="ct-row"><span class="ct-seat">${seat}</span><span class="ct-emo">${escT(h.emoji || '🏙️')}</span></div>
+                    <div class="ct-title">${escT(h.title)}</div>
+                    <div class="ct-when">${when}</div>
+                </div>
+                <div class="ct-cut"></div>
+                <button type="button" class="ct-bottom" id="ctMap"${locUrl ? '' : ' disabled'}>📍 ${locUrl ? 'адрес · открыть на карте ›' : 'адрес пришлём ближе к дате'}</button>
+            </div>
+            <button type="button" class="ct-line" id="ctCal"><i>🗓</i><span><b>добавить в календарь</b><small>чтобы не потерять вечер</small></span><em>›</em></button>
+            ${needsWriteAccess() ? `<button type="button" class="ct-line" id="ctNotify"><i>🔔</i><span><b>разреши нам написать тебе</b><small>напомним за день и скажем, если что-то поменяется</small></span><em>включить</em></button>` : ''}
+            <button type="button" class="btn ct-ok" id="ctOk">отлично, жду</button>
+        </div>`;
+    document.body.appendChild(overlay);
+    requestAnimationFrame(() => overlay.classList.add('is-on'));
+    showConfetti({ soft: true });
+    log('городское событие: экран после записи', state.userCard?.status !== 'active', state.user, { hike_date: h.date });
+    const close = () => { haptic(); overlay.classList.remove('is-on'); setTimeout(() => overlay.remove(), 250); };
+    overlay.querySelector('#ctOk').addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelector('#ctMap').addEventListener('click', () => { if (locUrl) openLink(locUrl, 'городское событие: адрес на карте', false); });
+    overlay.querySelector('#ctCal').addEventListener('click', () => {
+        haptic();
+        log('городское событие: добавить в календарь', false, state.user, { hike_date: h.date });
+        if (tgw?.openLink) tgw.openLink(icsUrl); else window.open(icsUrl, '_blank');
+    });
+    overlay.querySelector('#ctNotify')?.addEventListener('click', async e => {
+        haptic();
+        const row = e.currentTarget;
+        if (await ensureCanMessage('билет городского события')) {
+            row.disabled = true;
+            row.querySelector('b').textContent = 'сообщения включены ✓';
+            row.querySelector('em')?.remove();
+        }
+    });
+}
+
 // ==================== ЭКРАН ПОСЛЕ РЕГИСТРАЦИИ ====================
 export function showRegistrationSuccess(hikeDate, hikeTitle) {
     if (sheetActHike) sheetActHike.registered = true;
     window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
     const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
-    if (hikeObj && (hikeObj.city === true || hikeObj.book_club === true)) return;
+    if (hikeObj && (hikeObj.city === true || hikeObj.city === 'yes')) return showCityRegistrationSuccess(hikeObj);
+    if (hikeObj && hikeObj.book_club === true) return;
 
     const isExperienced = hasPastBooking() || state.userCard.status === 'active';
     const d = feedDate(hikeDate);
