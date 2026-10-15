@@ -5962,16 +5962,20 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 /* hiking box – шторка «что внутри», вырастает из плашки (js/ui/hiking-box.js) */
 .hb-overlay { position: fixed; inset: 0; z-index: 2150; background: rgba(5, 8, 12, 0); transition: background .38s ease; }
 .hb-overlay.is-on { background: rgba(5, 8, 12, .55); }
-.hb-sheet { position: fixed; overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box;
-    background: linear-gradient(rgba(214, 170, 110, .10), rgba(214, 170, 110, 0) 260px), #121a23; border: 1px solid rgba(214, 170, 110, .35);
+.hb-sheet { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; max-width: 600px; margin: 0 auto;
+    overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box;
+    border-radius: 28px 28px 0 0; border: 1px solid rgba(214, 170, 110, .4); border-bottom: 0;
+    /* стекло как у шторки карты интеллигента (blur 36px), но в тёплых тонах плашки хайкинг бокса */
+    background: linear-gradient(180deg, rgba(214, 170, 110, .20), rgba(214, 170, 110, .07) 45%, rgba(214, 170, 110, .04)), rgba(22, 26, 30, .72);
+    backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%);
     box-shadow: 0 -10px 40px rgba(0, 0, 0, .45);
-    transition: top .38s cubic-bezier(.2, .9, .25, 1), left .38s cubic-bezier(.2, .9, .25, 1), width .38s cubic-bezier(.2, .9, .25, 1),
-        height .38s cubic-bezier(.2, .9, .25, 1), border-radius .38s ease; }
+    transform-origin: 0 0; will-change: transform;
+    transition: transform .36s cubic-bezier(.2, .9, .25, 1); }
 .hb-sheet > :not(.hb-grab) { opacity: 0; transition: opacity .2s ease; }
 .hb-overlay.is-on .hb-sheet > * { opacity: 1; transition: opacity .25s ease .18s; }
 .hb-grab { margin: 10px auto 0; flex: none; }
 .hb-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .1); color: #fff; font-size: 16px; cursor: pointer; }
-.hb-scroll { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px 120px; -webkit-overflow-scrolling: touch; }
+.hb-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; overscroll-behavior: contain; padding: 4px 18px 120px; -webkit-overflow-scrolling: touch; }
 .hb-hero { display: block; width: 210px; margin: 2px auto 0; transform: rotate(-6deg); filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .55)); }
 .hb-title { margin-top: 6px; text-align: center; font-size: 26px; font-weight: 800; color: #F3D9B1; }
 .hb-sub { margin: 6px auto 0; max-width: 330px; text-align: center; font-size: 14px; line-height: 1.45; color: rgba(255, 255, 255, .7); }
@@ -6152,6 +6156,8 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-collage { position: absolute; left: 0; top: 0; width: 375px; height: 500px; transform: scale(var(--hc-k)); transform-origin: 0 0; }
 .hb-scroll { padding-left: 0; padding-right: 0; }
 .hb-scroll > :not(.hb-collage-wrap) { margin-left: 24px; margin-right: 24px; }
+.hb-scroll > .hb-sub { margin-left: auto; margin-right: auto; max-width: 310px; } /* подпись – по центру */
+.hb-collage-wrap { overflow: hidden; } /* повёрнутые продукты не вылезают за края – шторка не ездит вбок */
 .hb-collage img { position: absolute; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .55)); }
 .hc-sandwich { width: 212px; left: 8px; top: 104px; transform: rotate(-10deg); z-index: 3; }
 .hc-shake { height: 168px; left: 168px; top: 78px; transform: rotate(6deg); z-index: 4; }

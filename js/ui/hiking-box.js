@@ -33,16 +33,27 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     });
     container.appendChild(row);
     container.classList.add('has-plates');
+    preloadHikingBox();
 }
 
 // шторка вырастает из плашки: стартует ровно в её прямоугольнике и разворачивается вверх на весь экран
+// шрифт подписей и картинки коллажа грузим заранее, как только показали плашку –
+// тогда шторка «что внутри» открывается сразу целиком, без поэтапной догрузки
+const CUT = ['pesto', 'shake', 'water', 'sticks', 'wafers', 'cookie'];
+let preloaded = false;
+function preloadHikingBox() {
+    if (preloaded) return;
+    preloaded = true;
+    const l = document.createElement('link');
+    l.id = 'caveatFont'; l.rel = 'stylesheet';
+    l.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap';
+    document.head.appendChild(l);
+    l.onload = () => { try { document.fonts.load('700 20px Caveat'); document.fonts.load('500 16px Caveat'); } catch (e) {} };
+    CUT.forEach(n => { const i = new Image(); i.decoding = 'async'; i.src = `assets/box/cut/${n}.png`; });
+}
+
 export function openHikingBox(fromEl, hike, isGuest) {
-    if (!document.getElementById('caveatFont')) {
-        const l = document.createElement('link');
-        l.id = 'caveatFont'; l.rel = 'stylesheet';
-        l.href = 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap';
-        document.head.appendChild(l);
-    }
+    preloadHikingBox();
     document.querySelector('.hb-overlay')?.remove();
     const r = fromEl.getBoundingClientRect();
     const overlay = document.createElement('div');
@@ -89,26 +100,31 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <div class="hb-bar"><button type="button" class="btn btn-yellow hb-buy">взять бокс с собой</button><button type="button" class="btn hb-buy hb-custom">настроить свой бокс</button></div>
         </div>`;
     const sheet = overlay.querySelector('.hb-sheet');
-    const fitCollage = () => {
-        const wrap = overlay.querySelector('.hb-collage-wrap');
-        if (!wrap) return;
-        const k = Math.min(1.15, window.innerWidth / 375); // шторка во всю ширину экрана
-        wrap.style.setProperty('--hc-k', k.toFixed(3));
-    };
-    // старт – в рамке плашки
-    Object.assign(sheet.style, { top: r.top + 'px', left: r.left + 'px', width: r.width + 'px', height: r.height + 'px', borderRadius: '22px' });
+    const tgw = window.Telegram?.WebApp;
+    const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    sheet.style.top = (inset ? inset + 14 : 40) + 'px';
+    // коллаж свёрстан на 375px – масштабируем под ширину шторки один раз, до показа
+    const k = Math.min(1.15, Math.min(window.innerWidth, 600) / 375);
+    overlay.querySelector('.hb-collage-wrap')?.style.setProperty('--hc-k', k.toFixed(3));
     document.body.appendChild(overlay);
-    fitCollage();
     document.body.style.overflow = 'hidden';
-    fromEl.style.visibility = 'hidden';
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        overlay.classList.add('is-on');
-        const tgw = window.Telegram?.WebApp;
-        const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
-        const top = inset ? inset + 14 : 40;
-        Object.assign(sheet.style, { top: top + 'px', left: '0px', width: '100%', height: `calc(100% - ${top}px)`, borderRadius: '28px 28px 0 0' });
 
-    }));
+    // трансформация «из плашки»: сдвиг + масштаб от прямоугольника плашки к итоговой шторке
+    const fromPlate = () => {
+        // размеры шторки – из раскладки (offset*), без учёта текущего transform (например, после свайпа)
+        const f = { left: sheet.offsetLeft, top: sheet.offsetTop, width: sheet.offsetWidth, height: sheet.offsetHeight };
+        const p = fromEl.isConnected ? fromEl.getBoundingClientRect() : r;
+        return `translate(${p.left - f.left}px, ${p.top - f.top}px) scale(${p.width / f.width}, ${p.height / f.height})`;
+    };
+    sheet.style.transition = 'none';
+    sheet.style.transform = fromPlate();
+    fromEl.style.visibility = 'hidden';
+    sheet.getBoundingClientRect(); // зафиксировать стартовое положение
+    requestAnimationFrame(() => {
+        sheet.style.transition = '';
+        sheet.style.transform = '';
+        overlay.classList.add('is-on');
+    });
 
     let closed = false;
     const close = () => {
@@ -116,14 +132,12 @@ export function openHikingBox(fromEl, hike, isGuest) {
         closed = true;
         overlay.classList.remove('is-on');
         sheet.style.transition = ''; // после свайпа sheet-drag оставляет свой transition
-        const r2 = fromEl.isConnected ? fromEl.getBoundingClientRect() : r;
-        sheet.style.transform = '';
-        Object.assign(sheet.style, { top: r2.top + 'px', left: r2.left + 'px', width: r2.width + 'px', height: r2.height + 'px', borderRadius: '22px' });
+        sheet.style.transform = fromPlate();
         setTimeout(() => {
             overlay.remove();
             fromEl.style.visibility = '';
             if (!document.querySelector('.bottom-sheet.visible, .cs-overlay')) document.body.style.overflow = '';
-        }, 380);
+        }, 360);
     };
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
     overlay.querySelector('.hb-close').addEventListener('click', () => { haptic(); close(); });
