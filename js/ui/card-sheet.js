@@ -91,7 +91,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     <div class="cs-city-k">${escT(ev.emoji || '🏙️')} ${evDay}</div>
                     <h2>в городе мы собираемся своими</h2>
                     <p>так за столом остаются те, с кем хочется говорить дольше, чем длится вечер. карта интеллигента – твой вход на такие встречи и на все хайки сезона</p>
-                    <div class="cs-city-ev"><i>🏙️</i><div><b>${escT(ev.title)}</b><small>${Number(ev.capacity) > 0 ? `${Number(ev.capacity)} мест · ` : ''}запишем сразу после оплаты</small></div></div>
+                    <div class="cs-city-ev"><i>${escT(ev.emoji || '🏙️')}</i><div><b>${escT(ev.title)}</b><small>${Number(ev.capacity) > 0 ? `${Number(ev.capacity)} мест · ` : ''}запишем сразу после оплаты</small></div></div>
                 </div>` : '';
     const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `оформить навсегда · ${rub(price)}` : `взять на сезон · ${rub(price)}`;
 
