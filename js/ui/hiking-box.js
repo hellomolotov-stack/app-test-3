@@ -10,7 +10,65 @@ const SHOP_URL = 'https://dietcakes.ru';
 
 
 
-// 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50 (цены сайта на 15.10.2026)
+// Два универсальных бокса – человек выбирает только «лёгкий» или «оптимальный», а начинку меняет уже в магазине.
+// Коллаж нарисован на 375px: items – картинки (left/top/размер/поворот), notes – рукописные подписи, arrows – стрелки.
+// Цены сайта на 15.10.2026:
+//   лёгкий 446 ₽ = батончик Bombbar 139 + чипсы Bombbar 92 + Qwikler 88 + пастила Фрутилад 77 + вода 50
+//   оптимальный 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50
+const BOXES = {
+    light: {
+        tab: 'лёгкий', price: '446 ₽', priceNote: 'пять продуктов по ценам dietcakes.ru', h: 470,
+        items: [
+            ['chips', 'height:190px; left:36px; top:66px; transform:rotate(-7deg); z-index:2'],
+            ['water', 'height:162px; left:282px; top:62px; transform:rotate(6deg); z-index:1'],
+            ['bar', 'width:226px; left:34px; top:240px; transform:rotate(-8deg); z-index:5'],
+            ['qwikler', 'width:200px; left:158px; top:318px; transform:rotate(7deg); z-index:6'],
+            ['frut', 'width:190px; left:16px; top:334px; transform:rotate(-4deg); z-index:7'],
+        ],
+        notes: [
+            ['left:24px; top:16px', 'чипсы', 'хрустящие с белком'],
+            ['right:24px; top:16px', 'вода', 'пол-литра', true],
+            ['right:24px; top:236px', 'батончик', '20 г белка', true],
+            ['left:24px; top:414px', 'пастила', 'яблоко и клюква'],
+            ['right:24px; top:414px', 'Qwikler', 'орехи без сахара', true],
+        ],
+        arrows: ['M50 56 C 54 66, 60 74, 70 84', 'M322 56 C 318 62, 316 66, 312 72', 'M300 280 C 294 290, 284 294, 270 294',
+            'M44 412 C 46 404, 50 398, 58 392', 'M322 412 C 320 402, 314 396, 306 390'],
+        swaps: ['батончик → другой вкус', 'чипсы → палочки', 'пастила → печенье'],
+    },
+    optimal: {
+        tab: 'оптимальный', price: '854 ₽', priceNote: 'шесть продуктов по ценам dietcakes.ru', h: 500,
+        items: [
+            ['pesto', 'width:212px; left:8px; top:104px; transform:rotate(-10deg); z-index:3'],
+            ['shake', 'height:168px; left:168px; top:78px; transform:rotate(6deg); z-index:4'],
+            ['water', 'height:176px; left:268px; top:104px; transform:rotate(-6deg); z-index:2'],
+            ['sticks', 'width:122px; left:214px; top:246px; transform:rotate(9deg); z-index:5'],
+            ['wafers', 'width:188px; left:34px; top:288px; transform:rotate(-6deg); z-index:6'],
+            ['cookie', 'width:108px; left:118px; top:350px; transform:rotate(7deg); z-index:7'],
+        ],
+        notes: [
+            ['left:24px; top:16px', 'сэндвич', 'сытный обед'],
+            ['left:176px; top:16px', 'коктейль', '24 г белка'],
+            ['right:24px; top:40px', 'вода', 'минералы', true],
+            ['left:24px; top:404px', 'вафли', 'без сахара'],
+            ['right:24px; top:404px', 'палочки', 'солёное с белком', true],
+            ['left:140px; top:452px', 'печенье', 'сладкое без сахара'],
+        ],
+        arrows: ['M52 56 C 54 76, 60 96, 72 116', 'M196 58 C 200 70, 204 80, 206 92', 'M322 82 C 318 94, 312 104, 304 116',
+            'M44 400 C 46 384, 56 370, 70 358', 'M322 400 C 320 384, 312 368, 300 356', 'M150 450 C 148 440, 152 432, 160 424'],
+        swaps: ['коктейль → энергетик', 'сэндвич → ролл', 'печенье → батончик'],
+        warn: 'сэндвич или ролл – заказ за 2 дня до хайка',
+    },
+};
+const DEFAULT_BOX = 'optimal';
+
+function collageHtml(b) {
+    return b.items.map(([n, st]) => `<img src="assets/box/cut/${n}.png" style="${st}" alt="">`).join('')
+        + b.notes.map(([pos, t, s, r]) => `<div class="hc-note${r ? ' is-r' : ''}" style="${pos}">${t}<small>${s}</small></div>`).join('')
+        + `<svg class="hc-arrows" viewBox="0 0 375 ${b.h}"><defs><marker id="hcHd" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M2 2 L9.5 6 L2.5 10.5" /></marker></defs>`
+        + b.arrows.map(d => `<path marker-end="url(#hcHd)" d="${d}" />`).join('') + '</svg>';
+}
+
 export function hikingBoxEnabled() {
     return HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''));
 }
@@ -39,7 +97,7 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
 // шторка вырастает из плашки: стартует ровно в её прямоугольнике и разворачивается вверх на весь экран
 // шрифт подписей и картинки коллажа грузим заранее, как только показали плашку –
 // тогда шторка «что внутри» открывается сразу целиком, без поэтапной догрузки
-const CUT = ['pesto', 'shake', 'water', 'sticks', 'wafers', 'cookie'];
+const CUT = [...new Set(Object.values(BOXES).flatMap(b => b.items.map(i => i[0])))];
 let preloaded = false;
 function preloadHikingBox() {
     if (preloaded) return;
@@ -65,36 +123,18 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <div class="hb-scroll">
                 <div class="hb-title">хайкинг бокс</div>
                 <div class="hb-sub">еда и вода на весь хайк в одной коробке. получаешь перед стартом – и не думаешь, что взять с собой</div>
-                <div class="hb-collage-wrap"><div class="hb-collage">
-                    <img class="hc-sandwich" src="assets/box/cut/pesto.png" alt="">
-                    <img class="hc-shake" src="assets/box/cut/shake.png" alt="">
-                    <img class="hc-water" src="assets/box/cut/water.png" alt="">
-                    <img class="hc-sticks" src="assets/box/cut/sticks.png" alt="">
-                    <img class="hc-wafers" src="assets/box/cut/wafers.png" alt="">
-                    <img class="hc-cookie" src="assets/box/cut/cookie.png" alt="">
-                    <div class="hc-note" style="left:24px; top:16px;">сэндвич<small>сытный обед</small></div>
-                    <div class="hc-note" style="left:176px; top:16px;">коктейль<small>24 г белка</small></div>
-                    <div class="hc-note is-r" style="right:24px; top:40px;">вода<small>минералы</small></div>
-                    <div class="hc-note" style="left:24px; top:404px;">вафли<small>без сахара</small></div>
-                    <div class="hc-note is-r" style="right:24px; top:404px;">палочки<small>солёное с белком</small></div>
-                    <div class="hc-note" style="left:140px; top:452px;">печенье<small>сладкое без сахара</small></div>
-                    <svg class="hc-arrows" viewBox="0 0 375 500">
-                        <defs><marker id="hcHd" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M2 2 L9.5 6 L2.5 10.5" /></marker></defs>
-                        <path marker-end="url(#hcHd)" d="M52 56 C 54 76, 60 96, 72 116" />
-                        <path marker-end="url(#hcHd)" d="M196 58 C 200 70, 204 80, 206 92" />
-                        <path marker-end="url(#hcHd)" d="M322 82 C 318 94, 312 104, 304 116" />
-                        <path marker-end="url(#hcHd)" d="M44 400 C 46 384, 56 370, 70 358" />
-                        <path marker-end="url(#hcHd)" d="M322 400 C 320 384, 312 368, 300 356" />
-                        <path marker-end="url(#hcHd)" d="M150 450 C 148 440, 152 432, 160 424" />
-                    </svg>
-                </div></div>
+                <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
+                    `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${b.price}</small></button>`).join('')}</div>
+                <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
+                <div class="hb-warn"></div>
+                <div class="hb-swaps"><span class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
                 <div class="hb-label">как получить</div>
                 <div class="hb-ways">
                     <div class="hb-way"><span>🚚</span><b>доставка по Ялте</b><small>накануне</small></div>
                     <div class="hb-way"><span>🏪</span><b>самовывоз</b><small>из магазина</small></div>
                     <div class="hb-way is-hl"><span>🏔</span><b>на хайк</b><small>на точке сбора</small></div>
                 </div>
-                <div class="hb-price"><span class="hb-price-k">весь бокс</span><b>854 ₽</b><small>шесть продуктов по ценам dietcakes.ru</small></div>
+                <div class="hb-price"><span class="hb-price-k"></span><b></b><small></small></div>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
             </div>
             <div class="hb-bar"><button type="button" class="btn btn-yellow hb-buy">взять бокс с собой</button><button type="button" class="btn hb-buy hb-custom">настроить свой бокс</button></div>
@@ -105,7 +145,31 @@ export function openHikingBox(fromEl, hike, isGuest) {
     sheet.style.top = (inset ? inset + 14 : 40) + 'px';
     // коллаж свёрстан на 375px – масштабируем под ширину шторки один раз, до показа
     const k = Math.min(1.15, Math.min(window.innerWidth, 600) / 375);
-    overlay.querySelector('.hb-collage-wrap')?.style.setProperty('--hc-k', k.toFixed(3));
+    const wrap = overlay.querySelector('.hb-collage-wrap');
+    wrap.style.setProperty('--hc-k', k.toFixed(3));
+    // вкладки «лёгкий / оптимальный»: меняем коллаж, цену, замены и пометку про сэндвич
+    let current = DEFAULT_BOX;
+    const showBox = (key) => {
+        current = key;
+        const b = BOXES[key];
+        overlay.querySelectorAll('.hb-tab').forEach(t => t.classList.toggle('is-on', t.dataset.box === key));
+        wrap.style.setProperty('--hc-h', b.h + 'px');
+        wrap.querySelector('.hb-collage').innerHTML = collageHtml(b);
+        const warn = overlay.querySelector('.hb-warn');
+        warn.textContent = b.warn || '';
+        warn.hidden = !b.warn;
+        overlay.querySelector('.hb-swaps-list').innerHTML = b.swaps.map(s => `<span>${s}</span>`).join('');
+        overlay.querySelector('.hb-price-k').textContent = `${b.tab} бокс`;
+        overlay.querySelector('.hb-price b').textContent = b.price;
+        overlay.querySelector('.hb-price small').textContent = b.priceNote;
+    };
+    showBox(DEFAULT_BOX);
+    overlay.querySelectorAll('.hb-tab').forEach(t => t.addEventListener('click', () => {
+        if (t.dataset.box === current) return;
+        haptic();
+        log(`hiking box: вкладка ${BOXES[t.dataset.box].tab} – ${hike.title}`, isGuest, state.user);
+        showBox(t.dataset.box);
+    }));
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
 
@@ -144,6 +208,6 @@ export function openHikingBox(fromEl, hike, isGuest) {
     overlay.querySelectorAll('.hb-buy').forEach(btn => btn.addEventListener('click', () => {
         haptic();
         const custom = btn.classList.contains('hb-custom');
-        openLink(SHOP_URL, `hiking box: ${custom ? 'настроить свой' : 'взять'} – ${hike.title}`, isGuest);
+        openLink(SHOP_URL, `hiking box: ${custom ? 'настроить свой' : `взять ${BOXES[current].tab}`} – ${hike.title}`, isGuest);
     }));
 }
