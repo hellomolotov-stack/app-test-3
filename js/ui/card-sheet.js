@@ -102,9 +102,9 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             <div class="cs-grab"></div>
             <div class="cs-scroll">
                 ${cityHtml}
-                <div class="cs-hero"${ev ? ' hidden' : ''}>
+                <div class="cs-hero${ev ? ' is-under-city' : ''}">
                     <div class="cs-stage"><div class="cs-card"><img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции"></div></div>
-                    <h2>${gift ? 'подари новый опыт' : 'стань интеллигентом'}</h2>
+                    <h2>${gift ? 'подари новый опыт' : ev ? 'карта интеллигента' : 'стань интеллигентом'}</h2>
                     <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
                     <p>${gift ? 'подари другу то, что есть у тебя: все хайки сезона, закрытые события и людей, с которыми хочется идти дальше' : 'карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше'}</p>
                     ${membersHtml()}
