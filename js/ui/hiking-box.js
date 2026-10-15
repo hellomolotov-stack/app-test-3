@@ -144,7 +144,6 @@ export function openHikingBox(fromEl, hike, isGuest) {
                         <div class="hb-p-card"><span class="hb-p-badge">−10%</span><small>с картой интеллигента</small><b></b></div>
                     </div>
                     <small class="hb-price-note"></small>
-                    <button type="button" class="hb-get-card"><img src="assets/card-front.jpg" alt="">оформить карту интеллигента</button>
                 </div>
                 <div class="hb-fair"><b>без наценки</b> – по прямой цене магазина. самые заботливые цены по всей большой Ялте</div>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
@@ -238,7 +237,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
     overlay.querySelector('.hb-close').addEventListener('click', () => { haptic(); close(); });
     // «оформить карту» в плашке цен – только тем, у кого карты нет
     // и строка над кнопкой покупки: «с картой интеллигента – 401 ₽ · оформить карту ›»
-    overlay.querySelectorAll('.hb-get-card, .hb-card-hint').forEach(el => {
+    overlay.querySelectorAll('.hb-card-hint').forEach(el => {
         el.hidden = isMember;
         el.addEventListener('click', () => {
             haptic();
