@@ -724,7 +724,8 @@ async function saveHike() {
     btn.textContent = 'сохраняю…';
     const fields = {
         title: d.title.trim(),
-        emoji: d.title.trim() ? '' : d.emoji,
+        // эмоджи у события с названием храним для городских событий и для «🌧️ дата перенесена»
+        emoji: (!d.title.trim() || d.city || /🌧/.test(d.emoji || '')) ? (d.emoji || '') : '',
         start_time: d.start_time.trim(),
         tags: d.tags.split(',').map(t => t.trim()).filter(Boolean),
         image: d.image.trim(),
