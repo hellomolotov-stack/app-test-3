@@ -204,8 +204,18 @@ function allHikes() {
 }
 
 // ---------- каркас ----------
+// перерисовка того же экрана (нажали чип, галочку, кнопку) не должна сбрасывать прокрутку –
+// наверх уводим только при переходе на другой экран (вкладка, карточка хайка)
+let lastScreenKey = '';
 function render() {
     if (!root) return;
+    const screenKey = `${view.tab}|${view.sub || ''}|${view.sub === 'edit' ? (draft?.original || 'new') : ''}`;
+    const sameScreen = screenKey === lastScreenKey;
+    lastScreenKey = screenKey;
+    const keepTop = sameScreen ? root.scrollTop : 0;
+    // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
+    const prevBody = root.querySelector('.adm-body');
+    const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
     const tabs = [['hikes', '🏔 хайки'], ['broadcast', '📨 рассылка'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
@@ -229,7 +239,13 @@ function render() {
     else if (view.tab === 'home') renderHomepage(body);
     else if (view.tab === 'admissions') renderAdmissionAdmin(body);
     else renderHikeList(body);
-    root.scrollTop = 0;
+    if (holdHeight) {
+        body.style.minHeight = holdHeight + 'px';
+        // асинхронные блоки (участники, статистика) дорисуются – потом отпускаем высоту
+        setTimeout(() => { if (body.isConnected) body.style.minHeight = ''; }, 1500);
+    }
+    root.scrollTop = keepTop;
+    if (keepTop) requestAnimationFrame(() => { if (root) root.scrollTop = keepTop; });
     root.querySelector('.adm-tab.is-on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
