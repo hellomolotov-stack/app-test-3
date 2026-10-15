@@ -1047,11 +1047,18 @@ async function sendCardOffer(people) {
 // Здесь – карта цепочки с цифрами: сколько ушло на каждый шаг и сколько нажали каждую кнопку.
 let flowsData = null; // { list, error, loading }
 let flowOpen = '';
-async function loadFlows(body) {
+// рисуем в актуальный экран (пока шла загрузка, админка могла перерисоваться), ждём не дольше 30 с
+async function loadFlows() {
     flowsData = { loading: true };
-    try { const res = await adminCall('adminFlows'); flowsData = { list: res.flows || [] }; }
-    catch (e) { flowsData = { error: e.message }; }
-    if (body.isConnected && view.tab === 'flows') renderFlows(body);
+    const cur = root?.querySelector('.adm-body');
+    if (cur && view.tab === 'flows' && !view.sub && !flowEdit) cur.innerHTML = '<div class="adm-muted" style="padding:12px 2px">загружаю цепочки…</div>';
+    try {
+        const res = await Promise.race([adminCall('adminFlows'),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('сервер не ответил за 30 секунд')), 30000))]);
+        flowsData = { list: res.flows || [] };
+    } catch (e) { flowsData = { error: e.message }; }
+    const b = root?.querySelector('.adm-body');
+    if (b && view.tab === 'flows' && !view.sub) renderFlows(b);
 }
 function flowNodeHtml(f, nodeId, depth, seen) {
     const node = f.flow.nodes?.[nodeId];
