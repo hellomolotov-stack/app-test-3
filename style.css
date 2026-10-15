@@ -6145,3 +6145,22 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-bar { display: flex; flex-direction: column; gap: 8px; }
 .hb-custom { background: rgba(255, 255, 255, .1); color: #fff; border: 1px solid rgba(255, 255, 255, .2); }
 .hb-scroll { padding-bottom: 170px; }
+
+/* хайкинг бокс: коллаж продуктов с рукописными подписями (нарисован на 375px, масштабируется под экран) */
+.hb-title { margin-top: 26px; }
+.hb-collage-wrap { --hc-k: 1; position: relative; width: calc(375px * var(--hc-k)); height: calc(500px * var(--hc-k)); margin: 6px auto 0; }
+.hb-collage { position: absolute; left: 0; top: 0; width: 375px; height: 500px; transform: scale(var(--hc-k)); transform-origin: 0 0; }
+.hb-scroll { padding-left: 0; padding-right: 0; }
+.hb-scroll > :not(.hb-collage-wrap) { margin-left: 24px; margin-right: 24px; }
+.hb-collage img { position: absolute; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .55)); }
+.hc-sandwich { width: 212px; left: 8px; top: 104px; transform: rotate(-10deg); z-index: 3; }
+.hc-shake { height: 168px; left: 168px; top: 78px; transform: rotate(6deg); z-index: 4; }
+.hc-water { height: 176px; left: 268px; top: 104px; transform: rotate(-6deg); z-index: 2; }
+.hc-sticks { width: 122px; left: 214px; top: 246px; transform: rotate(9deg); z-index: 5; }
+.hc-wafers { width: 188px; left: 34px; top: 288px; transform: rotate(-6deg); z-index: 6; }
+.hc-cookie { width: 108px; left: 118px; top: 350px; transform: rotate(7deg); z-index: 7; }
+.hc-note { position: absolute; z-index: 10; font-family: Caveat, cursive; font-weight: 700; font-size: 20px; line-height: 1; color: #F3D9B1; white-space: nowrap; text-shadow: 0 2px 6px rgba(0, 0, 0, .7); }
+.hc-note small { display: block; margin-top: 2px; font-weight: 500; font-size: 16px; color: rgba(255, 255, 255, .78); }
+.hc-note.is-r { text-align: right; }
+.hc-arrows { position: absolute; inset: 0; z-index: 9; pointer-events: none; overflow: visible; filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, .9)) drop-shadow(0 1px 3px rgba(0, 0, 0, .6)); }
+.hc-arrows path { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
