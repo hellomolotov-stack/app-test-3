@@ -3861,8 +3861,8 @@ export function showLeaderDropdown(leaderElement, leaderData) {
 }
 
 // ==================== ЭКРАН ПОСЛЕ ЗАПИСИ НА ГОРОДСКОЕ СОБЫТИЕ ====================
-// Голубой «билет на вечер»: гость №N из M, эмоджи, название, дата; линия отрыва с вырезами;
-// ниже – адрес на карте (после записи он открыт) и «добавить в календарь».
+// Коротко и тепло (вариант В): эмоджи события в круге, «ты с нами», что и когда,
+// где встречаемся (после записи адрес открыт) и «есть вопрос?».
 function showCityRegistrationSuccess(h) {
     document.querySelector('.city-ticket-overlay')?.remove();
     const escT = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -3870,12 +3870,8 @@ function showCityRegistrationSuccess(h) {
     const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
     const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${h.start_time ? ' · ' + h.start_time : ''}`;
-    const count = Math.max(1, (feedGoingList[h.date]?.some(p => String(p.userId) === String(state.user?.id)) ? 0 : 1) + (window._participantCount || feedGoingList[h.date]?.length || 0));
-    const cap = Number(h.capacity) > 0 ? Number(h.capacity) : 0;
-    const seat = cap ? `гость №${Math.min(count, cap)} из ${cap}` : `гость №${count}`;
     const loc = String(h.location_link || '');
     const locUrl = (loc.match(/\((https?:[^)\s]+)\)/) || loc.match(/https?:\/\/\S+/) || [])[1] || (loc.match(/https?:\/\/\S+/) || [])[0] || '';
-    const icsUrl = `${location.origin}/api/ics?` + new URLSearchParams({ d: h.date, t: h.start_time || '', title: h.title || 'событие клуба', url: locUrl }).toString();
     const tgw = window.Telegram?.WebApp;
     const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
 
@@ -3883,20 +3879,13 @@ function showCityRegistrationSuccess(h) {
     overlay.className = 'city-ticket-overlay';
     overlay.style.paddingTop = (inset ? inset + 16 : 40) + 'px';
     overlay.innerHTML = `
-        <div class="ct-wrap">
-            <div class="ct-hey">🎉 место за столом твоё</div>
-            <div class="ct-ticket">
-                <div class="ct-top">
-                    <div class="ct-row"><span class="ct-seat">${seat}</span><span class="ct-emo">${escT(h.emoji || '🏙️')}</span></div>
-                    <div class="ct-title">${escT(h.title)}</div>
-                    <div class="ct-when">${when}</div>
-                </div>
-                <div class="ct-cut"></div>
-                <button type="button" class="ct-bottom" id="ctMap"${locUrl ? '' : ' disabled'}>📍 ${locUrl ? 'адрес · открыть на карте ›' : 'адрес пришлём ближе к дате'}</button>
-            </div>
-            <button type="button" class="ct-line" id="ctCal"><i>🗓</i><span><b>добавить в календарь</b><small>чтобы не потерять вечер</small></span><em>›</em></button>
-            ${needsWriteAccess() ? `<button type="button" class="ct-line" id="ctNotify"><i>🔔</i><span><b>разреши нам написать тебе</b><small>напомним за день и скажем, если что-то поменяется</small></span><em>включить</em></button>` : ''}
-            <button type="button" class="btn ct-ok" id="ctOk">отлично, жду</button>
+        <div class="ct-wrap ct-v">
+            <div class="ct-circle">${escT(h.emoji || '🏙️')}</div>
+            <div class="ct-big">ты с нами 🤍</div>
+            <div class="ct-sub">записали тебя на <b>${escT(h.title)}</b><br>${when}</div>
+            <button type="button" class="ct-line" id="ctMap"${locUrl ? '' : ' disabled'}><i>📍</i><span><b>где встречаемся</b><small>${locUrl ? 'адрес теперь открыт для тебя' : 'адрес пришлём ближе к дате'}</small></span>${locUrl ? '<em>›</em>' : ''}</button>
+            <button type="button" class="ct-line" id="ctAsk"><i>💬</i><span><b>есть вопрос?</b><small>напиши – ответим лично</small></span><em>›</em></button>
+            <button type="button" class="btn ct-ok" id="ctOk">до встречи</button>
         </div>`;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-on'));
@@ -3906,19 +3895,13 @@ function showCityRegistrationSuccess(h) {
     overlay.querySelector('#ctOk').addEventListener('click', close);
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
     overlay.querySelector('#ctMap').addEventListener('click', () => { if (locUrl) openLink(locUrl, 'городское событие: адрес на карте', false); });
-    overlay.querySelector('#ctCal').addEventListener('click', () => {
-        haptic();
-        log('городское событие: добавить в календарь', false, state.user, { hike_date: h.date });
-        if (tgw?.openLink) tgw.openLink(icsUrl); else window.open(icsUrl, '_blank');
-    });
-    overlay.querySelector('#ctNotify')?.addEventListener('click', async e => {
-        haptic();
-        const row = e.currentTarget;
-        if (await ensureCanMessage('билет городского события')) {
-            row.disabled = true;
-            row.querySelector('b').textContent = 'сообщения включены ✓';
-            row.querySelector('em')?.remove();
-        }
+    overlay.querySelector('#ctAsk').addEventListener('click', () => {
+        close();
+        const [, mo, dd] = String(h.date).split('-');
+        openOnboardingChat(null, null, false, { supportTopic: {
+            intro: `напиши вопрос про «${h.title}» – передам организаторам. как только ответят, покажу здесь 🤍`,
+            prefix: `[событие ${dd}.${mo} «${h.title}»] `,
+        } });
     });
 }
 
