@@ -216,7 +216,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [['hikes', '🏔 хайки'], ['broadcast', '📨 рассылка'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [['hikes', '🏔 хайки'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -233,6 +233,7 @@ function render() {
     const body = root.querySelector('.adm-body');
     if (view.sub === 'edit') renderEditor(body);
     else if (view.tab === 'broadcast') renderBroadcast(body);
+    else if (view.tab === 'flows') renderFlows(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);
     else if (view.tab === 'plus1') renderPlus1(body);
     else if (view.tab === 'pass') renderPass(body);
@@ -1041,6 +1042,62 @@ async function sendCardOffer(people) {
         if (btn) { btn.disabled = false; btn.textContent = `отправить · ${people.length} чел.`; }
     }
 }
+// ---------- цепочки сообщений ----------
+// Дерево сообщений в боте (Firebase flows/, запускает Apps Script, кнопки обрабатывает бот).
+// Здесь – карта цепочки с цифрами: сколько ушло на каждый шаг и сколько нажали каждую кнопку.
+let flowsData = null; // { list, error, loading }
+let flowOpen = '';
+async function loadFlows(body) {
+    flowsData = { loading: true };
+    try { const res = await adminCall('adminFlows'); flowsData = { list: res.flows || [] }; }
+    catch (e) { flowsData = { error: e.message }; }
+    if (body.isConnected) renderFlows(body);
+}
+function flowNodeHtml(f, nodeId, depth, seen) {
+    const node = f.flow.nodes?.[nodeId];
+    if (!node || seen.has(nodeId) || depth > 4) return '';
+    seen.add(nodeId);
+    const st = f.stats[nodeId] || {};
+    const sent = Number(st.sent || 0);
+    const clicks = (node.buttons || []).map((_, i) => Number(st.clicks?.[i] || 0));
+    const totalClicks = clicks.reduce((a, b) => a + b, 0);
+    const pct = n => (sent ? ` · ${Math.round(n / sent * 100)}%` : '');
+    const text = esc(String(node.text || '')).replace(/\[имя\]/gi, '<i>[имя]</i>').replace(/\n/g, '<br>');
+    const btns = node.buttons || [];
+    return `<div class="fl-node">
+        <div class="fl-msg"><div class="fl-text">${text}</div>
+            <div class="fl-pills"><span>ушло ${sent}</span>${btns.length ? `<span>не нажали ${Math.max(0, sent - totalClicks)}</span>` : ''}</div></div>
+        ${btns.length ? `<div class="fl-branches" style="grid-template-columns:repeat(${btns.length},minmax(0,1fr))">${btns.map((b, i) => `<div class="fl-branch">
+            <div class="fl-line"></div><div class="fl-btn">${esc(b.label)}<small>нажали ${clicks[i]}${pct(clicks[i])}</small></div>
+            ${b.next ? `<div class="fl-line"></div>${flowNodeHtml(f, b.next, depth + 1, seen)}` : ''}</div>`).join('')}</div>` : ''}
+    </div>`;
+}
+function renderFlows(body) {
+    if (!flowsData) { loadFlows(body); }
+    const d = flowsData || { loading: true };
+    if (d.loading) { body.innerHTML = '<div class="adm-muted" style="padding:12px 2px">загружаю цепочки…</div>'; return; }
+    if (d.error) { body.innerHTML = `<div class="adm-error-inline">не удалось загрузить: ${esc(d.error)}</div><button class="adm-link" id="flRetry">ещё раз</button>`; body.querySelector('#flRetry').addEventListener('click', () => loadFlows(body)); return; }
+    const f = d.list.find(x => x.id === flowOpen);
+    if (!f) {
+        body.innerHTML = `<div class="adm-hint">цепочка – несколько сообщений в боте: первое уходит само по событию, кнопки ведут к следующим. здесь видно, как каждая отработала</div>
+            ${d.list.map(x => `<button class="fl-item" data-flow="${esc(x.id)}"><b>${esc(x.flow.title || x.id)} <span class="fl-state${x.flow.enabled === false ? ' is-off' : ''}">${x.flow.enabled === false ? 'выключена' : 'включена'}</span></b>
+                <small>${esc(x.flow.trigger_text || '')}</small><small>получили ${x.people} чел. · запусков ${x.runs}</small></button>`).join('') || '<div class="adm-muted">цепочек пока нет</div>'}
+            <div class="adm-hint">создавать и править цепочки самому – следующий этап, пока тексты меняет Claude</div>
+            <button class="adm-link" id="flReload">обновить цифры</button>`;
+        body.querySelectorAll('[data-flow]').forEach(b => b.addEventListener('click', () => { haptic(); flowOpen = b.dataset.flow; renderFlows(body); }));
+        body.querySelector('#flReload').addEventListener('click', () => { haptic(); loadFlows(body); });
+        return;
+    }
+    body.innerHTML = `<button class="adm-back" id="flBack">‹ все цепочки</button>
+        <div class="adm-h1">${esc(f.flow.title || f.id)}</div>
+        <div class="fl-trigger">⚡ <b>запуск:</b> ${esc(f.flow.trigger_text || f.flow.trigger || '')}<br><small>получили ${f.people} чел. · запусков ${f.runs}</small></div>
+        <div class="fl-line"></div>
+        <div class="fl-map">${flowNodeHtml(f, f.flow.start, 0, new Set())}</div>
+        <button class="adm-link" id="flReload">обновить цифры</button>`;
+    body.querySelector('#flBack').addEventListener('click', () => { haptic(); flowOpen = ''; renderFlows(body); });
+    body.querySelector('#flReload').addEventListener('click', () => { haptic(); loadFlows(body); });
+}
+
 // ---------- рассылка ----------
 function newBroadcast() {
     return { segment: 'all', hikeDate: '', text: '', btnType: 'app', section: 'calendar', btnHike: '', url: '', btnText: '▶ открыть', count: null, excl: [], off: {}, showExcl: false, showPeople: false, q: '', peopleLimit: 100, kind: 'regular', when: 'now', sendAt: defaultSendAt() };
