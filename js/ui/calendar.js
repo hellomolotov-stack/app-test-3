@@ -82,7 +82,7 @@ export function renderCalendar(container) {
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">📷 отчёт</span>
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🎟️ запись</span>
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">⛰️ готовим хайк</span>
-                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🌧️ переносим дату</span>
+                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🌧️ дата перенесена</span>
                     <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🏄🏻‍♂️ готовим событие</span>
                 </div>
             </div>
@@ -260,7 +260,10 @@ function setFeedWaitlist(date, on) {
     try { localStorage.setItem(FEED_WAITLIST_KEY, JSON.stringify(w)); } catch (e) {}
 }
 
+// 🌧️ в эмоджи события = дата перенесена (из-за погоды): дождик и честная подпись вместо «готовим»
+export const isPostponed = h => /🌧/.test(h?.emoji || '');
 function feedTeaserLabel(h) {
+    if (isPostponed(h)) return 'дата перенесена';
     return /🏄/.test(h.emoji || '') ? 'готовим событие' : 'готовим хайк';
 }
 
@@ -341,6 +344,10 @@ function feedNearestCard(h) {
     if (!h) {
         return `<div class="ef-next ef-next-empty"><div class="ef-next-title">⛰️ следующий хайк скоро в календаре</div><div class="ef-next-sub">обычно анонсируем за неделю</div></div>`;
     }
+    if (isPostponed(h)) {
+        const name = h.title && h.title.trim() ? feedEsc(h.title) : 'хайк';
+        return `<div class="ef-next ef-next-teaser ef-rain"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">🌧️ ${name} – дата перенесена</div><div class="ef-next-sub">погода не пускает в горы. новую дату объявим в календаре</div></div></div>${feedNotifyButton(h.date)}</div>`;
+    }
     if (!h.title || !h.title.trim()) {
         const waiting = !!feedWaitlist()[h.date];
         const note = waiting
@@ -394,10 +401,12 @@ function feedRow(h, nearestDate = '') {
     const isCity = feedIsCity(h);
     const cancelled = h.cancelled === true;
     const isTeaser = !h.title || !h.title.trim();
-    const icon = isTeaser ? (h.emoji || '⛰️') : isCity ? '🥂' : h.book_club === true ? '📚' : '⛰️';
+    const postponed = isPostponed(h);
+    const icon = postponed ? '🌧️' : isTeaser ? (h.emoji || '⛰️') : isCity ? (h.emoji || '🥂') : h.book_club === true ? '📚' : '⛰️';
     const km = feedKm(h);
     let sub = FEED_WD[d.getDay()];
     if (cancelled) sub += ' · отменили';
+    else if (postponed) sub += ' · <span class="ef-rain-text">дата перенесена</span>';
     else if (isTeaser) sub += ' · запись скоро откроется';
     else {
         if (isCity) sub += ' · <span class="ef-city">клубный вечер</span>';
@@ -408,12 +417,12 @@ function feedRow(h, nearestDate = '') {
     // у прошедшего хайка одна кнопка – она открывает его шторку, где уже и отчёт, и письмо, и саммари
     if (!cancelled && isPast && hasReportLink(h)) action = `<button class="ef-report" data-report="${h.date}">📷 отчёт</button>`;
     else if (!cancelled && isPast && hasLetterLink(h)) action = `<button class="ef-report ef-letter" data-report="${h.date}">✉️ письмо</button>`;
-    else if (!cancelled && !isPast && isTeaser) action = feedNotifyButton(h.date, true);
+    else if (!cancelled && !isPast && (isTeaser || postponed)) action = feedNotifyButton(h.date, true);
     // жёлтая «записаться» одна – в карточке ближайшего; в списке строка сама открывает хайк
     else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">↑ ближайший</span>`;
     else if (!cancelled && !isPast) action = `<span class="ef-go" aria-hidden="true">›</span>`;
-    const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}`;
-    const img = h.image && !cancelled ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
+    const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}${postponed ? ' is-rain' : ''}`;
+    const img = h.image && !cancelled && !postponed ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
     return `<div class="ef-row${cancelled ? ' is-off' : ''}${isPast ? '' : ' is-future'}"${isTeaser ? '' : ` data-open="${h.date}"`}>
         <div class="${thumbCls}"${img}>${img ? '' : icon}<span class="ef-thumb-date">${d.getDate()} ${FEED_MONTHS_SHORT[d.getMonth()]}</span></div>
         <div class="ef-row-mid"><div class="ef-row-title">${isTeaser ? feedTeaserLabel(h) : h.title}</div><div class="ef-row-sub">${sub}<span data-going-for="${isPast && !cancelled && !isTeaser ? h.date : ''}"></span></div></div>
@@ -2890,6 +2899,15 @@ function updateFloatingSheetButtons() {
         placeholderMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
         placeholderMsg.textContent = '💫 скоро появится';
         container.appendChild(placeholderMsg);
+        return;
+    }
+
+    if (isPostponed(hike) && !isPast) {
+        const rainMsg = document.createElement('div');
+        rainMsg.className = 'availability-floating rain-plate';
+        rainMsg.innerHTML = '<span class="rain-plate-ic">🌧️</span><span><b>дата перенесена</b><small>погода не пускает в горы – новую дату объявим в календаре</small></span>';
+        container.appendChild(rainMsg);
+        container.style.pointerEvents = 'none';
         return;
     }
 

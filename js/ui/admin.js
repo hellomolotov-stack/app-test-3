@@ -14,9 +14,11 @@ const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 const MS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const PLACEHOLDER_EMOJI = [
     ['⛰️', '⛰️ готовим хайк'],
-    ['🌧️', '🌧️ переносим дату'],
+    ['🌧️', '🌧️ дата перенесена'],
     ['🏄🏻‍♂️', '🏄🏻‍♂️ готовим событие']
 ];
+// эмоджи городского события – видно в ленте календаря вместо 🥂
+const CITY_EMOJI = ['🥂', '🍷', '🎬', '🎨', '🎤', '🎶', '📚', '🧘', '🎲', '🍽️', '☕', '🔥', '💃', '🌊', '🎭', '🧠'];
 const APP_SECTIONS = [
     ['calendar', 'календарь'],
     ['hike', 'конкретный хайк'],
@@ -542,7 +544,7 @@ function renderEditor(body) {
         ${field('date', 'дата', 'type="date"')}
         <div id="admDateNote">${dateNoteHtml()}</div>
         ${field('title', 'название', 'placeholder="хайк на Ай-Петри"')}
-        <div class="adm-hint">без названия событие показывается заглушкой:</div>
+        <div class="adm-hint">без названия событие показывается заглушкой. «🌧️ дата перенесена» работает и для хайка с названием – запись закрывается, в ленте дождик:</div>
         <div class="adm-chips">${PLACEHOLDER_EMOJI.map(([e, l]) => `<button class="adm-chip${d.emoji === e ? ' is-on' : ''}" data-emoji="${e}">${l}</button>`).join('')}</div>
         ${field('start_time', 'время старта', 'placeholder="12:00" inputmode="numeric"')}
         ${field('tags', 'теги через запятую', 'placeholder="умеренно, 10 км, 4-5 часов, без пропуска"')}
@@ -551,6 +553,7 @@ function renderEditor(body) {
         ${trackSectionHtml(d)}
 
         <div class="adm-label">описание</div>
+        <label class="adm-upload">📷 загрузить картинку<input type="file" accept="image/*" id="admImgFile" hidden></label>
         ${field('image', 'картинка (ссылка)', 'placeholder="https://i.postimg.cc/…"')}
         ${d.image ? `<img class="adm-img" src="${esc(d.image)}" alt="">` : ''}
         ${area('features', 'о маршруте', 5)}
@@ -564,10 +567,14 @@ function renderEditor(body) {
         ${field('summary_title', 'название саммари', 'placeholder="как в блоке «саммари мастермайнда»"')}
         <div class="adm-hint">плашка «саммари мастермайнда» появится у прошедшего хайка, а запись – в блоке саммари на главной</div>
         <div class="adm-checks">${check('cancelled', 'отменён')}${check('woman', 'женский хайк')}${check('city', 'городское событие')}</div>
+        ${d.city ? `<div class="adm-label">эмоджи события</div>
+            <div class="adm-chips">${CITY_EMOJI.map(e => `<button class="adm-chip adm-emo${(d.emoji || '🥂') === e ? ' is-on' : ''}" data-city-emoji="${e}">${e}</button>`).join('')}</div>
+            <div class="adm-hint">фоновая картинка события – «загрузить картинку» выше</div>` : ''}
 
         <button class="btn btn-yellow adm-primary adm-save" id="admSave">сохранить</button>
         <div class="adm-error" id="admSaveError" hidden></div>
-        ${d.original ? `<div class="adm-label">участники</div><div id="admPeople" class="adm-hint">загружаю…</div>` : ''}`;
+        ${d.original ? `<div class="adm-label">участники</div><div id="admPeople" class="adm-hint">загружаю…</div>
+            <button class="adm-delete" id="admDelete">🗑 удалить событие полностью</button>` : ''}`;
 
     body.querySelector('.adm-back').addEventListener('click', () => { haptic(); view = { tab: 'hikes' }; render(); });
     body.querySelectorAll('[data-k]').forEach(inp => {
@@ -590,6 +597,11 @@ function renderEditor(body) {
         d.emoji = d.emoji === b.dataset.emoji ? '' : b.dataset.emoji;
         render();
     }));
+    body.querySelectorAll('[data-city-emoji]').forEach(b => b.addEventListener('click', () => { haptic(); d.emoji = b.dataset.cityEmoji; render(); }));
+    // при переключении «городское событие» показываем выбор эмоджи
+    body.querySelector('[data-k="city"]')?.addEventListener('change', () => render());
+    body.querySelector('#admImgFile')?.addEventListener('change', e => uploadHikeImage(e.target.files && e.target.files[0]));
+    body.querySelector('#admDelete')?.addEventListener('click', deleteHike);
     body.querySelector('#admRoute').addEventListener('change', e => onRouteChange(e.target.value));
     body.querySelector('#admGpx')?.addEventListener('change', e => onGpxFile(e.target.files && e.target.files[0]));
     body.querySelector('#admTrackRemove')?.addEventListener('click', () => {
@@ -650,6 +662,50 @@ async function onGpxFile(file) {
         render();
     } catch (err) {
         toast(err.message || 'не удалось прочитать GPX', true);
+    }
+}
+
+// картинка с телефона: ужимаем до 1600 px и кладём через /api/story (публичная ссылка /story/<id>.jpg)
+async function uploadHikeImage(file) {
+    if (!file) return;
+    const d = draft;
+    const label = root?.querySelector('.adm-upload');
+    if (label) label.firstChild.textContent = '⏳ загружаю…';
+    try {
+        const bmp = await createImageBitmap(file);
+        const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+        c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+        const img = c.toDataURL('image/jpeg', 0.85);
+        const r = await fetch('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: tg?.initData || '', date: d.date || 'cover', img }) });
+        const j = await r.json();
+        if (!r.ok || !j.url) throw new Error(j.error || 'не загрузилось');
+        d.image = j.url;
+        toast('картинка загружена – не забудьте сохранить');
+    } catch (e) {
+        toast('не получилось загрузить: ' + e.message, true);
+    }
+    render();
+}
+
+async function deleteHike() {
+    const d = draft;
+    if (!d?.original) return;
+    haptic();
+    const name = d.title || 'заглушку';
+    if (!(await confirmAsync(`Удалить «${name}» (${dateLabel(d.original)}) полностью? Событие пропадёт из календаря. Отменить нельзя.`))) return;
+    const btn = root?.querySelector('#admDelete');
+    if (btn) { btn.disabled = true; btn.textContent = 'удаляю…'; }
+    try {
+        await adminCall('adminDeleteHike', { date: d.original });
+        toast('событие удалено');
+        view = { tab: 'hikes' };
+        render();
+    } catch (e) {
+        toast(e.message, true);
+        if (btn) { btn.disabled = false; btn.textContent = '🗑 удалить событие полностью'; }
     }
 }
 
