@@ -6026,3 +6026,12 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .adm-emo { font-size: 18px; padding: 4px 10px; }
 .adm-delete { display: block; width: 100%; margin: 22px 0 8px; padding: 12px; border-radius: 14px; border: 1px solid rgba(255, 90, 90, .45);
     background: rgba(255, 90, 90, .08); color: #ff8a8a; font: inherit; font-size: 14.5px; cursor: pointer; }
+
+/* пиксельная мозаика вместо адреса городского события для гостей */
+.px-mask { display: inline-flex; flex-wrap: wrap; gap: 5px 4px; vertical-align: middle; max-width: 100%; }
+.px-mask.is-inline { display: inline-flex; flex-wrap: nowrap; overflow: hidden; max-width: 60%; }
+.px-word { display: inline-block; height: 0.9em; border-radius: 2px; image-rendering: pixelated;
+    background-image: linear-gradient(90deg, rgba(255,255,255,.28) 50%, rgba(255,255,255,.12) 50%), linear-gradient(rgba(255,255,255,.22) 50%, rgba(255,255,255,.08) 50%);
+    background-size: 6px 6px, 6px 6px; background-blend-mode: screen; }
+.px-lock { display: block; margin-top: 6px; font-size: 12.5px; color: rgba(255, 255, 255, .45); }
+.px-mask.is-inline + .px-lock { display: inline; margin: 0 0 0 6px; }

@@ -948,6 +948,16 @@ export function hikeSummary(hike) {
     return item ? { link: String(item.link).trim(), title: item.title || hike.title } : null;
 }
 
+// пиксельная заглушка вместо скрытого текста (городские события для гостей): мозаика как в тетрисе
+function pixelMask(len, inline = false) {
+    const words = [];
+    let left = Math.max(8, Math.min(len, inline ? 24 : 220));
+    while (left > 0) { const w = 3 + Math.floor(Math.random() * 7); words.push(w); left -= w + 1; }
+    const blocks = words.map(w => `<i class="px-word" style="width:${w * 0.62}em"></i>`).join(' ');
+    return `<span class="px-mask${inline ? ' is-inline' : ''}" aria-label="видно только владельцам карты">${blocks}</span>`
+        + `<span class="px-lock">🔒 видно владельцам карты</span>`;
+}
+
 function hasLetterLink(hike) {
     return /^https?:\/\//.test(String(hike?.letter_link || '').trim());
 }
@@ -1943,6 +1953,9 @@ export function showBottomSheet(index) {
         if (hike.access && hike.access.trim() !== '') {
             let processedText = parseLinks(hike.access, isGuest);
             processedText = processedText.replace(/\n/g, '<br>');
+            // городское событие: «как добраться» видят только владельцы карты, остальным – пиксельная мозаика
+            // (сам текст гостю не отдаём – только заглушку похожей длины)
+            if (isGuest && isCity) processedText = pixelMask(hike.access.length);
             sectionsHtml += `
                 <div class="bottom-sheet-section">
                     <div class="bottom-sheet-section-title" style="color: ${accentColor};">как добраться</div>
@@ -2054,7 +2067,7 @@ export function showBottomSheet(index) {
                 const locationLabel = (isCity || isBookClub) ? 'локация' : 'точка сбора';
                 let locationHtml = '';
                 if (isGuest && isCity) {
-                    locationHtml = `🔒 <span style="color: rgba(255,255,255,0.35); font-size: 13px;">будет доступно после записи</span>`;
+                    locationHtml = pixelMask(18, true);
                 } else if (hike.location_link.includes('[') && hike.location_link.includes('](')) {
                     locationHtml = parseLinks(hike.location_link, isGuest);
                 } else {
