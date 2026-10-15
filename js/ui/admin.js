@@ -168,9 +168,15 @@ function closeAdmin() {
 // ---------- сервер ----------
 async function adminCall(action, data = {}) {
     const params = new URLSearchParams({ action, init_data: tg?.initData || '', ...data });
-    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params });
+    // запрос не должен висеть вечно (кнопка «сохраняю…» навсегда): через 45 с – понятная ошибка
+    const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = setTimeout(() => ctrl?.abort(), 45000);
+    let resp;
+    try { resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, signal: ctrl?.signal }); }
+    catch (e) { throw new Error(e?.name === 'AbortError' ? 'сервер не ответил за 45 секунд – попробуй ещё раз' : 'нет связи с сервером: ' + (e?.message || e)); }
+    finally { clearTimeout(timer); }
     let json;
-    try { json = JSON.parse(await resp.text()); } catch (e) { throw new Error('сервер ответил не JSON'); }
+    try { json = JSON.parse(await resp.text()); } catch (e) { throw new Error('сервер ответил не JSON (код ' + resp.status + ')'); }
     if (json.status !== 'ok') throw new Error(json.message || 'ошибка сервера');
     return json;
 }
@@ -1153,7 +1159,7 @@ function renderFlowEditor(body) {
             });
         };
         if (!String(nodes[flowEdit.start]?.text || '').trim()) return toast('напиши первое сообщение', true);
-        prune(flowEdit.start);
+        try { prune(flowEdit.start); } catch (err) { return toast('не получилось собрать цепочку: ' + err.message, true); }
         e.target.disabled = true;
         e.target.textContent = 'сохраняю…';
         try {
