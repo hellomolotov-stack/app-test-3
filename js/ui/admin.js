@@ -771,7 +771,7 @@ async function saveHike() {
         const local = { ...base, ...fields, track: d.trackChanged ? d.track : base.track };
         if (d.original && d.original !== d.date) delete state.hikesData[d.original];
         state.hikesData[d.date] = local;
-        toast(res.notified ? `сохранено ✓ · уведомили о записи: ${res.notified}` : 'сохранено ✓');
+        toast(res.postponed ? `сохранено ✓ · о переносе написали: ${res.postponed}` : res.notified ? `сохранено ✓ · уведомили о записи: ${res.notified}` : 'сохранено ✓');
         view = { tab: 'hikes' };
         render();
     } catch (err) {
