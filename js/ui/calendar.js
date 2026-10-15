@@ -1994,10 +1994,11 @@ export function showBottomSheet(index) {
                 buttonTextColor = '#000000';
                 buttonText = 'поделиться хайком';
             }
-            // владельцу карты – скромная жёлтая ссылка (главное у него – блок «твой +1»), гостю – кнопка
-            shareButtonHtml = isGuest ? `
+            // владельцу карты на хайке – скромная ссылка (главное у него – блок «твой +1»);
+            // гостю и на городских событиях / книжном клубе (там +1 нет) – полноценная кнопка
+            shareButtonHtml = (isGuest || isCity || isBookClub) ? `
                 <div style="margin-top: 20px; margin-bottom: 16px;">
-                    <button class="btn btn-share" id="shareEventBtn" style="background-color: ${buttonColor} !important; color: ${buttonTextColor} !important; font-weight: 800; border-radius: 40px; padding: 12px 24px; width: auto; display: block; margin: 0 auto; border: none;">🔗 поделиться ссылкой</button>
+                    <button class="btn btn-share" id="shareEventBtn" style="background-color: ${buttonColor} !important; color: ${buttonTextColor} !important; font-weight: 800; border-radius: 40px; padding: 12px 24px; width: auto; display: block; margin: 0 auto; border: none;">🔗 ${isGuest && !isCity && !isBookClub ? 'поделиться ссылкой' : buttonText}</button>
                 </div>
             ` : `
                 <div style="margin-top: 16px; margin-bottom: 16px; text-align: center;">

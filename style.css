@@ -5941,9 +5941,10 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 }
 .floating-sheet-buttons .report-btn:active { transform: scale(.97); }
 
-/* подложка под плашками письма и саммари: размытый градиент от низа экрана,
-   чтобы между плашками не просвечивал текст шторки */
-.floating-sheet-buttons.has-plates::before {
+/* подложка под всем блоком внизу шторки (слайдер записи, места, письмо, саммари): плотный тёмный градиент
+   с размытием. при резкой прокрутке шторки backdrop-filter на мгновение пропадает – плотный цвет остаётся,
+   и слайдер/плашки не сливаются с текстом под ними */
+.floating-sheet-buttons:not(:empty)::before {
     content: ''; position: absolute; z-index: -1; pointer-events: none;
     left: calc((100% - 100vw) / 2); width: 100vw; top: -60px; bottom: -40px;
     background: linear-gradient(to top, rgba(14, 20, 28, .94) 0%, rgba(14, 20, 28, .88) 65%, rgba(14, 20, 28, 0) 100%);
