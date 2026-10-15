@@ -58,10 +58,11 @@ module.exports = async (req, res) => {
             const id = String(req.query.id || '').replace(/\.jpg$/, '');
             if (!/^[\w-]{6,60}$/.test(id)) return res.status(404).end();
             const token = await dbToken();
-            const r = await fetch(`${DB}/stories/${id}/img.json?access_token=${token}`);
-            const b64 = r.ok ? await r.json() : null;
+            const r = await fetch(`${DB}/stories/${id}.json?access_token=${token}`);
+            const rec = r.ok ? await r.json() : null;
+            const b64 = rec && rec.img;
             if (!b64 || typeof b64 !== 'string') return res.status(404).end();
-            res.setHeader('Content-Type', 'image/jpeg');
+            res.setHeader('Content-Type', rec.type === 'png' ? 'image/png' : 'image/jpeg');
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
             return res.status(200).send(Buffer.from(b64, 'base64'));
         }
@@ -74,7 +75,9 @@ module.exports = async (req, res) => {
         const user = botToken ? verifyInitData(String(body?.initData || ''), botToken) : null;
         if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
 
-        const img = String(body?.img || '').replace(/^data:image\/jpeg;base64,/, '');
+        // jpeg – сторис и фото; png – прозрачные картинки событий из эмоджи (админка)
+        const isPng = /^data:image\/png;base64,/.test(String(body?.img || ''));
+        const img = String(body?.img || '').replace(/^data:image\/(jpeg|png);base64,/, '');
         if (!img || img.length > MAX_IMG_B64 || !/^[A-Za-z0-9+/=]+$/.test(img)) return res.status(400).json({ error: 'bad image' });
         const date = /^\d{4}-\d{2}-\d{2}$/.test(body?.date) ? body.date : 'hike';
 
@@ -83,11 +86,11 @@ module.exports = async (req, res) => {
         const w = await fetch(`${DB}/stories/${id}.json?access_token=${token}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ img, uid: String(user.id), date, ts: Date.now() })
+            body: JSON.stringify({ img, uid: String(user.id), date, ts: Date.now(), ...(isPng ? { type: 'png' } : {}) })
         });
         if (!w.ok) return res.status(502).json({ error: 'save failed' });
         const host = req.headers['x-forwarded-host'] || req.headers.host;
-        return res.status(200).json({ url: `https://${host}/story/${id}.jpg` });
+        return res.status(200).json({ url: `https://${host}/story/${id}.${isPng ? 'png' : 'jpg'}` });
     } catch (e) {
         return res.status(500).json({ error: 'server error' });
     }

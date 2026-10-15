@@ -41,6 +41,10 @@
     {
       "source": "/story/:id.jpg",
       "destination": "/api/story?id=:id"
+    },
+    {
+      "source": "/story/:id.png",
+      "destination": "/api/story?id=:id"
     }
   ]
 }

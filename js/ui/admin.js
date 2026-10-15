@@ -579,6 +579,11 @@ function renderEditor(body) {
 
         <div class="adm-label">описание</div>
         <label class="adm-upload">📷 загрузить картинку<input type="file" accept="image/*" id="admImgFile" hidden></label>
+        <div class="adm-emoimg">
+            <input id="admEmoImgText" placeholder="🫖🍕🎲" maxlength="24" inputmode="text">
+            <button class="adm-ghost" id="admEmoImgMake">🎨 картинка из эмоджи</button>
+        </div>
+        <div class="adm-hint">до трёх эмоджи – получится картинка, как у прошлых событий: эмоджи в ряд на прозрачном фоне</div>
         ${field('image', 'картинка (ссылка)', 'placeholder="https://i.postimg.cc/…"')}
         ${d.image ? `<img class="adm-img" src="${esc(d.image)}" alt="">` : ''}
         ${area('features', 'о маршруте', 5)}
@@ -626,6 +631,7 @@ function renderEditor(body) {
     // при переключении «городское событие» показываем выбор эмоджи
     body.querySelector('[data-k="city"]')?.addEventListener('change', () => render());
     body.querySelector('#admImgFile')?.addEventListener('change', e => uploadHikeImage(e.target.files && e.target.files[0]));
+    body.querySelector('#admEmoImgMake')?.addEventListener('click', () => makeEmojiImage(body.querySelector('#admEmoImgText').value));
     body.querySelector('#admDelete')?.addEventListener('click', deleteHike);
     body.querySelector('#admRoute').addEventListener('change', e => onRouteChange(e.target.value));
     body.querySelector('#admGpx')?.addEventListener('change', e => onGpxFile(e.target.files && e.target.files[0]));
@@ -711,6 +717,37 @@ async function uploadHikeImage(file) {
         toast('картинка загружена – не забудьте сохранить');
     } catch (e) {
         toast('не получилось загрузить: ' + e.message, true);
+    }
+    render();
+}
+
+// картинка события из 1–3 эмоджи: рисуем на телефоне (его эмоджи-шрифтом) 800×800, прозрачный фон,
+// эмоджи в ряд по центру – как у «встречи в Капри» и «киновечера», и загружаем как обычную картинку
+async function makeEmojiImage(raw) {
+    const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter('ru', { granularity: 'grapheme' }).segment(raw)].map(x => x.segment) : Array.from(raw);
+    const emos = seg.filter(g => /\p{Extended_Pictographic}/u.test(g)).slice(0, 3);
+    if (!emos.length) return toast('вставь от одного до трёх эмоджи', true);
+    haptic();
+    const c = document.createElement('canvas');
+    c.width = c.height = 800;
+    const ctx = c.getContext('2d');
+    ctx.font = '135px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const step = 188;
+    const x0 = 400 - step * (emos.length - 1) / 2;
+    emos.forEach((e, i) => ctx.fillText(e, x0 + step * i, 405));
+    const btn = root?.querySelector('#admEmoImgMake');
+    if (btn) { btn.disabled = true; btn.textContent = 'загружаю…'; }
+    try {
+        const r = await fetch('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: tg?.initData || '', date: draft?.date || 'cover', img: c.toDataURL('image/png') }) });
+        const j = await r.json();
+        if (!r.ok || !j.url) throw new Error(j.error || 'не загрузилось');
+        draft.image = j.url;
+        toast('картинка готова – не забудьте сохранить');
+    } catch (e) {
+        toast('не получилось: ' + e.message, true);
     }
     render();
 }
