@@ -12,6 +12,7 @@ import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openCardSheet } from './card-sheet.js';
+import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { cardScratchHtml, mountCardScratch } from './card-scratch.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
@@ -189,12 +190,14 @@ export function renderUserBookings(container) {
                     <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
                 </div>
                 ${cells ? `<div class="bk-stub">${cells}</div>` : ''}
+                ${canStory && hikingBoxEnabled() ? `<div class="bk-box" data-box-date="${booking.date}">${hikingBoxRowHtml()}</div>` : ''}
             </div>
         `;
     });
     html += '</div>';
     container.innerHTML = html;
 
+    container.querySelectorAll('.bk-box').forEach(el => bindHikingBoxRow(el.querySelector('.hb-row'), el.dataset.boxDate, 'мои записи'));
     container.querySelectorAll('.bk-story-btn').forEach(btn => btn.addEventListener('click', () => {
         import('./story.js').then(m => m.openStoryShare(btn.dataset.storyDate, 'мои записи'));
     }));

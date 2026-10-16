@@ -60,13 +60,27 @@ const BOXES = {
         warn: 'сэндвич или ролл – заказ за 2 дня до хайка',
     },
 };
+// карточка продукта по нажатию на него в коллаже: название, вес, цена (dietcakes.ru на 15.10.2026), зачем он на хайке, чем заменить
+const PRODUCTS = {
+    pesto: { name: 'сэндвич с песто', w: '1 шт', price: 318, why: 'полноценный обед на вершине – наедаешься и не тяжелеешь', swap: 'ролл с фалафелем, сэндвич с лососем, лаваш с тофу' },
+    shake: { name: 'протеиновый коктейль Bombbar', w: '350 мл', price: 143, why: '24 г белка – мышцы восстанавливаются ещё на тропе', swap: 'энергетик, изотоник, лимонад без сахара' },
+    water: { name: 'вода Bombbar', w: '0,5 л', price: 50, why: 'глоток на каждом привале – основу 1,5 л всё равно бери свою', swap: 'изотоник, лимонад без сахара' },
+    sticks: { name: 'протеиновые палочки Bombbar', w: '60 г', price: 129, why: '15 г белка и соль, которую уносит пот', swap: 'протеиновые чипсы, нутсы' },
+    wafers: { name: 'вафли CHIKALAB', w: '40 г', price: 112, why: 'хрустящее сладкое без сахара к чаю на вершине', swap: 'протеиновый батончик, вафли Bombbar' },
+    cookie: { name: 'печенье Bombbar', w: '40 г', price: 102, why: 'сладкое без сахара – награда за подъём', swap: 'брауни, пастила, батончик' },
+    bar: { name: 'протеиновый батончик Bombbar', w: '60 г', price: 139, why: '20 г белка – держит сытость на подъёме', swap: 'другие вкусы, CHIKABAR, ROCKET' },
+    chips: { name: 'протеиновые чипсы Bombbar «Нежный сыр»', w: '50 г', price: 92, why: 'солёное и хрустящее – возвращает соль, которую уносит пот', swap: 'протеиновые палочки, цельнозерновые чипсы' },
+    qwikler: { name: 'батончик Qwikler «Орех в карамели»', w: '40 г', price: 88, why: 'орехи без сахара – быстрая энергия на крутом участке', swap: 'другие вкусы Qwikler, фруктово-ореховый батончик' },
+    frut: { name: 'пастила «Фрутилад» яблоко и клюква', w: '30 г', price: 77, why: 'лёгкое фруктовое сладкое, не тает в рюкзаке', swap: 'белёвская пастила, печенье' },
+};
 const DEFAULT_BOX = 'optimal';
+const MIN_PRICE = Math.min(...Object.values(BOXES).map(b => b.price));
 const CARD_DISCOUNT = 0.10; // скидка владельцам карты интеллигента
 const rub = n => `${n.toLocaleString('ru-RU')} ₽`;
 const cardPrice = n => Math.round(n * (1 - CARD_DISCOUNT));
 
 function collageHtml(b) {
-    return b.items.map(([n, st]) => `<img src="assets/box/cut/${n}.png" style="${st}" alt="">`).join('')
+    return b.items.map(([n, st]) => `<img class="hc-p" data-p="${n}" src="assets/box/cut/${n}.png" style="${st}" alt="${PRODUCTS[n]?.name || ''}">`).join('')
         + b.notes.map(([pos, t, s, r]) => `<div class="hc-note${r ? ' is-r' : ''}" style="${pos}">${t}<small>${s}</small></div>`).join('')
         + `<svg class="hc-arrows" viewBox="0 0 375 ${b.h}"><defs><marker id="hcHd" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M2 2 L9.5 6 L2.5 10.5" /></marker></defs>`
         + b.arrows.map(d => `<path marker-end="url(#hcHd)" d="${d}" />`).join('') + '</svg>';
@@ -81,8 +95,8 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     const row = document.createElement('div');
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
-        <img class="box-plate-img" src="assets/hiking-box.png" alt="">
-        <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на весь хайк в одной коробке</small></span>
+        <span class="box-plate-pics"><img src="assets/box/cut/pesto.png" alt=""><img src="assets/box/cut/shake.png" alt=""><img src="assets/box/cut/bar.png" alt=""></span>
+        <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на хайк</small><em>от ${rub(MIN_PRICE)} · 💳 −10%</em></span>
         <button type="button" class="box-plate-btn">что внутри</button></div>`;
     const plate = row.querySelector('.box-plate');
     plate.addEventListener('click', e => {
@@ -129,6 +143,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
                     `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${rub(b.price)}</small></button>`).join('')}</div>
                 <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
+                <div class="hb-tap-hint">нажми на продукт – расскажем о нём</div>
                 <div class="hb-warn"></div>
                 <div class="hb-swaps"><span class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
                 <div class="hb-label">как получить</div>
@@ -148,6 +163,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
                 <div class="hb-fair"><b>без наценки</b> – по прямой цене магазина. самые заботливые цены по всей большой Ялте</div>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
             </div>
+            <div class="hb-pop" hidden></div>
             <div class="hb-bar">
                 <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b></b> с картой интеллигента</span><em>оформить ›</em></button>
                 <button type="button" class="btn btn-yellow hb-buy hb-buy-full"></button>
@@ -196,9 +212,29 @@ export function openHikingBox(fromEl, hike, isGuest) {
     overlay.querySelectorAll('.hb-tab').forEach(t => t.addEventListener('click', () => {
         if (t.dataset.box === current) return;
         haptic();
+        hidePop();
         log(`hiking box: вкладка ${BOXES[t.dataset.box].tab} – ${hike.title}`, isGuest, state.user);
         showBox(t.dataset.box);
     }));
+    // карточка продукта: нажал на продукт в коллаже – снизу всплывает, что это и чем заменить
+    const pop = overlay.querySelector('.hb-pop');
+    const hidePop = () => { pop.classList.remove('is-on'); setTimeout(() => { if (!pop.classList.contains('is-on')) pop.hidden = true; }, 200); };
+    wrap.addEventListener('click', e => {
+        const img = e.target.closest('.hc-p');
+        const p = img && PRODUCTS[img.dataset.p];
+        if (!p) { hidePop(); return; }
+        e.stopPropagation();
+        haptic();
+        log(`hiking box: продукт ${p.name}`, isGuest, state.user);
+        pop.innerHTML = `<img src="assets/box/cut/${img.dataset.p}.png" alt="">
+            <div class="hb-pop-t"><b>${p.name}</b><span>${p.w} · ${rub(p.price)}</span><p>${p.why}</p><small>можно заменить: ${p.swap}</small></div>
+            <button type="button" class="hb-pop-x" aria-label="закрыть">✕</button>`;
+        pop.hidden = false;
+        requestAnimationFrame(() => pop.classList.add('is-on'));
+        img.classList.remove('is-tap'); void img.offsetWidth; img.classList.add('is-tap');
+    });
+    pop.addEventListener('click', e => { e.stopPropagation(); hidePop(); });
+    overlay.querySelector('.hb-scroll').addEventListener('scroll', () => { if (!pop.hidden) hidePop(); }, { passive: true });
     document.body.appendChild(overlay);
     fitBuy(); // при первом showBox шторки ещё нет в документе – подгоняем после вставки
     document.body.style.overflow = 'hidden';
@@ -253,4 +289,24 @@ export function openHikingBox(fromEl, hike, isGuest) {
             : `взять ${tab}${isMember ? ' с картой' : ''}`;
         openLink(SHOP_URL, `hiking box: ${what} – ${hike.title}`, isGuest);
     }));
+}
+
+// 4. строка-приглашение там, где человек уже записан: «мои записи» на главной и окно «записали тебя»
+export function hikingBoxRowHtml(cls = '') {
+    return `<button type="button" class="hb-row ${cls}"><span class="hb-row-pics"><img src="assets/box/cut/pesto.png" alt=""><img src="assets/box/cut/bar.png" alt=""></span>`
+        + `<span class="hb-row-t"><b>возьми хайкинг бокс</b><small>еда и вода на весь хайк · от ${rub(MIN_PRICE)}</small></span><span class="hb-row-go">›</span></button>`;
+}
+export function bindHikingBoxRow(el, hikeDate, source, before) {
+    if (!el) return;
+    el.addEventListener('click', e => {
+        e.stopPropagation();
+        const hike = state.hikesWithTitle.find(h => h.date === hikeDate);
+        if (!hike) return;
+        const isGuest = state.userCard?.status !== 'active';
+        haptic();
+        log(`hiking box: из «${source}» – ${hike.title}`, isGuest, state.user);
+        openHikingBox(el, hike, isGuest);
+        before?.();
+    });
+    preloadHikingBox();
 }

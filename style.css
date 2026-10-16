@@ -6237,3 +6237,49 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .adm-wl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 13px; }
 .adm-wl-row i { font-style: normal; color: rgba(255,255,255,.5); }
 .adm-flag.is-carry { background: rgba(169, 205, 240, .16); color: #a9cdf0; }
+
+/* хайкинг бокс: плашка с мини-коллажем и ценой «от …» */
+.box-plate-pics { position: relative; flex: none; width: 70px; height: 62px; }
+.box-plate-pics img { position: absolute; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .5)); }
+.box-plate-pics img:nth-child(1) { width: 52px; left: 0; top: 14px; transform: rotate(-12deg); z-index: 1; }
+.box-plate-pics img:nth-child(2) { height: 50px; left: 34px; top: 2px; transform: rotate(8deg); z-index: 2; }
+.box-plate-pics img:nth-child(3) { width: 50px; left: 14px; top: 38px; transform: rotate(-6deg); z-index: 3; }
+.box-plate .letter-plate-text em { display: block; margin-top: 2px; font-style: normal; font-size: 12px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+
+/* хайкинг бокс: нажатие на продукт – карточка снизу */
+.hb-collage .hc-p { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.hb-collage .hc-p.is-tap { animation: hcTap .35s ease; }
+@keyframes hcTap { 40% { filter: drop-shadow(0 10px 14px rgba(0,0,0,.55)) brightness(1.15); scale: 1.06; } }
+.hb-tap-hint { margin-top: 2px; text-align: center; font-family: Caveat, cursive; font-size: 18px; color: rgba(243, 217, 177, .75); }
+.hb-pop { position: absolute; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 196px); z-index: 5;
+    display: flex; gap: 12px; align-items: center; padding: 12px 40px 12px 12px; border-radius: 22px;
+    background: linear-gradient(rgba(214, 170, 110, .16), rgba(214, 170, 110, .16)), rgba(22, 27, 33, .97); border: 1px solid rgba(214, 170, 110, .5);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .5); opacity: 0; transform: translateY(14px); transition: opacity .2s ease, transform .2s ease; }
+.hb-pop.is-on { opacity: 1; transform: none; }
+.hb-pop[hidden] { display: none; }
+.hb-pop > img { flex: none; width: 70px; height: 70px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
+.hb-pop-t { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.hb-pop-t b { font-size: 15px; color: #F3D9B1; line-height: 1.25; }
+.hb-pop-t span { font-size: 12.5px; font-weight: 700; color: var(--yellow); }
+.hb-pop-t p { margin: 2px 0 0; font-size: 13px; line-height: 1.4; color: rgba(255, 255, 255, .85); }
+.hb-pop-t small { margin-top: 2px; font-size: 12px; line-height: 1.35; color: rgba(255, 255, 255, .55); }
+.hb-pop-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .1); color: #fff; font-size: 13px; cursor: pointer; }
+
+/* хайкинг бокс: строка «возьми хайкинг бокс» в «моих записях» и в билете после записи */
+.hb-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 12px 6px 6px; border-radius: 16px; cursor: pointer; font: inherit; text-align: left; color: #fff;
+    background: linear-gradient(90deg, rgba(214, 170, 110, .22), rgba(214, 170, 110, .06)); border: 1px solid rgba(214, 170, 110, .45); -webkit-tap-highlight-color: transparent; }
+.hb-row-pics { position: relative; flex: none; width: 50px; height: 42px; }
+.hb-row-pics img { position: absolute; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .5)); }
+.hb-row-pics img:nth-child(1) { width: 40px; left: 0; top: 4px; transform: rotate(-10deg); }
+.hb-row-pics img:nth-child(2) { width: 38px; left: 12px; top: 22px; transform: rotate(-4deg); }
+.hb-row-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.hb-row-t b { font-size: 14px; color: #F3D9B1; }
+.hb-row-t small { font-size: 12px; color: rgba(255, 255, 255, .65); }
+.hb-row-go { flex: none; font-size: 22px; font-weight: 700; color: #F3D9B1; }
+.bk-box { margin-top: 8px; }
+.rt-box { margin: 2px 0; }
+.box-plate .letter-plate-text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.box-plate .letter-plate-text { min-width: 0; }
+.box-plate { gap: 8px; }
+.box-plate-pics { width: 60px; transform: scale(.88); transform-origin: left center; }
+.box-plate .box-plate-btn { padding: 9px 12px; }

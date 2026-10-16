@@ -4,7 +4,7 @@ import { passCodeFor } from '../pass-store.js';
 import { isAdmissionPilot, admission } from '../admission.js';
 import { haptic, openLink, openLetterLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
-import { hikingBoxEnabled, mountHikingBoxPlate } from './hiking-box.js';
+import { hikingBoxEnabled, mountHikingBoxPlate, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist, markPaymentSeen, paymentErrorText } from '../api.js';
 import {
@@ -3919,6 +3919,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const route = hikeObj ? findCatalogRoute(hikeObj) : null;
     const PHONE = '+7 978 549 09 74';
+    const boxOk = hikingBoxEnabled() && !!hikeObj;
 
     const tgw = window.Telegram?.WebApp;
     const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
@@ -3958,6 +3959,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
                         <div class="rt-text"><b>собери рюкзак</b><span>${isExperienced ? 'вода, перекус, удобная обувь, санскрин' : 'вода 1,5 л, перекус, обувь с закрытым носком, санскрин'}</span></div>
                         <div class="rt-go">›</div>
                     </button>
+                    ${boxOk ? hikingBoxRowHtml('rt-box') : ''}
                     <button type="button" class="rt-row" id="rtWeather">
                         <div class="rt-n">4</div>
                         <div class="rt-text"><b>погода на ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}</b><span>${route ? 'горы · ' + esc(route.title) : 'южный берег'}</span></div>
@@ -4031,6 +4033,8 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
         haptic();
         openLink('https://t.me/yaltahikingchat', 'чат хайка из успешной регистрации', false);
     });
+    // хайкинг бокс сразу под «собери рюкзак»: открываем шторку бокса, билет закрываем
+    bindHikingBoxRow(overlay.querySelector('.rt-box'), hikeDate, 'записали тебя', () => overlay.remove());
     document.getElementById('rtPack').addEventListener('click', () => {
         haptic();
         overlay.remove();
