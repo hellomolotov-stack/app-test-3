@@ -6,7 +6,20 @@ import { haptic, openLink } from '../utils.js';
 import { log } from '../api.js';
 
 export const HIKING_BOX_TEST_IDS = ['7845375334']; // @hellointelligent
-const SHOP_URL = 'https://dietcakes.ru';
+const SHOP_URL = 'https://dietcakes.ru/hiking-intelligence/'; // наша страница на сайте «Жить здорово»
+
+// ссылка на страницу бокса: бокс, дата и маршрут хайка; владельцу карты – card=1 (страница сама применит промокод INTELLIGENT)
+function shopUrl(hike, boxKey, custom) {
+    const q = new URLSearchParams();
+    q.set('box', boxKey === 'light' ? 'light' : 'full');
+    if (custom) q.set('custom', '1');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(hike?.date || '')) q.set('hike', hike.date);
+    const route = String(hike?.title || '').replace(/^(хайк|маршрут|тропа)\s+/i, '').replace(/^на\s+/i, '').trim();
+    if (route) q.set('route', route);
+    if (state.userCard?.status === 'active') q.set('card', '1');
+    q.set('utm_source', 'intelligentsia');
+    return `${SHOP_URL}?${q}`;
+}
 
 
 
@@ -319,7 +332,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         const tab = BOXES[current].tab;
         const what = btn.classList.contains('hb-custom') ? 'настроить свой'
             : `взять ${tab}${isMember ? ' с картой' : ''}`;
-        openLink(SHOP_URL, `hiking box: ${what} – ${hike.title}`, isGuest);
+        openLink(shopUrl(hike, current, btn.classList.contains('hb-custom')), `hiking box: ${what} – ${hike.title}`, isGuest);
     }));
 }
 
