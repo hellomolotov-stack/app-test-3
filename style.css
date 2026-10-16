@@ -6229,3 +6229,7 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-card-hint em { flex: none; font-style: normal; font-weight: 800; color: var(--yellow); }
 .hb-bar .hb-custom { height: 46px; font-size: 15px; }
 .hb-scroll { padding-bottom: 200px; }
+.adm-add-res { display: flex; flex-direction: column; gap: 4px; margin: 4px 0 6px; }
+.adm-add-hit { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.05); color: #fff; font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.adm-add-hit b { color: var(--yellow); font-size: 18px; }

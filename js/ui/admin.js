@@ -1279,6 +1279,7 @@ const fmtWhen = ts => new Date(ts * 1000).toLocaleString('ru-RU', { day: 'numeri
 // сбор отзывов: участникам прошедшего хайка, кнопка ведёт в общий чат
 function applyFeedbackPreset(hike) {
     bc.segment = 'hike';
+    bc.extra = [];
     bc.hikeDate = hike?.date || bc.hikeDate;
     bc.excl = [];
     bc.off = {};
@@ -1481,9 +1482,13 @@ function personMeta(p, now) {
     return parts.join(' · ');
 }
 // итоговый список: сегмент минус сегменты-исключения минус снятые галочки
+// несколько сегментов сразу: bc.segment – первый (по нему шаблон текста), bc.extra – остальные;
+// bc.add – люди, добавленные вручную поиском по имени
+const bcSegs = () => [bc.segment, ...(bc.extra || [])].filter(Boolean);
+const bcHas = k => bcSegs().includes(k);
 function bcRecipients() {
     const segs = audience?.segments || {};
-    const base = segs[bc.segment] || [];
+    const base = [...new Set([...bcSegs().flatMap(k => segs[k] || []), ...Object.keys(bc.add || {})].map(String))];
     const exBy = {};
     bc.excl.forEach(k => (segs[k] || []).forEach(id => { if (!exBy[id]) exBy[id] = k; }));
     // настройка человека «как часто писать» (бот спрашивает после первой рассылки) против типа сообщения
@@ -1508,7 +1513,7 @@ function bcRecipients() {
 // ---------- черновики рассылки ----------
 // Храним в облаке Telegram (CloudStorage: привязано к аккаунту админа, видно с любого устройства),
 // если его нет – в памяти устройства. Текст – отдельным ключом: у облака лимит 4096 символов на значение.
-const DRAFT_FIELDS = ['segment', 'hikeDate', 'waitDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText', 'when', 'sendAt'];
+const DRAFT_FIELDS = ['segment', 'extra', 'add', 'hikeDate', 'waitDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText', 'when', 'sendAt'];
 const cloud = {
     ok: () => !!(tg?.CloudStorage && tg.isVersionAtLeast?.('6.9')),
     get: keys => new Promise(res => {
@@ -1626,7 +1631,7 @@ function renderBroadcast(body) {
     const upcoming = titled.filter(h => h.date >= today);
     const recent = titled.filter(h => h.date < today).reverse().slice(0, 6);
     const hikeOptions = sel => [...upcoming, ...recent].map(h => `<option value="${h.date}" ${sel === h.date ? 'selected' : ''}>${dateLabel(h.date)} – ${esc(h.title)}</option>`).join('');
-    if (bc.segment === 'hike' && !bc.hikeDate) bc.hikeDate = (upcoming[0] || recent[0] || {}).date || '';
+    if (bcHas('hike') && !bc.hikeDate) bc.hikeDate = (upcoming[0] || recent[0] || {}).date || '';
     if (bc.btnType === 'app' && bc.section === 'hike' && !bc.btnHike) bc.btnHike = (upcoming[0] || recent[0] || {}).date || '';
     const tip = SEGMENT_TIPS[bc.segment];
     const chip = (k, l, attr, on) => `<button class="adm-chip${on ? ' is-on' : ''}" ${attr}="${k}">${l} <span class="adm-chip-n" data-n="${k}"></span></button>`;
@@ -1639,9 +1644,10 @@ function renderBroadcast(body) {
         ${bc.draftId ? '<div class="adm-hint">открыт черновик – «сохранить черновик» обновит его</div>' : ''}
         <div class="adm-label">кому</div>
         ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
-            <div class="adm-chips">${list.map(([k, l]) => chip(k, l, 'data-seg', bc.segment === k)).join('')}</div>`).join('')}
-        ${bc.segment === 'hike' ? `<label class="adm-field"><span>хайк</span><select id="admBcHike">${hikeOptions(bc.hikeDate)}</select></label>` : ''}
-        ${bc.segment === 'waitlist_date' ? waitlistDateHtml() : ''}
+            <div class="adm-chips">${list.map(([k, l]) => chip(k, l, 'data-seg', bcHas(k))).join('')}</div>`).join('')}
+        <div class="adm-hint">можно выбрать несколько сегментов – люди сложатся; повторное нажатие снимает сегмент</div>
+        ${bcHas('hike') ? `<label class="adm-field"><span>хайк</span><select id="admBcHike">${hikeOptions(bc.hikeDate)}</select></label>` : ''}
+        ${bcHas('waitlist_date') ? waitlistDateHtml() : ''}
 
         <div class="adm-label">кроме</div>
         <div class="adm-excl">
@@ -1649,7 +1655,7 @@ function renderBroadcast(body) {
             <button class="adm-link" id="admExclToggle">${bc.showExcl ? 'готово' : '+ исключить сегмент'}</button>
         </div>
         ${bc.showExcl ? `<div class="adm-excl-pick">${SEGMENT_GROUPS.map(([group, list]) => {
-            const items = list.filter(([k]) => k !== bc.segment && k !== 'hike' && k !== 'all');
+            const items = list.filter(([k]) => !bcHas(k) && k !== 'hike' && k !== 'all');
             return items.length ? `<div class="adm-seg-group">${group}</div><div class="adm-chips">${items.map(([k, l]) => chip(k, l, 'data-excl', bc.excl.includes(k))).join('')}</div>` : '';
         }).join('')}</div>` : ''}
 
@@ -1659,6 +1665,10 @@ function renderBroadcast(body) {
 
         <div class="adm-sum" id="admSum">считаю получателей…</div>
         <div id="admUnreach"></div>
+        <div class="adm-label">добавить вручную</div>
+        <input class="adm-people-search" id="admAddQ" placeholder="найти человека по имени или @username" value="${esc(bc.addQ || '')}" autocomplete="off">
+        <div id="admAddRes"></div>
+        <div class="adm-excl" id="admAdded"></div>
         <button class="adm-people-toggle" id="admPeopleToggle">${bc.showPeople ? 'скрыть список' : 'показать людей'} <span id="admPeopleN"></span></button>
         ${bc.showPeople ? `<input class="adm-people-search" id="admPeopleQ" placeholder="поиск по имени или @username" value="${esc(bc.q)}">
             <div class="adm-people" id="admPeople"></div>` : ''}
@@ -1705,12 +1715,20 @@ function renderBroadcast(body) {
     body.querySelectorAll('[data-bc-flow]').forEach(b => b.addEventListener('click', () => { haptic(); bc.flowId = b.dataset.bcFlow; render(); }));
     body.querySelectorAll('[data-seg]').forEach(b => b.addEventListener('click', () => {
         haptic();
-        const changedHike = (b.dataset.seg === 'hike' && bc.segment !== 'hike') || (b.dataset.seg === 'waitlist_date' && bc.segment !== 'waitlist_date');
-        bc.segment = b.dataset.seg;
+        const k = b.dataset.seg;
+        const changedHike = (k === 'hike' || k === 'waitlist_date');
+        if (bcHas(k)) {
+            // сняли сегмент; если это был первый – первым становится следующий
+            const rest = bcSegs().filter(x => x !== k);
+            bc.segment = rest[0] || '';
+            bc.extra = rest.slice(1);
+        } else {
+            if (!bc.segment) bc.segment = k; else bc.extra = [...(bc.extra || []), k];
+            bc.excl = bc.excl.filter(x => x !== k);
+            // пустое сообщение – сразу подставляем шаблон первого сегмента
+            if (!bc.text.trim() && SEGMENT_TIPS[bc.segment]) applyTip(bc.segment);
+        }
         bc.off = {};
-        bc.excl = bc.excl.filter(k => k !== bc.segment);
-        // пустое сообщение – сразу подставляем шаблон сегмента
-        if (!bc.text.trim() && SEGMENT_TIPS[bc.segment]) applyTip(bc.segment);
         render();
         if (changedHike) refreshAudience(true);
     }));
@@ -1740,6 +1758,8 @@ function renderBroadcast(body) {
     body.querySelectorAll('[data-btn]').forEach(b => b.addEventListener('click', () => { haptic(); bc.btnType = b.dataset.btn; render(); }));
     body.querySelector('#admBcHike')?.addEventListener('change', e => { bc.hikeDate = e.target.value; bc.off = {}; refreshAudience(true); });
     body.querySelector('#admBcWaitDate')?.addEventListener('change', e => { bc.waitDate = e.target.value; bc.off = {}; refreshAudience(true); });
+    body.querySelector('#admAddQ')?.addEventListener('input', e => { bc.addQ = e.target.value; renderAddSearch(); });
+    renderAddSearch();
     body.querySelector('#admBcSection')?.addEventListener('change', e => { bc.section = e.target.value; render(); });
     body.querySelector('#admBcBtnHike')?.addEventListener('change', e => { bc.btnHike = e.target.value; update(); });
     body.querySelector('#admBcText').addEventListener('input', e => { bc.text = e.target.value; update(); });
@@ -1797,8 +1817,8 @@ function waitlistDateHtml() {
 
 async function refreshAudience(force = false) {
     const seq = ++audSeq;
-    const hikeDate = bc.segment === 'hike' ? bc.hikeDate : '';
-    const waitDate = bc.segment === 'waitlist_date' ? (bc.waitDate || '') : '';
+    const hikeDate = bcHas('hike') ? bc.hikeDate : '';
+    const waitDate = bcHas('waitlist_date') ? (bc.waitDate || '') : '';
     if (!force && audience && Date.now() - audience.at < 60000 && audience.hikeDate === hikeDate && (audience.waitDate || '') === waitDate) return updateAudienceViews(true);
     const sum = root?.querySelector('#admSum');
     if (sum) sum.textContent = 'считаю получателей…';
@@ -1814,12 +1834,12 @@ async function refreshAudience(force = false) {
         if (res.waitlist_dates) {
             waitlistDates = res.waitlist_dates;
             // первая дата с ожидающими – сразу выбрана
-            if (bc.segment === 'waitlist_date' && !bc.waitDate) {
+            if (bcHas('waitlist_date') && !bc.waitDate) {
                 const first = Object.keys(waitlistDates).sort()[0];
                 if (first) { bc.waitDate = first; render(); return refreshAudience(true); }
             }
             const sel = root?.querySelector('#admBcWaitDate');
-            if (sel && bc.segment === 'waitlist_date') sel.outerHTML = waitlistDateSelect();
+            if (sel && bcHas('waitlist_date')) sel.outerHTML = waitlistDateSelect();
             root?.querySelector('#admBcWaitDate')?.addEventListener('change', e => { bc.waitDate = e.target.value; bc.off = {}; refreshAudience(true); });
         }
         updateAudienceViews(true);
@@ -1835,10 +1855,35 @@ async function refreshAudience(force = false) {
 
 // Обновляем цифры, итог и список на месте – без перерисовки формы (иначе поле теряет фокус и экран прыгает)
 // участники хайка, которым бот написать не может (не запускали бота) – им писать лично
+// ручное добавление адресатов: поиск по всем, кому бот может написать
+function renderAddSearch() {
+    const res = root?.querySelector('#admAddRes');
+    const added = root?.querySelector('#admAdded');
+    if (!res || !added) return;
+    const people = audience?.people || {};
+    const name = id => { const p = people[id] || {}; return (p.n || 'без имени') + (p.u ? ' @' + p.u : ''); };
+    const ids = Object.keys(bc.add || {});
+    added.innerHTML = ids.map(id => `<button class="adm-pill" data-unadd="${id}">${esc(name(id))} <b>×</b></button>`).join('');
+    added.querySelectorAll('[data-unadd]').forEach(b => b.addEventListener('click', () => { haptic(); delete bc.add[b.dataset.unadd]; renderAddSearch(); updateAudienceViews(true); }));
+    const q = String(bc.addQ || '').trim().toLowerCase().replace(/^@/, '');
+    if (q.length < 2) { res.innerHTML = audience ? '' : '<div class="adm-muted" style="padding:6px 2px">загружаю людей…</div>'; return; }
+    const hits = Object.keys(people).filter(id => !bc.add?.[id] && `${people[id].n || ''} ${people[id].u || ''}`.toLowerCase().includes(q)).slice(0, 8);
+    res.innerHTML = hits.length ? `<div class="adm-add-res">${hits.map(id => `<button class="adm-add-hit" data-add="${id}"><span>${esc(name(id))}</span><b>+</b></button>`).join('')}</div>`
+        : '<div class="adm-muted" style="padding:6px 2px">никого не нашёл (ищу среди тех, кому бот может написать)</div>';
+    res.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        bc.add = { ...(bc.add || {}), [b.dataset.add]: true };
+        bc.addQ = '';
+        const inp = root.querySelector('#admAddQ'); if (inp) inp.value = '';
+        renderAddSearch();
+        updateAudienceViews(true);
+    }));
+}
+
 function renderUnreach() {
     const box = root?.querySelector('#admUnreach');
     if (!box) return;
-    const all = bc.segment === 'hike' && audience?.hikeDate === bc.hikeDate ? audience.hikeAll : null;
+    const all = bcHas('hike') && audience?.hikeDate === bc.hikeDate ? audience.hikeAll : null;
     if (!all) { box.innerHTML = ''; return; }
     const ok = new Set((audience.segments.hike || []).map(String));
     const list = all.filter(p => !ok.has(String(p.user_id)));
@@ -1868,6 +1913,7 @@ function updateAudienceViews(withList) {
     const pn = root.querySelector('#admPeopleN');
     if (pn) pn.textContent = `(${r.base.length})`;
     if (withList) renderPeople();
+    renderAddSearch();
     updateSendLabel();
 }
 
@@ -1988,7 +2034,8 @@ async function sendBroadcast(test) {
     const label = el.textContent;
     el.disabled = true;
     el.textContent = test ? 'отправляю…' : later ? 'планирую…' : 'отправляю… не закрывайте';
-    const segLabel = [SEG_LABEL[bc.segment] || bc.segment, bc.segment === 'hike' ? bc.hikeDate : bc.segment === 'waitlist_date' ? bc.waitDate : '',
+    const segLabel = [bcSegs().map(k => (SEG_LABEL[k] || k) + (k === 'hike' ? ' ' + bc.hikeDate : k === 'waitlist_date' ? ' ' + bc.waitDate : '')).join(' + '),
+        Object.keys(bc.add || {}).length ? `+ ${Object.keys(bc.add).length} вручную` : '',
         ...bc.excl.map(k => '− ' + (SEG_LABEL[k] || k)), r && r.manual.length ? `− ${r.manual.length} вручную` : ''].filter(Boolean).join(' ');
     try {
         const res = await adminCall(later ? 'adminScheduleBroadcast' : 'adminBroadcast', test ? {
