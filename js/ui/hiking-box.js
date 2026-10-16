@@ -14,7 +14,7 @@ const SHOP_URL = 'https://dietcakes.ru';
 // Коллаж нарисован на 375px: items – картинки (left/top/размер/поворот), notes – рукописные подписи, arrows – стрелки.
 // Цены сайта на 15.10.2026:
 //   лёгкий 446 ₽ = батончик Bombbar 139 + чипсы Bombbar 92 + Qwikler 88 + пастила Фрутилад 77 + вода 50
-//   оптимальный 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50
+//   сытный 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50
 const BOXES = {
     light: {
         tab: 'лёгкий', price: 446, count: 'пять продуктов', h: 470,
@@ -37,7 +37,7 @@ const BOXES = {
         swaps: ['батончик → другой вкус', 'чипсы → палочки', 'пастила → печенье'],
     },
     optimal: {
-        tab: 'оптимальный', price: 854, count: 'шесть продуктов', h: 500,
+        tab: 'сытный', price: 854, count: 'шесть продуктов', h: 500,
         items: [
             ['pesto', 'width:212px; left:8px; top:104px; transform:rotate(-10deg); z-index:3'],
             ['shake', 'height:168px; left:168px; top:78px; transform:rotate(6deg); z-index:4'],
@@ -162,7 +162,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
     const k = Math.min(1.15, Math.min(window.innerWidth, 600) / 375);
     const wrap = overlay.querySelector('.hb-collage-wrap');
     wrap.style.setProperty('--hc-k', k.toFixed(3));
-    // вкладки «лёгкий / оптимальный»: меняем коллаж, цену, замены и пометку про сэндвич
+    // вкладки «лёгкий / сытный»: меняем коллаж, цену, замены и пометку про сэндвич
     let current = DEFAULT_BOX;
     const isMember = state.userCard?.status === 'active'; // владельцу карты цена на кнопке – сразу со скидкой
     // надпись на кнопке в одну строку: если не влезает (узкий экран, цена со скидкой) – чуть уменьшаем шрифт
