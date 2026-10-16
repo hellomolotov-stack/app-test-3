@@ -1,0 +1,163 @@
+// Страница «хайкинг бокс» на dietcakes.ru/hiking-intelligence.
+// На самой странице WordPress стоит только: <div id="hi-root"></div><script src="https://app-test-3-delta.vercel.app/assets/dc/hiking-box.js"></script>
+// Вся разметка, стили и логика живут здесь – правки выкатываются через наш Vercel, в админку dietcakes заходить не нужно.
+(function () {
+  if (window.__hiBox) return; window.__hiBox = true;
+  var mount = document.getElementById('hi-root');
+  if (!mount) { mount = document.createElement('div'); (document.currentScript && document.currentScript.parentNode || document.body).appendChild(mount); }
+  mount.innerHTML = "<div class=\"hi\" id=\"hi\">\n<style>\n.page-id-15624 .website-wrapper,.page-id-15624 .main-page-wrapper,.page-id-15624 .wd-page-content,.page-id-15624 .site-content{background:transparent!important}\n.hi-bg{position:fixed;inset:0;z-index:-1;background:#0f161d url(https://app-test-3-delta.vercel.app/assets/box/bg-rock.jpg) center/cover no-repeat}\n.hi-bg::after{content:\"\";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,16,22,.3),rgba(10,16,22,.75))}\n.hi{--y:#D9FD19;--kraft:#F3D9B1;--glass:rgba(18,26,35,.62);--line:rgba(255,255,255,.14);--mut:rgba(255,255,255,.66);font-family:Inter,-apple-system,Arial,sans-serif;color:#fff;max-width:900px;margin:22px auto 0;padding:0 0 130px}\n.hi *{box-sizing:border-box}\n.hi [hidden]{display:none!important}\n.hi p{margin:0;line-height:1.5}\n.hi h1,.hi h2{color:#fff;font-weight:800;margin:0}\n.hi button{height:auto;min-height:0;line-height:1.25;text-transform:none;letter-spacing:normal;box-shadow:none;font-family:inherit}\n.hi-card{background:var(--glass);border:1px solid var(--line);border-radius:28px;padding:24px;margin:0 0 14px;-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px)}\n.hi .hi-btn{display:inline-block;border:0;border-radius:30px;padding:14px 26px;font-weight:800;font-size:15.5px;color:#000;text-decoration:none;cursor:pointer;\n background:linear-gradient(180deg,#e8ff4a,#c9ec00);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 18px rgba(0,0,0,.35)}\n.hi .hi-btn[disabled]{opacity:.6;cursor:wait}\n.hi h2{font-size:22px;margin-bottom:6px}\n.hi-sub{color:var(--mut);margin:0 0 14px!important;font-size:14px}\n.hi-hero{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr 360px;align-items:center;padding:0}\n.hi-hero-t{grid-column:1;grid-row:1;padding:26px 0 26px 26px}\n.hi-stage{grid-column:2;grid-row:1;position:relative;height:330px;background:radial-gradient(60% 60% at 55% 55%,rgba(217,253,25,.16),transparent 70%)}\n.hi-col{position:absolute;left:50%;top:50%;width:340px;height:300px;margin:-150px 0 0 -170px}\n.hi .hi-col img{position:absolute;max-width:none;filter:drop-shadow(0 12px 16px rgba(0,0,0,.55))}\n.hi-logos{display:flex;align-items:center;gap:12px}\n.hi .hi-logos img{display:block;width:auto;height:30px}\n.hi-logos .hi-x{font-size:34px;font-weight:200;opacity:.75;line-height:1}\n.hi .hi-logos .hi-dc{height:40px;padding:5px 10px;border-radius:12px;background:#fff}\n.hi-hero h1{font-size:34px;line-height:1.1;margin:18px 0 10px;text-wrap:balance}\n.hi-hero p{color:var(--mut);margin:0 0 18px}\n.hi-club{margin-top:14px}\n.hi-club summary{cursor:pointer;color:var(--y);font-weight:700;font-size:14px;list-style:none}\n.hi-club summary::-webkit-details-marker{display:none}\n.hi-club p{font-size:14px;margin-top:10px!important;color:var(--mut)}\n.hi-club a{color:var(--y);font-weight:700;text-decoration:none}\n.hi-tabs{display:flex;gap:4px;padding:4px;border-radius:24px;background:rgba(0,0,0,.25);border:1px solid rgba(214,170,110,.3);margin:0 0 6px}\n.hi-tab{flex:1;border:0;border-radius:20px;padding:11px 8px;background:transparent;font-size:16px;font-weight:800;color:rgba(255,255,255,.7);cursor:pointer}\n.hi-tab small{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.45);margin-top:2px}\n.hi-tab.is-on{background:linear-gradient(180deg,rgba(214,170,110,.42),rgba(214,170,110,.24));color:var(--kraft)}\n.hi-tab.is-on small{color:rgba(243,217,177,.8)}\n.hi-slot{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}\n.hi-slot-k b{display:block;color:var(--kraft);font-size:15px}\n.hi-slot-k small{display:block;color:var(--mut);font-size:12.5px}\n.hi-slot-k em{display:block;font-style:normal;font-size:12px;color:rgba(255,255,255,.4);margin-top:6px}\n.hi-row{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}\n.hi-opt{flex:none;width:128px;scroll-snap-align:start;border-radius:18px;background:rgba(255,255,255,.06);border:2px solid transparent;padding:8px;cursor:pointer;position:relative;user-select:none}\n.hi .hi-opt img{display:block;width:100%;height:92px;object-fit:contain;background:#fff;border-radius:12px}\n.hi-opt span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;line-height:1.25;margin-top:6px;color:rgba(255,255,255,.85);height:43px}\n.hi-opt b{display:block;font-size:13.5px;color:var(--y);margin-top:4px}\n.hi-opt i{font-style:normal;font-size:11px;font-weight:700;color:var(--mut);margin-left:4px}\n.hi-opt.is-on{border-color:var(--y);background:rgba(217,253,25,.1)}\n.hi-opt.is-on::after{content:\"✓\";position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--y);color:#000;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center}\n.hi-warn{margin:10px 0 0;padding:11px 14px;border-radius:16px;text-align:center;font-size:14px;color:var(--kraft);background:rgba(214,170,110,.12);border:1px dashed rgba(214,170,110,.5)}\n.hi-fair{font-size:14px;color:rgba(255,255,255,.8);padding:10px 14px;border-radius:16px;background:rgba(214,170,110,.1);border:1px solid rgba(214,170,110,.3);margin-top:14px}\n.hi-fair b{color:var(--kraft)}\n.hi-cardrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:20px;background:linear-gradient(135deg,rgba(217,253,25,.16),rgba(217,253,25,.04));border:1px solid rgba(217,253,25,.45)}\n.hi .hi-cardrow img{width:64px;height:42px;object-fit:cover;border-radius:7px;transform:rotate(-6deg);box-shadow:0 4px 10px rgba(0,0,0,.45)}\n.hi-cardrow div{flex:1;min-width:180px}\n.hi-cardrow b{display:block;color:var(--y)}\n.hi-cardrow small{color:var(--mut)}\n.hi .hi-cardrow .hi-btn{padding:9px 16px;font-size:14px}\n.hi-ways{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}\n.hi-way{position:relative;border-radius:20px;background:rgba(255,255,255,.06);padding:16px 14px 16px 44px;border:1px solid rgba(255,255,255,.1);cursor:pointer;user-select:none}\n.hi-way::before{content:\"\";position:absolute;left:14px;top:18px;width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.35)}\n.hi-way.is-on{border-color:rgba(217,253,25,.6);background:rgba(217,253,25,.08)}\n.hi-way.is-on::before{border-color:var(--y);background:var(--y);box-shadow:inset 0 0 0 3px #1a2430}\n.hi-way b{display:block;margin-bottom:4px}\n.hi-way small{color:var(--mut);font-size:13px}\n.hi-date{margin-top:14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}\n.hi .hi-date input{border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:9px 14px;font:inherit;background:rgba(0,0,0,.25);color:#fff;color-scheme:dark;height:auto;margin:0;width:auto}\n.hi-msg{margin-top:12px!important;font-size:13px;color:var(--mut)}\n.hi-left{font-size:14.5px;margin:0 0 8px!important;color:rgba(255,255,255,.85)}\n.hi-left b{color:var(--y)}\n.hi-bar{height:8px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden;margin:0 0 16px}\n.hi-bar i{display:block;height:100%;width:0;background:var(--y);border-radius:8px;transition:width .3s}\n.hi-more{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}\n.hi-m{display:flex;flex-direction:column;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);padding:10px}\n.hi .hi-m img{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border-radius:14px;margin-bottom:8px}\n.hi-m-n{font-size:13px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;min-height:50px}\n.hi-m-p{font-weight:800;color:var(--y);margin:6px 0 8px;font-size:14.5px}\n.hi .hi-m-add{margin-top:auto;border:0;border-radius:20px;padding:9px 10px;font-size:13.5px;font-weight:800;color:#000;background:linear-gradient(180deg,#e8ff4a,#c9ec00);cursor:pointer}\n.hi .hi-m-add.is-in{background:rgba(217,253,25,.15);color:var(--y)}\n.hi-faq details{border-top:1px solid var(--line);padding:13px 0}\n.hi-faq summary{cursor:pointer;font-weight:700}\n.hi-faq details p{margin-top:8px!important;color:var(--mut)}\n.hi-sticky{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(872px,calc(100% - 20px));display:flex;align-items:center;gap:14px;padding:10px 10px 10px 16px;border-radius:26px;background:rgba(15,22,30,.92);border:1px solid var(--line);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);z-index:500;box-shadow:0 10px 30px rgba(0,0,0,.4)}\n.hi-thumbs{display:flex;padding-left:8px}\n.hi .hi-thumbs img{width:36px;height:36px;object-fit:contain;background:#fff;border-radius:50%;border:2px solid #0f161d;margin-left:-8px;transition:transform .25s}\n.hi .hi-thumbs img.is-pop{transform:scale(1.25)}\n.hi-sp{flex:1;min-width:0}\n.hi-sp b{font-size:21px;color:var(--y)}\n.hi-sp em{font-style:normal;font-size:13px;font-weight:700;color:var(--kraft);margin-left:8px}\n.hi-sp small{display:block;color:var(--mut);font-size:12px}\n@media(max-width:640px){\n .hi{margin-top:12px;padding:0 0 120px}\n .hi-card{padding:18px;border-radius:24px}\n .hi-hero{display:block;padding:0}\n .hi-stage{height:240px;border-bottom:1px solid var(--line)}\n .hi-col{transform:scale(.78)}\n .hi-hero-t{padding:18px 18px 20px}\n .hi-logos{gap:8px}.hi .hi-logos img{height:22px}.hi-logos .hi-x{font-size:26px}.hi .hi-logos .hi-dc{height:32px;padding:4px 8px;border-radius:10px}\n .hi-hero h1{font-size:25px;line-height:1.15;margin:14px 0 8px}\n .hi-hero p{font-size:14.5px;margin:0 0 16px}\n .hi-hero .hi-btn{display:block;text-align:center}\n .hi-slot{grid-template-columns:1fr;gap:8px;padding:12px 0}\n .hi-slot-k{display:grid;grid-template-columns:1fr auto;column-gap:10px}\n .hi-slot-k b{grid-column:1}.hi-slot-k em{grid-column:2;grid-row:1;margin:0;align-self:center}.hi-slot-k small{grid-column:1/3}\n .hi-opt{width:116px}.hi .hi-opt img{height:84px}\n .hi-tab{font-size:15px}.hi-tab small{font-size:11.5px}\n .hi-ways{grid-template-columns:1fr}\n .hi-cardrow{display:grid;grid-template-columns:auto 1fr;gap:10px 14px}.hi-cardrow div{min-width:0}.hi .hi-cardrow .hi-btn{grid-column:1/3;text-align:center}\n .hi-thumbs{display:none}\n .hi-sp b{font-size:19px}.hi .hi-sticky .hi-btn{padding:13px 18px;font-size:15px}\n}\n</style>\n<div class=\"hi-bg\" aria-hidden=\"true\"></div>\n\n<div class=\"hi-card hi-hero\">\n  <div class=\"hi-stage\"><div class=\"hi-col\" id=\"hi-col\"></div></div>\n  <div class=\"hi-hero-t\">\n    <div class=\"hi-logos\"><img src=\"https://app-test-3-delta.vercel.app/assets/logo-hiking.png\" alt=\"хайкинг интеллигенция\"><span class=\"hi-x\">×</span><img class=\"hi-dc\" src=\"https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg\" alt=\"жить здорово\"></div>\n    <h1 id=\"hi-h1\">хайкинг бокс – еда и вода на весь хайк</h1>\n    <p>еда и вода на весь хайк из продуктов «Жить здорово» – по прямым ценам магазина. получишь в начале маршрута</p>\n    <a class=\"hi-btn\" href=\"#hi-box\">собрать бокс ↓</a>\n    <details class=\"hi-club\"><summary>о клубе ↓</summary>\n      <p>хайкинг интеллигенция – клуб молодых деятельных людей большой Ялты, которые проводят свободное время стильно, отдыхают продуктивно и знакомятся лично. 3–5 часов лёгкой ходьбы по видовым тропам в компании таких же интеллигентов, как ты.</p>\n      <p><a href=\"https://t.me/yaltahiking_bot\" target=\"_blank\" rel=\"noopener\">открыть приложение клуба →</a></p>\n    </details>\n  </div>\n</div>\n\n<div class=\"hi-card\" id=\"hi-box\">\n  <div class=\"hi-tabs\">\n    <button type=\"button\" class=\"hi-tab\" data-box=\"light\">лёгкий<small>перекус</small></button>\n    <button type=\"button\" class=\"hi-tab\" data-box=\"full\">сытный<small>обед и перекусы</small></button>\n  </div>\n  <div id=\"hi-slots\"><p class=\"hi-sub\" style=\"padding:16px 0\">загружаем товары…</p></div>\n  <div class=\"hi-warn\" id=\"hi-warn\" hidden>⏰ сэндвич или ролл – при заказе за 2 дня до хайка</div>\n  <div class=\"hi-fair\">🤝 <b>без наценки</b> – по прямой цене магазина. самые заботливые цены по всей большой Ялте</div>\n  <div class=\"hi-cardrow\"><img src=\"https://app-test-3-delta.vercel.app/assets/card-front.jpg\" alt=\"\"><div><b>по карте интеллигента −10%</b><small id=\"hi-card-note\">скидка для владельцев карты клуба</small></div><a class=\"hi-btn\" id=\"hi-card-btn\" href=\"https://t.me/yaltahiking_bot\" target=\"_blank\" rel=\"noopener\">узнать о карте</a></div>\n</div>\n\n<div class=\"hi-card\">\n  <h2>как получить</h2>\n  <p class=\"hi-sub\">выбери способ – дальше обычное оформление заказа</p>\n  <div class=\"hi-ways\">\n    <div class=\"hi-way is-on\" role=\"button\" tabindex=\"0\" data-way=\"hike\"><b>🏔 в день хайка</b><small>получишь бокс в начале маршрута</small></div>\n    <div class=\"hi-way\" role=\"button\" tabindex=\"0\" data-way=\"home\"><b>🚚 доставка домой</b><small>по Ялте; от 2 000 ₽ – бесплатно</small></div>\n    <div class=\"hi-way\" role=\"button\" tabindex=\"0\" data-way=\"pickup\"><b>🏪 самовывоз</b><small>из магазина</small></div>\n  </div>\n  <div class=\"hi-date\" id=\"hi-date-row\"><b>дата хайка</b><input type=\"date\" id=\"hi-date\"></div>\n  <p class=\"hi-msg\" id=\"hi-msg\">товары бокса добавятся в корзину – дальше обычное оформление заказа. дату хайка напиши в комментарии к заказу.</p>\n</div>\n\n<div class=\"hi-card\" id=\"hi-more-card\" hidden>\n  <h2>добери до 2 000 ₽ – и доставка бесплатно</h2>\n  <p class=\"hi-left\" id=\"hi-left\"></p>\n  <div class=\"hi-bar\"><i id=\"hi-bar\"></i></div>\n  <div class=\"hi-more\" id=\"hi-more\"></div>\n</div>\n\n<div class=\"hi-card hi-faq\">\n  <h2>частые вопросы</h2>\n  <details><summary>хайк перенесли или отменили – что с боксом?</summary><p>[уточнить у «Жить здорово»: перенос на новую дату или возврат]</p></details>\n  <details><summary>сколько хранится сэндвич?</summary><p>[уточнить у «Жить здорово»]</p></details>\n  <details><summary>можно взять два бокса?</summary><p>да – просто укажи количество в корзине.</p></details>\n  <details><summary>как получить скидку по карте?</summary><p>открой бокс из приложения клуба – скидка применится сама.</p></details>\n</div>\n\n<div class=\"hi-sticky\"><div class=\"hi-thumbs\" id=\"hi-thumbs\"></div><div class=\"hi-sp\"><b id=\"hi-sum\">–</b><small id=\"hi-sumk\">собираем бокс…</small></div><button type=\"button\" class=\"hi-btn\" id=\"hi-cta\">оформить бокс</button></div>\n\n\n</div>\n";
+
+(function () {
+  // слоты боксов: [название, подпись, [id товаров: первый – по умолчанию]]; цены и наличие – из каталога в реальном времени
+  var BOXES = {
+    light: { name: 'лёгкий бокс', slots: [
+      ['энергия и белок', 'на подъём', [4899, 4642, 2222, 4607, 4741, 1812, 14965]],
+      ['вернуть соль', 'на привал', [3139, 4060, 2862, 2315, 1871]],
+      ['быстрая энергия', 'на крутой участок', [1671, 1801, 1583, 1647, 1930, 4820]],
+      ['лёгкое сладкое', 'на вершине', [3985, 3263, 4051, 2707, 4747]],
+      ['чтобы не пить из ручья', '0,5 л', [15026, 4997, 4991, 2631, 2628]]
+    ]},
+    full: { name: 'сытный бокс', warn: true, slots: [
+      ['обед на вершине', 'сытно и не тяжело', [11683, 11678, 11681, 11720, 14279]],
+      ['восстановить силы', 'после подъёма', [2466, 2272, 11299, 4991, 3456]],
+      ['хрустящее к чаю', 'без сахара', [14266, 14265, 2906, 3049, 2932]],
+      ['сладкое без сахара', 'награда за подъём', [1602, 4320, 4897, 3356, 1860]],
+      ['белок и соль', 'на привал', [2315, 1871, 3139, 2862]],
+      ['глоток на привале', '0,5 л', [15026, 4997, 4991]]
+    ]}
+  };
+  var CUT = 'https://app-test-3-delta.vercel.app/assets/box/cut/';
+  var COL = {
+    light: [['chips', 'height:180px;left:0;top:40px;transform:rotate(-7deg)'], ['water', 'height:160px;left:250px;top:20px;transform:rotate(6deg)'], ['bar', 'width:220px;left:60px;top:170px;transform:rotate(-8deg)'], ['qwikler', 'width:180px;left:170px;top:120px;transform:rotate(9deg)'], ['frut', 'width:160px;left:20px;top:230px;transform:rotate(-3deg)']],
+    full: [['pesto', 'width:190px;left:0;top:60px;transform:rotate(-10deg)'], ['shake', 'height:160px;left:150px;top:10px;transform:rotate(6deg)'], ['water', 'height:170px;left:250px;top:40px;transform:rotate(-6deg)'], ['wafers', 'width:170px;left:40px;top:190px;transform:rotate(-6deg)'], ['sticks', 'width:110px;left:210px;top:170px;transform:rotate(9deg)']]
+  };
+  // «добери до 2 000 ₽»: продукты домой (первые 8 в наличии)
+  var MORE = [3251, 2552, 4574, 1709, 2429, 2924, 2987, 3388, 2707, 4747, 11663, 3249];
+  var FREE = 2000, extra = {};
+  var $ = function (id) { return document.getElementById(id); };
+  var root = $('hi');
+  var qs = new URLSearchParams(location.search);
+  var cur = qs.get('box') === 'light' ? 'light' : 'full';
+  // из приложения клуба: ?hike=ГГГГ-ММ-ДД&route=Ай-Петри&box=light|full&custom=1&card=1
+  if (qs.get('hike')) $('hi-date').value = qs.get('hike');
+  var route = (qs.get('route') || '').trim().slice(0, 60);
+  if (route) $('hi-h1').textContent = 'собери себе бокс для маршрута на ' + route;
+  var hasCard = qs.get('card') === '1';
+  if (hasCard) { $('hi-card-note').textContent = 'у тебя есть карта – скидка применится в корзине сама'; $('hi-card-btn').hidden = true; }
+  if (qs.get('custom') === '1') setTimeout(function () { $('hi-box').scrollIntoView({ behavior: 'smooth' }); }, 600);
+
+  var P = {}, pick = {}, boxSum = 0;
+  var price = function (p) { return Number(p.prices.price) / Math.pow(10, p.prices.currency_minor_unit); };
+  var rub = function (n) { return Math.round(n).toLocaleString('ru-RU') + ' ₽'; };
+  var form = function (n, a, b, c) { var x = n % 10, y = n % 100; return x === 1 && y !== 11 ? a : x >= 2 && x <= 4 && (y < 12 || y > 14) ? b : c; };
+  var dec = function (s) { var t = document.createElement('textarea'); t.innerHTML = s; return t.value; };
+  // короткое название: без «ИП …», «1шт» и слова «протеиновый» – чтобы был виден вкус
+  var short = function (n) { return dec(n).replace(/\s*ИП\s+[А-ЯЁ][а-яё]+,?/g, '').replace(/,?\s*1\s*шт\.?/gi, '').replace(/\s*протеинов\S*/gi, '').replace(/BOMBBAR/g, 'Bombbar').replace(/\s+,/g, ',').replace(/\s{2,}/g, ' ').trim(); };
+  var img = function (p) { return p.images && p.images[0] ? p.images[0].thumbnail : ''; };
+  function avail(arr) { return arr.filter(function (id) { return P[id] && P[id].is_in_stock && P[id].is_purchasable; }); }
+
+  // коллаж рисуем сразу, не дожидаясь каталога
+  $('hi-col').innerHTML = COL[cur].map(function (c) { return '<img src="' + CUT + c[0] + '.png" style="' + c[1] + '" alt="">'; }).join('');
+  var ids = MORE.slice();
+  Object.keys(BOXES).forEach(function (k) { BOXES[k].slots.forEach(function (s) { ids = ids.concat(s[2]); }); });
+  fetch('/wp-json/wc/store/v1/products?per_page=100&include=' + ids.join(','))
+    .then(function (r) { return r.json(); })
+    .then(function (list) {
+      list.forEach(function (p) { P[p.id] = p; });
+      Object.keys(BOXES).forEach(function (k) { pick[k] = BOXES[k].slots.map(function (s) { return avail(s[2])[0] || null; }); });
+      render();
+    })
+    .catch(function () { $('hi-slots').innerHTML = '<p class="hi-sub" style="padding:16px 0">не получилось загрузить товары – обнови страницу</p>'; });
+
+  function render(pop) {
+    root.querySelectorAll('.hi-tab').forEach(function (t) { t.classList.toggle('is-on', t.dataset.box === cur); });
+    var b = BOXES[cur];
+    $('hi-warn').hidden = !b.warn;
+    $('hi-col').innerHTML = COL[cur].map(function (c) { return '<img src="' + CUT + c[0] + '.png" style="' + c[1] + '" alt="">'; }).join('');
+    var html = '';
+    b.slots.forEach(function (s, i) {
+      var list = avail(s[2]); if (!list.length) return;
+      var base = price(P[list[0]]);
+      html += '<div class="hi-slot"><div class="hi-slot-k"><b>' + s[0] + '</b><small>' + s[1] + '</small><em>' + list.length + ' ' + form(list.length, 'вариант', 'варианта', 'вариантов') + (list.length > 1 ? ' →' : '') + '</em></div><div class="hi-row">'
+        + list.map(function (id) {
+            var d = Math.round(price(P[id]) - base);
+            return '<div class="hi-opt' + (id === pick[cur][i] ? ' is-on' : '') + '" role="button" tabindex="0" data-i="' + i + '" data-id="' + id + '"><img src="' + img(P[id]) + '" alt="" loading="lazy"><span>' + short(P[id].name) + '</span><b>' + rub(price(P[id])) + (d ? '<i>' + (d > 0 ? '+' : '−') + Math.abs(d) + '</i>' : '') + '</b></div>';
+          }).join('') + '</div></div>';
+    });
+    $('hi-slots').innerHTML = html;
+    var items = pick[cur].filter(Boolean);
+    boxSum = items.reduce(function (a, id) { return a + price(P[id]); }, 0);
+    $('hi-thumbs').innerHTML = items.map(function (id, i) { return '<img src="' + img(P[id]) + '" alt=""' + (pop === i ? ' class="is-pop"' : '') + '>'; }).join('');
+    if (pop != null) setTimeout(function () { var t = $('hi-thumbs').children[pop]; if (t) t.classList.remove('is-pop'); }, 300);
+    renderMore();
+  }
+
+  function renderMore() {
+    var add = 0, extraIds = Object.keys(extra).filter(function (id) { return extra[id] && P[id]; });
+    extraIds.forEach(function (id) { add += price(P[id]); });
+    var total = boxSum + add, left = Math.max(0, FREE - total);
+    $('hi-sum').innerHTML = rub(total) + '<em>💳 по карте ' + rub(total * 0.9) + '</em>';
+    var n = pick[cur].filter(Boolean).length + extraIds.length;
+    $('hi-sumk').textContent = BOXES[cur].name + ' · ' + n + ' ' + form(n, 'продукт', 'продукта', 'продуктов');
+    $('hi-left').innerHTML = left ? 'бокс и добавленное – ' + rub(total) + '. до бесплатной доставки осталось <b>' + rub(left) + '</b>' : '🎉 доставка по Ялте – бесплатно';
+    $('hi-bar').style.width = Math.min(100, total / FREE * 100) + '%';
+    $('hi-more').innerHTML = avail(MORE).slice(0, 8).map(function (id) {
+      var p = P[id];
+      return '<div class="hi-m"><img src="' + img(p) + '" alt=""><div class="hi-m-n">' + short(p.name) + '</div><div class="hi-m-p">' + rub(price(p)) + '</div>'
+        + '<button type="button" class="hi-m-add' + (extra[id] ? ' is-in' : '') + '" data-add="' + id + '">' + (extra[id] ? '✓ добавлено' : '+ к заказу') + '</button></div>';
+    }).join('');
+  }
+
+  root.addEventListener('click', function (e) {
+    var way = e.target.closest('.hi-way');
+    if (way) {
+      root.querySelectorAll('.hi-way').forEach(function (w) { w.classList.toggle('is-on', w === way); });
+      $('hi-date-row').hidden = way.dataset.way !== 'hike';
+      $('hi-more-card').hidden = way.dataset.way !== 'home';
+      if (way.dataset.way !== 'home') extra = {};
+      renderMore();
+      return;
+    }
+    var add = e.target.closest('[data-add]');
+    if (add) { var aid = +add.dataset.add; extra[aid] = !extra[aid]; renderMore(); return; }
+    var tab = e.target.closest('.hi-tab');
+    if (tab) { cur = tab.dataset.box; render(); return; }
+    var opt = e.target.closest('.hi-opt');
+    if (opt) {
+      var i = +opt.dataset.i, row = opt.closest('.hi-row'), rows = [].slice.call(root.querySelectorAll('.hi-row')), k = rows.indexOf(row), x = row.scrollLeft;
+      pick[cur][i] = +opt.dataset.id;
+      render(pick[cur].slice(0, i + 1).filter(Boolean).length - 1);
+      var nr = root.querySelectorAll('.hi-row')[k]; if (nr) nr.scrollLeft = x;
+    }
+  });
+
+  // оформить: кладём товары бокса (и добавленное) в обычную корзину магазина; владельцу карты – сразу скидка клуба
+  $('hi-cta').addEventListener('click', function () {
+    var btn = this, msg = $('hi-msg');
+    var items = pick[cur].filter(Boolean).concat(Object.keys(extra).filter(function (id) { return extra[id]; }).map(Number));
+    if (!items.length) return;
+    btn.disabled = true; btn.textContent = 'кладём в корзину…';
+    var nonce = function () { return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) { return r.headers.get('Nonce'); }); };
+    nonce()
+      .then(function (n) {
+        return fetch('/wp-json/wc/store/v1/batch', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'Nonce': n },
+          body: JSON.stringify({ requests: items.map(function (id) {
+            return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: id, quantity: 1 } };
+          }) })
+        });
+      })
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status);
+        if (!hasCard) return;
+        return nonce().then(function (n2) {
+          return fetch('/wp-json/wc/store/v1/cart/apply-coupon', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Nonce': n2 }, body: JSON.stringify({ code: atob('aW50ZWxsaWdlbnQ=') }) });
+        }).catch(function () {});
+      })
+      .then(function () { location.href = '/checkout/'; })
+      .catch(function () { btn.disabled = false; btn.textContent = 'оформить бокс'; msg.textContent = 'не получилось добавить в корзину – попробуй ещё раз'; });
+  });
+})();
+
+})();
