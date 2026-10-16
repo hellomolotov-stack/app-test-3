@@ -114,7 +114,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 <div class="cs-ben"><div class="cs-e">🥾</div><div><b>все хайки сезона</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
                 <div class="cs-ben"><div class="cs-e">🎟️</div><div><b>запись даже когда мест нет</b><span>набор закрыт для всех, но не для владельцев карты – место для тебя найдётся</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🤝</div><div><b>свой +1 на хайк</b><span>бери с собой друга, если он ещё ни разу не был с нами</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🍕</div><div><b>клубные события в городе и на море</b><span>вечера, книжный клуб, встречи – только для своих</span></div></div>
+                <div class="cs-ben"><div class="cs-e">🍕</div><div><b>события в городе</b><span>приглашаем на домашнюю пиццу в гости, устраиваем пикники, собираемся в заведениях</span></div></div>
+                <div class="cs-ben"><div class="cs-e">🏷️</div><div><b>привилегии в городе и онлайне</b><span>особые условия для членов клуба в лучших местах и магазинах города</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🧠</div><div><b>мастермайнды на вершинах</b><span>бронируй свой запрос и получай саммари каждой встречи</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🫆</div><div><b>профили интеллигентов</b><span>заранее узнаешь, кто идёт: профессии, увлечения, с кем обсудить идею</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🛡️</div><div><b>свободный интернет</b><span>наше приложение по обходу блокировок, чтобы телеграм и весь интернет работали как раньше</span></div></div>
@@ -148,6 +149,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             </div>
             <div class="cs-bar">
                 <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить бессрочную · ${rub(permanent)}` : buyLabel(permanent, true)}</button>
+                ${gift ? '' : `<button type="button" class="btn cs-buy cs-buy-season" id="csBuySeason">взять на сезон · ${rub(season)}</button>`}
                 ${ev ? '<div class="cs-city-note">после оплаты ты сразу в списке гостей</div>' : ''}
                 ${isReturning || gift || !allowTicket || cityEvent ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
                 ${SPLIT_NOTE}
@@ -187,23 +189,27 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         plan = btn.dataset.plan;
         selectedPrice = plan === 'permanent' ? permanent : season;
         overlay.querySelectorAll('.cs-plan').forEach(b => b.classList.toggle('is-on', b === btn));
-        buyBtn.textContent = gift
-            ? `подарить ${plan === 'permanent' ? 'бессрочную' : 'сезонную'} · ${rub(selectedPrice)}`
-            : buyLabel(selectedPrice, plan === 'permanent');
+        // у покупки для себя две постоянные кнопки (навсегда и сезон) – выбор карточки только подсвечивает
+        if (gift) buyBtn.textContent = `подарить ${plan === 'permanent' ? 'бессрочную' : 'сезонную'} · ${rub(selectedPrice)}`;
+        else { plan = 'permanent'; selectedPrice = permanent; }
     }));
 
-    buyBtn.addEventListener('click', async () => {
-        if (buyBtn.dataset.busy) return;
-        buyBtn.dataset.busy = '1';
+    const seasonBtn = overlay.querySelector('#csBuySeason');
+    const pay = async (btn, planChoice, price) => {
+        if (buyBtn.dataset.busy || seasonBtn?.dataset.busy) return;
+        plan = planChoice;
+        selectedPrice = price;
+        const buyBtn_ = btn;
+        buyBtn_.dataset.busy = '1';
         if (!await requireAdmission({ hikeDate, hikeTitle })) {
-            delete buyBtn.dataset.busy;
+            delete buyBtn_.dataset.busy;
             return;
         }
         bought = true;
         act('card_buy');
         haptic();
-        const label = buyBtn.innerHTML;
-        buyBtn.textContent = 'открываем оплату…';
+        const label = buyBtn_.innerHTML;
+        buyBtn_.textContent = 'открываем оплату…';
         log(gift ? 'подарок: клик оплатить' : (plan === 'permanent' ? 'клик бессрочная карта' : 'клик сезонная карта'), !gift, state.user, { source: 'шторка карты' });
         try {
             const { url } = await initPayment({
@@ -221,11 +227,13 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             openLink(url, gift ? 'оплата подарочной карты' : plan === 'offer' ? 'оплата карты по спецпредложению' : (plan === 'permanent' ? 'оплата бессрочной карты' : 'оплата сезонной карты'), true);
         } catch (err) {
             console.error('initPayment error:', err);
-            buyBtn.innerHTML = label;
-            delete buyBtn.dataset.busy;
+            buyBtn_.innerHTML = label;
+            delete buyBtn_.dataset.busy;
             alert(paymentErrorText(err, 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз.'));
         }
-    });
+    };
+    buyBtn.addEventListener('click', () => pay(buyBtn, gift ? plan : (plan === 'offer' ? 'offer' : 'permanent'), gift ? selectedPrice : (plan === 'offer' ? selectedPrice : permanent)));
+    seasonBtn?.addEventListener('click', () => pay(seasonBtn, 'season', season));
 
     // личное спецпредложение: показываем, только если сервер подтвердил его для этого человека
     if (!gift && state.userCard?.status !== 'active') {
@@ -253,6 +261,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             plan = 'offer';
             selectedPrice = price;
             buyBtn.textContent = `оформить за ${rub(price)}`;
+            seasonBtn?.remove();
             offerTimer = setInterval(() => {
                 const l = left();
                 if (!l) { clearInterval(offerTimer); return; }

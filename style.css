@@ -6307,3 +6307,6 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-finger.is-tap { animation: hbTap 1s ease forwards; }
 @keyframes hbTap { 0% { opacity: 0; transform: scale(1.25); } 25% { opacity: 1; transform: scale(1); } 40% { transform: scale(.78); }
     55% { transform: scale(1); box-shadow: 0 0 0 10px rgba(217, 253, 25, .35), 0 4px 14px rgba(0, 0, 0, .4); } 85% { opacity: 1; } 100% { opacity: .9; box-shadow: 0 0 0 18px rgba(217, 253, 25, 0); } }
+/* шторка карты: вторая кнопка – сезон, спокойная, не акцентная */
+.cs-buy-season { margin-top: 8px; background: rgba(255, 255, 255, .1) !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, .22) !important; box-shadow: none !important; }
+.cs-overlay.is-city .cs-buy-season { background: rgba(65, 181, 237, .12) !important; border-color: rgba(65, 181, 237, .4) !important; }
