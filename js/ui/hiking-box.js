@@ -26,11 +26,11 @@ const BOXES = {
             ['frut', 'width:190px; left:16px; top:334px; transform:rotate(-4deg); z-index:7'],
         ],
         notes: [
-            ['left:24px; top:16px', 'чипсы', 'хрустящие с белком'],
-            ['right:24px; top:16px', 'вода', 'пол-литра', true],
-            ['right:24px; top:236px', 'батончик', '20 г белка', true],
-            ['left:24px; top:414px', 'пастила', 'яблоко и клюква'],
-            ['right:24px; top:414px', 'Qwikler', 'орехи без сахара', true],
+            ['left:24px; top:16px', 'чипсы', 'хрустящие с белком', false, 'chips'],
+            ['right:24px; top:16px', 'вода', 'пол-литра', true, 'water'],
+            ['right:24px; top:236px', 'батончик', '20 г белка', true, 'bar'],
+            ['left:24px; top:414px', 'пастила', 'яблоко и клюква', false, 'frut'],
+            ['right:24px; top:414px', 'Qwikler', 'орехи без сахара', true, 'qwikler'],
         ],
         arrows: ['M50 56 C 54 66, 60 74, 70 84', 'M322 56 C 318 62, 316 66, 312 72', 'M300 280 C 294 290, 284 294, 270 294',
             'M44 412 C 46 404, 50 398, 58 392', 'M322 412 C 320 402, 314 396, 306 390'],
@@ -47,12 +47,12 @@ const BOXES = {
             ['cookie', 'width:108px; left:118px; top:350px; transform:rotate(7deg); z-index:7'],
         ],
         notes: [
-            ['left:24px; top:16px', 'сэндвич', 'полноценный обед'],
-            ['left:176px; top:16px', 'коктейль', '24 г белка'],
-            ['right:24px; top:40px', 'вода', 'минералы', true],
-            ['left:24px; top:404px', 'вафли', 'без сахара'],
-            ['right:24px; top:404px', 'палочки', 'солёное с белком', true],
-            ['left:140px; top:452px', 'печенье', 'сладкое без сахара'],
+            ['left:24px; top:16px', 'сэндвич', 'полноценный обед', false, 'pesto'],
+            ['left:176px; top:16px', 'коктейль', '24 г белка', false, 'shake'],
+            ['right:24px; top:40px', 'вода', 'минералы', true, 'water'],
+            ['left:24px; top:404px', 'вафли', 'без сахара', false, 'wafers'],
+            ['right:24px; top:404px', 'палочки', 'солёное с белком', true, 'sticks'],
+            ['left:140px; top:452px', 'печенье', 'сладкое без сахара', false, 'cookie'],
         ],
         arrows: ['M52 56 C 54 76, 60 96, 72 116', 'M196 58 C 200 70, 204 80, 206 92', 'M322 82 C 318 94, 312 104, 304 116',
             'M44 400 C 46 384, 56 370, 70 358', 'M322 400 C 320 384, 312 368, 300 356', 'M150 450 C 148 440, 152 432, 160 424'],
@@ -79,9 +79,15 @@ const CARD_DISCOUNT = 0.10; // скидка владельцам карты ин
 const rub = n => `${n.toLocaleString('ru-RU')} ₽`;
 const cardPrice = n => Math.round(n * (1 - CARD_DISCOUNT));
 
+// мини-бенто для плашки и строк: голубой лоток – сэндвич в большой ячейке, печенье и палочки в маленьких
+const bentoHtml = (cls = '') => `<span class="hb-bento ${cls}"><span class="hb-bento-tray">`
+    + `<span class="hb-bento-cell is-big"><img src="assets/box/cut/pesto.png" alt=""></span>`
+    + `<span class="hb-bento-cell"><img src="assets/box/cut/cookie.png" alt=""></span>`
+    + `<span class="hb-bento-cell"><img src="assets/box/cut/sticks.png" alt=""></span></span></span>`;
+
 function collageHtml(b) {
     return b.items.map(([n, st]) => `<img class="hc-p" data-p="${n}" src="assets/box/cut/${n}.png" style="${st}" alt="${PRODUCTS[n]?.name || ''}">`).join('')
-        + b.notes.map(([pos, t, s, r]) => `<div class="hc-note${r ? ' is-r' : ''}" style="${pos}">${t}<small>${s}</small></div>`).join('')
+        + b.notes.map(([pos, t, s, r, p]) => `<div class="hc-note${r ? ' is-r' : ''}" data-p="${p}" style="${pos}">${t}<span class="hc-i">i</span><small>${s}</small></div>`).join('')
         + `<svg class="hc-arrows" viewBox="0 0 375 ${b.h}"><defs><marker id="hcHd" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M2 2 L9.5 6 L2.5 10.5" /></marker></defs>`
         + b.arrows.map(d => `<path marker-end="url(#hcHd)" d="${d}" />`).join('') + '</svg>';
 }
@@ -95,8 +101,8 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     const row = document.createElement('div');
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
-        <span class="box-plate-pics"><img src="assets/box/cut/pesto.png" alt=""><img src="assets/box/cut/shake.png" alt=""><img src="assets/box/cut/bar.png" alt=""></span>
-        <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на хайк</small><em>от ${rub(MIN_PRICE)} · 💳 −10%</em></span>
+        ${bentoHtml()}
+        <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на весь хайк в одной коробке</small></span>
         <button type="button" class="box-plate-btn">что внутри</button></div>`;
     const plate = row.querySelector('.box-plate');
     plate.addEventListener('click', e => {
@@ -218,12 +224,20 @@ export function openHikingBox(fromEl, hike, isGuest) {
     }));
     // карточка продукта: нажал на продукт в коллаже – снизу всплывает, что это и чем заменить
     const pop = overlay.querySelector('.hb-pop');
-    const hidePop = () => { pop.classList.remove('is-on'); setTimeout(() => { if (!pop.classList.contains('is-on')) pop.hidden = true; }, 200); };
+    const unselect = () => wrap.querySelectorAll('.hc-p.is-sel').forEach(i => i.classList.remove('is-sel'));
+    const hidePop = () => { unselect(); pop.classList.remove('is-on'); setTimeout(() => { if (!pop.classList.contains('is-on')) pop.hidden = true; }, 200); };
+    let hinted = false;
     wrap.addEventListener('click', e => {
-        const img = e.target.closest('.hc-p');
+        // нажать можно на сам продукт или на его подпись с «i»
+        const note = e.target.closest('.hc-note');
+        const img = note ? wrap.querySelector(`.hc-p[data-p="${note.dataset.p}"]`) : e.target.closest('.hc-p');
         const p = img && PRODUCTS[img.dataset.p];
         if (!p) { hidePop(); return; }
         e.stopPropagation();
+        hinted = true;
+        wrap.querySelector('.hb-finger')?.remove();
+        unselect();
+        img.classList.add('is-sel');
         haptic();
         log(`hiking box: продукт ${p.name}`, isGuest, state.user);
         pop.innerHTML = `<img src="assets/box/cut/${img.dataset.p}.png" alt="">
@@ -235,6 +249,24 @@ export function openHikingBox(fromEl, hike, isGuest) {
     });
     pop.addEventListener('click', e => { e.stopPropagation(); hidePop(); });
     overlay.querySelector('.hb-scroll').addEventListener('scroll', () => { if (!pop.hidden) hidePop(); }, { passive: true });
+    // подсказка как у карты: «палец» дважды тапает по продуктам, продукт подпрыгивает – видно, что на них можно нажимать
+    const fingerHint = () => {
+        if (hinted || !overlay.isConnected) return;
+        const imgs = [...wrap.querySelectorAll('.hc-p')];
+        const seq = [imgs[0], imgs[Math.min(2, imgs.length - 1)]].filter(Boolean);
+        const f = document.createElement('div');
+        f.className = 'hb-finger';
+        wrap.querySelector('.hb-collage').appendChild(f);
+        seq.forEach((img, i) => setTimeout(() => {
+            if (hinted || !img.isConnected) return f.remove();
+            f.style.left = (img.offsetLeft + img.offsetWidth / 2) + 'px';
+            f.style.top = (img.offsetTop + img.offsetHeight / 2) + 'px';
+            f.classList.remove('is-tap'); void f.offsetWidth; f.classList.add('is-tap');
+            setTimeout(() => { if (!hinted) { img.classList.remove('is-tap'); void img.offsetWidth; img.classList.add('is-tap'); } }, 380);
+        }, i * 1100));
+        setTimeout(() => f.remove(), seq.length * 1100 + 300);
+    };
+    setTimeout(fingerHint, 900);
     document.body.appendChild(overlay);
     fitBuy(); // при первом showBox шторки ещё нет в документе – подгоняем после вставки
     document.body.style.overflow = 'hidden';
@@ -293,8 +325,8 @@ export function openHikingBox(fromEl, hike, isGuest) {
 
 // 4. строка-приглашение там, где человек уже записан: «мои записи» на главной и окно «записали тебя»
 export function hikingBoxRowHtml(cls = '') {
-    return `<button type="button" class="hb-row ${cls}"><span class="hb-row-pics"><img src="assets/box/cut/pesto.png" alt=""><img src="assets/box/cut/bar.png" alt=""></span>`
-        + `<span class="hb-row-t"><b>возьми хайкинг бокс</b><small>еда и вода на весь хайк · от ${rub(MIN_PRICE)}</small></span><span class="hb-row-go">›</span></button>`;
+    return `<button type="button" class="hb-row ${cls}">${bentoHtml('is-sm')}`
+        + `<span class="hb-row-t"><b>возьми хайкинг бокс</b><small>еда и вода на весь хайк</small></span><span class="hb-row-go">›</span></button>`;
 }
 export function bindHikingBoxRow(el, hikeDate, source, before) {
     if (!el) return;
