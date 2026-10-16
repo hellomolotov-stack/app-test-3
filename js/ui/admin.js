@@ -827,13 +827,16 @@ async function saveHike() {
 async function loadPeople(el, date) {
     if (!el) return;
     try {
-        const { participants, waitlist = [] } = await adminCall('adminParticipants', { date });
+        const { participants, waitlist = [], carry = null } = await adminCall('adminParticipants', { date });
         if (!root || !el.isConnected) return;
         const booked = participants.filter(p => p.in_app || p.status === 'booked');
         const waiting = waitlist.filter(w => !w.notified);
-        // кто просил сообщить об открытии записи – для заглушки это главное
+        const carried = waitlist.filter(w => w.carried_from);
+        // кто просил сообщить об открытии записи – для заглушки это главное; перенесённые с отменённой даты помечены
         const waitHtml = waitlist.length
-            ? `<div class="adm-note">🔔 ждут открытия записи: <b>${waiting.length}</b>${waitlist.length > waiting.length ? ` (уже уведомили: ${waitlist.length - waiting.length})` : ''}${waiting.length ? '<br>как только дадите название и сохраните, им придёт сообщение с кнопкой на этот хайк' : ''}</div>`
+            ? `<div class="adm-note">🔔 ждут открытия записи: <b>${waiting.length}</b>${carried.length ? ` · из них перенесены с других дат: ${carried.length}` : ''}${waitlist.length > waiting.length ? ` (уже уведомили: ${waitlist.length - waiting.length})` : ''}${waiting.length ? '<br>как только дадите название и сохраните, им придёт сообщение с кнопкой на этот хайк' : ''}
+                ${carry?.to ? `<br>↪ при отмене перенесены на ${dateLabel(carry.to)}: ${carry.moved}` : carry?.pending ? '<br>↪ перенесём на следующий хайк, как только он появится в календаре' : ''}
+                <div class="adm-wl">${waitlist.map(w => `<div class="adm-wl-row"><span>${esc(w.name || 'без имени')}${w.username ? ` <i>@${esc(w.username)}</i>` : ''}</span>${w.carried_from ? `<span class="adm-flag is-carry">↪ с ${dateLabel(w.carried_from)}</span>` : '<span class="adm-flag">сам</span>'}</div>`).join('')}</div></div>`
             : '';
         if (!booked.length) { el.className = 'adm-people'; el.innerHTML = waitHtml + '<div class="adm-hint">пока никто не записался</div>'; return; }
         el.className = 'adm-people';
