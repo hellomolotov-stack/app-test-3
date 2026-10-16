@@ -129,15 +129,15 @@ export async function maybeShowHomeBanner(delay = 1200) {
     await new Promise(r => setTimeout(r, delay));
     // ждём, пока уйдёт экран загрузки
     for (let i = 0; i < 20 && !document.documentElement.classList.contains('app-ready'); i++) await new Promise(r => setTimeout(r, 500));
-    if (!shouldAsk('home_banner') || document.querySelector('.optin-banner')) return;
+    // 16.10: показываем при каждом открытии, пока человек не решит сам: «включить» (и разрешил) или «не сейчас»
+    const canAskBanner = () => !!(state.user?.id && tg?.requestWriteAccess && !allowsFromInitData() && !readAsk().ok && !readAsk().bannerDeclined);
+    if (!canAskBanner() || document.querySelector('.optin-banner')) return;
     // на главной и без открытых шторок/окон; иначе ещё раз попробуем позже
     const busy = () => document.querySelector('.modal-overlay, .bottom-sheet-overlay, .cs-overlay, .reg-ticket-overlay, .ai-island.visible')
         || document.querySelector('.nav-item.active:not(#navHome)');
     for (let i = 0; i < 6 && busy(); i++) await new Promise(r => setTimeout(r, 10000));
-    if (busy() || !shouldAsk('home_banner')) return;
+    if (busy() || !canAskBanner()) return;
 
-    const a = readAsk();
-    writeAsk({ n: (a.n || 0) + 1, last: Date.now() });
     log('сообщения: показали карточку на главной', state.userCard?.status !== 'active', state.user);
 
     const el = document.createElement('div');
@@ -145,16 +145,15 @@ export async function maybeShowHomeBanner(delay = 1200) {
     el.setAttribute('role', 'dialog');
     el.innerHTML = `
         <div class="optin-banner-top">
-            <span class="optin-banner-ic">🌿</span>
+            <span class="optin-banner-ic">🌧️</span>
             <div class="optin-banner-body">
-                <div class="optin-banner-title">мы не шумим</div>
-                <div class="optin-banner-text">но если появится свободное место, закрытое событие или предложение только для своих – скажем первым. выключить можно в один тап</div>
+                <div class="optin-banner-title">вдруг хайк перенесут?</div>
+                <div class="optin-banner-text">о переносах, новой дате и месте встречи мы пишем в бот. включи сообщения – и ничего не пропустишь 🤍</div>
             </div>
-            <button class="optin-banner-x" data-optin="later" aria-label="закрыть">✕</button>
         </div>
         <div class="optin-banner-btns">
-            <button class="optin-banner-yes" data-optin="yes">разрешить писать</button>
-            <button class="optin-banner-no" data-optin="later">не надо</button>
+            <button class="optin-banner-yes" data-optin="yes">включить</button>
+            <button class="optin-banner-no" data-optin="later">не сейчас</button>
         </div>`;
     document.body.appendChild(el);
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-on')));
@@ -163,7 +162,7 @@ export async function maybeShowHomeBanner(delay = 1200) {
         haptic();
         close();
         if (b.dataset.optin === 'yes') requestAccess('home_banner');
-        else log('сообщения: карточка – не надо', state.userCard?.status !== 'active', state.user);
+        else { writeAsk({ bannerDeclined: Date.now() }); log('сообщения: карточка – не сейчас', state.userCard?.status !== 'active', state.user); }
     }));
 }
 
