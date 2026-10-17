@@ -53,6 +53,9 @@
       .then(function () { moreBusy = false; renderMore(); });
   }
   var MORE = MORE_SETS.home.concat(MORE_SETS.rec);
+  // товары из вариантов боксов в «собери корзину» не повторяем
+  var INBOX = {};
+  Object.keys(BOXES).forEach(function (k) { BOXES[k].slots.forEach(function (s) { s[2].forEach(function (id) { INBOX[id] = 1; }); }); });
   var FREE = 2000, extra = {};
   var $ = function (id) { return document.getElementById(id); };
   var root = $('hi');
@@ -171,7 +174,7 @@
     $('hi-left').innerHTML = left ? 'бокс и добавленное – ' + rub(total) + '. до бесплатной доставки осталось <b>' + rub(left) + '</b>' : '🎉 доставка по Ялте – бесплатно';
     $('hi-bar').style.width = Math.min(100, total / FREE * 100) + '%';
     root.querySelectorAll('.hi-mtab').forEach(function (t) { t.classList.toggle('is-on', t.dataset.m === moreTab); });
-    var all = avail(MORE_SETS[moreTab]).concat(avail(moreLoaded[moreTab]));
+    var all = avail(MORE_SETS[moreTab]).concat(avail(moreLoaded[moreTab])).filter(function (id) { return !INBOX[id]; });
     var canMore = all.length > moreVis[moreTab] || !moreDone[moreTab];
     $('hi-more').innerHTML = all.slice(0, moreVis[moreTab]).map(function (id) {
       var p = P[id];
@@ -194,9 +197,9 @@
     var d = $('hi-date').value, p = d ? d.split('-') : null;
     return 'Хайкинг бокс · заберу на старте хайка' + (p ? ' ' + p[2] + '.' + p[1] : '') + (route ? ' · ' + route : '');
   }
-  function pickPickup(n) {
+  function pickPickup(n, known) {
     // находим в корзине способ «самовывоз» и выбираем его; если не нашли – оставляем выбор человеку
-    return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (res) { return res.json(); }).then(function (cart) {
+    return (known ? Promise.resolve(known) : fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (res) { return res.json(); })).then(function (cart) {
       var pk = (cart.shipping_rates || [])[0]; if (!pk) return;
       var rate = (pk.shipping_rates || []).filter(function (x) { return /pickup/i.test(x.method_id) || /самовывоз/i.test(x.name); })[0];
       if (!rate || rate.selected) return;
@@ -279,29 +282,35 @@
     if (note && navigator.clipboard) navigator.clipboard.writeText(note).catch(function () {});
     btn.disabled = true; btn.textContent = 'кладём в корзину…';
     var nonce = function () { return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) { return r.headers.get('Nonce'); }); };
+    var n0;
     nonce()
       .then(function (n) {
+        n0 = n;
+        var reqs = items.map(function (it) {
+          return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: it[0], quantity: it[1] } };
+        });
+        if (hasCard) reqs.push({ path: '/wc/store/v1/cart/apply-coupon', method: 'POST', headers: { 'Nonce': n }, body: { code: atob('aW50ZWxsaWdlbnQ=') } });
         return fetch('/wp-json/wc/store/v1/batch', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json', 'Nonce': n },
-          body: JSON.stringify({ requests: items.map(function (it) {
-            return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: it[0], quantity: it[1] } };
-          }) })
+          body: JSON.stringify({ requests: reqs })
         });
       })
       .then(function (r) {
         if (!r.ok) throw new Error(r.status);
-        if (!hasCard) return;
-        return nonce().then(function (n2) {
-          return fetch('/wp-json/wc/store/v1/cart/apply-coupon', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Nonce': n2 }, body: JSON.stringify({ code: atob('aW50ZWxsaWdlbnQ=') }) });
+        if (wayNow === 'home') return;
+        return r.json().then(function (d) {
+          // последний ответ batch – свежая корзина со способами доставки, отдельный запрос за ней не нужен
+          var rs = (d && d.responses) || [], cart = null;
+          for (var k = rs.length - 1; k >= 0 && !cart; k--) if (rs[k].body && rs[k].body.shipping_rates) cart = rs[k].body;
+          return pickPickup(n0, cart);
         }).catch(function () {});
       })
-      .then(function () { if (wayNow !== 'home') return nonce().then(pickPickup); })
       .then(function () {
         if (!note) { location.href = '/checkout/'; return; }
         msg.innerHTML = '✓ скопировали: <b>' + note.replace(/</g, '') + '</b> – вставь в комментарий к заказу';
         btn.textContent = 'переходим к оформлению…';
-        setTimeout(function () { location.href = '/checkout/'; }, 2200);
+        setTimeout(function () { location.href = '/checkout/'; }, 1500);
       })
       .catch(function () { btn.disabled = false; btn.textContent = 'заказать'; msg.textContent = 'не получилось добавить в корзину – попробуй ещё раз'; });
   });
