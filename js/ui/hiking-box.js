@@ -18,7 +18,9 @@ function shopUrl(hike, boxKey, custom) {
     if (route) q.set('route', route);
     if (state.userCard?.status === 'active') q.set('card', '1');
     q.set('utm_source', 'intelligentsia');
-    return `${SHOP_URL}?${q}`;
+    // имя – после #: эта часть ссылки не уходит на сервер магазина, страница сама склонит «для Макса»
+    const name = String(state.user?.first_name || '').trim().split(/\s+/)[0].slice(0, 30);
+    return `${SHOP_URL}?${q}${name ? '#name=' + encodeURIComponent(name) : ''}`;
 }
 
 
