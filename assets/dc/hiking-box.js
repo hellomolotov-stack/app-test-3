@@ -321,7 +321,7 @@
     if (e.target.closest('#hi-card-btn')) {
       e.preventDefault();
       var cm = $('hi-modal');
-      cm.innerHTML = '<div class="hi-modal-c"><button type="button" class="hi-modal-x" aria-label="закрыть">✕</button><img src="https://app-test-3-delta.vercel.app/assets/card-front.jpg" alt="" style="height:auto;max-height:200px;object-fit:contain;background:none"><b>карта интеллигента</b><p class="hi-modal-d" style="margin-top:10px!important">клубная карта хайкинг интеллигенции: хайки с клубом и привилегии партнёров. в «Жить здорово» по карте – скидка 10% на продукты, и на хайкинг бокс тоже.</p><a class="hi-btn hi-modal-b" href="https://t.me/yaltahiking_bot?startapp=buy_card" target="_blank" rel="noopener">узнать подробнее в приложении клуба</a></div>';
+      cm.innerHTML = '<div class="hi-modal-c"><button type="button" class="hi-modal-x" aria-label="закрыть">✕</button><img src="https://app-test-3-delta.vercel.app/assets/card-front.jpg" alt="" style="height:auto;max-height:200px;object-fit:contain;background:none"><b>карта интеллигента</b><p class="hi-modal-d" style="margin-top:10px!important">клубная карта, с которой хайкинги и все события клуба становятся бесплатными, а в городе и онлайне появляются скидки и привилегии. например, в «Жить здорово» по карте любой заказ – со скидкой 10% на продукты и на хайкинг бокс тоже.</p><a class="hi-btn hi-modal-b" href="https://t.me/yaltahiking_bot?startapp=buy_card" target="_blank" rel="noopener">узнать о карте больше</a></div>';
       cm.hidden = false; document.documentElement.style.overflow = 'hidden'; return;
     }
     if (e.target.closest('.hi-club-btn')) {
