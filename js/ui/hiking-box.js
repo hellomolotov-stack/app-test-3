@@ -172,7 +172,6 @@ export function openHikingBox(fromEl, hike, isGuest) {
                 <div class="hb-tap-hint">нажми на продукт – расскажем о нём</div>
                 <div class="hb-warn"></div>
                 <div class="hb-swaps"><span class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
-                <div class="hb-more"><b>более 100 продуктов на выбор</b> – собери бокс полностью под свои вкусы</div>
                 <div class="hb-label">как получить</div>
                 <div class="hb-ways">
                     <div class="hb-way"><span>🚚</span><b>доставка по Ялте</b><small>накануне</small></div>
@@ -187,7 +186,8 @@ export function openHikingBox(fromEl, hike, isGuest) {
                     </div>
                     <small class="hb-price-note"></small>
                 </div>
-                <div class="hb-fair"><b>без наценки</b> – по прямой цене магазина. мы получаем выгоду только от продажи карты интеллигента</div>
+                <div class="hb-facts"><div><b>100+</b><span>продуктов на выбор – собери бокс под свои вкусы</span></div><div><b>0%</b><span>нашей наценки – по прямой цене магазина</span></div></div>
+                <div class="hb-why"><span>почему мы это сделали</span><p>сами часто стояли в очередях перед хайком и брали что попало. поэтому нашли в Ялте магазин, где основатель подходит к каждому продукту с любовью: всё в нём – про полезную и при этом вкусную еду. это отлично совпадает с нашей философией хайкинга</p></div>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
             </div>
             <div class="hb-pop" hidden></div>
