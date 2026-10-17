@@ -172,6 +172,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
                 <div class="hb-tap-hint">нажми на продукт – расскажем о нём</div>
                 <div class="hb-warn"></div>
                 <div class="hb-swaps"><span class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
+                <div class="hb-more"><b>более 100 продуктов на выбор</b> – батончики, вафли, чипсы, печенье, напитки. собери бокс под себя</div>
                 <div class="hb-label">как получить</div>
                 <div class="hb-ways">
                     <div class="hb-way"><span>🚚</span><b>доставка по Ялте</b><small>накануне</small></div>
@@ -241,12 +242,14 @@ export function openHikingBox(fromEl, hike, isGuest) {
         hidePop();
         log(`hiking box: вкладка ${BOXES[t.dataset.box].tab} – ${hike.title}`, isGuest, state.user);
         showBox(t.dataset.box);
+        if (!hintedBoxes.has(current)) setTimeout(fingerHint, 450);
     }));
     // карточка продукта: нажал на продукт в коллаже – снизу всплывает, что это и чем заменить
     const pop = overlay.querySelector('.hb-pop');
     const unselect = () => wrap.querySelectorAll('.hc-p.is-sel').forEach(i => i.classList.remove('is-sel'));
     const hidePop = () => { unselect(); pop.classList.remove('is-on'); setTimeout(() => { if (!pop.classList.contains('is-on')) pop.hidden = true; }, 200); };
     let hinted = false;
+    const hintedBoxes = new Set(); // «палец» показываем один раз на каждой вкладке
     wrap.addEventListener('click', e => {
         // нажать можно на сам продукт или на его подпись с «i»
         const note = e.target.closest('.hc-note');
@@ -271,7 +274,8 @@ export function openHikingBox(fromEl, hike, isGuest) {
     overlay.querySelector('.hb-scroll').addEventListener('scroll', () => { if (!pop.hidden) hidePop(); }, { passive: true });
     // подсказка как у карты: «палец» дважды тапает по продуктам, продукт подпрыгивает – видно, что на них можно нажимать
     const fingerHint = () => {
-        if (hinted || !overlay.isConnected) return;
+        if (hinted || !overlay.isConnected || hintedBoxes.has(current)) return;
+        hintedBoxes.add(current);
         const imgs = [...wrap.querySelectorAll('.hc-p')];
         const seq = [imgs[0], imgs[Math.min(2, imgs.length - 1)]].filter(Boolean);
         const f = document.createElement('div');
