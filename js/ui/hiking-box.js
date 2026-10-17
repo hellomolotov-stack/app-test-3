@@ -165,14 +165,14 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
                 <div class="hb-title">хайкинг бокс</div>
-                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой<em>а ещё не стоишь в очередях</em></div>
+                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой. а ещё не стоишь в очередях и не переплачиваешь за наценку сетевых магазинов</div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
                     `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${rub(b.price)}</small></button>`).join('')}</div>
                 <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
                 <div class="hb-tap-hint">нажми на продукт – расскажем о нём</div>
                 <div class="hb-warn"></div>
                 <div class="hb-swaps"><span class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
-                <div class="hb-more"><b>более 100 продуктов на выбор</b> – батончики, вафли, чипсы, печенье, напитки. собери бокс под себя</div>
+                <div class="hb-more"><b>более 100 продуктов на выбор</b> – собери бокс полностью под свои вкусы</div>
                 <div class="hb-label">как получить</div>
                 <div class="hb-ways">
                     <div class="hb-way"><span>🚚</span><b>доставка по Ялте</b><small>накануне</small></div>
@@ -228,7 +228,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         overlay.querySelector('.hb-price-k').textContent = `${b.tab} бокс`;
         overlay.querySelector('.hb-p-full b').textContent = rub(b.price);
         overlay.querySelector('.hb-p-card b').textContent = rub(cardPrice(b.price));
-        overlay.querySelector('.hb-price-note').textContent = `${b.count} по ценам dietcakes.ru`;
+        overlay.querySelector('.hb-price-note').textContent = 'по ценам dietcakes.ru';
         // на кнопке: без карты – полная цена; с картой – полная зачёркнута и цена со скидкой
         overlay.querySelector('.hb-card-hint b').textContent = rub(cardPrice(b.price));
         overlay.querySelector('.hb-buy-full').innerHTML = `взять бокс на хайк · `
