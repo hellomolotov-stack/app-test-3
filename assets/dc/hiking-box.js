@@ -129,7 +129,12 @@
     .then(function (lists) {
       var list = [].concat.apply([], lists);
       list.forEach(function (p) { P[p.id] = p; });
-      Object.keys(BOXES).forEach(function (k) { sel[k] = BOXES[k].slots.map(function (s) { var f = avail(s[2])[0]; return f ? [[f, 1]] : []; }); });
+      // лёгкий – тот же состав, что в коллаже приложения; в остальных категориях по умолчанию ничего
+      var PRE = { light: [14965, 1868, 13874, 2862, 15026] };
+      Object.keys(BOXES).forEach(function (k) { sel[k] = BOXES[k].slots.map(function (s) {
+        if (PRE[k]) return avail(s[2]).filter(function (id) { return PRE[k].indexOf(id) >= 0; }).map(function (id) { return [id, 1]; });
+        var f = avail(s[2])[0]; return f ? [[f, 1]] : [];
+      }); });
       render();
       hideLoad();
     })

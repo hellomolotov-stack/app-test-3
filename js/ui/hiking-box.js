@@ -28,28 +28,28 @@ function shopUrl(hike, boxKey, custom) {
 // Два универсальных бокса – человек выбирает только «лёгкий» или «сытный», а начинку меняет уже в магазине.
 // Коллаж нарисован на 375px: items – картинки (left/top/размер/поворот), notes – рукописные подписи, arrows – стрелки.
 // Цены сайта на 15.10.2026:
-//   лёгкий 446 ₽ = батончик Bombbar 139 + чипсы Bombbar 92 + Qwikler 88 + пастила Фрутилад 77 + вода 50
+//   лёгкий 455 ₽ = CHIKABAR тирамису 118 + чипсы Bombbar «Стейк» 118 + гель Bombbar 92 + CHIKA CHIKERS 77 + вода 50
 //   сытный 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50
 const BOXES = {
     light: {
-        tab: 'лёгкий', price: 446, count: 'пять продуктов', h: 470,
+        tab: 'лёгкий', price: 455, count: 'пять продуктов', h: 470,
         items: [
-            ['chips', 'height:190px; left:36px; top:66px; transform:rotate(-7deg); z-index:2'],
-            ['water', 'height:162px; left:282px; top:62px; transform:rotate(6deg); z-index:1'],
-            ['bar', 'width:226px; left:34px; top:240px; transform:rotate(-8deg); z-index:5'],
-            ['qwikler', 'width:200px; left:158px; top:318px; transform:rotate(7deg); z-index:6'],
-            ['frut', 'width:190px; left:16px; top:334px; transform:rotate(-4deg); z-index:7'],
+            ['steak', 'height:196px; left:22px; top:64px; transform:rotate(-7deg); z-index:3'],
+            ['gel', 'height:150px; left:204px; top:66px; transform:rotate(8deg); z-index:4'],
+            ['water', 'height:180px; left:272px; top:124px; transform:rotate(7deg); z-index:2'],
+            ['chikabar', 'width:232px; left:14px; top:276px; transform:rotate(-6deg); z-index:5'],
+            ['chikers', 'width:204px; left:156px; top:330px; transform:rotate(6deg); z-index:6'],
         ],
         notes: [
-            ['left:24px; top:16px', 'чипсы', 'хрустящие с белком', false, 'chips'],
-            ['right:24px; top:16px', 'вода', 'пол-литра', true, 'water'],
-            ['right:24px; top:236px', 'батончик', '20 г белка', true, 'bar'],
-            ['left:24px; top:414px', 'пастила', 'яблоко и клюква', false, 'frut'],
-            ['right:24px; top:414px', 'Qwikler', 'орехи без сахара', true, 'qwikler'],
+            ['left:24px; top:16px', 'чипсы', 'стейк на гриле', false, 'steak'],
+            ['left:180px; top:12px', 'гель', 'быстрая энергия', false, 'gel'],
+            ['right:20px; top:40px', 'вода', 'пол-литра', true, 'water'],
+            ['left:24px; top:414px', 'батончик', 'тирамису', false, 'chikabar'],
+            ['right:24px; top:414px', 'CHIKA', 'арахис и карамель', true, 'chikers'],
         ],
-        arrows: ['M50 56 C 54 66, 60 74, 70 84', 'M322 56 C 318 62, 316 66, 312 72', 'M300 280 C 294 290, 284 294, 270 294',
-            'M44 412 C 46 404, 50 398, 58 392', 'M322 412 C 320 402, 314 396, 306 390'],
-        swaps: ['батончик → другой вкус', 'чипсы → палочки', 'пастила → печенье'],
+        arrows: ['M50 56 C 54 66, 60 74, 70 84', 'M196 52 C 200 60, 206 66, 216 72', 'M338 80 C 336 94, 330 106, 320 116',
+            'M44 412 C 46 398, 52 388, 64 378', 'M322 412 C 320 402, 314 396, 306 390'],
+        swaps: ['батончик → другой вкус', 'чипсы → палочки', 'гель → энергетический шот'],
     },
     optimal: {
         tab: 'сытный', price: 854, count: 'шесть продуктов', h: 500,
@@ -77,6 +77,10 @@ const BOXES = {
 };
 // карточка продукта по нажатию на него в коллаже: название, вес, цена (dietcakes.ru на 15.10.2026), зачем он на хайке, чем заменить
 const PRODUCTS = {
+    steak: { name: 'протеиновые чипсы Bombbar «Стейк на гриле»', w: '50 г', price: 118, why: 'солёное и хрустящее – возвращает соль, которую уносит пот', swap: 'другие вкусы, протеиновые палочки' },
+    gel: { name: 'питьевой гель Bombbar «Ягодный микс»', w: '60 г', price: 92, why: 'быстрая энергия на крутом подъёме – пьётся на ходу', swap: 'энергетический шот, изотоник' },
+    chikabar: { name: 'батончик CHIKABAR мини «Тирамису»', w: '45 г', price: 118, why: 'белок без сахара – держит сытость до привала', swap: 'Bombbar, ROCKET, другие вкусы CHIKABAR' },
+    chikers: { name: 'батончик CHIKA CHIKERS «Арахис и карамель»', w: '40 г', price: 77, why: 'арахис и белок – быстрый перекус без сахара', swap: 'Qwikler, Snaq Fabriq' },
     pesto: { name: 'сэндвич с песто', w: '1 шт', price: 318, why: 'полноценный обед на вершине – наедаешься и не тяжелеешь', swap: 'ролл с фалафелем, сэндвич с лососем, лаваш с тофу' },
     shake: { name: 'протеиновый коктейль Bombbar', w: '350 мл', price: 143, why: '24 г белка – мышцы восстанавливаются ещё на тропе', swap: 'энергетик, изотоник, лимонад без сахара' },
     water: { name: 'вода Bombbar', w: '0,5 л', price: 50, why: 'глоток на каждом привале – основу 1,5 л всё равно бери свою', swap: 'изотоник, лимонад без сахара' },
