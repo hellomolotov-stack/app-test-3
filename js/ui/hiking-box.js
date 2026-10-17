@@ -93,7 +93,7 @@ const PRODUCTS = {
     qwikler: { name: 'батончик Qwikler «Орех в карамели»', w: '40 г', price: 88, why: 'орехи без сахара – быстрая энергия на крутом участке', swap: 'другие вкусы Qwikler, фруктово-ореховый батончик' },
     frut: { name: 'пастила «Фрутилад» яблоко и клюква', w: '30 г', price: 77, why: 'лёгкое фруктовое сладкое, не тает в рюкзаке', swap: 'белёвская пастила, печенье' },
 };
-const DEFAULT_BOX = 'optimal';
+const DEFAULT_BOX = 'light';
 const MIN_PRICE = Math.min(...Object.values(BOXES).map(b => b.price));
 const CARD_DISCOUNT = 0.10; // скидка владельцам карты интеллигента
 const rub = n => `${n.toLocaleString('ru-RU')} ₽`;
@@ -165,7 +165,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
                 <div class="hb-title">хайкинг бокс</div>
-                <div class="hb-sub">еда и вода на весь хайк в одной коробке. получаешь перед стартом – и не думаешь, что взять с собой</div>
+                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой<em>а ещё не стоишь в очередях</em></div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
                     `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${rub(b.price)}</small></button>`).join('')}</div>
                 <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
@@ -186,7 +186,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
                     </div>
                     <small class="hb-price-note"></small>
                 </div>
-                <div class="hb-fair"><b>без наценки</b> – по прямой цене магазина. самые заботливые цены по всей большой Ялте</div>
+                <div class="hb-fair"><b>без наценки</b> – по прямой цене магазина. мы получаем выгоду только от продажи карты интеллигента</div>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
             </div>
             <div class="hb-pop" hidden></div>

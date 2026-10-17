@@ -6326,3 +6326,8 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .cs-calc-lbl { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; color: rgba(255, 255, 255, .45); }
 .cs-calc-sum { margin-top: 12px; text-align: center; font-size: 13px; color: rgba(255, 255, 255, .75); }
 .cs-calc-sum b { color: #fff; }
+
+/* хайкинг бокс: подпись с курсивом, плашка цен на всю ширину, «настроить свой бокс» не обрезана */
+.hb-sub em { display: block; margin-top: 4px; font-style: italic; color: rgba(255, 255, 255, .55); }
+.hb-scroll > .hb-price { max-width: none; }
+.hb-bar .hb-custom { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; margin: 0; padding: 0 16px; border-radius: 30px; line-height: 1; }
