@@ -165,7 +165,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
                 <div class="hb-title">хайкинг бокс</div>
-                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой. а ещё не стоишь в очередях и не переплачиваешь за наценку сетевых магазинов</div>
+                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой<em>а ещё не стоишь в очередях и не переплачиваешь за наценку сетевых магазинов</em></div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
                     `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${rub(b.price)}</small></button>`).join('')}</div>
                 <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
