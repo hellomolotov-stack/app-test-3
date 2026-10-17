@@ -112,10 +112,35 @@
     }).join('');
   }
 
+  // способ получения: «в день хайка» и «самовывоз» – в корзине сразу выбираем самовывоз магазина;
+  // для хайка добавляем строку с датой и маршрутом (копируем – пока на сайте нет кода, который вставит её сам)
+  var wayNow = 'hike';
+  var WAY_MSG = {
+    hike: 'при оформлении уже будет выбран самовывоз – бокс заберёт организатор и отдаст тебе на старте маршрута. строку с датой хайка мы скопируем – вставь её в комментарий к заказу',
+    pickup: 'при оформлении уже будет выбран самовывоз – заберёшь бокс в магазине',
+    home: 'товары добавятся в корзину – доставку выберешь при оформлении заказа'
+  };
+  function setWayMsg() { $('hi-msg').textContent = WAY_MSG[wayNow]; }
+  setWayMsg();
+  function hikeNote() {
+    var d = $('hi-date').value, p = d ? d.split('-') : null;
+    return 'Хайкинг бокс · заберу на старте хайка' + (p ? ' ' + p[2] + '.' + p[1] : '') + (route ? ' · ' + route : '');
+  }
+  function pickPickup(n) {
+    // находим в корзине способ «самовывоз» и выбираем его; если не нашли – оставляем выбор человеку
+    return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (res) { return res.json(); }).then(function (cart) {
+      var pk = (cart.shipping_rates || [])[0]; if (!pk) return;
+      var rate = (pk.shipping_rates || []).filter(function (x) { return /pickup/i.test(x.method_id) || /самовывоз/i.test(x.name); })[0];
+      if (!rate || rate.selected) return;
+      return fetch('/wp-json/wc/store/v1/cart/select-shipping-rate', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Nonce': n }, body: JSON.stringify({ package_id: pk.package_id, rate_id: rate.rate_id }) });
+    }).catch(function () {});
+  }
+
   root.addEventListener('click', function (e) {
     var way = e.target.closest('.hi-way');
     if (way) {
       root.querySelectorAll('.hi-way').forEach(function (w) { w.classList.toggle('is-on', w === way); });
+      wayNow = way.dataset.way; setWayMsg();
       $('hi-date-row').hidden = way.dataset.way !== 'hike';
       $('hi-more-card').hidden = way.dataset.way !== 'home';
       if (way.dataset.way !== 'home') extra = {};
@@ -142,6 +167,11 @@
     var btn = this, msg = $('hi-msg');
     var items = pick[cur].filter(Boolean).concat(Object.keys(extra).filter(function (id) { return extra[id]; }).map(Number));
     if (!items.length) return;
+    if (wayNow === 'hike' && !$('hi-date').value) { msg.textContent = 'укажи дату хайка – соберём бокс к этому дню'; $('hi-date').focus(); $('hi-date-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    var note = wayNow === 'hike' ? hikeNote() : '';
+    // строка для комментария: в буфер обмена (сразу, пока действует нажатие) и в cookie – для будущей вставки кодом на сайте
+    document.cookie = 'hi_note=' + encodeURIComponent(note) + ';path=/;max-age=' + (note ? 7200 : 0);
+    if (note && navigator.clipboard) navigator.clipboard.writeText(note).catch(function () {});
     btn.disabled = true; btn.textContent = 'кладём в корзину…';
     var nonce = function () { return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) { return r.headers.get('Nonce'); }); };
     nonce()
@@ -161,7 +191,13 @@
           return fetch('/wp-json/wc/store/v1/cart/apply-coupon', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Nonce': n2 }, body: JSON.stringify({ code: atob('aW50ZWxsaWdlbnQ=') }) });
         }).catch(function () {});
       })
-      .then(function () { location.href = '/checkout/'; })
+      .then(function () { if (wayNow !== 'home') return nonce().then(pickPickup); })
+      .then(function () {
+        if (!note) { location.href = '/checkout/'; return; }
+        msg.innerHTML = '✓ скопировали: <b>' + note.replace(/</g, '') + '</b> – вставь в комментарий к заказу';
+        btn.textContent = 'переходим к оформлению…';
+        setTimeout(function () { location.href = '/checkout/'; }, 2200);
+      })
       .catch(function () { btn.disabled = false; btn.textContent = 'заказать'; msg.textContent = 'не получилось добавить в корзину – попробуй ещё раз'; });
   });
 })();
