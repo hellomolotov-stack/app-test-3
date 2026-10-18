@@ -5,7 +5,10 @@ import { state } from '../state.js';
 import { haptic, openLink } from '../utils.js';
 import { log } from '../api.js';
 
-export const HIKING_BOX_TEST_IDS = ['7845375334']; // @hellointelligent
+export const HIKING_BOX_TEST_IDS = ['7845375334', '163665735']; // @hellointelligent, @maxmolotov
+// тест «как видит владелец карты»: этим аккаунтам бокс показываем как владельцам карты, даже если карты нет
+const HIKING_BOX_AS_MEMBER_IDS = ['163665735']; // @maxmolotov
+const boxMember = () => state.userCard?.status === 'active' || HIKING_BOX_AS_MEMBER_IDS.includes(String(state.user?.id || ''));
 const SHOP_URL = 'https://dietcakes.ru/hiking-intelligence/'; // наша страница на сайте «Жить здорово»
 
 // ссылка на страницу бокса: бокс, дата и маршрут хайка; владельцу карты – card=1 (страница сама применит промокод INTELLIGENT)
@@ -16,7 +19,7 @@ function shopUrl(hike, boxKey, custom) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(hike?.date || '')) q.set('hike', hike.date);
     const route = String(hike?.title || '').replace(/^(хайк|маршрут|тропа)\s+/i, '').replace(/^на\s+/i, '').trim();
     if (route) q.set('route', route);
-    if (state.userCard?.status === 'active') q.set('card', '1');
+    if (boxMember()) q.set('card', '1');
     q.set('utm_source', 'intelligentsia');
     // имя – после #: эта часть ссылки не уходит на сервер магазина, страница сама склонит «для Макса»
     const name = String(state.user?.first_name || '').trim().split(/\s+/)[0].slice(0, 30);
@@ -207,7 +210,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
     wrap.style.setProperty('--hc-k', k.toFixed(3));
     // вкладки «лёгкий / сытный»: меняем коллаж, цену, замены и пометку про сэндвич
     let current = DEFAULT_BOX;
-    const isMember = state.userCard?.status === 'active'; // владельцу карты цена на кнопке – сразу со скидкой
+    const isMember = boxMember(); // владельцу карты цена на кнопке – сразу со скидкой
     // надпись на кнопке в одну строку: если не влезает (узкий экран, цена со скидкой) – чуть уменьшаем шрифт
     const fitBuy = () => {
         const btn = overlay.querySelector('.hb-buy-full');
