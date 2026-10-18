@@ -6345,3 +6345,4 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-why span { display: block; font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: rgba(255, 255, 255, .45); }
 .hb-why p { margin: 8px 0 0; padding-left: 12px; border-left: 2px solid rgba(214, 170, 110, .6); font-style: italic; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, .78); }
 .hb-bar .hb-custom { border-radius: 12px; } /* как у жёлтой кнопки */
+.hb-card-hint.is-member { cursor: default; }

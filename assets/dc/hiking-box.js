@@ -197,7 +197,10 @@
     var add = 0, extraIds = Object.keys(extra).filter(function (id) { return extra[id] && P[id]; });
     extraIds.forEach(function (id) { add += price(P[id]); });
     var total = boxSum + add, left = Math.max(0, FREE - total);
-    $('hi-sum').innerHTML = rub(total) + '<em>' + rub(total * 0.9) + ' с картой<span class="hi-sp-x"> интеллигента</span></em>';
+    // у владельца карты крупно – сумма со скидкой (её он и заплатит), полная – мелко и зачёркнута
+    $('hi-sum').innerHTML = hasCard
+      ? rub(total * 0.9) + '<em><s>' + rub(total) + '</s> по твоей карте −10%</em>'
+      : rub(total) + '<em>' + rub(total * 0.9) + ' с картой<span class="hi-sp-x"> интеллигента</span></em>';
     var n = allSel().reduce(function (a, x) { return a + x[1]; }, 0) + extraIds.length;
     $('hi-sumk').textContent = BOXES[cur].name + ' · ' + n + ' ' + form(n, 'продукт', 'продукта', 'продуктов');
     $('hi-left').innerHTML = left ? 'бокс и добавленное – ' + rub(total) + '. до бесплатной доставки осталось <b>' + rub(left) + '</b>' : '🎉 доставка по Ялте – бесплатно';

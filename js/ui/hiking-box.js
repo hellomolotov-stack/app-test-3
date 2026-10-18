@@ -233,7 +233,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         overlay.querySelector('.hb-p-card b').textContent = rub(cardPrice(b.price));
         overlay.querySelector('.hb-price-note').textContent = 'по ценам dietcakes.ru';
         // на кнопке: без карты – полная цена; с картой – полная зачёркнута и цена со скидкой
-        overlay.querySelector('.hb-card-hint b').textContent = rub(cardPrice(b.price));
+        if (!isMember) overlay.querySelector('.hb-card-hint b').textContent = rub(cardPrice(b.price));
         overlay.querySelector('.hb-buy-full').innerHTML = `взять бокс на хайк · `
             + (isMember ? `<s>${rub(b.price)}</s> ${rub(cardPrice(b.price))}` : rub(b.price));
         fitBuy();
@@ -333,7 +333,13 @@ export function openHikingBox(fromEl, hike, isGuest) {
     // «оформить карту» в плашке цен – только тем, у кого карты нет
     // и строка над кнопкой покупки: «с картой интеллигента – 401 ₽ · оформить карту ›»
     overlay.querySelectorAll('.hb-card-hint').forEach(el => {
-        el.hidden = isMember;
+        // владельцу карты – та же плашка, но без «оформить»: просто напоминание о его скидке
+        if (isMember) {
+            el.classList.add('is-member');
+            el.querySelector('span').innerHTML = 'по твоей карте интеллигента – <b>скидка 10%</b>';
+            el.querySelector('em').textContent = '✓';
+            return;
+        }
         el.addEventListener('click', () => {
             haptic();
             log(`hiking box: оформить карту – ${BOXES[current].tab}`, isGuest, state.user);
