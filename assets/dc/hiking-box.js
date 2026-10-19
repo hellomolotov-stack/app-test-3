@@ -162,16 +162,15 @@
     var html = '';
     b.slots.forEach(function (s, i) {
       var list = avail(s[2]); if (!list.length) return;
-      var base = price(P[list[0]]);
       var chosen = sel[cur][i];
       html += '<div class="hi-slot"><div class="hi-slot-k"><b>' + s[0] + '</b><div class="hi-picked">'
         + (chosen.length ? chosen.slice(0, 4).map(function (x) { return '<button type="button" class="hi-pk" data-go="' + x[0] + '" data-slot="' + i + '"><img src="' + img(P[x[0]]) + '" alt="">' + (x[1] > 1 ? '<i>' + x[1] + '</i>' : '') + '</button>'; }).join('') + (chosen.length > 4 ? '<span class="hi-pk-n">+' + (chosen.length - 4) + '</span>' : '') : '<span class="hi-pk-0">не выбрано</span>')
         + '</div><small>' + s[1] + ' · ' + list.length + ' ' + form(list.length, 'вариант', 'варианта', 'вариантов') + (list.length > 1 ? ' →' : '') + '</small></div><div class="hi-rw"><button type="button" class="hi-arr is-l" data-arr="-1" aria-label="назад"></button><div class="hi-row">'
         + list.map(function (id) {
-            var d = Math.round(price(P[id]) - base), g = got(i, id);
+            var g = got(i, id);
             return '<div class="hi-opt' + (g ? ' is-on' : '') + '" role="button" tabindex="0" data-i="' + i + '" data-id="' + id + '"><button type="button" class="hi-i" data-info="' + id + '" data-slot="' + i + '" aria-label="подробнее">i</button><div class="hi-ph"><img src="' + img(P[id]) + '" alt="" loading="lazy">'
               + (g ? '<div class="hi-qty"><button type="button" data-q="-1" data-id="' + id + '" data-slot="' + i + '" aria-label="' + (g[1] > 1 ? 'меньше' : 'убрать') + '">' + (g[1] > 1 ? '−' : TRASH) + '</button><span>' + g[1] + '</span><button type="button" data-q="1" data-id="' + id + '" data-slot="' + i + '" aria-label="больше">+</button></div>' : '')
-              + '</div><span>' + short(P[id].name) + '</span><b>' + rub(price(P[id])) + (d ? '<i>' + (d > 0 ? '+' : '−') + Math.abs(d) + '</i>' : '') + '</b></div>';
+              + '</div><span>' + short(P[id].name) + '</span><b>' + rub(price(P[id])) + '</b></div>';
           }).join('') + '</div><button type="button" class="hi-arr is-r" data-arr="1" aria-label="дальше"></button></div></div>';
     });
     if (html) html = '<p class="hi-multi">в каждой категории можно выбрать несколько товаров – нажми, чтобы добавить или убрать</p>' + html;
