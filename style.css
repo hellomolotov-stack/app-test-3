@@ -5965,16 +5965,13 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-sheet { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; max-width: 600px; margin: 0 auto;
     overflow: hidden; display: flex; flex-direction: column; box-sizing: border-box;
     border-radius: 28px 28px 0 0; border: 1px solid rgba(214, 170, 110, .4); border-bottom: 0;
-    /* Скала в расфокусе: отдельный слой, чтобы продукты и подписи оставались резкими. */
-    isolation: isolate;
-    background: #121a23;
+    /* Тёплый графит — фон из согласованного макета. */
+    background: radial-gradient(ellipse at 48% 15%, #665044 0%, #382e2b 45%, #201e1d 100%);
+    border-color: #ad967666;
     backdrop-filter: none; -webkit-backdrop-filter: none;
     box-shadow: 0 -10px 40px rgba(0, 0, 0, .45);
     transform-origin: 0 0; will-change: transform;
     transition: transform .36s cubic-bezier(.2, .9, .25, 1); }
-.hb-sheet::before { content: ''; position: absolute; inset: -16px; z-index: -1; pointer-events: none;
-    background: linear-gradient(rgba(23, 37, 42, .53), rgba(16, 27, 33, .86)), url('assets/box/rock-hd.jpg') center / cover no-repeat;
-    filter: blur(8px); }
 .hb-sheet > :not(.hb-grab) { opacity: 0; transition: opacity .2s ease; }
 .hb-overlay.is-on .hb-sheet > * { opacity: 1; transition: opacity .25s ease .18s; }
 .hb-grab { margin: 10px auto 0; flex: none; }
