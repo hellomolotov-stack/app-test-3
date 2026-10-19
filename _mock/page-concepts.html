@@ -1,0 +1,152 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Концепции страницы бокса</title>
+<style>
+*{box-sizing:border-box}
+:root{--y:#D9FD19;--kraft:#F3D9B1;--glass:rgba(18,26,35,.62);--line:rgba(255,255,255,.14);--mut:rgba(255,255,255,.66)}
+body{margin:0;font-family:Inter,-apple-system,Arial,sans-serif;color:#fff;background:#0f161d url(../assets/box/bg-rock.jpg) center/cover fixed}
+body::before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(10,16,22,.3),rgba(10,16,22,.75));z-index:-1}
+.wrap{max-width:900px;margin:0 auto;padding:24px 16px 120px}
+.tag{display:inline-block;margin:34px 0 10px;padding:5px 12px;border-radius:12px;background:#fff;color:#111;font-size:12px;font-weight:800;letter-spacing:.04em}
+.note{font-size:13px;color:var(--mut);margin:-4px 0 12px}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:28px;padding:24px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.btn{display:inline-block;border:0;border-radius:30px;padding:14px 26px;font:inherit;font-weight:800;font-size:15.5px;color:#000;background:linear-gradient(180deg,#e8ff4a,#c9ec00);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 18px rgba(0,0,0,.35)}
+.logos{display:flex;align-items:center;gap:12px}
+.logos img.h{height:30px}.logos .x{font-size:34px;font-weight:200;opacity:.75;line-height:1}
+.logos .dc{height:40px;padding:5px 10px;border-radius:12px;background:#fff}
+/* HERO A */
+.heroA{position:relative;overflow:hidden;min-height:330px;display:grid;grid-template-columns:1.1fr 1fr;gap:10px;align-items:center}
+.heroA h1{font-size:36px;line-height:1.08;margin:18px 0 10px;font-weight:800}
+.heroA p{color:var(--mut);margin:0 0 18px;line-height:1.5}
+.col{position:relative;height:300px}
+.col img{position:absolute;filter:drop-shadow(0 12px 16px rgba(0,0,0,.55))}
+/* HERO B */
+.heroB{text-align:center;padding:36px 24px}
+.heroB .logos{justify-content:center;margin-bottom:22px}
+.heroB .logos img.h{height:44px}.heroB .logos .dc{height:54px}.heroB .logos .x{font-size:46px}
+.heroB h1{font-size:40px;margin:0 0 10px;font-weight:800}
+.heroB p{color:var(--mut);margin:0 auto 20px;max-width:520px}
+.strip{display:flex;justify-content:center;gap:4px;margin:18px 0 22px}
+.strip img{height:86px;filter:drop-shadow(0 8px 10px rgba(0,0,0,.5))}
+/* HERO C */
+.ticket{display:flex;border-radius:26px;overflow:hidden;background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(22px)}
+.ticket .l{flex:1;padding:24px}
+.ticket .r{width:210px;border-left:2px dashed rgba(255,255,255,.25);padding:24px;display:flex;flex-direction:column;justify-content:center;gap:6px;background:rgba(217,253,25,.08)}
+.ticket .when{color:var(--y);font-weight:800;font-size:15px}
+.ticket h1{font-size:30px;margin:8px 0 6px}
+.ticket .r b{font-size:30px;color:var(--y)}
+.ticket .r small{color:var(--mut)}
+/* SWAP 1 – карусель вариантов в строке */
+.slot1{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.slot1:first-child{border-top:0}
+.slot1 .k b{display:block;color:var(--kraft);font-size:15px}.slot1 .k small{color:var(--mut);font-size:12.5px}
+.row{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none}
+.opt{flex:none;width:118px;border-radius:18px;background:rgba(255,255,255,.06);border:2px solid transparent;padding:8px;text-align:center;cursor:pointer;position:relative}
+.opt img{width:100%;height:80px;object-fit:contain;background:#fff;border-radius:12px}
+.opt span{display:block;font-size:12px;line-height:1.25;margin-top:6px;color:rgba(255,255,255,.85);height:30px;overflow:hidden}
+.opt b{display:block;font-size:13px;color:var(--y);margin-top:2px}
+.opt.on{border-color:var(--y);background:rgba(217,253,25,.1)}
+.opt.on::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--y);color:#000;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center}
+.opt .d{font-size:11px;color:var(--mut)}
+/* SWAP 2 – карточка + шторка с вариантами */
+.grid2{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.s2{border-radius:22px;background:rgba(255,255,255,.06);padding:12px;position:relative}
+.s2 img{width:100%;height:120px;object-fit:contain;background:#fff;border-radius:14px}
+.s2 .k{color:var(--kraft);font-weight:800;font-size:13px;margin-bottom:8px}
+.s2 .n{font-size:13px;margin:8px 0 2px}
+.s2 .sw{position:absolute;top:44px;right:18px;border-radius:14px;padding:6px 10px;font-size:12px;font-weight:800;color:#000;background:var(--y)}
+.sheet{margin-top:14px;border-radius:26px 26px 0 0;background:#151d26;border:1px solid var(--line);padding:16px 18px 20px}
+.sheet .g{width:40px;height:4px;border-radius:3px;background:rgba(255,255,255,.3);margin:0 auto 12px}
+.sheet h3{margin:0 0 4px}.sheet p{margin:0 0 12px;color:var(--mut);font-size:13.5px}
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.sg .opt{width:auto}
+/* SWAP 3 – пошагово */
+.steps{display:flex;gap:6px;margin-bottom:14px}.steps i{flex:1;height:5px;border-radius:4px;background:rgba(255,255,255,.15)}.steps i.on{background:var(--y)}
+.q{font-size:24px;font-weight:800;margin:0 0 4px}.qs{color:var(--mut);margin:0 0 14px}
+.big{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.big .opt{width:auto}.big .opt img{height:120px}
+.sticky{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(860px,calc(100% - 24px));display:flex;align-items:center;gap:14px;padding:10px 10px 10px 18px;border-radius:26px;background:rgba(15,22,30,.9);border:1px solid var(--line);backdrop-filter:blur(18px);z-index:5}
+.sticky .p{flex:1}.sticky .p b{font-size:20px;color:var(--y)}.sticky .p small{display:block;color:var(--mut);font-size:12px}
+.sticky .thumbs{display:flex}.sticky .thumbs img{width:34px;height:34px;object-fit:contain;background:#fff;border-radius:50%;border:2px solid #0f161d;margin-left:-8px}
+</style></head><body><div class="wrap">
+
+<span class="tag">ВЕРХ · A — коллаб-баннер с коллажем</span>
+<div class="note">как страницы коллабораций Nike × …, Самокат × брендов: слева логотипы и заголовок, справа живой коллаж бокса</div>
+<div class="card heroA">
+  <div>
+    <div class="logos"><img class="h" src="../assets/logo-hiking.png"><span class="x">×</span><img class="dc" src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div>
+    <h1>собери себе бокс для маршрута на Ай-Петри</h1>
+    <p>еда и вода на весь хайк. по прямым ценам магазина, получишь в начале маршрута</p>
+    <span class="btn">собрать бокс ↓</span>
+  </div>
+  <div class="col">
+    <img src="../assets/box/cut/pesto.png" style="width:190px;left:0;top:60px;transform:rotate(-10deg)">
+    <img src="../assets/box/cut/shake.png" style="height:160px;left:150px;top:10px;transform:rotate(6deg)">
+    <img src="../assets/box/cut/water.png" style="height:170px;left:250px;top:40px;transform:rotate(-6deg)">
+    <img src="../assets/box/cut/wafers.png" style="width:170px;left:40px;top:190px;transform:rotate(-6deg)">
+    <img src="../assets/box/cut/sticks.png" style="width:110px;left:210px;top:170px;transform:rotate(9deg)">
+  </div>
+</div>
+
+<span class="tag">ВЕРХ · B — постер коллаборации</span>
+<div class="note">как Glossier × …, IKEA × …: крупно два логотипа, заголовок и лента продуктов</div>
+<div class="card heroB">
+  <div class="logos"><img class="h" src="../assets/logo-hiking.png"><span class="x">×</span><img class="dc" src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div>
+  <h1>хайкинг бокс</h1>
+  <p>собрали всё, что держит энергию на маршруте, в одну коробку</p>
+  <div class="strip"><img src="../assets/box/cut/bar.png" style="height:60px;margin-top:20px"><img src="../assets/box/cut/shake.png"><img src="../assets/box/cut/chips.png"><img src="../assets/box/cut/water.png"><img src="../assets/box/cut/frut.png" style="height:50px;margin-top:30px"></div>
+  <span class="btn">собрать бокс на Ай-Петри</span>
+</div>
+
+<span class="tag">ВЕРХ · C — «билет» на конкретный хайк</span>
+<div class="note">как билет в нашем приложении: дата и маршрут слева, цена бокса справа</div>
+<div class="ticket">
+  <div class="l"><div class="logos"><img class="h" src="../assets/logo-hiking.png" style="height:24px"><span class="x" style="font-size:26px">×</span><img class="dc" style="height:32px" src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div>
+    <div class="when" style="margin-top:16px">вс, 25 октября · старт 9:00</div><h1>бокс на Ай-Петри</h1><p style="color:var(--mut);margin:0">получишь в начале маршрута</p></div>
+  <div class="r"><small>сытный бокс</small><b>854 ₽</b><small>по карте – 769 ₽</small></div>
+</div>
+
+<span class="tag">ЗАМЕНА · 1 — варианты в строке, выбор тапом</span>
+<div class="note">как комбо в Макдоналдс / Burger King и «собери боул» в Sweetgreen: все варианты видны сразу, выбранный с галочкой, листается вбок</div>
+<div class="card" id="s1"></div>
+
+<span class="tag">ЗАМЕНА · 2 — карточки + шторка с вариантами</span>
+<div class="note">как замена товара в Яндекс Лавке / настройка напитка в Starbucks: на карточке жёлтая кнопка «заменить», снизу выезжает шторка с крупными вариантами</div>
+<div class="card">
+  <div class="grid2">
+    <div class="s2"><div class="k">обед на вершине</div><img src="../assets/box/cut/pesto.png"><span class="sw">заменить</span><div class="n">сэндвич с песто</div><b style="color:var(--y)">318 ₽</b></div>
+    <div class="s2"><div class="k">восстановить силы</div><img src="../assets/box/cut/shake.png"><span class="sw">заменить</span><div class="n">коктейль Bombbar</div><b style="color:var(--y)">143 ₽</b></div>
+    <div class="s2"><div class="k">хрустящее к чаю</div><img src="../assets/box/cut/wafers.png"><span class="sw">заменить</span><div class="n">вафли CHIKALAB</div><b style="color:var(--y)">112 ₽</b></div>
+  </div>
+  <div class="sheet"><div class="g"></div><h3>восстановить силы</h3><p>выбери напиток – цена бокса пересчитается</p>
+    <div class="sg">
+      <div class="opt on"><img src="../assets/box/cut/shake.png"><span>коктейль ваниль</span><b>143 ₽</b></div>
+      <div class="opt"><img src="../assets/box/cut/shake.png" style="filter:hue-rotate(300deg)"><span>коктейль клубника</span><b>143 ₽</b></div>
+      <div class="opt"><img src="../assets/box/cut/water.png" style="filter:hue-rotate(120deg)"><span>изотоник</span><b>102 ₽ <span class="d">−41</span></b></div>
+      <div class="opt"><img src="../assets/box/cut/water.png" style="filter:hue-rotate(200deg)"><span>энергетик</span><b>139 ₽</b></div>
+    </div></div>
+</div>
+
+<span class="tag">ЗАМЕНА · 3 — пошаговый сборщик</span>
+<div class="note">как HelloFresh / конструктор пиццы в Додо: по одному вопросу на экран, крупно и весело, но дольше</div>
+<div class="card">
+  <div class="steps"><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+  <div class="q">что возьмёшь на подъём?</div><div class="qs">шаг 2 из 6 · энергия и белок</div>
+  <div class="big">
+    <div class="opt on"><img src="../assets/box/cut/bar.png"><span>батончик Bombbar шоколад-фундук</span><b>139 ₽</b></div>
+    <div class="opt"><img src="../assets/box/cut/qwikler.png"><span>Qwikler орех в карамели</span><b>88 ₽</b></div>
+    <div class="opt"><img src="../assets/box/cut/wafers.png"><span>вафли CHIKALAB</span><b>112 ₽</b></div>
+  </div>
+</div>
+</div>
+
+<div class="sticky"><div class="thumbs"><img src="../assets/box/cut/pesto.png"><img src="../assets/box/cut/shake.png"><img src="../assets/box/cut/wafers.png"><img src="../assets/box/cut/cookie.png"><img src="../assets/box/cut/sticks.png"><img src="../assets/box/cut/water.png"></div>
+<div class="p"><b>854 ₽</b><small>сытный бокс · 6 продуктов · бокс собирается внизу экрана</small></div><span class="btn">оформить</span></div>
+
+<script>
+const S=[['обед на вершине','сытно и не тяжело',[['pesto','сэндвич с песто',318],['pesto','ролл с фалафелем',318,'hue-rotate(40deg)'],['pesto','сэндвич с лососем',335,'hue-rotate(320deg)'],['pesto','лаваш с тофу',349,'hue-rotate(80deg)']]],
+['восстановить силы','белок после подъёма',[['shake','коктейль ваниль',143],['shake','коктейль клубника',143,'hue-rotate(300deg)'],['water','изотоник',102,'hue-rotate(120deg)'],['water','энергетик',139,'hue-rotate(200deg)']]],
+['хрустящее к чаю','без сахара',[['wafers','вафли кокос-миндаль',112],['wafers','вафли печенье-крем',112,'hue-rotate(200deg)'],['bar','батончик Bombbar',139],['qwikler','Qwikler',88]]]];
+document.getElementById('s1').innerHTML=S.map(([k,s,o])=>`<div class="slot1"><div class="k"><b>${k}</b><small>${s}</small></div><div class="row">${o.map((x,i)=>`<div class="opt${i?'':' on'}"><img src="../assets/box/cut/${x[0]}.png" style="${x[3]?'filter:'+x[3]:''}"><span>${x[1]}</span><b>${x[2]} ₽</b></div>`).join('')}</div></div>`).join('');
+document.addEventListener('click',e=>{const o=e.target.closest('.row .opt, .sg .opt, .big .opt');if(!o)return;o.parentNode.querySelectorAll('.opt').forEach(x=>x.classList.toggle('on',x===o));});
+</script>
+</body></html>

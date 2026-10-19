@@ -30,7 +30,7 @@ function shopUrl(hike, boxKey, custom) {
 
 // Два универсальных бокса – человек выбирает только «лёгкий» или «сытный», а начинку меняет уже в магазине.
 // Коллаж нарисован на 375px: items – картинки (left/top/размер/поворот), notes – рукописные подписи, arrows – стрелки.
-// Цены сайта на 15.10.2026:
+// Ориентиры стоимости, а не актуальная цена магазина. Итог зависит от состава и наличия:
 //   лёгкий 476 ₽ = CHIKABAR тирамису 118 + чипсы Bombbar «Стейк» 118 + гель Bombbar 92 + вафли Bombbar 98 + вода 50
 //   сытный 854 ₽ = сэндвич с песто 318 + коктейль 143 + вафли 112 + печенье 102 + палочки 129 + вода 50
 const BOXES = {
@@ -97,7 +97,6 @@ const PRODUCTS = {
     frut: { name: 'пастила «Фрутилад» яблоко и клюква', w: '30 г', price: 77, why: 'лёгкое фруктовое сладкое, не тает в рюкзаке', swap: 'белёвская пастила, печенье' },
 };
 const DEFAULT_BOX = 'light';
-const MIN_PRICE = Math.min(...Object.values(BOXES).map(b => b.price));
 const CARD_DISCOUNT = 0.10; // скидка владельцам карты интеллигента
 const rub = n => `${n.toLocaleString('ru-RU')} ₽`;
 const cardPrice = n => Math.round(n * (1 - CARD_DISCOUNT));
@@ -168,9 +167,9 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
                 <div class="hb-title">хайкинг бокс</div>
-                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой<em>а ещё не стоишь в очередях и не переплачиваешь за наценку сетевых магазинов</em></div>
+                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой</div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
-                    `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}<small>${rub(b.price)}</small></button>`).join('')}</div>
+                    `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}</button>`).join('')}</div>
                 <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
                 <div class="hb-tap-hint">нажми на продукт – расскажем о нём</div>
                 <div class="hb-warn"></div>
@@ -195,7 +194,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             </div>
             <div class="hb-pop" hidden></div>
             <div class="hb-bar">
-                <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b></b> с картой интеллигента</span><em>оформить ›</em></button>
+                <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b>скидка 10%</b> с картой интеллигента</span><em>оформить ›</em></button>
                 <button type="button" class="btn btn-yellow hb-buy hb-buy-full"></button>
                 <button type="button" class="btn hb-buy hb-custom">настроить свой бокс</button>
             </div>
@@ -208,10 +207,10 @@ export function openHikingBox(fromEl, hike, isGuest) {
     const k = Math.min(1.15, Math.min(window.innerWidth, 600) / 375);
     const wrap = overlay.querySelector('.hb-collage-wrap');
     wrap.style.setProperty('--hc-k', k.toFixed(3));
-    // вкладки «лёгкий / сытный»: меняем коллаж, цену, замены и пометку про сэндвич
+    // вкладки «лёгкий / сытный»: меняем коллаж, ориентир стоимости, замены и пометку про сэндвич
     let current = DEFAULT_BOX;
-    const isMember = boxMember(); // владельцу карты цена на кнопке – сразу со скидкой
-    // надпись на кнопке в одну строку: если не влезает (узкий экран, цена со скидкой) – чуть уменьшаем шрифт
+    const isMember = boxMember();
+    // Подгоняем надпись кнопки под узкие экраны
     const fitBuy = () => {
         const btn = overlay.querySelector('.hb-buy-full');
         btn.style.fontSize = '';
@@ -228,14 +227,12 @@ export function openHikingBox(fromEl, hike, isGuest) {
         warn.textContent = b.warn || '';
         warn.hidden = !b.warn;
         overlay.querySelector('.hb-swaps-list').innerHTML = b.swaps.map(s => `<span>${s}</span>`).join('');
-        overlay.querySelector('.hb-price-k').textContent = `${b.tab} бокс`;
+        overlay.querySelector('.hb-price-k').textContent = `${b.tab} бокс · примерная стоимость`;
         overlay.querySelector('.hb-p-full b').textContent = rub(b.price);
         overlay.querySelector('.hb-p-card b').textContent = rub(cardPrice(b.price));
-        overlay.querySelector('.hb-price-note').textContent = 'по ценам dietcakes.ru';
-        // на кнопке: без карты – полная цена; с картой – полная зачёркнута и цена со скидкой
-        if (!isMember) overlay.querySelector('.hb-card-hint b').textContent = rub(cardPrice(b.price));
-        overlay.querySelector('.hb-buy-full').innerHTML = `взять бокс на хайк · `
-            + (isMember ? `<s>${rub(b.price)}</s> ${rub(cardPrice(b.price))}` : rub(b.price));
+        overlay.querySelector('.hb-price-note').textContent = 'итоговая цена зависит от состава и наличия в магазине';
+        // На кнопке нет фиксированной суммы: актуальный состав и цену человек увидит в магазине.
+        overlay.querySelector('.hb-buy-full').textContent = 'взять бокс на хайк';
         fitBuy();
     };
     showBox(DEFAULT_BOX);
@@ -267,7 +264,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         haptic();
         log(`hiking box: продукт ${p.name}`, isGuest, state.user);
         pop.innerHTML = `<img src="assets/box/cut/${img.dataset.p}.png" alt="">
-            <div class="hb-pop-t"><b>${p.name}</b><span>${p.w} · ${rub(p.price)}</span><p>${p.why}</p><small>можно заменить: ${p.swap}</small></div>
+            <div class="hb-pop-t"><b>${p.name}</b><span>${p.w}</span><p>${p.why}</p><small>можно заменить: ${p.swap}</small></div>
             <button type="button" class="hb-pop-x" aria-label="закрыть">✕</button>`;
         pop.hidden = false;
         requestAnimationFrame(() => pop.classList.add('is-on'));
@@ -331,7 +328,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
     overlay.querySelector('.hb-close').addEventListener('click', () => { haptic(); close(); });
     // «оформить карту» в плашке цен – только тем, у кого карты нет
-    // и строка над кнопкой покупки: «с картой интеллигента – 401 ₽ · оформить карту ›»
+    // и строка над кнопкой покупки: «скидка 10% с картой интеллигента · оформить ›»
     overlay.querySelectorAll('.hb-card-hint').forEach(el => {
         // владельцу карты – та же плашка, но без «оформить»: просто напоминание о его скидке
         if (isMember) {

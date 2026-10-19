@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui;background:#ddd;display:flex;flex-wrap:wrap;gap:16px;justify-content:center;padding:16px}
+.v{width:300px;height:560px;background:rgb(250,233,234);border-radius:24px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
+.lab{position:absolute;top:12px;left:0;right:0;text-align:center;font-size:13px;font-weight:600;color:#9b4a63}
+.x{width:14px;height:14px;flex:none}
+.hl{height:38px;filter:brightness(0) opacity(.72)}
+.t{margin-top:18px;color:#c9265d;font-size:14px;font-weight:500}
+/* B: наш логотип внутри их круга */
+.b{position:relative;width:270px}
+.b img.g{width:100%;display:block}
+.b .in{position:absolute;left:0;right:0;top:66%;display:flex;align-items:center;justify-content:center;gap:8px}
+.b .hl{height:30px}
+/* C: только полоса с логотипом в белой карточке */
+.c{background:#fafafa;border-radius:28px;padding:6px 0 18px;box-shadow:0 10px 30px rgba(201,38,93,.12);display:flex;flex-direction:column;align-items:center;width:260px}
+.crop{width:260px;height:120px;overflow:hidden;position:relative;clip-path:circle(125px at 130px 61px)}
+.crop img{position:absolute;width:300px;left:-20px;top:-80px}
+.row{display:flex;align-items:center;gap:10px;margin-top:2px}
+/* D: строкой без круга – их анимация обрезана по логотипу */
+.d{display:flex;flex-direction:column;align-items:center}
+.crop2{width:260px;height:110px;overflow:hidden;position:relative;clip-path:circle(125px at 130px 57px)}
+.crop2 img{position:absolute;width:300px;left:-20px;top:-84px}
+.crop2::after{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 40px rgb(250,233,234);border-radius:20px;pointer-events:none;opacity:0}
+</style></head><body>
+<div class="v"><div class="lab">B · наш логотип внутри их круга</div>
+ <div class="b"><img class="g" src="dc-loader.gif"><div class="in"><svg class="x" viewBox="0 0 22 22"><path d="M3 3 L19 19 M19 3 L3 19" stroke="#c9265d" stroke-width="1.6" stroke-linecap="round"/></svg><img class="hl" src="/assets/logo-hiking.png"></div></div>
+ <div class="t">собираем бокс</div></div>
+<div class="v"><div class="lab">C · одна белая карточка, логотипы вплотную</div>
+ <div class="c"><div class="crop"><img src="dc-loader.gif"></div><div class="row"><svg class="x" viewBox="0 0 22 22"><path d="M3 3 L19 19 M19 3 L3 19" stroke="#c9265d" stroke-width="1.6" stroke-linecap="round"/></svg><img class="hl" src="/assets/logo-hiking.png"></div></div>
+ <div class="t">собираем бокс</div></div>
+<div class="v" style="background:#fafafa"><div class="lab">D · без круга, на светлом фоне</div>
+ <div class="d"><div class="crop2"><img src="dc-loader.gif"></div><div class="row" style="margin-top:4px"><svg class="x" viewBox="0 0 22 22"><path d="M3 3 L19 19 M19 3 L3 19" stroke="#c9265d" stroke-width="1.6" stroke-linecap="round"/></svg><img class="hl" src="/assets/logo-hiking.png"></div></div>
+ <div class="t">собираем бокс</div></div>
+</body></html>

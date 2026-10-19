@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%}
+.ld{position:fixed;inset:0;gap:6px!important;background:rgb(250,233,234);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;font-family:Inter,system-ui}
+.ld-c img{width:300px;max-width:78vw;display:block}
+@keyframes hop{0%,100%{transform:translateY(0) scaleY(1)}40%{transform:translateY(-14px) scaleY(1.03)}55%{transform:translateY(-14px)}85%{transform:translateY(0) scaleY(.96)}}
+.ld-x{display:flex;align-items:center;gap:12px;margin-top:-18px}
+.ld-x svg{width:16px;height:16px}
+.ld-x img{height:44px;filter:brightness(0) opacity(.72)}
+.ld-t{margin-top:14px;color:#c9265d;font-size:15px;font-weight:500;opacity:.92;min-height:20px;transition:opacity .3s}
+</style></head><body>
+<div class="ld">
+ <div class="ld-c"><img src="dc-loader.gif" alt=""></div>
+ <div class="ld-x"><svg viewBox="0 0 22 22"><path d="M3 3 L19 19 M19 3 L3 19" stroke="#c9265d" stroke-width="1.6" stroke-linecap="round"/></svg><img src="/assets/logo-hiking.png" alt="хайкинг интеллигенция"></div>
+ <div class="ld-t" id="t">выбираем продукты</div>
+</div>
+<script>var T=['выбираем продукты','собираем бокс','доставляем на хайк'],k=0,t=document.getElementById('t');setInterval(function(){t.style.opacity=0;setTimeout(function(){k=(k+1)%T.length;t.textContent=T[k];t.style.opacity=.92},300)},1400);</script>
+</body></html>

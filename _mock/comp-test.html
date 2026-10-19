@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><body><script>
+// проверяем поиск состава на разных вариантах разметки
+</script><script src="findcomp.js"></script>
+<script>
+var cases={
+ table:'<table><tr><th>Вес</th><td>60 г</td></tr><tr><th>Состав</th><td>молочный белок, фундук, какао</td></tr></table>',
+ para:'<div><p>Вкусный батончик.</p><p><strong>Состав:</strong> изолят белка, фундук, шоколад без сахара.</p><p>Пищевая ценность: белки 20</p></div>',
+ tab:'<ul><li><a href="#tab-c">Состав</a></li></ul><div id="tab-c"><p>вода, соль, перец</p></div>',
+ head:'<div><h3>Состав</h3><p>рис, водоросли, огурец</p></div>',
+ inline:'<p>Описание. Состав: мука цельнозерновая, яйцо. Срок хранения 6 мес</p>'
+};
+var out={};for(var k in cases){out[k]=findComp(new DOMParser().parseFromString(cases[k],'text/html'));}
+document.body.textContent=JSON.stringify(out);
+</script>

@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap">
+<style>body{margin:0;background:#2a2f2c;font-family:Inter,system-ui;display:flex;gap:24px;justify-content:center;padding:20px;flex-wrap:wrap}
+.col{width:375px}.col h3{color:#fff;font:600 15px Inter,system-ui;margin:0 0 8px;text-align:center}
+.sh{background:linear-gradient(180deg,rgba(214,170,110,.20),rgba(214,170,110,.07) 45%,rgba(214,170,110,.04)),rgba(22,26,30,.92);border-radius:28px;padding:10px 0 16px}
+.pr{color:#F3D9B1;text-align:center;font:600 14px Inter,system-ui;margin-top:6px}</style></head><body>
+<div class="col"><h3>сейчас</h3><div class="sh"><div class="hb-collage-wrap" id="a"><div class="hb-collage"></div></div><div class="pr">446 ₽</div></div></div>
+<div class="col"><h3>новый лёгкий</h3><div class="sh"><div class="hb-collage-wrap" id="b"><div class="hb-collage"></div></div><div class="pr">466 ₽</div></div></div>
+<script>
+var OLD={h:470,items:[['chips','height:190px; left:36px; top:66px; transform:rotate(-7deg); z-index:2'],['water','height:162px; left:282px; top:62px; transform:rotate(6deg); z-index:1'],['bar','width:226px; left:34px; top:240px; transform:rotate(-8deg); z-index:5'],['qwikler','width:200px; left:158px; top:318px; transform:rotate(7deg); z-index:6'],['frut','width:190px; left:16px; top:334px; transform:rotate(-4deg); z-index:7']],
+notes:[['left:24px; top:16px','чипсы','хрустящие с белком',false],['right:24px; top:16px','вода','пол-литра',true],['right:24px; top:236px','батончик','20 г белка',true],['left:24px; top:414px','пастила','яблоко и клюква',false],['right:24px; top:414px','Qwikler','орехи без сахара',true]],
+arrows:['M50 56 C 54 66, 60 74, 70 84','M322 56 C 318 62, 316 66, 312 72','M300 280 C 294 290, 284 294, 270 294','M44 412 C 46 404, 50 398, 58 392','M322 412 C 320 402, 314 396, 306 390']};
+var NEW={h:470,items:[
+ ['steak','height:196px; left:22px; top:64px; transform:rotate(-7deg); z-index:3'],
+ ['gel','height:150px; left:204px; top:66px; transform:rotate(8deg); z-index:4'],
+ ['water','height:180px; left:272px; top:124px; transform:rotate(7deg); z-index:2'],
+ ['chikabar','width:232px; left:14px; top:276px; transform:rotate(-6deg); z-index:5'],
+ ['qwikler','width:204px; left:156px; top:330px; transform:rotate(6deg); z-index:6']],
+notes:[['left:24px; top:16px','чипсы','стейк на гриле',false],['left:180px; top:12px','гель','быстрая энергия',false],['right:20px; top:40px','вода','пол-литра',true],['left:24px; top:414px','батончик','тирамису',false],['right:24px; top:414px','Qwikler','орехи без сахара',true]],
+arrows:['M50 56 C 54 66, 60 74, 70 84','M196 52 C 200 60, 206 66, 216 72','M338 80 C 336 94, 330 106, 320 116','M44 412 C 46 398, 52 388, 64 378','M322 412 C 320 402, 314 396, 306 390']};
+function html(b){return b.items.map(function(x){return '<img class="hc-p" src="/assets/box/cut/'+x[0]+'.png" style="'+x[1]+'">'}).join('')+b.notes.map(function(n){return '<div class="hc-note'+(n[3]?' is-r':'')+'" style="'+n[0]+'">'+n[1]+'<span class="hc-i">i</span><small>'+n[2]+'</small></div>'}).join('')+'<svg class="hc-arrows" viewBox="0 0 375 '+b.h+'"><defs><marker id="hcHd" viewBox="0 0 12 12" refX="9" refY="6" markerWidth="11" markerHeight="11" orient="auto-start-reverse" markerUnits="userSpaceOnUse"><path d="M2 2 L9.5 6 L2.5 10.5"/></marker></defs>'+b.arrows.map(function(d){return '<path marker-end="url(#hcHd)" d="'+d+'"/>'}).join('')+'</svg>';}
+[['a',OLD],['b',NEW]].forEach(function(p){var w=document.getElementById(p[0]);w.style.setProperty('--hc-h',p[1].h+'px');w.querySelector('.hb-collage').innerHTML=html(p[1]);});
+</script></body></html>

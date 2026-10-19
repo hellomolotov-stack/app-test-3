@@ -1,0 +1,35 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Шапка B</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f2f3f7;font-family:Inter,Arial,sans-serif;color:#404040}
+.site{height:58px;background:#fff;border-radius:0 0 22px 22px;display:flex;align-items:center;padding:0 16px}
+.site img{height:34px}
+.wrap{max-width:900px;margin:0 auto;padding:12px 10px 40px}
+.next{background:#fff;border-radius:24px;padding:18px;margin-top:12px;color:#8a8a8a;font-size:14px}
+/* B: резкое фото – небо сверху светлое, текст внизу на мягкой тени поверх скалы */
+.B{position:relative;overflow:hidden;border-radius:24px;min-height:460px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;color:#fff;padding:22px 20px 24px;
+ background:#4a90c8 url(../assets/box/rock.jpg) center 62%/cover}
+.B::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 40%,rgba(10,16,24,.55) 72%,rgba(10,16,24,.78) 100%)}
+.B>*{position:relative}
+.lock{display:inline-flex;align-items:center;gap:12px;padding:10px 14px;border-radius:18px;background:rgba(255,255,255,.9);box-shadow:0 6px 20px rgba(20,40,70,.18)}
+.lock .h{height:26px;padding:4px 8px;border-radius:9px;background:#14202b}
+.lock .x{font-size:30px;font-weight:200;line-height:1;color:#242424}
+.lock .d{height:34px}
+.pill{display:inline-block;padding:5px 12px;border-radius:14px;background:#D9FD19;color:#000;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.B h1{margin:12px 0 8px;font-size:28px;line-height:1.15;text-wrap:balance;text-shadow:0 2px 12px rgba(0,0,0,.35)}
+.B h1 span{white-space:nowrap}
+.B p{margin:0 auto 18px;max-width:420px;font-size:15px;line-height:1.45;color:rgba(255,255,255,.92);text-shadow:0 1px 8px rgba(0,0,0,.4)}
+.btn{display:inline-block;border:0;border-radius:30px;padding:14px 30px;font:inherit;font-weight:700;font-size:15.5px;color:#000;background:linear-gradient(180deg,#e8ff4a,#c9ec00);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+@media(min-width:700px){.B{min-height:420px;background-position:center 58%}}
+
+.v{font-size:12px;font-weight:700;margin:18px 4px 8px;color:#242424}
+.lk{display:flex;align-items:center;gap:16px}
+.lk img{filter:brightness(0) invert(1) drop-shadow(0 2px 8px rgba(0,0,0,.25))}
+.lk .h{height:40px}.lk .d{height:36px}
+.lk svg{width:22px;height:22px;flex:none;filter:drop-shadow(0 1px 4px rgba(0,0,0,.3))}
+.lk i{width:1px;height:34px;background:rgba(255,255,255,.75);box-shadow:0 0 6px rgba(0,0,0,.2)}
+/* матовая белая плашка «коллаборация» */
+.B .pill{background:rgba(255,255,255,.22);color:#fff;border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-weight:700;letter-spacing:.08em;padding:6px 14px}
+</style></head><body>
+<div class="site"><img src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div>
+<div class="wrap"><div class="v">1а · тонкий «×»</div><div class="B"><div class="lk"><img class="h" src="../assets/logo-hiking.png"><svg viewBox="0 0 22 22"><path d="M3 3 L19 19 M19 3 L3 19" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg><img class="d" src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div><div><span class="pill">коллаборация</span><h1>хайкинг бокс на <span>Ай-Петри</span></h1><p>собрали всё, что держит энергию на маршруте, – из продуктов «Жить здорово»</p><span class="btn">собрать бокс</span></div></div><div class="v">1б · тонкая черта</div><div class="B"><div class="lk"><img class="h" src="../assets/logo-hiking.png"><i></i><img class="d" src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div><div><span class="pill">коллаборация</span><h1>хайкинг бокс на <span>Ай-Петри</span></h1><p>собрали всё, что держит энергию на маршруте, – из продуктов «Жить здорово»</p><span class="btn">собрать бокс</span></div></div></div></body></html>

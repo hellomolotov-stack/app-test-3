@@ -1,0 +1,154 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Бокс – макет v2</title>
+<style>
+*{box-sizing:border-box}
+:root{--y:#D9FD19;--kraft:#F3D9B1;--glass:rgba(18,26,35,.62);--line:rgba(255,255,255,.14);--mut:rgba(255,255,255,.66)}
+body{margin:0;font-family:Inter,-apple-system,Arial,sans-serif;color:#fff;background:#0f161d url(../assets/box/bg-rock.jpg) center/cover fixed}
+body::before{content:"";position:fixed;inset:0;background:linear-gradient(180deg,rgba(10,16,22,.3),rgba(10,16,22,.75));z-index:-1}
+.site{height:64px;background:#fff;display:flex;align-items:center;padding:0 24px;gap:16px}
+.site img{height:40px}.site span{flex:1;white-space:nowrap;overflow:hidden;height:40px;border-radius:20px;background:#f2f2f2;color:#999;display:flex;align-items:center;padding:0 16px;font-size:14px}
+.wrap{max-width:900px;margin:0 auto;padding:22px 14px 130px}
+.card{background:var(--glass);border:1px solid var(--line);border-radius:28px;padding:24px;margin:0 0 14px;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.btn{display:inline-block;border:0;border-radius:30px;padding:14px 26px;font:inherit;font-weight:800;font-size:15.5px;color:#000;background:linear-gradient(180deg,#e8ff4a,#c9ec00);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 6px 18px rgba(0,0,0,.35);cursor:pointer;text-decoration:none}
+h2{margin:0 0 6px;font-size:22px}
+.sub{color:var(--mut);margin:0 0 14px;font-size:14px}
+/* верх A */
+.hero{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr 360px;gap:10px;align-items:center;padding:0}
+.hero-t{padding:26px 0 26px 26px;grid-column:1;grid-row:1}
+.hero .stage{grid-column:2;grid-row:1}
+.stage{position:relative;height:330px;background:radial-gradient(60% 60% at 55% 55%,rgba(217,253,25,.16),transparent 70%)}
+.logos{display:flex;align-items:center;gap:12px}
+.logos img.h{height:30px}.logos .x{font-size:34px;font-weight:200;opacity:.75;line-height:1}
+.logos .dc{height:40px;padding:5px 10px;border-radius:12px;background:#fff}
+.hero h1{font-size:34px;line-height:1.1;margin:18px 0 10px;font-weight:800;text-wrap:balance}
+.hero p{color:var(--mut);margin:0 0 18px;line-height:1.5}
+.club{margin-top:14px}.club summary{cursor:pointer;color:var(--y);font-weight:700;font-size:14px;list-style:none}.club summary::-webkit-details-marker{display:none}
+.club p{font-size:14px;margin:10px 0 0}
+.col{position:absolute;left:50%;top:50%;width:340px;height:300px;margin:-150px 0 0 -170px}
+.col img{position:absolute;filter:drop-shadow(0 12px 16px rgba(0,0,0,.55));transition:transform .3s}
+/* вкладки */
+.tabs{display:flex;gap:4px;padding:4px;border-radius:24px;background:rgba(0,0,0,.25);border:1px solid rgba(214,170,110,.3);margin:0 0 6px}
+.tab{flex:1;border:0;border-radius:20px;padding:11px 8px;background:transparent;font:inherit;font-size:16px;font-weight:800;color:rgba(255,255,255,.7);cursor:pointer}
+.tab small{display:block;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.45);margin-top:2px}
+.tab.on{background:linear-gradient(180deg,rgba(214,170,110,.42),rgba(214,170,110,.24));color:var(--kraft)}
+.tab.on small{color:rgba(243,217,177,.8)}
+/* замена 1 */
+.slot{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;padding:14px 0;border-top:1px solid var(--line)}
+.slot .k b{display:block;color:var(--kraft);font-size:15px}.slot .k small{color:var(--mut);font-size:12.5px}
+.slot .k em{display:block;font-style:normal;font-size:12px;color:rgba(255,255,255,.4);margin-top:6px}
+.row{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;scroll-snap-type:x mandatory;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent}
+.opt{flex:none;width:128px;scroll-snap-align:start;border-radius:18px;background:rgba(255,255,255,.06);border:2px solid transparent;padding:8px;cursor:pointer;position:relative;transition:border-color .15s,background .15s}
+.opt img{width:100%;height:92px;object-fit:contain;background:#fff;border-radius:12px;display:block}
+.opt span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:11.5px;line-height:1.25;margin-top:6px;color:rgba(255,255,255,.85);height:43px}
+.opt b{display:block;font-size:13.5px;color:var(--y);margin-top:4px}
+.opt i{font-style:normal;font-size:11px;font-weight:700;color:var(--mut);margin-left:4px}
+.opt.on{border-color:var(--y);background:rgba(217,253,25,.1)}
+.opt.on::after{content:"✓";position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:var(--y);color:#000;font-weight:900;font-size:13px;display:flex;align-items:center;justify-content:center}
+.warn{margin:10px 0 0;padding:11px 14px;border-radius:16px;text-align:center;font-size:14px;color:var(--kraft);background:rgba(214,170,110,.12);border:1px dashed rgba(214,170,110,.5)}
+.cardrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:14px;padding:12px 14px;border-radius:20px;background:linear-gradient(135deg,rgba(217,253,25,.16),rgba(217,253,25,.04));border:1px solid rgba(217,253,25,.45)}
+.cardrow img{width:64px;height:42px;object-fit:cover;border-radius:7px;transform:rotate(-6deg);box-shadow:0 4px 10px rgba(0,0,0,.45)}
+.cardrow div{flex:1;min-width:180px}.cardrow b{display:block;color:var(--y)}.cardrow small{color:var(--mut)}
+.ways{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.way{position:relative;border-radius:20px;background:rgba(255,255,255,.06);padding:16px 14px 16px 44px;border:1px solid rgba(255,255,255,.1);cursor:pointer}
+.way::before{content:"";position:absolute;left:14px;top:18px;width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.35)}
+.way.on{border-color:rgba(217,253,25,.6);background:rgba(217,253,25,.08)}.way.on::before{border-color:var(--y);background:var(--y);box-shadow:inset 0 0 0 3px #1a2430}
+.way b{display:block;margin-bottom:4px}.way small{color:var(--mut);font-size:13px}
+.date{margin-top:14px;display:flex;gap:10px;align-items:center}.date input{border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:9px 14px;font:inherit;background:rgba(0,0,0,.25);color:#fff;color-scheme:dark}
+.fair{font-size:14px;color:rgba(255,255,255,.8);padding:10px 14px;border-radius:16px;background:rgba(214,170,110,.1);border:1px solid rgba(214,170,110,.3);margin-top:14px}.fair b{color:var(--kraft)}
+/* нижняя панель */
+.sticky{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);width:min(872px,calc(100% - 20px));display:flex;align-items:center;gap:14px;padding:10px 10px 10px 16px;border-radius:26px;background:rgba(15,22,30,.92);border:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.thumbs{display:flex;padding-left:8px}.thumbs img{width:36px;height:36px;object-fit:contain;background:#fff;border-radius:50%;border:2px solid #0f161d;margin-left:-8px;transition:transform .25s}
+.thumbs img.pop{transform:scale(1.25)}
+.sp{flex:1;min-width:0}.sp b{font-size:21px;color:var(--y)}.sp em{font-style:normal;font-size:13px;font-weight:700;color:var(--kraft);margin-left:8px}.sp small{display:block;color:var(--mut);font-size:12px}
+@media(max-width:640px){
+ .wrap{padding:14px 12px 120px}
+ .card{padding:18px;border-radius:24px}
+ .hero{display:block;padding:0}
+ .stage{height:240px;border-bottom:1px solid var(--line)}
+ .col{transform:scale(.78);transform-origin:center}
+ .hero-t{padding:18px 18px 20px}
+ .logos{gap:8px}.logos img.h{height:22px}.logos .x{font-size:26px}.logos .dc{height:32px;padding:4px 8px;border-radius:10px}
+ .hero h1{font-size:25px;line-height:1.15;margin:14px 0 8px;text-wrap:balance}
+ .hero p{font-size:14.5px;margin:0 0 16px}
+ .hero .btn{display:block;text-align:center}
+ .slot{grid-template-columns:1fr;gap:8px;padding:12px 0}
+ .slot .k{display:grid;grid-template-columns:1fr auto;column-gap:10px}.slot .k b{grid-column:1}.slot .k em{grid-column:2;grid-row:1;margin:0;align-self:center}.slot .k small{grid-column:1/3}
+ .opt{width:116px}.opt img{height:84px}
+ .tab{font-size:15px}.tab small{font-size:11.5px}
+ .ways{grid-template-columns:1fr}
+ .cardrow{display:grid;grid-template-columns:auto 1fr;gap:10px 14px}.cardrow div{min-width:0}.cardrow b{font-size:15.5px}.cardrow small{font-size:13px}.cardrow .btn{grid-column:1/3;text-align:center}
+ .thumbs{display:none}
+ .sp b{font-size:19px}.sticky .btn{padding:13px 18px;font-size:15px}
+}
+</style></head><body>
+<div class="site"><img src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"><span>🔍 поиск по названию или бренду</span></div>
+<div class="wrap">
+<div class="card hero">
+  <div class="stage"><div class="col" id="col"></div></div>
+  <div class="hero-t">
+    <div class="logos"><img class="h" src="../assets/logo-hiking.png"><span class="x">×</span><img class="dc" src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div>
+    <h1>собери себе бокс для маршрута на Ай-Петри</h1>
+    <p>еда и вода на весь хайк из продуктов «Жить здорово» – по прямым ценам магазина. получишь в начале маршрута</p>
+    <a class="btn" href="#box">собрать бокс ↓</a>
+    <details class="club"><summary>о клубе ↓</summary><p>хайкинг интеллигенция – клуб молодых деятельных людей большой Ялты. 3–5 часов лёгкой ходьбы по видовым тропам в компании таких же интеллигентов, как ты.</p></details>
+  </div>
+</div>
+
+<div class="card" id="box">
+  <div class="tabs"><button class="tab" data-b="light">лёгкий<small>перекус</small></button><button class="tab" data-b="full">сытный<small>обед и перекусы</small></button></div>
+  <div id="slots"></div>
+  <div class="warn" id="warn">⏰ сэндвич или ролл – при заказе за 2 дня до хайка</div>
+  <div class="fair">🤝 <b>без наценки</b> – по прямой цене магазина. самые заботливые цены по всей большой Ялте</div>
+  <div class="cardrow"><img src="../assets/card-front.jpg"><div><b>по карте интеллигента −10%</b><small>скидка для владельцев карты клуба</small></div><span class="btn" style="padding:9px 16px;font-size:14px">узнать о карте</span></div>
+</div>
+
+<div class="card">
+  <h2>как получить</h2><p class="sub">выбери способ – дальше обычное оформление заказа</p>
+  <div class="ways"><div class="way on"><b>🏔 в день хайка</b><small>получишь бокс в начале маршрута</small></div><div class="way"><b>🚚 доставка домой</b><small>по Ялте; от 2 000 ₽ – бесплатно</small></div><div class="way"><b>🏪 самовывоз</b><small>из магазина</small></div></div>
+  <div class="date"><b>дата хайка</b><input type="date" value="2026-10-25"></div>
+</div>
+</div>
+
+<div class="sticky"><div class="thumbs" id="thumbs"></div><div class="sp"><b id="sum">–</b><small id="sumk">–</small></div><span class="btn">оформить бокс</span></div>
+
+<script>
+const P = {"4899": {"n": "Батончик протеиновый Bombbar 60 гр. шоколад-фундук", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/i-1-1-400x400.png", "s": true}, "4642": {"n": "Батончик протеиновый Bombbar 60 гр. клубника", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/i-1-3-400x400.png", "s": true}, "2222": {"n": "Bombbar протеиновый батончик 60 гр. венские вафли", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/Bombbar-протеиновый-батончик-60-гр.-венские-вафли-400x402.png", "s": true}, "4607": {"n": "Батончик протеиновый Bombbar 60 гр. датский бисквит", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/1394641-1-800Wx800H-400x400.png", "s": true}, "4741": {"n": "Батончик протеиновый Bombbar 60 гр. соленая карамель", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/photo_2025-11-05_14-32-47-1000x1000-1-400x400.png", "s": true}, "1812": {"n": "Батончик протеиновый Bombbar 60 гр. печенье-крем Орео", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/i-13-400x400.png", "s": true}, "14965": {"n": "CHIKABAR мини Батончик протеиновый 45гр. Тирамису", "p": 118, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/Resize-image-project-1-1-400x400.png", "s": true}, "3139": {"n": "BOMBBAR чипсы цельнозерновые протеиновые «Нежный сыр», 50 г", "p": 92, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-2-11-400x400.png", "s": true}, "4060": {"n": "BOMBBAR чипсы цельнозерновые протеиновые «Сладкий чили», 50 г", "p": 92, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/1-1-1-400x400.png", "s": true}, "2862": {"n": "Чипсы BOMBBAR цельнозерновые протеиновые «Стейк на гриле», 50г", "p": 118, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-22-400x400.png", "s": true}, "2315": {"n": "Кукурузные протеиновые палочки Bombbar «Барбекю», 60 г", "p": 129, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/Кукурузные-протеиновые-палочки-Bombbar-Барбекю-60-г-400x400.png", "s": true}, "1871": {"n": "Кукурузные протеиновые палочки Bombbar «Вяленые томаты», 60 г", "p": 129, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/Кукурузные-протеиновые-палочки-Bombbar-Вяленые-томаты-400x402.png", "s": true}, "1671": {"n": "Батончик Qwikler «Орех в карамели», 40г", "p": 88, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/Батончик-Qwikler-Орех-в-карамели-400x400.png", "s": true}, "1801": {"n": "Батончик Qwikler «Грецкий орех», 40г", "p": 88, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/i-7-400x400.png", "s": true}, "1583": {"n": "Батончик Qwikler «Кокосовый», 35г", "p": 88, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/Resize-image-project-1-2-400x400.png", "s": true}, "1647": {"n": "Батончик Qwikler «Марципан», 35г", "p": 88, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/Qwikler-Марципан-400x400.png", "s": true}, "1930": {"n": "Фруктово-ореховый батончик Ол лайт Клубничный, 30 г.", "p": 50, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/Фруктово-ореховый-батончик-Клубника-400x391.png", "s": true}, "4820": {"n": "Бантончик курага MAGICMOON, 60гр", "p": 133, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/C8XeEYwq1NtT0TNryaCnOQqdYcljq0OvPDLjaNoKJKYq6l7RFlZviUYU_JmxIUUV-qa3xhPtQpSlNbuKjVOuSuHp-400x286.png", "s": true}, "3985": {"n": "Фруктовая пастила «Фрутилад» яблочная с клюквой, 30гр", "p": 77, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/i-11-8-400x400.png", "s": true}, "3263": {"n": "Фруктовая пастила «Фрутилад» яблочная с вишней, 30гр", "p": 77, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/6WJHEKT-400x400.png", "s": true}, "4051": {"n": "Фруктовая пастила «Фрутилад» чернослив — яблоко, 30 гр", "p": 77, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/nb4w62gipbeue2mmmo54oz1my80nbi9u-400x533.png", "s": true}, "2707": {"n": "Батончик ягодный микс из Белевской пастилы, 35гр", "p": 92, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/ff17d9cef1b2cbeeb3244ce2098f5458-400x406.png", "s": true}, "4747": {"n": "Яблочные чипсы натуральные из сладких яблок Яблоков, 25гр", "p": 143, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/928x928-webp-1-400x400.png", "s": true}, "15026": {"n": "Bombbar Вода питьевая негазированная, 500 мл", "p": 50, "img": "https://dietcakes.ru/wp-content/uploads/2026/09/Remove-background-project-03-сентября-2026-г.-в-14.35.43-1-1-400x400.png", "s": true}, "4997": {"n": "Вода «Южный берег» негаз. 0.5", "p": 46, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/i-9-1-400x440.png", "s": true}, "4991": {"n": "Изотоник Bombbar «Лесные ягоды», 500 мл", "p": 102, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/ab2yjowawcjy76np06npn7ay6mh1ng4h-400x400.png", "s": true}, "2631": {"n": "Лимонад Bombbar «Ананас», 330мл", "p": 102, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-4-16-400x400.png", "s": true}, "2628": {"n": "Лимонад Bombbar «Тархун», 330мл", "p": 102, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-7-4-400x400.png", "s": true}, "11683": {"n": "Сендвич с песто ИП Сережников, 1шт", "p": 318, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/grilled-cheese-spanakopita-400x400.png", "s": true}, "11678": {"n": "Ролл с Фалафелем, 1шт", "p": 318, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-7-1-400x389.png", "s": true}, "11681": {"n": "Сендвич с лососем ИП Сережников, 1шт", "p": 335, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/100069579462b0-400x400.png", "s": true}, "11720": {"n": "Лаваш с тофу и нори, 1шт", "p": 349, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-1-28-400x398.png", "s": true}, "14279": {"n": "Ролл с креветками ИП Сережников, 200гр", "p": 366, "img": "https://dietcakes.ru/wp-content/uploads/2026/05/ChatGPT-Image-7-мая-2026-г.-15_19_32-1-1-1-400x400.png", "s": true}, "2466": {"n": "Коктейль протеиновый BOMBBAR «Ванильное мороженое», 350мл", "p": 143, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/Коктейль-протеиновый-BOMBBAR-Ванильное-мороженое-350мл-400x402.png", "s": true}, "2272": {"n": "Коктейль протеиновый BOMBBAR «Клубничный джелато», 350мл", "p": 143, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/Коктейль-протеиновый-BOMBBAR-Клубничный-джелато-350мл-400x402.png", "s": true}, "11299": {"n": "Коктейль протеиновый BOMBBAR «Шоколадный пломбир», 350мл", "p": 143, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/2-7-1-400x400.png", "s": true}, "3456": {"n": "Энергетик Bombbar Грейпфрут, 450мл", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/energy-grapefruit-jpeg-1-400x400.png", "s": true}, "14266": {"n": "Вафли CHIKALAB с начинкой Кокос-миндаль, 40г", "p": 112, "img": "https://dietcakes.ru/wp-content/uploads/2026/05/w500_shop_nomenclature_picture_5352.jpg-1-400x400.png", "s": true}, "14265": {"n": "Вафли CHIKALAB с начинкой Печенье-крем, 40г", "p": 112, "img": "https://dietcakes.ru/wp-content/uploads/2026/05/w500_shop_nomenclature_picture_5350.jpg-1-400x400.png", "s": true}, "2906": {"n": "Вафли CHIKALAB с шоколадной начинкой, 40г", "p": 112, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-4-11-400x400.png", "s": true}, "3049": {"n": "Вафли BOMBBAR «Капучино», 32г", "p": 98, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-2-13-400x400.png", "s": true}, "2932": {"n": "Вафли BOMBBAR «Топленое молоко», 32г", "p": 98, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/i-1-17-400x400.png", "s": true}, "1602": {"n": "Печенье BOMBBAR Вишня, 40 гр.", "p": 102, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/i-2-400x400.png", "s": true}, "4320": {"n": "Печенье BOMBBAR Фисташка, 40 гр.", "p": 102, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/i-6-6-400x400.png", "s": true}, "4897": {"n": "Печенье BOMBBAR Шоколадный брауни,40 гр.", "p": 102, "img": "https://dietcakes.ru/wp-content/uploads/2026/01/100069833425b0-400x400.png", "s": true}, "3356": {"n": "Брауни «Классический» без сахара Protein rex, 50г", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2026/02/e6f74ca4-8c97-44bc-9a72-0f5972707889-400x400.jpg", "s": true}, "1860": {"n": "Брауни «Лесной орех» без сахара Protein rex, 50г", "p": 139, "img": "https://dietcakes.ru/wp-content/uploads/2025/12/i-1-1-400x400.png", "s": true}};
+const BOX = {
+ light:{name:'лёгкий бокс',warn:false,slots:[
+  ['энергия и белок','на подъём',[4899,4642,2222,4607,4741,1812,14965]],
+  ['вернуть соль','на привал',[3139,4060,2862,2315,1871]],
+  ['быстрая энергия','на крутой участок',[1671,1801,1583,1647,1930,4820]],
+  ['лёгкое сладкое','на вершине',[3985,3263,4051,2707,4747]],
+  ['чтобы не пить из ручья','0,5 л',[15026,4997,4991,2631,2628]]]},
+ full:{name:'сытный бокс',warn:true,slots:[
+  ['обед на вершине','сытно и не тяжело',[11683,11678,11681,11720,14279]],
+  ['восстановить силы','после подъёма',[2466,2272,11299,4991,3456]],
+  ['хрустящее к чаю','без сахара',[14266,14265,2906,3049,2932]],
+  ['сладкое без сахара','награда за подъём',[1602,4320,4897,3356,1860]],
+  ['белок и соль','на привал',[2315,1871,3139,2862]],
+  ['глоток на привале','0,5 л',[15026,4997,4991]]]}};
+const COL = {light:[['chips','height:180px;left:0;top:40px;transform:rotate(-7deg)'],['water','height:160px;left:250px;top:20px;transform:rotate(6deg)'],['bar','width:220px;left:60px;top:170px;transform:rotate(-8deg)'],['qwikler','width:180px;left:170px;top:120px;transform:rotate(9deg)'],['frut','width:160px;left:20px;top:230px;transform:rotate(-3deg)']],
+ full:[['pesto','width:190px;left:0;top:60px;transform:rotate(-10deg)'],['shake','height:160px;left:150px;top:10px;transform:rotate(6deg)'],['water','height:170px;left:250px;top:40px;transform:rotate(-6deg)'],['wafers','width:170px;left:40px;top:190px;transform:rotate(-6deg)'],['sticks','width:110px;left:210px;top:170px;transform:rotate(9deg)']]};
+let cur='full'; const pick={light:BOX.light.slots.map(s=>s[2][0]), full:BOX.full.slots.map(s=>s[2][0])};
+const plural=n=>{const a=n%10,b=n%100;return n+' '+(a===1&&b!==11?'вариант':a>=2&&a<=4&&(b<12||b>14)?'варианта':'вариантов');};
+// короткое название: без «ИП …», «1шт» и слова «протеиновый» – чтобы был виден вкус
+const short=n=>n.replace(/\s*ИП\s+[А-ЯЁ][а-яё]+,?/g,'').replace(/,?\s*1\s*шт\.?/gi,'').replace(/\s*протеинов\w*/gi,'').replace(/BOMBBAR/g,'Bombbar').replace(/\s+,/g,',').replace(/\s{2,}/g,' ').trim();
+const rub=n=>n.toLocaleString('ru-RU')+' ₽';
+function render(pop){
+ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.b===cur));
+ const b=BOX[cur]; document.getElementById('warn').hidden=!b.warn;
+ document.getElementById('col').innerHTML=COL[cur].map(([n,st])=>`<img src="../assets/box/cut/${n}.png" style="${st}">`).join('');
+ document.getElementById('slots').innerHTML=b.slots.map(([k,s,ids],i)=>{const sel=pick[cur][i], base=P[ids[0]].p;
+  return `<div class="slot"><div class="k"><b>${k}</b><small>${s}</small><em>${plural(ids.length)} →</em></div><div class="row">${ids.filter(id=>P[id]).map(id=>{const d=P[id].p-base;
+   return `<div class="opt${id===sel?' on':''}" data-i="${i}" data-id="${id}"><img src="${P[id].img}" loading="lazy"><span>${short(P[id].n)}</span><b>${rub(P[id].p)}${d&&id!==ids[0]?`<i>${d>0?'+':'−'}${Math.abs(d)}</i>`:''}</b></div>`}).join('')}</div></div>`}).join('');
+ const sum=pick[cur].reduce((a,id)=>a+P[id].p,0);
+ document.getElementById('sum').innerHTML=rub(sum)+`<em>💳 по карте ${rub(Math.round(sum*.9))}</em>`;
+ document.getElementById('sumk').textContent=`${b.name} · ${pick[cur].length} продуктов`;
+ document.getElementById('thumbs').innerHTML=pick[cur].map((id,i)=>`<img src="${P[id].img}" class="${pop===i?'pop':''}">`).join('');
+ if(pop!=null) setTimeout(()=>document.querySelectorAll('.thumbs img')[pop]?.classList.remove('pop'),300);
+}
+document.addEventListener('click',e=>{const t=e.target.closest('.tab'); if(t){cur=t.dataset.b;render();return;}
+ const o=e.target.closest('.opt'); if(o){const i=+o.dataset.i; pick[cur][i]=+o.dataset.id; const x=document.querySelectorAll('.row')[i].scrollLeft; render(i); document.querySelectorAll('.row')[i].scrollLeft=x;}
+ const w=e.target.closest('.way'); if(w){document.querySelectorAll('.way').forEach(z=>z.classList.toggle('on',z===w)); document.querySelector('.date').style.display=w===document.querySelector('.way')?'flex':'none';}});
+render();
+</script></body></html>

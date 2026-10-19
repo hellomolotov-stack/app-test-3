@@ -1,0 +1,78 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Шапки</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f2f3f7;font-family:Inter,Arial,sans-serif;color:#404040}
+.site{height:58px;background:#fff;border-radius:0 0 22px 22px;display:flex;align-items:center;padding:0 16px}
+.site img{height:34px}
+.wrap{max-width:900px;margin:0 auto;padding:6px 10px 40px}
+.tag{display:inline-block;margin:22px 4px 8px;padding:4px 10px;border-radius:10px;background:#242424;color:#fff;font-size:12px;font-weight:700}
+.note{font-size:13px;color:#8a8a8a;margin:0 4px 10px}
+.btn{display:inline-block;border:0;border-radius:30px;padding:13px 24px;font:inherit;font-weight:700;font-size:15px}
+.LH{height:26px}.LD{height:34px;padding:4px 9px;border-radius:11px;background:#fff}
+.x{font-size:34px;font-weight:200;line-height:1}
+.next{background:#fff;border-radius:24px;padding:18px;margin-top:12px;color:#8a8a8a;font-size:14px}
+/* A – разделённая шапка: слева мир клуба, справа мир магазина */
+.A{border-radius:24px;overflow:hidden;background:#fff}
+.A .split{display:grid;grid-template-columns:1fr 1fr;position:relative;height:150px}
+.A .l{background:#14202b url(../assets/box/bg-rock.jpg) center 70%/cover;display:flex;align-items:center;justify-content:center;position:relative}
+.A .l::before{content:"";position:absolute;inset:0;background:rgba(10,16,24,.55)}
+.A .l img{position:relative;height:30px}
+.A .r{background:#eef6e7;display:flex;align-items:center;justify-content:center}
+.A .r img{width:78%;height:auto;max-height:44px}
+.A .mid{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:#fff;box-shadow:0 4px 14px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:300;color:#242424}
+.A .t{padding:18px}
+.A .k{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:rgb(140,188,103)}
+.A h1{margin:6px 0 8px;font-size:24px;line-height:1.18;color:#242424}
+.A p{margin:0 0 14px;font-size:14.5px;line-height:1.5}
+.A .btn{display:block;text-align:center;color:#fff;background:rgb(231,34,104)}
+/* B – фото с крупным лого-локапом по центру */
+.B{border-radius:24px;overflow:hidden;position:relative;padding:34px 20px 26px;text-align:center;color:#fff;background:#14202b url(../assets/box/bg-rock.jpg) center/cover}
+.B::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,16,24,.35),rgba(10,16,24,.8))}
+.B>*{position:relative}
+.B .lock{display:inline-flex;align-items:center;gap:12px;padding:12px 16px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(10px)}
+.B .lock .LH{height:28px}.B .lock .LD{height:38px}
+.B .pill{display:inline-block;margin:16px 0 0;padding:5px 12px;border-radius:14px;background:#D9FD19;color:#000;font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase}
+.B h1{margin:12px 0 8px;font-size:27px;line-height:1.15;text-wrap:balance}.B h1 span{white-space:nowrap}
+.B p{margin:0 auto 18px;max-width:420px;font-size:14.5px;color:rgba(255,255,255,.8)}
+.B .btn{color:#000;background:linear-gradient(180deg,#e8ff4a,#c9ec00)}
+/* C – две карточки-половинки, сцепленные «×» */
+.C{background:#fff;border-radius:24px;padding:16px}
+.C .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
+.C .card{border-radius:18px;padding:14px 12px;min-height:128px;display:flex;flex-direction:column;justify-content:space-between}
+.C .c1{background:#14202b url(../assets/box/bg-rock.jpg) center 75%/cover;color:#fff;position:relative;overflow:hidden}
+.C .c1::before{content:"";position:absolute;inset:0;background:rgba(10,16,24,.55)}
+.C .c1>*{position:relative}
+.C .c1 img{width:100%;height:auto;max-height:24px;object-fit:contain;object-position:left}
+.C .c2{background:#eef6e7;color:#242424}
+.C .c2 img{width:100%;height:auto;max-height:30px;align-self:flex-start}
+.C .card small{font-size:12.5px;line-height:1.35}
+.C .c1 small{color:rgba(255,255,255,.85)}
+.C .knot{position:absolute;left:50%;top:30px;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;background:#D9FD19;color:#000;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:400;box-shadow:0 0 0 5px #fff}
+.C h1{margin:16px 2px 6px;font-size:24px;line-height:1.18;color:#242424}
+.C p{margin:0 2px 14px;font-size:14.5px;line-height:1.5}
+.C .btn{display:block;text-align:center;color:#fff;background:rgb(231,34,104)}
+</style></head><body>
+<div class="site"><img src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div>
+<div class="wrap">
+
+<span class="tag">A · две половины и «×» на стыке</span>
+<p class="note">слева мир клуба (скала, наш логотип), справа мир магазина (его зелёный, его логотип) – встречаются посередине</p>
+<div class="A"><div class="split"><div class="l"><img src="../assets/logo-hiking.png"></div><div class="r"><img src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div><div class="mid">×</div></div>
+ <div class="t"><div class="k">коллаборация</div><h1>собери себе бокс для маршрута на Ай-Петри</h1><p>еда и вода на весь хайк – по прямым ценам магазина. получишь в начале маршрута</p><span class="btn">собрать бокс ↓</span></div></div>
+<div class="next">↓ дальше страница в стиле магазина</div>
+
+<span class="tag">B · фото и крупный лого-локап</span>
+<p class="note">как афиши совместных коллекций: два логотипа в одной плашке по центру, метка «коллаборация», заголовок</p>
+<div class="B"><div class="lock"><img class="LH" src="../assets/logo-hiking.png"><span class="x">×</span><img class="LD" src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"></div><br>
+ <span class="pill">коллаборация</span><h1>хайкинг бокс на <span>Ай-Петри</span></h1><p>собрали всё, что держит энергию на маршруте, – из продуктов «Жить здорово»</p><span class="btn">собрать бокс ↓</span></div>
+<div class="next">↓ дальше страница в стиле магазина</div>
+
+<span class="tag">C · две карточки, сцепленные «×»</span>
+<p class="note">кто мы и кто они – по одной строке на каждого; жёлтый «×» как замок между ними</p>
+<div class="C"><div class="pair">
+ <div class="card c1"><img src="../assets/logo-hiking.png"><small>клуб хайкинга большой Ялты – знаем, что брать на маршрут</small></div>
+ <div class="card c2"><img src="https://dietcakes.ru/wp-content/uploads/2026/04/%D0%A0%D0%B5%D1%81%D1%83%D1%80%D1%81-4.svg"><small>экомагазин ПП-продуктов – собирает и привозит</small></div>
+ <div class="knot">×</div></div>
+ <h1>собери себе бокс для маршрута на Ай-Петри</h1><p>еда и вода на весь хайк – по прямым ценам магазина</p><span class="btn">собрать бокс ↓</span></div>
+<div class="next">↓ дальше страница в стиле магазина</div>
+</div></body></html>
