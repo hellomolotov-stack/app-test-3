@@ -382,11 +382,27 @@
     var note = wayNow === 'hike' ? hikeNote() : '';
     // строка для комментария: в буфер обмена (сразу, пока действует нажатие) и в cookie – для будущей вставки кодом на сайте
     document.cookie = 'hi_note=' + encodeURIComponent(note) + ';path=/;max-age=' + (note ? 7200 : 0);
-    if (note && navigator.clipboard) navigator.clipboard.writeText(note).catch(function () {});
+    var clubPilot = fromClubApp && qs.get('hi_club_test') === '1';
+    if (note && !clubPilot && navigator.clipboard) navigator.clipboard.writeText(note).catch(function () {});
     btn.disabled = true; btn.textContent = 'кладём…';
     var nonce = function () { return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) { return r.headers.get('Nonce'); }); };
     var n0;
     nonce()
+      .then(function (n) {
+        if (!clubPilot) return n;
+        // Explicit pilot only. Store API verifies its normal nonce and owns the cart session.
+        return fetch('/wp-json/wc/store/v1/cart/extensions', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json', 'Nonce': n },
+          body: JSON.stringify({ namespace: 'hiking-club', data: {
+            source: 'intelligentsia', pilot: '1', way: wayNow,
+            date: $('hi-date').value || '', route: route
+          } })
+        }).then(function (r) {
+          if (!r.ok) throw new Error('club context ' + r.status);
+          return r.headers.get('Nonce') || n;
+        });
+      })
       .then(function (n) {
         n0 = n;
         var reqs = items.map(function (it) {
@@ -401,21 +417,29 @@
       })
       .then(function (r) {
         if (!r.ok) throw new Error(r.status);
-        if (wayNow === 'home') return;
+        if (wayNow === 'home' && !clubPilot) return;
         return r.json().then(function (d) {
+          if (clubPilot && (!d.responses || !d.responses.length || d.responses.some(function (x) { return !x.status || x.status >= 400; }))) {
+            throw new Error('club cart operation failed');
+          }
+          if (wayNow === 'home') return;
           // последний ответ batch – свежая корзина со способами доставки, отдельный запрос за ней не нужен
           var rs = (d && d.responses) || [], cart = null;
           for (var k = rs.length - 1; k >= 0 && !cart; k--) if (rs[k].body && rs[k].body.shipping_rates) cart = rs[k].body;
           return pickPickup(n0, cart);
-        }).catch(function () {});
+        }).catch(function (error) { if (clubPilot) throw error; });
       })
       .then(function () {
-        if (!note) { location.href = '/checkout/'; return; }
+        if (clubPilot || !note) { location.href = '/checkout/'; return; }
         msg.innerHTML = '✓ скопировали: <b>' + note.replace(/</g, '') + '</b> – вставь в комментарий к заказу';
         btn.textContent = 'переходим…';
         setTimeout(function () { location.href = '/checkout/'; }, 1500);
       })
-      .catch(function () { btn.disabled = false; btn.textContent = 'заказать'; msg.textContent = 'не получилось добавить в корзину – попробуй ещё раз'; });
+      .catch(function () {
+        btn.disabled = clubPilot;
+        btn.textContent = clubPilot ? 'оформление остановлено' : 'заказать';
+        msg.textContent = clubPilot ? 'не удалось подготовить клубный заказ. не нажимай повторно: часть товаров могла добавиться. обратись в поддержку для проверки корзины' : 'не получилось добавить в корзину – попробуй ещё раз';
+      });
   });
 })();
 
