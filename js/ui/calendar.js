@@ -2794,7 +2794,7 @@ function updateFloatingSheetButtons() {
 
     // ТЕСТ (14.10.2026): хайкинг бокс от партнёра – плашка над слайдером «иду» и на прошедших хайках
     // (рядом с письмом и саммари), пока только для @hellointelligent
-    if (!isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && hikingBoxEnabled()) {
+    if (!isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && hikingBoxEnabled(hike.date)) {
         mountHikingBoxPlate(container, hike, isGuest);
     }
 
@@ -3919,7 +3919,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     const route = hikeObj ? findCatalogRoute(hikeObj) : null;
     const PHONE = '+7 978 549 09 74';
-    const boxOk = hikingBoxEnabled() && !!hikeObj;
+    const boxOk = hikingBoxEnabled(hikeDate) && !!hikeObj;
 
     const tgw = window.Telegram?.WebApp;
     const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);

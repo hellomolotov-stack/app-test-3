@@ -134,8 +134,12 @@ function collageHtml(b) {
         + b.arrows.map(d => `<path marker-end="url(#hcHd)" d="${d}" />`).join('') + '</svg>';
 }
 
-export function hikingBoxEnabled() {
-    return true; // запущено для всех (20.10.2026); HIKING_BOX_TEST_IDS – только для тестовой подстановки даты
+export function hikingBoxEnabled(date) {
+    // тестовые аккаунты – на любом хайке, в том числе прошедшем;
+    // остальным – только на предстоящих: плашка появится у всех с выходом нового хайка
+    if (HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''))) return true;
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' });
+    return /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) && String(date) >= today;
 }
 
 // плашка над слайдером «иду» (контейнер .floating-sheet-buttons)
