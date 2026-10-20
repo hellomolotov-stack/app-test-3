@@ -49,7 +49,7 @@
         if (!Array.isArray(list) || list.length < 12) moreDone[tab] = true;
         (list || []).forEach(function (pr) { P[pr.id] = pr; if (MORE_SETS[tab].indexOf(pr.id) < 0 && moreLoaded[tab].indexOf(pr.id) < 0) moreLoaded[tab].push(pr.id); });
       })
-      .catch(function () { moreDone[tab] = true; inventoryReady = false; stockNotice('не удалось проверить дополнительные товары. обнови наличие перед заказом'); syncControls(); })
+      .catch(function () { moreDone[tab] = true; inventoryReady = false; stockNotice('не удалось проверить дополнительные товары. обнови страницу перед заказом'); syncControls(); })
       .then(function () { moreBusy = false; renderMore(); });
   }
   var MORE = MORE_SETS.home.concat(MORE_SETS.rec);
@@ -101,11 +101,17 @@
   function assortmentAllowed(p) {
     if (!p) return false;
     var name = String(p.name || '').toLowerCase().replace(/ё/g, 'е');
+    if (/детск|для детей|малыш|baby|kids|snaqy|снаки|фруто.?няня|агуша/.test(name) || (p.categories || []).some(function (c) { return c.id === 248 || /детск|для детей|kids|baby/.test(String(c.name || '').toLowerCase()); })) return false;
+    if (/морск\S*\s+капуст|seaweed|\bнори\b/.test(name)) return false;
+    if (/печень|крекер|cracker/.test(name) && /лук|onion/.test(name)) return false;
+    if (/кукуруз/.test(name) && /шарик|драже/.test(name) && /шоколад/.test(name)) return false;
+    if (/хлебц/.test(name) && /рис/.test(name) && /темн/.test(name) && /шоколад/.test(name)) return false;
     if (/(кокос|coconut|cocowater)/.test(name) && /(вод[аыуе]|water)/.test(name)) return false;
     var childCategory = (p.categories || []).some(function (c) { return [248, 256].indexOf(c.id) >= 0; });
     if (/(сок|нектар|сады\s*придонья|фруто.?няня|агуша)/.test(name) && (childCategory || /детск|малыш|baby|kids|фруто.?няня|агуша|сады\s*придонья|(?:0[.,]2\s*л|200\s*мл)/.test(name))) return false;
     var packaging = JSON.stringify(p.attributes || []).toLowerCase();
     if (/лимонад|lemonade|lapochka|лапочка|lemonardo|лемонардо|капли/.test(name)) {
+      if (/lapochka|лапочка/.test(name)) return true; // Explicit collaboration assortment exception.
       if (/стекл|glass/.test(name + ' ' + packaging)) return false;
       if (/lapochka|лапочка|lemonardo|лемонардо|капли/.test(name)) return false;
       // Unknown lemonade packaging is withheld rather than guessed to be non-glass.
@@ -157,7 +163,7 @@
   Object.keys(BOXES).forEach(function (box) { preferred[box] = BOXES[box].slots.map(function (slot) { return slot[2].slice(); }); });
   var cartState = null, inventoryBusy = true, inventoryReady = false, checkoutLocked = false, lastStockCheck = 0, selectionInitialized = false;
   var apiQueue = Promise.resolve(), storeReadFailed = false;
-  // One read at a time, no retries and no background polling.
+  // One read at a time, no retries; stock refresh runs only on visible pages.
   function readStore(url) {
     var next = apiQueue.then(function () {
       return fetch(url, { credentials: 'include', cache: 'no-store' }).then(function (response) {
@@ -173,7 +179,6 @@
   function stockNotice(text) { $('hi-stock-msg').textContent = text; }
   function syncControls() {
     $('hi-cta').disabled = inventoryBusy || !inventoryReady || checkoutLocked;
-    $('hi-catalog-refresh').disabled = inventoryBusy || checkoutLocked;
     // Additional variants load automatically; no extra action is required.
     root.querySelectorAll('[data-q="1"]').forEach(function (button) { button.disabled = !canAdd(+button.dataset.id); button.setAttribute('aria-disabled', String(button.disabled)); if (button.disabled) button.title = 'достигнут доступный остаток'; else button.removeAttribute('title'); });
   }
@@ -188,16 +193,40 @@
     var n = capacity(id), inCart = cartState && cartState.quantities[id] || 0;
     stockNotice('«' + short(P[id].name) + '»: можно добавить ' + n + ' шт.' + (inCart ? ' В корзине уже ' + inCart + ' шт.' : '') + ' Больше доступного количества выбрать нельзя.');
   }
+  function productName(p) { return String(p.name || '').toLowerCase().replace(/ё/g, 'е'); }
+  function categoryHas(p, ids) { return (p.categories || []).some(function (c) { return ids.indexOf(c.id) >= 0; }); }
+  function groupFor(p) {
+    if (!assortmentAllowed(p)) return '';
+    var n = productName(p);
+    // Fruit crisps and sweet rice cakes are desserts even when tagged as chips.
+    if (categoryHas(p, GROUP_CATS.salty) && /ябло[кч]|груш|банан|ягод|фрукт|карамел|шоколад|медов|кориц/.test(n)) return 'sweet';
+    var priority = ['lunch', 'salty', 'crisp', 'sweet', 'water', 'energy'];
+    return priority.filter(function (group) { return categoryHas(p, GROUP_CATS[group]); })[0];
+  }
+  function assortmentRank(p, group) {
+    var n = productName(p);
+    if (group === 'sweet') {
+      if (/протеин|белков|protein|bombbar|бомббар|chikalab|чика|шоки|шокки|shock|rex\s*crispy|рекс/.test(n) || categoryHas(p, [188])) return 0;
+      return /пастил/.test(n) ? 2 : 1;
+    }
+    if (group === 'water') {
+      var bomb = /bombbar|бомббар/.test(n), water = /вод[аыуе]|water/.test(n);
+      var sparkling = /газиров|газирован|sparkling/.test(n) && !/негаз|non.?sparkling|still/.test(n);
+      if (bomb && water && /витамин|антиокс|минерал|vitamin/.test(n)) return 2;
+      if (bomb && water && !/лимонад/.test(n)) return sparkling ? 1 : 0;
+      if (/южн/.test(n) && water) return sparkling ? 4 : 3;
+      return 5;
+    }
+    return 0;
+  }
   function rebuildCategories() {
     INBOX = {};
-    var priority = ['lunch', 'salty', 'crisp', 'sweet', 'water', 'energy'];
-    function groupFor(p) { return priority.filter(function (group) { return (p.categories || []).some(function (category) { return GROUP_CATS[group].indexOf(category.id) >= 0; }); })[0]; }
     Object.keys(BOXES).forEach(function (box) {
       BOXES[box].slots.forEach(function (slot, i) {
         var cats = GROUP_CATS[SLOT_GROUPS[box][i]];
         slot[2] = catalogIds.filter(function (id) {
           return groupFor(P[id]) === SLOT_GROUPS[box][i];
-        });
+        }).sort(function (a, b) { return assortmentRank(P[a], SLOT_GROUPS[box][i]) - assortmentRank(P[b], SLOT_GROUPS[box][i]); });
         slot[2].forEach(function (id) { INBOX[id] = 1; });
       });
     });
@@ -252,7 +281,7 @@
     }).catch(function () {
       if (revision !== catalogRevision) return;
       catalogHasMore = false; inventoryReady = false;
-      stockNotice('не удалось обновить остальные товары. нажми «обновить наличие» перед заказом');
+      stockNotice('не удалось обновить остальные товары. обнови страницу перед заказом');
     }).then(function () { catalogRunning = false; if (!catalogHasMore || !inventoryReady) { $('hi-catalog-status').textContent = ''; hideLoad(); } syncControls(); continueCatalog(); });
   }
   function selectedPairs() {
@@ -339,7 +368,7 @@
   window.addEventListener('resize', placeSticky);
   setTimeout(placeSticky, 300); setTimeout(placeSticky, 1500);
 
-  $('hi-slots').insertAdjacentHTML('beforebegin', '<style>.hi [data-q]:disabled{opacity:.3;cursor:not-allowed}</style><p class="hi-sub" id="hi-stock-msg" role="status" aria-live="polite"></p><div style="display:flex;gap:12px;margin:12px 0"><button type="button" class="hi-m-add" id="hi-catalog-refresh">обновить наличие</button></div><p class="hi-sub" id="hi-catalog-status" role="status"></p>');
+  $('hi-slots').insertAdjacentHTML('beforebegin', '<style>.hi [data-q]:disabled{opacity:.3;cursor:not-allowed}</style><p class="hi-sub" id="hi-stock-msg" role="status" aria-live="polite"></p><p class="hi-sub" id="hi-catalog-status" role="status"></p>');
   Object.keys(BOXES).forEach(function (box) { rowLimits[box] = []; sel[box] = BOXES[box].slots.map(function () { return []; }); });
   syncControls();
   function reloadCatalog() {
@@ -388,15 +417,38 @@
     }).then(function () { inventoryBusy = false; catalogPaused = false; syncControls(); if (!inventoryReady) hideLoad(); continueCatalog(); });
   }
   reloadCatalog();
-  $('hi-catalog-refresh').addEventListener('click', function () { if (!inventoryBusy && !checkoutLocked) reloadCatalog(); });
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState !== 'visible' || !inventoryReady || inventoryBusy || checkoutLocked || Date.now() - lastStockCheck < 120000) return;
+  // Refresh only visible/selected stock, not the full catalogue or images.
+  // Hidden pages and any failed API session generate no periodic traffic.
+  function refreshStock() {
+    if (document.visibilityState !== 'visible' || !inventoryReady || inventoryBusy || catalogRunning || moreBusy || checkoutLocked || storeReadFailed || Date.now() - lastStockCheck < 300000) return;
     inventoryBusy = true; syncControls();
-    readStore('/wp-json/wc/store/v1/cart').then(freshSelected).then(function (changes) {
-      stockNotice(changes.length ? changes.join('. ') + '. Проверь обновлённый состав перед заказом.' : 'наличие выбранных товаров обновлено');
-    }).catch(function () { inventoryReady = false; stockNotice('не удалось обновить наличие. нажми «обновить наличие» перед заказом'); })
-      .then(function () { inventoryBusy = false; syncControls(); continueCatalog(); });
-  });
+    var ids = Object.keys(Inventory.aggregate(selectedPairs())).map(Number);
+    root.querySelectorAll('.hi-opt[data-id], [data-add]').forEach(function (node) { var id = +(node.dataset.id || node.dataset.add); if (P[id] && ids.indexOf(id) < 0) ids.push(id); });
+    var oldPrices = {}; ids.forEach(function (id) { oldPrices[id] = P[id].prices.price; });
+    var fields = 'id,name,type,categories,prices,is_in_stock,is_purchasable,is_on_backorder,low_stock_remaining,sold_individually,add_to_cart';
+    readStore('/wp-json/wc/store/v1/cart?_fields=items,coupons').then(function (cart) {
+      cartState = Inventory.cart(cart);
+      var sequence = Promise.resolve();
+      for (var i = 0; i < ids.length; i += 100) (function (chunk) {
+        sequence = sequence.then(function () {
+          return readStore('/wp-json/wc/store/v1/products?per_page=100&include=' + chunk.join(',') + '&_fields=' + fields + '&_hi_stock=' + Date.now()).then(function (list) {
+            if (!Array.isArray(list)) throw new Error('invalid stock');
+            acceptProducts(list.map(function (p) { return Object.assign({}, P[p.id], p); }));
+            chunk.forEach(function (id) { if (!list.some(function (p) { return p.id === id; })) P[id].is_in_stock = false; });
+          });
+        });
+      })(ids.slice(i, i + 100));
+      return sequence;
+    }).then(function () {
+      var changes = reconcileSelection(cur);
+      ids.forEach(function (id) { if (wanted(id) && oldPrices[id] !== P[id].prices.price) changes.push('обновилась цена «' + short(P[id].name) + '»'); });
+      rebuildCategories(); lastStockCheck = Date.now(); render();
+      if (changes.length) stockNotice(changes.join('. ') + '. Проверь обновлённый состав перед заказом.');
+    }).catch(function () { inventoryReady = false; stockNotice('не удалось обновить наличие. обнови страницу перед заказом'); })
+      .then(function () { inventoryBusy = false; syncControls(); });
+  }
+  setInterval(refreshStock, 60000);
+  document.addEventListener('visibilitychange', refreshStock);
 
   // стрелки ряда (на компьютере): левая появляется, когда пролистали вправо; правая прячется в конце
   var SHORT = /(^|[\s(«„"–—-])([а-яёА-ЯЁ]{1,2}|[0-9]+)\s+(?=\S)/g;
@@ -742,7 +794,6 @@
         var reqs = items.map(function (it) {
           return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: it[0], quantity: it[1] } };
         });
-        if (hasCard && !cardToken && !cartCoupons.some(function (coupon) { return String(coupon.code).toLowerCase() === atob('aW50ZWxsaWdlbnQ='); })) reqs.push({ path: '/wc/store/v1/cart/apply-coupon', method: 'POST', headers: { 'Nonce': n }, body: { code: atob('aW50ZWxsaWdlbnQ=') } });
         reqs.forEach(function (request, index) { request.path += '?_fields=' + (index === reqs.length - 1 ? 'shipping_rates' : 'items_count'); });
         reqsCount = reqs.length;
         return fetch('/wp-json/wc/store/v1/batch', {
@@ -787,7 +838,7 @@
       .catch(function (error) {
         inventoryBusy = false;
         if (error.hiReview) { catalogPaused = false; syncControls(); continueCatalog(); btn.textContent = 'заказать'; msg.textContent = 'состав или цена изменились — проверь обновление выше'; return; }
-        if (!writesStarted) { inventoryReady = false; syncControls(); btn.textContent = 'заказать'; stockNotice('не удалось проверить наличие. товары в корзине не изменены. обнови наличие перед заказом'); return; }
+        if (!writesStarted) { inventoryReady = false; syncControls(); btn.textContent = 'заказать'; stockNotice('не удалось проверить наличие. товары в корзине не изменены. обнови страницу перед заказом'); return; }
         checkoutLocked = true; syncControls();
         btn.disabled = true;
         btn.textContent = 'остановлено';
