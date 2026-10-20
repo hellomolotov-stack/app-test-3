@@ -33,7 +33,8 @@
   };
   // «добери до 2 000 ₽»: продукты домой (первые 8 в наличии)
   // «собери корзину на 2 000 ₽»: две вкладки – еда домой и БАДы для восстановления (по 8 первых в наличии)
-  var MORE_SETS = { home: [11628, 14902, 11632, 4197, 5055, 1833, 2840, 1568, 14283, 14288, 3315, 4933, 2967, 11626, 11627, 11629, 11630, 14700, 1716, 4446, 5083, 4867, 5002, 1595, 1834, 4570, 4034, 3625, 2439, 4768, 4131, 13890, 2540, 3115, 2049, 11710, 11715, 14699], rec: [2136, 2137, 15526, 3944, 14926, 15015, 3270, 2676, 3022, 3344, 14584, 2071, 15204, 15205] };
+
+  var MORE_SETS = { home: [], rec: [] };
   var moreTab = 'home';
   // «ещё товары»: дальше подгружаем весь ассортимент разделов магазина (запрос идёт из браузера покупателя)
   var MORE_CATS = { home: '508,207,210,503,211,193,176,197,491', rec: '233' };
@@ -42,14 +43,13 @@
   function loadMore() {
     if (moreBusy || moreDone[moreTab]) return;
     moreBusy = true; var tab = moreTab, btn = $('hi-more-btn'); if (btn) btn.textContent = 'загружаем…';
-    fetch('/wp-json/wc/store/v1/products?per_page=12&stock_status=instock&orderby=popularity&category=' + MORE_CATS[tab] + '&page=' + (morePage[tab] + 1))
-      .then(function (res) { return res.json(); })
+    readStore('/wp-json/wc/store/v1/products?per_page=12&stock_status=instock&orderby=popularity&category=' + MORE_CATS[tab] + '&page=' + (morePage[tab] + 1))
       .then(function (list) {
-        morePage[tab]++;
+        acceptProducts(list); morePage[tab]++;
         if (!Array.isArray(list) || list.length < 12) moreDone[tab] = true;
-        (list || []).forEach(function (pr) { if (!P[pr.id]) P[pr.id] = pr; if (MORE_SETS[tab].indexOf(pr.id) < 0 && moreLoaded[tab].indexOf(pr.id) < 0) moreLoaded[tab].push(pr.id); });
+        (list || []).forEach(function (pr) { P[pr.id] = pr; if (MORE_SETS[tab].indexOf(pr.id) < 0 && moreLoaded[tab].indexOf(pr.id) < 0) moreLoaded[tab].push(pr.id); });
       })
-      .catch(function () { moreDone[tab] = true; })
+      .catch(function () { moreDone[tab] = true; inventoryReady = false; stockNotice('не удалось проверить дополнительные товары. обнови наличие перед заказом'); syncControls(); })
       .then(function () { moreBusy = false; renderMore(); });
   }
   var MORE = MORE_SETS.home.concat(MORE_SETS.rec);
@@ -91,7 +91,161 @@
   var P = {}, sel = {}, boxSum = 0;
   function got(i, id) { var l = sel[cur][i]; for (var k = 0; k < l.length; k++) if (l[k][0] === id) return l[k]; return null; }
   function allSel() { var r = []; sel[cur].forEach(function (l) { l.forEach(function (x) { r.push(x); }); }); return r; }
-  function toggle(i, id) { var l = sel[cur][i], g = got(i, id); if (g) l.splice(l.indexOf(g), 1); else l.push([id, 1]); }
+  function toggle(i, id) { var l = sel[cur][i], g = got(i, id); if (g) l.splice(l.indexOf(g), 1); else if (canAdd(id)) l.push([id, 1]); else limitNotice(id); }
+
+  // HI_INVENTORY_START: pure stock rules; a Store API limit is not a reservation.
+  var Inventory = {
+    maximum: function (p) {
+      if (!p || !p.is_in_stock || !p.is_purchasable || p.is_on_backorder || p.type !== 'simple') return 0;
+      var l = p.add_to_cart || {}, max = Number(l.maximum);
+      if (!p.prices || !Number.isFinite(Number(p.prices.price)) || Number(p.prices.price) < 0) return 0;
+      if (Number(l.minimum) !== 1 || Number(l.multiple_of) !== 1 || !Number.isFinite(max) || max < 1) return 0;
+      if (typeof p.low_stock_remaining === 'number') max = Math.min(max, p.low_stock_remaining);
+      return p.sold_individually ? Math.min(1, Math.floor(max)) : Math.floor(max);
+    },
+    cart: function (cart) {
+      if (!cart || !Array.isArray(cart.items) || !Array.isArray(cart.coupons)) throw new Error('invalid cart');
+      var quantities = {}, limits = {};
+      cart.items.forEach(function (item) {
+        if (!Number.isInteger(item.id) || !Number.isInteger(item.quantity) || item.quantity < 0) throw new Error('invalid cart item');
+        quantities[item.id] = (quantities[item.id] || 0) + item.quantity;
+        var max = item.quantity_limits && Number(item.quantity_limits.maximum);
+        if (Number.isFinite(max)) limits[item.id] = limits[item.id] == null ? max : Math.min(limits[item.id], max);
+      });
+      return { quantities: quantities, limits: limits, coupons: cart.coupons };
+    },
+    capacity: function (p, cart) {
+      var max = Inventory.maximum(p);
+      if (!max || !cart) return 0;
+      if (cart.limits[p.id] != null) max = Math.min(max, cart.limits[p.id]);
+      return Math.max(0, Math.floor(max - (cart.quantities[p.id] || 0)));
+    },
+    aggregate: function (pairs) {
+      var result = {};
+      pairs.forEach(function (pair) { result[pair[0]] = (result[pair[0]] || 0) + pair[1]; });
+      return result;
+    }
+  };
+  // HI_INVENTORY_END
+  // Category IDs read from the public store taxonomy on 2026-10-20.
+  // Old BOXES lists are preferences only; they no longer restrict the assortment.
+  var GROUP_CATS = { energy: [184, 225, 227], salty: [187, 219], crisp: [175], sweet: [174, 185, 188], water: [231, 226], lunch: [178] };
+  var SLOT_GROUPS = { light: ['energy', 'salty', 'crisp', 'sweet', 'water'], full: ['lunch', 'energy', 'crisp', 'sweet', 'salty', 'water'] };
+  var preferred = {}, catalogIds = [], catalogPage = 0, catalogHasMore = false;
+  Object.keys(BOXES).forEach(function (box) { preferred[box] = BOXES[box].slots.map(function (slot) { return slot[2].slice(); }); });
+  var cartState = null, inventoryBusy = true, inventoryReady = false, checkoutLocked = false, lastStockCheck = 0, selectionInitialized = false;
+  var apiQueue = Promise.resolve();
+  // One read at a time, no retries and no background polling.
+  function readStore(url) {
+    var next = apiQueue.then(function () {
+      return fetch(url, { credentials: 'include', cache: 'no-store' }).then(function (response) {
+        if (!response.ok) { var error = new Error('store read failed'); error.status = response.status; throw error; }
+        return response.json();
+      });
+    });
+    apiQueue = next.catch(function () {});
+    return next;
+  }
+  function stockNotice(text) { $('hi-stock-msg').textContent = text; }
+  function syncControls() {
+    $('hi-cta').disabled = inventoryBusy || !inventoryReady || checkoutLocked;
+    $('hi-catalog-refresh').disabled = inventoryBusy || checkoutLocked;
+    $('hi-catalog-more').hidden = !catalogHasMore;
+    $('hi-catalog-more').disabled = inventoryBusy || checkoutLocked;
+    root.querySelectorAll('[data-q="1"]').forEach(function (button) { button.disabled = !canAdd(+button.dataset.id); button.setAttribute('aria-disabled', String(button.disabled)); if (button.disabled) button.title = 'достигнут доступный остаток'; else button.removeAttribute('title'); });
+  }
+  function capacity(id) { return Inventory.capacity(P[id], cartState); }
+  function wanted(id) {
+    var n = 0;
+    if (sel[cur]) allSel().forEach(function (x) { if (x[0] === id) n += x[1]; });
+    return n + (extra[id] ? 1 : 0);
+  }
+  function canAdd(id) { return inventoryReady && !inventoryBusy && wanted(id) < capacity(id); }
+  function limitNotice(id) {
+    var n = capacity(id), inCart = cartState && cartState.quantities[id] || 0;
+    stockNotice('«' + short(P[id].name) + '»: можно добавить ' + n + ' шт.' + (inCart ? ' В корзине уже ' + inCart + ' шт.' : '') + ' Больше доступного количества выбрать нельзя.');
+  }
+  function rebuildCategories() {
+    INBOX = {};
+    var priority = ['lunch', 'salty', 'crisp', 'sweet', 'water', 'energy'];
+    function groupFor(p) { return priority.filter(function (group) { return (p.categories || []).some(function (category) { return GROUP_CATS[group].indexOf(category.id) >= 0; }); })[0]; }
+    Object.keys(BOXES).forEach(function (box) {
+      BOXES[box].slots.forEach(function (slot, i) {
+        var cats = GROUP_CATS[SLOT_GROUPS[box][i]];
+        slot[2] = catalogIds.filter(function (id) {
+          return groupFor(P[id]) === SLOT_GROUPS[box][i];
+        });
+        slot[2].forEach(function (id) { INBOX[id] = 1; });
+      });
+    });
+  }
+  function catalogUrl(page) {
+    var cats = [];
+    Object.keys(GROUP_CATS).forEach(function (group) { cats = cats.concat(GROUP_CATS[group]); });
+    return '/wp-json/wc/store/v1/products?per_page=100&stock_status=instock&orderby=date&order=desc&category=' + cats.join(',') + '&page=' + page;
+  }
+  function acceptProducts(list) {
+    if (!Array.isArray(list) || list.some(function (p) { return !p || !Number.isInteger(p.id) || !p.prices || !Array.isArray(p.categories); })) throw new Error('invalid catalog');
+    list.forEach(function (p) { P[p.id] = p; });
+  }
+  function loadCatalogPage() {
+    return readStore(catalogUrl(catalogPage + 1)).then(function (list) {
+      acceptProducts(list); catalogPage++;
+      list.forEach(function (p) { if (catalogIds.indexOf(p.id) < 0) catalogIds.push(p.id); });
+      catalogHasMore = list.length === 100;
+      rebuildCategories();
+    });
+  }
+  function selectedPairs() {
+    return allSel().concat(Object.keys(extra).filter(function (id) { return extra[id]; }).map(function (id) { return [+id, 1]; }));
+  }
+  // Changes are presented for review. Never write a substituted order in this pass.
+  function reconcileSelection(box) {
+    var changes = [], used = {}, shortages = [];
+    sel[box].forEach(function (list, index) {
+      var next = [];
+      list.forEach(function (pair) {
+        var id = pair[0], count = pair[1], remaining = Math.max(0, capacity(id) - (used[id] || 0));
+        var kept = Math.min(count, remaining);
+        if (kept) { next.push([id, kept]); used[id] = (used[id] || 0) + kept; }
+        if (kept < count) { changes.push('«' + short(P[id] && P[id].name || 'товар') + '»: доступно для добавления ' + capacity(id) + ' шт.'); if (!kept) shortages.push(index); }
+      });
+      sel[box][index] = next;
+    });
+    Object.keys(extra).forEach(function (id) {
+      if (!extra[id]) return;
+      if ((used[id] || 0) >= capacity(+id)) { delete extra[id]; changes.push('дополнительный товар «' + short(P[id] && P[id].name || 'товар') + '» убран из выбора'); }
+      else used[id] = (used[id] || 0) + 1;
+    });
+    shortages.forEach(function (index) {
+      var fallback = BOXES[box].slots[index][2].filter(function (id) { return !(used[id] || 0) && capacity(id) > 0; })[0];
+      if (fallback) { sel[box][index].push([fallback, 1]); used[fallback] = 1; changes.push('предложена замена: «' + short(P[fallback].name) + '»'); }
+      else changes.push('в разделе «' + BOXES[box].slots[index][0] + '» доступной замены нет — выбери другой раздел');
+    });
+    return changes;
+  }
+  function freshSelected(cart) {
+    cartState = Inventory.cart(cart);
+    var ids = Object.keys(Inventory.aggregate(selectedPairs())).map(Number), oldPrices = {};
+    ids.forEach(function (id) { oldPrices[id] = P[id] && P[id].prices.price; });
+    var chunks = []; for (var i = 0; i < ids.length; i += 100) chunks.push(ids.slice(i, i + 100));
+    var sequence = Promise.resolve();
+    chunks.forEach(function (chunk) {
+      sequence = sequence.then(function () {
+        return readStore('/wp-json/wc/store/v1/products?per_page=100&include=' + chunk.join(',') + '&_hi_stock=' + Date.now()).then(function (list) {
+          acceptProducts(list);
+          chunk.forEach(function (id) { if (!list.some(function (p) { return p.id === id; }) && P[id]) P[id].is_in_stock = false; });
+        });
+      });
+    });
+    return sequence.then(function () {
+      var changes = reconcileSelection(cur);
+      ids.forEach(function (id) { if (P[id] && oldPrices[id] !== P[id].prices.price) changes.push('обновилась цена «' + short(P[id].name) + '»'); });
+      lastStockCheck = Date.now(); render();
+      return changes;
+    });
+  }
+
   var TRASH = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
   var price = function (p) { return Number(p.prices.price) / Math.pow(10, p.prices.currency_minor_unit); };
   var rub = function (n) { return Math.round(n).toLocaleString('ru-RU') + ' ₽'; };
@@ -100,7 +254,8 @@
   // короткое название: без «ИП …», «1шт» и слова «протеиновый» – чтобы был виден вкус
   var short = function (n) { return dec(n).replace(/\s*ИП\s+[А-ЯЁ][а-яё]+,?/g, '').replace(/,?\s*1\s*шт\.?/gi, '').replace(/\s*протеинов\S*/gi, '').replace(/BOMBBAR/g, 'Bombbar').replace(/\s+,/g, ',').replace(/\s{2,}/g, ' ').trim(); };
   var img = function (p) { return p.images && p.images[0] ? p.images[0].thumbnail : ''; };
-  function avail(arr) { return arr.filter(function (id) { return P[id] && P[id].is_in_stock && P[id].is_purchasable; }); }
+  function escapeHTML(text) { return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+  function avail(arr) { return arr.filter(function (id) { return capacity(id) > 0; }); }
 
   // коллаж рисуем сразу, не дожидаясь каталога
   $('hi-col').innerHTML = COL[cur].map(function (c) { return '<img src="' + CUT + c[0] + '.png" style="' + c[1] + '" alt="">'; }).join('');
@@ -124,24 +279,60 @@
   window.addEventListener('scroll', placeSticky, { passive: true });
   window.addEventListener('resize', placeSticky);
   setTimeout(placeSticky, 300); setTimeout(placeSticky, 1500);
-  var ids = MORE.slice();
-  Object.keys(BOXES).forEach(function (k) { BOXES[k].slots.forEach(function (s) { ids = ids.concat(s[2]); }); });
-  ids = ids.filter(function (v, i) { return ids.indexOf(v) === i; });
-  var parts = []; for (var c = 0; c < ids.length; c += 100) parts.push(ids.slice(c, c + 100));
-  Promise.all(parts.map(function (p) { return fetch('/wp-json/wc/store/v1/products?per_page=100&include=' + p.join(',')).then(function (r) { return r.json(); }); }))
-    .then(function (lists) {
-      var list = [].concat.apply([], lists);
-      list.forEach(function (p) { P[p.id] = p; });
-      // лёгкий – тот же состав, что в коллаже приложения; в остальных категориях по умолчанию ничего
-      var PRE = { light: [14965, 1868, 2932, 2862, 15026] };
-      Object.keys(BOXES).forEach(function (k) { sel[k] = BOXES[k].slots.map(function (s) {
-        if (PRE[k]) return avail(s[2]).filter(function (id) { return PRE[k].indexOf(id) >= 0; }).map(function (id) { return [id, 1]; });
-        var f = avail(s[2])[0]; return f ? [[f, 1]] : [];
-      }); });
-      render();
-      hideLoad();
-    })
-    .catch(function () { hideLoad(); $('hi-slots').innerHTML = '<p class="hi-sub" style="padding:16px 0">не получилось загрузить товары – обнови страницу</p>'; });
+
+  $('hi-slots').insertAdjacentHTML('beforebegin', '<style>.hi [data-q]:disabled{opacity:.3;cursor:not-allowed}</style><p class="hi-sub" id="hi-stock-msg" role="status" aria-live="polite"></p><div style="display:flex;gap:12px;margin:12px 0"><button type="button" class="hi-m-add" id="hi-catalog-refresh">обновить наличие</button><button type="button" class="hi-m-add" id="hi-catalog-more" hidden>ещё варианты</button></div>');
+  Object.keys(BOXES).forEach(function (box) { sel[box] = BOXES[box].slots.map(function () { return []; }); });
+  syncControls();
+  function reloadCatalog() {
+    inventoryBusy = true; syncControls(); stockNotice('обновляем ассортимент и наличие в магазине…');
+    var initial = !selectionInitialized;
+    return readStore('/wp-json/wc/store/v1/cart').then(function (cart) {
+      cartState = Inventory.cart(cart); catalogIds = []; catalogPage = 0; catalogHasMore = false;
+      function page() { return loadCatalogPage().then(function () { if (catalogHasMore && catalogPage < 4) return page(); }); }
+      return page();
+    }).then(function () {
+      // Explicit current selection may include products no longer returned by the category query.
+      if (!initial) return freshSelected({ items: Object.keys(cartState.quantities).map(function (id) { return { id: +id, quantity: cartState.quantities[id], quantity_limits: { maximum: cartState.limits[id] } }; }), coupons: cartState.coupons });
+      var preset = { light: [14965, 1868, 2932, 2862, 15026] };
+      Object.keys(BOXES).forEach(function (box) {
+        var used = {};
+        sel[box] = BOXES[box].slots.map(function (slot, index) {
+          var available = avail(slot[2]).filter(function (id) { return !used[id]; });
+          var want = preset[box] ? preferred[box][index].filter(function (id) { return preset[box].indexOf(id) >= 0; }) : preferred[box][index].slice(0, 1);
+          var chosen = [];
+          want.forEach(function (id) {
+            var pick = available.indexOf(id) >= 0 && !used[id] ? id : available.filter(function (candidate) { return !used[candidate]; })[0];
+            if (pick) { used[pick] = 1; chosen.push([pick, 1]); }
+          });
+          return chosen;
+        });
+      });
+      return [];
+    }).then(function (changes) {
+      inventoryReady = true; selectionInitialized = true; lastStockCheck = Date.now(); render();
+      stockNotice(changes.length ? changes.join('. ') + '. Проверь состав и сумму перед заказом.' : 'ассортимент и цены загружены из магазина. количество учитывает товары в твоей корзине');
+    }).catch(function () {
+      inventoryReady = false;
+      stockNotice('не удалось проверить ассортимент и наличие. заказ недоступен до успешного обновления; товары в корзине не изменены');
+    }).then(function () { inventoryBusy = false; syncControls(); hideLoad(); });
+  }
+  reloadCatalog();
+  $('hi-catalog-refresh').addEventListener('click', function () { if (!inventoryBusy && !checkoutLocked) reloadCatalog(); });
+  $('hi-catalog-more').addEventListener('click', function () {
+    if (inventoryBusy || checkoutLocked) return;
+    inventoryBusy = true; syncControls();
+    loadCatalogPage().then(function () { render(); stockNotice('загрузили дополнительные товары из магазина'); })
+      .catch(function () { inventoryReady = false; stockNotice('не удалось загрузить товары. обнови наличие перед заказом'); })
+      .then(function () { inventoryBusy = false; syncControls(); });
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible' || !inventoryReady || inventoryBusy || checkoutLocked || Date.now() - lastStockCheck < 120000) return;
+    inventoryBusy = true; syncControls();
+    readStore('/wp-json/wc/store/v1/cart').then(freshSelected).then(function (changes) {
+      stockNotice(changes.length ? changes.join('. ') + '. Проверь обновлённый состав перед заказом.' : 'наличие выбранных товаров обновлено');
+    }).catch(function () { inventoryReady = false; stockNotice('не удалось обновить наличие. нажми «обновить наличие» перед заказом'); })
+      .then(function () { inventoryBusy = false; syncControls(); });
+  });
 
   // стрелки ряда (на компьютере): левая появляется, когда пролистали вправо; правая прячется в конце
   var SHORT = /(^|[\s(«„"–—-])([а-яёА-ЯЁ]{1,2}|[0-9]+)\s+(?=\S)/g;
@@ -164,7 +355,7 @@
     $('hi-col').innerHTML = COL[cur].map(function (c) { return '<img src="' + CUT + c[0] + '.png" style="' + c[1] + '" alt="">'; }).join('');
     var html = '';
     b.slots.forEach(function (s, i) {
-      var list = avail(s[2]); if (!list.length) return;
+      var list = avail(s[2]); if (!list.length) { html += '<div class="hi-slot"><div><b>' + s[0] + '</b><p>сейчас нет доступных товаров</p></div></div>'; return; }
       var chosen = sel[cur][i];
       html += '<div class="hi-slot"><div class="hi-slot-k"><b>' + s[0] + '</b><div class="hi-picked">'
         + (chosen.length ? chosen.slice(0, 4).map(function (x) { return '<button type="button" class="hi-pk" data-go="' + x[0] + '" data-slot="' + i + '"><img src="' + img(P[x[0]]) + '" alt="">' + (x[1] > 1 ? '<i>' + x[1] + '</i>' : '') + '</button>'; }).join('') + (chosen.length > 4 ? '<span class="hi-pk-n">+' + (chosen.length - 4) + '</span>' : '') : '<span class="hi-pk-0">не выбрано</span>')
@@ -172,8 +363,8 @@
         + list.map(function (id) {
             var g = got(i, id);
             return '<div class="hi-opt' + (g ? ' is-on' : '') + '" role="button" tabindex="0" data-i="' + i + '" data-id="' + id + '"><button type="button" class="hi-i" data-info="' + id + '" data-slot="' + i + '" aria-label="подробнее">i</button><div class="hi-ph"><img src="' + img(P[id]) + '" alt="" loading="lazy">'
-              + (g ? '<div class="hi-qty"><button type="button" data-q="-1" data-id="' + id + '" data-slot="' + i + '" aria-label="' + (g[1] > 1 ? 'меньше' : 'убрать') + '">' + (g[1] > 1 ? '−' : TRASH) + '</button><span>' + g[1] + '</span><button type="button" data-q="1" data-id="' + id + '" data-slot="' + i + '" aria-label="больше">+</button></div>' : '')
-              + '</div><span>' + short(P[id].name) + '</span><b>' + rub(price(P[id])) + '</b></div>';
+              + (g ? '<div class="hi-qty"><button type="button" data-q="-1" data-id="' + id + '" data-slot="' + i + '" aria-label="' + (g[1] > 1 ? 'меньше' : 'убрать') + '">' + (g[1] > 1 ? '−' : TRASH) + '</button><span>' + g[1] + '</span><button type="button" data-q="1" data-id="' + id + '" data-slot="' + i + '" aria-label="больше"' + (canAdd(id) ? '' : ' disabled aria-disabled="true" title="достигнут доступный остаток"') + '>+</button></div>' : '')
+              + '</div><span>' + escapeHTML(short(P[id].name)) + '</span><b>' + rub(price(P[id])) + '</b>' + (capacity(id) <= 5 ? '<small style="display:block;margin:4px;font-size:11px;color:var(--mut)">доступно ' + capacity(id) + ' шт.</small>' : '') + '</div>';
           }).join('') + '</div><button type="button" class="hi-arr is-r" data-arr="1" aria-label="дальше"></button></div></div>';
     });
     if (html) html = '<p class="hi-multi">в каждой категории можно выбрать несколько товаров – нажми, чтобы добавить или убрать</p>' + html;
@@ -212,7 +403,7 @@
     var canMore = all.length > moreVis[moreTab] || !moreDone[moreTab];
     $('hi-more').innerHTML = all.slice(0, moreVis[moreTab]).map(function (id) {
       var p = P[id];
-      return '<div class="hi-m"><div class="hi-ph"><img src="' + img(p) + '" alt=""></div><div class="hi-m-n">' + short(p.name) + '</div><div class="hi-m-p">' + rub(price(p)) + '</div>'
+      return '<div class="hi-m"><div class="hi-ph"><img src="' + img(p) + '" alt=""></div><div class="hi-m-n">' + escapeHTML(short(p.name)) + '</div><div class="hi-m-p">' + rub(price(p)) + '</div>'
         + '<button type="button" class="hi-m-add' + (extra[id] ? ' is-in' : '') + '" data-add="' + id + '">' + (extra[id] ? '✓ добавлено' : '+ к заказу') + '</button></div>';
     }).join('') + (canMore ? '<button type="button" class="hi-more-btn" id="hi-more-btn">ещё товары</button>' : '');
   }
@@ -319,18 +510,19 @@
   function closeInfo() { $('hi-modal').hidden = true; document.documentElement.style.overflow = ''; }
 
   root.addEventListener('click', function (e) {
+    if ((inventoryBusy || !inventoryReady || checkoutLocked) && e.target.closest('[data-q], [data-pick], [data-add], .hi-opt, .hi-tab, #hi-more-btn, .hi-mtab')) return;
     var way = e.target.closest('.hi-way');
     if (way) {
       root.querySelectorAll('.hi-way').forEach(function (w) { w.classList.toggle('is-on', w === way); });
       wayNow = way.dataset.way; setWayMsg();
       $('hi-date-row').hidden = way.dataset.way !== 'hike';
       $('hi-more-card').hidden = way.dataset.way !== 'home';
-      if (way.dataset.way !== 'home') extra = {};
+      if (way.dataset.way !== 'home') extra = {}; else if (!morePage[moreTab]) loadMore();
       renderMore();
       return;
     }
     var qb = e.target.closest('[data-q]');
-    if (qb) { e.stopPropagation(); var qi = +qb.dataset.slot, qid = +qb.dataset.id, g = got(qi, qid); if (!g) return; g[1] += +qb.dataset.q; if (g[1] < 1) toggle(qi, qid); else g[1] = Math.min(9, g[1]); render(); return; }
+    if (qb) { e.stopPropagation(); var qi = +qb.dataset.slot, qid = +qb.dataset.id, g = got(qi, qid); if (!g) return; if (+qb.dataset.q > 0 && !canAdd(qid)) { limitNotice(qid); return; } g[1] += +qb.dataset.q; if (g[1] < 1) toggle(qi, qid); render(); if (wanted(qid) >= capacity(qid)) limitNotice(qid); return; }
     var ar = e.target.closest('[data-arr]');
     if (ar) { var rr = ar.parentNode.querySelector('.hi-row'); rr.scrollBy({ left: +ar.dataset.arr * rr.clientWidth * 0.8, behavior: 'smooth' }); return; }
     var go = e.target.closest('[data-go]');
@@ -358,11 +550,11 @@
       return;
     }
     var mt = e.target.closest('.hi-mtab');
-    if (mt) { moreTab = mt.dataset.m; renderMore(); return; }
+    if (mt) { moreTab = mt.dataset.m; if (!morePage[moreTab]) loadMore(); renderMore(); return; }
     var add = e.target.closest('[data-add]');
-    if (add) { var aid = +add.dataset.add; extra[aid] = !extra[aid]; renderMore(); return; }
+    if (add) { var aid = +add.dataset.add; if (!extra[aid] && !canAdd(aid)) { limitNotice(aid); return; } extra[aid] = !extra[aid]; renderMore(); return; }
     var tab = e.target.closest('.hi-tab');
-    if (tab) { cur = tab.dataset.box; render(); return; }
+    if (tab) { cur = tab.dataset.box; var changes = reconcileSelection(cur); render(); if (changes.length) stockNotice(changes.join('. ') + '. Проверь состав.'); return; }
     var opt = e.target.closest('.hi-opt');
     if (opt) {
       var i = +opt.dataset.i, oid = +opt.dataset.id, had = !!got(i, oid);
@@ -374,11 +566,13 @@
   // оформить: кладём товары бокса (и добавленное) в обычную корзину магазина; владельцу карты – сразу скидка клуба
   $('hi-cta').addEventListener('click', function () {
     var btn = this, msg = $('hi-msg');
+    if (inventoryBusy || !inventoryReady || checkoutLocked || moreBusy) return;
+    inventoryBusy = true; syncControls();
     var items = [];
     allSel().forEach(function (x) { items.push([x[0], x[1]]); });
     Object.keys(extra).forEach(function (id) { if (extra[id]) items.push([+id, 1]); });
-    if (!items.length) return;
-    if (wayNow === 'hike' && !$('hi-date').value) { msg.textContent = 'укажи дату хайка – соберём бокс к этому дню'; $('hi-date').focus(); $('hi-date-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (!items.length) { inventoryBusy = false; syncControls(); return; }
+    if (wayNow === 'hike' && !$('hi-date').value) { inventoryBusy = false; syncControls(); msg.textContent = 'укажи дату хайка – соберём бокс к этому дню'; $('hi-date').focus(); $('hi-date-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     var note = wayNow === 'hike' ? hikeNote() : '';
     // строка для комментария: в буфер обмена (сразу, пока действует нажатие) и в cookie – для будущей вставки кодом на сайте
     document.cookie = 'hi_note=' + encodeURIComponent(note) + ';path=/;max-age=' + (note ? 7200 : 0);
@@ -399,19 +593,38 @@
         throw diagnosticError(stage, response.status, body && body.code);
       });
     }
+    var writesStarted = false, cartCoupons = [];
     var nonce = function () {
-      return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) {
-        if (clubPilot && !r.ok) return rejectedResponse(r, 'S1');
-        var n = r.headers.get('Nonce');
-        if (clubPilot && !n) throw diagnosticError('S1', r.status, 'NO_NONCE');
-        return n;
+      return readStoreCart().then(function (result) {
+        cartCoupons = result.cart.coupons;
+        return freshSelected(result.cart).then(function (changes) {
+          if (changes.length) {
+            var changed = new Error('review required'); changed.hiReview = true;
+            stockNotice(changes.join('. ') + '. Проверь состав и сумму, затем нажми «заказать» ещё раз.');
+            throw changed;
+          }
+          var grouped = Inventory.aggregate(selectedPairs());
+          items = Object.keys(grouped).map(function (id) { return [+id, grouped[id]]; });
+          if (!items.length) { var empty = new Error('empty selection'); empty.hiReview = true; throw empty; }
+          if (items.length > 24) { var tooMany = new Error('review required'); tooMany.hiReview = true; stockNotice('для одного перехода выбери не больше 24 разных товаров'); throw tooMany; }
+          return result.nonce;
+        });
       });
     };
-    var n0;
-    nonce()
+    function readStoreCart() {
+      return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include', cache: 'no-store' }).then(function (r) {
+        if (!r.ok) return rejectedResponse(r, 'S1');
+        var n = r.headers.get('Nonce');
+        if (!n) throw diagnosticError('S1', r.status, 'NO_NONCE');
+        return r.json().then(function (cart) { Inventory.cart(cart); return { nonce: n, cart: cart }; });
+      });
+    }
+    var n0, reqsCount = 0;
+    // Drain pending reads before checkout; selections remain locked through navigation.
+    apiQueue.then(nonce)
       .then(function (n) {
         if (!clubPilot) return n;
-        diagnosticStage = 'S2';
+        diagnosticStage = 'S2'; writesStarted = true;
         // Explicit pilot only. Store API verifies its normal nonce and owns the cart session.
         return fetch('/wp-json/wc/store/v1/cart/extensions', {
           method: 'POST', credentials: 'include',
@@ -427,11 +640,12 @@
       })
       .then(function (n) {
         n0 = n;
-        diagnosticStage = 'S3';
+        diagnosticStage = 'S3'; writesStarted = true;
         var reqs = items.map(function (it) {
           return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: it[0], quantity: it[1] } };
         });
-        if (hasCard) reqs.push({ path: '/wc/store/v1/cart/apply-coupon', method: 'POST', headers: { 'Nonce': n }, body: { code: atob('aW50ZWxsaWdlbnQ=') } });
+        if (hasCard && !cartCoupons.some(function (coupon) { return String(coupon.code).toLowerCase() === atob('aW50ZWxsaWdlbnQ='); })) reqs.push({ path: '/wc/store/v1/cart/apply-coupon', method: 'POST', headers: { 'Nonce': n }, body: { code: atob('aW50ZWxsaWdlbnQ=') } });
+        reqsCount = reqs.length;
         return fetch('/wp-json/wc/store/v1/batch', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json', 'Nonce': n },
@@ -440,16 +654,15 @@
       })
       .then(function (r) {
         if (!r.ok) {
-          if (clubPilot) return rejectedResponse(r, 'S3');
-          throw new Error(r.status);
+          return rejectedResponse(r, 'S3');
         }
-        if (wayNow === 'home' && !clubPilot) return;
+        // Always inspect item results, including ordinary store links.
         return r.json().catch(function (error) {
           if (clubPilot) throw diagnosticError('S3', r.status, 'INVALID_JSON');
           throw error;
         }).then(function (d) {
-          if (clubPilot) {
-            if (!d || !Array.isArray(d.responses) || !d.responses.length) throw diagnosticError('S3', r.status, 'EMPTY_BATCH');
+          {
+            if (!d || !Array.isArray(d.responses) || d.responses.length !== reqsCount) throw diagnosticError('S3', r.status, 'EMPTY_BATCH');
             for (var index = 0; index < d.responses.length; index++) {
               var itemResponse = d.responses[index];
               if (!itemResponse || !itemResponse.status || itemResponse.status >= 400) {
@@ -464,7 +677,7 @@
           for (var k = rs.length - 1; k >= 0 && !cart; k--) if (rs[k].body && rs[k].body.shipping_rates) cart = rs[k].body;
           diagnosticStage = 'S4';
           return pickPickup(n0, cart);
-        }).catch(function (error) { if (clubPilot) throw error; });
+        });
       })
       .then(function () {
         if (clubPilot || !note) { location.href = '/checkout/'; return; }
@@ -473,8 +686,12 @@
         setTimeout(function () { location.href = '/checkout/'; }, 1500);
       })
       .catch(function (error) {
-        btn.disabled = clubPilot;
-        btn.textContent = clubPilot ? 'оформление остановлено' : 'заказать';
+        inventoryBusy = false;
+        if (error.hiReview) { syncControls(); btn.textContent = 'заказать'; msg.textContent = 'состав или цена изменились — проверь обновление выше'; return; }
+        if (!writesStarted) { inventoryReady = false; syncControls(); btn.textContent = 'заказать'; stockNotice('не удалось проверить наличие. корзина не изменена. обнови наличие перед заказом'); return; }
+        checkoutLocked = true; syncControls();
+        btn.disabled = true;
+        btn.textContent = 'остановлено';
         if (clubPilot) {
           var stage = error && error.hiStage || diagnosticStage;
           var label = stage === 'S1' ? 'подготовка корзины' : stage === 'S2' ? 'клубный переход' : stage === 'S3-coupon' ? 'применение скидки' : stage.indexOf('S3-item-') === 0 ? 'добавление товара' : stage === 'S4' ? 'выбор получения' : 'сборка корзины';
@@ -482,8 +699,13 @@
           var apiCode = error && error.hiCode ? '; ' + error.hiCode : '';
           msg.textContent = 'не удалось подготовить клубный заказ: ' + label + ' [D1; ' + stage + '; ' + status + apiCode + ']. не нажимай повторно: часть товаров могла добавиться. пришли этот код поддержке';
         } else {
-          msg.textContent = 'не получилось добавить в корзину – попробуй ещё раз';
+          msg.textContent = 'добавление остановлено. часть товаров могла добавиться — проверь корзину, повторно не нажимай';
         }
+        if (error && /out_of_stock|sold_individually|quantity/.test(error.hiCode || '')) {
+          msg.textContent = 'пока собирали заказ, доступное количество изменилось. часть товаров могла добавиться. проверь корзину перед следующей попыткой';
+        }
+        var cartLink = document.createElement('a'); cartLink.href = '/cart/'; cartLink.textContent = ' открыть корзину'; msg.appendChild(cartLink);
+
       });
   });
 })();
