@@ -38,7 +38,7 @@ function orderLines(o) {
         `💳 ${rub(o.total)}${o.card_discount ? ` (скидка по карте ${rub(o.card_discount)})` : ''}${o.ready_food ? ' · 🍱 готовая еда' : ''}`];
 }
 function createHandler(deps) {
-    return async function (req, res) {
+    const handle = async function (req, res) {
         res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
         if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'POST only' });
         const env = deps.env, mode = env.DC_LOYALTY_MODE;
@@ -182,6 +182,29 @@ function createHandler(deps) {
             // No user amounts, QR tokens, credentials, provider errors or request bodies in logs.
             const known = error instanceof LoyaltyError;
             return res.status(known ? error.status : 503).json({ error: known ? error.code : 'service_unavailable' });
+        }
+    };
+    return async function (req, res) {
+        const started = Date.now();
+        let status = 200;
+        const originalStatus = res.status;
+        res.status = function (code) { status = code; return originalStatus.call(this, code); };
+        try { return await handle(req, res); }
+        finally {
+            res.status = originalStatus;
+            // Operational metadata only: never log bodies, identifiers, signatures or keys.
+            let body = req.body;
+            try { if (typeof body === 'string') body = JSON.parse(body); } catch { body = null; }
+            const actions = ['app_card', 'app_ref', 'quote', 'status', 'reserve', 'confirm', 'cancel', 'refund', 'card', 'hike_order', 'hike_cancelled', 'box_choice', 'staff_invite', 'staff_join', 'staff_list', 'staff_remove', 'staff_ids'];
+            const headers = req.headers || {};
+            const report = { event: 'dc_loyalty_result', action: req.method === 'GET' ? 'cron' : actions.includes(body && body.action) ? body.action : 'unknown',
+                status, duration_ms: Math.max(0, Date.now() - started),
+                store_key_present: typeof headers['x-dc-store-key'] === 'string',
+                store_authorized: sameSecret(headers['x-dc-store-key'], deps.env.DC_STORE_KEY),
+                bot_key_present: typeof headers['x-dc-bot-key'] === 'string',
+                card_present: !!(body && typeof body.card === 'string' && body.card.length),
+                init_data_present: !!(body && typeof body.initData === 'string' && body.initData.length) };
+            try { (deps.diagnostic || (value => console.info(JSON.stringify(value))))(report); } catch { /* Diagnostics must never affect the response. */ }
         }
     };
 }
