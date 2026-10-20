@@ -16,13 +16,22 @@ function cleanOrder(o) {
     const int = v => Number.isSafeInteger(v) && v >= 0 && v < 1e9 ? v : 0, str = (v, n) => String(v == null ? '' : v).slice(0, n);
     return { number: str(o.number, 20), status: o.status, date: o.date, route: str(o.route, 120), name: str(o.name, 60), phone: str(o.phone, 30),
         items: (Array.isArray(o.items) ? o.items : []).slice(0, 30).map(i => ({ name: str(i && i.name, 80), qty: int(i && i.qty), total: int(i && i.total) })),
-        total: int(o.total), card_discount: int(o.card_discount), ready_food: o.ready_food === true };
+        total: int(o.total), card_discount: int(o.card_discount), ready_food: o.ready_food === true, tg: str(o.tg, 64) };
 }
 function hikeTotals(orders) {
     const paid = Object.values(orders || {}).filter(o => o && o.status === 'paid');
     const sum = paid.reduce((a, o) => a + (o.total || 0), 0);
     return { paid, sum, decision: sum >= FREE_DELIVERY ? '🚚 магазин везёт боксы к тебе домой' : `🛍 забираешь в магазине сам (до ${rub(FREE_DELIVERY)})` };
 }
+// Подписанный Telegram ID покупателя (любого, не только владельца карты) – чтобы бот мог написать ему о его заказе.
+function signRef(uid, secret) { const p = `tg1_${uid}`; return `${p}_${crypto.createHmac('sha256', secret).update(p).digest('base64url').slice(0, 28)}`; }
+function verifyRef(value, secret) {
+    const m = /^tg1_(\d{1,16})_([A-Za-z0-9_-]{28})$/.exec(String(value || '')); if (!m) return '';
+    const expected = signRef(m[1], secret);
+    return crypto.timingSafeEqual(Buffer.from(String(value)), Buffer.from(expected)) ? m[1] : '';
+}
+// крайний срок заказа (и бесплатной отмены) – как в плагине: 17:00 МСК накануне, с готовой едой 20:00 за два дня
+function hikeDeadline(date, ready) { const [y, m, d] = date.split('-').map(Number); return Date.UTC(y, m - 1, d - (ready ? 2 : 1), ready ? 17 : 14, 0); }
 function orderLines(o) {
     return [`👤 ${esc(o.name || 'без имени')}${o.phone ? ' · ' + esc(o.phone) : ''}`,
         `🧺 ${o.items.map(i => `${esc(i.name)}${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ') || '—'}`,
@@ -51,6 +60,27 @@ function createHandler(deps) {
         let body = req.body;
         try { if (typeof body === 'string') body = JSON.parse(body); } catch { return res.status(400).json({ error: 'invalid_request' }); }
         if (!body || typeof body !== 'object' || JSON.stringify(body).length > 16384) return res.status(400).json({ error: 'invalid_request' });
+        // Приложение: подписанный Telegram ID для ссылки в магазин (любому пользователю)
+        if (body.action === 'app_ref' || body.action === 'hike_cancelled') {
+            const user = deps.verifyInitData(String(body.initData || ''));
+            if (!user || !/^\d{1,16}$/.test(String(user.id))) return res.status(401).json({ error: 'unauthorized' });
+            const uid = String(user.id);
+            if (body.action === 'app_ref') return res.status(200).json({ ref: signRef(uid, env.DC_CARD_SIGNING_KEY) });
+            // человек отменил участие в хайке – если у него оплачен бокс на эту дату, бот спросит, что с ним сделать
+            const date = String(body.date || '');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'invalid_date' });
+            try {
+                const mine = Object.values(await deps.hikeOrders.read(date)).filter(o => o && o.status === 'paid' && o.tg === uid && !o.request);
+                for (const o of mine) {
+                    const canCancel = Date.now() < hikeDeadline(date, o.ready_food);
+                    const buttons = [[{ text: 'заберу сам в магазине', callback_data: `dco:p:${date}:${o.number}` }]];
+                    if (canCancel) buttons.unshift([{ text: 'отменить заказ и вернуть деньги', callback_data: `dco:c:${date}:${o.number}` }]);
+                    await deps.message(uid, [`Ты отменил(а) участие в хайке ${dayLabel(date)}, а у тебя оплачен хайкинг бокс (заказ №${esc(o.number)}, ${rub(o.total)}).`,
+                        '', canCancel ? 'Что с ним сделать?' : 'Бокс уже собирают, поэтому отменить его нельзя – но его можно забрать в магазине «Жить здорово».'].join('\n'), buttons);
+                }
+                return res.status(200).json({ orders: mine.length });
+            } catch { return res.status(503).json({ error: 'service_unavailable' }); }
+        }
         // Приложение клуба: владелец карты получает свой QR для кассы. Личность – только из подписанных данных Telegram.
         if (body.action === 'app_card') {
             const user = deps.verifyInitData(String(body.initData || ''));
@@ -70,6 +100,22 @@ function createHandler(deps) {
         if (bot && store) return res.status(400).json({ error: 'ambiguous_actor' });
         const actor = String(body.actor || ''), action = body.action;
         if (!/^\d{1,16}$/.test(actor)) return res.status(400).json({ error: 'invalid_actor' });
+        // Покупатель выбрал в боте, что делать с боксом после отмены участия
+        if (bot && action === 'box_choice') {
+            const date = String(body.date || ''), number = String(body.number || ''), choice = body.choice;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^[\w-]{1,20}$/.test(number) || !['cancel', 'pickup'].includes(choice)) return res.status(400).json({ error: 'invalid_request' });
+            try {
+                const all = await deps.hikeOrders.read(date), o = all[number];
+                if (!o || o.tg !== actor || o.status !== 'paid') return res.status(404).json({ error: 'order_not_found' });
+                if (o.request) return res.status(200).json({ ok: true, choice: o.request, already: true });
+                if (choice === 'cancel' && Date.now() >= hikeDeadline(date, o.ready_food)) return res.status(409).json({ error: 'too_late' });
+                await deps.hikeOrders.save({ ...o, request: choice });
+                await deps.notify(choice === 'cancel'
+                    ? [`↩️ <b>Запрос на отмену · заказ №${esc(o.number)}</b>`, `Покупатель не идёт на хайк ${dayLabel(date)} и просит отменить заказ и вернуть деньги.`, ...orderLines(o), '', 'Магазин: отмени заказ и сделай возврат в WooCommerce – покупатель получит уведомление сам.'].join('\n')
+                    : [`🛍 <b>Заберёт сам · заказ №${esc(o.number)}</b>`, `Покупатель не идёт на хайк ${dayLabel(date)} и заберёт бокс в магазине. На хайк этот заказ не везём.`, ...orderLines(o)].join('\n'));
+                return res.status(200).json({ ok: true, choice });
+            } catch { return res.status(503).json({ error: 'service_unavailable' }); }
+        }
         // Сотрудники магазина (добавляет владелец через бота): касса + уведомления о заказах, без прав администратора бота.
         const owners = ids(env.DC_OWNER_IDS || '163665735');
         if (bot && ['staff_invite', 'staff_join', 'staff_list', 'staff_remove', 'staff_ids'].includes(action)) {
@@ -101,7 +147,11 @@ function createHandler(deps) {
         if (store && action === 'hike_order') {
             const order = cleanOrder(body.order);
             if (!order) return res.status(400).json({ error: 'invalid_order' });
+            order.tg = verifyRef(order.tg, env.DC_CARD_SIGNING_KEY); // подпись не сошлась – просто без Telegram
             try {
+                const prev = (await deps.hikeOrders.read(order.date))[order.number];
+                if (prev && prev.request) order.request = prev.request;
+                if (order.status === 'cancelled' && order.tg) await deps.message(order.tg, `Заказ хайкинг бокса №${esc(order.number)} отменён. Деньги вернутся тем же способом, которым ты платил(а).`);
                 const all = await deps.hikeOrders.save(order);
                 const { paid, sum, decision } = hikeTotals(all);
                 const head = order.status === 'paid'
@@ -165,6 +215,12 @@ module.exports = createHandler({
             if (!r.ok) throw new Error('read');
             return (await r.json()) || {};
         }
+    },
+    async message(uid, text, buttons) {
+        const token = process.env.TELEGRAM_BOT_TOKEN; if (!token || !/^\d{1,16}$/.test(String(uid))) return;
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: uid, text, parse_mode: 'HTML', disable_web_page_preview: true, ...(buttons ? { reply_markup: { inline_keyboard: buttons } } : {}) }),
+            signal: AbortSignal.timeout(8000) }).catch(() => {});
     },
     async notify(text) {
         const token = process.env.TELEGRAM_BOT_TOKEN; if (!token) return;

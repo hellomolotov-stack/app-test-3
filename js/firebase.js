@@ -359,7 +359,14 @@ export async function addParticipant(hikeDate, userId, userData) {
 export async function removeParticipant(hikeDate, userId) {
     if (!database || !userId) return Promise.reject('No database or user');
     await authReady();
-    return database.ref(`hikeParticipants/${hikeDate}/${userId}`).remove();
+    const done = await database.ref(`hikeParticipants/${hikeDate}/${userId}`).remove();
+    // если у человека оплачен хайкинг бокс на эту дату – бот спросит, отменить заказ или забрать самому
+    const initData = window.Telegram?.WebApp?.initData;
+    if (initData && String(window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '') === String(userId)) {
+        fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'hike_cancelled', initData, date: hikeDate }) }).catch(() => {});
+    }
+    return done;
 }
 
 export async function setUserRegistrationStatus(userId, hikeDate, status) {

@@ -78,3 +78,30 @@ test('shop staff: owner invites, employee joins via code, becomes cashier; other
  await r({action:'staff_remove',actor:'163665735',uid:'777'});
  assert.equal((await r({action:'status',actor:'777',card:signCard(actor,signing)})).body.error,'cashier_forbidden');
 });
+test('cancel participation: customer gets choice, cancel only before deadline, shop is notified',async()=>{
+ const sk='c'.repeat(40), db={}, notes=[], msgs=[];
+ const api=setup({DC_LOYALTY_MODE:'live',DC_STORE_KEY:sk,DC_ONLINE_ENABLED:'1'});
+ api.deps.verifyInitData=d=>d==='me'?{id:42}:null;
+ api.deps.notify=async t=>notes.push(t); api.deps.message=async(u,t,b)=>msgs.push({u,t,b});
+ api.deps.hikeOrders={async save(o){(db[o.date] ||= {})[o.number]=o;return db[o.date]},async read(d){return db[d]||{}}};
+ const app=b=>api.request({...b,mode:'live'},{});
+ const ref=(await app({action:'app_ref',initData:'me'})).body.ref; assert.match(ref,/^tg1_42_/);
+ const future=new Date(Date.now()+10*86400000).toISOString().slice(0,10);
+ await api.request({actor:'0',mode:'live',action:'hike_order',order:{number:'7',status:'paid',date:future,route:'Ай-Петри',name:'Ира',items:[],total:50000,tg:ref}},{'x-dc-store-key':sk});
+ assert.equal(db[future]['7'].tg,'42');
+ await app({action:'hike_cancelled',initData:'me',date:future});
+ assert.equal(msgs.length,1); assert.equal(msgs[0].u,'42'); assert.equal(msgs[0].b.length,2);
+ const bot=b=>api.request({...b,mode:'live'});
+ assert.equal((await bot({action:'box_choice',actor:'99',date:future,number:'7',choice:'cancel'})).body.error,'order_not_found');
+ assert.equal((await bot({action:'box_choice',actor:'42',date:future,number:'7',choice:'cancel'})).body.choice,'cancel');
+ assert.match(notes.at(-1),/Запрос на отмену/);
+ // после срока – только «заберу сам»
+ const soon=new Date(Date.now()+3*3600000).toISOString().slice(0,10);
+ await api.request({actor:'0',mode:'live',action:'hike_order',order:{number:'8',status:'paid',date:soon,items:[],total:1,tg:ref}},{'x-dc-store-key':sk});
+ await app({action:'hike_cancelled',initData:'me',date:soon});
+ assert.equal(msgs.at(-1).b.length,1);
+ assert.equal((await bot({action:'box_choice',actor:'42',date:soon,number:'8',choice:'cancel'})).body.error,'too_late');
+ // отмена магазином – покупателю приходит сообщение
+ await api.request({actor:'0',mode:'live',action:'hike_order',order:{number:'7',status:'cancelled',date:future,items:[],total:50000,tg:ref}},{'x-dc-store-key':sk});
+ assert.match(msgs.at(-1).t,/отменён/);
+});

@@ -9,8 +9,12 @@ export const HIKING_BOX_TEST_IDS = ['7845375334', '163665735']; // @hellointelli
 const boxMember = () => state.userCard?.status === 'active';
 const SHOP_URL = 'https://dietcakes.ru/hiking-intelligence/'; // наша страница на сайте «Жить здорово»
 // онлайн-скидка по карте с месячным лимитом: ссылка несёт личный подписанный ID карты (тот же, что в QR для кассы).
-let cardToken = '';
+let cardToken = '', tgRef = '';
 function prefetchCardToken() {
+    // подписанный Telegram ID – всем (бот напишет человеку о его заказе бокса)
+    if (!tgRef && window.Telegram?.WebApp?.initData) fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'app_ref', initData: window.Telegram.WebApp.initData }) })
+        .then(r => r.ok ? r.json() : null).then(b => { if (/^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(b?.ref || '')) tgRef = b.ref; }).catch(() => {});
     if (cardToken || !boxMember()) return;
     fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'app_card', initData: window.Telegram?.WebApp?.initData || '' }) })
@@ -43,6 +47,7 @@ function shopUrl(hike, boxKey, custom) {
     const hash = new URLSearchParams();
     if (name) hash.set('name', name);
     if (cardToken) hash.set('card', cardToken);
+    if (tgRef) hash.set('tg', tgRef);
     return `${SHOP_URL}?${q}${hash.toString() ? '#' + hash : ''}`;
 }
 

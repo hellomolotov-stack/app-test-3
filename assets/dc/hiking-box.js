@@ -86,6 +86,8 @@
   var hasCard = qs.get('card') === '1';
   // личный подписанный ID карты из приложения (после # – не уходит в адрес запроса); скидку по нему считает магазин с сервером клуба
   var cardToken = /^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(hq.get('card') || '') ? hq.get('card') : '';
+  // подписанный Telegram ID покупателя – бот клуба напишет ему про заказ (например, если он отменит участие в хайке)
+  var tgRef = /^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(hq.get('tg') || '') ? hq.get('tg') : '';
   if (hasCard) { $('hi-card-note').textContent = 'у тебя есть карта – скидка применится в корзине сама'; $('hi-card-btn').hidden = true; }
   if (qs.get('custom') === '1') setTimeout(function () { $('hi-box').scrollIntoView({ behavior: 'smooth' }); }, 600);
 
@@ -722,7 +724,7 @@
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json', 'Nonce': n },
           body: JSON.stringify({ namespace: 'hiking-club', data: {
-            source: 'intelligentsia', pilot: '1', way: wayNow, date: $('hi-date').value || '', route: route, card: cardToken
+            source: 'intelligentsia', pilot: '1', way: wayNow, date: $('hi-date').value || '', route: route, card: cardToken, tg: tgRef
           } })
         }).then(function (r) {
           if (!r.ok) return rejectedResponse(r, 'S2');

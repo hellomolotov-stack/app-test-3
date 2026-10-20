@@ -192,6 +192,21 @@ class Cashier:
             return await handler(event, data)
         command = text.split(maxsplit=1)[0].split('@')[0] if text else ''
         token = None if callback else card_from_text(text)
+        # Покупатель отвечает на вопрос «что сделать с боксом» после отмены участия в хайке
+        box = re.fullmatch(r'dco:([cp]):(\d{4}-\d{2}-\d{2}):([\w-]{1,20})', text) if callback else None
+        if box:
+            try:
+                result = await self.api.call('box_choice', actor, date=box[2], number=box[3], choice='cancel' if box[1] == 'c' else 'pickup')
+                await event.answer()
+                try:
+                    await message.edit_reply_markup(reply_markup=None)
+                except Exception:
+                    pass
+                await message.answer('Передали магазину: заказ отменят и вернут деньги – придёт сообщение, когда отменят.' if result.get('choice') == 'cancel'
+                                     else 'Передали магазину: бокс на хайк не везём, заберёшь его сам в магазине «Жить здорово» в часы работы.')
+            except ApiError as error:
+                await event.answer('Отменить уже нельзя – бокс собирают. Его можно забрать в магазине.' if str(error) == 'too_late' else 'Не получилось. Напиши организатору клуба.', show_alert=True)
+            return
         invite = None if callback else SHOP_INVITE.fullmatch(text.split(maxsplit=1)[1]) if text.startswith('/start ') and len(text.split()) == 2 else None
         if invite:
             try:

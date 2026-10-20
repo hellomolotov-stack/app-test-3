@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.3.2
+ * Version: 0.3.3
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -150,6 +150,8 @@ final class HI_Club_Checkout {
             'way' => $way, 'date' => $date,
             // Подписанный ID карты из приложения; подлинность и активность проверяет сервер клуба.
             'card' => preg_match('/^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', $card) ? $card : '',
+            // подписанный Telegram ID покупателя: клуб напишет ему о заказе (подпись проверяет сервер клуба)
+            'tg' => preg_match('/^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', self::scalar($data, 'tg')) ? self::scalar($data, 'tg') : '',
             'route' => mb_substr(sanitize_text_field(self::scalar($data, 'route')), 0, 120),
         );
         $session->set(self::SESSION, $context);
@@ -317,6 +319,7 @@ final class HI_Club_Checkout {
             'items' => array_slice($items, 0, 30), 'total' => (int) round((float) $order->get_total() * 100),
             'card_discount' => (int) $order->get_meta('_hi_club_card_discount'),
             'ready_food' => $order->get_meta('_hi_club_ready_food') === 'yes',
+            'tg' => (string) $order->get_meta('_hi_club_tg'),
         ));
     }
 
@@ -425,6 +428,7 @@ final class HI_Club_Checkout {
         if (!$context) return;
         $order->update_meta_data('_hi_club_source', 'intelligentsia');
         $order->update_meta_data('_hi_club_way', $context['way']);
+        if (!empty($context['tg'])) $order->update_meta_data('_hi_club_tg', $context['tg']);
         if (self::card_active()) {
             $quote = self::quote(WC()->cart);
             if ($quote && $quote['ok'] && $quote['discount'] > 0) {
@@ -471,8 +475,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.2', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.2');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.3', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.3');
     }
 
     public static function render() {
