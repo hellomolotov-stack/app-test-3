@@ -94,9 +94,24 @@
   function toggle(i, id) { if (pendingDefaults[cur]) pendingDefaults[cur][i] = 0; var l = sel[cur][i], g = got(i, id); if (g) l.splice(l.indexOf(g), 1); else if (canAdd(id)) l.push([id, 1]); else limitNotice(id); }
 
   // HI_INVENTORY_START: pure stock rules; a Store API limit is not a reservation.
+  function assortmentAllowed(p) {
+    if (!p) return false;
+    var name = String(p.name || '').toLowerCase().replace(/ё/g, 'е');
+    if (/(кокос|coconut|cocowater)/.test(name) && /(вод[аыуе]|water)/.test(name)) return false;
+    var childCategory = (p.categories || []).some(function (c) { return [248, 256].indexOf(c.id) >= 0; });
+    if (/(сок|нектар|сады\s*придонья|фруто.?няня|агуша)/.test(name) && (childCategory || /детск|малыш|baby|kids|фруто.?няня|агуша|сады\s*придонья|(?:0[.,]2\s*л|200\s*мл)/.test(name))) return false;
+    var packaging = JSON.stringify(p.attributes || []).toLowerCase();
+    if (/лимонад|lemonade|lapochka|лапочка|lemonardo|лемонардо|капли/.test(name)) {
+      if (/стекл|glass/.test(name + ' ' + packaging)) return false;
+      if (/lapochka|лапочка|lemonardo|лемонардо|капли/.test(name)) return false;
+      // Unknown lemonade packaging is withheld rather than guessed to be non-glass.
+      return /bombbar|бомббар|пэт|пластик|алюмин|жестян|\bpet\b|\bcan\b/.test(name + ' ' + packaging);
+    }
+    return true;
+  }
   var Inventory = {
     maximum: function (p) {
-      if (!p || !p.is_in_stock || !p.is_purchasable || p.is_on_backorder || p.type !== 'simple') return 0;
+      if (!assortmentAllowed(p) || !p.is_in_stock || !p.is_purchasable || p.is_on_backorder || p.type !== 'simple') return 0;
       var l = p.add_to_cart || {}, max = Number(l.maximum);
       if (!p.prices || !Number.isFinite(Number(p.prices.price)) || Number(p.prices.price) < 0) return 0;
       if (Number(l.minimum) !== 1 || Number(l.multiple_of) !== 1 || !Number.isFinite(max) || max < 1) return 0;
@@ -132,6 +147,7 @@
   var GROUP_CATS = { energy: [184, 225, 227], salty: [187, 219], crisp: [175], sweet: [174, 185, 188], water: [231, 226], lunch: [178] };
   var SLOT_GROUPS = { light: ['energy', 'salty', 'crisp', 'sweet', 'water'], full: ['lunch', 'energy', 'crisp', 'sweet', 'salty', 'water'] };
   var preferred = {}, catalogIds = [], catalogPage = 0, catalogHasMore = false;
+  var rowLimits = {};
   var cartNonce = '', catalogRevision = 0, catalogRunning = false, catalogPaused = false, pendingDefaults = {};
   var PRODUCT_FIELDS = 'id,name,type,permalink,prices,images,categories,is_in_stock,is_purchasable,is_on_backorder,low_stock_remaining,sold_individually,add_to_cart';
   Object.keys(BOXES).forEach(function (box) { preferred[box] = BOXES[box].slots.map(function (slot) { return slot[2].slice(); }); });
@@ -297,7 +313,7 @@
   function avail(arr) { return arr.filter(function (id) { return capacity(id) > 0; }); }
 
   // коллаж рисуем сразу, не дожидаясь каталога
-  $('hi-col').innerHTML = COL[cur].map(function (c) { return '<img src="' + CUT + c[0] + '.png" style="' + c[1] + '" alt="">'; }).join('');
+  // Hidden decorative collage deliberately has no image requests.
   function hideLoad() { var loader = $('hi-load'); if (loader) { loader.remove(); document.documentElement.style.overflow = ''; } }
   hideLoad(); // Show the page immediately; product availability still gates ordering.
   setTimeout(hideLoad, 12000); // на всякий случай – не держим заставку дольше 12 с
@@ -316,7 +332,7 @@
   setTimeout(placeSticky, 300); setTimeout(placeSticky, 1500);
 
   $('hi-slots').insertAdjacentHTML('beforebegin', '<style>.hi [data-q]:disabled{opacity:.3;cursor:not-allowed}</style><p class="hi-sub" id="hi-stock-msg" role="status" aria-live="polite"></p><div style="display:flex;gap:12px;margin:12px 0"><button type="button" class="hi-m-add" id="hi-catalog-refresh">обновить наличие</button></div><p class="hi-sub" id="hi-catalog-status" role="status"></p>');
-  Object.keys(BOXES).forEach(function (box) { sel[box] = BOXES[box].slots.map(function () { return []; }); });
+  Object.keys(BOXES).forEach(function (box) { rowLimits[box] = []; sel[box] = BOXES[box].slots.map(function () { return []; }); });
   syncControls();
   function reloadCatalog() {
     storeReadFailed = false; catalogPaused = true; catalogRevision++;
@@ -392,17 +408,19 @@
     root.querySelectorAll('.hi-tab').forEach(function (t) { t.classList.toggle('is-on', t.dataset.box === cur); });
     var b = BOXES[cur];
     $('hi-warn').hidden = !b.warn;
-    $('hi-col').innerHTML = COL[cur].map(function (c) { return '<img src="' + CUT + c[0] + '.png" style="' + c[1] + '" alt="">'; }).join('');
+    // Hidden decorative collage deliberately has no image requests.
     var html = '';
     b.slots.forEach(function (s, i) {
       var list = avail(s[2]); if (!list.length) { html += '<div class="hi-slot"><div><b>' + s[0] + '</b><p>сейчас нет доступных товаров</p></div></div>'; return; }
-      var chosen = sel[cur][i];
+      var chosen = sel[cur][i], selectedIds = chosen.map(function (pair) { return pair[0]; });
+      list = selectedIds.filter(function (id) { return list.indexOf(id) >= 0; }).concat(list.filter(function (id) { return selectedIds.indexOf(id) < 0; }));
+      var visibleLimit = Math.max(rowLimits[cur][i] || 12, chosen.length + 8);
       html += '<div class="hi-slot"><div class="hi-slot-k"><b>' + s[0] + '</b><div class="hi-picked">'
         + (chosen.length ? chosen.slice(0, 4).map(function (x) { return '<button type="button" class="hi-pk" data-go="' + x[0] + '" data-slot="' + i + '"><img src="' + img(P[x[0]]) + '" alt="">' + (x[1] > 1 ? '<i>' + x[1] + '</i>' : '') + '</button>'; }).join('') + (chosen.length > 4 ? '<span class="hi-pk-n">+' + (chosen.length - 4) + '</span>' : '') : '<span class="hi-pk-0">не выбрано</span>')
-        + '</div><small>' + s[1] + ' · ' + list.length + ' ' + form(list.length, 'вариант', 'варианта', 'вариантов') + (list.length > 1 ? ' →' : '') + '</small></div><div class="hi-rw"><button type="button" class="hi-arr is-l" data-arr="-1" aria-label="назад"></button><div class="hi-row">'
-        + list.map(function (id) {
+        + '</div><small>' + s[1] + ' · ' + (catalogHasMore ? 'уточняем количество…' : list.length + ' ' + form(list.length, 'доступный вариант', 'доступных варианта', 'доступных вариантов')) + (list.length > 1 ? ' →' : '') + '</small></div><div class="hi-rw"><button type="button" class="hi-arr is-l" data-arr="-1" aria-label="назад"></button><div class="hi-row">'
+        + list.slice(0, visibleLimit).map(function (id) {
             var g = got(i, id);
-            return '<div class="hi-opt' + (g ? ' is-on' : '') + '" role="button" tabindex="0" data-i="' + i + '" data-id="' + id + '"><button type="button" class="hi-i" data-info="' + id + '" data-slot="' + i + '" aria-label="подробнее">i</button><div class="hi-ph"><img src="' + img(P[id]) + '" alt="" loading="lazy">'
+            return '<div class="hi-opt' + (g ? ' is-on' : '') + '" role="button" tabindex="0" data-i="' + i + '" data-id="' + id + '"><button type="button" class="hi-i" data-info="' + id + '" data-slot="' + i + '" aria-label="подробнее">i</button><div class="hi-ph"><img src="' + img(P[id]) + '" alt="" loading="lazy" decoding="async">'
               + (g ? '<div class="hi-qty"><button type="button" data-q="-1" data-id="' + id + '" data-slot="' + i + '" aria-label="' + (g[1] > 1 ? 'меньше' : 'убрать') + '">' + (g[1] > 1 ? '−' : TRASH) + '</button><span>' + g[1] + '</span><button type="button" data-q="1" data-id="' + id + '" data-slot="' + i + '" aria-label="больше"' + (canAdd(id) ? '' : ' disabled aria-disabled="true" title="достигнут доступный остаток"') + '>+</button></div>' : '')
               + '</div><span>' + escapeHTML(short(P[id].name)) + '</span><b>' + rub(price(P[id])) + '</b>' + (capacity(id) <= 5 ? '<small style="display:block;margin:4px;font-size:11px;color:var(--mut)">доступно ' + capacity(id) + ' шт.</small>' : '') + '</div>';
           }).join('') + '</div><button type="button" class="hi-arr is-r" data-arr="1" aria-label="дальше"></button></div></div>';
@@ -413,11 +431,10 @@
     $('hi-slots').innerHTML = html;
     [].forEach.call(root.querySelectorAll('.hi-row'), function (rw) {
       var o = rw.querySelector('.hi-opt'); if (!o) return;
-      if (keep[o.dataset.i] != null) rw.scrollLeft = keep[o.dataset.i];
-      var on = scrollTo != null ? rw.querySelector('.hi-opt[data-id="' + scrollTo + '"]') : (keep[o.dataset.i] == null ? rw.querySelector('.hi-opt.is-on') : null);
-      if (on && (on.offsetLeft < rw.scrollLeft || on.offsetLeft + on.offsetWidth > rw.scrollLeft + rw.clientWidth)) rw.scrollLeft = Math.max(0, on.offsetLeft - 8);
+      var changed = pop != null && rw.querySelector('.hi-opt[data-id="' + pop + '"]') || scrollTo != null && rw.querySelector('.hi-opt[data-id="' + scrollTo + '"]');
+      rw.scrollLeft = changed ? 0 : (keep[o.dataset.i] || 0);
     });
-    [].forEach.call(root.querySelectorAll('.hi-row'), function (rw) { arrows(rw); rw.addEventListener('scroll', function () { arrows(rw); }, { passive: true }); });
+    [].forEach.call(root.querySelectorAll('.hi-row'), function (rw) { arrows(rw); rw.addEventListener('scroll', function () { arrows(rw); var option = rw.querySelector('.hi-opt'); if (!option || inventoryBusy || checkoutLocked) return; var slot = +option.dataset.i, limit = Math.max(rowLimits[cur][slot] || 12, sel[cur][slot].length + 8); if (rw.scrollLeft + rw.clientWidth >= rw.scrollWidth - 180 && limit < avail(BOXES[cur].slots[slot][2]).length) { rowLimits[cur][slot] = limit + 12; render(); } }, { passive: true }); });
     var items = allSel();
     boxSum = items.reduce(function (a, x) { return a + price(P[x[0]]) * x[1]; }, 0);
     $('hi-thumbs').innerHTML = items.map(function (x) { return '<img src="' + img(P[x[0]]) + '" alt=""' + (pop === x[0] ? ' class="is-pop"' : '') + '>'; }).join('') + (items.length > 3 ? '<span class="hi-thumbs-n">+' + (items.length - 3) + '</span>' : '');
