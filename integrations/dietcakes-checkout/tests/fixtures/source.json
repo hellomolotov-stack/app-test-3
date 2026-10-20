@@ -1,0 +1,9 @@
+{
+  "read_at": "2026-10-20",
+  "theme": "woodmart-child",
+  "source_sha256": "fbc3d4902c84c18230c8b612b37d4f4e2acd15f74853f6d22877e6982f6171a3",
+  "fixture_sha256": "b2c55509d388d1f143dd67a81ab8eb5a398f5dea4d4fc1bdd2761285a742cd67",
+  "scope": "Existing delivery/pickup switch, selected shipping methods, address fields, and pickup discount only; no full theme or credentials included.",
+  "fixture_original_sha256": "a25e2a55cfe788b842669760a15f67a1a16b8b2da7b54773c85377f2d6eedd8f",
+  "test_adaptation": "Only the named eco_get_checkout_fulfillment_mode helper is guarded against redeclaration between isolated cases; callback bodies are unchanged."
+}

@@ -84,6 +84,8 @@
   // заголовок: жёлтая наклейка «хайкинг бокс», под ней – маршрут (имя пока не показываем)
   (function () { var h1 = $('hi-h1'); h1.innerHTML = '<span class="hi-pill hi-h1-pill">хайкинг бокс</span>'; if (route) { var rs = document.createElement('span'); rs.className = 'hi-h1-route'; rs.textContent = 'на ' + route; h1.appendChild(rs); } })();
   var hasCard = qs.get('card') === '1';
+  // личный подписанный ID карты из приложения (после # – не уходит в адрес запроса); скидку по нему считает магазин с сервером клуба
+  var cardToken = /^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(hq.get('card') || '') ? hq.get('card') : '';
   if (hasCard) { $('hi-card-note').textContent = 'у тебя есть карта – скидка применится в корзине сама'; $('hi-card-btn').hidden = true; }
   if (qs.get('custom') === '1') setTimeout(function () { $('hi-box').scrollIntoView({ behavior: 'smooth' }); }, 600);
 
@@ -701,7 +703,7 @@
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json', 'Nonce': n },
           body: JSON.stringify({ namespace: 'hiking-club', data: {
-            source: 'intelligentsia', pilot: '1', way: wayNow, date: $('hi-date').value || '', route: route
+            source: 'intelligentsia', pilot: '1', way: wayNow, date: $('hi-date').value || '', route: route, card: cardToken
           } })
         }).then(function (r) {
           if (!r.ok) return rejectedResponse(r, 'S2');
@@ -719,7 +721,7 @@
         var reqs = items.map(function (it) {
           return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: it[0], quantity: it[1] } };
         });
-        if (hasCard && !cartCoupons.some(function (coupon) { return String(coupon.code).toLowerCase() === atob('aW50ZWxsaWdlbnQ='); })) reqs.push({ path: '/wc/store/v1/cart/apply-coupon', method: 'POST', headers: { 'Nonce': n }, body: { code: atob('aW50ZWxsaWdlbnQ=') } });
+        if (hasCard && !cardToken && !cartCoupons.some(function (coupon) { return String(coupon.code).toLowerCase() === atob('aW50ZWxsaWdlbnQ='); })) reqs.push({ path: '/wc/store/v1/cart/apply-coupon', method: 'POST', headers: { 'Nonce': n }, body: { code: atob('aW50ZWxsaWdlbnQ=') } });
         reqs.forEach(function (request, index) { request.path += '?_fields=' + (index === reqs.length - 1 ? 'shipping_rates' : 'items_count'); });
         reqsCount = reqs.length;
         return fetch('/wp-json/wc/store/v1/batch', {

@@ -1,0 +1,16 @@
+/* Scoped to the added pilot UI. Existing delivery/pickup markup is not replaced. */
+#hi-club-hike-button { white-space: normal; }
+#hi-club-hike-details { margin: 16px 0; padding: 16px; border: 1px solid #dce5d6; border-radius: 12px; }
+#hi-club-hike-details[hidden] { display: none; }
+#hi-club-hike-details label { display: block; margin-bottom: 6px; }
+#hi-club-hike-details p { margin: 8px 0 0; }
+.hi-club-on-hike #eco-pickup-store-map-wrap,
+.hi-club-on-hike #eco-pickup-badge { display: none !important; }
+
+/* The native 3% badge is a CSS pseudo-element, independent of the actual fee. */
+body.hi-club-checkout:not(.hi-club-show-pickup-discount) #eco-fulfillment-switch [data-mode="pickup"]::after,
+body.hi-club-checkout:not(.hi-club-show-pickup-discount) #eco-pickup-badge,
+body.hi-club-on-hike #eco-delivery-ui-mount,
+body.hi-club-on-hike .eco-delivery-ui,
+body.hi-club-on-hike #billing_eco_delivery_date_field,
+body.hi-club-on-hike #billing_eco_delivery_time_field { display: none !important; }

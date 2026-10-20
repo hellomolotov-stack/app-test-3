@@ -1,0 +1,85 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import assert from 'node:assert/strict';
+const require = createRequire('/private/tmp/hi-checkout-runtime/package.json');
+const { JSDOM } = require('jsdom');
+const jquery = require('jquery');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const fixture = await fs.readFile(path.join(root, 'tests/fixtures/dietcakes-checkout.php'), 'utf8');
+const themeScript = fixture.match(/<script>\s*(jQuery\(function\(\$\)\{[\s\S]*?)<\/script>/)[1];
+const plugin = await fs.readFile(path.join(root, 'hi-club-checkout/checkout.js'), 'utf8');
+const dom = new JSDOM(`<body><span id="hi-club-discount-state" data-card="0"></span><input id="billing_eco_delivery_date"><select id="billing_eco_delivery_time"><option value=""></option></select><div id="eco-fulfillment-switch"><button class="eco-fulfillment-btn" data-mode="delivery">Доставка</button><button class="eco-fulfillment-btn" data-mode="pickup">Самовывоз</button></div><input id="eco_fulfillment_type" value="pickup"><div id="hi-club-checkout"><button id="hi-club-hike-button" class="eco-fulfillment-btn" data-mode="hi-hike">Хайк</button><input id="hi_club_way" value="hike"><div id="hi-club-hike-details"><input id="hi_club_date" value="2026-10-25"></div></div><div id="billing_address_1_field"></div><div id="eco-pickup-store-map-wrap"></div></body>`, { runScripts: 'outside-only', url: 'http://127.0.0.1/' });
+const w = dom.window; w.jQuery = w.$ = jquery(w);
+let recalcs = 0;
+w.jQuery(w.document.body).on('update_checkout', () => recalcs++);
+w.eval(plugin); // Same footer order as the actual enqueued plugin vs late theme callback.
+w.eval(themeScript);
+await new Promise(resolve => w.jQuery(() => setTimeout(resolve, 20)));
+const doc = w.document;
+const get = id => doc.getElementById(id);
+const checks = [];
+function check(name, condition) { assert.ok(condition, name); checks.push(name); }
+check('Initial hike stays active after original theme DOM-ready', get('hi-club-hike-button').classList.contains('is-active'));
+check('Hike button is inside existing switch', get('hi-club-hike-button').parentNode === get('eco-fulfillment-switch'));
+get('eco-fulfillment-switch').querySelector('[data-mode="delivery"]').click();
+await new Promise(resolve => setTimeout(resolve, 10));
+check('Home click updates native delivery mode', get('eco_fulfillment_type').value === 'delivery' && get('hi_club_way').value === 'home');
+check('Home hides hike details', get('hi-club-hike-details').hidden);
+check('Home click triggers exactly one original recalculation', recalcs === 1);
+get('hi-club-hike-button').click();
+await new Promise(resolve => setTimeout(resolve, 10));
+check('Hike click reuses native pickup and stores separate choice', get('eco_fulfillment_type').value === 'pickup' && get('hi_club_way').value === 'hike');
+check('Hike click adds exactly one recalculation', recalcs === 2);
+check('Hike choice has one active button', doc.querySelectorAll('#eco-fulfillment-switch .is-active').length === 1);
+check('Hike hides delivery-address fields using existing theme handler', get('billing_address_1_field').style.display === 'none');
+w.jQuery(doc.body).trigger('updated_checkout');
+await new Promise(resolve => setTimeout(resolve, 10));
+check('Original checkout refresh cannot visually revert hike to pickup', get('hi-club-hike-button').classList.contains('is-active') && !doc.querySelector('[data-mode="pickup"]').classList.contains('is-active'));
+doc.querySelector('[data-mode="pickup"]').click();
+await new Promise(resolve => setTimeout(resolve, 10));
+check('Ordinary pickup clears hike choice', get('hi_club_way').value === 'pickup' && get('hi-club-hike-details').hidden);
+check('Ordinary pickup adds one recalculation', recalcs === 3);
+check('Native pickup without coupon shows the 3% badge', doc.body.classList.contains('hi-club-show-pickup-discount'));
+check('Returning to native pickup restores slot inputs', !get('billing_eco_delivery_time').disabled && get('billing_eco_delivery_time').required);
+get('hi-club-discount-state').setAttribute('data-card','1');
+w.jQuery(doc.body).trigger('updated_checkout');
+await new Promise(resolve=>setTimeout(resolve,10));
+check('Applying coupon hides badge after native checkout refresh', !doc.body.classList.contains('hi-club-show-pickup-discount'));
+get('hi-club-discount-state').setAttribute('data-card','0');
+
+get('hi-club-hike-button').click();
+get('hi_club_date').dispatchEvent(new w.Event('change', { bubbles: true }));
+check('Date change requests one recalculation', recalcs === 5);
+await new Promise(resolve=>setTimeout(resolve,10));
+check('Hike never advertises the pickup discount', !doc.body.classList.contains('hi-club-show-pickup-discount'));
+check('Hike disables hidden native slot inputs and browser-required validation', get('billing_eco_delivery_time').disabled && !get('billing_eco_delivery_time').required);
+
+const savedMarkup = dom.serialize();
+dom.window.close();
+// Script safely does nothing on the ordinary visitor's checkout.
+const ordinary = new JSDOM('<body><div id="eco-fulfillment-switch"></div></body>', { runScripts: 'outside-only' });
+ordinary.window.eval(plugin);
+check('No club markup: frontend script is a no-op', ordinary.window.document.body.innerHTML === '<div id="eco-fulfillment-switch"></div>');
+ordinary.window.close();
+// Exercise the current store's actual slot frontend and the scoped CSS together.
+const combined=new JSDOM(savedMarkup,{runScripts:'outside-only',url:'http://127.0.0.1/'});
+const cw=combined.window; cw.jQuery=cw.$=jquery(cw);
+cw.jQuery.post=()=>({}); // No HTTP requests from the local fixture.
+cw.ECO_DeliveryRules={fieldDateId:'billing_eco_delivery_date',fieldTimeId:'billing_eco_delivery_time',todayYmd:'2026-10-20',nowTs:1792486800,workStart:'10:00',workEnd:'20:00',lastStart:'19:30',prepMin:30,asapHours:[1,2],slots:[['10:00','12:00']],ajaxUrl:'/blocked-local-only',i18n:{slots:'Интервалы',asap:'Скоро',noOptionsToday:'Нет'}};
+const style=cw.document.createElement('style'); style.textContent=await fs.readFile(path.join(root,'hi-club-checkout/checkout.css'),'utf8'); cw.document.head.appendChild(style);
+const mount=cw.document.createElement('div');mount.id='eco-delivery-ui-mount';cw.document.body.appendChild(mount);
+cw.eval(plugin); cw.eval(themeScript); cw.eval(await fs.readFile(path.join(root,'tests/fixtures/eco-checkout.js'),'utf8'));
+await new Promise(resolve=>cw.jQuery(()=>setTimeout(resolve,30)));
+check('Actual ECO script mounts its native date/time UI', Boolean(mount.querySelector('.eco-delivery-ui')));
+check('Hike CSS hides the actual ECO mount after its initialization', cw.getComputedStyle(mount).display==='none');
+cw.document.querySelector('[data-mode="pickup"]').click(); await new Promise(resolve=>setTimeout(resolve,20));
+check('Returning to pickup reveals actual ECO UI and required fields', cw.getComputedStyle(mount).display!=='none' && cw.document.getElementById('billing_eco_delivery_time').required && !cw.document.getElementById('billing_eco_delivery_time').disabled);
+cw.document.getElementById('hi-club-hike-button').click(); await new Promise(resolve=>setTimeout(resolve,20));
+cw.jQuery(cw.document.body).trigger('updated_checkout');await new Promise(resolve=>setTimeout(resolve,20));
+check('Native ECO refresh cannot reveal the pickup-today block during hike', cw.getComputedStyle(mount).display==='none' && cw.document.getElementById('billing_eco_delivery_time').disabled);
+combined.window.close();
+await fs.writeFile(path.join(root, 'tests/ui-results.json'), JSON.stringify({ checks: checks.map(name => ({ name, passed: true })), kind: 'DOM contract tests using the saved theme script and actual plugin script; not browser or payment tests' }, null, 2) + '\n');
+console.log(`${checks.length} UI checks passed`);
+for (const name of checks) console.log('✓ ' + name);

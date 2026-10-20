@@ -10,6 +10,18 @@ export const HIKING_BOX_TEST_IDS = ['7845375334', '163665735']; // @hellointelli
 const HIKING_BOX_AS_MEMBER_IDS = ['163665735']; // @maxmolotov
 const boxMember = () => state.userCard?.status === 'active' || HIKING_BOX_AS_MEMBER_IDS.includes(String(state.user?.id || ''));
 const SHOP_URL = 'https://dietcakes.ru/hiking-intelligence/'; // наша страница на сайте «Жить здорово»
+// онлайн-скидка по карте с месячным лимитом: ссылка несёт личный подписанный ID карты (тот же, что в QR для кассы).
+// Пока только тест – после проверки на магазине (плагин 0.3.0 со скидкой включён) расширить на всех владельцев карты.
+const ONLINE_CARD_IDS = ['163665735']; // @maxmolotov
+let cardToken = '';
+function prefetchCardToken() {
+    if (cardToken || !ONLINE_CARD_IDS.includes(String(state.user?.id || ''))) return;
+    fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'app_card', initData: window.Telegram?.WebApp?.initData || '' }) })
+        .then(r => r.ok ? r.json() : null)
+        .then(b => { const m = /start=(dc1_\d{1,16}_[A-Za-z0-9_-]{28})$/.exec(b?.url || ''); if (m) cardToken = m[1]; })
+        .catch(() => {});
+}
 
 // ссылка на страницу бокса: бокс, дата и маршрут хайка; владельцу карты – card=1 (страница сама применит промокод INTELLIGENT)
 function shopUrl(hike, boxKey, custom) {
@@ -34,7 +46,10 @@ function shopUrl(hike, boxKey, custom) {
     if (HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''))) q.set('hi_club_test', '1');
     // имя – после #: эта часть ссылки не уходит на сервер магазина, страница сама склонит «для Макса»
     const name = String(state.user?.first_name || '').trim().split(/\s+/)[0].slice(0, 30);
-    return `${SHOP_URL}?${q}${name ? '#name=' + encodeURIComponent(name) : ''}`;
+    const hash = new URLSearchParams();
+    if (name) hash.set('name', name);
+    if (cardToken) hash.set('card', cardToken);
+    return `${SHOP_URL}?${q}${hash.toString() ? '#' + hash : ''}`;
 }
 
 
@@ -134,7 +149,7 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     const row = document.createElement('div');
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
-        ${bentoHtml()}
+        <img class="hb-box-thumb" src="assets/box/hiking-box-top-plain-v1.webp" width="66" height="62" alt="" decoding="async">
         <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на весь хайк в одной коробке</small></span>
         <button type="button" class="box-plate-btn">что внутри</button></div>`;
     const plate = row.querySelector('.box-plate');
@@ -167,6 +182,7 @@ function preloadHikingBox() {
 }
 
 export function openHikingBox(fromEl, hike, isGuest) {
+    prefetchCardToken(); // пока человек смотрит бокс, ID карты уже готов к переходу в магазин
     preloadHikingBox();
     document.querySelector('.hb-overlay')?.remove();
     const r = fromEl.getBoundingClientRect();
