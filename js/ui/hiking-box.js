@@ -1,21 +1,17 @@
 // js/ui/hiking-box.js – hiking box от партнёра (dietcakes.ru): плашка в шторке хайка над слайдером «иду»
 // и шторка «что внутри», которая вырастает прямо из плашки. Покупка – на сайте партнёра.
-// Пока тест: показываем только @hellointelligent (по числовому id Telegram).
+// Запущено для всех 20.10.2026.
 import { state } from '../state.js';
 import { haptic, openLink } from '../utils.js';
 import { log } from '../api.js';
 
 export const HIKING_BOX_TEST_IDS = ['7845375334', '163665735']; // @hellointelligent, @maxmolotov
-// тест «как видит владелец карты»: этим аккаунтам бокс показываем как владельцам карты, даже если карты нет
-const HIKING_BOX_AS_MEMBER_IDS = ['163665735']; // @maxmolotov
-const boxMember = () => state.userCard?.status === 'active' || HIKING_BOX_AS_MEMBER_IDS.includes(String(state.user?.id || ''));
+const boxMember = () => state.userCard?.status === 'active';
 const SHOP_URL = 'https://dietcakes.ru/hiking-intelligence/'; // наша страница на сайте «Жить здорово»
 // онлайн-скидка по карте с месячным лимитом: ссылка несёт личный подписанный ID карты (тот же, что в QR для кассы).
-// Пока только тест – после проверки на магазине (плагин 0.3.0 со скидкой включён) расширить на всех владельцев карты.
-const ONLINE_CARD_IDS = ['163665735']; // @maxmolotov
 let cardToken = '';
 function prefetchCardToken() {
-    if (cardToken || !ONLINE_CARD_IDS.includes(String(state.user?.id || ''))) return;
+    if (cardToken || !boxMember()) return;
     fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'app_card', initData: window.Telegram?.WebApp?.initData || '' }) })
         .then(r => r.ok ? r.json() : null)
@@ -42,8 +38,6 @@ function shopUrl(hike, boxKey, custom) {
     if (route) q.set('route', route);
     if (boxMember()) q.set('card', '1');
     q.set('utm_source', 'intelligentsia');
-    // Первый этап нового checkout: только существующие тестовые аккаунты бокса.
-    if (HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''))) q.set('hi_club_test', '1');
     // имя – после #: эта часть ссылки не уходит на сервер магазина, страница сама склонит «для Макса»
     const name = String(state.user?.first_name || '').trim().split(/\s+/)[0].slice(0, 30);
     const hash = new URLSearchParams();
@@ -141,7 +135,7 @@ function collageHtml(b) {
 }
 
 export function hikingBoxEnabled() {
-    return HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''));
+    return true; // запущено для всех (20.10.2026); HIKING_BOX_TEST_IDS – только для тестовой подстановки даты
 }
 
 // плашка над слайдером «иду» (контейнер .floating-sheet-buttons)

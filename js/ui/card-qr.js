@@ -5,11 +5,10 @@ import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 
-// пока только для проверки владельцем; потом – всем, у кого активна карта
-const CARD_QR_IDS = ['163665735']; // @maxmolotov
+// всем владельцам активной карты
 
 export function cardQrEnabled() {
-    return state.userCard?.status === 'active' && CARD_QR_IDS.includes(String(state.user?.id || ''));
+    return state.userCard?.status === 'active'; // всем владельцам активной карты
 }
 
 // партнёры, у которых работает карта; пока один
