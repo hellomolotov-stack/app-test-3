@@ -21,6 +21,8 @@ function shopUrl(hike, boxKey, custom) {
     if (route) q.set('route', route);
     if (boxMember()) q.set('card', '1');
     q.set('utm_source', 'intelligentsia');
+    // Первый этап нового checkout: только существующие тестовые аккаунты бокса.
+    if (HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''))) q.set('hi_club_test', '1');
     // имя – после #: эта часть ссылки не уходит на сервер магазина, страница сама склонит «для Макса»
     const name = String(state.user?.first_name || '').trim().split(/\s+/)[0].slice(0, 30);
     return `${SHOP_URL}?${q}${name ? '#name=' + encodeURIComponent(name) : ''}`;
