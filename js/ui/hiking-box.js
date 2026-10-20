@@ -16,7 +16,16 @@ function shopUrl(hike, boxKey, custom) {
     const q = new URLSearchParams();
     q.set('box', boxKey === 'light' ? 'light' : 'full');
     if (custom) q.set('custom', '1');
-    if (/^\d{4}-\d{2}-\d{2}$/.test(hike?.date || '')) q.set('hike', hike.date);
+    let shopDate = hike?.date || '';
+    const checkoutPilot = HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''));
+    if (checkoutPilot) {
+        const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' });
+        // Только тестовая ссылка: прошедший/пустой хайк проверяем на дате через неделю.
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(shopDate) || shopDate < today) {
+            shopDate = new Date(Date.now() + 7 * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' });
+        }
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(shopDate)) q.set('hike', shopDate);
     const route = String(hike?.title || '').replace(/^(хайк|маршрут|тропа)\s+/i, '').replace(/^на\s+/i, '').trim();
     if (route) q.set('route', route);
     if (boxMember()) q.set('card', '1');

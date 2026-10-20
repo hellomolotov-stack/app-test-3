@@ -384,7 +384,7 @@
     document.cookie = 'hi_note=' + encodeURIComponent(note) + ';path=/;max-age=' + (note ? 7200 : 0);
     var clubPilot = fromClubApp && qs.get('hi_club_test') === '1';
     if (note && !clubPilot && navigator.clipboard) navigator.clipboard.writeText(note).catch(function () {});
-    btn.disabled = true; btn.textContent = 'кладём…';
+    btn.disabled = true; btn.textContent = 'собираем...';
     var nonce = function () { return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) { return r.headers.get('Nonce'); }); };
     var n0;
     nonce()
