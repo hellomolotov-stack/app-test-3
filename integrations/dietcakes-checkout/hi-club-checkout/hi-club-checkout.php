@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.3.5
+ * Version: 0.3.6
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -22,6 +22,8 @@ final class HI_Club_Checkout {
     const LOYALTY = 'hi_club_loyalty';          // 'off' | 'on'; по умолчанию выключено
     const LOYALTY_KEY = 'hi_club_loyalty_key';  // ключ магазина для API клуба; вводит владелец в настройках
     const LOYALTY_API = 'https://app-test-3-delta.vercel.app/api/dc-loyalty';
+    // Адрес API можно сменить в настройках: сервер магазина не всегда достаёт до Vercel напрямую (посредник клуба).
+    const LOYALTY_API_URL = 'hi_club_api_url';
     const CARD_FEE = 'Скидка по карте интеллигента';
     const QUOTE = 'hi_club_card_quote';
     private static $adding_box = false;
@@ -352,10 +354,16 @@ final class HI_Club_Checkout {
         return self::loyalty_enabled() && $context && !empty($context['card']);
     }
 
+    // Только https-адрес, оканчивающийся на /api/dc-loyalty; иначе – адрес по умолчанию.
+    public static function api_url() {
+        $url = trim((string) get_option(self::LOYALTY_API_URL, ''));
+        return preg_match('#^https://[a-z0-9.-]+(:\d{2,5})?/api/dc-loyalty$#Di', $url) ? $url : self::LOYALTY_API;
+    }
+
     // Один запрос к серверу клуба; без повторов. Ответ – массив или null.
     public static function api($payload) {
         if (!function_exists('wp_remote_post')) return null;
-        $response = wp_remote_post(self::LOYALTY_API, array(
+        $response = wp_remote_post(self::api_url(), array(
             'timeout' => ($payload['action'] ?? '') === 'health' ? 20 : 6, 'redirection' => 0,
             'headers' => array('Content-Type' => 'application/json', 'x-dc-store-key' => (string) get_option(self::LOYALTY_KEY, '')),
             'body' => wp_json_encode(array_merge(array('actor' => '0'), $payload)),
@@ -574,8 +582,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.5', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.5');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.6', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.6');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.
@@ -632,6 +640,8 @@ final class HI_Club_Checkout {
             update_option(self::LOYALTY, self::scalar($_POST, 'hi_club_loyalty') === 'on' ? 'on' : 'off', false);
             $key = trim(self::scalar($_POST, 'hi_club_loyalty_key'));
             if ($key !== '') update_option(self::LOYALTY_KEY, $key, false); // пустое поле – ключ не меняем
+            $url = trim(self::scalar($_POST, 'hi_club_api_url'));
+            update_option(self::LOYALTY_API_URL, preg_match('#^https://[a-z0-9.-]+(:\d{2,5})?/api/dc-loyalty$#Di', $url) ? $url : '', false);
             echo '<div class="notice notice-success"><p>Режим сохранён.</p></div>';
         }
         $mode = get_option(self::OPTION, 'off');
@@ -642,6 +652,7 @@ final class HI_Club_Checkout {
         echo '<h2>Скидка по карте интеллигента</h2><p>10% на покупки до 15 000 ₽ в месяц, сверх – 5%. Лимит общий с кассой магазина и считается на сервере клуба.</p>';
         echo '<p><label>Скидка <select name="hi_club_loyalty"><option value="off" ' . selected($loyalty, 'off', false) . '>Выключена</option><option value="on" ' . selected($loyalty, 'on', false) . '>Включена</option></select></label></p>';
         echo '<p><label>Ключ магазина <input type="password" name="hi_club_loyalty_key" autocomplete="off" placeholder="' . (get_option(self::LOYALTY_KEY, '') ? 'задан – оставьте пустым' : 'не задан') . '"></label></p>';
+        echo '<p><label>Адрес API клуба <input type="url" name="hi_club_api_url" size="55" value="' . esc_attr((string) get_option(self::LOYALTY_API_URL, '')) . '" placeholder="' . esc_attr(self::LOYALTY_API) . '"></label><br><small>Пусто – прямой адрес Vercel. Сейчас используется: ' . esc_html(self::api_url()) . '</small></p>';
         submit_button('Сохранить режим', 'primary', 'hi_club_save');
         submit_button('Проверить связь с API (без заказов)', 'secondary', 'hi_club_probe');
         echo '</form></div>';
