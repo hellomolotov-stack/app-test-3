@@ -2,6 +2,7 @@
 import asyncio
 import io
 import os
+import html
 import re
 import secrets
 import sqlite3
@@ -17,6 +18,9 @@ LIVE = MODE == 'live'
 # Кассиры: в рабочем режиме – DC_CASHIER_IDS (через запятую), иначе тестовые аккаунты.
 CASHIER_IDS = {int(x) for x in os.getenv('DC_CASHIER_IDS', '').replace(' ', '').split(',') if x.isdigit()} if LIVE else PILOT_IDS
 T = '' if LIVE else 'ТЕСТ '
+# Владелец клуба управляет сотрудниками магазина (/shop). Сотрудник – только касса и уведомления, не админ бота.
+OWNER_IDS = {int(x) for x in os.getenv('DC_OWNER_IDS', '163665735').replace(' ', '').split(',') if x.isdigit()}
+SHOP_INVITE = re.compile(r'shop_([a-z0-9]{8,24})')
 CARD = re.compile(r"dc1_\d{1,16}_[A-Za-z0-9_-]{28}")
 
 
@@ -124,6 +128,36 @@ class Cashier:
     def __init__(self, api, sessions):
         self.api, self.sessions = api, sessions
         self.locks = {}
+        self.staff, self.staff_at = set(), 0.0
+
+    async def is_cashier(self, actor):
+        if actor in CASHIER_IDS:
+            return True
+        import time
+        if time.monotonic() - self.staff_at > 60:
+            try:
+                result = await self.api.call('staff_ids', actor)
+                self.staff = {int(x) for x in result.get('ids', []) if str(x).isdigit()}
+            except Exception:
+                pass  # остаётся прежний список
+            self.staff_at = time.monotonic()
+        return actor in self.staff
+
+    async def shop_admin(self, message, actor, callback_text=None):
+        from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+        if callback_text:
+            uid = callback_text.split(':')[2]
+            await self.api.call('staff_remove', actor, uid=uid)
+            self.staff_at = 0
+        invite = await self.api.call('staff_invite', actor)
+        members = (await self.api.call('staff_list', actor)).get('members') or {}
+        link = f"https://t.me/yaltahiking_bot?start=shop_{invite['code']}"
+        lines = ['<b>Сотрудники магазина «Жить здорово»</b>',
+                 'Могут проверять QR карты на кассе (/cashier) и получают уведомления о заказах боксов. Админом бота не становятся.', '']
+        lines += [f"• {html.escape((m or {}).get('name') or 'без имени')} · <code>{uid}</code>" for uid, m in members.items()] or ['пока никого']
+        lines += ['', 'Ссылка для нового сотрудника (одноразовая, действует 7 дней):', link]
+        kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text=f"убрать {(m or {}).get('name') or uid}", callback_data=f'dcs:r:{uid}')] for uid, m in members.items()])
+        await message.answer('\n'.join(lines), parse_mode='HTML', reply_markup=kb if members else None, disable_web_page_preview=True)
 
     @staticmethod
     def keyboard(ref, retry=False):
@@ -158,8 +192,34 @@ class Cashier:
             return await handler(event, data)
         command = text.split(maxsplit=1)[0].split('@')[0] if text else ''
         token = None if callback else card_from_text(text)
+        invite = None if callback else SHOP_INVITE.fullmatch(text.split(maxsplit=1)[1]) if text.startswith('/start ') and len(text.split()) == 2 else None
+        if invite:
+            try:
+                name = ' '.join(x for x in [event.from_user.first_name, event.from_user.last_name] if x)
+                await self.api.call('staff_join', actor, code=invite[1], name=name)
+                self.staff_at = 0
+                await message.answer('Готово – ты сотрудник магазина «Жить здорово» в боте клуба.\n\n'
+                                     '• /cashier – касса: наведи камеру на QR карты интеллигента, бот посчитает скидку\n'
+                                     '• уведомления о заказах хайкинг боксов будут приходить сюда автоматически\n'
+                                     '• /cashier_exit – выйти из кассы')
+            except ApiError as error:
+                await message.answer('Ссылка устарела или уже использована. Попроси новую у организатора клуба.' if str(error) in {'invite_expired', 'invalid_code'} else 'Не получилось добавить. Попробуй ещё раз позже.')
+            return
+        if (command == '/shop' and not callback) or (callback and text.startswith('dcs:r:')):
+            if actor not in OWNER_IDS:
+                return await handler(event, data)
+            if callback:
+                await event.answer()
+            try:
+                await self.shop_admin(message, actor, text if callback else None)
+            except ApiError:
+                await message.answer('Не получилось загрузить список сотрудников. Попробуй позже.')
+            return
         special = text.startswith('dc:') if callback else command in {'/cashier', '/cashier_exit', '/discount_card'} or token is not None
-        if actor not in CASHIER_IDS:
+        # Обычные сообщения не-кассиров – сразу дальше, без запросов к серверу; список сотрудников сверяем только для кассовых действий.
+        if not special and actor not in CASHIER_IDS and actor not in self.staff:
+            return await handler(event, data)
+        if not (actor in CASHIER_IDS or actor in self.staff or (special and await self.is_cashier(actor))):
             # Do not interfere with the bot's ordinary onboarding or support.
             if special:
                 if callback:

@@ -70,7 +70,31 @@ function createHandler(deps) {
         if (bot && store) return res.status(400).json({ error: 'ambiguous_actor' });
         const actor = String(body.actor || ''), action = body.action;
         if (!/^\d{1,16}$/.test(actor)) return res.status(400).json({ error: 'invalid_actor' });
-        const cashiers = mode === 'pilot' ? PILOT_IDS : ids(env.DC_CASHIER_IDS);
+        // Сотрудники магазина (добавляет владелец через бота): касса + уведомления о заказах, без прав администратора бота.
+        const owners = ids(env.DC_OWNER_IDS || '163665735');
+        if (bot && ['staff_invite', 'staff_join', 'staff_list', 'staff_remove', 'staff_ids'].includes(action)) {
+            try {
+                if (action === 'staff_ids') return res.status(200).json({ ids: Object.keys(await deps.staff.members()), owners, mode });
+                if (action === 'staff_join') {
+                    const code = String(body.code || '');
+                    if (!/^[a-z0-9]{8,24}$/.test(code)) return res.status(400).json({ error: 'invalid_code' });
+                    const invite = await deps.staff.takeInvite(code);
+                    if (!invite || invite.exp < Date.now()) return res.status(410).json({ error: 'invite_expired' });
+                    await deps.staff.add(actor, String(body.name || '').slice(0, 60));
+                    return res.status(200).json({ ok: true, mode });
+                }
+                if (!owners.includes(actor)) return res.status(403).json({ error: 'owner_only' });
+                if (action === 'staff_invite') return res.status(200).json({ code: await deps.staff.invite(Date.now() + 7 * 86400000), mode });
+                if (action === 'staff_list') return res.status(200).json({ members: await deps.staff.members(), mode });
+                const uid = String(body.uid || '');
+                if (!/^\d{1,16}$/.test(uid)) return res.status(400).json({ error: 'invalid_uid' });
+                await deps.staff.remove(uid);
+                return res.status(200).json({ ok: true, mode });
+            } catch { return res.status(503).json({ error: 'service_unavailable' }); }
+        }
+        let staffIds = [];
+        if (bot && action !== 'card') { try { staffIds = Object.keys(await deps.staff.members()); } catch { staffIds = []; } }
+        const cashiers = mode === 'pilot' ? PILOT_IDS : ids(env.DC_CASHIER_IDS).concat(staffIds);
         const allowed = bot && (action === 'card' || cashiers.includes(actor));
         if (store && action === 'card') return res.status(403).json({ error: 'action_forbidden' });
         if (bot && !allowed) return res.status(403).json({ error: 'cashier_forbidden' });
@@ -113,6 +137,19 @@ function createHandler(deps) {
 }
 module.exports = createHandler({
     env: process.env,
+    staff: {
+        async req(path, init = {}) {
+            const { getAccessToken } = require('./club-content');
+            const r = await fetch(`${DATABASE}/dcShopStaff/${path}.json`, { ...init, headers: { Authorization: `Bearer ${await getAccessToken()}`, 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000) });
+            if (!r.ok) throw new Error('staff');
+            return r.json();
+        },
+        async members() { return (await this.req('members')) || {}; },
+        async add(uid, name) { await this.req(`members/${uid}`, { method: 'PUT', body: JSON.stringify({ name, at: Date.now() }) }); },
+        async remove(uid) { await this.req(`members/${uid}`, { method: 'DELETE' }); },
+        async invite(exp) { const code = crypto.randomBytes(9).toString('hex'); await this.req(`invites/${code}`, { method: 'PUT', body: JSON.stringify({ exp }) }); return code; },
+        async takeInvite(code) { const inv = await this.req(`invites/${code}`); if (inv) await this.req(`invites/${code}`, { method: 'DELETE' }); return inv; }
+    },
     hikeOrders: {
         // dcHikeOrders/<дата>/<номер заказа> – закрыт для чтения клиентам, пишет только сервер
         async save(order) {
@@ -131,7 +168,8 @@ module.exports = createHandler({
     },
     async notify(text) {
         const token = process.env.TELEGRAM_BOT_TOKEN; if (!token) return;
-        const ids = String(process.env.DC_ORDER_NOTIFY_IDS || '163665735').split(',').map(x => x.trim()).filter(x => /^\d{1,16}$/.test(x));
+        let staff = []; try { staff = Object.keys(await this.staff.members()); } catch { staff = []; }
+        const ids = [...new Set(String(process.env.DC_ORDER_NOTIFY_IDS || '163665735').split(',').map(x => x.trim()).concat(staff))].filter(x => /^\d{1,16}$/.test(x));
         await Promise.all(ids.map(id => fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ chat_id: id, text, parse_mode: 'HTML', disable_web_page_preview: true }), signal: AbortSignal.timeout(8000) }).catch(() => {})));
     },

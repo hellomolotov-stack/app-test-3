@@ -63,3 +63,18 @@ test('hike_order: store key required, notifies organizer with totals; cron summa
  await h({method:'GET',headers:{authorization:'Bearer wrong'}},res); assert.equal(res.code,401);
  api.deps.now=()=>Date.parse('2026-10-24T14:05:00Z');
 });
+test('shop staff: owner invites, employee joins via code, becomes cashier; others cannot manage',async()=>{
+ const api=setup({DC_LOYALTY_MODE:'live',DC_OWNER_IDS:'163665735'}); const db={members:{},invites:{}};
+ api.deps.staff={async members(){return db.members},async add(u,n){db.members[u]={name:n}},async remove(u){delete db.members[u]},
+  async invite(exp){db.invites.abcdef1234={exp};return 'abcdef1234'},async takeInvite(c){const i=db.invites[c];delete db.invites[c];return i}};
+ const r=(b)=>api.request({...b,mode:'live'});
+ assert.equal((await r({action:'staff_invite',actor:'555'})).body.error,'owner_only');
+ const code=(await r({action:'staff_invite',actor:'163665735'})).body.code;
+ assert.equal((await r({action:'status',actor:'777',card:signCard(actor,signing)})).body.error,'cashier_forbidden');
+ assert.equal((await r({action:'staff_join',actor:'777',code,name:'Ольга'})).code,200);
+ assert.equal((await r({action:'staff_join',actor:'888',code})).body.error,'invite_expired');
+ assert.equal((await r({action:'status',actor:'777',card:signCard(actor,signing)})).code,200);
+ assert.deepEqual((await r({action:'staff_ids',actor:'777'})).body.ids,['777']);
+ await r({action:'staff_remove',actor:'163665735',uid:'777'});
+ assert.equal((await r({action:'status',actor:'777',card:signCard(actor,signing)})).body.error,'cashier_forbidden');
+});

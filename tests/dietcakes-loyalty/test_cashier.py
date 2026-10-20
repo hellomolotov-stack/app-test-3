@@ -35,7 +35,7 @@ class CashierTests(unittest.IsolatedAsyncioTestCase):
  async def test_regular_messages_and_commands_preserved(self):
   await self.send('привет');await self.send('/start');await self.send('привет',123);self.assertEqual(self.delegated,3);self.assertEqual(self.api.calls,[])
  async def test_other_users_cannot_enter_pilot(self):
-  await self.send('/cashier',123);self.assertEqual(self.api.calls,[]);self.assertIsNone(self.db.get(123))
+  await self.send('/cashier',123);self.assertEqual([c[0] for c in self.api.calls],['staff_ids']);self.assertIsNone(self.db.get(123))
  async def test_timeout_preserves_same_reference_after_restart(self):
   self.db.put(163665735,card='dc1_163665735_'+'x'*28,stage='amount');self.api.fail=True
   await self.send('1000');pending=self.db.get(163665735);self.assertTrue(pending['ref']);self.assertEqual(pending['gross'],100000)
