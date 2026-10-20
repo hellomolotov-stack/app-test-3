@@ -97,7 +97,7 @@ class WC_Order {
 }
 // Заглушка API клуба: записываем запросы, ответ задаёт тест.
 $GLOBALS['api_calls'] = array(); $GLOBALS['api_reply'] = null;
-function wp_remote_post($url, $args) { $GLOBALS['api_calls'][] = array('url' => $url, 'headers' => $args['headers'], 'body' => json_decode($args['body'], true));
+function wp_remote_post($url, $args) { $GLOBALS['api_calls'][] = array('url' => $url, 'timeout' => $args['timeout'], 'headers' => $args['headers'], 'body' => json_decode($args['body'], true));
     $r = is_callable($GLOBALS['api_reply']) ? call_user_func($GLOBALS['api_reply'], json_decode($args['body'], true)) : $GLOBALS['api_reply'];
     return $r === 'timeout' ? new WP_Error('http', 'timeout') : $r; }
 function is_wp_error($v) { return $v instanceof WP_Error; }

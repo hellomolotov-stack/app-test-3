@@ -356,7 +356,7 @@ final class HI_Club_Checkout {
     public static function api($payload) {
         if (!function_exists('wp_remote_post')) return null;
         $response = wp_remote_post(self::LOYALTY_API, array(
-            'timeout' => 6, 'redirection' => 0,
+            'timeout' => ($payload['action'] ?? '') === 'health' ? 20 : 6, 'redirection' => 0,
             'headers' => array('Content-Type' => 'application/json', 'x-dc-store-key' => (string) get_option(self::LOYALTY_KEY, '')),
             'body' => wp_json_encode(array_merge(array('actor' => '0'), $payload)),
         ));

@@ -107,4 +107,5 @@ check('Malformed quote is distinct from connection error', WC()->session->get(HI
 loyalty_case(true, $CARD); WC()->session->set(HI_Club_Checkout::QUOTE,array('card'=>$CARD,'gross'=>100000,'discount'=>0,'ok'=>false,'at'=>time(),'error'=>'unavailable')); $GLOBALS['api_reply']=$quote10; WC()->cart->recalculate();
 check('Old opaque failed cache gets one fresh calculation',count($GLOBALS['api_calls'])===1 && local_total()===900.0);
 WC()->cart->recalculate(); check('New successful quote still cached',count($GLOBALS['api_calls'])===1);
+$GLOBALS['api_calls']=array(); $GLOBALS['api_reply']=array('code'=>200,'body'=>array('ok'=>true)); HI_Club_Checkout::api(array('action'=>'health')); HI_Club_Checkout::api(array('action'=>'quote')); check('Only health probe waits up to twenty seconds', $GLOBALS['api_calls'][0]['timeout']===20 && $GLOBALS['api_calls'][1]['timeout']===6);
 echo json_encode(array('engine' => PHP_VERSION, 'checks' => $checks), JSON_UNESCAPED_UNICODE);
