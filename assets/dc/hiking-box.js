@@ -385,11 +385,33 @@
     var clubPilot = fromClubApp && qs.get('hi_club_test') === '1';
     if (note && !clubPilot && navigator.clipboard) navigator.clipboard.writeText(note).catch(function () {});
     btn.disabled = true; btn.textContent = 'собираем...';
-    var nonce = function () { return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) { return r.headers.get('Nonce'); }); };
+    // D1: technical stage/status only; never display server messages, cart data or credentials.
+    var diagnosticStage = 'S1';
+    function diagnosticError(stage, status, apiCode) {
+      var error = new Error('checkout preparation failed');
+      error.hiStage = stage;
+      error.hiStatus = typeof status === 'number' && status >= 100 && status <= 599 ? status : 0;
+      error.hiCode = typeof apiCode === 'string' && /^(?:(?:woocommerce_rest_|rest_|wc_store_api_)[a-z0-9_]{1,65}|NO_NONCE|INVALID_JSON|EMPTY_BATCH|API_ERROR)$/.test(apiCode) ? apiCode : '';
+      return error;
+    }
+    function rejectedResponse(response, stage) {
+      return response.json().catch(function () { return {}; }).then(function (body) {
+        throw diagnosticError(stage, response.status, body && body.code);
+      });
+    }
+    var nonce = function () {
+      return fetch('/wp-json/wc/store/v1/cart', { credentials: 'include' }).then(function (r) {
+        if (clubPilot && !r.ok) return rejectedResponse(r, 'S1');
+        var n = r.headers.get('Nonce');
+        if (clubPilot && !n) throw diagnosticError('S1', r.status, 'NO_NONCE');
+        return n;
+      });
+    };
     var n0;
     nonce()
       .then(function (n) {
         if (!clubPilot) return n;
+        diagnosticStage = 'S2';
         // Explicit pilot only. Store API verifies its normal nonce and owns the cart session.
         return fetch('/wp-json/wc/store/v1/cart/extensions', {
           method: 'POST', credentials: 'include',
@@ -399,12 +421,13 @@
             date: $('hi-date').value || '', route: route
           } })
         }).then(function (r) {
-          if (!r.ok) throw new Error('club context ' + r.status);
+          if (!r.ok) return rejectedResponse(r, 'S2');
           return r.headers.get('Nonce') || n;
         });
       })
       .then(function (n) {
         n0 = n;
+        diagnosticStage = 'S3';
         var reqs = items.map(function (it) {
           return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: it[0], quantity: it[1] } };
         });
@@ -416,16 +439,30 @@
         });
       })
       .then(function (r) {
-        if (!r.ok) throw new Error(r.status);
+        if (!r.ok) {
+          if (clubPilot) return rejectedResponse(r, 'S3');
+          throw new Error(r.status);
+        }
         if (wayNow === 'home' && !clubPilot) return;
-        return r.json().then(function (d) {
-          if (clubPilot && (!d.responses || !d.responses.length || d.responses.some(function (x) { return !x.status || x.status >= 400; }))) {
-            throw new Error('club cart operation failed');
+        return r.json().catch(function (error) {
+          if (clubPilot) throw diagnosticError('S3', r.status, 'INVALID_JSON');
+          throw error;
+        }).then(function (d) {
+          if (clubPilot) {
+            if (!d || !Array.isArray(d.responses) || !d.responses.length) throw diagnosticError('S3', r.status, 'EMPTY_BATCH');
+            for (var index = 0; index < d.responses.length; index++) {
+              var itemResponse = d.responses[index];
+              if (!itemResponse || !itemResponse.status || itemResponse.status >= 400) {
+                var operation = index < items.length ? 'S3-item-' + (index + 1) : 'S3-coupon';
+                throw diagnosticError(operation, itemResponse && itemResponse.status, itemResponse && itemResponse.body && itemResponse.body.code);
+              }
+            }
           }
           if (wayNow === 'home') return;
           // последний ответ batch – свежая корзина со способами доставки, отдельный запрос за ней не нужен
           var rs = (d && d.responses) || [], cart = null;
           for (var k = rs.length - 1; k >= 0 && !cart; k--) if (rs[k].body && rs[k].body.shipping_rates) cart = rs[k].body;
+          diagnosticStage = 'S4';
           return pickPickup(n0, cart);
         }).catch(function (error) { if (clubPilot) throw error; });
       })
@@ -435,10 +472,18 @@
         btn.textContent = 'переходим…';
         setTimeout(function () { location.href = '/checkout/'; }, 1500);
       })
-      .catch(function () {
+      .catch(function (error) {
         btn.disabled = clubPilot;
         btn.textContent = clubPilot ? 'оформление остановлено' : 'заказать';
-        msg.textContent = clubPilot ? 'не удалось подготовить клубный заказ. не нажимай повторно: часть товаров могла добавиться. обратись в поддержку для проверки корзины' : 'не получилось добавить в корзину – попробуй ещё раз';
+        if (clubPilot) {
+          var stage = error && error.hiStage || diagnosticStage;
+          var label = stage === 'S1' ? 'подготовка корзины' : stage === 'S2' ? 'клубный переход' : stage === 'S3-coupon' ? 'применение скидки' : stage.indexOf('S3-item-') === 0 ? 'добавление товара' : stage === 'S4' ? 'выбор получения' : 'сборка корзины';
+          var status = error && error.hiStatus ? 'HTTP ' + error.hiStatus : 'NETWORK';
+          var apiCode = error && error.hiCode ? '; ' + error.hiCode : '';
+          msg.textContent = 'не удалось подготовить клубный заказ: ' + label + ' [D1; ' + stage + '; ' + status + apiCode + ']. не нажимай повторно: часть товаров могла добавиться. пришли этот код поддержке';
+        } else {
+          msg.textContent = 'не получилось добавить в корзину – попробуй ещё раз';
+        }
       });
   });
 })();
