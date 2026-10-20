@@ -55,5 +55,11 @@
       "source": "/story/:id.png",
       "destination": "/api/story?id=:id"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/dc-loyalty",
+      "schedule": "5 14 * * *"
+    }
   ]
 }

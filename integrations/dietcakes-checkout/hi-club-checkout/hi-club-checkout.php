@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.3.1
+ * Version: 0.3.2
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -24,9 +24,20 @@ final class HI_Club_Checkout {
     const LOYALTY_API = 'https://app-test-3-delta.vercel.app/api/dc-loyalty';
     const CARD_FEE = 'Скидка по карте интеллигента';
     const QUOTE = 'hi_club_card_quote';
+    // Сроки заказа «на хайк»: магазин доставляет 10–20 (последний выезд 19:30); готовую еду готовит за 2 дня.
+    const READY_FOOD = 'Готовая еда';
+    const CUTOFF_REGULAR = '17:00'; // накануне хайка
+    const CUTOFF_READY = '20:00';   // за два дня до хайка
 
     public static function boot() {
         add_action('admin_menu', array(__CLASS__, 'admin_menu'));
+        // Сводка заказов «на хайк» в бот клуба: оплачен / отменён (ключ магазина тот же, что для скидки).
+        if (strlen((string) get_option(self::LOYALTY_KEY, '')) >= 32) {
+            add_action('woocommerce_order_status_processing', array(__CLASS__, 'notify_paid'), 20);
+            add_action('woocommerce_order_status_completed', array(__CLASS__, 'notify_paid'), 20);
+            add_action('woocommerce_order_status_cancelled', array(__CLASS__, 'notify_cancelled'), 20);
+            add_action('woocommerce_order_status_refunded', array(__CLASS__, 'notify_cancelled'), 20);
+        }
         if (self::loyalty_enabled()) {
             add_action('woocommerce_order_status_processing', array(__CLASS__, 'ledger_confirm'));
             add_action('woocommerce_order_status_completed', array(__CLASS__, 'ledger_confirm'));
@@ -75,6 +86,41 @@ final class HI_Club_Checkout {
         $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date, new DateTimeZone('Europe/Moscow'));
         $today = new DateTimeImmutable('today', new DateTimeZone('Europe/Moscow'));
         return $d && $d->format('Y-m-d') === $date && $d >= $today;
+    }
+
+    // Есть ли в корзине готовая еда (категория «Готовая еда» или любая её подкатегория).
+    public static function cart_has_ready_food() {
+        if (!WC()->cart || !function_exists('get_the_terms')) return false;
+        foreach (WC()->cart->get_cart() as $item) {
+            $pid = !empty($item['product_id']) ? (int) $item['product_id'] : 0;
+            $terms = $pid ? get_the_terms($pid, 'product_cat') : array();
+            foreach (is_array($terms) ? $terms : array() as $term) {
+                $ids = array_merge(array($term->term_id), function_exists('get_ancestors') ? get_ancestors($term->term_id, 'product_cat') : array());
+                foreach ($ids as $id) { $t = get_term($id, 'product_cat'); if ($t && !is_wp_error($t) && $t->name === self::READY_FOOD) return true; }
+            }
+        }
+        return false;
+    }
+
+    // Крайний срок заказа на хайк в дату $date (МСК). Возвращает DateTimeImmutable.
+    public static function hike_deadline($date, $ready) {
+        $tz = new DateTimeZone('Europe/Moscow');
+        $d = DateTimeImmutable::createFromFormat('!Y-m-d', $date, $tz);
+        if (!$d) return null;
+        list($h, $m) = explode(':', $ready ? self::CUTOFF_READY : self::CUTOFF_REGULAR);
+        return $d->modify($ready ? '-2 days' : '-1 day')->setTime((int) $h, (int) $m);
+    }
+
+    public static function hike_open($date, $ready, $now = null) {
+        $deadline = self::hike_deadline($date, $ready);
+        $now = $now ?: new DateTimeImmutable('now', new DateTimeZone('Europe/Moscow'));
+        return $deadline && $now < $deadline;
+    }
+
+    public static function closed_message($ready) {
+        return $ready
+            ? 'Заказ с готовой едой на этот хайк закрыт – её готовят за 2 дня (до 20:00 за два дня до хайка). Выбери самовывоз или доставку домой, или убери готовую еду из бокса.'
+            : 'Заказ на этот хайк закрыт – боксы принимаем до 17:00 накануне. Выбери самовывоз или доставку домой.';
     }
 
     public static function register_store_api() {
@@ -256,6 +302,38 @@ final class HI_Club_Checkout {
         $cart->fees_api()->add_fee(array('name' => self::CARD_FEE, 'amount' => -$quote['discount'] / 100, 'taxable' => false));
     }
 
+    // ---- сводка заказов «на хайк» в бот клуба ----
+    private static function order_payload($order, $status) {
+        $items = array();
+        foreach ($order->get_items('line_item') as $item) {
+            if (!method_exists($item, 'get_quantity')) continue;
+            $items[] = array('name' => mb_substr((string) $item->get_name(), 0, 80), 'qty' => (int) $item->get_quantity(), 'total' => (int) round((float) $item->get_total() * 100));
+        }
+        return array('action' => 'hike_order', 'order' => array(
+            'number' => (string) $order->get_order_number(), 'status' => $status,
+            'date' => (string) $order->get_meta('_hi_club_hike_date'), 'route' => mb_substr((string) $order->get_meta('_hi_club_hike_route'), 0, 120),
+            'name' => mb_substr(trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name()), 0, 60),
+            'phone' => mb_substr((string) $order->get_billing_phone(), 0, 30),
+            'items' => array_slice($items, 0, 30), 'total' => (int) round((float) $order->get_total() * 100),
+            'card_discount' => (int) $order->get_meta('_hi_club_card_discount'),
+            'ready_food' => $order->get_meta('_hi_club_ready_food') === 'yes',
+        ));
+    }
+
+    public static function notify_paid($order_id) {
+        $order = self::order_from($order_id);
+        if (!$order || $order->get_meta('_hi_club_way') !== 'hike' || $order->get_meta('_hi_club_notified') === 'paid') return;
+        $r = self::api(self::order_payload($order, 'paid'));
+        if ($r && !isset($r['error'])) { $order->update_meta_data('_hi_club_notified', 'paid'); $order->save(); }
+    }
+
+    public static function notify_cancelled($order_id) {
+        $order = self::order_from($order_id);
+        if (!$order || $order->get_meta('_hi_club_way') !== 'hike' || $order->get_meta('_hi_club_notified') !== 'paid') return;
+        $r = self::api(self::order_payload($order, 'cancelled'));
+        if ($r && !isset($r['error'])) { $order->update_meta_data('_hi_club_notified', 'cancelled'); $order->save(); }
+    }
+
     private static function order_from($order_id) {
         return is_object($order_id) ? $order_id : (function_exists('wc_get_order') ? wc_get_order($order_id) : null);
     }
@@ -328,6 +406,10 @@ final class HI_Club_Checkout {
                 $errors->add('hi_club_payment', 'Получить на хайке можно только с оплатой через СБП. Выбери СБП и обнови заказ.');
             }
             if (!self::valid_date($context['date'])) $errors->add('hi_club_date', 'Выбери сегодняшнюю или будущую дату хайка.');
+            else {
+                $ready = self::cart_has_ready_food();
+                if (!self::hike_open($context['date'], $ready)) $errors->add('hi_club_deadline', self::closed_message($ready));
+            }
         }
         if (self::should_skip_pickup_discount(WC()->cart)) {
             foreach (WC()->cart->fees_api()->get_fees() as $fee) {
@@ -355,6 +437,7 @@ final class HI_Club_Checkout {
             foreach (array('_eco_pickup_date', '_eco_pickup_time', '_eco_delivery_date', '_eco_delivery_time') as $key) $order->delete_meta_data($key);
             $order->update_meta_data('_hi_club_hike_date', $context['date']);
             $order->update_meta_data('_hi_club_hike_route', $context['route']);
+            $order->update_meta_data('_hi_club_ready_food', self::cart_has_ready_food() ? 'yes' : 'no');
             foreach ($order->get_items('shipping') as $item) {
                 if ($item->get_method_id() === 'local_pickup' && (int) $item->get_instance_id() === 8) {
                     $item->set_method_title('Получить на хайке');
@@ -388,8 +471,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.1', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.1');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.2', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.2');
     }
 
     public static function render() {

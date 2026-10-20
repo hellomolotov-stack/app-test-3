@@ -479,8 +479,26 @@
     pickup: 'при оформлении уже будет выбран самовывоз – заберёшь бокс в магазине',
     home: 'товары добавятся в корзину – доставку выберешь при оформлении заказа'
   };
-  function setWayMsg() { $('hi-msg').textContent = fromClubApp && wayNow === 'hike' ? 'выберем «Получить на хайке», передадим дату и маршрут автоматически. оплата — через СБП' : WAY_MSG[wayNow]; }
+  function setWayMsg() { if (wayNow === 'hike' && !hikeOpen()) { $('hi-msg').textContent = hikeClosedText(); return; } $('hi-msg').textContent = fromClubApp && wayNow === 'hike' ? 'выберем «Получить на хайке», передадим дату и маршрут автоматически. оплата — через СБП' : WAY_MSG[wayNow]; }
   setWayMsg();
+  // сроки заказа «на хайк» – как в плагине магазина: без готовой еды до 17:00 накануне, с готовой едой до 20:00 за два дня
+  function hasReadyFood() {
+    return allSel().concat(Object.keys(extra).filter(function (id) { return extra[id]; }).map(function (id) { return [+id, 1]; })).some(function (x) {
+      return ((P[x[0]] && P[x[0]].categories) || []).some(function (c) { return /готов|сэндвич|сендвич|ролл|завтрак|салат|суп/i.test(c.name || ''); });
+    });
+  }
+  function hikeOpen() {
+    var d = $('hi-date').value; if (!d) return true;
+    var ready = hasReadyFood(), p = d.split('-').map(Number);
+    // дедлайн по Москве (UTC+3)
+    var deadline = Date.UTC(p[0], p[1] - 1, p[2] - (ready ? 2 : 1), ready ? 17 : 14, 0);
+    return Date.now() < deadline;
+  }
+  function hikeClosedText() {
+    return hasReadyFood()
+      ? 'готовую еду на этот хайк уже не успеют приготовить – её заказывают за 2 дня (до 20:00). убери сэндвич или ролл из бокса, либо выбери самовывоз или доставку домой'
+      : 'заказ на этот хайк закрыт – боксы принимаем до 17:00 накануне. выбери самовывоз или доставку домой';
+  }
   function hikeNote() {
     var d = $('hi-date').value, p = d ? d.split('-') : null;
     return 'Хайкинг бокс · заберу на старте хайка' + (p ? ' ' + p[2] + '.' + p[1] : '') + (route ? ' · ' + route : '');
@@ -648,6 +666,7 @@
     allSel().forEach(function (x) { items.push([x[0], x[1]]); });
     Object.keys(extra).forEach(function (id) { if (extra[id]) items.push([+id, 1]); });
     if (!items.length) { inventoryBusy = false; catalogPaused = false; syncControls(); continueCatalog(); return; }
+    if (wayNow === 'hike' && $('hi-date').value && !hikeOpen()) { inventoryBusy = false; catalogPaused = false; syncControls(); continueCatalog(); msg.textContent = hikeClosedText(); $('hi-date-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     if (wayNow === 'hike' && !$('hi-date').value) { inventoryBusy = false; catalogPaused = false; syncControls(); continueCatalog(); msg.textContent = 'укажи дату хайка – соберём бокс к этому дню'; $('hi-date').focus(); $('hi-date-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     var note = wayNow === 'hike' ? hikeNote() : '';
     // строка для комментария: в буфер обмена (сразу, пока действует нажатие) и в cookie – для будущей вставки кодом на сайте

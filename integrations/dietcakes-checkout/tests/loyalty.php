@@ -74,4 +74,26 @@ check('Ledger failure leaves order note', $o2->get_meta('_hi_club_ledger') === '
 $o3 = new WC_Order(); $GLOBALS['api_calls'] = array(); HI_Club_Checkout::ledger_confirm($o3);
 check('Order without card: no ledger calls', count($GLOBALS['api_calls']) === 0);
 
+// ---- сроки заказа на хайк ----
+$tz = new DateTimeZone('Europe/Moscow');
+check('Regular: deadline is 17:00 the day before', HI_Club_Checkout::hike_deadline('2026-10-25', false)->format('Y-m-d H:i') === '2026-10-24 17:00');
+check('Ready food: deadline is 20:00 two days before', HI_Club_Checkout::hike_deadline('2026-10-25', true)->format('Y-m-d H:i') === '2026-10-23 20:00');
+check('Regular open at 16:59 the day before', HI_Club_Checkout::hike_open('2026-10-25', false, new DateTimeImmutable('2026-10-24 16:59', $tz)));
+check('Regular closed at 17:00 the day before', !HI_Club_Checkout::hike_open('2026-10-25', false, new DateTimeImmutable('2026-10-24 17:00', $tz)));
+check('Ready food closed the day before', !HI_Club_Checkout::hike_open('2026-10-25', true, new DateTimeImmutable('2026-10-24 09:00', $tz)));
+check('Ready food open two days before at 19:59', HI_Club_Checkout::hike_open('2026-10-25', true, new DateTimeImmutable('2026-10-23 19:59', $tz)));
+
+// ---- уведомления о заказах на хайк ----
+loyalty_case(true, $CARD, 'hike'); $GLOBALS['api_reply'] = array('code' => 200, 'body' => array('ok' => true));
+$h = new WC_Order(); $h->meta = array('_hi_club_way' => 'hike', '_hi_club_hike_date' => '2026-10-25', '_hi_club_hike_route' => 'Ай-Петри', '_hi_club_card_discount' => 4760);
+$GLOBALS['api_calls'] = array(); HI_Club_Checkout::notify_paid($h);
+$p = $GLOBALS['api_calls'][0]['body'] ?? array();
+check('Paid hike order sent to club with details', ($p['action'] ?? '') === 'hike_order' && $p['order']['status'] === 'paid' && $p['order']['date'] === '2026-10-25' && $p['order']['name'] === 'Анна К' && $p['order']['total'] === 47600);
+HI_Club_Checkout::notify_paid($h);
+check('Paid notice sent once', count($GLOBALS['api_calls']) === 1);
+HI_Club_Checkout::notify_cancelled($h);
+check('Cancellation of paid hike order is reported', count($GLOBALS['api_calls']) === 2 && $GLOBALS['api_calls'][1]['body']['order']['status'] === 'cancelled');
+$home = new WC_Order(); $home->meta = array('_hi_club_way' => 'home'); $GLOBALS['api_calls'] = array(); HI_Club_Checkout::notify_paid($home);
+check('Non-hike orders are not reported', count($GLOBALS['api_calls']) === 0);
+
 echo json_encode(array('engine' => PHP_VERSION, 'checks' => $checks), JSON_UNESCAPED_UNICODE);

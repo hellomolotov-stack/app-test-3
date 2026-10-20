@@ -42,3 +42,24 @@ test('app_card: only verified Telegram user with an active card gets own QR',asy
  const pilot=setup(); pilot.deps.verifyInitData=()=>({id:123});
  assert.equal((await pilot.request({action:'app_card',initData:'x'},{})).body.error,'pilot_card_only');
 });
+test('hike_order: store key required, notifies organizer with totals; cron summary',async()=>{
+ const sk='c'.repeat(40), sent=[], db={};
+ const api=setup({DC_LOYALTY_MODE:'live',DC_STORE_KEY:sk,DC_ONLINE_ENABLED:'1',CRON_SECRET:'d'.repeat(40)});
+ api.deps.notify=async t=>sent.push(t);
+ api.deps.hikeOrders={async save(o){(db[o.date] ||= {})[o.number]=o;return db[o.date]},async read(d){return db[d]||{}}};
+ const order=n=>({number:String(n),status:'paid',date:'2026-10-25',route:'Ай-Петри',name:'Анна',phone:'+7',items:[{name:'CHIKABAR',qty:1,total:11800}],total:120000,card_discount:0,ready_food:false});
+ const r=b=>api.request({actor:'0',...b,mode:'live'},{'x-dc-store-key':sk});
+ assert.equal((await api.request({actor:'0',action:'hike_order',order:order(1),mode:'live'},{})).code,401);
+ assert.equal((await r({action:'hike_order',order:{bad:1}})).code,400);
+ assert.equal((await r({action:'hike_order',order:order(101)})).code,200);
+ assert.match(sent[0],/Бокс на хайк 25\.10/); assert.match(sent[0],/забираешь в магазине/);
+ await r({action:'hike_order',order:order(102)});
+ assert.match(sent[1],/2 заказа на 2[\s ]400 ₽ → 🚚 магазин везёт/);
+ await r({action:'hike_order',order:{...order(102),status:'cancelled'}});
+ assert.match(sent[2],/отменён/); assert.match(sent[2],/1 заказ на 1[\s ]200 ₽/);
+ // cron
+ const res={setHeader(){},status(c){this.code=c;return this},json(b){this.body=b;return this}};
+ const h=require('../../api/dc-loyalty').createHandler(api.deps);
+ await h({method:'GET',headers:{authorization:'Bearer wrong'}},res); assert.equal(res.code,401);
+ api.deps.now=()=>Date.parse('2026-10-24T14:05:00Z');
+});

@@ -89,6 +89,9 @@ class WC_Order {
     function get_id() { return $this->id; }
     function add_order_note($n) { $this->notes[] = $n; }
     function save() { $this->saved++; }
+    function get_order_number() { return (string) $this->id; }
+    function get_billing_first_name() { return 'Анна'; } function get_billing_last_name() { return 'К'; }
+    function get_billing_phone() { return '+79780000000'; } function get_total() { return 476.0; }
 }
 // Заглушка API клуба: записываем запросы, ответ задаёт тест.
 $GLOBALS['api_calls'] = array(); $GLOBALS['api_reply'] = null;

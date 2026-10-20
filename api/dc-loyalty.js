@@ -5,16 +5,52 @@ const { DATABASE, firebaseStore } = require('../lib/dietcakes-loyalty/firebase-s
 const PILOT_IDS = ['163665735', '7845375334'];
 const ids = value => String(value || '').split(',').map(x => x.trim()).filter(x => /^\d{1,16}$/.test(x));
 function sameSecret(actual, expected) { return typeof expected === 'string' && expected.length >= 32 && typeof actual === 'string' && Buffer.byteLength(actual) === Buffer.byteLength(expected) && crypto.timingSafeEqual(Buffer.from(actual), Buffer.from(expected)); }
+// ---- заказы «на хайк»: сразу пишем организатору в бот, накануне в 17:05 – итог по хайку ----
+const rub = k => (Math.round(Number(k) || 0) / 100).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽';
+const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const dayLabel = d => { const [y, m, dd] = d.split('-').map(Number); return `${String(dd).padStart(2, '0')}.${String(m).padStart(2, '0')} (${WD[new Date(Date.UTC(y, m - 1, dd)).getUTCDay()]})`; };
+const FREE_DELIVERY = 200000; // от 2 000 ₽ за хайк магазин везёт боксы организатору домой
+function cleanOrder(o) {
+    if (!o || typeof o !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(String(o.date)) || !/^[\w-]{1,20}$/.test(String(o.number)) || !['paid', 'cancelled'].includes(o.status)) return null;
+    const int = v => Number.isSafeInteger(v) && v >= 0 && v < 1e9 ? v : 0, str = (v, n) => String(v == null ? '' : v).slice(0, n);
+    return { number: str(o.number, 20), status: o.status, date: o.date, route: str(o.route, 120), name: str(o.name, 60), phone: str(o.phone, 30),
+        items: (Array.isArray(o.items) ? o.items : []).slice(0, 30).map(i => ({ name: str(i && i.name, 80), qty: int(i && i.qty), total: int(i && i.total) })),
+        total: int(o.total), card_discount: int(o.card_discount), ready_food: o.ready_food === true };
+}
+function hikeTotals(orders) {
+    const paid = Object.values(orders || {}).filter(o => o && o.status === 'paid');
+    const sum = paid.reduce((a, o) => a + (o.total || 0), 0);
+    return { paid, sum, decision: sum >= FREE_DELIVERY ? '🚚 магазин везёт боксы к тебе домой' : `🛍 забираешь в магазине сам (до ${rub(FREE_DELIVERY)})` };
+}
+function orderLines(o) {
+    return [`👤 ${esc(o.name || 'без имени')}${o.phone ? ' · ' + esc(o.phone) : ''}`,
+        `🧺 ${o.items.map(i => `${esc(i.name)}${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ') || '—'}`,
+        `💳 ${rub(o.total)}${o.card_discount ? ` (скидка по карте ${rub(o.card_discount)})` : ''}${o.ready_food ? ' · 🍱 готовая еда' : ''}`];
+}
 function createHandler(deps) {
     return async function (req, res) {
         res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
-        if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+        if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).json({ error: 'POST only' });
         const env = deps.env, mode = env.DC_LOYALTY_MODE;
         if (!['pilot', 'live'].includes(mode)) return res.status(503).json({ error: 'loyalty_disabled' });
         if (!env.DC_CARD_SIGNING_KEY || env.DC_CARD_SIGNING_KEY.length < 32) return res.status(503).json({ error: 'not_configured' });
+        // Vercel Cron: итог по хайку завтрашнего дня
+        if (req.method === 'GET') {
+            if (!sameSecret(String(req.headers.authorization || '').replace(/^Bearer /, ''), env.CRON_SECRET)) return res.status(401).json({ error: 'unauthorized' });
+            const tomorrow = new Date(Date.now() + 3 * 3600000 + 86400000).toISOString().slice(0, 10);
+            const { paid, sum, decision } = hikeTotals(await deps.hikeOrders.read(tomorrow));
+            if (!paid.length) return res.status(200).json({ sent: false, date: tomorrow });
+            const routes = [...new Set(paid.map(o => o.route).filter(Boolean))].join(', ');
+            const text = [`📦 <b>Боксы на хайк завтра, ${dayLabel(tomorrow)}</b>${routes ? ' · ' + esc(routes) : ''}`,
+                `${paid.length} ${paid.length === 1 ? 'заказ' : paid.length < 5 ? 'заказа' : 'заказов'} на ${rub(sum)} → ${decision}`, '',
+                ...paid.map((o, i) => [`<b>${i + 1}. №${esc(o.number)}</b>`, ...orderLines(o)].join('\n'))].join('\n');
+            await deps.notify(text);
+            return res.status(200).json({ sent: true, date: tomorrow, orders: paid.length });
+        }
         let body = req.body;
         try { if (typeof body === 'string') body = JSON.parse(body); } catch { return res.status(400).json({ error: 'invalid_request' }); }
-        if (!body || typeof body !== 'object' || JSON.stringify(body).length > 4096) return res.status(400).json({ error: 'invalid_request' });
+        if (!body || typeof body !== 'object' || JSON.stringify(body).length > 16384) return res.status(400).json({ error: 'invalid_request' });
         // Приложение клуба: владелец карты получает свой QR для кассы. Личность – только из подписанных данных Telegram.
         if (body.action === 'app_card') {
             const user = deps.verifyInitData(String(body.initData || ''));
@@ -38,6 +74,21 @@ function createHandler(deps) {
         const allowed = bot && (action === 'card' || cashiers.includes(actor));
         if (store && action === 'card') return res.status(403).json({ error: 'action_forbidden' });
         if (bot && !allowed) return res.status(403).json({ error: 'cashier_forbidden' });
+        if (store && action === 'hike_order') {
+            const order = cleanOrder(body.order);
+            if (!order) return res.status(400).json({ error: 'invalid_order' });
+            try {
+                const all = await deps.hikeOrders.save(order);
+                const { paid, sum, decision } = hikeTotals(all);
+                const head = order.status === 'paid'
+                    ? `🆕 <b>Бокс на хайк ${dayLabel(order.date)}</b> · заказ №${esc(order.number)} оплачен`
+                    : `❌ <b>Заказ №${esc(order.number)} отменён</b> · хайк ${dayLabel(order.date)}`;
+                const text = [head, order.route ? `🏔 ${esc(order.route)}` : '', ...orderLines(order), '',
+                    `Итого на ${dayLabel(order.date)}: ${paid.length} ${paid.length === 1 ? 'заказ' : paid.length < 5 ? 'заказа' : 'заказов'} на ${rub(sum)} → ${decision}`].filter(x => x !== '').join('\n');
+                await deps.notify(text);
+                return res.status(200).json({ ok: true });
+            } catch { return res.status(503).json({ error: 'service_unavailable' }); }
+        }
         if (store && (!env.DC_ONLINE_ENABLED || env.DC_ONLINE_ENABLED !== '1')) return res.status(503).json({ error: 'online_disabled' });
         try {
             const uid = action === 'card' && bot ? actor : verifyCard(body.card, env.DC_CARD_SIGNING_KEY);
@@ -62,6 +113,28 @@ function createHandler(deps) {
 }
 module.exports = createHandler({
     env: process.env,
+    hikeOrders: {
+        // dcHikeOrders/<дата>/<номер заказа> – закрыт для чтения клиентам, пишет только сервер
+        async save(order) {
+            const { getAccessToken } = require('./club-content'), token = await getAccessToken();
+            const url = `${DATABASE}/dcHikeOrders/${order.date}/${order.number}.json`;
+            const put = await fetch(url, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ ...order, at: Date.now() }), signal: AbortSignal.timeout(8000) });
+            if (!put.ok) throw new Error('save');
+            return this.read(order.date, token);
+        },
+        async read(date, token) {
+            const { getAccessToken } = require('./club-content');
+            const r = await fetch(`${DATABASE}/dcHikeOrders/${date}.json`, { headers: { Authorization: `Bearer ${token || await getAccessToken()}` }, signal: AbortSignal.timeout(8000) });
+            if (!r.ok) throw new Error('read');
+            return (await r.json()) || {};
+        }
+    },
+    async notify(text) {
+        const token = process.env.TELEGRAM_BOT_TOKEN; if (!token) return;
+        const ids = String(process.env.DC_ORDER_NOTIFY_IDS || '163665735').split(',').map(x => x.trim()).filter(x => /^\d{1,16}$/.test(x));
+        await Promise.all(ids.map(id => fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: id, text, parse_mode: 'HTML', disable_web_page_preview: true }), signal: AbortSignal.timeout(8000) }).catch(() => {})));
+    },
     verifyInitData(initData) { const token = process.env.TELEGRAM_BOT_TOKEN; return token ? require('./tg-auth').verifyInitData(initData, token) : null; },
     store(mode) { const { getAccessToken } = require('./club-content'); return firebaseStore(getAccessToken, mode === 'pilot' ? 'dietcakesLoyaltyPilot' : 'dietcakesLoyalty'); },
     async activeMember(uid) {
