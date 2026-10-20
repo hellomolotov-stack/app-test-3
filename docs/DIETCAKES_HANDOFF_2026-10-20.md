@@ -49,6 +49,11 @@
 ## 1а. Обновление 21.10.2026: посредник для API
 Сервер магазина (Fornex) перестал соединяться с Vercel напрямую (cURL 28, обрыв за 6–10 с) – скидка не ставилась, оформление долго грузилось. Решение: посредник Caddy на сервере бота `https://api.intelligentsia-club.ru:8444/api/dc-loyalty` → `app-test-3-delta.vercel.app` (пропускает только этот путь, остальное 404; сертификат Let's Encrypt, порты 80 и 8444 открыты в ufw, VPN на 443/8443 не тронут). DNS A `api` → 64.188.117.132 (reg.ru). Плагин 0.3.6: поле «Адрес API клуба» в настройках (пусто – прямой Vercel); сейчас стоит адрес посредника. Проверка связи из магазина: ok, 602 мс. Конфиг: `/etc/caddy/Caddyfile` (исходный – `Caddyfile.orig`).
 
+## 1б. Обновление 21.10.2026: конструктор отдаётся из плагина (0.4.0)
+Страница бокса больше не зависит от Vercel для покупателей: плагин подменяет на странице 15624 адрес скрипта `app-test-3-delta.vercel.app/assets/dc/hiking-box.js` на копию из плагина (`wp-content/plugins/hi-club-checkout/assets/hiking-box.js`), картинки (скала, карта, логотип) тоже из плагина. Переключатель «Откуда грузить страницу бокса» в настройках плагина (из плагина / с Vercel) – откат без переустановки.
+**Как выпускать правки конструктора:** править `assets/dc/hiking-box.js` (на Vercel – предпросмотр), затем `integrations/dietcakes-checkout/sync-frontend.sh`, поднять версию плагина, собрать zip и обновить плагин в админке (Chrome, по регламенту). Собирать правки пачкой.
+Также убрана повторная строка «Скидка по карте интеллигента» в корзине (остаётся одна строка скидки; при сбое расчёта – предупреждение).
+
 ## 2. Где что настроено (без значений секретов)
 - **Vercel (app-test-3), production env:** `DC_LOYALTY_MODE=live`, `DC_CASHIER_IDS=163665735,7845375334`, `DC_CARD_SIGNING_KEY`, `DC_CASHIER_BOT_KEY`, `DC_STORE_KEY`, `DC_ONLINE_ENABLED=1`, `CRON_SECRET`, `TELEGRAM_BOT_TOKEN`. Необязательные: `DC_OWNER_IDS`, `DC_ORDER_NOTIFY_IDS`.
 - **Сервер бота** (`ssh -i ~/.ssh/hiking_bot_ed25519 root@64.188.117.132`): `/opt/hiking_bot/dc-cashier-pilot.env` – `DC_CASHIER_ENABLED=live`, `DC_LOYALTY_MODE=live`, `DC_CASHIER_IDS`, `DC_LOYALTY_URL`, `DC_CASHIER_BOT_KEY`. Режимы бота и Vercel должны совпадать. Перезапускать только `hiking_bot.service`. Бэкапы модуля: `dc_cashier.py.before-*`.
