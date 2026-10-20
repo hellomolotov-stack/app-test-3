@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Hiking Club Checkout Pilot
- * Description: Изолированный пилот выдачи боксов на старте хайка для действующего checkout Dietcakes.
- * Version: 0.3.0
+ * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
+ * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
+ * Version: 0.3.1
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -388,8 +388,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.0', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.0');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.1', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.1');
     }
 
     public static function render() {
@@ -405,7 +405,7 @@ final class HI_Club_Checkout {
     }
 
     public static function admin_menu() {
-        add_submenu_page('woocommerce', 'Клубный бокс — пилот', 'Клубный бокс — пилот', 'manage_options', 'hi-club-checkout', array(__CLASS__, 'settings'));
+        add_submenu_page('woocommerce', 'Хайкинг бокс клуба', 'Хайкинг бокс клуба', 'manage_options', 'hi-club-checkout', array(__CLASS__, 'settings'));
     }
 
     public static function settings() {
@@ -420,9 +420,9 @@ final class HI_Club_Checkout {
             echo '<div class="notice notice-success"><p>Режим сохранён.</p></div>';
         }
         $mode = get_option(self::OPTION, 'off');
-        echo '<div class="wrap"><h1>Клубный бокс — пилот</h1><p>По умолчанию выключен. Пилот требует специальной отметки теста в клубной ссылке. Публичного режима в этой версии нет.</p><form method="post">';
+        echo '<div class="wrap"><h1>Хайкинг бокс клуба</h1><p>Заказы, пришедшие из приложения клуба: способ «Получить на хайке» и скидка по карте. Обычные покупатели магазина этого не видят.</p><form method="post">';
         wp_nonce_field('hi_club_checkout_settings');
-        echo '<label>Режим <select name="hi_club_mode"><option value="off" ' . selected($mode, 'off', false) . '>Выключен</option><option value="pilot" ' . selected($mode, 'pilot', false) . '>Только тестовый переход</option></select></label>';
+        echo '<label>Режим <select name="hi_club_mode"><option value="off" ' . selected($mode, 'off', false) . '>Выключен</option><option value="pilot" ' . selected($mode, 'pilot', false) . '>Включён</option></select></label>';
         $loyalty = get_option(self::LOYALTY, 'off');
         echo '<h2>Скидка по карте интеллигента</h2><p>10% на покупки до 15 000 ₽ в месяц, сверх – 5%. Лимит общий с кассой магазина и считается на сервере клуба.</p>';
         echo '<p><label>Скидка <select name="hi_club_loyalty"><option value="off" ' . selected($loyalty, 'off', false) . '>Выключена</option><option value="on" ' . selected($loyalty, 'on', false) . '>Включена</option></select></label></p>';
