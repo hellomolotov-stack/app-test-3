@@ -96,4 +96,15 @@ check('Cancellation of paid hike order is reported', count($GLOBALS['api_calls']
 $home = new WC_Order(); $home->meta = array('_hi_club_way' => 'home'); $GLOBALS['api_calls'] = array(); HI_Club_Checkout::notify_paid($home);
 check('Non-hike orders are not reported', count($GLOBALS['api_calls']) === 0);
 
+// Failure diagnostics must classify errors without exposing provider text or secrets.
+loyalty_case(true, $CARD); $GLOBALS['api_reply'] = 'timeout'; WC()->cart->recalculate();
+$q = WC()->session->get(HI_Club_Checkout::QUOTE);
+check('Transport failure has specific safe code', $q['error'] === 'transport_error');
+loyalty_case(true, $CARD); $GLOBALS['api_reply'] = array('code'=>200, 'body'=>'not an object'); WC()->cart->recalculate();
+check('Non-JSON-object response distinguished', WC()->session->get(HI_Club_Checkout::QUOTE)['error'] === 'http_200_invalid_json');
+loyalty_case(true, $CARD); $GLOBALS['api_reply'] = array('code'=>200, 'body'=>array('ok'=>true)); WC()->cart->recalculate();
+check('Malformed quote is distinct from connection error', WC()->session->get(HI_Club_Checkout::QUOTE)['error'] === 'invalid_quote');
+loyalty_case(true, $CARD); WC()->session->set(HI_Club_Checkout::QUOTE,array('card'=>$CARD,'gross'=>100000,'discount'=>0,'ok'=>false,'at'=>time(),'error'=>'unavailable')); $GLOBALS['api_reply']=$quote10; WC()->cart->recalculate();
+check('Old opaque failed cache gets one fresh calculation',count($GLOBALS['api_calls'])===1 && local_total()===900.0);
+WC()->cart->recalculate(); check('New successful quote still cached',count($GLOBALS['api_calls'])===1);
 echo json_encode(array('engine' => PHP_VERSION, 'checks' => $checks), JSON_UNESCAPED_UNICODE);

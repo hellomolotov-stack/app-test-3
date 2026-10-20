@@ -27,6 +27,7 @@ class BoxProduct {
 function wc_get_product($id) { return $GLOBALS['products'][$id] ?? null; }
 function wc_add_notice($s, $type) { $GLOBALS['notices'][] = $s; }
 class BoxCart extends LocalCart {
+    function get_product_price($p) { return '<span>100 ₽</span>'; }
     public $contents = array(); public $removed = array(); public $totals_calls = 0;
     function get_cart_contents() { return $this->contents; } function set_cart_contents($c) { $this->contents = $c; }
     function get_cart() { return $this->contents; }
@@ -70,7 +71,9 @@ HI_Club_Checkout::update_quantities('hi_club_qty[item-1]=8');check('Stock overfl
 HI_Club_Checkout::update_quantities('hi_club_qty[item-1]=1');check('Checkout decrease works',WC()->cart->contents['item-1']['quantity']===1);
 HI_Club_Checkout::update_quantities('hi_club_qty[item-2]=0');check('Checkout removal works',!isset(WC()->cart->contents['item-2']));
 HI_Club_Checkout::update_quantities('hi_club_qty[unknown]=3');check('Unknown cart key cannot add product',count(WC()->cart->contents)===1);
+check('Line price reuses server Woo unit price and quantity', strpos(HI_Club_Checkout::checkout_item_price('old', array('data'=>new BoxProduct(),'quantity'=>2), 'item-1'), '2 × ') !== false);
 WC()->session->__unset(HI_Club_Checkout::SESSION);check('Ordinary checkout markup unchanged',HI_Club_Checkout::checkout_quantity('old',$item,'item-1')==='old');
 HI_Club_Checkout::update_quantities('hi_club_qty[item-1]=3');check('Ordinary checkout update not intercepted',WC()->cart->contents['item-1']['quantity']===1);
+check('Ordinary subtotal markup unchanged', HI_Club_Checkout::checkout_item_price('old',$item,'item-1')==='old');
 echo json_encode(array('engine'=>PHP_VERSION,'checks'=>$checks),JSON_UNESCAPED_UNICODE);
 }

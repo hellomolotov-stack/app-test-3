@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.3.4
+ * Version: 0.3.5
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -63,6 +63,7 @@ final class HI_Club_Checkout {
         add_filter('woocommerce_checkout_cart_item_quantity', array(__CLASS__, 'checkout_quantity'), 40, 3);
         add_action('woocommerce_checkout_update_order_review', array(__CLASS__, 'update_quantities'), 10);
         add_action('woocommerce_review_order_before_order_total', array(__CLASS__, 'card_notice'));
+        add_filter('woocommerce_cart_item_subtotal', array(__CLASS__, 'checkout_item_price'), 40, 3);
         add_filter('woocommerce_shipping_package_name', array(__CLASS__, 'package_name'), 30, 3);
         add_filter('woocommerce_get_order_item_totals', array(__CLASS__, 'order_totals'), 40, 3);
         add_action('woocommerce_admin_order_data_after_billing_address', array(__CLASS__, 'admin_order'));
@@ -186,6 +187,11 @@ final class HI_Club_Checkout {
         if (!self::context() || !is_checkout() || !isset($item['data'], $item['quantity']) || !preg_match('/^[a-zA-Z0-9_-]{1,64}$/D', (string) $key)) return $html;
         $qty = (int) $item['quantity'];
         return '<span class="hi-club-quantity" data-hi-key="' . esc_attr($key) . '"><button type="button" data-hi-step="-1" aria-label="Уменьшить количество">−</button><input type="number" name="hi_club_qty[' . esc_attr($key) . ']" value="' . $qty . '" min="0" step="1" inputmode="numeric" aria-label="Количество"><button type="button" data-hi-step="1" aria-label="Увеличить количество">+</button><button type="button" data-hi-remove="1" aria-label="Удалить товар">×</button></span>';
+    }
+
+    public static function checkout_item_price($html, $item, $key) {
+        if (!self::context() || !is_checkout() || !isset($item['data'], $item['quantity']) || !method_exists(WC()->cart, 'get_product_price')) return $html;
+        return '<span class="hi-club-line-price"><span class="hi-club-line-count">' . (int) $item['quantity'] . ' × </span>' . WC()->cart->get_product_price($item['data']) . '</span>';
     }
 
     public static function update_quantities($posted) {
@@ -354,10 +360,14 @@ final class HI_Club_Checkout {
             'headers' => array('Content-Type' => 'application/json', 'x-dc-store-key' => (string) get_option(self::LOYALTY_KEY, '')),
             'body' => wp_json_encode(array_merge(array('actor' => '0'), $payload)),
         ));
-        if (is_wp_error($response)) return null;
+        if (is_wp_error($response)) {
+            $message = method_exists($response, 'get_error_message') ? $response->get_error_message() : '';
+            preg_match('/cURL error (\d{1,3})\b/i', $message, $curl);
+            return array('error' => isset($curl[1]) ? 'transport_curl_' . $curl[1] : 'transport_error');
+        }
         $body = json_decode((string) wp_remote_retrieve_body($response), true);
         if ((int) wp_remote_retrieve_response_code($response) !== 200 || !is_array($body)) {
-            return is_array($body) && isset($body['error']) ? array('error' => (string) $body['error']) : null;
+            return is_array($body) && isset($body['error']) ? array('error' => (string) $body['error']) : array('error' => 'http_' . (int) wp_remote_retrieve_response_code($response) . (is_array($body) ? '' : '_invalid_json'));
         }
         return $body;
     }
@@ -374,12 +384,12 @@ final class HI_Club_Checkout {
         $session = self::session();
         $cached = $session ? $session->get(self::QUOTE) : null;
         // Корзина пересчитывается много раз – сервер спрашиваем не чаще раза в 5 минут для той же суммы.
-        if (is_array($cached) && $cached['card'] === $context['card'] && $cached['gross'] === $gross && $cached['at'] > time() - 300) return $cached;
+        if (is_array($cached) && $cached['card'] === $context['card'] && $cached['gross'] === $gross && $cached['at'] > time() - 300 && (!empty($cached['ok']) || ($cached['error'] ?? '') !== 'unavailable')) return $cached;
         $result = self::api(array('action' => 'quote', 'card' => $context['card'], 'gross' => $gross));
         $quote = $result && isset($result['discount']) && is_int($result['discount']) && $result['discount'] >= 0 && $result['discount'] <= $gross
             ? array('card' => $context['card'], 'gross' => $gross, 'discount' => $result['discount'], 'at' => time(), 'ok' => true)
             : array('card' => $context['card'], 'gross' => $gross, 'discount' => 0, 'at' => time(), 'ok' => false,
-                'error' => $result['error'] ?? 'unavailable');
+                'error' => $result['error'] ?? 'invalid_quote');
         if ($session) $session->set(self::QUOTE, $quote);
         return $quote;
     }
@@ -564,8 +574,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.4', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.4');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.5', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.5');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.
@@ -582,8 +592,8 @@ final class HI_Club_Checkout {
             $parts[] = 'сумма_расчёта=' . (WC()->cart && ($cached['gross'] ?? -1) === self::gross_kopecks(WC()->cart) ? 'актуальна' : 'изменилась');
             $parts[] = 'возраст_сек=' . max(0, time() - (int) ($cached['at'] ?? 0));
             $error = $cached['error'] ?? '';
-            $known = array('unavailable', 'unauthorized', 'online_disabled', 'inactive_card', 'invalid_card', 'service_unavailable', 'storage_unavailable', 'not_configured', 'loyalty_disabled', 'pilot_card_only');
-            if (empty($cached['ok'])) $parts[] = 'код=' . (in_array($error, $known, true) ? $error : 'other');
+            $known = array('transport_error', 'invalid_quote', 'unavailable', 'unauthorized', 'online_disabled', 'inactive_card', 'invalid_card', 'service_unavailable', 'storage_unavailable', 'not_configured', 'loyalty_disabled', 'pilot_card_only');
+            if (empty($cached['ok'])) $parts[] = 'код=' . (in_array($error, $known, true) || preg_match('/^(?:transport_curl_\d{1,3}|http_\d{1,3}(?:_invalid_json)?)$/D', (string) $error) ? $error : 'other');
         }
         return '<p id="hi-card-diagnostic" role="status" style="padding:12px;border:1px solid #ddd;overflow-wrap:anywhere">Диагностика карты: ' . esc_html(implode('; ', $parts)) . '</p>';
     }
@@ -607,6 +617,14 @@ final class HI_Club_Checkout {
 
     public static function settings() {
         if (!current_user_can('manage_options')) return;
+        if (isset($_POST['hi_club_probe'])) {
+            check_admin_referer('hi_club_checkout_settings');
+            $started = microtime(true);
+            $probe = self::api(array('action' => 'health'));
+            $code = !empty($probe['ok']) ? 'ok' : ($probe['error'] ?? 'unavailable');
+            $safe = preg_match('/^[a-z0-9_]{1,60}$/D', (string) $code) ? $code : 'other';
+            echo '<div class="notice notice-info"><p id="hi-club-probe-result">Связь с API: ' . esc_html($safe) . '; время=' . (int) round((microtime(true) - $started) * 1000) . ' мс</p></div>';
+        }
         if (isset($_POST['hi_club_save'])) {
             check_admin_referer('hi_club_checkout_settings');
             $mode = self::scalar($_POST, 'hi_club_mode') === 'pilot' ? 'pilot' : 'off';
@@ -625,6 +643,7 @@ final class HI_Club_Checkout {
         echo '<p><label>Скидка <select name="hi_club_loyalty"><option value="off" ' . selected($loyalty, 'off', false) . '>Выключена</option><option value="on" ' . selected($loyalty, 'on', false) . '>Включена</option></select></label></p>';
         echo '<p><label>Ключ магазина <input type="password" name="hi_club_loyalty_key" autocomplete="off" placeholder="' . (get_option(self::LOYALTY_KEY, '') ? 'задан – оставьте пустым' : 'не задан') . '"></label></p>';
         submit_button('Сохранить режим', 'primary', 'hi_club_save');
+        submit_button('Проверить связь с API (без заказов)', 'secondary', 'hi_club_probe');
         echo '</form></div>';
     }
 }
