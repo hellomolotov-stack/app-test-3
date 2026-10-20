@@ -144,6 +144,7 @@ function createHandler(deps) {
         const allowed = bot && (action === 'card' || cashiers.includes(actor));
         if (store && action === 'card') return res.status(403).json({ error: 'action_forbidden' });
         if (bot && !allowed) return res.status(403).json({ error: 'cashier_forbidden' });
+        if (store && action === 'health') return res.status(200).json({ ok: true });
         if (store && action === 'hike_order') {
             const order = cleanOrder(body.order);
             if (!order) return res.status(400).json({ error: 'invalid_order' });
@@ -195,7 +196,7 @@ function createHandler(deps) {
             // Operational metadata only: never log bodies, identifiers, signatures or keys.
             let body = req.body;
             try { if (typeof body === 'string') body = JSON.parse(body); } catch { body = null; }
-            const actions = ['app_card', 'app_ref', 'quote', 'status', 'reserve', 'confirm', 'cancel', 'refund', 'card', 'hike_order', 'hike_cancelled', 'box_choice', 'staff_invite', 'staff_join', 'staff_list', 'staff_remove', 'staff_ids'];
+            const actions = ['app_card', 'app_ref', 'health', 'quote', 'status', 'reserve', 'confirm', 'cancel', 'refund', 'card', 'hike_order', 'hike_cancelled', 'box_choice', 'staff_invite', 'staff_join', 'staff_list', 'staff_remove', 'staff_ids'];
             const headers = req.headers || {};
             const report = { event: 'dc_loyalty_result', action: req.method === 'GET' ? 'cron' : actions.includes(body && body.action) ? body.action : 'unknown',
                 status, duration_ms: Math.max(0, Date.now() - started),
