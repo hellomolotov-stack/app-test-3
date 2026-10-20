@@ -104,6 +104,7 @@ function is_wp_error($v) { return $v instanceof WP_Error; }
 function wp_remote_retrieve_body($r) { return is_array($r) ? json_encode($r['body']) : ''; }
 function wp_remote_retrieve_response_code($r) { return is_array($r) ? $r['code'] : 0; }
 function wp_json_encode($v) { return json_encode($v); }
+function plugins_url($p, $f) { return 'https://dietcakes.ru/wp-content/plugins/hi-club-checkout/' . $p; }
 function WC() { return $GLOBALS['wc']; }
 $GLOBALS['wc'] = (object) array('session' => new LocalSession(), 'cart' => new LocalCart());
 require __DIR__ . '/../hi-club-checkout/hi-club-checkout.php';

@@ -49,7 +49,7 @@ $d = setup_box(); HI_Club_Checkout::set_box($d);
 check('Complete box added in one callback', count(WC()->cart->contents) === 2 && WC()->cart->contents['item-1']['quantity'] === 2);
 check('No intermediate totals or quote requests', WC()->cart->totals_calls === 0 && count($GLOBALS['api_calls']) === 0);
 WC()->cart->calculate_totals(); check('Final totals request applies signed card discount', count($GLOBALS['api_calls']) === 1 && count(fees_named(HI_Club_Checkout::CARD_FEE)) === 1);
-ob_start(); HI_Club_Checkout::card_notice(); $notice = ob_get_clean(); check('Card summary reflects actual applied fee', strpos($notice, 'уже учтена') !== false);
+ob_start(); HI_Club_Checkout::card_notice(); $notice = ob_get_clean(); check('Applied card discount is not duplicated by a summary row', trim($notice) === '');
 WC()->cart->fees_api()->remove_all_fees(); ob_start(); HI_Club_Checkout::card_notice(); $notice=ob_get_clean(); check('Absent fee never presented as applied discount', strpos($notice, 'Не удалось') !== false && strpos($notice, 'уже учтена') === false);
 HI_Club_Checkout::set_box($d); check('Repeated request adds no duplicate quantity', WC()->cart->contents['item-1']['quantity'] === 2);
 $altered=$d;$altered['items'][0]['quantity']=3;check('Same request ID with changed payload rejected',rejected($altered));

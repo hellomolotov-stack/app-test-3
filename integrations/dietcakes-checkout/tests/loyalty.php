@@ -108,4 +108,12 @@ loyalty_case(true, $CARD); WC()->session->set(HI_Club_Checkout::QUOTE,array('car
 check('Old opaque failed cache gets one fresh calculation',count($GLOBALS['api_calls'])===1 && local_total()===900.0);
 WC()->cart->recalculate(); check('New successful quote still cached',count($GLOBALS['api_calls'])===1);
 $GLOBALS['api_calls']=array(); $GLOBALS['api_reply']=array('code'=>200,'body'=>array('ok'=>true)); HI_Club_Checkout::api(array('action'=>'health')); HI_Club_Checkout::api(array('action'=>'quote')); check('Only health probe waits up to twenty seconds', $GLOBALS['api_calls'][0]['timeout']===20 && $GLOBALS['api_calls'][1]['timeout']===6);
+// ---- конструктор из плагина ----
+$page = '<div id="hi-root"></div><script src="https://app-test-3-delta.vercel.app/assets/dc/hiking-box.js"></script>';
+$GLOBALS['options'] = array();
+check('Page script served from plugin by default', strpos(HI_Club_Checkout::local_frontend($page), '/hi-club-checkout/assets/hiking-box.js?ver=') !== false);
+check('Other content untouched', HI_Club_Checkout::local_frontend('<p>текст</p>') === '<p>текст</p>');
+$GLOBALS['options'][HI_Club_Checkout::FRONTEND] = 'vercel';
+check('Vercel option keeps original script', HI_Club_Checkout::local_frontend($page) === $page);
+
 echo json_encode(array('engine' => PHP_VERSION, 'checks' => $checks), JSON_UNESCAPED_UNICODE);

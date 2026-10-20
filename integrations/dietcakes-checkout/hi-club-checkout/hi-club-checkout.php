@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.3.6
+ * Version: 0.4.0
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -32,8 +32,21 @@ final class HI_Club_Checkout {
     const CUTOFF_REGULAR = '17:00'; // накануне хайка
     const CUTOFF_READY = '20:00';   // за два дня до хайка
 
+    // Конструктор бокса: на странице стоит <script src> с Vercel; по умолчанию отдаём ту же копию из плагина (с самого dietcakes),
+    // чтобы покупатели не зависели от доступности Vercel. В настройках можно вернуть Vercel.
+    const FRONTEND = 'hi_club_frontend';  // 'local' (по умолчанию) | 'vercel'
+    const VERCEL_SCRIPT = 'https://app-test-3-delta.vercel.app/assets/dc/hiking-box.js';
+
+    public static function local_frontend($content) {
+        if (!is_string($content) || strpos($content, self::VERCEL_SCRIPT) === false || get_option(self::FRONTEND, 'local') === 'vercel') return $content;
+        $file = __DIR__ . '/assets/hiking-box.js';
+        if (!is_readable($file)) return $content;
+        return str_replace(self::VERCEL_SCRIPT, plugins_url('assets/hiking-box.js', __FILE__) . '?ver=' . filemtime($file), $content);
+    }
+
     public static function boot() {
         add_action('admin_menu', array(__CLASS__, 'admin_menu'));
+        add_filter('the_content', array(__CLASS__, 'local_frontend'), 99);
         // Сводка заказов «на хайк» в бот клуба: оплачен / отменён (ключ магазина тот же, что для скидки).
         if (strlen((string) get_option(self::LOYALTY_KEY, '')) >= 32) {
             add_action('woocommerce_order_status_processing', array(__CLASS__, 'notify_paid'), 20);
@@ -224,8 +237,8 @@ final class HI_Club_Checkout {
         if (!is_array($quote) || ($quote['card'] ?? '') !== $context['card'] || ($quote['gross'] ?? -1) !== self::gross_kopecks(WC()->cart)) return;
         $applied = 0;
         foreach (WC()->cart->fees_api()->get_fees() as $fee) { if ($fee->name === self::CARD_FEE && (float) $fee->amount < 0) $applied -= (float) $fee->amount; }
-        if ($applied > 0) echo '<tr class="hi-club-card-summary"><th>Скидка по карте интеллигента</th><td>−' . wc_price($applied) . '<small>уже учтена в итоговой сумме</small></td></tr>';
-        else echo '<tr class="hi-club-card-summary"><td colspan="2">Не удалось рассчитать скидку по карте. Не оплачивай заказ без проверки скидки.</td></tr>';
+        // Сама скидка уже есть отдельной строкой в итогах – повторную строку не выводим, только предупреждение при сбое.
+        if ($applied <= 0) echo '<tr class="hi-club-card-summary"><td colspan="2">Не удалось рассчитать скидку по карте. Не оплачивай заказ без проверки скидки.</td></tr>';
     }
 
     public static function set_context($data) {
@@ -582,8 +595,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.6', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.6');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.0', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.0');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.
@@ -640,6 +653,7 @@ final class HI_Club_Checkout {
             update_option(self::LOYALTY, self::scalar($_POST, 'hi_club_loyalty') === 'on' ? 'on' : 'off', false);
             $key = trim(self::scalar($_POST, 'hi_club_loyalty_key'));
             if ($key !== '') update_option(self::LOYALTY_KEY, $key, false); // пустое поле – ключ не меняем
+            update_option(self::FRONTEND, self::scalar($_POST, 'hi_club_frontend') === 'vercel' ? 'vercel' : 'local', false);
             $url = trim(self::scalar($_POST, 'hi_club_api_url'));
             update_option(self::LOYALTY_API_URL, preg_match('#^https://[a-z0-9.-]+(:\d{2,5})?/api/dc-loyalty$#Di', $url) ? $url : '', false);
             echo '<div class="notice notice-success"><p>Режим сохранён.</p></div>';
@@ -653,6 +667,8 @@ final class HI_Club_Checkout {
         echo '<p><label>Скидка <select name="hi_club_loyalty"><option value="off" ' . selected($loyalty, 'off', false) . '>Выключена</option><option value="on" ' . selected($loyalty, 'on', false) . '>Включена</option></select></label></p>';
         echo '<p><label>Ключ магазина <input type="password" name="hi_club_loyalty_key" autocomplete="off" placeholder="' . (get_option(self::LOYALTY_KEY, '') ? 'задан – оставьте пустым' : 'не задан') . '"></label></p>';
         echo '<p><label>Адрес API клуба <input type="url" name="hi_club_api_url" size="55" value="' . esc_attr((string) get_option(self::LOYALTY_API_URL, '')) . '" placeholder="' . esc_attr(self::LOYALTY_API) . '"></label><br><small>Пусто – прямой адрес Vercel. Сейчас используется: ' . esc_html(self::api_url()) . '</small></p>';
+        $front = get_option(self::FRONTEND, 'local');
+        echo '<h2>Конструктор бокса</h2><p><label>Откуда грузить страницу бокса <select name="hi_club_frontend"><option value="local" ' . selected($front, 'local', false) . '>Из плагина (с dietcakes)</option><option value="vercel" ' . selected($front, 'vercel', false) . '>С Vercel клуба</option></select></label></p>';
         submit_button('Сохранить режим', 'primary', 'hi_club_save');
         submit_button('Проверить связь с API (без заказов)', 'secondary', 'hi_club_probe');
         echo '</form></div>';
