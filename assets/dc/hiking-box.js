@@ -725,7 +725,10 @@
     var note = wayNow === 'hike' ? hikeNote() : '';
     // строка для комментария: в буфер обмена (сразу, пока действует нажатие) и в cookie – для будущей вставки кодом на сайте
     document.cookie = 'hi_note=' + encodeURIComponent(note) + ';path=/;max-age=' + (note ? 7200 : 0);
-    var clubPilot = fromClubApp; // Live club handoff; legacy pilot field remains internal API compatibility.
+    var clubPilot = fromClubApp;
+    var fastBox = clubPilot && qs.get('hi_fast') === '1';
+    var boxRequestId = 'box-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2); // Retry identity, not an authorization credential.
+    var fastCart = null; // Live club handoff; legacy pilot field remains internal API compatibility.
     if (note && !clubPilot && navigator.clipboard) navigator.clipboard.writeText(note).catch(function () {});
     btn.disabled = true; btn.textContent = 'собираем...';
     // D1: technical stage/status only; never display server messages, cart data or credentials.
@@ -744,7 +747,7 @@
     }
     var writesStarted = false, cartCoupons = [];
     var nonce = function () {
-      return (clubPilot ? pilotCart() : readStoreCart()).then(function (result) {
+      return (clubPilot && !fastBox ? pilotCart() : readStoreCart()).then(function (result) {
         cartCoupons = result.cart.coupons;
         return freshSelected(result.cart, true).then(function (changes) {
           if (changes.length) {
@@ -791,6 +794,17 @@
       .then(function (n) {
         n0 = n;
         diagnosticStage = 'S3'; writesStarted = true;
+        if (fastBox) return fetch('/wp-json/wc/store/v1/cart/extensions', {
+          method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json', 'Nonce': n },
+          body: JSON.stringify({ namespace: 'hiking-club-box', data: {
+            source: 'intelligentsia', pilot: '1', way: wayNow, date: $('hi-date').value || '', route: route,
+            card: cardToken, tg: tgRef, request_id: boxRequestId,
+            items: items.map(function (it) { return { id: it[0], quantity: it[1] }; })
+          } })
+        }).then(function (r) {
+          if (!r.ok) return rejectedResponse(r, 'S3');
+          return r.json().then(function (cart) { fastCart = cart; Inventory.cart(cart); return { ok: true, status: 200, json: function () { return Promise.resolve({responses: []}); } }; });
+        });
         var reqs = items.map(function (it) {
           return { path: '/wc/store/v1/cart/add-item', method: 'POST', headers: { 'Nonce': n }, body: { id: it[0], quantity: it[1] } };
         });
@@ -803,6 +817,7 @@
         });
       })
       .then(function (r) {
+        if (fastBox) return wayNow === 'home' ? undefined : pickPickup(n0, fastCart);
         if (!r.ok) {
           return rejectedResponse(r, 'S3');
         }

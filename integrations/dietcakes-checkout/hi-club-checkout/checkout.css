@@ -38,3 +38,5 @@ body.hi-club-on-hike #billing_eco_delivery_time_field { display: none !important
     font-size: inherit;
   }
 }
+
+.hi-club-quantity{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap;margin:8px 0;max-width:100%}.hi-club-quantity button{min-width:36px;min-height:36px;padding:4px 8px}.hi-club-quantity input{width:48px;min-width:0;text-align:center;padding:4px}.hi-club-card-summary small{display:block;font-size:12px;font-weight:normal}

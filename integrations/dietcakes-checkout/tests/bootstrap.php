@@ -6,9 +6,11 @@ $GLOBALS['options'] = array();
 $GLOBALS['store_callback'] = null;
 function add_action($tag, $callback, $priority = 10, $args = 1) { $GLOBALS['hooks'][$tag][$priority][] = array($callback, $args); }
 function remove_action($tag, $callback, $priority = 10) {
+    $removed = false;
     foreach ($GLOBALS['hooks'][$tag][$priority] ?? array() as $i => $row) {
-        if ($row[0] === $callback) unset($GLOBALS['hooks'][$tag][$priority][$i]);
+        if ($row[0] === $callback) { unset($GLOBALS['hooks'][$tag][$priority][$i]); $removed = true; }
     }
+    return $removed;
 }
 function add_filter($tag, $callback, $priority = 10, $args = 1) { add_action($tag, $callback, $priority, $args); }
 function do_action($tag, ...$args) {
@@ -38,7 +40,7 @@ function wp_unslash($value) { return $value; }
 function esc_attr($value) { return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); }
 function esc_html($value) { return esc_attr($value); }
 function wp_date($format, $timestamp = null, $tz = null) { return (new DateTimeImmutable('@' . ($timestamp ?? time())))->setTimezone($tz ?? new DateTimeZone('Europe/Moscow'))->format($format); }
-function woocommerce_store_api_register_update_callback($options) { $GLOBALS['store_callback'] = $options['callback']; }
+function woocommerce_store_api_register_update_callback($options) { $GLOBALS['store_callbacks'][$options['namespace']] = $options['callback']; if ($options['namespace'] === 'hiking-club') $GLOBALS['store_callback'] = $options['callback']; }
 class WC_Tax {
     static function get_tax_class_slugs() { return array('reduced'); }
     static function get_tax_classes() { return array('Reduced'); }

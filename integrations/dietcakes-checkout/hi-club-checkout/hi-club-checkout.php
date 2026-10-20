@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.3.3
+ * Version: 0.3.4
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -24,6 +24,7 @@ final class HI_Club_Checkout {
     const LOYALTY_API = 'https://app-test-3-delta.vercel.app/api/dc-loyalty';
     const CARD_FEE = 'Скидка по карте интеллигента';
     const QUOTE = 'hi_club_card_quote';
+    private static $adding_box = false;
     // Сроки заказа «на хайк»: магазин доставляет 10–20 (последний выезд 19:30); готовую еду готовит за 2 дня.
     const READY_FOOD = 'Готовая еда';
     const CUTOFF_REGULAR = '17:00'; // накануне хайка
@@ -59,6 +60,9 @@ final class HI_Club_Checkout {
         add_action('woocommerce_checkout_create_order', array(__CLASS__, 'stamp_order'), 30, 2);
         add_action('woocommerce_checkout_billing', array(__CLASS__, 'render'), 6);
         add_action('wp_enqueue_scripts', array(__CLASS__, 'enqueue'));
+        add_filter('woocommerce_checkout_cart_item_quantity', array(__CLASS__, 'checkout_quantity'), 40, 3);
+        add_action('woocommerce_checkout_update_order_review', array(__CLASS__, 'update_quantities'), 10);
+        add_action('woocommerce_review_order_before_order_total', array(__CLASS__, 'card_notice'));
         add_filter('woocommerce_shipping_package_name', array(__CLASS__, 'package_name'), 30, 3);
         add_filter('woocommerce_get_order_item_totals', array(__CLASS__, 'order_totals'), 40, 3);
         add_action('woocommerce_admin_order_data_after_billing_address', array(__CLASS__, 'admin_order'));
@@ -129,6 +133,91 @@ final class HI_Club_Checkout {
         woocommerce_store_api_register_update_callback(array(
             'namespace' => 'hiking-club', 'callback' => array(__CLASS__, 'set_context'),
         ));
+        woocommerce_store_api_register_update_callback(array('namespace' => 'hiking-club-box', 'callback' => array(__CLASS__, 'set_box')));
+    }
+
+    // One Store API request adds the box; native Woo validation remains authoritative.
+    public static function set_box($data) {
+        $cart = function_exists('WC') ? WC()->cart : null;
+        $class = '\\Automattic\\WooCommerce\\StoreApi\\Utilities\\CartController';
+        if (!$cart || !class_exists($class) || !is_array($data) || !isset($data['items']) || !is_array($data['items']) || !count($data['items']) || count($data['items']) > 24) throw new Exception('Не удалось проверить состав бокса.');
+        $items = array();
+        foreach ($data['items'] as $item) {
+            if (!is_array($item) || !isset($item['id'], $item['quantity']) || !is_int($item['id']) || $item['id'] < 1 || !is_int($item['quantity']) || $item['quantity'] < 1 || $item['quantity'] > 10000 || isset($items[$item['id']])) throw new Exception('Некорректное количество товара.');
+            $product = wc_get_product($item['id']);
+            if (!$product || !$product->is_type('simple') || !$product->is_purchasable() || !$product->is_in_stock() || $product->backorders_allowed()) throw new Exception('Состав изменился. Проверь наличие товаров.');
+            $items[$item['id']] = $item['quantity'];
+        }
+        $session = self::session();
+        if (!$session) throw new Exception('Корзина недоступна.');
+        $request = self::scalar($data, 'request_id');
+        if (!preg_match('/^[a-zA-Z0-9-]{16,80}$/D', $request)) throw new Exception('Обнови страницу бокса.');
+        $fingerprint = hash('sha256', wp_json_encode($data));
+        $done = $session ? $session->get('hi_club_box_request') : null;
+        if (is_array($done) && ($done['id'] ?? '') === $request) {
+            if (($done['fingerprint'] ?? '') !== $fingerprint) throw new Exception('Состав запроса изменился. Проверь корзину.');
+            return; // No duplicate quantities for an already accepted request.
+        }
+        $before = $cart->get_cart_contents();
+        $removed = $cart->get_removed_cart_contents();
+        $prior = array();
+        foreach (array(self::SESSION, self::QUOTE, 'eco_fulfillment_type', 'chosen_shipping_methods') as $key) $prior[$key] = $session->get($key);
+        $controller = new $class();
+        // Defer only Woo's native per-item totals, for this request, and restore in finally.
+        $deferred = remove_action('woocommerce_add_to_cart', array($cart, 'calculate_totals'), 20);
+        self::$adding_box = true;
+        try {
+            self::set_context($data);
+            foreach ($items as $id => $quantity) $controller->add_to_cart(array('id' => $id, 'quantity' => $quantity));
+            $session->set('hi_club_box_request', array('id' => $request, 'fingerprint' => $fingerprint));
+        } catch (Throwable $error) {
+            $cart->set_cart_contents($before);
+            $cart->set_removed_cart_contents($removed);
+            foreach ($prior as $key => $value) { if ($value === null) $session->__unset($key); else $session->set($key, $value); }
+            throw $error;
+        } finally {
+            self::$adding_box = false;
+            if ($deferred) add_action('woocommerce_add_to_cart', array($cart, 'calculate_totals'), 20, 0);
+        }
+        // The Store API extensions route recalculates and persists the completed cart.
+    }
+
+    public static function checkout_quantity($html, $item, $key) {
+        if (!self::context() || !is_checkout() || !isset($item['data'], $item['quantity']) || !preg_match('/^[a-zA-Z0-9_-]{1,64}$/D', (string) $key)) return $html;
+        $qty = (int) $item['quantity'];
+        return '<span class="hi-club-quantity" data-hi-key="' . esc_attr($key) . '"><button type="button" data-hi-step="-1" aria-label="Уменьшить количество">−</button><input type="number" name="hi_club_qty[' . esc_attr($key) . ']" value="' . $qty . '" min="0" step="1" inputmode="numeric" aria-label="Количество"><button type="button" data-hi-step="1" aria-label="Увеличить количество">+</button><button type="button" data-hi-remove="1" aria-label="Удалить товар">×</button></span>';
+    }
+
+    public static function update_quantities($posted) {
+        if (!self::context() || !is_string($posted)) return;
+        parse_str($posted, $data);
+        if (empty($data['hi_club_qty']) || !is_array($data['hi_club_qty'])) return;
+        $cart = WC()->cart;
+        $controller = new \Automattic\WooCommerce\StoreApi\Utilities\CartController();
+        foreach ($data['hi_club_qty'] as $key => $raw) {
+            $contents = $cart->get_cart();
+            if (!isset($contents[$key]) || !is_scalar($raw) || !preg_match('/^\d{1,5}$/D', (string) $raw)) continue;
+            $qty = (int) $raw;
+            if ($qty === (int) $contents[$key]['quantity']) continue;
+            try {
+                // Native Store API validates quantity limits, stock and cart item identity.
+                if ($qty === 0) $cart->remove_cart_item($key);
+                else $controller->set_cart_item_quantity($key, $qty);
+            } catch (Exception $error) {
+                wc_add_notice('Не удалось изменить количество: проверь доступный остаток товара.', 'error');
+            }
+        }
+    }
+
+    public static function card_notice() {
+        $context = self::context();
+        if (!$context || empty($context['card']) || !WC()->cart) return;
+        $quote = self::session()->get(self::QUOTE);
+        if (!is_array($quote) || ($quote['card'] ?? '') !== $context['card'] || ($quote['gross'] ?? -1) !== self::gross_kopecks(WC()->cart)) return;
+        $applied = 0;
+        foreach (WC()->cart->fees_api()->get_fees() as $fee) { if ($fee->name === self::CARD_FEE && (float) $fee->amount < 0) $applied -= (float) $fee->amount; }
+        if ($applied > 0) echo '<tr class="hi-club-card-summary"><th>Скидка по карте интеллигента</th><td>−' . wc_price($applied) . '<small>уже учтена в итоговой сумме</small></td></tr>';
+        else echo '<tr class="hi-club-card-summary"><td colspan="2">Не удалось рассчитать скидку по карте. Не оплачивай заказ без проверки скидки.</td></tr>';
     }
 
     public static function set_context($data) {
@@ -296,7 +385,7 @@ final class HI_Club_Checkout {
     }
 
     public static function card_discount($cart) {
-        if (!$cart || !self::card_active()) return;
+        if (!$cart || self::$adding_box || !self::card_active()) return;
         // Старый общий купон уже даёт 10% – не складываем две скидки.
         if ($cart->has_discount(self::COUPON)) return;
         $quote = self::quote($cart);
@@ -475,11 +564,32 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.3', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.3');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.3.4', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.3.4');
+    }
+
+    // Explicit support view: read existing session/cache only; never request a quote here.
+    public static function diagnostic_html() {
+        if (!isset($_GET['hi_card_debug']) || !is_scalar($_GET['hi_card_debug']) || (string) $_GET['hi_card_debug'] !== '1') return '';
+        $context = self::context();
+        $session = self::session();
+        $cached = $session ? $session->get(self::QUOTE) : null;
+        $parts = array('контекст=' . ($context ? 'есть' : 'нет'), 'карта=' . ($context && !empty($context['card']) ? 'есть' : 'нет'), 'скидка=' . (self::loyalty_enabled() ? 'включена' : 'выключена'));
+        if (!is_array($cached)) $parts[] = 'расчёт=нет';
+        else {
+            $parts[] = 'расчёт=' . (!empty($cached['ok']) ? 'успешен' : 'ошибка');
+            $parts[] = 'карта_расчёта=' . ($context && ($cached['card'] ?? '') === ($context['card'] ?? '') ? 'совпадает' : 'другая');
+            $parts[] = 'сумма_расчёта=' . (WC()->cart && ($cached['gross'] ?? -1) === self::gross_kopecks(WC()->cart) ? 'актуальна' : 'изменилась');
+            $parts[] = 'возраст_сек=' . max(0, time() - (int) ($cached['at'] ?? 0));
+            $error = $cached['error'] ?? '';
+            $known = array('unavailable', 'unauthorized', 'online_disabled', 'inactive_card', 'invalid_card', 'service_unavailable', 'storage_unavailable', 'not_configured', 'loyalty_disabled', 'pilot_card_only');
+            if (empty($cached['ok'])) $parts[] = 'код=' . (in_array($error, $known, true) ? $error : 'other');
+        }
+        return '<p id="hi-card-diagnostic" role="status" style="padding:12px;border:1px solid #ddd;overflow-wrap:anywhere">Диагностика карты: ' . esc_html(implode('; ', $parts)) . '</p>';
     }
 
     public static function render() {
+        echo self::diagnostic_html();
         $context = self::context();
         if (!$context) return;
         echo self::discount_state();
