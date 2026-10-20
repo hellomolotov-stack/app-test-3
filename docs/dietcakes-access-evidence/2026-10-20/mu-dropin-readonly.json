@@ -1,0 +1,14 @@
+{
+  "must_use": [
+    {
+      "description": "Очищает WP Rocket logged-in cache и прогревает общий logged-in cache по sitemap страниц и категорий.",
+      "name": "Dietcakes Common Logged-in Cache Warmer"
+    }
+  ],
+  "dropins": [
+    {
+      "description": "Расширенный плагин кеширования.",
+      "name": "advanced-cache.php"
+    }
+  ]
+}

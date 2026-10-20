@@ -6,3 +6,4 @@ dist/
 .claude/
 
 .graphify/
+__pycache__/

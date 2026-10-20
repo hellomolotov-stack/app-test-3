@@ -1,0 +1,38 @@
+{
+  "checked_at": "2026-10-20",
+  "plugin": "Loginizer",
+  "version": "2.0.9",
+  "brute_force_enabled": true,
+  "settings": [
+    {
+      "label": "Макс. кол-во повторных попыток",
+      "name": "max_retries",
+      "type": "text",
+      "value": "3"
+    },
+    {
+      "label": "Время блокировки",
+      "name": "lockout_time",
+      "type": "text",
+      "value": "15"
+    },
+    {
+      "label": "Макс. кол-во блокировок",
+      "name": "max_lockouts",
+      "type": "text",
+      "value": "5"
+    },
+    {
+      "label": "Продлить блокировку",
+      "name": "lockouts_extend",
+      "type": "text",
+      "value": "24"
+    },
+    {
+      "label": "Сброс повторных попыток",
+      "name": "reset_retries",
+      "type": "text",
+      "value": "24"
+    }
+  ]
+}

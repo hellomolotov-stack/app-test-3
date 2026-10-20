@@ -32,3 +32,13 @@ test('online is disabled independently and store cannot mint cards',async()=>{
  assert.equal((await api.request({action:'reserve',actor},headers)).body.error,'online_disabled');
  api.deps.env.DC_ONLINE_ENABLED='1';assert.equal((await api.request({action:'card',actor},headers)).code,403);assert.equal(api.accesses,0);
 });
+test('app_card: only verified Telegram user with an active card gets own QR',async()=>{
+ const api=setup({DC_LOYALTY_MODE:'live'}); api.deps.verifyInitData=d=>d==='ok'?{id:Number(actor)}:null;
+ const r=async(b)=>api.request({...b,mode:'live'},{});
+ assert.equal((await r({action:'app_card',initData:'bad'})).code,401);
+ const good=await r({action:'app_card',initData:'ok'}); assert.equal(good.code,200);
+ assert.ok(good.body.url.endsWith(signCard(actor,signing))); assert.equal(api.writes,0);
+ api.deps.activeMember=async()=>false; assert.equal((await r({action:'app_card',initData:'ok'})).body.error,'inactive_card');
+ const pilot=setup(); pilot.deps.verifyInitData=()=>({id:123});
+ assert.equal((await pilot.request({action:'app_card',initData:'x'},{})).body.error,'pilot_card_only');
+});

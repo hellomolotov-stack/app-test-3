@@ -1,0 +1,87 @@
+[
+  {
+    "active": true,
+    "details": "Версия 1.0.6 | Автор: Dietcakes",
+    "name": "Dietcakes PWA Preloader"
+  },
+  {
+    "active": true,
+    "details": "Версия 1.7.0 (Security Hardened) | Автор: Upsight (Modified)",
+    "name": "dietcakes Telegram (Login + Notifications)"
+  },
+  {
+    "active": true,
+    "details": "Версия 1.3.4 | Автор: Upsight",
+    "name": "ECO Delivery Slots"
+  },
+  {
+    "active": true,
+    "details": "Версия 3.35.9 | Автор: Elementor.com | Перейти на страницу плагина | Документация и FAQ | Видеоуроки",
+    "name": "Elementor"
+  },
+  {
+    "active": true,
+    "details": "Версия 2.0.9 | Автор: Softaculous | Перейти на страницу плагина",
+    "name": "Loginizer"
+  },
+  {
+    "active": true,
+    "details": "Версия 2.2.42 | Автор: SuperPWA | Перейти на страницу плагина | Демонстрация",
+    "name": "Super Progressive Web Apps"
+  },
+  {
+    "active": true,
+    "details": "Версия 2.8.2 | Автор: Upsight",
+    "name": "WC Yandex Delivery Zones (Flat Rate by Zone)"
+  },
+  {
+    "active": true,
+    "details": "Версия 10.5.3 | Автор: Automattic | Перейти на страницу плагина | Документация | Документация по API | Поддержка сообщества",
+    "name": "WooCommerce"
+  },
+  {
+    "active": true,
+    "details": "Версия 1.137.0 | Автор: wordpress-plugins.ru | Детали | Перейти на страницу плагина | Проверить обновления",
+    "name": "WooCommerce - 1C (МойСклад, СБИС) - Data Exchange"
+  },
+  {
+    "active": true,
+    "details": "Версия 1.8.1 | Автор: Komtet | Перейти на страницу плагина",
+    "name": "WooCommerce - КОМТЕТ Касса"
+  },
+  {
+    "active": true,
+    "details": "Версия 1.1.5",
+    "name": "Woodmart Core"
+  },
+  {
+    "active": true,
+    "details": "Версия 3.19.2.1 | Автор: WP Media | Перейти на страницу плагина",
+    "name": "WP Rocket"
+  },
+  {
+    "active": true,
+    "details": "Автор: WP Rocket Support Team | Перейти на страницу плагина",
+    "name": "WP Rocket | Common Cache For Logged-in Users"
+  },
+  {
+    "active": true,
+    "details": "Версия 27.0 | Автор: Команда Yoast | Перейти на страницу плагина",
+    "name": "Yoast SEO"
+  },
+  {
+    "active": true,
+    "details": "Версия 16.4 | Автор: Команда Yoast | Перейти на страницу плагина",
+    "name": "Yoast SEO: WooCommerce"
+  },
+  {
+    "active": true,
+    "details": "Версия 1.7.2-phone-fix | Автор: Sergey Yarovenko",
+    "name": "YooKassa SBP Gateway"
+  },
+  {
+    "active": true,
+    "details": "Версия 1.0.6 | Автор: Жить Здорово",
+    "name": "Жить Здорово — Yandex YML Feed"
+  }
+]

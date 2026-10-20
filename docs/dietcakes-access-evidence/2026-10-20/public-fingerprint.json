@@ -1,0 +1,29 @@
+{
+  "checked_at": "2026-10-20T14:31:47.521350+03:00",
+  "method": "single unauthenticated GET /; no redirects or retries",
+  "url": "https://dietcakes.ru/",
+  "dns_addresses": [
+    "31.172.67.59"
+  ],
+  "status": 200,
+  "headers": {
+    "server": "nginx",
+    "content-type": "text/html; charset=UTF-8",
+    "x-powered-by": "PHP/8.2.7"
+  },
+  "cookie_names": [],
+  "html_sha256": "9b65192cfd5e56f476778d8ed66b06505f2f946ace6773f8191a8ba897a5e3b9",
+  "body_bytes_read": 534911,
+  "plugin_slugs": [
+    "elementor",
+    "super-progressive-web-apps",
+    "woocommerce",
+    "wp-rocket"
+  ],
+  "theme_slugs": [
+    "woodmart",
+    "woodmart-child"
+  ],
+  "public_security_markers": {},
+  "title": "Жить Здорово — магазин здорового питания, ПП продуктов"
+}

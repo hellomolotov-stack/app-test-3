@@ -12,6 +12,7 @@ import { renderNewcomerPage, renderPriv, renderGuestPrivileges, renderSafetyPage
 import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openCardSheet } from './card-sheet.js';
+import { cardQrEnabled, openCardQr } from './card-qr.js';
 import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { cardScratchHtml, mountCardScratch } from './card-scratch.js';
 import { openOnboardingChat } from './onboarding-chat.js';
@@ -797,7 +798,9 @@ function renderOwnerHome() {
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
             <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
                 <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
-                <a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>
+                ${cardQrEnabled()
+                    ? `<a href="#" class="btn btn-outline" id="cardQrBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">показать QR</a>`
+                    : `<a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>`}
             </div>
             <button type="button" class="gift-text-link" id="giftCardBtn">подарить карту другу ›</button>
         </div>
@@ -842,6 +845,7 @@ function renderOwnerHome() {
         log('карта', false, user);
     });
     document.getElementById('privBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('привилегии', false, user); renderPriv(); });
+    document.getElementById('cardQrBtn')?.addEventListener('click', (e) => { e.preventDefault(); setUserInteracted(); openCardQr(); });
     document.getElementById('supportBtn')?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/hellointelligent', 'поддержка', false); });
     document.getElementById('newcomerBtn')?.addEventListener('click', () => {
         haptic(); setUserInteracted(); log('новичкам', false, user);

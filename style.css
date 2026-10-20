@@ -6347,3 +6347,31 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-why p { margin: 8px 0 0; padding-left: 12px; border-left: 2px solid rgba(214, 170, 110, .6); font-style: italic; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, .78); }
 .hb-bar .hb-custom { border-radius: 12px; } /* как у жёлтой кнопки */
 .hb-card-hint.is-member { cursor: default; }
+
+/* «показать QR»: шторка с выбором партнёра и личным QR карты для кассы */
+.cq-overlay { position: fixed; inset: 0; z-index: 3000; background: rgba(0, 0, 0, 0); transition: background .25s ease; display: flex; align-items: flex-end; justify-content: center; }
+.cq-overlay.is-on { background: rgba(0, 0, 0, .55); }
+.cq-sheet { position: relative; width: 100%; max-width: 600px; box-sizing: border-box; padding: 10px 20px calc(env(safe-area-inset-bottom, 0px) + 28px);
+    border-radius: 28px 28px 0 0; border: 1px solid rgba(255, 255, 255, .12); border-bottom: 0; color: #fff;
+    background: rgba(22, 26, 30, .92); backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%);
+    transform: translateY(100%); transition: transform .3s cubic-bezier(.2, .9, .25, 1); }
+.cq-overlay.is-on .cq-sheet { transform: none; }
+.cq-x { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; font-size: 15px; cursor: pointer; }
+.cq-body { text-align: center; padding-top: 6px; }
+.cq-emoji { font-size: 52px; line-height: 1; margin: 6px 0 10px; }
+.cq-title { font-size: 21px; font-weight: 800; }
+.cq-sub { margin-top: 6px; font-size: 14px; color: rgba(255, 255, 255, .6); }
+.cq-list { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.cq-partner { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px; border-radius: 18px; border: 1px solid rgba(255, 255, 255, .12);
+    background: rgba(255, 255, 255, .06); color: #fff; font: inherit; cursor: pointer; text-align: left; }
+.cq-partner:active { transform: scale(.98); }
+.cq-p-e { flex: none; width: 44px; height: 44px; border-radius: 12px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+.cq-p-t { flex: 1; min-width: 0; }
+.cq-p-t b { display: block; font-size: 16px; }
+.cq-p-t small { display: block; margin-top: 2px; font-size: 12.5px; line-height: 1.35; color: rgba(255, 255, 255, .6); }
+.cq-p-go { flex: none; font-size: 24px; color: var(--yellow); }
+.cq-back { display: block; margin: 0 0 8px; padding: 6px 0; border: 0; background: none; color: rgba(255, 255, 255, .7); font: inherit; font-size: 14px; cursor: pointer; }
+.cq-qr { margin: 18px auto 0; width: min(260px, 72vw); aspect-ratio: 1; padding: 12px; box-sizing: border-box; border-radius: 22px; background: #fff; display: flex; align-items: center; justify-content: center; }
+.cq-qr svg { width: 100%; height: 100%; display: block; }
+.cq-load { color: #555; font-size: 14px; padding: 12px; }
+.cq-note { margin-top: 14px; font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, .65); }

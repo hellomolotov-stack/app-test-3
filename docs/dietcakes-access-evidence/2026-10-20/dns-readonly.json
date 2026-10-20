@@ -1,0 +1,13 @@
+{
+  "checked_date": "2026-10-20",
+  "method": "DNS NS for dietcakes.ru and PTR for its observed IPv4; read-only lookup during this research",
+  "ipv4": "31.172.67.59",
+  "nameservers": [
+    "ns1.fornex.com",
+    "ns2.fornex.com",
+    "ns3.fornex.com",
+    "ns4.fornex.com"
+  ],
+  "ptr": "hostru09.fornex.host",
+  "interpretation": "Fornex infrastructure association; hosting panel and active WAF not verified"
+}

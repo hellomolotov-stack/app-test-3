@@ -11,6 +11,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 PILOT_IDS = {163665735, 7845375334}
+# Режим учёта: pilot – тестовый журнал, live – рабочий. Должен совпадать с DC_LOYALTY_MODE на сервере API.
+MODE = os.getenv('DC_LOYALTY_MODE', 'pilot') if os.getenv('DC_LOYALTY_MODE', 'pilot') in {'pilot', 'live'} else 'pilot'
+LIVE = MODE == 'live'
+# Кассиры: в рабочем режиме – DC_CASHIER_IDS (через запятую), иначе тестовые аккаунты.
+CASHIER_IDS = {int(x) for x in os.getenv('DC_CASHIER_IDS', '').replace(' ', '').split(',') if x.isdigit()} if LIVE else PILOT_IDS
+T = '' if LIVE else 'ТЕСТ '
 CARD = re.compile(r"dc1_\d{1,16}_[A-Za-z0-9_-]{28}")
 
 
@@ -86,7 +92,7 @@ class Api:
         import aiohttp
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20)) as client:
-                async with client.post(self.url, json={'action': action, 'actor': str(actor), 'mode': 'pilot', **kwargs},
+                async with client.post(self.url, json={'action': action, 'actor': str(actor), 'mode': MODE, **kwargs},
                                        headers={'x-dc-bot-key': self.key}, allow_redirects=False) as response:
                     if response.content_length and response.content_length > 16384:
                         raise ApiError('service_unavailable')
@@ -94,7 +100,7 @@ class Api:
                     if response.status != 200:
                         code = result.get('error', 'service_unavailable')
                         raise ApiError(code if re.fullmatch(r'[a-z_]{1,64}', str(code)) else 'service_unavailable')
-                    if result.get('mode') != 'pilot':
+                    if result.get('mode') != MODE:
                         raise ApiError('pilot_mode_required')
                     return result
         except ApiError:
@@ -110,7 +116,7 @@ ERRORS = {
     'month_changed': 'Начался новый месяц. Нажми «Отменить» и рассчитай сумму заново.',
     'cashier_forbidden': 'Кассовый режим для этого аккаунта не разрешён.',
     'operation_closed': 'Операция уже закрыта. Нажми «Отменить», затем начни новую покупку.',
-    'pilot_mode_required': 'Этот модуль работает только с тестовым учётом.',
+    'pilot_mode_required': 'Режим учёта бота и сервера не совпадает. Покупку не подтверждаем.',
 }
 
 
@@ -131,9 +137,9 @@ class Cashier:
         result = await self.api.call('reserve', actor, card=pending['card'], reference=pending['ref'], gross=pending['gross'])
         if result['state'] == 'confirmed':
             self.sessions.put(actor, card=pending['card'], stage='amount')
-            await event.answer('ТЕСТ: эта покупка уже учтена один раз. Можно ввести сумму следующей покупки.')
+            await event.answer(T + 'Эта покупка уже учтена один раз. Можно ввести сумму следующей покупки.')
             return
-        await event.answer('ТЕСТ — реальные покупки не учитываются\n\n'
+        await event.answer(('' if LIVE else 'ТЕСТ — реальные покупки не учитываются\n\n') +
                            f"Сумма до скидки: {money(result['gross'])}\n"
                            f"Под 10%: {money(result['highGross'])}\n"
                            f"Под 5%: {money(result['lowGross'])}\n"
@@ -153,13 +159,13 @@ class Cashier:
         command = text.split(maxsplit=1)[0].split('@')[0] if text else ''
         token = None if callback else card_from_text(text)
         special = text.startswith('dc:') if callback else command in {'/cashier', '/cashier_exit', '/discount_card'} or token is not None
-        if actor not in PILOT_IDS:
+        if actor not in CASHIER_IDS:
             # Do not interfere with the bot's ordinary onboarding or support.
             if special:
                 if callback:
-                    await event.answer('Пока доступно только тестовым аккаунтам.', show_alert=True)
+                    await event.answer('Кассовый режим доступен только кассирам магазина.', show_alert=True)
                 else:
-                    await message.answer('Кассовый пилот пока доступен только тестовым аккаунтам.')
+                    await message.answer('Это QR карты интеллигента для кассы «Жить здорово». Его сканирует кассир магазина.')
                 return
             return await handler(event, data)
         session = self.sessions.get(actor)
@@ -183,7 +189,7 @@ class Cashier:
                     image = qrcode.make(result['url'], image_factory=PyPNGImage)
                     output = io.BytesIO(); image.save(output)
                     await message.answer_photo(BufferedInputFile(output.getvalue(), filename='club-test-card.png'),
-                                               caption='ТЕСТОВЫЙ QR для кассы. Это дополнительный код; QR профиля сохраняется.\n' + result['url'])
+                                               caption=T + 'QR карты интеллигента для кассы «Жить здорово».\n' + result['url'])
                     return
                 if command in {'/cashier', '/cashier_exit'} and not callback:
                     if session and session.get('ref'):
@@ -194,7 +200,7 @@ class Cashier:
                         await message.answer('Кассовый режим закрыт. Обычное меню бота работает как прежде.')
                     else:
                         self.sessions.put(actor)
-                        await message.answer('ТЕСТОВАЯ КАССА\nОткрой QR карты камерой телефона или пришли ссылку на него сюда.\nВыход: /cashier_exit')
+                        await message.answer(('КАССА «ЖИТЬ ЗДОРОВО»' if LIVE else 'ТЕСТОВАЯ КАССА') + '\nОткрой QR карты камерой телефона или пришли ссылку на него сюда.\nВыход: /cashier_exit')
                     return
                 if token and not callback:
                     if session and session.get('ref'):
@@ -202,7 +208,7 @@ class Cashier:
                         return
                     result = await self.api.call('status', actor, card=token)
                     self.sessions.put(actor, card=token, stage='amount')
-                    await message.answer('ТЕСТ — карта активна\n'
+                    await message.answer(T + 'Карта активна\n'
                                          f"Месяц: {result['month']}\n"
                                          f"Учтено до скидки: {money(result['usedGross'])}\n"
                                          f"Доступно под 10% с учётом резервов: {money(result['remainingGross'])}\n\n"
@@ -224,7 +230,7 @@ class Cashier:
                         await message.edit_reply_markup(reply_markup=None)
                     except Exception:
                         pass  # Accounting is already confirmed; an old keyboard is harmless.
-                    await message.answer(('ТЕСТ: покупка учтена один раз.' if result['state'] == 'confirmed' else 'Тестовый расчёт отменён.') +
+                    await message.answer((T + 'Покупка учтена один раз.' if result['state'] == 'confirmed' else T + 'Расчёт отменён.') +
                                          '\nВведи сумму следующей покупки или /cashier_exit')
                     return
                 if not session or session['stage'] == 'scan':
@@ -251,7 +257,7 @@ class Cashier:
 
 
 def install(dp):
-    if os.getenv('DC_CASHIER_ENABLED') != 'pilot':
+    if os.getenv('DC_CASHIER_ENABLED') not in {'pilot', 'live'}:
         return False
     key = os.getenv('DC_CASHIER_BOT_KEY', '')
     if len(key) < 32:

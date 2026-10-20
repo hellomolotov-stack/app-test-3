@@ -15,6 +15,18 @@ function createHandler(deps) {
         let body = req.body;
         try { if (typeof body === 'string') body = JSON.parse(body); } catch { return res.status(400).json({ error: 'invalid_request' }); }
         if (!body || typeof body !== 'object' || JSON.stringify(body).length > 4096) return res.status(400).json({ error: 'invalid_request' });
+        // Приложение клуба: владелец карты получает свой QR для кассы. Личность – только из подписанных данных Telegram.
+        if (body.action === 'app_card') {
+            const user = deps.verifyInitData(String(body.initData || ''));
+            if (!user || !/^\d{1,16}$/.test(String(user.id))) return res.status(401).json({ error: 'unauthorized' });
+            const uid = String(user.id);
+            if (mode === 'pilot' && !PILOT_IDS.includes(uid)) return res.status(403).json({ error: 'pilot_card_only' });
+            try {
+                if (!await deps.activeMember(uid)) return res.status(403).json({ error: 'inactive_card' });
+            } catch { return res.status(503).json({ error: 'service_unavailable' }); }
+            const card = signCard(uid, env.DC_CARD_SIGNING_KEY);
+            return res.status(200).json({ url: `https://t.me/yaltahiking_bot?start=${card}`, mode });
+        }
         const bot = sameSecret(req.headers['x-dc-bot-key'], env.DC_CASHIER_BOT_KEY);
         const store = sameSecret(req.headers['x-dc-store-key'], env.DC_STORE_KEY);
         if (!bot && !store) return res.status(401).json({ error: 'unauthorized' });
@@ -50,6 +62,7 @@ function createHandler(deps) {
 }
 module.exports = createHandler({
     env: process.env,
+    verifyInitData(initData) { const token = process.env.TELEGRAM_BOT_TOKEN; return token ? require('./tg-auth').verifyInitData(initData, token) : null; },
     store(mode) { const { getAccessToken } = require('./club-content'); return firebaseStore(getAccessToken, mode === 'pilot' ? 'dietcakesLoyaltyPilot' : 'dietcakesLoyalty'); },
     async activeMember(uid) {
         const { getAccessToken } = require('./club-content');
