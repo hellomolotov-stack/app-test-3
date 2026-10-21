@@ -229,8 +229,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <div class="hb-pop" hidden></div>
             <div class="hb-bar">
                 <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b>скидка 10%</b> с картой интеллигента</span><em>оформить ›</em></button>
-                <button type="button" class="btn btn-yellow hb-buy hb-buy-full"></button>
-                <button type="button" class="btn hb-buy hb-custom">настроить свой бокс</button>
+                <button type="button" class="btn btn-yellow hb-buy hb-buy-full hb-custom">Настроить свой бокс</button>
             </div>
         </div>`;
     const sheet = overlay.querySelector('.hb-sheet');
@@ -266,7 +265,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         overlay.querySelector('.hb-p-card b').textContent = rub(cardPrice(b.price));
         overlay.querySelector('.hb-price-note').textContent = 'итоговая цена зависит от состава и наличия в магазине';
         // На кнопке нет фиксированной суммы: актуальный состав и цену человек увидит в магазине.
-        overlay.querySelector('.hb-buy-full').textContent = 'взять бокс на хайк';
+        overlay.querySelector('.hb-buy-full').textContent = 'Настроить свой бокс';
         fitBuy();
     };
     showBox(DEFAULT_BOX);
