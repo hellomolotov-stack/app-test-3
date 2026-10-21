@@ -52,21 +52,42 @@ function kmLength(pts) {
     return km;
 }
 
-// вершина и набор высоты по треку: высоты точек из открытой модели рельефа (Open-Meteo, до 100 точек)
+const statsCache = new Map();
+const ELEVATION_TIMEOUT = 2000;
+
+// Дополнительные цифры не должны задерживать уже готовую карту при сбое сервиса высот.
 async function trackStats(hike) {
     const { hikeTrackPoints } = await import('./calendar.js');
     const all = hikeTrackPoints(hike);
     if (all.length < 2) return null;
+    const key = JSON.stringify([all, hike.track?.km, hike.track?.gain, hike.track?.peak]);
+    if (statsCache.has(key)) return statsCache.get(key);
+    const base = {
+        peak: Number.isFinite(hike.track?.peak) ? hike.track.peak : null,
+        gain: Number.isFinite(hike.track?.gain) ? hike.track.gain : null,
+        km: Number.isFinite(hike.track?.km) ? hike.track.km : kmLength(all)
+    };
+    if (base.peak !== null && base.gain !== null) return base;
     const step = Math.max(1, Math.ceil(all.length / 100));
     const pts = all.filter((_, i) => i % step === 0);
     if (pts[pts.length - 1] !== all[all.length - 1]) pts.push(all[all.length - 1]);
     const pick = pts.slice(0, 100);
-    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${pick.map(p => p[0].toFixed(5)).join(',')}&longitude=${pick.map(p => p[1].toFixed(5)).join(',')}`);
-    const els = (await r.json())?.elevation?.filter(Number.isFinite) || [];
-    if (els.length < 5) return null;
+    const controller = new AbortController();
+    let timer;
+    const result = await Promise.race([
+        fetch(`https://api.open-meteo.com/v1/elevation?latitude=${pick.map(p => p[0].toFixed(5)).join(',')}&longitude=${pick.map(p => p[1].toFixed(5)).join(',')}`, { signal: controller.signal })
+            .then(r => r.ok ? r.json() : null).catch(() => null),
+        new Promise(resolve => { timer = setTimeout(() => { controller.abort(); resolve(null); }, ELEVATION_TIMEOUT); })
+    ]).finally(() => clearTimeout(timer));
+    const els = result?.elevation;
+    // Не склеиваем точки через пропуски: иначе набор высоты получится недостоверным.
+    if (!Array.isArray(els) || els.length !== pick.length || !els.every(Number.isFinite)) return base;
     let gain = 0;
     for (let i = 1; i < els.length; i++) if (els[i] > els[i - 1]) gain += els[i] - els[i - 1];
-    return { peak: Math.max(...els), gain, km: kmLength(all) };
+    const stats = { peak: base.peak ?? Math.max(...els), gain: base.gain ?? gain, km: base.km };
+    if (statsCache.size >= 8) statsCache.delete(statsCache.keys().next().value);
+    statsCache.set(key, stats);
+    return stats;
 }
 
 const fmt = n => Math.round(n).toLocaleString('ru-RU');
@@ -136,8 +157,8 @@ export async function drawStory(hike, { colorful = false, footer = true } = {}) 
     // 5. вершина · набор · путь
     const km = Number(String(hikeTags(hike).join(' ').match(/(\d+(?:[.,]\d+)?)\s*км/)?.[1] || '').replace(',', '.')) || stats?.km;
     const cells = [
-        stats ? ['вершина', `${fmt(stats.peak)} м`] : null,
-        stats ? ['набор', `↗ ${fmt(stats.gain)} м`] : null,
+        Number.isFinite(stats?.peak) ? ['вершина', `${fmt(stats.peak)} м`] : null,
+        Number.isFinite(stats?.gain) ? ['набор', `↗ ${fmt(stats.gain)} м`] : null,
         km ? ['путь', `${fmtKm(km)} км`] : null
     ].filter(Boolean);
     const cellW = (W - PAD * 2) / 3;

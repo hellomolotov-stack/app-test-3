@@ -579,24 +579,28 @@ function feedPlaceMap(container, hike) {
 
 // Снимок 3D-карты маршрута для сторис: невидимая карта за экраном, неподвижный кадр, ждём все тайлы.
 // Возвращает canvas (width×height CSS-пикселей × ratio) или null, если трека нет или карта не успела.
-export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, timeout = 20000, camera, colorful = false } = {}) {
+const storyMapSnapshots = new Map();
+export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, timeout = 12000, camera, colorful = false } = {}) {
     const track = hike ? getHikeTrack(hike) : null;
     if (!track) return Promise.resolve(null);
-    return ensureMapLibre().then(() => new Promise(resolve => {
-        const host = document.createElement('div');
-        host.style.cssText = `position:fixed;left:0;top:0;opacity:0;width:${width}px;height:${height}px;z-index:-1;pointer-events:none;`;
-        document.body.appendChild(host);
-        let map = null, done = false;
+    const key = JSON.stringify([track, width, height, ratio, camera, colorful]);
+    if (storyMapSnapshots.has(key)) return storyMapSnapshots.get(key);
+    let complete = false;
+    const snapshot = new Promise(resolve => {
+        let host = null, map = null, done = false, pollTimer;
         const finish = c => {
             if (done) return;
             done = true;
             clearTimeout(timer);
+            clearTimeout(pollTimer);
             try { map && map.remove(); } catch (e) {}
-            host.remove();
+            host?.remove();
             resolve(c);
         };
         const grab = (last = false) => {
+            if (done) return;
             try {
+                if (!map.getLayer('route-line')) return finish(null);
                 const src = map.getCanvas();
                 const c = document.createElement('canvas');
                 c.width = src.width; c.height = src.height;
@@ -606,24 +610,34 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
                 let sum = 0, n = 0;
                 for (let i = 0; i < px.length; i += 4 * 997) { sum += px[i] + px[i + 1] + px[i + 2]; n++; }
                 // кадр ещё тёмный (тайлы не догрузились) – пробуем ещё раз, пока не истечёт время
-                if (!(n && sum / n >= 30)) { if (last) return finish(null); setTimeout(waitTiles, 400); return; }
+                if (!(n && sum / n >= 30)) { if (last) return finish(null); pollTimer = setTimeout(waitTiles, 400); return; }
+                complete = !last;
                 finish(c);
             } catch (e) { finish(null); }
         };
         // ждём, пока карта и все тайлы (спутник и рельеф) загрузятся, и снимаем свежий кадр
         const waitTiles = () => {
             if (done) return;
-            if (!(map.loaded() && map.areTilesLoaded())) { setTimeout(waitTiles, 250); return; }
+            if (!(map.loaded() && map.areTilesLoaded())) { pollTimer = setTimeout(waitTiles, 250); return; }
             map.once('render', () => grab());
             map.triggerRepaint();
         };
-        // время вышло: берём то, что успело нарисоваться (если кадр не пустой)
+        // Лимит включает загрузку самого SDK, а не только тайлов.
         const timer = setTimeout(() => (map ? grab(true) : finish(null)), timeout);
-        try {
+        ensureMapLibre().then(() => {
+            if (done) return;
+            host = document.createElement('div');
+            host.style.cssText = `position:fixed;left:0;top:0;opacity:0;width:${width}px;height:${height}px;z-index:-1;pointer-events:none;`;
+            document.body.appendChild(host);
             map = initHikeMap(host, track, true, true, { still: true, pixelRatio: ratio, camera, colorful });
-            map.once('still-ready', () => setTimeout(waitTiles, 300));
-        } catch (e) { finish(null); }
-    })).catch(() => null);
+            map.once('still-ready', waitTiles);
+        }).catch(() => finish(null));
+    });
+    // Только два полноразмерных кадра в памяти; неполные снимки не сохраняем.
+    if (storyMapSnapshots.size >= 2) storyMapSnapshots.delete(storyMapSnapshots.keys().next().value);
+    storyMapSnapshots.set(key, snapshot);
+    snapshot.then(() => { if (!complete && storyMapSnapshots.get(key) === snapshot) storyMapSnapshots.delete(key); });
+    return snapshot;
 }
 
 const FEED_SNAP_KEY = 'feedMapSnap';
