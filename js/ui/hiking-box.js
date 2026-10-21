@@ -3,7 +3,7 @@
 // Запущено для всех 20.10.2026.
 import { state } from '../state.js';
 import { haptic, openLink } from '../utils.js';
-import { log } from '../api.js';
+import { log, logSeq } from '../api.js';
 
 export const HIKING_BOX_TEST_IDS = ['7845375334', '163665735']; // @hellointelligent, @maxmolotov
 const boxMember = () => state.userCard?.status === 'active';
@@ -300,7 +300,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         requestAnimationFrame(() => pop.classList.add('is-on'));
         img.classList.remove('is-tap'); void img.offsetWidth; img.classList.add('is-tap');
     });
-    pop.addEventListener('click', e => { e.stopPropagation(); hidePop(); });
+    pop.addEventListener('click', e => { e.stopPropagation(); log(`hiking box: закрыл карточку продукта – ${hike.title}`, isGuest, state.user); hidePop(); });
     overlay.querySelector('.hb-scroll').addEventListener('scroll', () => { if (!pop.hidden) hidePop(); }, { passive: true });
     // подсказка как у карты: «палец» дважды тапает по продуктам, продукт подпрыгивает – видно, что на них можно нажимать
     const fingerHint = () => {
@@ -343,9 +343,10 @@ export function openHikingBox(fromEl, hike, isGuest) {
     });
 
     let closed = false;
-    const close = () => {
+    const close = (reason) => {
         if (closed) return;
         closed = true;
+        if (reason) log(`hiking box: закрыл (${reason}) – ${hike.title}`, isGuest, state.user);
         overlay.classList.remove('is-on');
         sheet.style.transition = ''; // после свайпа sheet-drag оставляет свой transition
         sheet.style.transform = fromPlate();
@@ -355,8 +356,18 @@ export function openHikingBox(fromEl, hike, isGuest) {
             if (!document.querySelector('.bottom-sheet.visible, .cs-overlay')) document.body.style.overflow = '';
         }, 360);
     };
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-    overlay.querySelector('.hb-close').addEventListener('click', () => { haptic(); close(); });
+    overlay.addEventListener('click', e => { if (e.target === overlay) close('тап мимо или свайп'); });
+    overlay.querySelector('.hb-close').addEventListener('click', () => { haptic(); close('крестик'); });
+    // каждое нажатие в шторке бокса – в лог (а оттуда в бота). Если у элемента свой лог уже был – не дублируем.
+    overlay.addEventListener('click', e => {
+        const before = logSeq;
+        const el = e.target.closest('button, a, [role="button"], .hc-p, .hc-note, .hb-way, .hb-swaps span, .hb-facts > div, .hb-tab, .hb-card-hint, .hb-pop, .hb-collage, .hb-price, .hb-why, .hb-sub, .hb-title') || e.target;
+        setTimeout(() => {
+            if (logSeq !== before || !overlay.isConnected && e.target === overlay) return;
+            const text = String(el.getAttribute?.('aria-label') || el.textContent || el.className || el.tagName || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+            log(`hiking box: нажал «${text || 'пустое место'}» – ${hike.title}`, isGuest, state.user);
+        }, 0);
+    }, true);
     // «оформить карту» в плашке цен – только тем, у кого карты нет
     // и строка над кнопкой покупки: «скидка 10% с картой интеллигента · оформить ›»
     overlay.querySelectorAll('.hb-card-hint').forEach(el => {
