@@ -93,6 +93,7 @@ function setupBottomNav() {
     const popupGift = document.getElementById('popupGift');
     const popupNewcomer = document.getElementById('popupNewcomer');
     const popupPass = document.getElementById('popupPass');
+    const popupZapovednik = document.getElementById('popupZapovednik');
     const popupQuestion = document.getElementById('popupQuestion');
 
     if (!navHome || !navHikes || !navMore || !popup) return;
@@ -178,6 +179,7 @@ function setupBottomNav() {
         popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('меню: подарить карту', state.userCard.status !== 'active', state.user); import('./ui/card-sheet.js').then(m => m.openCardSheet({ source: 'меню', gift: true })); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
         popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(true); });
         popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+        popupZapovednik?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); import('./ui/zapovednik.js').then(m => m.openZapovednikGuide('меню')); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
         const popupSafety = document.getElementById('popupSafety');
         if (popupSafety) {
             popupSafety.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderSafetyPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
@@ -524,6 +526,10 @@ function handleDeepLink(startParam) {
         case 'profiles':
             window._deepLinkPageChanged = true;
             renderProfiles();
+            break;
+        case 'zapovednik':
+            // ссылка для текстов: t.me/yaltahiking_bot?startapp=zapovednik – инструкция по пропуску в заповедник
+            setTimeout(() => import('./ui/zapovednik.js').then(m => m.openZapovednikGuide('ссылка')), 600);
             break;
         case 'pass':
             window._deepLinkPageChanged = true;
