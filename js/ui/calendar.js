@@ -2550,16 +2550,24 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     track.appendChild(hint);
     track.appendChild(thumb);
 
-    let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false;
+    let startX = 0, thumbLeft = 0, maxLeft = 0, isDown = false, completed = false, gestureHaptic = false;
     const THUMB_MARGIN = 8;
     const EDGE_PADDING = 30;
     const GAP_BETWEEN = 0;
+    let paymentPhase = !isBooked ? ticketPaymentPhase(hike.date) : '';
+    track.dataset.hikeDate = hike.date;
 
     function placeHint(thumbLeftPos) {
         const trackW = track.clientWidth;
         const thumbW = thumb.offsetWidth;
 
-        if (!isBooked) {
+        if (paymentPhase) {
+            hint.style.left = '20px';
+            hint.style.right = 'auto';
+            hint.style.width = Math.max(0, thumbLeftPos - 28) + 'px';
+            hint.style.justifyContent = 'flex-start';
+            hint.textContent = paymentPhase === 'creating' ? 'готовим оплату' : 'ожидаем оплату';
+        } else if (!isBooked) {
             const availableLeft = thumbLeftPos + thumbW + GAP_BETWEEN;
             const availableRight = trackW - EDGE_PADDING;
             const hintWidth = Math.max(0, availableRight - availableLeft);
@@ -2582,7 +2590,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     function initPosition() {
         maxLeft = track.clientWidth - thumb.offsetWidth - THUMB_MARGIN;
-        if (isBooked) {
+        if (isBooked || paymentPhase) {
             thumb.style.left = maxLeft + 'px';
             thumbLeft = maxLeft;
         } else {
@@ -2591,11 +2599,31 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         }
         placeHint(thumbLeft);
     }
-    setTimeout(initPosition, 20);
+    track.updateTicketPayment = phase => {
+        paymentPhase = phase;
+        completed = !!phase;
+        isDown = false;
+        track.dataset.paymentState = phase || '';
+        track.setAttribute('aria-busy', String(!!phase));
+        thumb.style.width = minThumbWidth + 'px';
+        thumb.style.transition = 'left 0.2s ease-out, width 0.25s ease';
+        if (phase) {
+            thumb.innerHTML = '<span class="swipe-payment-dots" aria-hidden="true"><i></i><i></i><i></i></span>';
+            thumb.setAttribute('aria-label', phase === 'creating' ? 'готовим оплату' : 'ожидаем оплату');
+        } else {
+            thumb.textContent = unbookedText;
+            thumb.removeAttribute('aria-label');
+        }
+        if (track.isConnected) initPosition();
+    };
+    if (paymentPhase) track.updateTicketPayment(paymentPhase);
+    requestAnimationFrame(initPosition);
 
     const onStart = (clientX) => {
-        if (completed) return;
+        if (paymentPhase === 'waiting') { offerPendingTicketRecovery({ force: true }); return; }
+        if (completed || paymentPhase) return;
         startX = clientX;
+        gestureHaptic = false;
         isDown = true;
         thumb.style.transition = 'none';
         hint.style.transition = 'none';
@@ -2611,7 +2639,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         thumb.style.left = newLeft + 'px';
         placeHint(newLeft);
 
-        if (isBooked && delta < 0) tg?.HapticFeedback?.impactOccurred('light');
+        if (!gestureHaptic && (isBooked ? delta < -8 : delta > 8)) {
+            gestureHaptic = true;
+            haptic();
+        }
 
         if (!isBooked && newLeft >= maxLeft * 0.95) {
             if (isGuest) {
@@ -2621,6 +2652,8 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 thumb.style.left = maxLeft + 'px';
                 placeHint(maxLeft);
                 const resetSwipe = () => {
+                    const phase = ticketPaymentPhase(hike.date);
+                    if (phase) { track.updateTicketPayment(phase); return; }
                     completed = false;
                     thumb.style.transition = 'left 0.3s ease-out, width 0.25s ease';
                     hint.style.transition = 'left 0.3s ease-out, width 0.3s ease-out';
@@ -2654,8 +2687,6 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             thumb.style.fontStyle = 'italic';
             isBooked = true;
             placeHint(maxLeft);
-            tg?.HapticFeedback?.impactOccurred('heavy');
-            setTimeout(() => tg?.HapticFeedback?.impactOccurred('heavy'), 70);
 
             const hikeDate = hike.date;
             const hikeTitle = hike.title;
@@ -2750,6 +2781,11 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         e.preventDefault();
         onEnd();
     }, { passive: false });
+    track.addEventListener('touchcancel', () => {
+        if (!isDown) return;
+        isDown = false;
+        initPosition();
+    });
 
     if (isAdmissionPilot() && !isBooked && admission.application?.status !== 'approved' && state.pendingInvite?.date !== hike.date) {
         const wrapper = document.createElement('div');
@@ -3533,11 +3569,11 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
     const _content = overlay.querySelector('.booking-popup-content');
     if (_content) _content.style.maxHeight = `calc(100dvh - ${Math.max(topInset + 12, 64) + bottomInset + 24}px)`;
 
-    const closePopup = () => {
+    const closePopup = (resetSwipe = true) => {
         if (overlay && overlay.parentNode) {
             overlay.parentNode.removeChild(overlay);
         }
-        if (onClose) onClose();
+        if (resetSwipe && onClose) onClose();
     };
 
     document.getElementById('closePopup').addEventListener('click', () => {
@@ -3637,7 +3673,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
         document.getElementById('buyTicketBtn')?.addEventListener('click', e => {
             e.preventDefault();
             haptic();
-            closePopup();
+            closePopup(false);
             startTicketPurchase(hikeDate, hikeTitle, 'купить билет на хайк');
         });
     }
@@ -4174,12 +4210,26 @@ export function showHikePickerSheet() {
 // чем взять их без следа.
 const TICKET_PRICE = 1200;
 const TICKET_SUPPORT_LINK = 'https://t.me/hellointelligent';
+let ticketPurchase = null;
+
+function ticketPaymentPhase(hikeDate) {
+    if (ticketPurchase?.hikeDate === hikeDate && ticketPurchase.userId === state.user?.id) return 'creating';
+    const pending = readPendingTicket();
+    return pending?.hikeDate === hikeDate && Date.now() - pending.ts < TICKET_PENDING_TTL ? 'waiting' : '';
+}
+
+function updateTicketPaymentControls(hikeDate, phase) {
+    document.querySelectorAll('.swipe-track').forEach(track => {
+        if (track.dataset.hikeDate === hikeDate) track.updateTicketPayment?.(phase);
+    });
+}
 
 async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
+    if (ticketPurchase) return;
+    ticketPurchase = { hikeDate, userId: state.user?.id };
+    confirmedTickets.delete(`${state.user?.id}:${hikeDate}`);
+    updateTicketPaymentControls(hikeDate, 'creating');
     log(logLabel, true, state.user, { hike_date: hikeDate });
-    // пошёл платить – язычку незачем потом звать на этот хайк
-    if (sheetActHike) sheetActHike.registered = true;
-    window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
 
     let payUrl = '', payErr = null;
     try {
@@ -4204,6 +4254,8 @@ async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
     }
 
     if (!payUrl) {
+        ticketPurchase = null;
+        updateTicketPaymentControls(hikeDate, '');
         alert(paymentErrorText(payErr, 'Не удалось открыть оплату. Проверь соединение и попробуй ещё раз – или напиши нам в поддержку: @hellointelligent'));
         return;
     }
@@ -4211,17 +4263,24 @@ async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
     // Запоминаем хайк только теперь, когда счёт точно создан: это подстраховка на случай,
     // если по возврату в приложение не придёт startapp (см. offerPendingTicketRecovery).
     if (hikeDate) {
+        pendingTicketMemory = {
+            hikeDate, hikeTitle: hikeTitle || '', type: 'ticket', userId: state.user?.id, ts: Date.now()
+        };
         try {
-            localStorage.setItem('pending_reg_celebration', JSON.stringify({
-                hikeDate,
-                hikeTitle: hikeTitle || '',
-                type: 'ticket',
-                ts: Date.now()
-            }));
+            localStorage.setItem('pending_reg_celebration', JSON.stringify(pendingTicketMemory));
         } catch (e) {}
     }
-    openLink(payUrl, 'купить билет на хайк', true);
+    ticketPurchase = null;
+    updateTicketPaymentControls(hikeDate, 'waiting');
     watchTicketReturn(hikeDate);
+    try {
+        openLink(payUrl, 'купить билет на хайк', true);
+    } catch (error) {
+        ticketWatch?.stop();
+        clearPendingTicket(hikeDate);
+        updateTicketPaymentControls(hikeDate, '');
+        alert('Не удалось открыть оплату. Попробуй ещё раз');
+    }
 }
 
 // Банки (TinkoffPay, SberPay) часто не возвращают в приложение по SuccessURL – человек просто
@@ -4232,13 +4291,14 @@ function watchTicketReturn(hikeDate) {
     if (!hikeDate || !state.user?.id) return;
     if (ticketWatch) ticketWatch.stop();
     const started = Date.now();
-    let timer = null, busy = false;
+    let timer = null, busy = false, stopped = false;
     const check = async () => {
-        if (busy || document.visibilityState !== 'visible') return;
-        if (Date.now() - started > 30 * 60 * 1000 || !readPendingTicket()) return stop();
+        if (stopped || busy || document.visibilityState !== 'visible') return;
+        if (Date.now() - started > 30 * 60 * 1000 || readPendingTicket()?.hikeDate !== hikeDate) return stop();
         busy = true;
         try {
             const regs = await loadUserRegistrations(state.user.id);
+            if (stopped) return;
             if (regs?.[hikeDate] === true) {
                 stop();
                 log('вернулся из оплаты сам (без ссылки возврата)', true, state.user, { hike_date: hikeDate });
@@ -4250,15 +4310,20 @@ function watchTicketReturn(hikeDate) {
     };
     const onShow = () => { if (document.visibilityState === 'visible') check(); };
     function stop() {
+        stopped = true;
         clearInterval(timer);
         document.removeEventListener('visibilitychange', onShow);
+        window.removeEventListener('focus', onShow);
         window.Telegram?.WebApp?.offEvent?.('activated', onShow);
-        ticketWatch = null;
+        if (ticketWatch === watcher) ticketWatch = null;
     }
     document.addEventListener('visibilitychange', onShow);
+    window.addEventListener('focus', onShow);
     window.Telegram?.WebApp?.onEvent?.('activated', onShow);
     timer = setInterval(check, 5000);
-    ticketWatch = { stop };
+    const watcher = { stop };
+    ticketWatch = watcher;
+    check();
 }
 
 // Срок хранения контекста быстрого возврата с оплаты.
@@ -4266,24 +4331,28 @@ export const TICKET_PENDING_TTL = 6 * 60 * 60 * 1000;
 // Если Robokassa не вернула человека в приложение, предлагаем проверить оплату
 // при следующих заходах — иначе оплаченный билет молча теряется.
 const TICKET_RECOVERY_TTL = 72 * 60 * 60 * 1000;
+let pendingTicketMemory = null;
+const ticketConfirmations = new Map();
+const confirmedTickets = new Set();
 
 function readPendingTicket() {
     try {
-        const raw = localStorage.getItem('pending_reg_celebration');
-        if (!raw) return null;
-        const pending = JSON.parse(raw);
+        const pending = pendingTicketMemory || JSON.parse(localStorage.getItem('pending_reg_celebration') || 'null');
+        if (pending?.userId && String(pending.userId) !== String(state.user?.id)) return null;
         return pending && pending.type === 'ticket' && pending.hikeDate ? pending : null;
     } catch (e) {
-        return null;
+        return pendingTicketMemory?.userId === state.user?.id ? pendingTicketMemory : null;
     }
 }
 
-function clearPendingTicket() {
+function clearPendingTicket(hikeDate) {
+    if (hikeDate && readPendingTicket()?.hikeDate !== hikeDate) return;
+    pendingTicketMemory = null;
     try { localStorage.removeItem('pending_reg_celebration'); } catch (e) {}
 }
 
 // Подстраховка на случай, когда возврата по startapp=paid не случилось.
-export function offerPendingTicketRecovery() {
+export function offerPendingTicketRecovery({ force = false } = {}) {
     const pending = readPendingTicket();
     if (!pending) return;
 
@@ -4293,22 +4362,25 @@ export function offerPendingTicketRecovery() {
     }
 
     const index = state.hikesWithTitle.findIndex(h => h.date === pending.hikeDate);
-    // Хайк прошёл или человек уже записан — след больше не нужен
-    if (index < 0 || state.hikeBookingStatus[index]) {
+    if (index < 0) {
         clearPendingTicket();
         return;
     }
-    if (document.querySelector('.modal-overlay, .bottom-sheet-overlay')) return;
+    if (state.hikeBookingStatus[index]) { confirmTicketPaymentReturn(pending.hikeDate); return; }
+    watchTicketReturn(pending.hikeDate);
+    if (!force && pending.ts && Date.now() - pending.ts < TICKET_PENDING_TTL) return;
+    if (document.querySelector('.modal-overlay') || (!force && document.querySelector('.bottom-sheet-overlay'))) return;
 
     const title = pending.hikeTitle || state.hikesWithTitle[index].title || '';
     const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
+    overlay.className = 'modal-overlay ticket-recovery-overlay';
+    overlay.dataset.hikeDate = pending.hikeDate;
     overlay.innerHTML = `
         <div class="modal-content" style="max-width:360px; text-align:center;">
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">проверим оплату билета?</div>
             <div class="modal-text" style="text-align:center; margin-top:8px;">если оплатил билет за «${title}», проверим подтверждение от платёжной системы</div>
             <button class="btn btn-yellow" id="ticketPaidYesBtn" style="width:100%; margin:16px 0 0;">проверить оплату</button>
-            <button class="btn btn-outline" id="ticketPaidNoBtn" style="width:100%; margin:10px 0 0;">ещё нет</button>
+            <button class="btn btn-outline" id="ticketPaidNoBtn" style="width:100%; margin:10px 0 0;">не оплатил – отменить</button>
         </div>
     `;
     document.body.appendChild(overlay);
@@ -4327,6 +4399,8 @@ export function offerPendingTicketRecovery() {
     document.getElementById('ticketPaidNoBtn').addEventListener('click', () => {
         haptic();
         clearPendingTicket();
+        ticketWatch?.stop();
+        updateTicketPaymentControls(pending.hikeDate, '');
         overlay.remove();
         log('билет не оплачен – отказ от записи', true, state.user, { hike_date: pending.hikeDate });
     });
@@ -4340,12 +4414,24 @@ export function completeTicketRegistration(hikeDate) {
 // Возврат из оплаты по ссылке startapp=paid_<дата>. Запись делает сервер по ResultURL Robokassa,
 // обычно за несколько секунд после оплаты, – ждём её и показываем экран успеха. Клиент сам никого
 // не записывает: иначе любая ручная ссылка вида ?startapp=paid_<дата> давала бы бесплатную запись.
-export async function confirmTicketPaymentReturn(hikeDate) {
+export function confirmTicketPaymentReturn(hikeDate) {
+    const key = `${state.user?.id}:${hikeDate}`;
+    if (confirmedTickets.has(key)) return Promise.resolve(true);
+    if (ticketConfirmations.has(key)) return ticketConfirmations.get(key);
+    const promise = verifyTicketPaymentReturn(hikeDate).finally(() => {
+        ticketConfirmations.delete(key);
+    });
+    ticketConfirmations.set(key, promise);
+    return promise;
+}
+
+async function verifyTicketPaymentReturn(hikeDate) {
     if (ticketWatch) ticketWatch.stop(); // вернулся по ссылке – автопроверка больше не нужна
     const userId = state.user?.id;
     const index = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
     const title = index >= 0 ? state.hikesWithTitle[index].title : '';
     if (!userId || !hikeDate) return false;
+    updateTicketPaymentControls(hikeDate, 'waiting');
 
     let registered = false;
     for (let attempt = 0; attempt < 8 && !registered; attempt++) {
@@ -4356,17 +4442,26 @@ export async function confirmTicketPaymentReturn(hikeDate) {
         if (!registered && attempt < 7) await new Promise(r => setTimeout(r, 2000));
     }
 
+    if (state.user?.id !== userId) return false;
     if (registered) {
-        clearPendingTicket();
-        if (index >= 0) {
-            state.hikeBookingStatus[index] = true;
-            saveBookingStatusToLocal();
+        clearPendingTicket(hikeDate);
+        const currentIndex = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
+        if (currentIndex >= 0) {
+            state.hikeBookingStatus[currentIndex] = true;
+            try { saveBookingStatusToLocal(); } catch (e) { /* private storage may be unavailable */ }
         }
+        document.querySelectorAll('.ticket-recovery-overlay, .ticket-payment-wait-overlay').forEach(overlay => {
+            if (overlay.dataset.hikeDate === hikeDate) overlay.remove();
+        });
+        updateFloatingSheetButtons();
         renderUserBookings(document.getElementById('userBookingsContainer'));
         const cal = document.getElementById('calendarContainer');
         if (cal) renderCalendar(cal);
         log('оплата билета подтверждена сервером', true, state.user, { hike_date: hikeDate });
         markPaymentSeen();
+        if (sheetActHike?.date === hikeDate) sheetActHike.registered = true;
+        window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
+        confirmedTickets.add(`${userId}:${hikeDate}`);
         showRegistrationSuccess(hikeDate, title);
         return true;
     }
@@ -4374,8 +4469,10 @@ export async function confirmTicketPaymentReturn(hikeDate) {
     // Сервер запись ещё не создал. Не пугаем человека и не записываем вслепую: подсказываем,
     // что делать. Локальная подстраховка (offerPendingTicketRecovery) остаётся на следующие заходы.
     log('оплата билета не подтверждена сервером', true, state.user, { hike_date: hikeDate });
+    if (readPendingTicket()?.hikeDate === hikeDate) watchTicketReturn(hikeDate);
     const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
+    overlay.className = 'modal-overlay ticket-payment-wait-overlay';
+    overlay.dataset.hikeDate = hikeDate;
     overlay.innerHTML = `
         <div class="modal-content" style="max-width:360px; text-align:center;">
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">оплату обрабатываем</div>
@@ -4457,6 +4554,7 @@ async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
     overlay.addEventListener('click', (e) => { if (e.target === overlay) { haptic(); closeBanner(); } });
     document.getElementById('choiceButBtn').addEventListener('click', () => {
         haptic();
+        handedOff = true;
         closeBanner();
         startTicketPurchase(hikeDate, hikeTitle, 'купить билет на хайк из короткого баннера');
     });
