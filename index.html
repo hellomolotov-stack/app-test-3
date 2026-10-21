@@ -51,8 +51,8 @@
         html:not(.app-ready) body > :not(#initial-loader) { visibility: hidden !important; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=20261021-ticket-pending" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=20261021-ticket-pending"></noscript>
+    <link rel="preload" href="style.css?v=20261021-going-live" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=20261021-going-live"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -179,6 +179,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=20261021-ticket-pending"></script>
+    <script type="module" src="js/main.js?v=20261021-going-live"></script>
 </body>
 </html>

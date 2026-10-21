@@ -319,9 +319,8 @@ export function subscribeToParticipantCount(hikeDate, callback) {
         const count = Object.keys(participants).length;
         const sorted = Object.values(participants)
             .filter(p => p && p.timestamp)
-            .sort((a, b) => b.timestamp - a.timestamp)
-            .slice(0, 3);
-        callback(count, sorted);
+            .sort((a, b) => b.timestamp - a.timestamp);
+        callback(count, sorted.slice(0, 3), sorted);
     });
     return () => ref.off('value', listener);
 }

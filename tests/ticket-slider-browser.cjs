@@ -28,8 +28,8 @@ const BASE = process.env.PREVIEW_URL || 'http://localhost:4186/?screen=ticket';
         });
         await page.route('https://api.open-meteo.com/**', route => route.fulfill({ json: {} }));
 
-        async function open() {
-            await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+        async function open(query = '') {
+            await page.goto(BASE + query, { waitUntil: 'domcontentloaded' });
             await page.waitForFunction(() => window.previewTicket);
             await page.locator('.swipe-thumb').waitFor();
             await page.waitForTimeout(100);
@@ -104,6 +104,11 @@ const BASE = process.env.PREVIEW_URL || 'http://localhost:4186/?screen=ticket';
         await page.locator('.reg-ticket-overlay').waitFor();
         assert.equal(await page.locator('.reg-ticket-overlay').count(), 1, 'Return and deep link do not duplicate success');
         assert.equal(await page.evaluate(() => window.previewTicket.state.hikeBookingStatus[0]), true);
+        await page.waitForFunction(() => document.querySelector('.ef-tk-cap')?.textContent === '2 из 10');
+        assert.equal(await page.locator('.ef-tk-bar i').evaluate(el => el.style.width), '20%');
+        assert.equal(await page.locator('.ef-tk-go.is-in').textContent(), 'ты записан ✓');
+        await page.evaluate(() => window.previewTicket.renderCalendar(document.getElementById('calendarContainer')));
+        await page.waitForFunction(() => document.querySelector('.ef-tk-cap')?.textContent === '2 из 10');
         assert.equal(await page.evaluate(() => localStorage.getItem('pending_reg_celebration')), null);
         assert.equal(await page.locator('.swipe-payment-dots').count(), 0);
         assert.equal(await page.evaluate(() => window.previewTicket.writes.length), 0, 'Only server payment callback may register');
@@ -142,7 +147,30 @@ const BASE = process.env.PREVIEW_URL || 'http://localhost:4186/?screen=ticket';
             await window.previewTicket.confirm();
         });
         assert.equal(await page.locator('.reg-ticket-overlay').count(), 1, 'Server-confirmed success works when storage is blocked');
+
+        await page.evaluate(() => { localStorage.clear(); });
+        await open('&member');
+        await page.waitForFunction(() => document.querySelector('.ef-tk-cap')?.textContent === '1 из 10');
+        await swipe();
+        await page.locator('.reg-ticket-overlay').waitFor();
+        await page.waitForFunction(() => document.querySelector('.ef-tk-cap')?.textContent === '2 из 10');
+        await page.locator('#rtDone').click();
+        await page.waitForTimeout(300);
+        await page.locator('.swipe-track').evaluate(el => {
+            const rect = el.getBoundingClientRect();
+            const thumb = el.querySelector('.swipe-thumb').getBoundingClientRect();
+            const send = (type, x) => {
+                const touch = new Touch({ identifier: 2, target: el, clientX: x, clientY: rect.top + 25 });
+                el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: type === 'touchend' ? [] : [touch], changedTouches: [touch] }));
+            };
+            send('touchstart', thumb.left + thumb.width / 2);
+            send('touchmove', rect.left);
+            send('touchend', rect.left);
+        });
+        await page.waitForFunction(() => document.querySelector('.ef-tk-cap')?.textContent === '1 из 10');
+        assert.equal(await page.locator('.ef-tk-bar i').evaluate(el => el.style.width), '10%');
+        assert.equal(await page.locator('.ef-tk-go').textContent(), 'записаться');
         assert.deepEqual(errors, [], 'No browser exceptions');
-        console.log('Ticket slider browser tests passed: one haptic, pending at right, dots, no false booking, reload, server-confirmed success, no duplicates, invoice error, 320/390px');
+        console.log('Ticket/calendar browser tests passed: payment states, immediate seats/progress/booking label, ticket and member booking, cancellation, stale-cache redraw, 320/390px');
     } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

@@ -844,14 +844,44 @@ export function prefetchHikeParticipants(date, timeoutMs = 4000) {
 // потом уточняем живыми данными Firebase (соединение телефона с базой бывает 6–10+ с).
 const feedGoingFromFb = {};      // date → true, когда пришёл ответ Firebase (он точнее серверного кэша)
 const feedGoingWaiters = {};     // date → [paint] – перерисовать, когда придут свежие данные
+const feedGoingVersion = {};
 function feedSetGoing(date, list, fromFb) {
     if (!Array.isArray(list)) return;
     if (!fromFb && feedGoingFromFb[date]) return;
     feedGoingList[date] = list;
     feedGoing[date] = list.length;
-    if (fromFb) feedGoingFromFb[date] = true;
+    if (fromFb) {
+        feedGoingFromFb[date] = true;
+        feedGoingVersion[date] = (feedGoingVersion[date] || 0) + 1;
+    }
     feedGoingWaiters[date] = (feedGoingWaiters[date] || []).filter(w => w.el.isConnected);
     feedGoingWaiters[date].forEach(w => { try { w.paint(list); } catch (e) {} });
+}
+
+function refreshFeedRegistration(date, booked) {
+    const user = state.user;
+    (state._userRegs ||= {})[date] = booked;
+    document.getElementById('calendarContainer')?.querySelectorAll('.ef-next[data-open]').forEach(card => {
+        if (card.dataset.open !== date) return;
+        const button = card.querySelector('.ef-tk-go');
+        if (!button) return;
+        button.classList.toggle('is-in', booked);
+        button.classList.toggle('btn-yellow', !booked);
+        button.classList.remove('btn-outline');
+        button.textContent = booked ? 'ты записан ✓' : 'записаться';
+    });
+    const matchesUser = p => String(p.userId) === String(user?.id);
+    if (user?.id && feedGoingList[date]) {
+        const others = feedGoingList[date].filter(p => !matchesUser(p));
+        feedSetGoing(date, booked ? [{ userId: user.id, name: user.first_name || '', photoUrl: user.photo_url || '', timestamp: Date.now() }, ...others] : others, true);
+    }
+    const version = feedGoingVersion[date] || 0;
+    loadAllParticipants(date).then(list => {
+        if (version !== (feedGoingVersion[date] || 0) || !Array.isArray(list)) return;
+        // ResultURL may write registration and participants in separate requests.
+        if (user?.id && list.some(matchesUser) !== booked) return;
+        feedSetGoing(date, list, true);
+    }).catch(() => {});
 }
 const goingServerReq = {};       // date → Promise
 export function fetchGoingFromServer(dates, fresh = false) {
@@ -869,8 +899,13 @@ export function fetchGoingFromServer(dates, fresh = false) {
 
 function feedLoadGoing(date) {
     if (feedGoingList[date]) return Promise.resolve(feedGoingList[date]);
+    const version = feedGoingVersion[date] || 0;
     const fromServer = fetchGoingFromServer([date]).then(([list]) => list || null);
-    const fromFb = feedWhenDb().then(ok => ok ? loadAllParticipants(date) : null).then(list => { feedSetGoing(date, list, true); return list; });
+    const fromFb = feedWhenDb().then(ok => ok ? loadAllParticipants(date) : null).then(list => {
+        if (version !== (feedGoingVersion[date] || 0)) return feedGoingList[date];
+        feedSetGoing(date, list, true);
+        return list;
+    });
     // кто первым вернёт список – тот и показан; Firebase потом сам перерисует (feedGoingWaiters)
     return new Promise(resolve => {
         let done = false;
@@ -899,7 +934,7 @@ function feedFillGoing(container) {
         const paint = list => {
             const n = list.length;
             if (isCard) el.innerHTML = feedGoingHtml(list);
-            else if (n) el.textContent = ` · ${n} ${feedPeople(n)}`;
+            else el.textContent = n ? ` · ${n} ${feedPeople(n)}` : '';
         };
         watch(date, paint, el);
         feedLoadGoing(date).then(list => { if (list) paint(list); }).catch(() => {});
@@ -2313,8 +2348,9 @@ export function showBottomSheet(index) {
                 loadAllParticipants(hike.date).then(list => { liveArrived = true; updateAvatars(list); });
             } else {
                 if (currentUnsubscribe) currentUnsubscribe();
-                currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants) => {
+                currentUnsubscribe = subscribeToParticipantCount(hike.date, (count, participants, allParticipants) => {
                     liveArrived = true;
+                    feedSetGoing(hike.date, allParticipants, true);
                     updateAvatars(participants, count);
                 });
             }
@@ -2732,6 +2768,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         delete state.hikeBookingStatus[curSheetIndex()];
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
+                        refreshFeedRegistration(hikeDate, false);
                         updateFloatingSheetButtons();
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
@@ -2743,6 +2780,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                         delete state.hikeBookingStatus[curSheetIndex()];
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                        refreshFeedRegistration(hikeDate, false);
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
@@ -2947,6 +2985,7 @@ function updateFloatingSheetButtons() {
                         .then(() => {
                             delete state.hikeBookingStatus[curSheetIndex()];
                             updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                            refreshFeedRegistration(hikeDate, false);
                             updateFloatingSheetButtons();
                             renderUserBookings(document.getElementById('userBookingsContainer'));
                             const cal = document.getElementById('calendarContainer');
@@ -3210,6 +3249,7 @@ function updateFloatingSheetButtons() {
                         delete state.hikeBookingStatus[curSheetIndex()];
                         saveBookingStatusToLocal();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
+                        refreshFeedRegistration(hikeDate, false);
                         updateFloatingSheetButtons();
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
@@ -3221,6 +3261,7 @@ function updateFloatingSheetButtons() {
                         delete state.hikeBookingStatus[curSheetIndex()];
                         updateFloatingSheetButtons();
                         updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
+                        refreshFeedRegistration(hikeDate, false);
                         renderUserBookings(document.getElementById('userBookingsContainer'));
                         const cal = document.getElementById('calendarContainer');
                         if (cal) renderCalendar(cal);
@@ -3965,6 +4006,7 @@ function showCityRegistrationSuccess(h) {
 
 // ==================== ЭКРАН ПОСЛЕ РЕГИСТРАЦИИ ====================
 export function showRegistrationSuccess(hikeDate, hikeTitle) {
+    refreshFeedRegistration(hikeDate, true);
     if (sheetActHike) sheetActHike.registered = true;
     window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
     const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
