@@ -2,12 +2,13 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.4.1
+ * Version: 0.4.2
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
  */
 defined('ABSPATH') || exit;
+require_once __DIR__ . '/stock-policy.php';
 
 final class HI_Club_Checkout {
     const OPTION = 'hi_club_checkout_mode';
@@ -45,6 +46,7 @@ final class HI_Club_Checkout {
     }
 
     public static function boot() {
+        HI_Club_Stock_Policy::boot();
         add_action('admin_menu', array(__CLASS__, 'admin_menu'));
         add_filter('the_content', array(__CLASS__, 'local_frontend'), 99);
         // Сводка заказов «на хайк» в бот клуба: оплачен / отменён (ключ магазина тот же, что для скидки).
@@ -547,6 +549,7 @@ final class HI_Club_Checkout {
         $context = self::context();
         if (!$context) return;
         $order->update_meta_data('_hi_club_source', 'intelligentsia');
+        HI_Club_Stock_Policy::stamp($order);
         $order->update_meta_data('_hi_club_way', $context['way']);
         if (!empty($context['tg'])) $order->update_meta_data('_hi_club_tg', $context['tg']);
         if (self::card_active()) {
@@ -595,8 +598,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.1', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.1');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.2', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.2');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.

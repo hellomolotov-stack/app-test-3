@@ -68,6 +68,7 @@ class LocalCart {
     function __construct() { $this->fees = new WC_Cart_Fees(); }
     function fees_api() { return $this->fees; }
     function get_cart_contents_total() { return $this->base; }
+    function get_cart() { return array(); }
     function has_discount($code) { return $code === 'intelligent' && $this->coupon; }
     function get_shipping_packages() { return $this->packages; }
     function add_fee($name, $amount, $taxable = false) { return $this->fees->add_fee(array('name' => $name, 'amount' => $amount, 'taxable' => $taxable)); }
