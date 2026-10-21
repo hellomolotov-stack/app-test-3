@@ -9,6 +9,16 @@ export function haptic() {
 export function openLink(url, action, isGuest) {
     haptic();
     if (action) log(action, isGuest, state.user);
+    // Та же публичная ссылка внутри приложения открывает шторку, а не перезапускает Mini App.
+    try {
+        const link = new URL(url);
+        if (link.protocol === 'https:' && ['t.me', 'www.t.me'].includes(link.hostname)
+            && link.pathname.replace(/\/$/, '').toLowerCase() === '/yaltahiking_bot'
+            && link.searchParams.get('startapp') === 'zapovednik') {
+            import('./ui/zapovednik.js').then(m => m.openZapovednikGuide('ссылка в приложении'));
+            return;
+        }
+    } catch (e) {}
     const tg = window.Telegram?.WebApp;
     if (!tg) return window.open(url, '_blank');
     if (url.startsWith('https://t.me/')) {

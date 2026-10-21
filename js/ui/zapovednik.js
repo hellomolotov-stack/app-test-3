@@ -17,14 +17,16 @@ const STEPS = [
 ];
 
 const CSS = `
-.zp-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0, 0, 0, .55); opacity: 0; transition: opacity .25s ease; }
+.zp-overlay { position: fixed; inset: 0; z-index: 4200; background: rgba(0, 0, 0, .55); opacity: 0; transition: opacity .25s ease; overscroll-behavior: none; }
 .zp-overlay.is-on { opacity: 1; }
-.zp-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-width: 600px; margin: 0 auto; max-height: 92vh; overflow-y: auto; box-sizing: border-box;
-    padding: 10px 20px calc(env(safe-area-inset-bottom, 0px) + 22px); border-radius: 28px 28px 0 0; background: #121a23; color: #fff;
+.zp-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-width: 600px; margin: 0 auto; max-height: 92vh; max-height: 92dvh; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column;
+    padding: 10px 0 0; border-radius: 28px 28px 0 0; background: #121a23; color: #fff;
     transform: translateY(100%); transition: transform .32s cubic-bezier(.2, .9, .25, 1); }
+.zp-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; padding: 0 20px calc(env(safe-area-inset-bottom, 0px) + 22px); }
+.zp-head { position: relative; flex: none; height: 40px; }
 .zp-overlay.is-on .zp-sheet { transform: none; }
 .zp-grab { width: 40px; height: 5px; margin: 0 auto 14px; border-radius: 3px; background: rgba(255, 255, 255, .25); }
-.zp-x { position: absolute; top: 14px; right: 16px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; font-size: 14px; cursor: pointer; }
+.zp-x { position: absolute; top: 0; right: 16px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; font-size: 14px; cursor: pointer; }
 .zp-h { margin: 6px 0 0; text-align: center; font-size: 22px; font-weight: 800; }
 .zp-sub { margin: 6px auto 16px; max-width: 320px; text-align: center; font-size: 13.5px; line-height: 1.45; color: rgba(255, 255, 255, .62); }
 .zp-local { margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: var(--yellow, #d9fd19); color: #1d2200; font-size: 13.5px; line-height: 1.45; }
@@ -45,6 +47,7 @@ const CSS = `
 `;
 
 let overlay = null;
+let restoreGuide = null;
 
 export function openZapovednikGuide(source = 'меню') {
     if (overlay) return;
@@ -59,9 +62,10 @@ export function openZapovednikGuide(source = 'меню') {
     overlay = document.createElement('div');
     overlay.className = 'zp-overlay';
     overlay.innerHTML = `
-        <div class="zp-sheet" role="dialog" aria-label="пропуск в заповедник">
-            <div class="zp-grab"></div>
-            <button type="button" class="zp-x" aria-label="закрыть">✕</button>
+        <div class="zp-sheet" role="dialog" aria-modal="true" aria-label="пропуск в заповедник" tabindex="-1">
+            <div class="zp-head"><div class="zp-grab cs-grab"></div>
+            <button type="button" class="zp-x" aria-label="закрыть">✕</button></div>
+            <div class="zp-scroll">
             <div class="zp-h">пропуск в заповедник</div>
             <div class="zp-sub">большинство наших маршрутов проходит по Ялтинскому заповеднику – пропуск оформляется онлайн за 3 минуты</div>
             <div class="zp-local">🏡 <b>прописка в Ялте или Севастополе?</b> тебе достаточно показать постоянный пропуск местного жителя – его можно оформить там же, на сайте заповедника</div>
@@ -69,10 +73,32 @@ export function openZapovednikGuide(source = 'меню') {
             <ol class="zp-steps">${STEPS.map(([t, tip], i) =>
                 `<li><span class="zp-n">${i + 1}</span><div class="zp-t">${t}${tip ? `<small>${tip}</small>` : ''}</div></li>`).join('')}</ol>
             <button type="button" class="zp-go">оформить пропуск ›</button>
+            </div>
         </div>`;
+    const o = overlay;
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    const background = [...document.body.children].filter(el => el !== o && el instanceof HTMLElement && !['SCRIPT', 'STYLE'].includes(el.tagName));
+    const inertStates = background.map(el => [el, el.inert]);
+    background.forEach(el => { el.inert = true; });
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => overlay.classList.add('is-on'));
+    const onKey = e => {
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeZapovednikGuide(); }
+        if (e.key === 'Tab') {
+            const first = o.querySelector('.zp-x'), last = o.querySelector('.zp-go');
+            if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+            else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+    };
+    document.addEventListener('keydown', onKey, true);
+    restoreGuide = () => {
+        document.removeEventListener('keydown', onKey, true);
+        inertStates.forEach(([el, inert]) => { el.inert = inert; });
+        document.body.style.overflow = previousOverflow;
+        if (previousFocus?.isConnected) previousFocus.focus?.({ preventScroll: true });
+    };
+    requestAnimationFrame(() => { if (overlay === o) { o.classList.add('is-on'); o.querySelector('.zp-x').focus({ preventScroll: true }); } });
     overlay.addEventListener('click', (e) => {
         if (e.target.closest('.zp-go')) {
             haptic();
@@ -89,6 +115,8 @@ export function closeZapovednikGuide() {
     const o = overlay;
     overlay = null;
     o.classList.remove('is-on');
-    document.body.style.overflow = '';
+    o.style.pointerEvents = 'none';
+    restoreGuide?.();
+    restoreGuide = null;
     setTimeout(() => o.remove(), 320);
 }
