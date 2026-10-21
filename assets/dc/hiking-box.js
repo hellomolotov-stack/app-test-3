@@ -213,6 +213,16 @@
   }
   function assortmentRank(p, group) {
     var n = productName(p);
+    if (group === 'energy') {
+      // Keep product types together, including energy-labelled gels and shots.
+      if (/батон|chikabar|chika.?bar|protein.?bar/.test(n)) return 0;
+      if (/гель|гели|\bgel\b/.test(n)) return 1;
+      if (/шот|\bshots?\b/.test(n)) return 3;
+      if (/коктейл|шейк|shake|напиток.*(?:протеин|белков)|(?:протеин|белков).*напиток/.test(n)) return 5;
+      if (/изотон|isotonic/.test(n)) return 4;
+      if (/энергет|энерджи|energy/.test(n)) return 2;
+      return 6;
+    }
     if (group === 'sweet') {
       if (/протеин|белков|protein|bombbar|бомббар|chikalab|чика|шоки|шокки|shock|rex\s*crispy|рекс/.test(n) || categoryHas(p, [188])) return 0;
       return /пастил/.test(n) ? 2 : 1;
@@ -472,6 +482,12 @@
     w.classList.toggle('has-l', rw.scrollLeft > 8);
     w.classList.toggle('has-r', rw.scrollLeft < max - 8);
   }
+  function orderedSlotProducts(list, selectedIds, group) {
+    var ordered = selectedIds.filter(function (id) { return list.indexOf(id) >= 0; }).concat(list.filter(function (id) { return selectedIds.indexOf(id) < 0; }));
+    // Stable type sort preserves selected-first order within each type only.
+    if (group === 'energy') ordered.sort(function (a, b) { return assortmentRank(P[a], group) - assortmentRank(P[b], group); });
+    return ordered;
+  }
   function render(pop, scrollTo) {
     root.querySelectorAll('.hi-tab').forEach(function (t) { t.classList.toggle('is-on', t.dataset.box === cur); });
     var b = BOXES[cur];
@@ -481,7 +497,7 @@
     b.slots.forEach(function (s, i) {
       var list = avail(s[2]); if (!list.length) { html += '<div class="hi-slot"><div><b>' + s[0] + '</b><p>сейчас нет доступных товаров</p></div></div>'; return; }
       var chosen = sel[cur][i], selectedIds = chosen.map(function (pair) { return pair[0]; });
-      list = selectedIds.filter(function (id) { return list.indexOf(id) >= 0; }).concat(list.filter(function (id) { return selectedIds.indexOf(id) < 0; }));
+      list = orderedSlotProducts(list, selectedIds, SLOT_GROUPS[cur][i]);
       var visibleLimit = Math.max(rowLimits[cur][i] || 12, chosen.length + 8);
       html += '<div class="hi-slot"><div class="hi-slot-k"><b>' + s[0] + '</b><div class="hi-picked">'
         + (chosen.length ? chosen.slice(0, 4).map(function (x) { return '<button type="button" class="hi-pk" data-go="' + x[0] + '" data-slot="' + i + '"><img src="' + img(P[x[0]]) + '" alt="">' + (x[1] > 1 ? '<i>' + x[1] + '</i>' : '') + '</button>'; }).join('') + (chosen.length > 4 ? '<span class="hi-pk-n">+' + (chosen.length - 4) + '</span>' : '') : '<span class="hi-pk-0">не выбрано</span>')

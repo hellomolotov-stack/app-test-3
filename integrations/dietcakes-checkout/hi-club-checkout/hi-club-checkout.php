@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.4.2
+ * Version: 0.4.3
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -598,8 +598,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.2', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.2');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.3', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.3');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.
