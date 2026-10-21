@@ -1639,10 +1639,15 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
     if (track.finalCamera) {
         target = { ...track.finalCamera };
     } else {
-        const latSpan = maxLat - minLat;
-        const span = Math.max(latSpan, maxLon - minLon);
-        const z = Math.min(14.5, 14.5 - Math.log2(span / 0.005));
-        target = { center: [cLon, cLat - latSpan * 0.45], zoom: z, pitch: 45, bearing: 0 };
+        // Камера облетает маршрут по кругу, поэтому центр – ровно в середине трека, а масштаб
+        // подбираем по описанному кругу: при любом повороте весь маршрут остаётся в кадре.
+        const latM = (maxLat - minLat) * 111320;
+        const lonM = (maxLon - minLon) * 111320 * Math.cos(cLat * Math.PI / 180);
+        const diameter = Math.max(Math.hypot(latM, lonM), 400);
+        const side = Math.max(120, Math.min(el.clientWidth || 360, el.clientHeight || 360));
+        const mpp = diameter / (side * 0.82);
+        const z = Math.min(14.5, Math.log2(78271.5 * Math.cos(cLat * Math.PI / 180) / mpp));
+        target = { center: [cLon, cLat], zoom: z, pitch: 45, bearing: 0 };
     }
     if (camera) {
         const latSpan = maxLat - minLat;
@@ -1680,10 +1685,12 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         },
         // При перелистывании стрелками сразу встаём в финальный кадр – смотреть,
         // как камера облетает пустой ландшафт до появления трека, незачем.
-        center: instant ? target.center : [cLon, cLat + 0.06],
-        zoom: instant ? target.zoom : 9.5,
-        pitch: instant ? (target.pitch ?? 45) : 0,
-        bearing: instant ? (target.bearing || 0) : 0,
+        // Старт сверху: смотрим на маршрут почти вертикально и издалека, потом камера опускается.
+        // Перелистывание стрелками – та же посадка, только с небольшой высоты. Снимок для сторис – сразу кадр.
+        center: still ? target.center : (instant ? target.center : [cLon, cLat + 0.06]),
+        zoom: still ? target.zoom : (instant ? Math.max(target.zoom - 1.6, 5) : 9.5),
+        pitch: still ? (target.pitch ?? 45) : 0,
+        bearing: still ? (target.bearing || 0) : (instant ? (target.bearing || 0) - 40 : 0),
         maxPitch: 85,
         maxBounds: CRIMEA,
         attributionControl: false,
@@ -1752,13 +1759,14 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
 
         map.once('idle', () => {
             reveal();
-            if (instant) {
-                // Камера уже стоит в целевом кадре (см. параметры создания карты) –
-                // просто уточняем позицию на случай смещения при загрузке рельефа
-                // и сразу начинаем оборот, не дожидаясь анимации перелёта.
+            if (still) {
                 map.jumpTo(target);
-                if (still) { map.fire('still-ready'); return; }
-                startHikeMapOrbit(map, target, orbitRadiusDeg, standalone);
+                map.fire('still-ready');
+            } else if (instant) {
+                // посадка сверху вниз с поворотом, затем оборот
+                map.easeTo({ ...target, duration: 3200, essential: true,
+                    easing: t => 1 - Math.pow(1 - t, 3) });
+                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone));
             } else {
                 map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
                 map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone));

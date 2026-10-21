@@ -1,0 +1,8 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"></head>
+<body style="background:#0e1318">
+<script type="module">
+window.Telegram={WebApp:{initData:''}};
+const realFetch=window.fetch; window.fetch=(u,o)=>String(u).includes('/api/dc-loyalty')?Promise.resolve(new Response(JSON.stringify({url:'https://t.me/yaltahiking_bot?start=dc1_163665735_AbCdEfGhIjKlMnOpQrStUvWxYz01',mode:'live'}),{status:200})):realFetch(u,o);
+const st=await import('/js/state.js'); st.state.userCard={status:'active'}; st.state.user={id:163665735};
+const m=await import('/js/ui/card-qr.js'); window.cq=m; m.openCardQr();
+</script></body></html>
