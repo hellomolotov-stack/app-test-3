@@ -11,7 +11,7 @@ import { log, initPayment, getCardOffer, paymentErrorText } from '../api.js';
 export const SPLIT_NOTE = '<div class="split-note"><img src="assets/split.png" alt="" width="16" height="16">можно частями в Яндекс Сплит</div>';
 
 const CARD_IMG = 'assets/card-front.jpg';
-const TICKET_PRICE = 1500;
+const TICKET_PRICE = 1200;
 const PERMANENT_PRICE = 7500;
 // спецпредложение после хайка (рассылка «новичкам»): бессрочная за 5 500 вместо 7 500
 const OFFER_PRICE = 5500;

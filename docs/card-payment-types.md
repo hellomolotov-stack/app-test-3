@@ -1,11 +1,12 @@
 # Card Payment Types
 
-Updated 2026-10-09. Existing Apps Script project: `Тест приложения клуба`,
-file `Файрбейс.gs`, deployed as version 62 without changing the web-app URL.
+Ticket price updated 2026-10-21 to 1200 RUB. Existing Apps Script project:
+`Тест приложения клуба`, file `Файрбейс.gs`; keep the existing web-app URL.
+Published as Apps Script version 80 on 2026-10-21.
 
 | Request | Server amount | Receipt item |
 | --- | ---: | --- |
-| `ticket` | 1000 | Билет на хайк |
+| `ticket` | 1200 | Билет на хайк |
 | `season` | 5500 | сезонная карта интеллигента – текущий и следующий сезон |
 | `permanent` | 7500 | бессрочная карта интеллигента |
 | `offer` | `CARD_OFFER_PRICE`, currently 5000 | бессрочная карта интеллигента – спецпредложение |
@@ -30,3 +31,8 @@ Tax and payment-object settings were preserved, not reclassified.
 Verification: `tests/card-payments.cjs`, `tests/gift-cards-browser.cjs`,
 `tests/sold-out-card.cjs`, `tests/ticket-recovery.cjs`, `tests/ticket-credit-chat.cjs`.
 No real charge or fiscal receipt issuance was performed by these tests.
+
+The ticket price also appears in `Поп-ап оплаты.gs` (sync fallback), the
+Telegram onboarding message in `Файрбейс.gs`, and source cells
+`popupConfig!B2` and `faq!B4`. `appscript-ticket-price-1200.gs` publishes only
+the current price and FAQ answer, preserving card counters and old payments.

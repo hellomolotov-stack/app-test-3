@@ -7,7 +7,7 @@ function clubPaymentProduct_(params) {
   // Older clients offered a permanent gift for 5500; keep that quoted price.
   const legacyGift = type === 'gift' && !params.gift_card_type;
   const permanent = type === 'permanent' || type === 'offer' || giftType === 'permanent';
-  const amount = type === 'ticket' ? 1500 : type === 'offer' ? CARD_OFFER_PRICE : permanent && !legacyGift ? 7500 : 5500;
+  const amount = type === 'ticket' ? 1200 : type === 'offer' ? CARD_OFFER_PRICE : permanent && !legacyGift ? 7500 : 5500;
   const description = type === 'ticket'
     ? 'Билет на хайк' + (params.hike_date ? ' ' + params.hike_date : '')
     : (type === 'gift' ? 'Подарочная ' : '') + (permanent ? 'бессрочная' : 'сезонная') + ' карта интеллигента' +

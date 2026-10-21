@@ -18,7 +18,7 @@ function payment(type, giftType) {
         card_type: type, gift_card_type: product.giftCardType, amount: product.amount };
 }
 for (const [type, giftType, amount, title] of [
-    ['ticket', undefined, 1000, 'Билет'], ['season', undefined, 5500, 'сезонная'],
+    ['ticket', undefined, 1200, 'Билет'], ['season', undefined, 5500, 'сезонная'],
     ['permanent', undefined, 7500, 'бессрочная'], ['offer', undefined, 5000, 'бессрочная'],
     ['gift', 'season', 5500, 'сезонная'], ['gift', 'permanent', 7500, 'бессрочная'],
 ]) {
@@ -42,7 +42,7 @@ console.log('Card payments passed: ticket, season, permanent, offer, both gifts,
 
 if (process.env.PAYMENT_INIT_READBACK) {
     const initBlock = fs.readFileSync(process.env.PAYMENT_INIT_READBACK, 'utf8');
-    for (const [type, giftType, amount] of [['ticket', '', 1000], ['season', '', 5500], ['permanent', '', 7500],
+    for (const [type, giftType, amount] of [['ticket', '', 1200], ['season', '', 5500], ['permanent', '', 7500],
         ['offer', '', 5000], ['gift', 'season', 5500], ['gift', 'permanent', 7500]]) {
         let pending;
         const server = vm.createContext({ CARD_OFFER_PRICE: 5000, encodeURIComponent, Date, FIREBASE_URL: 'https://test/', FIREBASE_SECRET: 'test',
@@ -65,18 +65,20 @@ if (process.env.PAYMENT_INIT_READBACK) {
 }
 
 const initSource = api.slice(api.indexOf('export async function initPayment'), api.indexOf('// Личное спецпредложение')).replace('export ', '');
-Object.assign(context, { URLSearchParams, AbortController, setTimeout, clearTimeout, log: () => {}, REGISTRATION_API_URL: 'https://script.google.com/test' });
+Object.assign(context, { URLSearchParams, AbortController, setTimeout, clearTimeout, log: () => {}, passCodeFor: () => '', REGISTRATION_API_URL: 'https://script.google.com/test' });
 vm.runInContext(initSource, context);
 (async () => {
     for (const pilot of [false, true]) {
         context.isAdmissionPilot = () => pilot;
-        for (const giftType of ['season', 'permanent']) {
+        for (const [type, giftType] of [['ticket', undefined], ['gift', 'season'], ['gift', 'permanent']]) {
             let sent;
-            context.fetch = async (url, options) => { sent = Object.fromEntries(options.body); return { text: async () => JSON.stringify(payment('gift', giftType)) }; };
-            context.admissionRequest = async (action, body) => { sent = body.payment; return payment('gift', giftType); };
-            const result = await context.initPayment({ userId: '123', cardType: 'gift', giftCardType: giftType });
-            assert.equal(result.gift_card_type, giftType);
-            assert.equal(pilot ? sent.giftCardType : sent.gift_card_type, giftType);
+            context.fetch = async (url, options) => { sent = Object.fromEntries(options.body); return { text: async () => JSON.stringify(payment(type, giftType)) }; };
+            context.admissionRequest = async (action, body) => { sent = body.payment; return payment(type, giftType); };
+            const result = await context.initPayment({ userId: '123', cardType: type, giftCardType: giftType });
+            if (type === 'gift') {
+                assert.equal(result.gift_card_type, giftType);
+                assert.equal(pilot ? sent.giftCardType : sent.gift_card_type, giftType);
+            } else assert.equal(result.amount, 1200);
         }
     }
     console.log('Payment transport passed: gift type forwarded in regular and admission-pilot flows');

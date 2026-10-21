@@ -37,6 +37,12 @@ const fixture = `
             }
             await page.evaluate(()=>openCardSheet());
             assert.match(await page.locator('[data-plan="season"]').textContent(),/действует начиная с текущего сезона плюс следующий/);
+            assert.match(await page.locator('#csTicket').textContent(),/1\s200\s₽/);
+            if (await page.locator('.cs-calc-range').count()) {
+                await page.locator('.cs-calc-range').fill('8');
+                assert.match(await page.locator('.cs-calc-sum').textContent(),/9\s600/);
+                assert.match(await page.locator('.cs-calc-tip').textContent(),/2\s100/);
+            }
             assert.deepEqual(errors,[]);await page.close();
         }
         console.log('Gift cards UI passed at 320/390/900: both choices, prices, payloads, no ticket, season note, no overflow');

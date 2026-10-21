@@ -1,0 +1,5 @@
+[
+  {"file":"Файрбейс.gs","from":"1 500 ₽","to":"1 200 ₽"},
+  {"file":"Файрбейс.gs","from":"type === 'ticket' ? 1500 :","to":"type === 'ticket' ? 1200 :"},
+  {"file":"Поп-ап оплаты.gs","from":"ticketPrice: Number(dataRow[headers.indexOf('ticketPrice')]) || 1500,","to":"ticketPrice: Number(dataRow[headers.indexOf('ticketPrice')]) || 1200,"}
+]
