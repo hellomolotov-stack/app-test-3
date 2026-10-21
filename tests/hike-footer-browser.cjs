@@ -47,6 +47,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmoloto
                 await page.waitForTimeout(450);
                 const chip = await page.locator('.floating-sheet-buttons .spots-counter-chip').boundingBox();
                 const box = await page.locator('.floating-sheet-buttons .box-plate').boundingBox();
+                const badge = page.locator('.box-plate .new-badge');
+                assert.equal(await badge.textContent(), 'Новое');
+                const badgeBox = await badge.boundingBox();
+                assert.ok(badgeBox.x >= box.x && badgeBox.x + badgeBox.width <= box.x + box.width, 'New badge stays inside the plate width');
+                assert.ok(badgeBox.y < box.y && badgeBox.y >= chip.y + chip.height, 'New badge sits on the top edge without touching the participant chip');
                 const swipe = await page.locator('.floating-sheet-buttons .swipe-track').boundingBox();
                 assert.ok(chip.y + chip.height <= box.y, 'Participant chip appears above the hiking box');
                 assert.ok(box.y + box.height <= swipe.y, 'The hiking box stays above registration');

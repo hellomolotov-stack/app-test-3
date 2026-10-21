@@ -5949,9 +5949,10 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .floating-sheet-buttons .report-btn:active { transform: scale(.97); }
 
 /* hiking box от партнёра – плашка как у письма/саммари, тёплый картонный тон (тест) */
-.box-plate { align-items: center; padding: 8px 10px 8px 16px;
+.box-plate { position: relative; align-items: center; padding: 8px 10px 8px 16px;
     background: linear-gradient(rgba(214, 170, 110, .16), rgba(214, 170, 110, .16)), rgba(20, 28, 38, .96); border-color: rgba(214, 170, 110, .45); }
 .box-plate .letter-plate-text b { color: #F3D9B1; white-space: nowrap; font-size: 15px; }
+.box-plate .new-badge { right: 12px; pointer-events: none; }
 .hb-box-thumb { flex: none; display: block; width: 54px; height: 54px; object-fit: contain; border-radius: 0; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3)); }
 .box-plate-img { flex: none; width: 64px; height: 64px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
 .box-plate-btn { flex: none; border: 0; border-radius: 30px; padding: 9px 15px; font: inherit; font-size: 14px; font-weight: 800; color: #000; cursor: pointer;
