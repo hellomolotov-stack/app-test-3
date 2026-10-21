@@ -79,3 +79,6 @@
 - `docs/DIETCAKES_ACCESS_RUNBOOK.md` – регламент доступа к сайту (обязателен).
 - `docs/DIETCAKES_CASHIER_PILOT.md` – кассовый пилот (часть про «пилот» устарела: сейчас рабочий режим).
 - `~/Documents/ХАЙКИНГ КЛУБ/outputs/dietcakes-checkout-pilot/` – материалы Codex по плагину 0.1.0–0.2.0.
+
+## Открытая задача
+- Удержание запасов в корзине/при оформлении: `docs/DIETCAKES_STOCK_HOLD.md` (выбран вариант 3).
