@@ -54,6 +54,9 @@
 **Как выпускать правки конструктора:** править `assets/dc/hiking-box.js` (на Vercel – предпросмотр), затем `integrations/dietcakes-checkout/sync-frontend.sh`, поднять версию плагина, собрать zip и обновить плагин в админке (Chrome, по регламенту). Собирать правки пачкой.
 Также убрана повторная строка «Скидка по карте интеллигента» в корзине (остаётся одна строка скидки; при сбое расчёта – предупреждение).
 
+## 1в. Исправление плашки самовывоза (0.4.1)
+`discount_state()` теперь учитывает `card_active()` вместе с прежним купоном. Ранее PHP уже снимал дополнительные 3% при карте, но визуальный фрагмент проверял только купон `intelligent`, поэтому на кнопке самовывоза оставалась неверная плашка. Расчёт скидок не менялся. Локально воспроизведено падение новой проверки до исправления; после правки 43 PHP и 23 DOM проверки пройдены. ZIP: `integrations/dietcakes-checkout/hi-club-checkout-0.4.1.zip`.
+
 ## 2. Где что настроено (без значений секретов)
 - **Vercel (app-test-3), production env:** `DC_LOYALTY_MODE=live`, `DC_CASHIER_IDS=163665735,7845375334`, `DC_CARD_SIGNING_KEY`, `DC_CASHIER_BOT_KEY`, `DC_STORE_KEY`, `DC_ONLINE_ENABLED=1`, `CRON_SECRET`, `TELEGRAM_BOT_TOKEN`. Необязательные: `DC_OWNER_IDS`, `DC_ORDER_NOTIFY_IDS`.
 - **Сервер бота** (`ssh -i ~/.ssh/hiking_bot_ed25519 root@64.188.117.132`): `/opt/hiking_bot/dc-cashier-pilot.env` – `DC_CASHIER_ENABLED=live`, `DC_LOYALTY_MODE=live`, `DC_CASHIER_IDS`, `DC_LOYALTY_URL`, `DC_CASHIER_BOT_KEY`. Режимы бота и Vercel должны совпадать. Перезапускать только `hiking_bot.service`. Бэкапы модуля: `dc_cashier.py.before-*`.

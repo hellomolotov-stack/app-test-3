@@ -19,11 +19,14 @@ $quote10 = function ($b) { return $b['action'] === 'quote' ? array('code' => 200
 loyalty_case(false, $CARD); $GLOBALS['api_reply'] = $quote10; WC()->cart->recalculate();
 check('Loyalty off: no API calls', count($GLOBALS['api_calls']) === 0);
 check('Loyalty off: club pickup without coupon stays 970', local_total() === 970.0);
+check('Loyalty off: pickup badge remains eligible', strpos(HI_Club_Checkout::discount_state(), 'data-card="0"') !== false);
 
 // Включено, карта есть, самовывоз: 10% от 1000, 3% за самовывоз снимается
 loyalty_case(true, $CARD); $GLOBALS['api_reply'] = $quote10; WC()->cart->recalculate();
 check('Card fee added', count(fees_named(HI_Club_Checkout::CARD_FEE)) === 1);
 check('Card pickup total 900 (no extra 3%)', local_total() === 900.0);
+check('Signed card without legacy coupon suppresses pickup badge', strpos(HI_Club_Checkout::discount_state(), 'data-card="1"') !== false);
+check('Checkout fragment preserves card badge suppression', strpos(HI_Club_Checkout::fragments(array())['#hi-club-discount-state'], 'data-card="1"') !== false);
 check('Quote sends store key, card and kopecks', $GLOBALS['api_calls'][0]['headers']['x-dc-store-key'] === $KEY && $GLOBALS['api_calls'][0]['body']['card'] === $CARD && $GLOBALS['api_calls'][0]['body']['gross'] === 100000);
 WC()->cart->recalculate(); WC()->cart->recalculate();
 check('Repeated recalculation uses cached quote (1 API call)', count($GLOBALS['api_calls']) === 1 && local_total() === 900.0);

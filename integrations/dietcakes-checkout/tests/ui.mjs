@@ -46,7 +46,7 @@ check('Returning to native pickup restores slot inputs', !get('billing_eco_deliv
 get('hi-club-discount-state').setAttribute('data-card','1');
 w.jQuery(doc.body).trigger('updated_checkout');
 await new Promise(resolve=>setTimeout(resolve,10));
-check('Applying coupon hides badge after native checkout refresh', !doc.body.classList.contains('hi-club-show-pickup-discount'));
+check('Card or legacy coupon hides badge after native checkout refresh', !doc.body.classList.contains('hi-club-show-pickup-discount'));
 get('hi-club-discount-state').setAttribute('data-card','0');
 
 get('hi-club-hike-button').click();

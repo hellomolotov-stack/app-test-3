@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.4.0
+ * Version: 0.4.1
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -344,7 +344,7 @@ final class HI_Club_Checkout {
 
     public static function discount_state() {
         return '<span id="hi-club-discount-state" hidden data-card="'
-            . (WC()->cart && WC()->cart->has_discount(self::COUPON) ? '1' : '0') . '"></span>';
+            . (self::card_active() || (WC()->cart && WC()->cart->has_discount(self::COUPON)) ? '1' : '0') . '"></span>';
     }
 
     public static function fragments($fragments) {
@@ -595,8 +595,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.0', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.0');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.1', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.1');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.
