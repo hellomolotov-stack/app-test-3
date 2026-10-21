@@ -5952,10 +5952,10 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 }
 
 /* hiking box от партнёра – плашка как у письма/саммари, тёплый картонный тон (тест) */
-.box-plate { align-items: center; padding: 6px 8px 6px 10px;
+.box-plate { align-items: center; padding: 8px 10px 8px 16px;
     background: linear-gradient(rgba(214, 170, 110, .16), rgba(214, 170, 110, .16)), rgba(20, 28, 38, .96); border-color: rgba(214, 170, 110, .45); }
 .box-plate .letter-plate-text b { color: #F3D9B1; white-space: nowrap; font-size: 15px; }
-.hb-box-thumb { flex: none; display: block; width: 54px; height: 54px; object-fit: contain; border-radius: 11px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3)); }
+.hb-box-thumb { flex: none; display: block; width: 54px; height: 54px; object-fit: contain; border-radius: 0; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3)); }
 .box-plate-img { flex: none; width: 64px; height: 64px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
 .box-plate-btn { flex: none; border: 0; border-radius: 30px; padding: 9px 15px; font: inherit; font-size: 14px; font-weight: 800; color: #000; cursor: pointer;
     background: linear-gradient(180deg, #e8ff4a 0%, #c9ec00 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 4px 12px rgba(0,0,0,.3); }
@@ -6268,8 +6268,9 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-pop-x { position: absolute; top: 8px; right: 8px; width: 28px; height: 28px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .1); color: #fff; font-size: 13px; cursor: pointer; }
 
 /* хайкинг бокс: строка «возьми хайкинг бокс» в «моих записях» и в билете после записи */
-.hb-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 12px 6px 6px; border-radius: 16px; cursor: pointer; font: inherit; text-align: left; color: #fff;
+.hb-row { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 12px 8px 14px; border-radius: 16px; cursor: pointer; font: inherit; text-align: left; color: #fff;
     background: linear-gradient(90deg, rgba(214, 170, 110, .22), rgba(214, 170, 110, .06)); border: 1px solid rgba(214, 170, 110, .45); -webkit-tap-highlight-color: transparent; }
+.hb-row .hb-box-thumb.is-sm { width: 48px; height: 48px; }
 .hb-row-pics { position: relative; flex: none; width: 50px; height: 42px; }
 .hb-row-pics img { position: absolute; object-fit: contain; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .5)); }
 .hb-row-pics img:nth-child(1) { width: 40px; left: 0; top: 4px; transform: rotate(-10deg); }
@@ -6284,6 +6285,7 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .box-plate { gap: 8px; }
 .box-plate-pics { width: 60px; transform: scale(.88); transform-origin: left center; }
 .box-plate .box-plate-btn { padding: 9px 12px; }
+@media (max-width: 360px) { .box-plate .box-plate-btn { padding: 9px 8px; font-size: 13px; } }
 
 /* хайкинг бокс: мини-бенто на плашке и в строках «возьми хайкинг бокс» */
 .hb-bento { position: relative; flex: none; width: 66px; height: 62px; display: block; }

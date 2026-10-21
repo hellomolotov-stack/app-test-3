@@ -126,11 +126,8 @@ const CARD_DISCOUNT = 0.10; // скидка владельцам карты ин
 const rub = n => `${n.toLocaleString('ru-RU')} ₽`;
 const cardPrice = n => Math.round(n * (1 - CARD_DISCOUNT));
 
-// мини-бенто для плашки и строк: голубой лоток – сэндвич в большой ячейке, печенье и палочки в маленьких
-const bentoHtml = (cls = '') => `<span class="hb-bento ${cls}"><span class="hb-bento-tray">`
-    + `<span class="hb-bento-cell is-big"><img src="assets/box/cut/pesto.png" alt=""></span>`
-    + `<span class="hb-bento-cell"><img src="assets/box/cut/cookie.png" alt=""></span>`
-    + `<span class="hb-bento-cell"><img src="assets/box/cut/sticks.png" alt=""></span></span></span>`;
+// Одна коричневая коробка для всех приглашений: над записью, в моих записях и в билете.
+const boxThumbHtml = (small = false) => `<img class="hb-box-thumb${small ? ' is-sm' : ''}" src="assets/box/hiking-box-top-plain-v1.webp" width="${small ? 48 : 54}" height="${small ? 48 : 54}" alt="" decoding="async">`;
 
 function collageHtml(b) {
     return b.items.map(([n, st]) => `<img class="hc-p" data-p="${n}" src="assets/box/cut/${n}.png" style="${st}" alt="${PRODUCTS[n]?.name || ''}">`).join('')
@@ -152,7 +149,7 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     const row = document.createElement('div');
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
-        <img class="hb-box-thumb" src="assets/box/hiking-box-top-plain-v1.webp" width="66" height="62" alt="" decoding="async">
+        ${boxThumbHtml()}
         <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на весь хайк в одной коробке</small></span>
         <button type="button" class="box-plate-btn">что внутри</button></div>`;
     const plate = row.querySelector('.box-plate');
@@ -396,7 +393,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
 
 // 4. строка-приглашение там, где человек уже записан: «мои записи» на главной и окно «записали тебя»
 export function hikingBoxRowHtml(cls = '') {
-    return `<button type="button" class="hb-row ${cls}">${bentoHtml('is-sm')}`
+    return `<button type="button" class="hb-row ${cls}">${boxThumbHtml(true)}`
         + `<span class="hb-row-t"><b>возьми хайкинг бокс</b><small>еда и вода на весь хайк</small></span><span class="hb-row-go">›</span></button>`;
 }
 export function bindHikingBoxRow(el, hikeDate, source, before) {
