@@ -16,7 +16,9 @@ function fixture(statuses = []) {
     const context = vm.createContext({
         Date, Promise, JSON, console,
         setTimeout: resolve => { resolve(); },
-        ticketWatch: null, TICKET_SUPPORT_LINK: 'https://t.me/hellointelligent',
+        ticketWatch: null, sheetActHike: null, TICKET_SUPPORT_LINK: 'https://t.me/hellointelligent',
+        updateTicketPaymentControls() {}, updateFloatingSheetButtons() {}, watchTicketReturn() {},
+        window: { dispatchEvent() {} }, CustomEvent: class {},
         state: { user: { id: 123 }, hikesWithTitle: [{ date, title: 'Test hike' }], hikeBookingStatus: {} },
         localStorage: {
             getItem: key => storage.get(key) || null,
@@ -24,9 +26,11 @@ function fixture(statuses = []) {
         },
         document: {
             querySelector: () => null,
+            querySelectorAll: () => [],
             getElementById: id => elements.get(id) || null,
             body: { appendChild: overlay => overlays.push(overlay) },
             createElement: () => ({
+                dataset: {},
                 removed: false,
                 remove() { this.removed = true; },
                 set innerHTML(html) {
@@ -80,7 +84,7 @@ function fixture(statuses = []) {
     assert.equal(anonymous.reads, 0);
 
     const clicked = fixture([{}]);
-    clicked.context.offerPendingTicketRecovery();
+    clicked.context.offerPendingTicketRecovery({ force: true });
     const button = clicked.elements.get('ticketPaidYesBtn');
     assert.ok(clicked.overlays[0].html.includes('проверить оплату'));
     const checking = button.click();
@@ -94,9 +98,23 @@ function fixture(statuses = []) {
     assert.ok(clicked.overlays[0].removed);
 
     const clickedPaid = fixture([{ [date]: true }]);
-    clickedPaid.context.offerPendingTicketRecovery();
+    clickedPaid.context.offerPendingTicketRecovery({ force: true });
     await clickedPaid.elements.get('ticketPaidYesBtn').click();
     assert.equal(clickedPaid.successes.length, 1);
     assert.equal(clickedPaid.writes.length, 0);
+
+    const concurrent = fixture([{}, { [date]: true }]);
+    const first = concurrent.context.confirmTicketPaymentReturn(date);
+    const second = concurrent.context.confirmTicketPaymentReturn(date);
+    assert.equal(first, second, 'Two return signals share one server verification');
+    await Promise.all([first, second]);
+    await concurrent.context.confirmTicketPaymentReturn(date);
+    assert.equal(concurrent.successes.length, 1, 'Success appears once per confirmed payment');
+
+    const otherUser = fixture([{ [date]: true }]);
+    otherUser.storage.set('pending_reg_celebration', JSON.stringify({ type: 'ticket', hikeDate: date, userId: 999, ts: Date.now() }));
+    otherUser.context.offerPendingTicketRecovery();
+    assert.equal(otherUser.overlays.length, 0, 'Ignore another account pending purchase');
+    assert.equal(otherUser.reads, 0);
     console.log('Ticket recovery security regression tests passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
