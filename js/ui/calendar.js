@@ -2327,7 +2327,7 @@ export function showBottomSheet(index) {
                             const initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
                             placeholder.textContent = initial;
                             placeholder.dataset.userId = p.userId;
-                            this.parentNode.replaceChild(placeholder, this);
+                            this.parentNode?.replaceChild(placeholder, this);
                         };
                         avatarsEl.appendChild(img);
                     }
@@ -2888,8 +2888,7 @@ function updateFloatingSheetButtons() {
     container.innerHTML = '';
     container.classList.remove('has-plates');
 
-    // ТЕСТ (14.10.2026): хайкинг бокс от партнёра – плашка над слайдером «иду» и на прошедших хайках
-    // (рядом с письмом и саммари), пока только для @hellointelligent
+    // Бокс предлагаем только на ближайшем актуальном хайке с открытой записью.
     if (!isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && hikingBoxEnabled(hike.date)) {
         mountHikingBoxPlate(container, hike, isGuest);
     }

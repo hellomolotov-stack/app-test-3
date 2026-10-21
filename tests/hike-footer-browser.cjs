@@ -15,8 +15,9 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmoloto
         window.firebase={initializeApp(){},database:()=>({ref:path=>({once:async()=>({val:()=>path.startsWith('hikeParticipants/')?people:null}),on:(event,fn)=>fn({val:()=>people}),off(){}})})};
         initFirebase();state.user=null;state.userCard={status:'inactive'};
         state.hikesWithTitle=[{date,title:'тестовый хайк',tags:['12 км'],image:'/assets/box/bg-rock.jpg',features:'описание маршрута '.repeat(180),leaders:[]}];
-        state.hikesList=state.hikesWithTitle;state.hikesData={[date]:state.hikesWithTitle[0]};
-        window.footerPreview={render(booked=false){state.hikeBookingStatus={0:booked};showBottomSheet(0);}};
+        state.hikesWithTitle.push({...state.hikesWithTitle[0],date:'2000-01-10'}, {...state.hikesWithTitle[0],date:'2099-01-17'});
+        state.hikesList=state.hikesWithTitle;state.hikesData=Object.fromEntries(state.hikesWithTitle.map(h=>[h.date,h]));
+        window.footerPreview={render(booked=false,index=0){state.hikeBookingStatus={[index]:booked};showBottomSheet(index);},setUser(id){state.user={id};}};
         footerPreview.render();`
     } });
     const browser = await chromium.launch({ channel: 'chrome', headless: true });
@@ -54,9 +55,18 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmoloto
                 assert.equal(await page.locator('.box-plate').evaluate(el => el.scrollWidth > el.clientWidth), false);
                 await page.screenshot({ path: `/private/tmp/hike-footer-${width}-${booked ? 'booked' : 'guest'}.png` });
             }
+            for (const id of [7845375334, 163665735]) {
+                await page.evaluate(id => footerPreview.setUser(id), id);
+                for (const index of [1, 2]) {
+                    await page.evaluate(index => footerPreview.render(false, index), index);
+                    assert.equal(await page.locator('.box-plate').count(), 0, 'No box on past or later hikes, including administrators');
+                }
+                await page.evaluate(() => footerPreview.render(false, 0));
+                assert.equal(await page.locator('.box-plate').count(), 1, 'Box stays on the current hike');
+            }
             assert.deepEqual(errors, []);
             await page.close();
         }
-        console.log('Hike footer passed at 320/390/600: participants above box above swipe, no common backdrop, image loaded, no overflow, booked and unbooked');
+        console.log('Hike footer passed at 320/390/600: current hike only, no past/later boxes for admins, layout and image intact, booked and unbooked');
     } finally { await browser.close(); }
 })().catch(error => { console.error(error); process.exitCode = 1; });

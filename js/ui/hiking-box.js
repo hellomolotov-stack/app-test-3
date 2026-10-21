@@ -136,12 +136,19 @@ function collageHtml(b) {
         + b.arrows.map(d => `<path marker-end="url(#hcHd)" d="${d}" />`).join('') + '</svg>';
 }
 
-export function hikingBoxEnabled(date) {
-    // тестовые аккаунты – на любом хайке, в том числе прошедшем;
-    // остальным – только на предстоящих: плашка появится у всех с выходом нового хайка
-    if (HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''))) return true;
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' });
-    return /^\d{4}-\d{2}-\d{2}$/.test(String(date || '')) && String(date) >= today;
+export function hikingBoxEnabled(date, now = new Date()) {
+    const today = now.toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' });
+    const current = (state.hikesWithTitle || []).filter(hike => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(hike.date || '') || hike.date < today) return false;
+        if (!hike.title?.trim() || hike.cancelled === true || hike.book_club === true
+            || hike.city === true || String(hike.city).toLowerCase() === 'yes' || /🌧/.test(hike.emoji || '')) return false;
+        const time = String(hike.start_time || '').match(/^(\d{1,2})[:.](\d{2})/);
+        const start = time && Number(time[1]) < 24 && Number(time[2]) < 60
+            ? new Date(`${hike.date}T${time[1].padStart(2, '0')}:${time[2]}:00+03:00`).getTime() : Infinity;
+        const evening = new Date(`${hike.date}T20:00:00+03:00`).getTime();
+        return now.getTime() < Math.min(start + 60 * 60 * 1000, evening);
+    }).sort((a, b) => a.date.localeCompare(b.date))[0];
+    return !!current && current.date === date;
 }
 
 // плашка над слайдером «иду» (контейнер .floating-sheet-buttons)
