@@ -29,7 +29,7 @@ const CSS = `
 .zp-x { position: absolute; top: 0; right: 16px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, .1); color: #fff; font-size: 14px; cursor: pointer; }
 .zp-h { margin: 6px 0 0; text-align: center; font-size: 22px; font-weight: 800; }
 .zp-sub { margin: 6px auto 16px; max-width: 320px; text-align: center; font-size: 13.5px; line-height: 1.45; color: rgba(255, 255, 255, .62); }
-.zp-local { margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: var(--yellow, #d9fd19); color: #1d2200; font-size: 13.5px; line-height: 1.45; }
+.zp-local { margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: rgba(255, 255, 255, .04); border: 1.5px dashed rgba(255, 255, 255, .28); color: rgba(255, 255, 255, .85); font-size: 13.5px; line-height: 1.45; }
 .zp-local b { font-weight: 800; }
 .zp-facts { display: flex; gap: 8px; margin-bottom: 20px; }
 .zp-facts div { flex: 1; padding: 9px 6px; border-radius: 14px; background: rgba(255, 255, 255, .06); text-align: center; font-size: 12px; line-height: 1.35; color: rgba(255, 255, 255, .6); }
@@ -76,6 +76,13 @@ export function openZapovednikGuide(source = 'меню') {
             </div>
         </div>`;
     const o = overlay;
+    // высота – как у шторки хайка: не выше системных кнопок Telegram (верхний отступ + запас)
+    const tgw = window.Telegram?.WebApp;
+    const topInset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    const topGap = topInset ? topInset + 14 : 40;
+    const zsheet = o.querySelector('.zp-sheet');
+    zsheet.style.maxHeight = `calc(100vh - ${topGap}px)`;
+    zsheet.style.maxHeight = `calc(100dvh - ${topGap}px)`;
     const previousFocus = document.activeElement;
     const previousOverflow = document.body.style.overflow;
     const background = [...document.body.children].filter(el => el !== o && el instanceof HTMLElement && !['SCRIPT', 'STYLE'].includes(el.tagName));
