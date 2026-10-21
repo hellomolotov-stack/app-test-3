@@ -6312,22 +6312,6 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .cs-buy-season { margin-top: 8px; background: rgba(255, 255, 255, .1) !important; color: #fff !important; border: 1px solid rgba(255, 255, 255, .22) !important; box-shadow: none !important; }
 .cs-overlay.is-city .cs-buy-season { background: rgba(65, 181, 237, .12) !important; border-color: rgba(65, 181, 237, .4) !important; }
 
-/* шторка карты: калькулятор выгоды */
-.cs-calc { margin: 0 4px 18px; padding: 16px 16px 14px; border-radius: 20px; background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); }
-.cs-calc-h { font-size: 16px; font-weight: 700; margin-bottom: 46px; }
-.cs-calc-sl { position: relative; height: 34px; }
-.cs-calc-tip { position: absolute; bottom: 38px; transform: translateX(-50%); white-space: nowrap; padding: 6px 11px; border-radius: 12px; font-size: 13.5px; font-weight: 700;
-    background: rgba(255, 255, 255, .14); color: #fff; transition: background .2s, color .2s; pointer-events: none; }
-.cs-calc-tip::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; transform: translateX(-50%) rotate(45deg); background: inherit; }
-.cs-calc-tip.is-ok { background: var(--yellow); color: #111; }
-.cs-calc-track { position: absolute; left: 0; right: 0; top: 13px; height: 8px; border-radius: 4px; background: rgba(255, 255, 255, .1); overflow: hidden; }
-.cs-calc-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, rgba(255,255,255,.35) 0, rgba(255,255,255,.35) var(--be, 100%), var(--yellow) var(--be, 100%)); }
-.cs-calc-thumb { position: absolute; top: 5px; width: 24px; height: 24px; margin-left: -12px; border-radius: 50%; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.4); pointer-events: none; }
-.cs-calc-range { position: absolute; inset: 0; width: 100%; margin: 0; opacity: 0; cursor: pointer; touch-action: pan-y; }
-.cs-calc-lbl { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; color: rgba(255, 255, 255, .45); }
-.cs-calc-sum { margin-top: 12px; text-align: center; font-size: 13px; color: rgba(255, 255, 255, .75); }
-.cs-calc-sum b { color: #fff; }
-
 /* хайкинг бокс: подпись с курсивом, плашка цен на всю ширину, «настроить свой бокс» не обрезана */
 .hb-sub em { display: block; margin-top: 4px; font-style: italic; color: rgba(255, 255, 255, .55); }
 .hb-scroll > .hb-price { max-width: none; }

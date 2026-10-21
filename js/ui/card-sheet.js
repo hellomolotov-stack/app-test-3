@@ -1,4 +1,4 @@
-// js/ui/card-sheet.js – шторка «карта интеллигента»: карта крутится в 3D, что внутри, окупаемость,
+// js/ui/card-sheet.js – шторка «карта интеллигента»: карта крутится в 3D, что внутри,
 // партнёры, клуб в цифрах и выбор карты. Открывается кнопкой «узнать» на главной.
 import { requireAdmission } from './admission.js';
 import { isAdmissionPilot } from '../admission.js';
@@ -71,38 +71,6 @@ function wireTilt(stage, card) {
 }
 
 // gift: true – после оплаты выбранной карты дарителю приходит ссылка-подарок
-// калькулятор выгоды: ползунок хайков, над бегунком – экономия против билетов; выгода начинается с окупаемости
-function wireCalc(el, cardPrice) {
-    if (!el) return;
-    const range = el.querySelector('.cs-calc-range');
-    const tip = el.querySelector('.cs-calc-tip');
-    const thumb = el.querySelector('.cs-calc-thumb');
-    const fill = el.querySelector('.cs-calc-fill');
-    const sum = el.querySelector('.cs-calc-sum');
-    const be = Math.ceil(cardPrice / TICKET_PRICE);                 // с какого хайка карта окупается
-    const pct = n => (n - 1) / 19 * 100;
-    const word = n => (n % 10 === 1 && n % 100 !== 11 ? 'хайк' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'хайка' : 'хайков');
-    let logged = false;
-    const upd = () => {
-        const n = Number(range.value);
-        const save = n * TICKET_PRICE - cardPrice;
-        const p = pct(n);
-        thumb.style.left = p + '%';
-        tip.style.left = Math.min(Math.max(p, 16), 84) + '%';
-        fill.style.width = p + '%';
-        fill.style.setProperty('--be', (p ? Math.min(100, pct(be) / p * 100) : 100) + '%');
-        tip.classList.toggle('is-ok', save >= 0);
-        tip.textContent = save > 0 ? `экономия ${rub(save)}` : save === 0 ? 'карта окупилась 🎉' : `ещё ${be - n} ${word(be - n)} до выгоды`;
-        sum.innerHTML = `<b>${n} ${word(n)}</b> · по билетам ${rub(n * TICKET_PRICE)} · с картой ${rub(cardPrice)}`;
-    };
-    range.addEventListener('input', () => {
-        upd();
-        if (!logged) { logged = true; log('карта: двигал калькулятор', true, state.user); }
-    });
-    range.addEventListener('change', () => haptic());
-    upd();
-}
-
 export function openCardSheet({ source = 'главная', hikeDate = '', hikeTitle = '', gift = false, allowTicket = true, cityEvent = false } = {}) {
     let offerTimer = null;
     haptic();
@@ -136,7 +104,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 ${cityHtml}
                 <div class="cs-hero${ev ? ' is-under-city' : ''}">
                     <div class="cs-stage"><div class="cs-card"><img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции"></div></div>
-                    <h2>${gift ? 'подари новый опыт' : ev ? 'карта интеллигента' : 'стань интеллигентом'}</h2>
+                    <h2>${gift ? 'подари новый опыт' : ev ? 'карта интеллигента' : 'Интеллигентное окружение'}</h2>
                     <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
                     <p>${gift ? 'подари другу то, что есть у тебя: все хайки сезона, закрытые события и людей, с которыми хочется идти дальше' : 'карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше'}</p>
                     ${membersHtml()}
@@ -163,19 +131,6 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     <div><i>3</i><span>друг открывает её и видит, что карта от тебя</span></div>
                 </div>
                 ` : ''}
-                ${gift ? '' : `
-                <div class="cs-sec">посчитай выгоду</div>
-                <div class="cs-calc">
-                    <div class="cs-calc-h">сколько хайков пройдёшь с нами?</div>
-                    <div class="cs-calc-sl">
-                        <div class="cs-calc-tip"></div>
-                        <div class="cs-calc-track"><div class="cs-calc-fill"></div></div>
-                        <div class="cs-calc-thumb"></div>
-                        <input type="range" min="1" max="20" step="1" value="8" class="cs-calc-range" aria-label="сколько хайков за сезон">
-                    </div>
-                    <div class="cs-calc-lbl"><span>1 хайк</span><span>20 хайков</span></div>
-                    <div class="cs-calc-sum"></div>
-                </div>`}
                 <div class="cs-sec">выбери карту</div>
                 <div class="cs-plans">
                     <button type="button" class="cs-plan is-on" data-plan="permanent">
@@ -224,8 +179,6 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
 
     // свайп вниз – общий для всех шторок (sheet-drag.js), тап по ручке тоже закрывает
     overlay.querySelector('.cs-grab').addEventListener('click', close);
-
-    wireCalc(overlay.querySelector('.cs-calc'), permanent);
 
     let plan = 'permanent';
     let selectedPrice = permanent;
