@@ -3183,7 +3183,6 @@ function updateFloatingSheetButtons() {
             container.insertBefore(sumRow, container.firstChild);
         }
         container.style.pointerEvents = hasReportLink(hike) || hasLetterLink(hike) || summary ? 'auto' : 'none';
-        // письмо и саммари лежат на размытой подложке – иначе сквозь щели между ними читается текст шторки
         if (hasLetterLink(hike) || summary) container.classList.add('has-plates');
         return;
     }
@@ -3216,7 +3215,7 @@ function updateFloatingSheetButtons() {
                 : '⏳ места закончились';
         }
         chipRow.appendChild(chip);
-        container.appendChild(chipRow);
+        container.insertBefore(chipRow, container.firstChild);
     }
 
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
