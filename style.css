@@ -6381,3 +6381,12 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 /* шторка карты: отдельная строка о том, на что идут деньги от карт */
 .cs-why { margin: 18px 0 2px; padding: 12px 14px; border-radius: 16px; background: rgba(214, 170, 110, .1); border: 1px solid rgba(214, 170, 110, .3);
     font-size: 13.5px; line-height: 1.45; color: rgba(255, 255, 255, .78); text-align: center; }
+
+/* приписка «для Валерии» – от руки, справа под «бокс», без рамки и фона; подзаголовок ближе */
+.hb-scroll > .hb-head { width: fit-content; max-width: calc(100% - 48px); margin: 0 auto; }
+.hb-head .hb-title { margin-bottom: 0; }
+.hb-head .hb-note { display: block; width: auto; max-width: none; margin: -2px 0 0; padding: 0 6px 0 0; background: none; border: 0; border-radius: 0; box-shadow: none;
+    text-align: right; transform: rotate(-4deg); transform-origin: right center; font-family: Caveat, cursive; font-size: 24px; font-weight: 700; line-height: 1; color: #F3D9B1; }
+.hb-scroll > .hb-head + .hb-sub { margin-top: 0; }
+.hb-scroll > .hb-head + .hb-sub { margin-top: 12px; }
+.hb-head .hb-note { margin-top: -4px; }

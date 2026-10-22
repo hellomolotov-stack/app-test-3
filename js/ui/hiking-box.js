@@ -177,12 +177,11 @@ function rowTexts(ctx, hike, order) {
     return ['возьми хайкинг бокс', route ? `ты идёшь на ${route} – привезём на старт` : 'привезём прямо на старт хайка'];
 }
 
-// записка под заголовком шторки: «для Валерии · хайк на Ат-Баш, 25.10» (без имени – только про хайк)
+// приписка от руки справа под словом «бокс»: «для Валерии» (без имени – «хайк на Ат-Баш · 25.10»)
 function noteHtml(hike) {
     const who = forWhom(state.user?.first_name), route = routeOf(hike), when = ddmm(hike?.date);
-    const line = [route ? `хайк на ${route}` : '', when].filter(Boolean).join(', ');
-    if (!who && !line) return '';
-    return `<div class="hb-note">${who ? `<b>для ${who}</b>` : ''}${line ? `<span>${line}</span>` : ''}</div>`;
+    const text = who ? `для ${who}` : [route ? `хайк на ${route}` : '', when].filter(Boolean).join(' · ');
+    return text ? `<div class="hb-note">${text}</div>` : '';
 }
 
 function collageHtml(b) {
@@ -256,8 +255,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <div class="cs-grab hb-grab"></div>
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
-                <div class="hb-title">хайкинг бокс</div>
-                ${noteHtml(hike)}
+                <div class="hb-head"><div class="hb-title">хайкинг бокс</div>${noteHtml(hike)}</div>
                 <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой</div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
                     `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}</button>`).join('')}</div>
