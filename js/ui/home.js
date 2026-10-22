@@ -191,7 +191,7 @@ export function renderUserBookings(container) {
                     <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
                 </div>
                 ${cells ? `<div class="bk-stub">${cells}</div>` : ''}
-                ${canStory && hikingBoxEnabled(booking.date) ? `<div class="bk-box" data-box-date="${booking.date}">${hikingBoxRowHtml()}</div>` : ''}
+                ${canStory && hikingBoxEnabled(booking.date) ? `<div class="bk-box" data-box-date="${booking.date}">${hikingBoxRowHtml('', booking.date)}</div>` : ''}
             </div>
         `;
     });

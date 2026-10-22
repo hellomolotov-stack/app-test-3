@@ -105,3 +105,12 @@ test('cancel participation: customer gets choice, cancel only before deadline, s
  await api.request({actor:'0',mode:'live',action:'hike_order',order:{number:'7',status:'cancelled',date:future,items:[],total:50000,tg:ref}},{'x-dc-store-key':sk});
  assert.match(msgs.at(-1).t,/отменён/);
 });
+test('box_status: only my paid, non-cancelled box orders per date',async()=>{
+ const db={'2030-01-10':{'1':{number:'1',status:'paid',tg:'42',total:50000},'2':{number:'2',status:'paid',tg:'7',total:1},'3':{number:'3',status:'cancelled',tg:'42',total:1}},'2030-01-11':{'4':{number:'4',status:'paid',tg:'42',total:1,request:'cancel'}}};
+ const api=setup({DC_LOYALTY_MODE:'live'}); api.deps.verifyInitData=d=>d==='me'?{id:42}:null;
+ api.deps.hikeOrders={async read(d){return db[d]||{}},async save(){}};
+ const app=b=>api.request({...b,mode:'live'},{});
+ assert.equal((await app({action:'box_status',initData:'bad',dates:['2030-01-10']})).code,401);
+ const r=(await app({action:'box_status',initData:'me',dates:['2030-01-10','2030-01-11','bad']})).body;
+ assert.deepEqual(Object.keys(r.orders),['2030-01-10']); assert.equal(r.orders['2030-01-10'].number,'1');
+});

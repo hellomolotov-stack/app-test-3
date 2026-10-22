@@ -129,6 +129,62 @@ const cardPrice = n => Math.round(n * (1 - CARD_DISCOUNT));
 // Одна коричневая коробка для всех приглашений: над записью, в моих записях и в билете.
 const boxThumbHtml = (small = false) => `<img class="hb-box-thumb${small ? ' is-sm' : ''}" src="assets/box/hiking-box-top-plain-v1.webp" width="${small ? 48 : 54}" height="${small ? 48 : 54}" alt="" decoding="async">`;
 
+// ---- тексты плашки по месту ----
+const routeOf = hike => String(hike?.title || '').replace(/^(хайк|маршрут|тропа)\s+/i, '').replace(/^на\s+/i, '').trim();
+const ddmm = date => /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? `${date.slice(8, 10)}.${date.slice(5, 7)}` : '';
+// «для Макса»: имя в родительном падеже (как на странице магазина); если имя не распознано – без имени
+function forWhom(name) {
+    const n = String(name || '').trim().split(/\s+/)[0];
+    if (!/^[А-ЯЁ][а-яё]{1,20}$/.test(n)) return '';
+    const l = n.slice(-1), l2 = n.slice(-2), base = n.slice(0, -1);
+    if (l2 === 'ия') return n.slice(0, -1) + 'и';
+    if (l === 'а') return base + (/[гкхжшчщ]$/.test(base) ? 'и' : 'ы');
+    if (l === 'я') return base + 'и';
+    if (l === 'й' || l === 'ь') return base + 'я';
+    if (/[бвгджзклмнпрстфхцчшщ]/.test(l)) return n + 'а';
+    return '';
+}
+// статус бокса у человека: есть ли оплаченный заказ на дату (один запрос на пачку дат, кеш 60 с)
+const boxCache = {}; let boxQueue = {}, boxTimer = null; // boxQueue: дата → функции, ждущие ответа
+function boxOrderFor(date) {
+    const hit = boxCache[date];
+    if (hit && Date.now() - hit.at < 60000) return hit.p;
+    const initData = window.Telegram?.WebApp?.initData;
+    const p = new Promise(resolve => {
+        if (!initData || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return resolve(null);
+        (boxQueue[date] ||= []).push(resolve);
+        clearTimeout(boxTimer);
+        boxTimer = setTimeout(() => {
+            const queue = boxQueue; boxQueue = {};
+            const dates = Object.keys(queue), done = orders => dates.forEach(d => queue[d].forEach(fn => fn(orders?.[d] || null)));
+            fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'box_status', initData, dates }) })
+                .then(r => r.ok ? r.json() : null).then(b => done(b?.orders)).catch(() => done(null));
+        }, 60);
+    });
+    boxCache[date] = { at: Date.now(), p };
+    return p;
+}
+// заголовок и подпись строки: «мои записи» (ctx = 'mine') и окно «записали тебя» (ctx = 'ticket'); order – оплаченный заказ или null
+function rowTexts(ctx, hike, order) {
+    const route = routeOf(hike), when = ddmm(hike?.date), member = state.userCard?.status === 'active';
+    if (order) {
+        const tail = order.pickup ? 'заберёшь сам в магазине' : 'получишь на старте';
+        return ctx === 'ticket'
+            ? [`бокс на ${when} уже ждёт тебя ✓`, `№${order.number} · ${tail}`]
+            : [`✓ бокс заказан на ${when}`, `№${order.number} · ${tail}`];
+    }
+    if (ctx === 'ticket') return ['ты в списке! добавь к хайку бокс', member ? 'по твоей карте −10% на бокс' : 'получишь его на старте'];
+    return ['возьми хайкинг бокс', route ? `ты идёшь на ${route} – привезём на старт` : 'привезём прямо на старт хайка'];
+}
+
+// записка под заголовком шторки: «для Валерии · хайк на Ат-Баш, 25.10» (без имени – только про хайк)
+function noteHtml(hike) {
+    const who = forWhom(state.user?.first_name), route = routeOf(hike), when = ddmm(hike?.date);
+    const line = [route ? `хайк на ${route}` : '', when].filter(Boolean).join(', ');
+    if (!who && !line) return '';
+    return `<div class="hb-note">${who ? `<b>для ${who}</b>` : ''}${line ? `<span>${line}</span>` : ''}</div>`;
+}
+
 function collageHtml(b) {
     return b.items.map(([n, st]) => `<img class="hc-p" data-p="${n}" src="assets/box/cut/${n}.png" style="${st}" alt="${PRODUCTS[n]?.name || ''}">`).join('')
         + b.notes.map(([pos, t, s, r, p]) => `<div class="hc-note${r ? ' is-r' : ''}" data-p="${p}" style="${pos}">${t}<span class="hc-i">i</span><small>${s}</small></div>`).join('')
@@ -157,7 +213,7 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
         ${boxThumbHtml()}
-        <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на весь хайк в одной коробке</small></span>
+        <span class="letter-plate-text"><b>возьми бокс на хайк</b><small>доставим прямо на старте${routeOf(hike) ? ' · ' + routeOf(hike) : ''}</small></span>
         <button type="button" class="box-plate-btn">что внутри</button></div>`;
     const plate = row.querySelector('.box-plate');
     plate.addEventListener('click', e => {
@@ -201,6 +257,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
                 <div class="hb-title">хайкинг бокс</div>
+                ${noteHtml(hike)}
                 <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой</div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
                     `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}</button>`).join('')}</div>
@@ -398,9 +455,11 @@ export function openHikingBox(fromEl, hike, isGuest) {
 }
 
 // 4. строка-приглашение там, где человек уже записан: «мои записи» на главной и окно «записали тебя»
-export function hikingBoxRowHtml(cls = '') {
+export function hikingBoxRowHtml(cls = '', date = '') {
+    const hike = (state.hikesWithTitle || []).find(h => h.date === date);
+    const [t, sub] = rowTexts(cls.includes('rt-box') ? 'ticket' : 'mine', hike, null);
     return `<button type="button" class="hb-row ${cls}">${boxThumbHtml(true)}`
-        + `<span class="hb-row-t"><b>возьми хайкинг бокс</b><small>еда и вода на весь хайк</small></span><span class="hb-row-go">›</span></button>`;
+        + `<span class="hb-row-t"><b>${t}</b><small>${sub}</small></span><span class="hb-row-go">›</span></button>`;
 }
 export function bindHikingBoxRow(el, hikeDate, source, before) {
     if (!el) return;
@@ -415,4 +474,13 @@ export function bindHikingBoxRow(el, hikeDate, source, before) {
         before?.();
     });
     preloadHikingBox();
+    // уже оплаченный бокс на эту дату – показываем статус вместо приглашения
+    const ctx = el.classList.contains('rt-box') ? 'ticket' : 'mine';
+    boxOrderFor(hikeDate).then(order => {
+        if (!order || !el.isConnected) return;
+        const hike = state.hikesWithTitle.find(h => h.date === hikeDate);
+        const [t, sub] = rowTexts(ctx, hike, order);
+        const box = el.querySelector('.hb-row-t'); if (box) box.innerHTML = `<b>${t}</b><small>${sub}</small>`;
+        el.classList.add('is-ordered');
+    });
 }

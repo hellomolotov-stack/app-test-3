@@ -4057,7 +4057,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
                         <div class="rt-text"><b>собери рюкзак</b><span>${isExperienced ? 'вода, перекус, удобная обувь, санскрин' : 'вода 1,5 л, перекус, обувь с закрытым носком, санскрин'}</span></div>
                         <div class="rt-go">›</div>
                     </button>
-                    ${boxOk ? hikingBoxRowHtml('rt-box') : ''}
+                    ${boxOk ? hikingBoxRowHtml('rt-box', hikeDate) : ''}
                     <button type="button" class="rt-row" id="rtWeather">
                         <div class="rt-n">4</div>
                         <div class="rt-text"><b>погода на ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}</b><span>${route ? 'горы · ' + esc(route.title) : 'южный берег'}</span></div>

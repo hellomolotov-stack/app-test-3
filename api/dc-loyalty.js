@@ -61,6 +61,20 @@ function createHandler(deps) {
         try { if (typeof body === 'string') body = JSON.parse(body); } catch { return res.status(400).json({ error: 'invalid_request' }); }
         if (!body || typeof body !== 'object' || JSON.stringify(body).length > 16384) return res.status(400).json({ error: 'invalid_request' });
         // Приложение: подписанный Telegram ID для ссылки в магазин (любому пользователю)
+        // Какие из этих хайков уже с оплаченным боксом у человека (для плашки «бокс заказан» в приложении)
+        if (body.action === 'box_status') {
+            const user = deps.verifyInitData(String(body.initData || ''));
+            if (!user || !/^\d{1,16}$/.test(String(user.id))) return res.status(401).json({ error: 'unauthorized' });
+            const dates = (Array.isArray(body.dates) ? body.dates : []).map(String).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).slice(0, 12);
+            try {
+                const orders = {};
+                for (const date of dates) {
+                    const mine = Object.values(await deps.hikeOrders.read(date)).filter(o => o && o.status === 'paid' && o.tg === String(user.id) && o.request !== 'cancel');
+                    if (mine.length) orders[date] = { number: mine[0].number, total: mine[0].total, pickup: mine[0].request === 'pickup' };
+                }
+                return res.status(200).json({ orders });
+            } catch { return res.status(503).json({ error: 'service_unavailable' }); }
+        }
         if (body.action === 'app_ref' || body.action === 'hike_cancelled') {
             const user = deps.verifyInitData(String(body.initData || ''));
             if (!user || !/^\d{1,16}$/.test(String(user.id))) return res.status(401).json({ error: 'unauthorized' });
@@ -196,7 +210,7 @@ function createHandler(deps) {
             // Operational metadata only: never log bodies, identifiers, signatures or keys.
             let body = req.body;
             try { if (typeof body === 'string') body = JSON.parse(body); } catch { body = null; }
-            const actions = ['app_card', 'app_ref', 'health', 'quote', 'status', 'reserve', 'confirm', 'cancel', 'refund', 'card', 'hike_order', 'hike_cancelled', 'box_choice', 'staff_invite', 'staff_join', 'staff_list', 'staff_remove', 'staff_ids'];
+            const actions = ['app_card', 'app_ref', 'box_status', 'health', 'quote', 'status', 'reserve', 'confirm', 'cancel', 'refund', 'card', 'hike_order', 'hike_cancelled', 'box_choice', 'staff_invite', 'staff_join', 'staff_list', 'staff_remove', 'staff_ids'];
             const headers = req.headers || {};
             const report = { event: 'dc_loyalty_result', action: req.method === 'GET' ? 'cron' : actions.includes(body && body.action) ? body.action : 'unknown',
                 status, duration_ms: Math.max(0, Date.now() - started),
