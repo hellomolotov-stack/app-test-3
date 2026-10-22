@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap"></head>
+<body style="background:#121a23;padding:14px"><div id="a" class="floating-sheet-buttons" style="display:flex;flex-wrap:wrap"></div><div id="b" style="margin-top:14px;width:340px"></div><div id="c" style="margin-top:14px;width:340px"></div><div id="d" style="margin-top:14px;width:340px"></div>
+<script type="module">
+window.Telegram={WebApp:{initData:'x',safeAreaInset:{top:0},contentSafeAreaInset:{top:0}}};
+const st=(await import('/js/state.js')).state; st.user={id:1,first_name:'Валерия'}; st.userCard={status:'active'};
+st.hikesWithTitle=[{date:'2030-10-25',title:'хайк на Ат-Баш'}];
+window.fetch=(u,o)=>String(u).includes('box_status')||(o&&String(o.body).includes('box_status'))?Promise.resolve(new Response(JSON.stringify({orders:{'2030-10-25':{number:'1234',total:47600}}}),{status:200})):Promise.reject();
+const m=await import('/js/ui/hiking-box.js');
+m.mountHikingBoxPlate(document.getElementById('a'),st.hikesWithTitle[0],false);
+document.getElementById('b').innerHTML='<div style="color:#999;font:12px sans-serif">мои записи (до статуса)</div>'+m.hikingBoxRowHtml('','2030-10-25');
+document.getElementById('c').innerHTML='<div style="color:#999;font:12px sans-serif">записали тебя</div>'+m.hikingBoxRowHtml('rt-box','2030-10-25');
+document.getElementById('d').innerHTML='<div style="color:#999;font:12px sans-serif">мои записи (бокс заказан)</div>'+m.hikingBoxRowHtml('','2030-10-25');
+const els=[...document.querySelectorAll('.hb-row')]; m.bindHikingBoxRow(els[0],'2030-10-25','m'); m.bindHikingBoxRow(els[1],'2030-10-25','t');
+</script></body></html>

@@ -3206,7 +3206,7 @@ function updateFloatingSheetButtons() {
         chip.className = 'spots-counter-chip';
         if (spotsLeft > 3) {
             const w = bookedCount === 1 ? 'человек' : bookedCount < 5 ? 'человека' : 'человек';
-            chip.innerHTML = `⛰️ уже идут <strong>${bookedCount}</strong> ${w}`;
+            chip.innerHTML = `⛰️ уже записано <strong>${bookedCount}</strong> ${w}`;
         } else {
             const w = getPlaceWord(spotsLeft);
             chip.innerHTML = spotsLeft > 0
