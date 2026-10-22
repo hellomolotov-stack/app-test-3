@@ -110,6 +110,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     ${membersHtml()}
                 </div>
 
+                ${ev ? '' : '<div class="cs-why">🌱 клуб развивается благодаря владельцам карты – всё, что приходит от карт, мы вкладываем обратно в клуб</div>'}
                 <div class="cs-sec">что внутри</div>
                 <div class="cs-ben"><div class="cs-e">🥾</div><div><b>все хайки сезона</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
                 <div class="cs-ben"><div class="cs-e">🎟️</div><div><b>запись даже когда мест нет</b><span>набор закрыт для всех, но не для владельцев карты – место для тебя найдётся</span></div></div>

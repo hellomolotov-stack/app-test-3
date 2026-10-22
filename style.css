@@ -6377,3 +6377,7 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-note { background: rgba(243, 217, 177, .12); color: #F3D9B1; border: 1.5px dashed rgba(243, 217, 177, .45); border-radius: 12px; box-shadow: none; transform: rotate(-1deg); }
 .hb-note b { font-size: 23px; }
 .hb-note span { font-size: 16px; opacity: .75; }
+
+/* шторка карты: отдельная строка о том, на что идут деньги от карт */
+.cs-why { margin: 18px 0 2px; padding: 12px 14px; border-radius: 16px; background: rgba(214, 170, 110, .1); border: 1px solid rgba(214, 170, 110, .3);
+    font-size: 13.5px; line-height: 1.45; color: rgba(255, 255, 255, .78); text-align: center; }
