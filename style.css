@@ -6370,3 +6370,6 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .box-plate .letter-plate-text { flex: 1; min-width: 0; }
 .box-plate .letter-plate-text b { white-space: normal; font-size: 14.5px; line-height: 1.15; }
 .box-plate .letter-plate-text small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.25; }
+
+/* записка – по центру (общее правило .hb-scroll > * задаёт ей левый отступ) */
+.hb-scroll > .hb-note { margin-left: auto; margin-right: auto; }
