@@ -156,7 +156,6 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     const row = document.createElement('div');
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
-        <span class="new-badge">Новое</span>
         ${boxThumbHtml()}
         <span class="letter-plate-text"><b>хайкинг бокс</b><small>еда и вода на весь хайк в одной коробке</small></span>
         <button type="button" class="box-plate-btn">что внутри</button></div>`;
