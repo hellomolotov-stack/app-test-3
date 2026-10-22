@@ -248,6 +248,26 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 return d ? `${d} дн. ${h} ч` : (h ? `${h} ч ${m % 60} мин` : `${m % 60} мин`);
             };
             if (!left()) return;
+            if (offer.kind === 'circle') {
+                // приглашение в близкий круг: без таймера и «спецпредложения» – засчитанные билеты и личная цена
+                log('карта: показали приглашение в круг', true, state.user, { source });
+                const n = Number(offer.tickets_count) || 0, a = n % 10, b = n % 100;
+                const tw = `${n} ${a === 1 && b !== 11 ? 'билет' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'билета' : 'билетов'}`;
+                overlay.querySelector('.cs-members')?.insertAdjacentHTML('afterend', `
+                <div class="cs-circle">
+                    <div class="cs-circle-tag">🤝 приглашение в близкий круг</div>
+                    <p>мы рады знакомству с тобой и хотим видеть тебя в нашем близком кругу. поэтому засчитываем все твои билеты в карту: хайки с нами должны быть для тебя свободными, без билетов</p>
+                    ${n ? `<div class="cs-circle-sum">твои ${tw} – <b>${rub(offer.tickets_sum)}</b> – уже учтены</div>` : ''}
+                </div>`);
+                const plans = overlay.querySelector('.cs-plans');
+                if (plans) plans.outerHTML = `<div class="cs-plans is-offer"><div class="cs-plan is-on"><small>бессрочная · с учётом билетов</small><b><s>${rub(full)}</s> ${rub(price)}</b><span>один раз – и клуб твой без продлений</span></div></div>`;
+                overlay.querySelector('.cs-note')?.remove();
+                plan = 'offer';
+                selectedPrice = price;
+                buyBtn.textContent = `оформить за ${rub(price)}`;
+                seasonBtn?.remove();
+                return;
+            }
             log('карта: показали спецпредложение', true, state.user, { source });
             overlay.querySelector('.cs-members')?.insertAdjacentHTML('afterend', `
                 <div class="cs-offer">

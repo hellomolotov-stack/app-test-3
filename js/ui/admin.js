@@ -942,7 +942,20 @@ export function parseGpx(text) {
 // рассылка: бот пишет выбранным, и предложение открывается им ещё на 3 дня с момента отправки.
 // Кому бот писать не может – кнопка «написать лично» с тем же текстом.
 const OFFER_TEXT_DEFAULT = '[имя], спасибо, что ходишь с нами на хайки 🤍\n\nследующие 3 дня бессрочная карта интеллигента для тебя стоит 5 500 ₽ вместо 7 500 – один раз и навсегда:\n\n• все хайки без билетов и оплат\n• запись, даже когда мест уже нет\n• закрытые события клуба и привилегии у партнёров\n\nподробности и оформление – по кнопке ниже';
+// приглашение в близкий круг: админ сам выбирает людей, бот пишет им это сообщение, в приложении – тёплая плашка.
+// Цена = 7 500 − все оплаченные билеты (не дороже 5 500 и не дешевле 1 500), считает сервер.
+const CIRCLE_TEXT = '[имя], мы рады знакомству с тобой и хотим видеть тебя в нашем близком кругу 🤍\n\nпоэтому засчитываем все твои билеты в карту интеллигента: [билеты] на [сумма] уже учтены, и бессрочная карта для тебя стоит [цена] вместо 7 500 ₽.\n\nнам хочется, чтобы хайки с нами были для тебя свободными, без билетов, а клуб стал твоей компанией';
 let nc = null;
+function ncTickets(n) {
+    const a = n % 10, b = n % 100;
+    return `${n} ${a === 1 && b !== 11 ? 'билет' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'билета' : 'билетов'}`;
+}
+function ncRub(n) { return `${Math.round(n).toLocaleString('ru-RU')} ₽`; }
+function circleMessage(p) {
+    const name = String(p?.name || 'друг').split(' ')[0];
+    return CIRCLE_TEXT.replace(/\[имя\]/gi, name).replace(/\[билеты\]/gi, ncTickets(p.tickets_count || 0))
+        .replace(/\[сумма\]/gi, ncRub(p.tickets_sum || 0)).replace(/\[цена\]/gi, ncRub(p.circle_price || 0));
+}
 function ncAgo(ts) {
     const h = Math.floor((Date.now() / 1000 - ts) / 3600);
     return h < 24 ? `${Math.max(1, h)} ч назад` : `${Math.floor(h / 24)} дн. назад`;
@@ -965,6 +978,7 @@ function ncBadges(p) {
     else if (p.can_message === false) out.push('<span class="adm-badge is-off">бот не может писать – только лично</span>');
     else out.push('<span class="adm-badge">бот – не знаем, дойдёт ли</span>');
     const o = p.offer;
+    if (o && o.kind === 'circle' && !o.used_at && !o.closed_at) out.push(`<span class="adm-badge is-on">🤝 приглашён в круг ${ncAgo(o.sent_at)} · ${ncRub(o.price)}</span>`);
     if (o && o.used_at) out.push('<span class="adm-badge is-ok">купил по предложению</span>');
     else {
         const until = ncActiveUntil(p);
@@ -1014,13 +1028,18 @@ function renderNewcomers(body) {
         const name = esc(p.name || 'без имени') + (p.username ? ` <span class="adm-muted">@${esc(p.username)}</span>` : '');
         const n = p.hikes.length;
         const hk = `${n} ${n === 1 ? 'хайк' : n < 5 ? 'хайка' : 'хайков'} · последний ${dateLabel(p.last)}${p.hikes[p.hikes.length - 1].title ? ' – ' + esc(p.hikes[p.hikes.length - 1].title) : ''}`;
+        const invited = p.offer && p.offer.kind === 'circle' && !p.offer.closed_at && !p.offer.used_at;
+        const circle = p.tickets_count
+            ? `<div class="adm-nc-sub">оплатил ${ncTickets(p.tickets_count)} на ${ncRub(p.tickets_sum)} → карта для него ${ncRub(p.circle_price)}</div>`
+              + (invited || p.can_message === false ? '' : `<div class="adm-nc-acts"><button type="button" class="adm-ghost adm-nc-act" data-circle="${esc(p.id)}">🤝 пригласить в круг</button></div>`)
+            : '';
         const personal = p.can_message !== true
             ? (p.username ? `<div class="adm-nc-acts"><button type="button" class="adm-ghost adm-nc-act" data-dm="${esc(p.id)}">написать лично</button></div>` : '<div class="adm-nc-acts"><span class="adm-nc-note">нет @username – найти в чате хайка</span></div>')
             : '';
         return `<label class="adm-nc-person${nc.selected.has(p.id) ? ' is-on' : ''}">
             <input type="checkbox" data-id="${esc(p.id)}" ${nc.selected.has(p.id) ? 'checked' : ''}>
             <div class="adm-nc-info"><div class="adm-nc-name">${name}</div><div class="adm-nc-sub">${hk}</div>
-            <div class="adm-nc-badges">${ncBadges(p)}</div>${personal}</div>
+            ${circle}<div class="adm-nc-badges">${ncBadges(p)}</div>${personal}</div>
         </label>`;
     };
     body.innerHTML = `
@@ -1031,6 +1050,9 @@ function renderNewcomers(body) {
         </div>
         <div class="adm-row-btns"><button class="adm-ghost" id="ncAll">выбрать всех в списке</button><button class="adm-ghost" id="ncNone">снять выбор</button></div>
         <div class="adm-nc-list">${list.length ? list.map(row).join('') : '<div class="adm-muted" style="padding:12px 4px">пока никого</div>'}</div>
+        <div class="adm-label">приглашение в круг – так напишет бот</div>
+        <div class="adm-preview"><div class="adm-bubble">${esc(circleMessage(all.find(x => x.tickets_count) || { name: 'Аня', tickets_count: 3, tickets_sum: 4500, circle_price: 3000 })).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть карту</div></div>
+        <div class="adm-hint">кнопка «🤝 пригласить в круг» – у каждого, кто оплачивал билеты. цена = 7 500 − все его билеты, но не дороже 5 500 и не дешевле 1 500. действует 30 дней, срок человеку не показываем</div>
         <label class="adm-field"><span>сообщение</span><textarea id="ncText" rows="10">${esc(nc.text)}</textarea></label>
         <div class="adm-hint">[имя] заменится именем. под сообщением – кнопка «посмотреть предложение»: откроется карта с ценой 5 500 ₽</div>
         <div class="adm-label">так увидят</div>
@@ -1061,9 +1083,30 @@ function renderNewcomers(body) {
         const url = `https://t.me/${encodeURIComponent(p.username)}`;
         if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
     }));
+    body.querySelectorAll('[data-circle]').forEach(b => b.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation(); haptic();
+        inviteCircle(all.find(x => x.id === b.dataset.circle));
+    }));
     body.querySelector('#ncText').addEventListener('input', e => { nc.text = e.target.value; preview(); });
     body.querySelector('#ncSend').addEventListener('click', () => sendCardOffer(chosen));
     preview();
+}
+async function inviteCircle(p) {
+    if (!p) return;
+    const ok = await new Promise(res => {
+        // у телеграма в окне подтверждения не больше 256 знаков – само сообщение видно в превью ниже
+        const q = `пригласить ${String(p.name || '').split(' ')[0] || 'его'} в круг? бот напишет приглашение, карта для него – ${ncRub(p.circle_price)}`;
+        if (tg?.showConfirm) { try { tg.showConfirm(q, r => res(!!r)); return; } catch (e) {} }
+        res(window.confirm(q));
+    });
+    if (!ok) return;
+    try {
+        const res = await adminCall('adminInviteCircle', { user_ids: JSON.stringify([p.id]), names: JSON.stringify({ [p.id]: p.name || '' }), text: CIRCLE_TEXT });
+        toast(res.sent ? 'приглашение отправлено 🤝' : 'приглашение открыто, но бот не смог написать');
+        await loadNewcomers(true);
+    } catch (e) {
+        toast(e.message, true);
+    }
 }
 async function sendCardOffer(people) {
     if (!people.length) return;

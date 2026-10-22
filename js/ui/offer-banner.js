@@ -48,11 +48,24 @@ export async function mountOfferBanner(offer) {
     }
     if (!leftText(offer.expires_at) || document.getElementById('offerBanner')) return;
 
+    const circle = offer.kind === 'circle';
     const el = document.createElement('div');
     el.id = 'offerBanner';
-    el.className = 'offer-banner';
+    el.className = 'offer-banner' + (circle ? ' is-circle' : '');
+    const name = String(state.user?.first_name || '').trim().split(/\s+/)[0];
     const paint = () => {
         if (!leftText(offer.expires_at) || state.userCard?.status === 'active') { removeOfferBanner(); return; }
+        // приглашение в близкий круг: без цены и срока – только суть
+        if (circle) {
+            el.innerHTML = `
+            <button type="button" class="ob-main">
+                <span class="ob-icon">🤝</span>
+                <span class="ob-txt"><b>${name ? esc(name) + ', мы' : 'мы'} засчитали твои билеты в карту</b><small>приглашение в близкий круг клуба</small></span>
+                <span class="ob-go">›</span>
+            </button>
+            <button type="button" class="ob-close" aria-label="скрыть">×</button>`;
+            return;
+        }
         el.innerHTML = `
             <button type="button" class="ob-main">
                 <span class="ob-icon">🎁</span>
@@ -64,20 +77,21 @@ export async function mountOfferBanner(offer) {
     paint();
     document.body.appendChild(el);
     timer = setInterval(paint, 60000);
-    log('спецпредложение: баннер показан', true, state.user);
+    const what = circle ? 'приглашение в круг' : 'спецпредложение';
+    log(`${what}: баннер показан`, true, state.user);
     getCardOffer({ seen: true }).catch(() => {}); // отметка «видел баннер» для админки
 
     el.addEventListener('click', e => {
         if (e.target.closest('.ob-close')) {
             haptic();
             closedThisLaunch = true;
-            log('спецпредложение: баннер скрыт', true, state.user);
+            log(`${what}: баннер скрыт`, true, state.user);
             removeOfferBanner();
             return;
         }
         if (!e.target.closest('.ob-main')) return;
         haptic();
-        log('спецпредложение: баннер нажат', true, state.user);
-        import('./card-sheet.js').then(m => m.openCardSheet({ source: 'баннер спецпредложения' }));
+        log(`${what}: баннер нажат`, true, state.user);
+        import('./card-sheet.js').then(m => m.openCardSheet({ source: circle ? 'баннер приглашения в круг' : 'баннер спецпредложения' }));
     });
 }

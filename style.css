@@ -6390,3 +6390,13 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-scroll > .hb-head + .hb-sub { margin-top: 0; }
 .hb-scroll > .hb-head + .hb-sub { margin-top: 12px; }
 .hb-head .hb-note { margin-top: -4px; }
+
+/* приглашение в близкий круг – тёплая плашка вместо жёлтой «акции» */
+.offer-banner.is-circle { background: rgba(58, 44, 30, .94); border-color: rgba(214, 170, 110, .45); }
+.offer-banner.is-circle .ob-txt b { color: #F3D9B1; }
+.offer-banner.is-circle .ob-go { color: #F3D9B1; }
+.cs-circle { margin: 16px 0 4px; padding: 14px 16px; border-radius: 18px; background: rgba(214, 170, 110, .12); border: 1px solid rgba(214, 170, 110, .38); text-align: center; }
+.cs-circle-tag { font-size: 13px; font-weight: 800; color: #F3D9B1; }
+.cs-circle p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, .82); }
+.cs-circle-sum { margin-top: 10px; font-size: 13.5px; color: rgba(255, 255, 255, .7); }
+.cs-circle-sum b { color: #F3D9B1; }

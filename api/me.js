@@ -48,6 +48,11 @@ async function offerFor(id, token, regsP) {
         const o = await read(`card_offers/${id}`, token);
         if (o && o.used_at) return null; // уже купил по предложению
         let expires = o && !o.closed_at && Number(o.expires_at) * 1000 > Date.now() ? Number(o.expires_at) : 0;
+        // приглашение в близкий круг: личная цена с учётом оплаченных билетов (kind 'circle')
+        if (expires && o.kind === 'circle' && o.price) {
+            return { kind: 'circle', price: Number(o.price), full_price: OFFER.full_price, expires_at: expires,
+                tickets_count: o.tickets_count || 0, tickets_sum: o.tickets_sum || 0 };
+        }
         if (!expires) {
             const regs = (await regsP) || {};
             const today = mskDay(Date.now());
@@ -59,7 +64,7 @@ async function offerFor(id, token, regsP) {
                 if (ok) { expires = Math.floor(Date.parse(`${addDays(d, 1 + OFFER.days)}T00:00:00+03:00`) / 1000); break; }
             }
         }
-        return expires ? { price: OFFER.price, full_price: OFFER.full_price, expires_at: expires, title: OFFER.title, text: OFFER.text } : null;
+        return expires ? { price: Number(o?.price) && expires === Number(o?.expires_at) ? Number(o.price) : OFFER.price, full_price: OFFER.full_price, expires_at: expires, title: OFFER.title, text: OFFER.text } : null;
     } catch (e) {
         console.error('me offer:', e.message);
         return null;
