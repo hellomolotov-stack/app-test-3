@@ -1,5 +1,6 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { requireAdmission } from './admission.js';
+import { trackFunnel } from '../analytics.js';
 import { passCodeFor } from '../pass-store.js';
 import { isAdmissionPilot, admission } from '../admission.js';
 import { haptic, openLink, openLetterLink, parseLinks, formatDateForDisplay, normalizeDate, mainDiv, tg, showConfetti } from '../utils.js';
@@ -1942,6 +1943,7 @@ export function showBottomSheet(index) {
     function updateContent(instant = false) {
         const hike = state.hikesWithTitle[curSheetIndex()];
         if (!hike) return;
+        trackFunnel('hike_view', hike.date);
 
         const isWoman = hike.woman === 'yes';
         const isCity = hike.city === true || hike.city === 'yes';
@@ -2681,6 +2683,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         }
 
         if (!isBooked && newLeft >= maxLeft * 0.95) {
+            trackFunnel('booking_intent', hike.date);
             if (isGuest) {
                 isDown = false;
                 thumb.style.transition = 'left 0.2s ease-out';
@@ -3307,6 +3310,7 @@ function updateFloatingSheetButtons() {
         goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
         goBtn.addEventListener('click', e => {
             e.preventDefault();
+            trackFunnel('booking_intent', hike.date);
             showGuestBookingPopup(hike.date, hike.title);
         });
         row.appendChild(goBtn);
@@ -3329,6 +3333,7 @@ function updateFloatingSheetButtons() {
     goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
     goBtn.addEventListener('click', e => {
         e.preventDefault();
+        trackFunnel('booking_intent', hike.date);
         const userId = state.user?.id;
         const hikeDate = hike.date;
         const hikeTitle = hike.title;
@@ -4004,6 +4009,7 @@ function showCityRegistrationSuccess(h) {
 
 // ==================== ЭКРАН ПОСЛЕ РЕГИСТРАЦИИ ====================
 export function showRegistrationSuccess(hikeDate, hikeTitle) {
+    trackFunnel('booking_success', hikeDate);
     refreshFeedRegistration(hikeDate, true);
     if (sheetActHike) sheetActHike.registered = true;
     window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));

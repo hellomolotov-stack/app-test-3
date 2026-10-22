@@ -1,6 +1,7 @@
 // js/api.js
 import { isAdmissionPilot, admissionRequest } from './admission.js';
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
+import { trackFunnel } from './analytics.js';
 import { passCodeFor } from './pass-store.js';
 
 // Счётчик явных логов: общий логгер кликов (ui/click-log.js) не дублирует уже залогированное нажатие.
@@ -211,6 +212,7 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
         return validatePayment(data, { cardType, giftCardType, expectedAmount });
     } catch (err) {
         clearTimeout(timer);
+        if (hikeDate) trackFunnel('checkout_error', hikeDate);
         throw err;
     }
 }

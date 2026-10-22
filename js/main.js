@@ -3,6 +3,7 @@ import { applyAdmissionVisitorMode, initAdmission, isAdmissionPilot } from './ad
 import { openAdmission } from './ui/admission.js';
 import { haptic, openLink, normalizeDate, formatDateForDisplay, parseLinks, mainDiv, subtitle, tg, scrollToElement, showConfetti } from './utils.js';
 import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, saveBookingStatusToLocal } from './state.js';
+import { startAnalytics } from './analytics.js';
 import { initFirebase, getDatabase, hikesFromSnapshot, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups, parseNode } from './firebase.js';
 import { log, logAutoSendClick, markPaymentSeen } from './api.js';
 import { pingAppUser, maybeShowHomeBanner } from './ui/notify-optin.js';
@@ -954,6 +955,7 @@ document.addEventListener('focusout', (e) => {
 // и на медленном интернете приложение стояло пустым лишние 10+ секунд.
 function startApp() {
     state.user = tg?.initDataUnsafe?.user;
+    startAnalytics();
     // сразу на весь экран: кнопки бота открывают приложение в половину экрана, пока его не развернуть
     try {
         tg?.expand?.();

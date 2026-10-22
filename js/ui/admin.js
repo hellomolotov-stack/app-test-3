@@ -4,6 +4,7 @@
 import { state } from '../state.js';
 import { haptic, tg } from '../utils.js';
 import { REGISTRATION_API_URL } from '../config.js';
+import { renderAnalytics } from './admin-analytics.js';
 import { loadAllParticipants } from '../firebase.js';
 import { previewHikeTrack, findCatalogRoute, catalogRouteTrack } from './calendar.js';
 import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
@@ -222,7 +223,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [['hikes', '🏔 хайки'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [['hikes', '🏔 хайки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -238,6 +239,7 @@ function render() {
     }));
     const body = root.querySelector('.adm-body');
     if (view.sub === 'edit') renderEditor(body);
+    else if (view.tab === 'analytics') renderAnalytics(body, adminCall);
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'flows') renderFlows(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);

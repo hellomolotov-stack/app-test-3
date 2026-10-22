@@ -6400,3 +6400,24 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .cs-circle p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, .82); }
 .cs-circle-sum { margin-top: 10px; font-size: 13.5px; color: rgba(255, 255, 255, .7); }
 .cs-circle-sum b { color: #F3D9B1; }
+/* Admin analytics uses the existing compact admin surface. */
+.analytics { min-width: 0; }
+.analytics-controls { display: grid; gap: 12px; margin-bottom: 20px; }
+.analytics-period { display: flex; flex-wrap: wrap; gap: 6px; }
+.analytics-controls select { width: 100%; min-width: 0; color: inherit; background: #292929; border: 1px solid #555; border-radius: 8px; padding: 10px; font: inherit; }
+.analytics-refresh { justify-self: start; }
+.analytics-coverage { color: #aaa; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.analytics-totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: #ffffff18; margin: 20px 0; }
+.analytics-totals > div { display: flex; flex-direction: column; gap: 6px; padding: 16px 10px; background: #222; }
+.analytics-totals strong { font-size: 26px; }
+.analytics-totals span { font-size: 12px; color: #ccc; overflow-wrap: anywhere; }
+.analytics h3 { font-size: 16px; font-weight: 600; margin: 24px 0 14px; }
+.analytics-funnel ol { list-style: none; padding: 0; margin: 0; }
+.analytics-funnel li { margin: 0 0 14px; }
+.analytics-step { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.analytics-step span { min-width: 0; overflow-wrap: anywhere; }
+.analytics-track { height: 6px; background: #ffffff16; margin: 7px 0 3px; overflow: hidden; border-radius: 3px; }
+.analytics-track > div { height: 100%; background: #e7c451; }
+.analytics-funnel small { font-size: 11px; color: #aaa; }
+.analytics-insights { margin-top: 24px; border-top: 1px solid #ffffff20; }
+.analytics-insights p { font-size: 14px; line-height: 1.6; }
