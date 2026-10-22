@@ -6373,3 +6373,7 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 
 /* записка – по центру (общее правило .hb-scroll > * задаёт ей левый отступ) */
 .hb-scroll > .hb-note { margin-left: auto; margin-right: auto; }
+/* записка: тёмная бирка с пунктиром (вариант A) */
+.hb-note { background: rgba(243, 217, 177, .12); color: #F3D9B1; border: 1.5px dashed rgba(243, 217, 177, .45); border-radius: 12px; box-shadow: none; transform: rotate(-1deg); }
+.hb-note b { font-size: 23px; }
+.hb-note span { font-size: 16px; opacity: .75; }
