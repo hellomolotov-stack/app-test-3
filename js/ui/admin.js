@@ -981,9 +981,7 @@ function ncBadges(p) {
     if (o && o.kind === 'circle' && !o.used_at && !o.closed_at) out.push(`<span class="adm-badge is-on">🤝 приглашён в круг ${ncAgo(o.sent_at)} · ${ncRub(o.price)}</span>`);
     if (o && o.used_at) out.push('<span class="adm-badge is-ok">купил по предложению</span>');
     else {
-        const until = ncActiveUntil(p);
-        if (until) out.push(`<span class="adm-badge is-on">спеццена до ${ncUntil(until)}${p.auto_until && until === p.auto_until ? ' · после хайка' : ''}</span>`);
-        if (o && o.sent_at && o.notified) out.push(`<span class="adm-badge">бот писал ${ncAgo(o.sent_at)}</span>`);
+        if (o && o.kind === 'circle' && o.sent_at && !o.notified) out.push('<span class="adm-badge is-off">бот не смог написать</span>');
     }
     return out.join('');
 }
@@ -1022,74 +1020,35 @@ function renderNewcomers(body) {
     const all = nc.people.filter(p => !(p.offer && p.offer.used_at));
     const recent = all.filter(ncRecent);
     const list = nc.filter === 'recent' ? recent : all;
-    const chosen = all.filter(p => nc.selected.has(p.id));
-    const botCan = chosen.filter(p => p.can_message !== false);
     const row = p => {
         const name = esc(p.name || 'без имени') + (p.username ? ` <span class="adm-muted">@${esc(p.username)}</span>` : '');
         const n = p.hikes.length;
         const hk = `${n} ${n === 1 ? 'хайк' : n < 5 ? 'хайка' : 'хайков'} · последний ${dateLabel(p.last)}${p.hikes[p.hikes.length - 1].title ? ' – ' + esc(p.hikes[p.hikes.length - 1].title) : ''}`;
-        const invited = p.offer && p.offer.kind === 'circle' && !p.offer.closed_at && !p.offer.used_at;
-        const circle = p.tickets_count
-            ? `<div class="adm-nc-sub">оплатил ${ncTickets(p.tickets_count)} на ${ncRub(p.tickets_sum)} → карта для него ${ncRub(p.circle_price)}</div>`
-              + (invited || p.can_message === false ? '' : `<div class="adm-nc-acts"><button type="button" class="adm-ghost adm-nc-act" data-circle="${esc(p.id)}">🤝 пригласить в круг</button></div>`)
-            : '';
-        const personal = p.can_message !== true
-            ? (p.username ? `<div class="adm-nc-acts"><button type="button" class="adm-ghost adm-nc-act" data-dm="${esc(p.id)}">написать лично</button></div>` : '<div class="adm-nc-acts"><span class="adm-nc-note">нет @username – найти в чате хайка</span></div>')
-            : '';
-        return `<label class="adm-nc-person${nc.selected.has(p.id) ? ' is-on' : ''}">
-            <input type="checkbox" data-id="${esc(p.id)}" ${nc.selected.has(p.id) ? 'checked' : ''}>
-            <div class="adm-nc-info"><div class="adm-nc-name">${name}</div><div class="adm-nc-sub">${hk}</div>
-            ${circle}<div class="adm-nc-badges">${ncBadges(p)}</div>${personal}</div>
-        </label>`;
+        const invited = p.offer && p.offer.kind === 'circle' && !p.offer.closed_at && !p.offer.used_at && p.offer.expires_at * 1000 > Date.now();
+        let act = '';
+        if (!p.tickets_count) act = '<div class="adm-nc-acts"><span class="adm-nc-note">билетов не оплачивал – засчитывать нечего</span></div>';
+        else if (p.can_message === false) act = '<div class="adm-nc-acts"><span class="adm-nc-note">бот не может ему писать</span></div>';
+        else if (!invited) act = `<div class="adm-nc-acts"><button type="button" class="adm-ghost adm-nc-act" data-circle="${esc(p.id)}">🤝 пригласить в круг</button></div>`;
+        const tk = p.tickets_count ? `<div class="adm-nc-sub">оплатил ${ncTickets(p.tickets_count)} на ${ncRub(p.tickets_sum)} → карта для него ${ncRub(p.circle_price)}</div>` : '';
+        return `<div class="adm-nc-person">
+            <div class="adm-nc-info"><div class="adm-nc-name">${name}</div><div class="adm-nc-sub">${hk}</div>${tk}
+            <div class="adm-nc-badges">${ncBadges(p)}</div>${act}</div>
+        </div>`;
     };
     body.innerHTML = `
-        <div class="adm-hint" style="margin-top:0"><b>само собой:</b> на следующий день после хайка каждому, кто на нём был без карты, приложение 3 дня показывает баннер – бессрочная карта за 5 500 ₽ вместо 7 500.<br><b>здесь:</b> напиши через бота тем, кто ходил, – спеццена откроется им ещё на 3 дня с момента отправки</div>
+        <div class="adm-hint" style="margin-top:0">выбери тех, кого хочешь видеть в близком кругу. бот напишет приглашение, а все оплаченные билеты засчитаются в бессрочную карту: 7 500 − билеты, но не дороже 5 500 и не дешевле 1 500. приглашение действует 30 дней, срок человеку не показываем</div>
         <div class="adm-chips">
             <button class="adm-chip${nc.filter === 'recent' ? ' is-on' : ''}" data-f="recent">ходили за 2 недели · ${recent.length}</button>
             <button class="adm-chip${nc.filter === 'all' ? ' is-on' : ''}" data-f="all">все, кто ходил · ${all.length}</button>
         </div>
-        <div class="adm-row-btns"><button class="adm-ghost" id="ncAll">выбрать всех в списке</button><button class="adm-ghost" id="ncNone">снять выбор</button></div>
         <div class="adm-nc-list">${list.length ? list.map(row).join('') : '<div class="adm-muted" style="padding:12px 4px">пока никого</div>'}</div>
-        <div class="adm-label">приглашение в круг – так напишет бот</div>
-        <div class="adm-preview"><div class="adm-bubble">${esc(circleMessage(all.find(x => x.tickets_count) || { name: 'Аня', tickets_count: 3, tickets_sum: 4500, circle_price: 3000 })).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть карту</div></div>
-        <div class="adm-hint">кнопка «🤝 пригласить в круг» – у каждого, кто оплачивал билеты. цена = 7 500 − все его билеты, но не дороже 5 500 и не дешевле 1 500. действует 30 дней, срок человеку не показываем</div>
-        <label class="adm-field"><span>сообщение</span><textarea id="ncText" rows="10">${esc(nc.text)}</textarea></label>
-        <div class="adm-hint">[имя] заменится именем. под сообщением – кнопка «посмотреть предложение»: откроется карта с ценой 5 500 ₽</div>
-        <div class="adm-label">так увидят</div>
-        <div class="adm-preview" id="ncPreview"></div>
-        <button class="btn btn-yellow adm-primary" id="ncSend" ${chosen.length ? '' : 'disabled'}>${chosen.length ? `отправить · ${chosen.length} чел.` : 'выбери, кому отправить'}</button>
-        ${chosen.length > botCan.length ? `<div class="adm-hint" style="margin-top:8px">${chosen.length - botCan.length} из выбранных бот написать не может – спеццена им всё равно откроется, а сообщение отправь сам кнопкой «написать лично»</div>` : ''}`;
-    const preview = () => {
-        body.querySelector('#ncPreview').innerHTML = `<div class="adm-bubble">${esc(ncMessage(chosen[0])).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть предложение</div>`;
-    };
+        <div class="adm-label">так напишет бот</div>
+        <div class="adm-preview"><div class="adm-bubble">${esc(circleMessage(all.find(x => x.tickets_count) || { name: 'Аня', tickets_count: 3, tickets_sum: 4500, circle_price: 3000 })).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть карту</div></div>`;
     body.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { haptic(); nc.filter = b.dataset.f; render(); }));
-    body.querySelector('#ncAll').addEventListener('click', () => { haptic(); list.forEach(p => nc.selected.add(p.id)); render(); });
-    body.querySelector('#ncNone').addEventListener('click', () => { haptic(); nc.selected.clear(); render(); });
-    body.querySelectorAll('.adm-nc-person input').forEach(cb => cb.addEventListener('change', () => {
-        haptic();
-        if (cb.checked) nc.selected.add(cb.dataset.id); else nc.selected.delete(cb.dataset.id);
-        render();
-    }));
-    body.querySelectorAll('[data-dm]').forEach(b => b.addEventListener('click', e => {
-        e.preventDefault(); e.stopPropagation(); haptic();
-        const p = all.find(x => x.id === b.dataset.dm);
-        try { navigator.clipboard?.writeText(ncMessage(p)); } catch (err) {}
-        toast('текст скопирован – вставь в чат');
-        // чтобы обещанные в сообщении 3 дня по спеццене были правдой – открываем предложение и ему
-        if (!(p.offer && p.offer.sent_at && !p.offer.closed_at && p.offer.expires_at * 1000 > Date.now())) {
-            adminCall('adminOpenCardOffer', { user_ids: JSON.stringify([p.id]), days: 3, notify: 'no' })
-                .then(() => loadNewcomers(true)).catch(err => toast(err.message, true));
-        }
-        const url = `https://t.me/${encodeURIComponent(p.username)}`;
-        if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
-    }));
     body.querySelectorAll('[data-circle]').forEach(b => b.addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation(); haptic();
         inviteCircle(all.find(x => x.id === b.dataset.circle));
     }));
-    body.querySelector('#ncText').addEventListener('input', e => { nc.text = e.target.value; preview(); });
-    body.querySelector('#ncSend').addEventListener('click', () => sendCardOffer(chosen));
-    preview();
 }
 async function inviteCircle(p) {
     if (!p) return;
@@ -1106,29 +1065,6 @@ async function inviteCircle(p) {
         await loadNewcomers(true);
     } catch (e) {
         toast(e.message, true);
-    }
-}
-async function sendCardOffer(people) {
-    if (!people.length) return;
-    const ok = await new Promise(res => {
-        const bot = people.filter(p => p.can_message !== false).length;
-        const q = `спеццена откроется ${people.length} чел. на 3 дня, бот напишет ${bot} из них. отправить?`;
-        if (tg?.showConfirm) { try { tg.showConfirm(q, r => res(!!r)); return; } catch (e) {} }
-        res(window.confirm(q));
-    });
-    if (!ok) return;
-    const btn = root?.querySelector('#ncSend');
-    if (btn) { btn.disabled = true; btn.textContent = 'отправляю…'; }
-    try {
-        const names = {};
-        people.forEach(p => { names[p.id] = p.name || ''; });
-        const res = await adminCall('adminOpenCardOffer', { user_ids: JSON.stringify(people.map(p => p.id)), names: JSON.stringify(names), days: 3, notify: 'yes', text: nc.text });
-        toast(`спеццена открыта: ${res.opened} · бот написал: ${res.sent}${res.failed ? ` · не дошло: ${res.failed}` : ''}`);
-        nc.selected.clear();
-        await loadNewcomers(true);
-    } catch (e) {
-        toast(e.message, true);
-        if (btn) { btn.disabled = false; btn.textContent = `отправить · ${people.length} чел.`; }
     }
 }
 // ---------- цепочки сообщений ----------

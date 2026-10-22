@@ -37,34 +37,17 @@ async function passesFor(id, token) {
     }
 }
 
-// Спецпредложение карты (логика – как activeCardOffer_ в Apps Script): бессрочная за 5 500 вместо 7 500.
-// 1) из админки «💳 продажа карты»: card_offers/<id> с expires_at; 2) само собой – 3 дня, начиная со
-// следующего дня после хайка, на котором человек остался записан (не отменён, не городское событие).
-const OFFER = { price: 5500, full_price: 7500, days: 3, title: 'бессрочная карта за [цена]', text: 'вместо [было] · для тех, кто ходил с нами · ещё [срок]' };
-const mskDay = (ms) => new Date(ms + 3 * 3600 * 1000).toISOString().slice(0, 10);
-const addDays = (date, n) => mskDay(Date.parse(`${date}T12:00:00+03:00`) + n * 86400000);
-async function offerFor(id, token, regsP) {
+// Предложение карты (логика – как activeCardOffer_ в Apps Script). С 22.10.2026 оно только одно –
+// личное приглашение в близкий круг из админки «💳 продажа карты»: card_offers/<id> с kind 'circle',
+// личной ценой (карта минус оплаченные билеты) и сроком. Автоматической спеццены после хайка больше нет.
+const FULL_PRICE = 7500;
+async function offerFor(id, token) {
     try {
         const o = await read(`card_offers/${id}`, token);
-        if (o && o.used_at) return null; // уже купил по предложению
-        let expires = o && !o.closed_at && Number(o.expires_at) * 1000 > Date.now() ? Number(o.expires_at) : 0;
-        // приглашение в близкий круг: личная цена с учётом оплаченных билетов (kind 'circle')
-        if (expires && o.kind === 'circle' && o.price) {
-            return { kind: 'circle', price: Number(o.price), full_price: OFFER.full_price, expires_at: expires,
-                tickets_count: o.tickets_count || 0, tickets_sum: o.tickets_sum || 0 };
-        }
-        if (!expires) {
-            const regs = (await regsP) || {};
-            const today = mskDay(Date.now());
-            const dates = Object.keys(regs).filter(d => regs[d] === true && /^\d{4}-\d{2}-\d{2}$/.test(d)
-                && today >= addDays(d, 1) && today < addDays(d, 1 + OFFER.days)).sort().reverse();
-            for (const d of dates) {
-                const h = await read(`hikes/${d}`, token);
-                const ok = h && h.title && h.cancelled !== true && h.cancelled !== 'yes' && h.city !== true && h.city !== 'yes' && h.book_club !== true;
-                if (ok) { expires = Math.floor(Date.parse(`${addDays(d, 1 + OFFER.days)}T00:00:00+03:00`) / 1000); break; }
-            }
-        }
-        return expires ? { price: Number(o?.price) && expires === Number(o?.expires_at) ? Number(o.price) : OFFER.price, full_price: OFFER.full_price, expires_at: expires, title: OFFER.title, text: OFFER.text } : null;
+        if (!o || o.used_at || o.closed_at || o.kind !== 'circle' || !o.price) return null;
+        if (!(Number(o.expires_at) * 1000 > Date.now())) return null;
+        return { kind: 'circle', price: Number(o.price), full_price: FULL_PRICE, expires_at: Number(o.expires_at),
+            tickets_count: o.tickets_count || 0, tickets_sum: o.tickets_sum || 0 };
     } catch (e) {
         console.error('me offer:', e.message);
         return null;
@@ -90,7 +73,7 @@ module.exports = async (req, res) => {
             read(`members/${id}`, token),
             regsP,
             passesFor(id, token),
-            offerFor(id, token, regsP.catch(() => ({}))),
+            offerFor(id, token),
         ]);
         // тот же вид, что отдаёт loadUserData() в js/firebase.js
         const card = member && member.user_id
