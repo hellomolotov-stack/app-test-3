@@ -16,10 +16,11 @@ function cleanOrder(o) {
     const int = v => Number.isSafeInteger(v) && v >= 0 && v < 1e9 ? v : 0, str = (v, n) => String(v == null ? '' : v).slice(0, n);
     return { number: str(o.number, 20), status: o.status, date: o.date, route: str(o.route, 120), name: str(o.name, 60), phone: str(o.phone, 30),
         items: (Array.isArray(o.items) ? o.items : []).slice(0, 30).map(i => ({ name: str(i && i.name, 80), qty: int(i && i.qty), total: int(i && i.total) })),
-        total: int(o.total), card_discount: int(o.card_discount), ready_food: o.ready_food === true, tg: str(o.tg, 64) };
+        total: int(o.total), card_discount: int(o.card_discount), ready_food: o.ready_food === true, tg: str(o.tg, 64),
+        fulfillment: ['hike', 'home', 'pickup'].includes(o.fulfillment) ? o.fulfillment : 'hike', address: str(o.address, 400) };
 }
 function hikeTotals(orders) {
-    const paid = Object.values(orders || {}).filter(o => o && o.status === 'paid');
+    const paid = Object.values(orders || {}).filter(o => o && o.status === 'paid' && (!o.fulfillment || o.fulfillment === 'hike') && o.request !== 'pickup');
     const sum = paid.reduce((a, o) => a + (o.total || 0), 0);
     return { paid, sum, decision: sum >= FREE_DELIVERY ? '🚚 магазин везёт боксы к тебе домой' : `🛍 забираешь в магазине сам (до ${rub(FREE_DELIVERY)})` };
 }
@@ -32,10 +33,15 @@ function verifyRef(value, secret) {
 }
 // крайний срок заказа (и бесплатной отмены) – как в плагине: 17:00 МСК накануне, с готовой едой 20:00 за два дня
 function hikeDeadline(date, ready) { const [y, m, d] = date.split('-').map(Number); return Date.UTC(y, m - 1, d - (ready ? 2 : 1), ready ? 17 : 14, 0); }
+function receivingLine(o) {
+    if (o.request === 'pickup' || o.fulfillment === 'pickup') return '🛍 Самовывоз';
+    if (o.fulfillment === 'home') return `🚚 Доставка: ${esc(o.address || 'адрес не передан магазином')}`;
+    return '⛰ Получить на хайке';
+}
 function orderLines(o) {
-    return [`👤 ${esc(o.name || 'без имени')}${o.phone ? ' · ' + esc(o.phone) : ''}`,
+    return [`👤 ${/^\d{1,16}$/.test(o.tg || '') ? `<a href="tg://user?id=${o.tg}">${esc(o.name || 'профиль в Telegram')}</a>` : esc(o.name || 'без имени')}${o.phone ? ' · ' + esc(o.phone) : ''}`,
         `🧺 ${o.items.map(i => `${esc(i.name)}${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ') || '—'}`,
-        `💳 ${rub(o.total)}${o.card_discount ? ` (скидка по карте ${rub(o.card_discount)})` : ''}${o.ready_food ? ' · 🍱 готовая еда' : ''}`];
+        `💳 ${rub(o.total)}${o.card_discount ? ` (скидка по карте ${rub(o.card_discount)})` : ''}${o.ready_food ? ' · 🍱 готовая еда' : ''}`, receivingLine(o)];
 }
 function createHandler(deps) {
     const handle = async function (req, res) {
@@ -84,7 +90,7 @@ function createHandler(deps) {
             const date = String(body.date || '');
             if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'invalid_date' });
             try {
-                const mine = Object.values(await deps.hikeOrders.read(date)).filter(o => o && o.status === 'paid' && o.tg === uid && !o.request);
+                const mine = Object.values(await deps.hikeOrders.read(date)).filter(o => o && o.status === 'paid' && o.tg === uid && (!o.fulfillment || o.fulfillment === 'hike') && !o.request);
                 for (const o of mine) {
                     const canCancel = Date.now() < hikeDeadline(date, o.ready_food);
                     const buttons = [[{ text: 'заберу сам в магазине', callback_data: `dco:p:${date}:${o.number}` }]];
@@ -168,12 +174,12 @@ function createHandler(deps) {
                 if (prev && prev.request) order.request = prev.request;
                 if (order.status === 'cancelled' && order.tg) await deps.message(order.tg, `Заказ хайкинг бокса №${esc(order.number)} отменён. Деньги вернутся тем же способом, которым ты платил(а).`);
                 const all = await deps.hikeOrders.save(order);
-                const { paid, sum, decision } = hikeTotals(all);
+                const { paid, sum } = hikeTotals(all);
                 const head = order.status === 'paid'
-                    ? `🆕 <b>Бокс на хайк ${dayLabel(order.date)}</b> · заказ №${esc(order.number)} оплачен`
+                    ? `🆕 <b>${order.fulfillment === 'hike' ? 'Бокс на хайк ' + dayLabel(order.date) : 'Хайкинг бокс'}</b> · заказ №${esc(order.number)} оплачен`
                     : `❌ <b>Заказ №${esc(order.number)} отменён</b> · хайк ${dayLabel(order.date)}`;
                 const text = [head, order.route ? `🏔 ${esc(order.route)}` : '', ...orderLines(order), '',
-                    `Итого на ${dayLabel(order.date)}: ${paid.length} ${paid.length === 1 ? 'заказ' : paid.length < 5 ? 'заказа' : 'заказов'} на ${rub(sum)} → ${decision}`].filter(x => x !== '').join('\n');
+                    order.fulfillment === 'hike' ? `Итого на ${dayLabel(order.date)}: ${paid.length} ${paid.length === 1 ? 'заказ' : paid.length < 5 ? 'заказа' : 'заказов'} на ${rub(sum)}` : ''].filter(x => x !== '').join('\n');
                 await deps.notify(text);
                 return res.status(200).json({ ok: true });
             } catch { return res.status(503).json({ error: 'service_unavailable' }); }

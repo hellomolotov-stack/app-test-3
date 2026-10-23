@@ -52,9 +52,9 @@ test('hike_order: store key required, notifies organizer with totals; cron summa
  assert.equal((await api.request({actor:'0',action:'hike_order',order:order(1),mode:'live'},{})).code,401);
  assert.equal((await r({action:'hike_order',order:{bad:1}})).code,400);
  assert.equal((await r({action:'hike_order',order:order(101)})).code,200);
- assert.match(sent[0],/Бокс на хайк 25\.10/); assert.match(sent[0],/забираешь в магазине/);
+ assert.match(sent[0],/Бокс на хайк 25\.10/); assert.match(sent[0],/Получить на хайке/); assert.doesNotMatch(sent[0],/забираешь в магазине/);
  await r({action:'hike_order',order:order(102)});
- assert.match(sent[1],/2 заказа на 2[\s ]400 ₽ → 🚚 магазин везёт/);
+ assert.match(sent[1],/2 заказа на 2[\s ]400 ₽/);
  await r({action:'hike_order',order:{...order(102),status:'cancelled'}});
  assert.match(sent[2],/отменён/); assert.match(sent[2],/1 заказ на 1[\s ]200 ₽/);
  // cron
@@ -113,4 +113,20 @@ test('box_status: only my paid, non-cancelled box orders per date',async()=>{
  assert.equal((await app({action:'box_status',initData:'bad',dates:['2030-01-10']})).code,401);
  const r=(await app({action:'box_status',initData:'me',dates:['2030-01-10','2030-01-11','bad']})).body;
  assert.deepEqual(Object.keys(r.orders),['2030-01-10']); assert.equal(r.orders['2030-01-10'].number,'1');
+});
+
+test('order notices: verified Telegram profile and actual receiving method, escaped address; delivery excluded from hike totals', async()=>{
+ const sk='c'.repeat(40), sent=[], db={}; const api=setup({DC_LOYALTY_MODE:'live',DC_STORE_KEY:sk});
+ api.deps.notify=async t=>sent.push(t); api.deps.verifyInitData=()=>({id:42});
+ api.deps.hikeOrders={async save(o){(db[o.date] ||= {})[o.number]=o;return db[o.date]},async read(d){return db[d]||{}}};
+ const ref=(await api.request({action:'app_ref',mode:'live'},{})).body.ref;
+ const order={number:'91',status:'paid',date:'2026-10-25',name:'Ира <К>',tg:ref,items:[],total:300000};
+ const send=o=>api.request({actor:'0',mode:'live',action:'hike_order',order:o},{'x-dc-store-key':sk});
+ await send({...order,fulfillment:'home',address:'Ялта, <улица> 5'});
+ assert.match(sent.at(-1),/<a href="tg:\/\/user\?id=42">Ира &lt;К&gt;<\/a>/);
+ assert.match(sent.at(-1),/Доставка: Ялта, &lt;улица&gt; 5/); assert.doesNotMatch(sent.at(-1),/Итого на/);
+ await send({...order,number:'92',fulfillment:'pickup',tg:'42'});
+ assert.match(sent.at(-1),/Самовывоз/); assert.doesNotMatch(sent.at(-1),/tg:\/\/user/);
+ await send({...order,number:'93',fulfillment:'hike',total:10000});
+ assert.match(sent.at(-1),/Получить на хайке/); assert.match(sent.at(-1),/1 заказ на 100 ₽/);
 });

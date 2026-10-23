@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.4.3
+ * Version: 0.4.4
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -442,19 +442,40 @@ final class HI_Club_Checkout {
             'card_discount' => (int) $order->get_meta('_hi_club_card_discount'),
             'ready_food' => $order->get_meta('_hi_club_ready_food') === 'yes',
             'tg' => (string) $order->get_meta('_hi_club_tg'),
+            'fulfillment' => (string) $order->get_meta('_hi_club_way'),
+            'address' => self::notification_address($order),
         ));
+    }
+
+    private static function notification_address($order) {
+        if ($order->get_meta('_hi_club_way') !== 'home') return '';
+        $type = $order->get_shipping_address_1() !== '' ? 'shipping' : 'billing';
+        $parts = array();
+        foreach (array('city', 'address_1', 'address_2', 'postcode') as $field) {
+            $getter = 'get_' . $type . '_' . $field;
+            $value = trim((string) $order->$getter());
+            if ($value !== '') $parts[] = $value;
+        }
+        return mb_substr(implode(', ', $parts), 0, 400);
+    }
+
+    private static function reportable_order($order) {
+        return $order && ($order->get_meta('_hi_club_way') === 'hike' ||
+            ($order->get_meta('_hi_club_source') === 'intelligentsia' &&
+             in_array($order->get_meta('_hi_club_way'), array('home', 'pickup'), true) &&
+             preg_match('/^\d{4}-\d{2}-\d{2}$/D', (string) $order->get_meta('_hi_club_hike_date'))));
     }
 
     public static function notify_paid($order_id) {
         $order = self::order_from($order_id);
-        if (!$order || $order->get_meta('_hi_club_way') !== 'hike' || $order->get_meta('_hi_club_notified') === 'paid') return;
+        if (!self::reportable_order($order) || $order->get_meta('_hi_club_notified') === 'paid') return;
         $r = self::api(self::order_payload($order, 'paid'));
         if ($r && !isset($r['error'])) { $order->update_meta_data('_hi_club_notified', 'paid'); $order->save(); }
     }
 
     public static function notify_cancelled($order_id) {
         $order = self::order_from($order_id);
-        if (!$order || $order->get_meta('_hi_club_way') !== 'hike' || $order->get_meta('_hi_club_notified') !== 'paid') return;
+        if (!self::reportable_order($order) || $order->get_meta('_hi_club_notified') !== 'paid') return;
         $r = self::api(self::order_payload($order, 'cancelled'));
         if ($r && !isset($r['error'])) { $order->update_meta_data('_hi_club_notified', 'cancelled'); $order->save(); }
     }
@@ -551,6 +572,9 @@ final class HI_Club_Checkout {
         $order->update_meta_data('_hi_club_source', 'intelligentsia');
         HI_Club_Stock_Policy::stamp($order);
         $order->update_meta_data('_hi_club_way', $context['way']);
+        // Notification context only; delivery/pickup settings and stock rules are unchanged.
+        $order->update_meta_data('_hi_club_hike_date', $context['date'] ?: current_time('Y-m-d'));
+        $order->update_meta_data('_hi_club_hike_route', $context['route']);
         if (!empty($context['tg'])) $order->update_meta_data('_hi_club_tg', $context['tg']);
         if (self::card_active()) {
             $quote = self::quote(WC()->cart);
@@ -598,8 +622,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.3', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.3');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.4', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.4');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.

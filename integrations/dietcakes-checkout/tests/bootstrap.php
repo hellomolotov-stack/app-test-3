@@ -94,6 +94,9 @@ class WC_Order {
     function save() { $this->saved++; }
     function get_order_number() { return (string) $this->id; }
     function get_billing_first_name() { return 'Анна'; } function get_billing_last_name() { return 'К'; }
+    public $addresses = array();
+    function get_shipping_address_1() { return $this->addresses['shipping_address_1'] ?? ''; }
+    function __call($method, $args) { return $this->addresses[substr($method, 4)] ?? ''; }
     function get_billing_phone() { return '+79780000000'; } function get_total() { return 476.0; }
 }
 // Заглушка API клуба: записываем запросы, ответ задаёт тест.
@@ -130,3 +133,5 @@ function start_case($enabled = true, $club = true, $way = 'pickup', $card = fals
 }
 function fees_named($name) { return array_values(array_filter(WC()->cart->fees_api()->get_fees(), function ($fee) use ($name) { return $fee->name === $name; })); }
 function local_total() { return round(WC()->cart->base + array_sum(array_map(function ($f) { return $f->amount; }, WC()->cart->fees_api()->get_fees())), 2); }
+
+function current_time($format) { return date($format); }

@@ -97,7 +97,21 @@ check('Paid notice sent once', count($GLOBALS['api_calls']) === 1);
 HI_Club_Checkout::notify_cancelled($h);
 check('Cancellation of paid hike order is reported', count($GLOBALS['api_calls']) === 2 && $GLOBALS['api_calls'][1]['body']['order']['status'] === 'cancelled');
 $home = new WC_Order(); $home->meta = array('_hi_club_way' => 'home'); $GLOBALS['api_calls'] = array(); HI_Club_Checkout::notify_paid($home);
-check('Non-hike orders are not reported', count($GLOBALS['api_calls']) === 0);
+check('Unmarked home orders are not reported', count($GLOBALS['api_calls']) === 0);
+$home->meta = array('_hi_club_source'=>'intelligentsia', '_hi_club_way'=>'home', '_hi_club_hike_date'=>'2026-10-25');
+$home->addresses = array('shipping_city'=>'Ялта', 'shipping_address_1'=>'Садовая, 7', 'shipping_address_2'=>'кв. 3', 'billing_address_1'=>'Другое');
+HI_Club_Checkout::notify_paid($home); $p=$GLOBALS['api_calls'][0]['body']['order'];
+check('Club delivery reports actual shipping address', $p['fulfillment']==='home' && $p['address']==='Ялта, Садовая, 7, кв. 3');
+HI_Club_Checkout::notify_paid($home);
+check('Club delivery paid notice is idempotent', count($GLOBALS['api_calls'])===1);
+$pickup = new WC_Order(); $pickup->meta=array('_hi_club_source'=>'intelligentsia','_hi_club_way'=>'pickup','_hi_club_hike_date'=>'2026-10-25');
+HI_Club_Checkout::notify_paid($pickup); $p=$GLOBALS['api_calls'][1]['body']['order'];
+check('Club pickup reports pickup without address', $p['fulfillment']==='pickup' && $p['address']==='');
+$fallback = new WC_Order(); $fallback->meta=array('_hi_club_source'=>'intelligentsia','_hi_club_way'=>'home','_hi_club_hike_date'=>'2026-10-25');
+$fallback->addresses=array('billing_city'=>'Ялта','billing_address_1'=>'Кирова, 1');
+HI_Club_Checkout::notify_paid($fallback); $p=$GLOBALS['api_calls'][2]['body']['order'];
+check('Delivery uses billing address when shipping address absent', $p['address']==='Ялта, Кирова, 1');
+
 
 // Failure diagnostics must classify errors without exposing provider text or secrets.
 loyalty_case(true, $CARD); $GLOBALS['api_reply'] = 'timeout'; WC()->cart->recalculate();
