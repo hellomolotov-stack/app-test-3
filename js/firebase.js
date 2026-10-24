@@ -133,11 +133,26 @@ export function subscribeToRouteFavorites(callback) {
     return () => favoritesRef.off('value', listener);
 }
 
+
+// Открытые узлы (профили, участники, избранные маршруты) читаем обычным запросом к базе:
+// у части людей живое соединение Firebase (websocket) поднимается 6–10+ с, а простой запрос отвечает за доли секунды.
+// Параллельно идёт чтение через Firebase – кто ответил первым, тот и используется.
+function restRead(path, ms = 5000) {
+    const base = database?.app?.options?.databaseURL;
+    if (!base) return Promise.reject(new Error('no db url'));
+    return fetch(`${base.replace(/\/$/, '')}/${path}.json`, { signal: AbortSignal.timeout?.(ms) })
+        .then(r => { if (!r.ok) throw new Error(`${path} ${r.status}`); return r.json(); });
+}
+function fastRead(path) {
+    const viaSdk = database.ref(path).once('value').then(s => s.val());
+    // Promise.any: ошибка одного пути не мешает другому
+    return Promise.any([restRead(path), viaSdk]);
+}
+
 export async function loadRouteFavorites() {
     if (!database) return {};
     try {
-        const snapshot = await database.ref('routeFavorites').once('value');
-        return snapshot.val() || {};
+        return (await fastRead('routeFavorites')) || {};
     } catch (error) {
         console.error('Could not load route favorites', error);
         return {};
@@ -327,8 +342,7 @@ export function subscribeToParticipantCount(hikeDate, callback) {
 
 export async function loadAllParticipants(hikeDate) {
     if (!database) return [];
-    const snapshot = await database.ref('hikeParticipants/' + hikeDate).once('value');
-    const participants = snapshot.val() || {};
+    const participants = (await fastRead('hikeParticipants/' + hikeDate)) || {};
     return Object.values(participants)
         .filter(p => p && p.timestamp)
         .sort((a, b) => b.timestamp - a.timestamp);
@@ -336,8 +350,7 @@ export async function loadAllParticipants(hikeDate) {
 
 export async function loadHikeParticipantIds(hikeDate) {
     if (!database) return [];
-    const snapshot = await database.ref('hikeParticipants/' + hikeDate).once('value');
-    return Object.entries(snapshot.val() || {})
+    return Object.entries((await fastRead('hikeParticipants/' + hikeDate)) || {})
         .filter(([, participant]) => participant && typeof participant === 'object')
         .map(([userId]) => userId);
 }
@@ -383,14 +396,12 @@ export async function loadUserRegistrations(userId) {
 
 export async function loadAllProfiles() {
     if (!database) return {};
-    const snapshot = await database.ref('userProfiles').once('value');
-    return snapshot.val() || {};
+    return (await fastRead('userProfiles')) || {};
 }
 
 export async function loadMyProfile(userId) {
     if (!database || !userId) return null;
-    const snapshot = await database.ref(`userProfiles/${userId}`).once('value');
-    return snapshot.val() || null;
+    return (await fastRead(`userProfiles/${userId}`)) || null;
 }
 
 export async function saveProfile(userId, profileData) {
