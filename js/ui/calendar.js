@@ -3806,20 +3806,15 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     closeParticipantDropdown();
     haptic();
 
-    // профили и список не должны держать нажатие: если база отвечает долго или отказывает (гость без входа),
-    // список всё равно раскрывается – с нашего сервера, а профили подтянутся, когда придут
+    // список не ждёт профили: показываем сразу (участники – из кэша нашего сервера, он уже загружен слайдером),
+    // а кликабельность профилей добавляем, когда они придут
     const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
-    if (Object.keys(state.profiles).length === 0) {
-        try {
-            const profiles = await withTimeout(loadAllProfiles(), 2500);
-            if (profiles) state.profiles = profiles;
-        } catch (e) {
-            console.error('Failed to load profiles', e);
-        }
-    }
+    const profilesP = Object.keys(state.profiles).length === 0
+        ? loadAllProfiles().then(pr => { if (pr) state.profiles = pr; }).catch(e => console.error('Failed to load profiles', e))
+        : null;
 
     let participants = null;
-    try { participants = (await fetchGoingFromServer([hikeDate], true))?.[hikeDate] || null; } catch (e) {}
+    try { participants = (await fetchGoingFromServer([hikeDate]))?.[0] || null; } catch (e) {}
     if (!participants) {
         try { participants = await withTimeout(loadAllParticipants(hikeDate), 4000); } catch (e) { console.error('Failed to load participants', e); }
     }
@@ -3859,9 +3854,10 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             nameSpan.textContent = name;
             item.appendChild(nameSpan);
 
-            if (hasProfile) {
+            {
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
+                    if (!state.profiles[p.userId]) return;
                     log('профиль участника из списка', false, state.user);
                     closeParticipantDropdown();
                     closeBottomSheet();
@@ -3901,6 +3897,15 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
 
     setTimeout(() => dropdown.classList.add('show'), 10);
     currentDropdownHikeDate = hikeDate;
+    // профили пришли позже списка – делаем участников с профилем кликабельными
+    profilesP?.then(() => {
+        dropdown.querySelectorAll('.participant-dropdown-item[data-user-id]').forEach(it => {
+            if (!state.profiles[it.dataset.userId]) return;
+            it.classList.add('clickable-profile');
+            it.style.cursor = 'pointer';
+            it.querySelector('.participant-dropdown-avatar')?.classList.add('has-profile');
+        });
+    });
 
     const closeHandler = e => {
         if (!dropdown.contains(e.target) && e.target !== counterElement) {
