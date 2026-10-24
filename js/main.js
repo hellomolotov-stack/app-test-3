@@ -959,6 +959,11 @@ function startApp() {
     // сразу на весь экран: кнопки бота открывают приложение в половину экрана, пока его не развернуть
     try {
         tg?.expand?.();
+        // Цвета рамки Телеграма вокруг приложения: без них низ (полоса под приложением) и шапка берут цвета
+        // темы Телеграма – в светлой теме это белая полоса под меню. Ставим тёмный фон приложения.
+        try { tg?.setBackgroundColor?.('#0A0B09'); } catch (e) {}
+        try { tg?.setHeaderColor?.('#0A0B09'); } catch (e) {}
+        try { tg?.setBottomBarColor?.('#0A0B09'); } catch (e) {}
         if (tg?.requestFullscreen && !tg.isFullscreen && ['ios', 'android'].includes(tg.platform) && tg.isVersionAtLeast?.('8.0')) tg.requestFullscreen();
     } catch (e) {}
     initAdmission();
