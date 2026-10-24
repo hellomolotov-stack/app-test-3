@@ -3806,16 +3806,26 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     closeParticipantDropdown();
     haptic();
 
+    // профили и список не должны держать нажатие: если база отвечает долго или отказывает (гость без входа),
+    // список всё равно раскрывается – с нашего сервера, а профили подтянутся, когда придут
+    const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))]);
     if (Object.keys(state.profiles).length === 0) {
         try {
-            const profiles = await loadAllProfiles();
-            state.profiles = profiles;
+            const profiles = await withTimeout(loadAllProfiles(), 2500);
+            if (profiles) state.profiles = profiles;
         } catch (e) {
             console.error('Failed to load profiles', e);
         }
     }
 
-    const participants = await loadAllParticipants(hikeDate);
+    let participants = null;
+    try { participants = (await fetchGoingFromServer([hikeDate], true))?.[hikeDate] || null; } catch (e) {}
+    if (!participants) {
+        try { participants = await withTimeout(loadAllParticipants(hikeDate), 4000); } catch (e) { console.error('Failed to load participants', e); }
+    }
+    participants = participants || [];
+    // за время загрузки человек мог закрыть шторку или открыть другой список
+    if (document.querySelector('.participant-dropdown.show') || !counterElement.isConnected) return;
     const dropdown = document.createElement('div');
     dropdown.className = 'participant-dropdown';
     dropdown.style.maxHeight = '250px';

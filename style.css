@@ -2422,6 +2422,11 @@ body::before {
     opacity: 0;
     pointer-events: none;
 }
+/* спрятанные кнопки не должны ловить нажатия: иначе невидимая плашка перекрывает «поделиться» внизу шторки */
+.floating-sheet-buttons.hidden,
+.floating-sheet-buttons.hidden * {
+    pointer-events: none !important;
+}
 
 .bot-chat-overlay {
     z-index: 1200;
