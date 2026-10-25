@@ -8,13 +8,14 @@ export function hikeTiming(hike, now = new Date()) {
     const time = String(hike.start_time || '').match(/^\s*(\d{1,2})[:.](\d{2})(?:\D|$)/);
     const startAt = time && Number(time[1]) < 24 && Number(time[2]) < 60
         ? Date.parse(`${date}T${time[1].padStart(2, '0')}:${time[2]}:00+03:00`) : Infinity;
-    const completedAt = Date.parse(`${date}T20:00:00+03:00`);
-    const closeAt = Math.min(startAt + 3600000, completedAt);
+    const fallbackAt = Date.parse(`${date}T20:00:00+03:00`);
+    const completedAt = Number.isFinite(startAt) ? startAt + 5 * 3600000 : fallbackAt;
+    const closeAt = Number.isFinite(startAt) ? startAt + 3600000 : fallbackAt;
     const today = moscowDateKey(now);
     const isPast = date < today;
     const isClosed = isPast || new Date(now).getTime() >= closeAt;
     return { startAt, closeAt, completedAt, isPast, isClosed,
-        isUnderway: date === today && isClosed,
+        isUnderway: date === today && isClosed && new Date(now).getTime() < completedAt,
         isCompletedToday: date === today && new Date(now).getTime() >= completedAt };
 }
 

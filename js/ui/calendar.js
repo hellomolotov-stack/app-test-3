@@ -394,7 +394,8 @@ function feedNearestCard(h) {
     const km = feedKm(h);
     const sub = [feedWhen(h.date), h.start_time, km ? `${km} км` : ''].filter(Boolean).join(' · ');
     const registered = state._userRegs?.[h.date] === true;
-    const closed = hikeTiming(h).isClosed;
+    const timing = hikeTiming(h);
+    const closed = timing.isClosed;
     // билет: дата | название и «когда»; ниже шкала мест (без аватарок – они долго грузятся) и кнопка
     return `<div class="ef-next ef-ticket${feedIsWoman(h) ? ' is-woman' : ''}${feedIsCity(h) ? ' is-city' : ''}" data-open="${h.date}">
         <div class="ef-tk-row">
@@ -404,7 +405,7 @@ function feedNearestCard(h) {
                 <div class="ef-tk-sub">${sub}</div>
             </div>
         </div>
-        ${closed ? '<div class="ef-tk-closed">запись закрыта</div>' : `<div class="ef-tk-seats" data-seats-for="${h.date}">
+        ${closed ? `<div class="ef-tk-closed">${timing.isCompletedToday ? 'хайк завершён' : 'запись закрыта'}</div>` : `<div class="ef-tk-seats" data-seats-for="${h.date}">
             <div class="ef-tk-seats-top"><span class="ef-tk-left">&nbsp;</span><span class="ef-tk-cap"></span></div>
             <div class="ef-tk-bar"><i></i></div>
         </div>`}
@@ -438,6 +439,7 @@ function feedRow(h, nearestDate = '') {
     const isTeaser = !h.title || !h.title.trim();
     const postponed = isPostponed(h);
     const underway = !cancelled && !isTeaser && !postponed && !isCity && h.book_club !== true && hikeTiming(h).isUnderway;
+    const completed = !cancelled && !isTeaser && !postponed && !isCity && h.book_club !== true && hikeTiming(h).isCompletedToday;
     const icon = postponed ? '🌧️' : isTeaser ? (h.emoji || '⛰️') : isCity ? (h.emoji || '🥂') : h.book_club === true ? '📚' : '⛰️';
     const km = feedKm(h);
     let sub = FEED_WD[d.getDay()];
@@ -455,6 +457,7 @@ function feedRow(h, nearestDate = '') {
     else if (!cancelled && isPast && hasLetterLink(h)) action = `<button class="ef-report ef-letter" data-report="${h.date}">✉️ письмо</button>`;
     else if (!cancelled && !isPast && (isTeaser || postponed)) action = feedNotifyButton(h.date, true);
     // жёлтая «записаться» одна – в карточке ближайшего; в списке строка сама открывает хайк
+    else if (completed) action = '<span class="ef-near is-underway">хайк завершён</span>';
     else if (underway) action = '<span class="ef-near is-underway">уже идём</span>';
     else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">ближайший хайк</span>`;
     else if (!cancelled && !isPast) action = `<span class="ef-go" aria-hidden="true">›</span>`;
@@ -490,9 +493,10 @@ function renderEventsFeed(container) {
     const nowMonth = today.slice(0, 7);
     const months = feedMonthList(events);
     const nearest = feedNearest(events);
-    const underway = events.find(h => h.date === today && h.title?.trim() && !h.cancelled && !isPostponed(h)
-        && !feedIsCity(h) && h.book_club !== true && hikeTiming(h).isUnderway);
-    const featured = underway || nearest;
+    const todayHike = events.find(h => h.date === today && h.title?.trim() && !h.cancelled && !isPostponed(h)
+        && !feedIsCity(h) && h.book_club !== true && hikeTiming(h).isClosed);
+    const featured = todayHike || nearest;
+    const featuredLabel = todayHike ? (hikeTiming(todayHike).isCompletedToday ? 'хайк завершён' : 'уже идём') : 'ближайший хайк';
     if (!feedMonth || !months.includes(feedMonth)) {
         const withPast = months.filter(k => k <= nowMonth && events.some(h => h.date.startsWith(k) && h.date < today));
         feedMonth = events.some(h => h.date.startsWith(nowMonth)) ? nowMonth : (withPast.pop() || nowMonth);
@@ -526,7 +530,7 @@ function renderEventsFeed(container) {
     container.innerHTML = `
         <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
         <div class="calendar-item events-feed">
-            <div class="ef-label is-soon">${underway ? 'уже идём' : 'ближайший хайк'}</div>
+            <div class="ef-label is-soon">${featuredLabel}</div>
             ${feedNearestCard(featured)}
             <div class="ef-label-row">
                 <div class="ef-label">события клуба</div>
@@ -2919,7 +2923,7 @@ function updateFloatingSheetButtons() {
 
     // Фазы по времени в день хайка:
     //   запись закрыта  — через час после старта и до 20:00
-    //   хайк завершён    — после 20:00 того же дня
+    //   хайк завершён    — через пять часов после старта
     const isCompletedToday = !isCancelled && !isPlaceholder && timing.isCompletedToday;
     const isClosedRegistration = !isPast && !isCancelled && !isPlaceholder && timing.isClosed && !isCompletedToday;
 

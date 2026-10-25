@@ -56,6 +56,17 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmoloto
                 assert.ok((await page.locator('.floating-sheet-buttons').textContent()).includes('запись закрыта'));
                 await page.evaluate(() => calendarTest.close());
             }
+            await page.clock.setSystemTime(new Date('2026-10-25T15:59:59+03:00'));
+            await page.evaluate(() => calendarTest.render());
+            assert.equal(await page.locator('.ef-label.is-soon').textContent(), 'уже идём');
+            await page.clock.fastForward(1200);
+            assert.equal(await page.locator('.ef-label.is-soon').textContent(), 'хайк завершён');
+            assert.equal(await page.locator('.ef-tk-closed').textContent(), 'хайк завершён');
+            assert.equal(await page.locator('.ef-list [data-open="2026-10-25"] .ef-near').textContent(), 'хайк завершён');
+            await page.evaluate(() => calendarTest.open(1));
+            assert.ok((await page.locator('.floating-sheet-buttons').textContent()).includes('хайк завершён'));
+            assert.equal(await page.locator('.floating-sheet-buttons .swipe-track').count(), 0);
+            await page.evaluate(() => calendarTest.close());
             await page.locator('[data-month="2026-11"]').click();
             assert.equal(await november.count(), 0, 'no duplicated next-month section on November tab');
             assert.equal(await page.locator('.ef-list [data-open="2026-11-01"]').count(), 1);
