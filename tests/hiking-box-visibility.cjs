@@ -5,6 +5,7 @@ const source = fs.readFileSync('js/ui/hiking-box.js', 'utf8');
 const fragment = source.slice(source.indexOf('export function hikingBoxEnabled'), source.indexOf('// плашка над слайдером')).replace('export ', '');
 const state = { user: null, hikesWithTitle: [] };
 const context = vm.createContext({ state, Date });
+vm.runInContext(fs.readFileSync('js/hike-timing.js', 'utf8').replace(/export /g, ''), context);
 vm.runInContext(fragment, context);
 const now = new Date('2026-10-21T12:00:00+03:00');
 const hike = (date, values = {}) => ({ date, title: 'Хайк', start_time: '10:00', ...values });

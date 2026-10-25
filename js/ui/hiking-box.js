@@ -2,6 +2,7 @@
 // и шторка «что внутри», которая вырастает прямо из плашки. Покупка – на сайте партнёра.
 // Запущено для всех 20.10.2026.
 import { state } from '../state.js';
+import { hikeTiming } from '../hike-timing.js';
 import { haptic, openLink } from '../utils.js';
 import { log, logSeq } from '../api.js';
 
@@ -197,11 +198,7 @@ export function hikingBoxEnabled(date, now = new Date()) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(hike.date || '') || hike.date < today) return false;
         if (!hike.title?.trim() || hike.cancelled === true || hike.book_club === true
             || hike.city === true || String(hike.city).toLowerCase() === 'yes' || /🌧/.test(hike.emoji || '')) return false;
-        const time = String(hike.start_time || '').match(/^(\d{1,2})[:.](\d{2})/);
-        const start = time && Number(time[1]) < 24 && Number(time[2]) < 60
-            ? new Date(`${hike.date}T${time[1].padStart(2, '0')}:${time[2]}:00+03:00`).getTime() : Infinity;
-        const evening = new Date(`${hike.date}T20:00:00+03:00`).getTime();
-        return now.getTime() < Math.min(start + 60 * 60 * 1000, evening);
+        return !hikeTiming(hike, now).isClosed;
     }).sort((a, b) => a.date.localeCompare(b.date))[0];
     return !!current && current.date === date;
 }

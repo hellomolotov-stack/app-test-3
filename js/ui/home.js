@@ -3,6 +3,7 @@ import { mountAdmissionEntry } from './admission.js';
 import { isAdmissionPilot } from '../admission.js';
 import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti, scrollToElement } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
+import { isUpcomingHike } from '../hike-timing.js';
 import { log, updateRegistrationInSheet, inviteApi } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
@@ -42,13 +43,10 @@ function greeting(firstName) {
 
 function mountStickyHikeCta() {
     removeStickyHikeCta();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     let nextHikeIndex = -1;
     for (let i = 0; i < (state.hikesWithTitle || []).length; i++) {
         const h = state.hikesWithTitle[i];
-        const d = new Date(h.date);
-        if (d >= today && !h.cancelled && h.city !== true && h.city !== 'yes') {
+        if (isUpcomingHike(h)) {
             nextHikeIndex = i;
             break;
         }
@@ -68,6 +66,10 @@ function mountStickyHikeCta() {
         showBottomSheet(i !== -1 ? i : nextHikeIndex);
     });
 }
+
+window.addEventListener('club:hike-clock', () => {
+    if (document.getElementById('stickyHikeCta')) mountStickyHikeCta();
+});
 
 function getCurrentTopOffset() {
     if (!tg) return 76;
@@ -547,10 +549,8 @@ function renderGuestHome() {
     showBottomNav(true);
     const main = mainDiv();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const nextHikeIdx = (state.hikesWithTitle || []).findIndex(
-        h => h.date && !h.cancelled && h.city !== true && h.city !== 'yes' && new Date(h.date) >= today
+        h => isUpcomingHike(h)
     );
     const nextHike = nextHikeIdx >= 0 ? state.hikesWithTitle[nextHikeIdx] : null;
 

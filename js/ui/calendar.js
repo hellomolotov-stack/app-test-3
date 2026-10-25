@@ -1,5 +1,6 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { requireAdmission } from './admission.js';
+import { hikeTiming, isUpcomingHike, moscowDateKey } from '../hike-timing.js';
 import { trackFunnel } from '../analytics.js';
 import { passCodeFor } from '../pass-store.js';
 import { isAdmissionPilot, admission } from '../admission.js';
@@ -251,6 +252,9 @@ let feedMonth = null;
 let feedMap = null;
 let feedMapEl = null;   // контейнер живой карты – переносим его в новую разметку, а не пересоздаём
 let feedMapKey = '';
+let feedClockContainer = null;
+let hikeClockTimer = null;
+let hikeClockListening = false;
 const FEED_WAITLIST_KEY = 'hikeWaitlist';
 
 // На какие даты-заглушки человек попросил сообщить об открытии записи (локально, сервер – источник рассылки).
@@ -291,8 +295,7 @@ function feedDate(dateStr) {
 }
 
 function feedTodayStr() {
-    const t = new Date();
-    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    return moscowDateKey();
 }
 
 // городское событие – и с названием (city), и заглушка «🏄 готовим событие»: всё оформление голубое
@@ -336,8 +339,34 @@ function feedEvents() {
 }
 
 function feedNearest(events) {
-    const today = feedTodayStr();
-    return events.find(h => h.date >= today && h.cancelled !== true && !feedIsCity(h) && h.book_club !== true);
+    return events.find(h => isUpcomingHike(h));
+}
+
+function scheduleHikeClock() {
+    clearTimeout(hikeClockTimer);
+    const now = Date.now();
+    const midnight = Date.parse(`${feedTodayStr()}T00:00:00+03:00`) + 86400000;
+    const boundaries = feedEvents().flatMap(h => {
+        const timing = hikeTiming(h);
+        return [timing.closeAt, timing.completedAt];
+    }).filter(at => at > now);
+    const next = Math.min(midnight, ...boundaries);
+    hikeClockTimer = setTimeout(() => {
+        if (feedClockContainer?.isConnected) renderEventsFeed(feedClockContainer);
+        refreshBottomSheetIfOpen();
+        window.dispatchEvent(new Event('club:hike-clock'));
+        if (feedClockContainer?.isConnected || document.getElementById('hikeBottomSheet')) scheduleHikeClock();
+    }, Math.min(2147483647, Math.max(50, next - now + 20)));
+    if (!hikeClockListening) {
+        hikeClockListening = true;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState !== 'visible') return;
+            if (feedClockContainer?.isConnected) renderEventsFeed(feedClockContainer);
+            refreshBottomSheetIfOpen();
+            window.dispatchEvent(new Event('club:hike-clock'));
+            scheduleHikeClock();
+        });
+    }
 }
 
 function feedDateBadge(dateStr) {
@@ -365,6 +394,7 @@ function feedNearestCard(h) {
     const km = feedKm(h);
     const sub = [feedWhen(h.date), h.start_time, km ? `${km} км` : ''].filter(Boolean).join(' · ');
     const registered = state._userRegs?.[h.date] === true;
+    const closed = hikeTiming(h).isClosed;
     // билет: дата | название и «когда»; ниже шкала мест (без аватарок – они долго грузятся) и кнопка
     return `<div class="ef-next ef-ticket${feedIsWoman(h) ? ' is-woman' : ''}${feedIsCity(h) ? ' is-city' : ''}" data-open="${h.date}">
         <div class="ef-tk-row">
@@ -374,14 +404,14 @@ function feedNearestCard(h) {
                 <div class="ef-tk-sub">${sub}</div>
             </div>
         </div>
-        <div class="ef-tk-seats" data-seats-for="${h.date}">
+        ${closed ? '<div class="ef-tk-closed">запись закрыта</div>' : `<div class="ef-tk-seats" data-seats-for="${h.date}">
             <div class="ef-tk-seats-top"><span class="ef-tk-left">&nbsp;</span><span class="ef-tk-cap"></span></div>
             <div class="ef-tk-bar"><i></i></div>
-        </div>
+        </div>`}
         <div class="ef-tk-actions">
             ${registered
                 ? `<button class="btn ef-tk-go is-in">ты записан ✓</button>`
-                : `<button class="btn btn-yellow ef-tk-go">записаться</button>`}
+                : closed ? '<button class="btn ef-tk-go">посмотреть маршрут</button>' : `<button class="btn btn-yellow ef-tk-go">записаться</button>`}
         </div>
     </div>`;
 }
@@ -407,6 +437,7 @@ function feedRow(h, nearestDate = '') {
     const cancelled = h.cancelled === true;
     const isTeaser = !h.title || !h.title.trim();
     const postponed = isPostponed(h);
+    const underway = !cancelled && !isTeaser && !postponed && !isCity && h.book_club !== true && hikeTiming(h).isUnderway;
     const icon = postponed ? '🌧️' : isTeaser ? (h.emoji || '⛰️') : isCity ? (h.emoji || '🥂') : h.book_club === true ? '📚' : '⛰️';
     const km = feedKm(h);
     let sub = FEED_WD[d.getDay()];
@@ -424,7 +455,8 @@ function feedRow(h, nearestDate = '') {
     else if (!cancelled && isPast && hasLetterLink(h)) action = `<button class="ef-report ef-letter" data-report="${h.date}">✉️ письмо</button>`;
     else if (!cancelled && !isPast && (isTeaser || postponed)) action = feedNotifyButton(h.date, true);
     // жёлтая «записаться» одна – в карточке ближайшего; в списке строка сама открывает хайк
-    else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">↑ ближайший</span>`;
+    else if (underway) action = '<span class="ef-near is-underway">уже идём</span>';
+    else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">ближайший хайк</span>`;
     else if (!cancelled && !isPast) action = `<span class="ef-go" aria-hidden="true">›</span>`;
     const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}${postponed ? ' is-rain' : ''}`;
     const img = h.image && !cancelled && !postponed ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
@@ -458,6 +490,9 @@ function renderEventsFeed(container) {
     const nowMonth = today.slice(0, 7);
     const months = feedMonthList(events);
     const nearest = feedNearest(events);
+    const underway = events.find(h => h.date === today && h.title?.trim() && !h.cancelled && !isPostponed(h)
+        && !feedIsCity(h) && h.book_club !== true && hikeTiming(h).isUnderway);
+    const featured = underway || nearest;
     if (!feedMonth || !months.includes(feedMonth)) {
         const withPast = months.filter(k => k <= nowMonth && events.some(h => h.date.startsWith(k) && h.date < today));
         feedMonth = events.some(h => h.date.startsWith(nowMonth)) ? nowMonth : (withPast.pop() || nowMonth);
@@ -481,6 +516,9 @@ function renderEventsFeed(container) {
     const count = monthEvents.filter(h => h.title && h.title.trim() && h.cancelled !== true).length;
     const monthName = FEED_MONTHS[Number(feedMonth.slice(5)) - 1];
     const countWord = count % 10 === 1 && count % 100 !== 11 ? 'событие' : (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) ? 'события' : 'событий';
+    const nextMonthHike = feedMonth === nowMonth && nearest && nearest.date.slice(0, 7) > nowMonth ? nearest : null;
+    const nextMonthHtml = nextMonthHike
+        ? `<div class="ef-upcoming-month"><div class="ef-upcoming-month-title"><span>${FEED_MONTHS[Number(nextMonthHike.date.slice(5, 7)) - 1]}${nextMonthHike.date.slice(0, 4) !== nowMonth.slice(0, 4) ? ` ${nextMonthHike.date.slice(0, 4)}` : ''}</span><span class="ef-near">ближайший хайк</span></div>${feedRow(nextMonthHike)}</div>` : '';
     const listHtml = (future.length || past.length)
         ? future.map(h => feedRow(h, nearest?.date)).join('') + past.map(h => feedRow(h)).join('')
         : `<div class="ef-row-sub ef-empty-month">${feedMonth >= nowMonth ? 'планируем хайки и события' : 'в этом месяце событий не было'}</div>`;
@@ -488,8 +526,8 @@ function renderEventsFeed(container) {
     container.innerHTML = `
         <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
         <div class="calendar-item events-feed">
-            <div class="ef-label is-soon">ближайший хайк</div>
-            ${feedNearestCard(nearest)}
+            <div class="ef-label is-soon">${underway ? 'уже идём' : 'ближайший хайк'}</div>
+            ${feedNearestCard(featured)}
             <div class="ef-label-row">
                 <div class="ef-label">события клуба</div>
                 <div class="ef-month-nav">
@@ -499,7 +537,7 @@ function renderEventsFeed(container) {
             </div>
             <div class="ef-strip">${strip}</div>
             <div class="ef-month-title">${monthName}${count ? `: ${count} ${countWord}` : ''}</div>
-            <div class="ef-list">${listHtml}</div>
+            <div class="ef-list">${nextMonthHtml}${listHtml}</div>
         </div>
         <div class="ef-suggest"><button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button></div>`;
 
@@ -539,8 +577,10 @@ function renderEventsFeed(container) {
     }));
     bindSuggestEventButton();
     feedFillGoing(container);
-    feedPlaceMap(container, nearest);
+    feedPlaceMap(container, featured);
     feedFitTicketTitle(container);
+    feedClockContainer = container;
+    scheduleHikeClock();
 }
 
 // Главная при запуске рисуется дважды (кэш, затем свежие данные), месяцы переключаются –
@@ -1881,6 +1921,7 @@ export function getTotalCardsCount() {
 
 export function showBottomSheet(index) {
     if (!state.hikesWithTitle.length || !state.hikesWithTitle[index]) return;
+    scheduleHikeClock();
 
     sheetLastOpenedAt = Date.now();
     const selectedHike = state.hikesWithTitle[index];
@@ -2683,6 +2724,11 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         }
 
         if (!isBooked && newLeft >= maxLeft * 0.95) {
+            if (!feedIsCity(hike) && hike.book_club !== true && hikeTiming(hike).isClosed) {
+                isDown = false;
+                updateFloatingSheetButtons();
+                return;
+            }
             trackFunnel('booking_intent', hike.date);
             if (isGuest) {
                 isDown = false;
@@ -2868,25 +2914,14 @@ function updateFloatingSheetButtons() {
     const isCity = (hike.city === true || hike.city === 'yes');
     const isBookClub = hike.book_club === true;
     const isGuest = state.userCard.status !== 'active';
-    const isPast = new Date(hike.date) < new Date().setHours(0,0,0,0);
+    const timing = hikeTiming(hike);
+    const isPast = timing.isPast;
 
     // Фазы по времени в день хайка:
     //   запись закрыта  — через час после старта и до 20:00
     //   хайк завершён    — после 20:00 того же дня
-    let isClosedRegistration = false;
-    let isCompletedToday = false;
-    if (!isPast && !isCancelled && !isPlaceholder && hike.start_time) {
-        const tm = String(hike.start_time).match(/(\d{1,2})[:.](\d{2})/);
-        const dp = String(hike.date).split('-').map(Number);
-        if (tm && dp.length === 3) {
-            const startDT = new Date(dp[0], dp[1] - 1, dp[2], Number(tm[1]), Number(tm[2]));
-            const closedDT = new Date(startDT.getTime() + 60 * 60 * 1000);
-            const completedDT = new Date(dp[0], dp[1] - 1, dp[2], 20, 0);
-            const now = new Date();
-            if (now >= completedDT) isCompletedToday = true;
-            else if (now >= closedDT) isClosedRegistration = true;
-        }
-    }
+    const isCompletedToday = !isCancelled && !isPlaceholder && timing.isCompletedToday;
+    const isClosedRegistration = !isPast && !isCancelled && !isPlaceholder && timing.isClosed && !isCompletedToday;
 
     container.innerHTML = '';
     container.classList.remove('has-plates');
@@ -3333,6 +3368,10 @@ function updateFloatingSheetButtons() {
     goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
     goBtn.addEventListener('click', e => {
         e.preventDefault();
+        if (!feedIsCity(hike) && hike.book_club !== true && hikeTiming(hike).isClosed) {
+            updateFloatingSheetButtons();
+            return;
+        }
         trackFunnel('booking_intent', hike.date);
         const userId = state.user?.id;
         const hikeDate = hike.date;
@@ -3433,6 +3472,12 @@ async function showCityGuestPopup(hikeDate, hikeTitle, onClose) {
 }
 
 export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, feature = 'hike') {
+    const targetHike = state.hikesWithTitle.find(h => h.date === hikeDate);
+    if (targetHike && !feedIsCity(targetHike) && targetHike.book_club !== true && hikeTiming(targetHike).isClosed) {
+        onClose?.();
+        refreshBottomSheetIfOpen();
+        return;
+    }
     // Profile introduction is informational; admission is checked when purchasing.
     if (feature !== 'profiles' && !await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
     haptic();
@@ -4555,6 +4600,8 @@ async function verifyTicketPaymentReturn(hikeDate) {
 // ==================== КОРОТКИЙ БАННЕР ВЫБОРА: БИЛЕТ ИЛИ КАРТА (гость без карты) ====================
 // Хайк открыт из приглашения +1 (state.pendingInvite): слайдер записывает по приглашению, без билета
 async function registerByInvite(hikeDate, hikeTitle, onClose) {
+    const hike = state.hikesWithTitle.find(h => h.date === hikeDate);
+    if (hike && hikeTiming(hike).isClosed) { onClose?.(); refreshBottomSheetIfOpen(); return; }
     const inv = state.pendingInvite;
     try {
         const { inviteApi } = await import('../api.js');
@@ -4575,9 +4622,12 @@ async function registerByInvite(hikeDate, hikeTitle, onClose) {
 }
 
 async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
+    const hike = state.hikesWithTitle.find(h => h.date === hikeDate);
+    if (hike && hikeTiming(hike).isClosed) { onClose?.(); refreshBottomSheetIfOpen(); return; }
     // по приглашению +1 анкета не нужна – за человека ручается тот, кто его позвал
     if (state.pendingInvite?.date === hikeDate) return registerByInvite(hikeDate, hikeTitle, onClose);
     if (!await requireAdmission({ hikeDate, hikeTitle }, onClose)) return;
+    if (hike && hikeTiming(hike).isClosed) { onClose?.(); refreshBottomSheetIfOpen(); return; }
     // места на экране могли прийти из кэша сервера (до 10 с) – перед покупкой сверяемся без кэша.
     // Нет ответа – не мешаем записи (как было раньше).
     if (!passCodeFor(hikeDate)) {

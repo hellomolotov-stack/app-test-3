@@ -1,6 +1,8 @@
 // js/api.js
 import { isAdmissionPilot, admissionRequest } from './admission.js';
 import { GUEST_API_URL, REGISTRATION_API_URL } from './config.js';
+import { state } from './state.js';
+import { hikeTiming } from './hike-timing.js';
 import { trackFunnel } from './analytics.js';
 import { passCodeFor } from './pass-store.js';
 
@@ -152,6 +154,7 @@ export function registerWebAppUser(user) {
 const NO_USER_TEXT = 'Оплата работает только в приложении внутри Telegram. Открой его через бота @yaltahiking_bot и попробуй ещё раз.';
 
 export function paymentErrorText(err, fallback) {
+    if (err?.code === 'REGISTRATION_CLOSED') return 'Запись на этот хайк уже закрыта';
     if (err?.code === 'NO_USER') return NO_USER_TEXT;
     if (/предложение/.test(err?.message || '')) return 'Срок спецпредложения закончился – карта доступна по обычной цене.';
     return fallback;
@@ -178,6 +181,13 @@ export function validatePayment(data, { cardType, giftCardType, expectedAmount }
 }
 
 export async function initPayment({ userId, firstName, lastName, username, hikeDate, hikeTitle, cardType, giftCardType, expectedAmount }) {
+    const targetHike = cardType === 'ticket' && hikeDate
+        ? state.hikesWithTitle.find(h => h.date === hikeDate) || state.hikesData?.[hikeDate] : null;
+    if (cardType === 'ticket' && targetHike && hikeTiming({ ...targetHike, date: hikeDate }).isClosed) {
+        const error = new Error('Запись на этот хайк уже закрыта');
+        error.code = 'REGISTRATION_CLOSED';
+        throw error;
+    }
     expectedAmount ??= cardType === 'ticket' ? 1200 : cardType === 'permanent' ? 7500 : cardType === 'season' ? 5500 : cardType === 'gift' ? (giftCardType === 'permanent' ? 7500 : 5500) : undefined;
     if (isAdmissionPilot()) {
         const data = await admissionRequest('payment', { payment: { hikeDate, hikeTitle, cardType, giftCardType } });
