@@ -4630,8 +4630,6 @@ body::after {
 
 .ef-next { position: relative; overflow: hidden; border-radius: 20px; background: rgba(255,255,255,.07); border: 1px solid rgba(217,253,25,.35); cursor: pointer; }
 .ef-tk-closed { margin: 12px 16px 0; font-size: 13px; color: rgba(255,255,255,.65); }
-.ef-upcoming-month { margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,.12); padding-bottom: 8px; }
-.ef-upcoming-month-title { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 4px 0 10px; color: rgba(255,255,255,.65); font-size: 12px; }
 .events-feed .ef-near.is-underway { color: rgba(255,255,255,.65); }
 .ef-next.is-woman { border-color: rgba(251,94,176,.5); }
 .ef-next.is-woman .ef-badge { background: #FB5EB0; color: #fff; }

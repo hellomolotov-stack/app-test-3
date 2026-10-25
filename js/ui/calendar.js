@@ -493,10 +493,10 @@ function renderEventsFeed(container) {
     const nowMonth = today.slice(0, 7);
     const months = feedMonthList(events);
     const nearest = feedNearest(events);
-    const todayHike = events.find(h => h.date === today && h.title?.trim() && !h.cancelled && !isPostponed(h)
-        && !feedIsCity(h) && h.book_club !== true && hikeTiming(h).isClosed);
-    const featured = todayHike || nearest;
-    const featuredLabel = todayHike ? (hikeTiming(todayHike).isCompletedToday ? 'хайк завершён' : 'уже идём') : 'ближайший хайк';
+    const nearestDate = nearest ? feedDate(nearest.date) : null;
+    const featuredLabel = nearestDate
+        ? `ближайший хайк · ${nearestDate.getDate()} ${FEED_MONTHS_GEN[nearestDate.getMonth()]}`
+        : 'ближайший хайк';
     if (!feedMonth || !months.includes(feedMonth)) {
         const withPast = months.filter(k => k <= nowMonth && events.some(h => h.date.startsWith(k) && h.date < today));
         feedMonth = events.some(h => h.date.startsWith(nowMonth)) ? nowMonth : (withPast.pop() || nowMonth);
@@ -520,9 +520,6 @@ function renderEventsFeed(container) {
     const count = monthEvents.filter(h => h.title && h.title.trim() && h.cancelled !== true).length;
     const monthName = FEED_MONTHS[Number(feedMonth.slice(5)) - 1];
     const countWord = count % 10 === 1 && count % 100 !== 11 ? 'событие' : (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) ? 'события' : 'событий';
-    const nextMonthHike = feedMonth === nowMonth && nearest && nearest.date.slice(0, 7) > nowMonth ? nearest : null;
-    const nextMonthHtml = nextMonthHike
-        ? `<div class="ef-upcoming-month"><div class="ef-upcoming-month-title"><span>${FEED_MONTHS[Number(nextMonthHike.date.slice(5, 7)) - 1]}${nextMonthHike.date.slice(0, 4) !== nowMonth.slice(0, 4) ? ` ${nextMonthHike.date.slice(0, 4)}` : ''}</span><span class="ef-near">ближайший хайк</span></div>${feedRow(nextMonthHike)}</div>` : '';
     const listHtml = (future.length || past.length)
         ? future.map(h => feedRow(h, nearest?.date)).join('') + past.map(h => feedRow(h)).join('')
         : `<div class="ef-row-sub ef-empty-month">${feedMonth >= nowMonth ? 'планируем хайки и события' : 'в этом месяце событий не было'}</div>`;
@@ -531,7 +528,7 @@ function renderEventsFeed(container) {
         <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
         <div class="calendar-item events-feed">
             <div class="ef-label is-soon">${featuredLabel}</div>
-            ${feedNearestCard(featured)}
+            ${feedNearestCard(nearest)}
             <div class="ef-label-row">
                 <div class="ef-label">события клуба</div>
                 <div class="ef-month-nav">
@@ -541,7 +538,7 @@ function renderEventsFeed(container) {
             </div>
             <div class="ef-strip">${strip}</div>
             <div class="ef-month-title">${monthName}${count ? `: ${count} ${countWord}` : ''}</div>
-            <div class="ef-list">${nextMonthHtml}${listHtml}</div>
+            <div class="ef-list">${listHtml}</div>
         </div>
         <div class="ef-suggest"><button class="btn-suggest-event" id="suggestEventBtn">+ предложить событие</button></div>`;
 
@@ -581,7 +578,7 @@ function renderEventsFeed(container) {
     }));
     bindSuggestEventButton();
     feedFillGoing(container);
-    feedPlaceMap(container, featured);
+    feedPlaceMap(container, nearest);
     feedFitTicketTitle(container);
     feedClockContainer = container;
     scheduleHikeClock();
