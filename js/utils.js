@@ -224,6 +224,7 @@ export function scrollToElement(element, offset = 80) {
     window.scrollTo({ top: targetY, behavior: 'smooth' });
 }
 
-export const tg = window.Telegram?.WebApp;
+export let tg = window.Telegram?.WebApp;
+window.addEventListener('club:telegram-ready', () => { tg = window.Telegram?.WebApp; });
 export const mainDiv = () => document.getElementById('mainContent');
 export const subtitle = () => document.getElementById('subtitle');

@@ -632,12 +632,16 @@ const FIREBASE_SDK = [
     'https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js',
     'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js'
 ];
-function loadScript(src) {
+function loadScript(src, timeoutMs = 6000) {
     return new Promise((resolve, reject) => {
         const s = document.createElement('script');
+        const timer = setTimeout(() => {
+            s.remove();
+            reject(new Error('Script load timed out'));
+        }, timeoutMs);
         s.src = src;
-        s.onload = resolve;
-        s.onerror = reject;
+        s.onload = () => { clearTimeout(timer); resolve(); };
+        s.onerror = () => { clearTimeout(timer); s.remove(); reject(new Error('Script load failed')); };
         document.head.appendChild(s);
     });
 }
@@ -656,6 +660,7 @@ loadFirebaseSdk(); // стартуем загрузку сразу при зап
 
 async function loadAppData() {
     showAnimatedLoader();
+    let startupFallbackTimer;
     try {
         loadCachedState();
         applyAdmissionVisitorMode();
@@ -680,6 +685,7 @@ async function loadAppData() {
             } catch (e) {}
         }
         let firstRenderDone = false;
+        let firstRenderWasEmpty = false;
         let deepLinkHandled = false;
         // deep link выполняем, когда подключилась база: ему нужны хайки и записи из Firebase
         let firebaseReady = false;
@@ -690,8 +696,10 @@ async function loadAppData() {
         };
         // Ранний рендер главной: как только есть список хайков (из кэша или первого ответа Firebase) —
         // показываем экран и сразу выполняем deep-link, не дожидаясь всех сетевых запросов
-        const earlyRenderHome = () => {
-            if (firstRenderDone || !state.hikesWithTitle.length) return;
+        const earlyRenderHome = (allowEmpty = false) => {
+            if (firstRenderDone || (!allowEmpty && !state.hikesWithTitle.length)) return;
+            clearTimeout(startupFallbackTimer);
+            firstRenderWasEmpty = !state.hikesWithTitle.length;
             if (!state.userCard || state.userCard.status === 'loading') {
                 state.userCard = { status: 'inactive', hikes: 0, cardUrl: '' };
             }
@@ -708,6 +716,11 @@ async function loadAppData() {
             firstRenderDone = true;
             ensureDeepLink();
         };
+        startupFallbackTimer = setTimeout(() => {
+            if (firstRenderDone) return;
+            window.dispatchEvent(new Event('club:connection-problem'));
+            earlyRenderHome(true);
+        }, 9000);
 
         let hikesFromFirebase = false;
         const applyHikes = (newList) => {
@@ -717,6 +730,10 @@ async function loadAppData() {
             applyOwnerBookings(); // #5: переприменить записи владельца при обновлении хайков
             saveCachedState();
             earlyRenderHome(); // показать экран сразу, как пришли хайки (для тех, у кого нет кэша)
+            if (firstRenderWasEmpty && newList.length && !window._deepLinkPageChanged) {
+                firstRenderWasEmpty = false;
+                renderHome();
+            }
         };
 
         // Быстрый первый запуск: список хайков с CDN (/api/hikes), запрошен ещё в index.html.
@@ -932,6 +949,7 @@ async function loadAppData() {
         console.error('Unhandled error in loadData:', e);
         renderHome();
     } finally {
+        clearTimeout(startupFallbackTimer);
         hideAnimatedLoader();
     }
 }
@@ -955,6 +973,7 @@ document.addEventListener('focusout', (e) => {
 // и на медленном интернете приложение стояло пустым лишние 10+ секунд.
 function startApp() {
     state.user = tg?.initDataUnsafe?.user;
+    if (!tg) window.dispatchEvent(new Event('club:connection-problem'));
     startAnalytics();
     // сразу на весь экран: кнопки бота открывают приложение в половину экрана, пока его не развернуть
     try {
@@ -973,5 +992,6 @@ function startApp() {
     initTypograph(); // без висящих предлогов во всех текстах
     loadAppData();
 }
-if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });
-else startApp();
+const startWhenTelegramReady = () => Promise.resolve(window.__telegramReady).then(startApp);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startWhenTelegramReady, { once: true });
+else startWhenTelegramReady();

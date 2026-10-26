@@ -56,7 +56,7 @@ export function loadCachedState() {
             if (data.mastermindSummaries) state.mastermindSummaries = data.mastermindSummaries;
             if (data.testimonials) state.testimonials = data.testimonials;
             if (data.safety) state.safety = data.safety;
-            if (data.userCard) state.userCard = data.userCard; // для мгновенного рендера из кэша
+            if (data.userCard && data.userId && String(data.userId) === String(state.user?.id)) state.userCard = data.userCard;
             return true;
         }
     } catch (e) {}
@@ -66,6 +66,8 @@ export function loadCachedState() {
 export function saveCachedState() {
     try {
         const toCache = {
+            userId: state.user?.id || null,
+            savedAt: Date.now(),
             hikesList: state.hikesList,
             hikesData: state.hikesData,
             metrics: state.metrics,
@@ -91,17 +93,19 @@ export function saveBookingStatusToLocal() {
     state.hikesWithTitle.forEach((hike, index) => {
         statusObj[hike.date] = state.hikeBookingStatus[index] || false;
     });
-    localStorage.setItem('hikeBookingStatus', JSON.stringify(statusObj));
+    try { localStorage.setItem('hikeBookingStatus', JSON.stringify({ userId: state.user?.id || null, registrations: statusObj })); } catch (e) {}
 }
 
 export function loadBookingStatusFromLocal() {
-    const saved = localStorage.getItem('hikeBookingStatus');
+    let saved;
+    try { saved = localStorage.getItem('hikeBookingStatus'); } catch (e) { return {}; }
     if (saved) {
         try {
             const parsed = JSON.parse(saved);
+            if (!parsed.userId || String(parsed.userId) !== String(state.user?.id)) return {};
             const statusMap = {};
             state.hikesWithTitle.forEach((hike, index) => {
-                statusMap[index] = parsed[hike.date] || false;
+                statusMap[index] = parsed.registrations?.[hike.date] === true;
             });
             return statusMap;
         } catch (e) {

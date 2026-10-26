@@ -138,7 +138,18 @@ async function bundleApp() {
     if (!block.test(html) || !script.test(html)) throw new Error('index.html: не нашёл modulepreload или main.js');
     html = html.replace(block, `<!-- modulepreload:start – один файл приложения (собран build.js) -->\n    ${preload}\n    <!-- modulepreload:end -->`)
                .replace(script, `<script type="module" src="${rel(entry)}"></script>`);
+    const crypto = require('crypto');
+    const css = fs.readFileSync(path.join(outputDir, 'style.css'));
+    const cssVersion = crypto.createHash('sha256').update(css).digest('hex').slice(0, 16);
+    html = html.replace(/style\.css\?v=[^"'\s>]+/g, `style.css?v=${cssVersion}`);
     fs.writeFileSync(htmlPath, html, 'utf8');
+    const workerTemplate = fs.readFileSync('sw.js', 'utf8');
+    const version = crypto.createHash('sha256').update(html).update(css).update(workerTemplate).digest('hex').slice(0, 16);
+    const cssUrl = html.match(/href="(style\.css[^" ]*)"/)?.[1] || 'style.css';
+    const shell = ['/index.html', `/${cssUrl}`, `/${rel(entry)}`, ...eager.map(file => `/${file}`), '/assets/card-front.jpg', '/assets/card-grey.png', '/assets/logo-hiking.png'];
+    const worker = workerTemplate.replace("const CACHE_NAME = 'club-shell-dev';", `const CACHE_NAME = 'club-shell-${version}';`)
+        .replace('const PRECACHE = [];', `const PRECACHE = ${JSON.stringify(shell)};`);
+    fs.writeFileSync(path.join(outputDir, 'sw.js'), worker, 'utf8');
     const kb = Object.keys(outputs).reduce((s, f) => s + outputs[f].bytes, 0) / 1024;
     console.log(`✔ бандл: ${rel(entry)} + ${Object.keys(outputs).length - 1} файл(ов), ${kb.toFixed(0)} КБ`);
 }
