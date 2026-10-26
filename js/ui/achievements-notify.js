@@ -5,7 +5,7 @@ import { haptic } from '../utils.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const ddmm = ts => { const d = new Date(ts); return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`; };
-const DEFAULT_TEXT = '[имя], у тебя новая ачивка в клубе 🏅\n\n<b>[ачивки]</b>\n\nзагляни – там твоя медаль, её можно покрутить и поделиться в сторис';
+const DEFAULT_TEXT = '[имя], у тебя новая ачивка в клубе 🏅\n\n<b>[ачивки]</b>\n\nзагляни – там твоя медаль, её можно посмотреть и поделиться в сторис';
 
 const ui = { open: false, people: null, picked: new Set(), text: DEFAULT_TEXT, busy: false, note: '', error: '' };
 

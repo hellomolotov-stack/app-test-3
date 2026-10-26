@@ -6334,6 +6334,7 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .medal-detail { text-align: center; margin: 18px auto 0; max-width: 440px; }
 .medal-detail h3 { font-size: 19px; line-height: 1.35; letter-spacing: 0; margin: 8px 0; overflow-wrap: anywhere; }
 .medal-detail p { font-size: 13px; color: rgba(255,255,255,.55); margin: 0; }
+.medal-detail .medal-description { margin: 0 0 12px; line-height: 1.5; color: rgba(255,255,255,.8); }
 .medal-rarity { font-size: 11px; color: #c0c6c7; }
 .medal-rarity[data-rarity="rare"] { color: #f1d586; }
 .medal-rarity[data-rarity="legendary"] { color: #a5ded8; }

@@ -107,7 +107,7 @@ export function openMedals(input, initialIndex = null) {
             const a = items[index];
             const date = /^\d{4}-\d{2}-\d{2}$/.test(a.grant?.date || '') ? a.grant.date.split('-').reverse().join('.') : '';
             content.innerHTML = `<div class="medal-large"><img src="${esc(a.medal.imageUrl)}" alt="${esc(a.title)}" width="900" height="900" draggable="false"></div>
-                <div class="medal-detail" aria-live="polite"><span class="medal-rarity" data-rarity="${esc(a.rarity)}">${esc(rarityNames[a.rarity] || '')}</span><h3>${esc(a.title)}</h3><p>${esc([a.grant?.name, date].filter(Boolean).join(' · '))}</p></div>
+                <div class="medal-detail" aria-live="polite"><span class="medal-rarity" data-rarity="${esc(a.rarity)}">${esc(rarityNames[a.rarity] || '')}</span><h3>${esc(a.title)}</h3>${a.description ? `<p class="medal-description">${esc(a.description)}</p>` : ''}<p>${esc([a.grant?.name, date].filter(Boolean).join(' · '))}</p></div>
                 ${items.length > 1 ? `<nav class="medals-pager" aria-label="листать медали"><button type="button" data-medal-move="-1" aria-label="предыдущая медаль" title="предыдущая">←</button><span>${index + 1} / ${items.length}</span><button type="button" data-medal-move="1" aria-label="следующая медаль" title="следующая">→</button></nav>` : ''}`;
             content.querySelectorAll('[data-medal-move]').forEach(button => button.onclick = () => move(Number(button.dataset.medalMove)));
             if (focusAction) content.querySelector(`[data-medal-move="${focusAction}"]`)?.focus({ preventScroll: true });
