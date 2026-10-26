@@ -6557,3 +6557,24 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .ach-btn + .ach-btn { margin-top: 8px; }
 .ach-note { margin: 8px 0 0; min-height: 0; font-size: 12.5px; color: rgba(255,255,255,.6); }
 .ach-note:empty { display: none; }
+
+/* главная: блок «мои ачивки» – полка медалей, «замочки» и прогресс (js/ui/medals.js) */
+.achievements-home { padding-bottom: 16px; }
+.mya-head { display: flex; align-items: baseline; justify-content: space-between; padding-right: 16px; }
+.mya-head .section-title { margin-bottom: 12px; }
+.mya-all { border: 0; background: none; padding: 4px 0; color: rgba(255,255,255,.6); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.mya-shelf { display: flex; gap: 12px; overflow-x: auto; padding: 8px 16px 2px; scrollbar-width: none; }
+.mya-shelf::-webkit-scrollbar { display: none; }
+.mya-it { flex: none; width: 96px; padding: 0; border: 0; background: none; color: #fff; font: inherit; text-align: center; cursor: pointer; }
+.mya-pic { position: relative; display: grid; place-items: center; width: 96px; height: 96px; border-radius: 24px; box-sizing: border-box;
+    background: radial-gradient(circle at 50% 40%, rgba(255,255,255,.12), rgba(255,255,255,.03)); border: 1px solid rgba(255,255,255,.14); }
+.mya-pic img { width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 6px 12px rgba(0,0,0,.45)); }
+.mya-new { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); background: var(--yellow); color: #000; font-size: 10px; font-weight: 900; border-radius: 10px; padding: 2px 7px; }
+.mya-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 6px; font-size: 11.5px; line-height: 1.25; }
+.mya-it.is-lock { cursor: default; }
+.mya-it.is-lock .mya-pic { background: rgba(255,255,255,.03); border-style: dashed; }
+.mya-it.is-lock .mya-pic b { font-size: 22px; opacity: .45; }
+.mya-it.is-lock .mya-name { color: rgba(255,255,255,.5); }
+.mya-prog { height: 6px; margin: 14px 16px 0; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.mya-prog i { display: block; height: 100%; min-width: 6px; border-radius: 3px; background: var(--yellow); }
+.mya-cap { margin: 6px 16px 0; font-size: 12px; color: rgba(255,255,255,.6); }
