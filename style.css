@@ -6537,7 +6537,7 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .ach-title b { color: var(--yellow); }
 .ach-sub { margin: 6px 0 0; font-size: 13.5px; color: rgba(255,255,255,.6); }
 .ach-track { display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; margin: 10px -18px 0; padding: 18px 0; scrollbar-width: none;
-    padding-inline: calc(50% - 105px); scroll-padding-inline: calc(50% - 105px); }
+    padding-inline: var(--ach-edge, calc(50% - 105px)); scroll-padding-inline: var(--ach-edge, calc(50% - 105px)); }
 .ach-track::-webkit-scrollbar { display: none; }
 .ach-slide { flex: none; width: 210px; height: 210px; scroll-snap-align: center; display: grid; place-items: center; cursor: pointer; }
 .ach-slide img { width: 100%; height: 100%; object-fit: contain; transform: scale(.58); opacity: .45; transition: transform .3s ease, opacity .3s ease;

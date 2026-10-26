@@ -60,6 +60,10 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const info = overlay.querySelector('.ach-info');
     const note = overlay.querySelector('.ach-note');
     let current = -1;
+    const centerSlide = (slide, behavior = 'instant') => {
+        const s = slide.getBoundingClientRect(), t = track.getBoundingClientRect();
+        track.scrollTo({ left: track.scrollLeft + s.left + s.width / 2 - t.left - t.width / 2, behavior });
+    };
     const show = i => {
         if (i === current) return;
         current = i;
@@ -72,10 +76,12 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     };
     // какая медаль ближе к центру – та и «текущая»
     const onScroll = () => {
-        const mid = track.scrollLeft + track.clientWidth / 2;
+        const rect = track.getBoundingClientRect();
+        const mid = rect.left + rect.width / 2;
         let best = 0, bestD = Infinity;
         track.querySelectorAll('.ach-slide').forEach((s, k) => {
-            const d = Math.abs(s.offsetLeft + s.offsetWidth / 2 - mid);
+            const r = s.getBoundingClientRect();
+            const d = Math.abs(r.left + r.width / 2 - mid);
             if (d < bestD) { bestD = d; best = k; }
         });
         if (best !== current) haptic();
@@ -83,17 +89,23 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     };
     track.addEventListener('scroll', () => requestAnimationFrame(onScroll), { passive: true });
     track.querySelectorAll('.ach-slide').forEach((s, k) => s.addEventListener('click', () => {
-        if (k !== current) track.scrollTo({ left: s.offsetLeft + s.offsetWidth / 2 - track.clientWidth / 2, behavior: 'smooth' });
+        if (k !== current) centerSlide(s, 'smooth');
     }));
     overlay.querySelectorAll('[data-dot]').forEach(d => d.addEventListener('click', () => track.querySelectorAll('.ach-slide')[Number(d.dataset.dot)].click()));
     const selected = Math.max(0, Math.min(n - 1, initialIndex));
     show(selected);
-    if (selected) requestAnimationFrame(() => {
-        const slide = track.querySelectorAll('.ach-slide')[selected];
-        track.scrollLeft = slide.offsetLeft + slide.offsetWidth / 2 - track.clientWidth / 2;
-    });
+    // Percent padding uses the narrower parent, not the full-bleed track width.
+    const fitTrack = () => {
+        const slides = track.querySelectorAll('.ach-slide');
+        track.style.setProperty('--ach-edge', Math.max(0, (track.clientWidth - slides[0].offsetWidth) / 2) + 'px');
+        centerSlide(slides[Math.max(0, current)]);
+    };
+    fitTrack();
+    const resizeObserver = new ResizeObserver(fitTrack);
+    resizeObserver.observe(track);
 
     const close = () => {
+        resizeObserver.disconnect();
         overlay.classList.remove('is-on');
         setTimeout(() => { overlay.remove(); if (!document.querySelector('.bottom-sheet.visible, .cs-overlay')) document.body.style.overflow = ''; }, 300);
     };

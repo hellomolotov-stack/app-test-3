@@ -48,20 +48,38 @@ const items = Array.from({ length: 5 }, (_, i) => ({ ...medal, id: 'fixture-'+i,
             await page.locator('#myAchievements [data-medal="3"]').click();
             await page.locator('.ach-overlay.is-on').waitFor();
             await page.locator('.ach-name').filter({hasText:'ачивка 4'}).waitFor();
+            const assertCentered = async () => {
+                await page.waitForTimeout(400);
+                const delta = await page.locator('.ach-slide.is-on').evaluate(slide => {
+                    const s=slide.getBoundingClientRect(),p=slide.closest('.ach-sheet').getBoundingClientRect();
+                    return Math.abs(s.left+s.width/2-p.left-p.width/2);
+                });
+                assert.ok(delta < 1, `Medal is centered, offset ${delta}px at ${width}px`);
+            };
+            await assertCentered();
             assert.equal(await page.locator('.ach-slide').count(), 5);
             assert.equal(await page.locator('[data-share-one], [data-share-all]').count(), 2, 'Preserve both story controls');
             const glass = await page.locator('.ach-sheet').evaluate(el => ({bg:getComputedStyle(el).backgroundColor,blur:getComputedStyle(el).backdropFilter}));
             assert.equal(glass.bg, 'rgba(18, 26, 36, 0.72)');
             assert.ok(glass.blur.includes('blur(36px)'));
             await page.locator('.ach-slide[data-i="0"]').evaluate(slide => {
-                const track=slide.parentElement;track.scrollTo({left:slide.offsetLeft+slide.offsetWidth/2-track.clientWidth/2,behavior:'instant'});
+                const track=slide.parentElement,s=slide.getBoundingClientRect(),t=track.getBoundingClientRect();
+                track.scrollTo({left:track.scrollLeft+s.left+s.width/2-t.left-t.width/2,behavior:'instant'});
             });
             await page.locator('.ach-name').filter({hasText:medal.title}).waitFor();
+            await assertCentered();
             await page.locator('.ach-slide img').first().evaluate(img=>img.decode());
             await page.waitForTimeout(350);
             assert.ok((await page.locator('.ach-desc').textContent()).includes(medal.description));
             await page.screenshot({path:`/private/tmp/canonical-transparent-medal-${width}.png`});
             assert.equal(await page.locator('.ach-sheet').evaluate(el=>el.scrollWidth>el.clientWidth), false);
+            await page.locator('[data-dot="4"]').click();
+            await page.locator('.ach-name').filter({hasText:'ачивка 5'}).waitFor();
+            await assertCentered();
+            await page.setViewportSize({width:width+30,height:844});
+            await assertCentered();
+            await page.setViewportSize({width,height:844});
+            await assertCentered();
             await page.locator('.ach-close').click();
             await page.locator('.ach-overlay').waitFor({state:'detached'});
             await page.evaluate(()=>testMedals.profiles());
@@ -71,6 +89,7 @@ const items = Array.from({ length: 5 }, (_, i) => ({ ...medal, id: 'fixture-'+i,
             await page.locator('.ach-close').click();
             await page.locator('.ach-overlay').waitFor({state:'detached'});
             await page.evaluate(()=>testMedals.single());
+            await assertCentered();
             assert.equal(await page.locator('[data-share-all]').count(), 0);
             assert.equal(await page.locator('canvas').count(), 0);
             assert.equal(requests.some(url=>/\.glb|medal-runtime|manrope-cyrillic/.test(url)), false);
