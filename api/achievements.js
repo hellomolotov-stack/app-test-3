@@ -246,8 +246,11 @@ function createHandler(deps = {}) {
             let draft, medal;
             if (['save', 'set_medal'].includes(body.action)) {
                 if (!revision(body.revision) || typeof body.requestId !== 'string' || !UUID.test(body.requestId)) throw fail(400, 'обнови редактор перед сохранением');
-                if (body.action === 'save') draft = normalizeDraft(body.draft);
-                else medal = normalizeMedal(body.medal);
+                if (body.action === 'save') {
+                    draft = normalizeDraft(body.draft);
+                    // готовая медаль из библиотеки приложения: ачивка выдаётся сразу при сохранении
+                    if (body.medal) medal = normalizeMedal(body.medal);
+                } else medal = normalizeMedal(body.medal);
             }
             const token = await accessToken();
             if (collection) {
@@ -317,6 +320,13 @@ function createHandler(deps = {}) {
                 record.publicationStatus = published ? 'published' : 'draft';
                 record.publishedAt = published ? old.publishedAt || old.medal.attachedAt : null;
                 record.grants = published ? grantsFor(old, recipients, user.id, now) : {};
+                if (medal) {
+                    const keep = record.medal && record.medal.imageUrl === medal.imageUrl;
+                    record.medal = keep ? record.medal : { ...medal, attachedAt: now, attachedBy: String(user.id) };
+                    record.publicationStatus = 'published';
+                    record.publishedAt = isPublished(old) ? old.publishedAt || old.medal.attachedAt : now;
+                    record.grants = grantsFor(old, recipients, user.id, now);
+                }
             }
             record.schemaVersion = 2;
             record.updatedAt = now;

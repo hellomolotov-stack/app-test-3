@@ -1,5 +1,7 @@
 import { state } from '../state.js';
 import { ACHIEVEMENT_RARITIES, achievementRequest } from '../achievements.js';
+import { MEDAL_LIBRARY, medalForTitle, medalByUrl } from '../achievements-medals.js';
+import { DEFAULT_TEXT } from './achievements-notify.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const today = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
@@ -7,7 +9,7 @@ const rarityName = key => ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || k
 const yes = value => value === true || String(value).toLowerCase() === 'yes';
 const dateLabel = date => /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date.split('-').reverse().join('.') : '';
 const count = a => Object.keys(a.recipients || {}).length;
-const statusLabel = a => a.status !== 'ready' ? 'черновик · ожидает медаль'
+const statusLabel = a => a.status !== 'ready' ? (medalForTitle(a.title) ? 'черновик · медаль есть – открой и сохрани, чтобы выдать' : 'черновик · ожидает медаль')
     : `выдана · ${a.notified ? `сообщение: ${a.notified} из ${Object.keys(a.grants || {}).length}` : 'сообщение не отправляли'}`;
 
 export async function renderAchievementsAdmin(body) {
@@ -52,7 +54,7 @@ export async function renderAchievementsAdmin(body) {
         rosterVersion++;
         const hike = hikes.find(h => h.date <= today());
         ui.screen = 'edit'; ui.id = crypto.randomUUID(); ui.revision = 'null_etag'; ui.original = null;
-        ui.draft = { title: '', description: '', rarity: 'common', kind: 'special', hikeDate: hike?.date || '', date: hike?.date || today() };
+        ui.draft = { title: '', description: '', rarity: 'common', kind: 'special', hikeDate: hike?.date || '', date: hike?.date || today(), medalUrl: '', medalAuto: true };
         ui.selected = new Map(); ui.search = ''; ui.scope = hike ? 'roster' : 'all'; ui.conflict = false; dirty();
         roster();
     }
@@ -64,7 +66,8 @@ export async function renderAchievementsAdmin(body) {
             if (!body.isConnected) return;
             const a = data.achievement;
             ui.screen = 'edit'; ui.id = id; ui.revision = data.revision; ui.original = a;
-            ui.draft = { title: a.title, description: a.description || '', rarity: a.rarity, kind: a.kind, date: a.date, hikeDate: a.hikeDate || '' };
+            ui.draft = { title: a.title, description: a.description || '', rarity: a.rarity, kind: a.kind, date: a.date, hikeDate: a.hikeDate || '',
+                medalUrl: a.medal?.imageUrl || medalForTitle(a.title)?.imageUrl || '', medalAuto: !a.medal };
             ui.selected = new Map(Object.values(a.recipients).map(p => [p.userId, { ...p }]));
             ui.search = ''; ui.scope = a.hikeDate ? 'roster' : 'all'; dirty();
             await roster();
@@ -92,6 +95,25 @@ export async function renderAchievementsAdmin(body) {
         });
         dirty(); paintPeople(); paintSelected();
     }
+    function saveLabel() {
+        if (ui.draft.medalUrl) return ui.original?.status === 'ready' ? 'сохранить изменения' : 'выдать ачивку';
+        return ui.original ? 'сохранить черновик' : 'сохранить черновик';
+    }
+    // медаль: готовая из библиотеки приложения → ачивка выдаётся при сохранении; нет → черновик
+    function paintMedal() {
+        const box = body.querySelector('#awMedal');
+        if (!box) return;
+        const d = ui.draft;
+        const own = ui.original?.medal && !medalByUrl(ui.original.medal.imageUrl) ? ui.original.medal : null;
+        const options = [...MEDAL_LIBRARY, ...(own ? [{ title: 'прикреплённая медаль', imageUrl: own.imageUrl }] : [])];
+        box.innerHTML = `<div class="aw-medal-box${d.medalUrl ? ' is-ready' : ''}">
+            ${d.medalUrl ? `<img src="${esc(d.medalUrl)}" alt="">` : '<span class="aw-medal-empty">🏅</span>'}
+            <div><b>${d.medalUrl ? '✓ медаль есть' : 'медали пока нет'}</b>
+            <small>${d.medalUrl ? 'после сохранения ачивка сразу выдаётся – можно отправить уведомление' : 'сохранится черновик. уведомление можно будет отправить, когда медаль прикрепят'}</small>
+            <select id="awMedalPick" aria-label="медаль"><option value="">без медали – черновик</option>${options.map(m => `<option value="${esc(m.imageUrl)}" ${m.imageUrl === d.medalUrl ? 'selected' : ''}>${esc(m.title)}</option>`).join('')}</select></div></div>`;
+        box.querySelector('#awMedalPick').onchange = e => { d.medalUrl = e.target.value; d.medalAuto = false; dirty(); paintMedal(); updateSave(); };
+    }
+    function updateSave() { const b = body.querySelector('#awSave'); if (b && !ui.busy) b.textContent = saveLabel(); }
     function visiblePeople() {
         const query = ui.search.trim().replace(/^@/, '').toLocaleLowerCase('ru');
         const people = new Map(ui.people.map(p => [p.userId, p]));
@@ -149,6 +171,7 @@ export async function renderAchievementsAdmin(body) {
             <form id="awForm"><fieldset ${ui.busy ? 'disabled' : ''}>
             <label class="adm-field"><span>тип</span><select id="awKind"><option value="special" ${d.kind === 'special' ? 'selected' : ''}>особая ачивка</option><option value="route" ${d.kind === 'route' ? 'selected' : ''}>за пройденный маршрут</option></select></label>
             <label class="adm-field"><span>название ачивки</span><input id="awTitle" maxlength="120" value="${esc(d.title)}" autocomplete="off" required></label>
+            <div id="awMedal"></div>
             <label class="adm-field"><span>описание · одна строка, её увидят в поп-апе и в сообщении</span><input id="awDescription" maxlength="200" value="${esc(d.description || '')}" placeholder="спустились туда, куда не ходят туристы" autocomplete="off"></label>
             <fieldset class="aw-rarities"><legend>редкость</legend>${ACHIEVEMENT_RARITIES.map(([key, label]) => `<label class="aw-rarity-option is-${key}"><input type="radio" name="awRarity" value="${key}" ${d.rarity === key ? 'checked' : ''}><span class="aw-swatch" aria-hidden="true"></span><span>${label}</span></label>`).join('')}</fieldset>
             <div class="aw-form-row"><label class="adm-field"><span>хайк</span><select id="awHike"><option value="">без привязки к хайку</option>${options.map(h => `<option value="${h.date}" ${h.date === d.hikeDate ? 'selected' : ''}>${dateLabel(h.date)} · ${esc(h.title)}</option>`).join('')}</select></label>
@@ -161,7 +184,7 @@ export async function renderAchievementsAdmin(body) {
             ${d.hikeDate ? '<button type="button" class="adm-link" id="awMarkSelected">отметить выбранных: были на хайке</button>' : ''}
             <div class="aw-people" id="awPeople"></div><div class="adm-label" id="awSelectedCount"></div><div id="awSelected"></div>
             ${ui.original?.medal ? '<p class="adm-muted">при изменении названия, редкости или типа потребуется новая медаль</p>' : ''}
-            <button type="submit" class="btn btn-yellow adm-primary" id="awSave">${ui.busy ? 'сохраняю…' : ui.original ? 'сохранить изменения' : 'выдать ачивку'}</button>
+            <button type="submit" class="btn btn-yellow adm-primary" id="awSave">${ui.busy ? 'сохраняю…' : saveLabel()}</button>
             </fieldset></form>`;
     }
     function detailHtml() {
@@ -171,7 +194,31 @@ export async function renderAchievementsAdmin(body) {
             ${a.medal ? `<img class="aw-medal-preview" src="${esc(a.medal.imageUrl)}" alt="${esc(a.title)}">` : ''}
             <div class="aw-saved-people">${Object.values(a.recipients).map(p => `<div><b>${esc(p.name)}</b><span>${dateLabel(p.date)}</span></div>`).join('')}</div>
             <div class="aw-detail-actions"><button class="adm-ghost" id="awEditSaved">редактировать</button><button class="adm-ghost" id="awCopy">скопировать задание для медали</button><button class="adm-ghost" id="awNew">ещё ачивка</button></div>
+            ${notifyHtml(a)}
             <div id="awCopyFallback"></div><p class="adm-muted aw-record-id">ID: ${esc(a.id)}</p>`;
+    }
+    function notifyHtml(a) {
+        if (a.status !== 'ready') return `<div class="aw-notify is-wait"><b>уведомление пока нельзя отправить</b><small>медали ещё нет – выбери готовую медаль в «редактировать» или прикрепи новую</small></div>`;
+        const total = Object.keys(a.grants || {}).length, done = a.notified || 0;
+        return `<div class="aw-notify"><b>🏅 уведомление в бот</b><small>${done ? `уже отправлено: ${done} из ${total}` : 'ещё не отправляли'} · текст и выбор людей – в «рассылки → 🏅 новые ачивки»</small>
+            ${done < total ? `<button class="btn btn-yellow adm-primary" id="awNotify">${ui.notifyBusy ? 'отправляю…' : `отправить ${done ? 'остальным' : 'всем'} · ${total - done}`}</button>` : ''}</div>`;
+    }
+    async function notifyNow() {
+        const a = ui.result;
+        if (ui.notifyBusy || !a) return;
+        if (!confirm(`отправить сообщение об ачивке «${a.title}» тем, кому ещё не писали?`)) return;
+        ui.notifyBusy = true; ui.error = ''; paint();
+        try {
+            // только тем, кому об этой ачивке ещё не писали – повторно никто не получит
+            const list = await achievementRequest('notify_list');
+            const ids = list.people.filter(p => p.items.some(i => i.id === a.id && !i.notifiedAt)).map(p => p.userId);
+            if (!ids.length) { ui.success = 'всем уже отправлено'; return; }
+            const r = await achievementRequest('notify_send', { userIds: ids, text: DEFAULT_TEXT });
+            ui.result = { ...a, notified: Math.min(Object.keys(a.grants || {}).length, (a.notified || 0) + r.sent) };
+            ui.achievements = ui.achievements.map(x => x.id === a.id ? ui.result : x);
+            ui.success = `отправлено ${r.sent}${r.failed?.length ? ` · не дошло: ${r.failed.length} (уже получили сообщение об этой ачивке или бот заблокирован)` : ''}`;
+        } catch (error) { ui.error = error.message; }
+        finally { ui.notifyBusy = false; paint(); }
     }
     function paint() {
         if (!body.isConnected) return;
@@ -187,7 +234,11 @@ export async function renderAchievementsAdmin(body) {
         body.querySelector('#awReload')?.addEventListener('click', () => { ui.conflict = false; edit(ui.id); });
         if (ui.screen === 'edit') {
             paintPeople(); paintSelected();
-            body.querySelector('#awTitle').oninput = e => { ui.draft.title = e.target.value; dirty(); };
+            paintMedal();
+            body.querySelector('#awTitle').oninput = e => {
+                ui.draft.title = e.target.value; dirty();
+                if (ui.draft.medalAuto) { const m = medalForTitle(ui.draft.title); if ((m?.imageUrl || '') !== ui.draft.medalUrl) { ui.draft.medalUrl = m?.imageUrl || ''; paintMedal(); updateSave(); } }
+            };
             body.querySelector('#awDescription').oninput = e => { ui.draft.description = e.target.value; dirty(); };
             body.querySelector('#awCopyFrom')?.addEventListener('change', e => { copyFrom(e.target.value); e.target.value = ''; });
             body.querySelector('#awMarkSelected')?.addEventListener('click', () => setAttended([...ui.selected.keys()], true));
@@ -215,6 +266,7 @@ export async function renderAchievementsAdmin(body) {
         }
         body.querySelector('#awEditSaved')?.addEventListener('click', () => edit(ui.result.id));
         body.querySelector('#awCopy')?.addEventListener('click', copyTask);
+        body.querySelector('#awNotify')?.addEventListener('click', notifyNow);
         if (ui.busy) body.querySelectorAll('button, input, select').forEach(el => { el.disabled = true; });
         if (scrollParent && scrollTop !== undefined) scrollParent.scrollTop = scrollTop;
     }
@@ -226,10 +278,11 @@ export async function renderAchievementsAdmin(body) {
         paint();
         try {
             const data = await achievementRequest('save', { id: ui.id, revision: ui.revision, requestId: ui.requestId,
-                draft: { ...ui.draft, recipients: [...ui.selected.values()].map(({ userId, name, date }) => ({ userId, name, date })) } });
+                draft: { ...ui.draft, recipients: [...ui.selected.values()].map(({ userId, name, date }) => ({ userId, name, date })) },
+                ...(ui.draft.medalUrl ? { medal: { imageUrl: ui.draft.medalUrl } } : {}) });
             const a = data.achievement;
             ui.achievements = [a, ...ui.achievements.filter(item => item.id !== a.id)];
-            ui.result = a; ui.screen = 'detail'; ui.success = a.status === 'ready' ? 'ачивка сохранена' : 'черновик ачивки сохранён';
+            ui.result = a; ui.screen = 'detail'; ui.success = a.status === 'ready' ? 'ачивка выдана – можно отправить уведомление' : 'черновик ачивки сохранён';
         } catch (error) { ui.error = error.message; ui.conflict = error.status === 409; }
         finally { ui.busy = false; paint(); }
     }
