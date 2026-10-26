@@ -136,8 +136,15 @@ function createHandler(deps = {}) {
             if (!object(body)) throw fail(400, 'неверный запрос');
             const user = verifyInitData(String(body.initData || ''), botToken);
             if (!user?.id) throw fail(401, 'открой админку внутри Telegram');
-            if (!isAdminUser(user)) throw fail(403, 'только для администраторов');
-            if (!['list', 'roster', 'get', 'save', 'set_medal'].includes(body.action)) throw fail(400, 'неизвестное действие');
+            const collection = body.action === 'collection';
+            if (!collection && !isAdminUser(user)) throw fail(403, 'только для администраторов');
+            if (!['list', 'roster', 'get', 'save', 'set_medal', 'collection'].includes(body.action)) throw fail(400, 'неизвестное действие');
+            let targetIds;
+            if (collection) {
+                targetIds = body.userIds || [String(user.id)];
+                if (!Array.isArray(targetIds) || !targetIds.length || targetIds.length > 200 || targetIds.some(id => typeof id !== 'string' || !UID.test(id))) throw fail(400, 'проверь участников');
+                targetIds = [...new Set(targetIds)];
+            }
             const hikeDate = body.action === 'roster' && body.hikeDate ? date(body.hikeDate) : '';
             if (['get', 'save', 'set_medal'].includes(body.action) && (typeof body.id !== 'string' || !UUID.test(body.id))) throw fail(400, 'неверный номер ачивки');
             let draft, medal;
@@ -147,6 +154,26 @@ function createHandler(deps = {}) {
                 else medal = normalizeMedal(body.medal);
             }
             const token = await accessToken();
+            if (collection) {
+                if (!isAdminUser(user) && targetIds.some(id => id !== String(user.id))) {
+                    const [member, profile] = await Promise.all([read(`members/${user.id}`, token), read(`userProfiles/${user.id}`, token)]);
+                    if (!member.value?.user_id || !profile.value) throw fail(403, 'профили доступны участникам клуба');
+                }
+                const snapshot = await read('clubAchievements', token);
+                const collections = Object.fromEntries(targetIds.map(id => [id, []]));
+                for (const record of Object.values(snapshot.value || {})) {
+                    if (!record?.medal || record.publicationStatus !== 'published') continue;
+                    for (const id of targetIds) {
+                        const grant = record.grants?.[id];
+                        if (!grant?.issuedAt) continue;
+                        collections[id].push({ id: record.id, title: record.title, rarity: record.rarity, kind: record.kind,
+                            medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
+                            grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt } });
+                    }
+                }
+                Object.values(collections).forEach(items => items.sort((a, b) => b.grant.issuedAt - a.grant.issuedAt));
+                return res.status(200).json({ collections });
+            }
             if (body.action === 'list') {
                 const [snapshot, list] = await Promise.all([read('clubAchievements', token), people(token)]);
                 const records = Object.values(snapshot.value || {}).filter(r => r && UUID.test(r.id || ''));

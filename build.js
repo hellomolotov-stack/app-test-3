@@ -56,6 +56,7 @@ async function processDirectory(srcDir, outDir) {
         console.warn(`⚠️  папка не найдена: ${srcDir}, пропускаю`);
         return;
     }
+    fs.mkdirSync(outDir, { recursive: true });
 
     const files = fs.readdirSync(srcDir, { withFileTypes: true });
     for (const file of files) {
@@ -91,6 +92,10 @@ async function processDirectory(srcDir, outDir) {
     if (fs.existsSync('assets')) {
         await processDirectory('assets', path.join(outputDir, 'assets'));
     }
+    await require('esbuild').build({
+        entryPoints: ['js/medals/renderer.js'], bundle: true, format: 'esm', minify: true,
+        legalComments: 'none', outfile: path.join(outputDir, 'assets/achievements/medal-runtime-v1.js'),
+    });
 
     // Один файл приложения вместо ~33 модулей (см. bundleApp ниже). Не получилось – остаются модули.
     try {

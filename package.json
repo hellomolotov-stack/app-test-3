@@ -5,6 +5,9 @@
   "scripts": {
     "build": "node generate-config.js && node build.js"
   },
+  "dependencies": {
+    "three": "0.186.1"
+  },
   "devDependencies": {
     "esbuild": "^0.25.10",
     "terser": "^5.31.0"

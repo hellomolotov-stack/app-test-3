@@ -20,6 +20,8 @@ const handler = createHandler({ getAccessToken: async () => 'test-db-token', fet
     if (path === 'members') return Response.json(members);
     if (path === 'hikeParticipants/2026-10-25') return Response.json(participants);
     if (path === 'clubAchievements') return Response.json(records);
+    if (path?.startsWith('members/')) return Response.json(members[path.split('/')[1]] || null);
+    if (path?.startsWith('userProfiles/')) return Response.json(profiles[path.split('/')[1]] || null);
     const match = /^clubAchievements\/([0-9a-f-]+)$/.exec(path);
     assert.ok(match, 'Only fixed achievement/person registry paths are requested');
     const id = match[1];
@@ -146,5 +148,25 @@ const save = (id = crypto.randomUUID(), value = draft, revision = 'null_etag') =
     const legacyAttached = await call({ ...medal, id: legacyId, revision: 'null_etag', requestId: crypto.randomUUID() });
     assert.equal(legacyAttached.status, 200);
     assert.ok(legacyAttached.body.achievement.grants['101'].issuedAt > 100, 'Legacy draft issue timestamp is not reused');
+    const own = await call({ action: 'collection', initData: signed(101, 'anna') });
+    assert.equal(own.status, 200);
+    assert.deepEqual(Object.keys(own.body.collections), ['101']);
+    assert.equal(own.body.collections['101'].length, 1, 'Only the published medal, never unrendered drafts');
+    const publicMedal = own.body.collections['101'][0];
+    assert.deepEqual(Object.keys(publicMedal).sort(), ['grant', 'id', 'kind', 'medal', 'rarity', 'title']);
+    assert.equal(publicMedal.grant.name, 'Анна');
+    assert.equal(publicMedal.grant.date, '2026-10-25');
+    assert.ok(!('attachedBy' in publicMedal.medal));
+    assert.ok(!('issuedBy' in publicMedal.grant));
+    assert.equal((await call({ action: 'collection', userIds: ['101'], initData: signed(999, 'visitor') })).status, 403, 'Guests cannot enumerate member awards');
+    assert.equal((await call({ action: 'collection', userIds: ['101'], initData: signed(103, 'member_without_profile') })).status, 403);
+    assert.equal((await call({ action: 'collection', userIds: ['101', '103'], initData: signed(101, 'anna') })).status, 200);
+    assert.deepEqual((await call({ action: 'collection', initData: signed(999, 'visitor') })).body.collections, { '999': [] }, 'Any authenticated user can view only their own published awards');
+    for (const userIds of [[], ['../members'], [101], Array(201).fill('101')]) {
+        assert.equal((await call({ action: 'collection', userIds, initData: auth })).status, 400);
+    }
+    const noGrant = crypto.randomUUID();
+    records[noGrant] = { ...records[legacyId], id: noGrant, grants: {} };
+    assert.equal((await call({ action: 'collection', initData: signed(101, 'anna') })).body.collections['101'].length, 1, 'A medal definition without a personal grant is not an award');
     console.log('Achievements API passed: protected private drafts with no grants, publication only with medal, legacy draft compatibility, auth, validation, safe retries, CAS and personal engraving');
 })().catch(error => { console.error(error); process.exitCode = 1; });

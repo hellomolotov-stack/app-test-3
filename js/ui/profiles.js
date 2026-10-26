@@ -10,6 +10,8 @@ import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, 
 import { renderGuestPrivileges } from './privileges.js';
 import { showGuestBookingPopup, showBottomSheet } from './calendar.js';
 import { renderPersonalRoutesMap, isPersonalMapPilotUser } from './personal-routes-map.js';
+import { loadAchievementCollections } from '../achievements.js';
+import { medalStripHtml, wireMedalStrip } from './medals.js';
 
 let profiles = {};
 let myProfile = null;
@@ -17,6 +19,7 @@ let nextHikesByUser = new Map();
 let participantsLoadFailed = false;
 let nearestHikeDate = null;
 let previewResizeObserver = null;
+let medalsByUser = {};
 
 async function loadProfilesData() {
     const [allProfiles, myProf, routeFavorites] = await Promise.all([
@@ -78,7 +81,9 @@ async function renderProfileCard(profile, isBlurred = false) {
         </div>
     ` : '';
 
-    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${contactButtons}</div>`;
+    const medals = !isBlurred ? medalsByUser[String(profile.userId)] || [] : [];
+    const medalsHtml = medals.length ? `<div class="profile-section-title">достижения</div>${medalStripHtml(medals, true)}` : '';
+    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
 
     // Грубая оценка высоты карточки для балансировки колонок в шахматном порядке –
     // без неё карточки просто чередуются по индексу и «падают» не туда, где есть место.
@@ -88,6 +93,7 @@ async function renderProfileCard(profile, isBlurred = false) {
         + statusTags.length * 0.4
         + (nextHikeHtml ? 60 : 0)
         + (favoritesHtml ? 40 : 0)
+        + (medalsHtml ? 100 : 0)
         + (contactButtons ? 40 : 0);
 
     return { html, weight };
@@ -113,6 +119,10 @@ function cleanupProfileOverlays() {
 }
 
 function wireProfileCardActions(container) {
+    container.querySelectorAll('.profile-card:not(.profile-preview-card)').forEach(card => {
+        const items = medalsByUser[String(card.dataset.userId)] || [];
+        if (items.length) wireMedalStrip(card, items);
+    });
     container.querySelectorAll('.profile-hike-link').forEach(link => {
         link.addEventListener('click', event => {
             event.preventDefault();
@@ -164,6 +174,11 @@ export async function renderProfiles() {
 
     const sorted = Object.entries(profiles).map(([id, profile]) => [id, { ...profile, userId: profile.userId || id }])
         .sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
+    medalsByUser = {};
+    if (!shouldAnimate) {
+        try { medalsByUser = await loadAchievementCollections(sorted.map(([, p]) => String(p.userId))); }
+        catch { /* Unavailable medals must not hide otherwise accessible member profiles. */ }
+    }
     const allCards = await Promise.all(sorted.map(async ([,p]) => ({
         ...await renderProfileCard(p, shouldAnimate),
         hikeDate: nextHikesByUser.get(String(p.userId))?.date || null,
