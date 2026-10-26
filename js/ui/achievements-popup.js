@@ -15,6 +15,7 @@ const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
 const isGuest = () => state.userCard?.status !== 'active';
 
 let shown = false;
+let activeResizeObserver = null;
 
 // новые (ещё не показанные) ачивки – сами при заходе; по ссылке из бота – новые, а если их нет, последние
 export async function maybeShowNewAchievements({ fromLink = false } = {}) {
@@ -36,6 +37,7 @@ export async function maybeShowNewAchievements({ fromLink = false } = {}) {
 
 export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0 } = {}) {
     if (!items?.length) return;
+    activeResizeObserver?.disconnect();
     document.querySelector('.ach-overlay')?.remove();
     log(`ачивки: поп-ап (${items.length}) · ${source}`, isGuest(), state.user);
     const n = items.length;
@@ -102,10 +104,12 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     };
     fitTrack();
     const resizeObserver = new ResizeObserver(fitTrack);
+    activeResizeObserver = resizeObserver;
     resizeObserver.observe(track);
 
     const close = () => {
         resizeObserver.disconnect();
+        if (activeResizeObserver === resizeObserver) activeResizeObserver = null;
         overlay.classList.remove('is-on');
         setTimeout(() => { overlay.remove(); if (!document.querySelector('.bottom-sheet.visible, .cs-overlay')) document.body.style.overflow = ''; }, 300);
     };
