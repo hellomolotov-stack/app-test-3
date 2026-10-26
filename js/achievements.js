@@ -1,9 +1,12 @@
 import { tg } from './utils.js';
 import { state } from './state.js';
 
+// три уровня: базовая – серебро, легендарная – золото, мифическая – фиолетовый металл
 export const ACHIEVEMENT_RARITIES = [
-    ['common', 'базовая'], ['rare', 'редкая'], ['legendary', 'легендарная'], ['mythical', 'мифическая'],
+    ['common', 'базовая'], ['legendary', 'легендарная'], ['mythical', 'мифическая'],
 ];
+// старое значение «rare» из ранних записей показываем как легендарную
+export const rarityLabel = key => key === 'rare' ? 'легендарная' : (ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || '');
 
 export async function achievementRequest(action, data = {}) {
     const response = await fetch('/api/achievements', {

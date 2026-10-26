@@ -1,11 +1,11 @@
 import { state } from '../state.js';
-import { ACHIEVEMENT_RARITIES, achievementRequest } from '../achievements.js';
+import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest } from '../achievements.js';
 import { MEDAL_LIBRARY, medalForTitle, medalByUrl } from '../achievements-medals.js';
 import { DEFAULT_TEXT } from './achievements-notify.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const today = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
-const rarityName = key => ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || key;
+const rarityName = key => rarityLabel(key) || key;
 const yes = value => value === true || String(value).toLowerCase() === 'yes';
 const dateLabel = date => /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date.split('-').reverse().join('.') : '';
 const count = a => Object.keys(a.recipients || {}).length;

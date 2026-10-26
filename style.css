@@ -6649,3 +6649,16 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .acol-cta { flex: none; margin: 0 16px 16px; padding: 13px 16px; border-radius: 22px; border: 1px solid rgba(217,253,25,.45); background: rgba(217,253,25,.1);
     color: #fff; font: inherit; font-size: 13px; line-height: 1.4; text-align: left; cursor: pointer; }
 .acol-cta b { color: var(--yellow); }
+
+/* три уровня значков: базовая – серебро, легендарная – золото, мифическая – фиолетовый (старое «rare» = легендарная) */
+.aw-rarity.is-legendary, .aw-rarity.is-rare { color: #f1ce75; }
+.is-legendary .aw-swatch, .is-rare .aw-swatch { background: #edc76e; }
+.aw-rarity.is-common { color: #dfe5ea; }
+.ach-rar.is-common { background: rgba(223,229,234,.14); color: #e6ebef; }
+.ach-rar.is-legendary, .ach-rar.is-rare { background: rgba(241,206,117,.18); color: #f1ce75; }
+.acol-head b i { background: #d6dce2; }
+.acol-tier.is-rare .acol-head b i { background: #edc76e; }
+.acol-tier.is-very .acol-head b i { background: #aa71ef; }
+.acol-blank { background: radial-gradient(circle at 35% 30%, #8e959c, #3c4248); }
+.acol-blank.is-rare { background: radial-gradient(circle at 35% 30%, #a8925a, #43392a); }
+.acol-blank.is-very { background: radial-gradient(circle at 35% 30%, #7d5fa8, #352a46); }

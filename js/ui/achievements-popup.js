@@ -4,10 +4,10 @@
 import { state } from '../state.js';
 import { tg, haptic } from '../utils.js';
 import { log } from '../api.js';
-import { ACHIEVEMENT_RARITIES, achievementRequest, loadAchievementCollections } from '../achievements.js';
+import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections } from '../achievements.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const rarityName = key => ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || '';
+const rarityName = key => rarityLabel(key);
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const dateRu = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? `${Number(d.slice(8))} ${MONTHS[Number(d.slice(5, 7)) - 1]} ${d.slice(0, 4)}` : '';
 const plural = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many;

@@ -1,36 +1,37 @@
 // Каталог базовых ачивок клуба – утверждённые 40 (Documents/ХАЙКИНГ КЛУБ/design/achievements/базовые-ачивки.md и РЕДКОСТЬ.md).
 // Нужен экрану «все ачивки» и блоку на главной: уровни, «N из M», серые не полученные с описанием «как получить».
 // Медали выдаются через админку (clubAchievements); связь с каталогом – по названию ачивки.
-// Уровни ценности в приложении – три: обычные (базовая), редкие (редкая), очень редкие (легендарная + мифическая).
+// Уровни ценности – три (правила значков, папка «значки»): базовые – серебро, легендарные – золото, мифические – фиолетовый металл.
 export const ACHIEVEMENT_TIERS = [
-    ['common', 'обычные', 'за первые шаги и маршруты клуба'],
-    ['rare', 'редкие', 'за то, что выходит за рамки обычного хайка'],
-    ['very', 'очень редкие', 'за большие вехи и особые моменты'],
+    ['common', 'базовые', 'серебро · первые шаги, город и маршруты клуба'],
+    ['rare', 'легендарные', 'золото · то, что выходит за рамки обычного хайка'],
+    ['very', 'мифические', 'фиолетовый металл · большие вехи'],
 ];
-export const tierOf = rarity => rarity === 'rare' ? 'rare' : rarity === 'legendary' || rarity === 'mythical' ? 'very' : 'common';
+// в базе 4 значения редкости; «rare» – старое, показывается как легендарная
+export const tierOf = rarity => rarity === 'mythical' ? 'very' : rarity === 'rare' || rarity === 'legendary' ? 'rare' : 'common';
 
 export const ACHIEVEMENT_CATALOG = [
     { id: "first-hike", title: "первый хайк с интеллигенцией", rarity: 'common', tier: 'common', description: "первый раз вышел на тропу с клубом – дальше только выше" },
-    { id: "card-owner", title: "владелец карты интеллигента", rarity: 'rare', tier: 'rare', description: "теперь ты – часть клуба, а клуб растёт вместе с тобой" },
+    { id: "card-owner", title: "владелец карты интеллигента", rarity: 'legendary', tier: 'rare', description: "теперь ты – часть клуба, а клуб растёт вместе с тобой" },
     { id: "profile", title: "показал себя клубу", rarity: 'common', tier: 'common', description: "заполнил профиль – теперь тебя легко найти и позвать на хайк" },
-    { id: "mastermind-request", title: "мой вопрос на мастермайнде", rarity: 'rare', tier: 'rare', description: "вынес свой вопрос на вершину и услышал десять взглядов" },
+    { id: "mastermind-request", title: "мой вопрос на мастермайнде", rarity: 'legendary', tier: 'rare', description: "вынес свой вопрос на вершину и услышал десять взглядов" },
     { id: "plus-one", title: "привёл своего +1", rarity: 'common', tier: 'common', description: "позвал друга в клуб – вас стало на одного больше" },
-    { id: "gift-card", title: "подарил карту другу", rarity: 'legendary', tier: 'very', description: "подарил кому-то целый сезон в горах" },
-    { id: "honest-review", title: "искренний отзыв", rarity: 'rare', tier: 'rare', description: "рассказал честно, как это было – так клуб становится лучше" },
+    { id: "gift-card", title: "подарил карту другу", rarity: 'legendary', tier: 'rare', description: "подарил кому-то целый сезон в горах" },
+    { id: "honest-review", title: "искренний отзыв", rarity: 'legendary', tier: 'rare', description: "рассказал честно, как это было – так клуб становится лучше" },
     { id: "story", title: "показал горы в сторис", rarity: 'common', tier: 'common', description: "поделился маршрутом – пусть все видят, где мы были" },
-    { id: "after-hike-drinks", title: "первый бухайкинг", rarity: 'legendary', tier: 'very', description: "после вершины – за стол: лучшие разговоры случаются именно тут" },
+    { id: "after-hike-drinks", title: "первый бухайкинг", rarity: 'common', tier: 'common', description: "после вершины – за стол: лучшие разговоры случаются именно тут" },
     { id: "first-city-event", title: "свои в городе", rarity: 'common', tier: 'common', description: "пришёл на встречу клуба в городе – пицца, пикник или вечер в заведении" },
-    { id: "hiking-box", title: "хайкинг бокс", rarity: 'rare', tier: 'rare', description: "взял хайкинг бокс – вершина вкуснее, когда не думаешь о еде" },
-    { id: "headlamps", title: "спуск с фонариками", rarity: 'rare', tier: 'rare', description: "спускались в темноте – и это был лучший кусок хайка" },
-    { id: "rain", title: "промок, но дошёл", rarity: 'legendary', tier: 'very', description: "дождь не остановил – промокли, посмеялись и дошли" },
+    { id: "hiking-box", title: "хайкинг бокс", rarity: 'legendary', tier: 'rare', description: "взял хайкинг бокс – вершина вкуснее, когда не думаешь о еде" },
+    { id: "headlamps", title: "спуск с фонариками", rarity: 'legendary', tier: 'rare', description: "спускались в темноте – и это был лучший кусок хайка" },
+    { id: "rain", title: "промок, но дошёл", rarity: 'legendary', tier: 'rare', description: "дождь не остановил – промокли, посмеялись и дошли" },
     { id: "wim-hof", title: "дыхание по Хофу", rarity: 'common', tier: 'common', description: "дышали на вершине так, что закружилась голова – в хорошем смысле" },
-    { id: "above-1500", title: "выше 1500 метров", rarity: 'legendary', tier: 'very', description: "поднялся выше полутора километров – Крым под ногами" },
-    { id: "swim", title: "нырнул после тропы", rarity: 'rare', tier: 'rare', description: "искупался в море или горном озере сразу после хайка" },
+    { id: "above-1500", title: "выше 1500 метров", rarity: 'legendary', tier: 'rare', description: "поднялся выше полутора километров – Крым под ногами" },
+    { id: "swim", title: "нырнул после тропы", rarity: 'legendary', tier: 'rare', description: "искупался в море или горном озере сразу после хайка" },
     { id: "four-seasons", title: "четыре сезона в горах", rarity: 'mythical', tier: 'very', description: "ходил с клубом зимой, весной, летом и осенью" },
     { id: "all-routes", title: "все 18 маршрутов клуба", rarity: 'mythical', tier: 'very', description: "прошёл каждый маршрут клуба – ты знаешь эти горы лучше всех" },
     { id: "hikes-5", title: "5 хайков", rarity: 'common', tier: 'common', description: "пять раз выходили вместе – это уже привычка" },
-    { id: "hikes-10", title: "10 хайков", rarity: 'rare', tier: 'rare', description: "десять вершин с клубом" },
-    { id: "hikes-25", title: "25 хайков", rarity: 'legendary', tier: 'very', description: "четверть сотни троп – ты один из тех, на ком держится клуб" },
+    { id: "hikes-10", title: "10 хайков", rarity: 'legendary', tier: 'rare', description: "десять вершин с клубом" },
+    { id: "hikes-25", title: "25 хайков", rarity: 'legendary', tier: 'rare', description: "четверть сотни троп – ты один из тех, на ком держится клуб" },
     { id: "hikes-50", title: "50 хайков", rarity: 'mythical', tier: 'very', description: "полсотни хайков – легенда клуба" },
     { id: "route-krestovaya", title: "хайк на Крестовую гору", rarity: 'common', tier: 'common', description: "Алупка сверху, Исар под ногами" },
     { id: "route-kant", title: "Форосский кант", rarity: 'common', tier: 'common', description: "прошёл кант над Форосом и Чёртовой лестницей" },
