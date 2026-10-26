@@ -68,9 +68,31 @@ function normalizeMedal(input) {
         ...(input.modelUrl ? { modelUrl: asset(input.modelUrl, 'glb') } : {}) };
 }
 
+function plannedRecipients(record) {
+    return Object.fromEntries(Object.entries(record.recipients || {}).map(([id, p]) => [id,
+        { userId: id, name: p.name, date: p.date || record.date }]));
+}
+
+function isPublished(record) {
+    return !!record?.medal && record.publicationStatus !== 'draft';
+}
+
+function grantsFor(record, recipients, userId, now) {
+    return Object.fromEntries(Object.entries(recipients).map(([id, p]) => {
+        // Only previously published grants can retain an issue date. Legacy drafts cannot.
+        const previous = isPublished(record) ? record.grants?.[id] || (record.schemaVersion !== 2 ? record.recipients?.[id] : null) : null;
+        return [id, { ...p, issuedAt: previous?.issuedAt || now, issuedBy: previous?.issuedBy || String(userId) }];
+    }));
+}
+
 function publicRecord(record) {
     const { lastWrite, ...data } = record;
-    return { ...data, status: record.medal ? 'ready' : 'awaiting_medal' };
+    const published = isPublished(record);
+    const recipients = plannedRecipients(record);
+    return { ...data, recipients, status: published ? 'ready' : 'draft',
+        publicationStatus: published ? 'published' : 'draft',
+        grants: published ? record.grants || grantsFor(record, recipients, record.updatedBy, record.medal.attachedAt) : {},
+        publishedAt: published ? record.publishedAt || record.medal.attachedAt : null };
 }
 
 function createHandler(deps = {}) {
@@ -147,20 +169,27 @@ function createHandler(deps = {}) {
             const now = Date.now();
             let record;
             if (body.action === 'set_medal') {
-                if (!old) throw fail(404, 'сначала выдай ачивку участникам');
-                record = { ...old, medal: { ...medal, attachedAt: now, attachedBy: String(user.id) } };
+                if (!old) throw fail(404, 'сначала сохрани черновик ачивки');
+                const recipients = plannedRecipients(old);
+                record = { ...old, recipients, medal: { ...medal, attachedAt: now, attachedBy: String(user.id) },
+                    publicationStatus: 'published', publishedAt: isPublished(old) ? old.publishedAt || old.medal.attachedAt : now,
+                    grants: grantsFor(old, recipients, user.id, now) };
             } else {
                 const known = new Set((await people(token, draft.hikeDate)).map(p => p.userId));
                 const recipients = {};
                 for (const p of draft.recipients) {
                     if (!known.has(p.userId) && !old?.recipients?.[p.userId]) throw fail(400, 'участник не найден — обнови список');
-                    recipients[p.userId] = { ...p, issuedAt: old?.recipients?.[p.userId]?.issuedAt || now,
-                        issuedBy: old?.recipients?.[p.userId]?.issuedBy || String(user.id) };
+                    recipients[p.userId] = { ...p };
                 }
                 const changedDesign = old && ['title', 'rarity', 'kind'].some(key => old[key] !== draft[key]);
                 record = { ...old, ...draft, recipients, id: body.id, medal: changedDesign ? null : old?.medal || null,
                     createdAt: old?.createdAt || now, createdBy: old?.createdBy || String(user.id) };
+                const published = !!record.medal && isPublished(old);
+                record.publicationStatus = published ? 'published' : 'draft';
+                record.publishedAt = published ? old.publishedAt || old.medal.attachedAt : null;
+                record.grants = published ? grantsFor(old, recipients, user.id, now) : {};
             }
+            record.schemaVersion = 2;
             record.updatedAt = now;
             record.updatedBy = String(user.id);
             record.lastWrite = { id: body.requestId, hash, by: String(user.id) };

@@ -7,6 +7,7 @@ const rarityName = key => ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || k
 const yes = value => value === true || String(value).toLowerCase() === 'yes';
 const dateLabel = date => /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date.split('-').reverse().join('.') : '';
 const count = a => Object.keys(a.recipients || {}).length;
+const statusLabel = a => a.status === 'ready' ? 'выдана' : 'черновик · ожидает медаль';
 
 export async function renderAchievementsAdmin(body) {
     const ui = { screen: 'list', filter: 'all', people: [], achievements: [], selected: new Map(),
@@ -110,10 +111,10 @@ export async function renderAchievementsAdmin(body) {
     function listHtml() {
         const items = ui.achievements.filter(a => ui.filter === 'all' || a.status === ui.filter);
         return `<div class="aw-toolbar"><h2>ачивки</h2><button class="adm-ghost" id="awNew">новая ачивка</button></div>
-            <div class="aw-filters" role="group" aria-label="статус медали">${[['all', 'все'], ['awaiting_medal', 'ждут медали'], ['ready', 'с медалью']].map(([key, label]) => `<button class="aw-filter" data-filter="${key}" aria-pressed="${ui.filter === key}">${label}</button>`).join('')}</div>
+            <div class="aw-filters" role="group" aria-label="статус ачивки">${[['all', 'все'], ['draft', 'черновики'], ['ready', 'выданы']].map(([key, label]) => `<button class="aw-filter" data-filter="${key}" aria-pressed="${ui.filter === key}">${label}</button>`).join('')}</div>
             <div class="aw-list">${items.length ? items.map(a => `<button class="aw-award" data-edit="${a.id}">
                 <span class="aw-award-main"><b>${esc(a.title)}</b><span>${esc(dateLabel(a.date))} · участников: ${count(a)}</span></span>
-                <span class="aw-award-side"><span class="aw-rarity is-${a.rarity}">${rarityName(a.rarity)}</span><small>${a.medal ? 'медаль добавлена' : 'ожидает медаль'}</small></span></button>`).join('')
+                <span class="aw-award-side"><span class="aw-rarity is-${a.rarity}">${rarityName(a.rarity)}</span><small>${statusLabel(a)}</small></span></button>`).join('')
                 : '<p class="adm-empty">ачивок пока нет</p>'}</div>`;
     }
     function formHtml() {
@@ -139,7 +140,7 @@ export async function renderAchievementsAdmin(body) {
     function detailHtml() {
         const a = ui.result;
         return `<div class="aw-toolbar"><button class="adm-link" id="awBack">к списку</button><span class="aw-rarity is-${a.rarity}">${rarityName(a.rarity)}</span></div>
-            <h2 class="aw-detail-title">${esc(a.title)}</h2><p class="adm-muted">${dateLabel(a.date)} · участников: ${count(a)} · ${a.medal ? 'медаль добавлена' : 'ожидает медаль'}</p>
+            <h2 class="aw-detail-title">${esc(a.title)}</h2><p class="adm-muted">${dateLabel(a.date)} · участников: ${count(a)} · ${statusLabel(a)}</p>
             ${a.medal ? `<img class="aw-medal-preview" src="${esc(a.medal.imageUrl)}" alt="${esc(a.title)}">` : ''}
             <div class="aw-saved-people">${Object.values(a.recipients).map(p => `<div><b>${esc(p.name)}</b><span>${dateLabel(p.date)}</span></div>`).join('')}</div>
             <div class="aw-detail-actions"><button class="adm-ghost" id="awEditSaved">редактировать</button><button class="adm-ghost" id="awCopy">скопировать задание для медали</button><button class="adm-ghost" id="awNew">ещё ачивка</button></div>
@@ -198,7 +199,7 @@ export async function renderAchievementsAdmin(body) {
                 draft: { ...ui.draft, recipients: [...ui.selected.values()].map(({ userId, name, date }) => ({ userId, name, date })) } });
             const a = data.achievement;
             ui.achievements = [a, ...ui.achievements.filter(item => item.id !== a.id)];
-            ui.result = a; ui.screen = 'detail'; ui.success = 'ачивка сохранена';
+            ui.result = a; ui.screen = 'detail'; ui.success = a.status === 'ready' ? 'ачивка сохранена' : 'черновик ачивки сохранён';
         } catch (error) { ui.error = error.message; ui.conflict = error.status === 409; }
         finally { ui.busy = false; paint(); }
     }
