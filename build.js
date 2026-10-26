@@ -90,12 +90,11 @@ async function processDirectory(srcDir, outDir) {
 
     // Переносим растровые ассеты Люмена в deployable output.
     if (fs.existsSync('assets')) {
+        // Retired 3D medal files must not survive a cached deployment build.
+        fs.rmSync(path.join(outputDir, 'assets', 'achievements'), { recursive: true, force: true });
+        fs.rmSync(path.join(outputDir, 'js', 'medals'), { recursive: true, force: true });
         await processDirectory('assets', path.join(outputDir, 'assets'));
     }
-    await require('esbuild').build({
-        entryPoints: ['js/medals/renderer.js'], bundle: true, format: 'esm', minify: true,
-        legalComments: 'none', outfile: path.join(outputDir, 'assets/achievements/medal-runtime-v1.js'),
-    });
 
     // Один файл приложения вместо ~33 модулей (см. bundleApp ниже). Не получилось – остаются модули.
     try {
