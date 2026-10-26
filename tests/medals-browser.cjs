@@ -4,10 +4,10 @@ const path = require('node:path');
 const { build } = require('esbuild');
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmolotov/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 
-const medal = { id: 'spider', title: 'залез в пещеру пауков', rarity: 'mythical',
-    medal: { imageUrl: '/assets/achievements/spider-cave-flat-v1.png' },
+const medal = { id: 'spider', title: 'залез в пещеру пауков', description: 'за смелость и любопытство', rarity: 'mythical',
+    medal: { imageUrl: '/assets/achievements/spider-cave-transparent-v2.png' },
     grant: { userId: '163665735', name: 'Макс', date: '2026-10-25', issuedAt: 1 } };
-// Five fixtures exercise overflow and paging without issuing fake production awards.
+// Fixture awards test the existing carousel without granting fake production awards.
 const items = Array.from({ length: 5 }, (_, i) => ({ ...medal, id: 'fixture-'+i, title: i ? 'ачивка '+(i+1) : medal.title }));
 
 (async () => {
@@ -15,17 +15,15 @@ const items = Array.from({ length: 5 }, (_, i) => ({ ...medal, id: 'fixture-'+i,
         import {state} from './js/state.js';
         import {initFirebase} from './js/firebase.js';
         import {renderProfiles} from './js/ui/profiles.js';
-        import {initSheetDrag} from './js/ui/sheet-drag.js';
-        import {mountCardMedals,openMedals} from './js/ui/medals.js';
+        import {mountMyAchievements,openMedal} from './js/ui/medals.js';
         state.user={id:163665735,username:'maxmolotov'};
-        window.testMedals={single:()=>openMedals([${JSON.stringify(medal)}],0),
-            profiles:async()=>{
-                const profile={userId:'163665735',name:'Макс',hobbies:'хайкинг',profession:'клуб',updatedAt:1};
-                const data={userProfiles:{'163665735':profile},'userProfiles/163665735':profile,routeFavorites:{}};
-                window.firebase={initializeApp(){},database:()=>({ref:key=>({once:async()=>({val:()=>data[key]||null})})})};
-                initFirebase();state.userCard={status:'active'};state.hikesWithTitle=[];await renderProfiles();
-            }};
-        initSheetDrag();mountCardMedals();` } });
+        window.testMedals={single:()=>openMedal(${JSON.stringify(medal)}),profiles:async()=>{
+            const profile={userId:'163665735',name:'Макс',hobbies:'хайкинг',profession:'клуб',updatedAt:1};
+            const data={userProfiles:{'163665735':profile},'userProfiles/163665735':profile,routeFavorites:{}};
+            window.firebase={initializeApp(){},database:()=>({ref:key=>({once:async()=>({val:()=>data[key]||null})})})};
+            initFirebase();state.userCard={status:'active'};state.hikesWithTitle=[];await renderProfiles();
+        }};
+        mountMyAchievements();` } });
     const browser = await chromium.launch({ channel: 'chrome', headless: true });
     try {
         for (const width of [320, 390, 900]) {
@@ -44,60 +42,43 @@ const items = Array.from({ length: 5 }, (_, i) => ({ ...medal, id: 'fixture-'+i,
             await page.addStyleTag({ content: fs.readFileSync('style.css', 'utf8') });
             await page.addScriptTag({ content: 'window.Telegram={WebApp:{initData:"fixture",HapticFeedback:{impactOccurred(){}}}};' });
             await page.addScriptTag({ content: outputFiles[0].text });
-            await page.locator('#cardBlock .card-medals:not([hidden])').waitFor();
-            assert.equal(await page.locator('#myAchievements').count(), 0, 'No standalone achievements section');
-            assert.equal(await page.locator('#cardBlock .medal-miniature').count(), 3);
-            await page.screenshot({ path: `/private/tmp/flat-medals-card-${width}.png` });
-            await page.locator('#cardBlock [data-medal-all]').click();
-            await page.locator('.medals-overlay.is-on .medals-grid-item').first().waitFor();
-            assert.equal(await page.locator('.medals-grid-item').count(), 5);
-            await page.screenshot({ path: `/private/tmp/flat-medals-all-${width}.png` });
-            await page.locator('[data-open-medal="4"]').click();
-            assert.equal(await page.locator('.medals-pager span').textContent(), '5 / 5');
-            await page.locator('[data-medal-move="1"]').click();
-            assert.equal(await page.locator('.medals-pager span').textContent(), '1 / 5', 'Paging loops');
-            await page.locator('.medal-large img').evaluate(img => img.decode());
-            const artwork = await page.locator('.medal-large img').evaluate(img => {
-                const r=img.getBoundingClientRect();return {left:r.left,right:r.right,width:innerWidth,parent:img.parentElement.getBoundingClientRect().toJSON()};
+            await page.locator('#myAchievements:not([hidden])').waitFor();
+            assert.equal(await page.locator('#cardBlock + #myAchievements').count(), 1, 'Keep the layout from the confirmed canonical folder');
+            assert.equal(await page.locator('.card-medals').count(), 0, 'Do not overlay the abandoned layout proposal');
+            await page.locator('#myAchievements [data-medal="3"]').click();
+            await page.locator('.ach-overlay.is-on').waitFor();
+            await page.locator('.ach-name').filter({hasText:'ачивка 4'}).waitFor();
+            assert.equal(await page.locator('.ach-slide').count(), 5);
+            assert.equal(await page.locator('[data-share-one], [data-share-all]').count(), 2, 'Preserve both story controls');
+            const glass = await page.locator('.ach-sheet').evaluate(el => ({bg:getComputedStyle(el).backgroundColor,blur:getComputedStyle(el).backdropFilter}));
+            assert.equal(glass.bg, 'rgba(18, 26, 36, 0.72)');
+            assert.ok(glass.blur.includes('blur(36px)'));
+            await page.locator('.ach-slide[data-i="0"]').evaluate(slide => {
+                const track=slide.parentElement;track.scrollTo({left:slide.offsetLeft+slide.offsetWidth/2-track.clientWidth/2,behavior:'instant'});
             });
-            assert.ok(artwork.left >= 0 && artwork.right <= artwork.width, JSON.stringify(artwork));
-            assert.equal(await page.locator('.medal-detail h3').textContent(), medal.title);
-            assert.equal(await page.locator('.medal-detail p').textContent(), 'Макс · 25.10.2026');
-            await page.screenshot({ path: `/private/tmp/flat-medal-detail-${width}.png` });
-            await page.keyboard.press('ArrowRight');
-            assert.equal(await page.locator('.medals-pager span').textContent(), '2 / 5');
-            const content = page.locator('.medals-scroll');
-            await content.dispatchEvent('touchstart', { touches: [{ identifier: 1, clientX: 250, clientY: 300 }] });
-            await content.dispatchEvent('touchend', { touches: [], changedTouches: [{ identifier: 1, clientX: 90, clientY: 310 }] });
-            assert.equal(await page.locator('.medals-pager span').textContent(), '3 / 5', 'Swipe advances the large medal');
-            assert.equal(await page.locator('.medals-sheet').evaluate(el => el.scrollWidth > el.clientWidth), false);
-            await page.keyboard.press('Escape');
-            await page.locator('.medals-overlay').waitFor({ state: 'detached' });
-            assert.equal(await page.locator('#mainContent').evaluate(el => el.inert), false);
-            await page.locator('#cardBlock [data-medal="1"]').click();
-            assert.equal(await page.locator('.medals-pager span').textContent(), '2 / 5');
-            const grab = page.locator('.medals-sheet .cs-grab');
-            await grab.dispatchEvent('touchstart', { touches: [{ identifier: 1, clientX: 150, clientY: 90 }] });
-            await grab.dispatchEvent('touchmove', { touches: [{ identifier: 1, clientX: 150, clientY: 240 }] });
-            await grab.dispatchEvent('touchend', { touches: [], changedTouches: [{ identifier: 1, clientX: 150, clientY: 240 }] });
-            await page.locator('.medals-overlay').waitFor({ state: 'detached' });
-            await page.evaluate(() => testMedals.profiles());
-            assert.equal(await page.locator('.profile-card .medal-miniature').count(), 3, 'Profiles show at most three medals');
-            assert.equal(await page.locator('.profile-card .medal-more').textContent(), '+2');
-            await page.screenshot({ path: `/private/tmp/flat-medals-profile-${width}.png` });
-            await page.locator('.profile-card .medal-more').click();
-            assert.equal(await page.locator('.medals-grid-item').count(), 5, 'Plus opens the entire collection');
-            await page.locator('.medals-close').click();
-            await page.locator('.medals-overlay').waitFor({ state: 'detached' });
-            await page.evaluate(() => testMedals.single());
-            assert.equal(await page.locator('.medals-pager').count(), 0, 'A single award has no dead navigation');
+            await page.locator('.ach-name').filter({hasText:medal.title}).waitFor();
+            await page.locator('.ach-slide img').first().evaluate(img=>img.decode());
+            await page.waitForTimeout(350);
+            assert.ok((await page.locator('.ach-desc').textContent()).includes(medal.description));
+            await page.screenshot({path:`/private/tmp/canonical-transparent-medal-${width}.png`});
+            assert.equal(await page.locator('.ach-sheet').evaluate(el=>el.scrollWidth>el.clientWidth), false);
+            await page.locator('.ach-close').click();
+            await page.locator('.ach-overlay').waitFor({state:'detached'});
+            await page.evaluate(()=>testMedals.profiles());
+            await page.locator('.profile-card .medal-miniature').first().waitFor();
+            await page.locator('.profile-card [data-medal="2"]').click();
+            await page.locator('.ach-name').filter({hasText:'ачивка 3'}).waitFor();
+            await page.locator('.ach-close').click();
+            await page.locator('.ach-overlay').waitFor({state:'detached'});
+            await page.evaluate(()=>testMedals.single());
+            assert.equal(await page.locator('[data-share-all]').count(), 0);
             assert.equal(await page.locator('canvas').count(), 0);
-            assert.equal(requests.some(url => /\.glb|medal-runtime|manrope-cyrillic/.test(url)), false, 'No 3D resources requested');
-            await page.locator('.medals-close').click();
-            await page.locator('.medals-overlay').waitFor({ state: 'detached' });
+            assert.equal(requests.some(url=>/\.glb|medal-runtime|manrope-cyrillic/.test(url)), false);
+            await page.locator('.ach-close').click();
+            await page.locator('.ach-overlay').waitFor({state:'detached'});
             assert.deepEqual(errors, []);
             await page.close();
-            console.log('Flat medals passed:', width, 'px: inside card, three + overflow, collection, paging/swipes, drag close, real profiles, no WebGL');
+            console.log('Canonical medal UI passed:',width,'px: original placements, existing carousel, selected medal, descriptions, stories, translucent glass, no 3D');
         }
-    } finally { await browser.close(); }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+    } finally {await browser.close();}
+})().catch(error=>{console.error(error);process.exitCode=1;});

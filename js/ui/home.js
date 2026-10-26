@@ -20,7 +20,7 @@ import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
 import { mountAdminEntry } from './admin.js';
-import { mountCardMedals } from './medals.js';
+import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
 
 function getVisitedRouteIds() {
@@ -919,6 +919,6 @@ export function renderHome() {
     }
     mountAdminEntry();
     mountAdmissionEntry();
-    mountCardMedals();
+    mountMyAchievements();
     maybeShowNewAchievements(); // новые ачивки – поп-ап один раз
 }

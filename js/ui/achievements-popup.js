@@ -34,7 +34,7 @@ export async function maybeShowNewAchievements({ fromLink = false } = {}) {
     } catch { /* ачивки не мешают работе приложения */ }
 }
 
-export function openAchievementsPopup(items, { fresh = true, source = '' } = {}) {
+export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0 } = {}) {
     if (!items?.length) return;
     document.querySelector('.ach-overlay')?.remove();
     log(`ачивки: поп-ап (${items.length}) · ${source}`, isGuest(), state.user);
@@ -86,7 +86,12 @@ export function openAchievementsPopup(items, { fresh = true, source = '' } = {})
         if (k !== current) track.scrollTo({ left: s.offsetLeft + s.offsetWidth / 2 - track.clientWidth / 2, behavior: 'smooth' });
     }));
     overlay.querySelectorAll('[data-dot]').forEach(d => d.addEventListener('click', () => track.querySelectorAll('.ach-slide')[Number(d.dataset.dot)].click()));
-    show(0);
+    const selected = Math.max(0, Math.min(n - 1, initialIndex));
+    show(selected);
+    if (selected) requestAnimationFrame(() => {
+        const slide = track.querySelectorAll('.ach-slide')[selected];
+        track.scrollLeft = slide.offsetLeft + slide.offsetWidth / 2 - track.clientWidth / 2;
+    });
 
     const close = () => {
         overlay.classList.remove('is-on');
