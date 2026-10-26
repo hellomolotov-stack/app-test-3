@@ -6244,6 +6244,72 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .adm-wl-row i { font-style: normal; color: rgba(255,255,255,.5); }
 .adm-flag.is-carry { background: rgba(169, 205, 240, .16); color: #a9cdf0; }
 
+/* Achievement administration shares the existing admin typography and form controls. */
+.aw-admin { min-width: 0; letter-spacing: 0; }
+.aw-admin h2 { margin: 0; font-size: 20px; line-height: 1.3; overflow-wrap: anywhere; }
+.aw-admin fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.aw-toolbar, .aw-pick-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 18px; }
+.aw-toolbar .adm-muted { font-size: 13px; }
+.aw-admin .adm-ghost { border-radius: 8px; }
+.aw-admin .adm-primary { border-radius: 8px; }
+.aw-admin .adm-label { letter-spacing: 0; }
+.aw-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.aw-filter { border: 1px solid rgba(255,255,255,.15); border-radius: 20px; background: rgba(255,255,255,.05); padding: 7px 12px; color: #fff; font: inherit; font-size: 13px; cursor: pointer; }
+.aw-filter[aria-pressed="true"] { color: var(--yellow); border-color: var(--yellow); background: rgba(217,253,25,.08); }
+.aw-award { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px 0; border: 0; border-bottom: 1px solid rgba(255,255,255,.12); background: transparent; color: #fff; text-align: left; font: inherit; cursor: pointer; }
+.aw-award-main { flex: 1; min-width: 0; }
+.aw-award-main b { display: block; font-size: 15px; line-height: 1.4; overflow-wrap: anywhere; }
+.aw-award-main > span, .aw-award-side small { display: block; font-size: 12px; margin-top: 5px; color: rgba(255,255,255,.6); }
+.aw-award-side { flex: none; text-align: right; }
+.aw-rarity { font-size: 12px; color: #cdd5db; }
+.aw-rarity.is-rare { color: #f1ce75; }
+.aw-rarity.is-legendary { color: #8ee3d9; }
+.aw-rarity.is-mythical { color: #ceadff; }
+.aw-admin .aw-rarities { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 16px 0; }
+.aw-rarities legend { margin-bottom: 8px; font-size: 13px; color: rgba(255,255,255,.65); }
+.aw-rarity-option { display: flex; align-items: center; gap: 8px; padding: 12px 10px; border: 1px solid rgba(255,255,255,.13); border-radius: 8px; background: rgba(255,255,255,.04); font-size: 13px; cursor: pointer; }
+.aw-rarity-option:has(input:checked) { border-color: var(--yellow); background: rgba(217,253,25,.06); }
+.aw-rarity-option input { margin: 0; width: 16px; height: 16px; accent-color: var(--yellow); }
+.aw-swatch { flex: none; width: 12px; height: 12px; border-radius: 50%; background: #cdd5db; }
+.is-rare .aw-swatch { background: #edc76e; }
+.is-legendary .aw-swatch { background: linear-gradient(135deg, #cfd5db, #8ee3d9, #e8efa7); }
+.is-mythical .aw-swatch { background: #aa71ef; }
+.aw-form-row { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 12px; }
+.aw-form-row .adm-field { min-width: 0; }
+.aw-admin select, .aw-admin input { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.aw-pick-toolbar { margin: 0 0 8px; }
+.aw-people { min-height: 70px; max-height: 280px; overflow-y: auto; overscroll-behavior: contain; border-block: 1px solid rgba(255,255,255,.12); }
+.aw-people > p { margin: 16px 0; font-size: 13px; }
+.aw-person { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; }
+.aw-person input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--yellow); }
+.aw-person > span { min-width: 0; }
+.aw-person b { display: block; font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.aw-person small { display: block; margin-top: 4px; font-size: 11px; color: rgba(255,255,255,.55); overflow-wrap: anywhere; }
+.aw-recipient { display: grid; grid-template-columns: minmax(0, 1fr) 154px 32px; align-items: end; gap: 8px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.aw-recipient .adm-field { min-width: 0; margin: 0; }
+.aw-recipient .adm-field > span { font-size: 11px; }
+.aw-remove { width: 32px; height: 40px; margin: 0 0 2px; padding: 0; background: transparent; color: #ddd; border: 0; font: inherit; font-size: 24px; cursor: pointer; }
+.aw-detail-title { margin: 12px 0 !important; }
+.aw-saved-people > div { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid rgba(255,255,255,.1); padding: 12px 0; }
+.aw-saved-people b { min-width: 0; overflow-wrap: anywhere; font-size: 14px; font-weight: 500; }
+.aw-saved-people span { flex: none; font-size: 13px; color: rgba(255,255,255,.6); }
+.aw-detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.aw-record-id { font-size: 11px; overflow-wrap: anywhere; }
+.aw-medal-preview { display: block; width: min(100%, 280px); aspect-ratio: 1; object-fit: contain; margin: 16px auto; }
+.aw-error, .aw-success { font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.aw-error { color: #ffa4a4; }
+.aw-success { color: var(--yellow); }
+.aw-error:empty, .aw-success:empty { display: none; }
+.aw-admin button:focus-visible, .aw-admin input:focus-visible, .aw-admin select:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
+.aw-admin button:disabled { opacity: .5; cursor: default; }
+@media (max-width: 380px) {
+    .aw-form-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .aw-recipient { grid-template-columns: minmax(0, 1fr) 32px; }
+    .aw-recipient .adm-field:first-child { grid-column: 1 / -1; }
+    .aw-award { gap: 8px; }
+    .aw-award-side small { max-width: 94px; line-height: 1.4; }
+}
+
 /* хайкинг бокс: плашка с мини-коллажем и ценой «от …» */
 .box-plate-pics { position: relative; flex: none; width: 70px; height: 62px; }
 .box-plate-pics img { position: absolute; object-fit: contain; filter: drop-shadow(0 3px 5px rgba(0, 0, 0, .5)); }

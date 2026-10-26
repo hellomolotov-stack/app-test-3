@@ -9,6 +9,7 @@ import { loadAllParticipants } from '../firebase.js';
 import { previewHikeTrack, findCatalogRoute, catalogRouteTrack } from './calendar.js';
 import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
 import { renderAdmissionAdmin } from './admission-admin.js';
+import { renderAchievementsAdmin } from './achievements-admin.js';
 
 const ADMIN_USERNAMES = new Set(['maxmolotov', 'hellointelligent']);
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
@@ -223,7 +224,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [['hikes', '🏔 хайки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -247,6 +248,7 @@ function render() {
     else if (view.tab === 'pass') renderPass(body);
     else if (view.tab === 'home') renderHomepage(body);
     else if (view.tab === 'admissions') renderAdmissionAdmin(body);
+    else if (view.tab === 'achievements') renderAchievementsAdmin(body);
     else renderHikeList(body);
     if (holdHeight) {
         body.style.minHeight = holdHeight + 'px';
