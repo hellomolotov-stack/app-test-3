@@ -21,6 +21,7 @@ import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
 import { mountAdminEntry } from './admin.js';
 import { mountMyAchievements } from './medals.js';
+import { maybeShowNewAchievements } from './achievements-popup.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -919,4 +920,5 @@ export function renderHome() {
     mountAdminEntry();
     mountAdmissionEntry();
     mountMyAchievements();
+    maybeShowNewAchievements(); // новые ачивки – поп-ап один раз
 }

@@ -54,7 +54,12 @@ function normalizeDraft(input) {
         seen.add(userId);
         return { userId, name: text(p.name, 100, 'имя участника'), date: date(p.date || awardDate) };
     }).sort((a, b) => a.userId.localeCompare(b.userId));
-    return { title, rarity: input.rarity, kind: input.kind, hikeDate, date: awardDate, recipients };
+    let description = '';
+    if (input.description != null && String(input.description).trim()) {
+        description = String(input.description).trim();
+        if (description.length > 200 || /[\x00-\x1f\x7f]/.test(description)) throw fail(400, 'проверь описание ачивки');
+    }
+    return { title, description, rarity: input.rarity, kind: input.kind, hikeDate, date: awardDate, recipients };
 }
 
 function normalizeMedal(input) {
@@ -106,15 +111,47 @@ function createHandler(deps = {}) {
         return { value: await response.json(), revision: response.headers.get('etag') };
     }
     async function people(token, hikeDate = '') {
-        const [profiles, members, roster] = await Promise.all([
+        const [profiles, members, roster, attendance] = await Promise.all([
             read('userProfiles', token), read('members', token),
             hikeDate ? read(`hikeParticipants/${hikeDate}`, token) : Promise.resolve({ value: {} }),
+            hikeDate ? read(`hikeAttendance/${hikeDate}`, token) : Promise.resolve({ value: {} }),
         ]);
-        const p = profiles.value || {}, m = members.value || {}, r = roster.value || {};
+        const p = profiles.value || {}, m = members.value || {}, r = roster.value || {}, att = attendance.value || {};
         const ids = new Set([...Object.keys(p), ...Object.keys(m), ...Object.keys(r)]);
         return [...ids].map(id => person(id, p[id], m[id], r[id])).filter(Boolean)
-            .map(p => ({ ...p, registered: Object.hasOwn(r, p.userId) }))
+            .map(p => ({ ...p, registered: Object.hasOwn(r, p.userId), attended: att[p.userId] === true }))
             .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+    }
+    async function patch(path, token, data) {
+        const response = await fetcher(`${DB}/${path}.json`, {
+            method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(data), signal: AbortSignal.timeout(10000),
+        });
+        if (!response.ok) throw fail(502, 'сохранение не подтверждено — повтори запрос');
+    }
+    async function sendBot(chatId, html, botToken) {
+        const response = await fetcher(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(10000),
+            body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true,
+                reply_markup: { inline_keyboard: [[{ text: '🏅 посмотреть ачивки', url: 'https://t.me/yaltahiking_bot?startapp=ach' }]] } }),
+        });
+        const result = await response.json().catch(() => ({}));
+        return !!result.ok;
+    }
+    // недавно выданные ачивки по людям: для рассылки «у тебя новая ачивка»
+    async function recentGrants(token, days = 45) {
+        const [snapshot, notices] = await Promise.all([read('clubAchievements', token), read('achievementNotices', token)]);
+        const since = Date.now() - days * 86400000;
+        const byUser = {};
+        for (const record of Object.values(snapshot.value || {})) {
+            if (!record?.medal || record.publicationStatus !== 'published') continue;
+            for (const [id, grant] of Object.entries(record.grants || {})) {
+                if (!grant?.issuedAt || grant.issuedAt < since) continue;
+                (byUser[id] ||= []).push({ id: record.id, title: record.title, issuedAt: grant.issuedAt, name: grant.name,
+                    notifiedAt: Number(notices.value?.[id]?.[record.id]) || null });
+            }
+        }
+        return byUser;
     }
     async function write(id, token, etag, record) {
         if (!revision(etag)) throw fail(502, 'не удалось проверить версию ачивки');
@@ -137,8 +174,67 @@ function createHandler(deps = {}) {
             const user = verifyInitData(String(body.initData || ''), botToken);
             if (!user?.id) throw fail(401, 'открой админку внутри Telegram');
             const collection = body.action === 'collection';
+            // «посмотрел ачивки» – любой участник, только про себя
+            if (body.action === 'seen') {
+                const ids = Array.isArray(body.ids) ? body.ids.filter(id => typeof id === 'string' && UUID.test(id)).slice(0, 100) : [];
+                if (!ids.length) throw fail(400, 'нет ачивок');
+                const now = Date.now();
+                await patch(`achievementSeen/${user.id}`, await accessToken(), Object.fromEntries(ids.map(id => [id, now])));
+                return res.status(200).json({ ok: true });
+            }
             if (!collection && !isAdminUser(user)) throw fail(403, 'только для администраторов');
-            if (!['list', 'roster', 'get', 'save', 'set_medal', 'collection'].includes(body.action)) throw fail(400, 'неизвестное действие');
+            if (body.action === 'attendance') {
+                const day = date(body.hikeDate);
+                const ids = Array.isArray(body.userIds) ? body.userIds.map(String).filter(id => UID.test(id)).slice(0, 300) : [];
+                if (!ids.length) throw fail(400, 'проверь участников');
+                await patch(`hikeAttendance/${day}`, await accessToken(), Object.fromEntries(ids.map(id => [id, body.attended ? true : null])));
+                return res.status(200).json({ ok: true });
+            }
+            if (body.action === 'notify_list') {
+                const token = await accessToken();
+                const [byUser, list] = await Promise.all([recentGrants(token), people(token)]);
+                const known = new Map(list.map(p => [p.userId, p]));
+                const rows = Object.entries(byUser).map(([userId, items]) => ({ userId,
+                    name: known.get(userId)?.name || items[0].name || userId, username: known.get(userId)?.username || '',
+                    items: items.sort((a, b) => b.issuedAt - a.issuedAt) }))
+                    .sort((a, b) => (a.items.every(i => i.notifiedAt) - b.items.every(i => i.notifiedAt)) || b.items[0].issuedAt - a.items[0].issuedAt);
+                return res.status(200).json({ people: rows });
+            }
+            if (body.action === 'notify_send') {
+                const ids = Array.isArray(body.userIds) ? [...new Set(body.userIds.map(String).filter(id => UID.test(id)))].slice(0, 300) : [];
+                if (!ids.length) throw fail(400, 'выбери получателей');
+                const template = typeof body.text === 'string' && body.text.trim() ? body.text.trim().slice(0, 1500) : '';
+                if (!template) throw fail(400, 'напиши текст сообщения');
+                const token = await accessToken();
+                const byUser = await recentGrants(token);
+                const esc = v => String(v ?? '').replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
+                const compose = (userId, items) => {
+                    const fresh = items.filter(i => !i.notifiedAt);
+                    const list = (fresh.length ? fresh : items).map(i => `«${esc(i.title)}»`).join(', ');
+                    const first = String(items[0]?.name || '').trim().split(/\s+/)[0];
+                    // текст админа может содержать <b>/<i>; имя и названия экранируем
+                    return template.replace(/\[имя\]/g, esc(first || 'друг')).replace(/\[ачивки\]/g, list);
+                };
+                if (body.test) {
+                    const sample = ids.find(id => byUser[id]) || ids[0];
+                    const ok = await sendBot(user.id, compose(sample, byUser[sample] || [{ title: 'пример ачивки', name: 'друг' }]), botToken);
+                    return res.status(200).json({ sent: ok ? 1 : 0, total: 1, test: true });
+                }
+                let sent = 0;
+                const failed = [];
+                for (const id of ids) {
+                    const items = byUser[id];
+                    if (!items?.length) { failed.push(id); continue; }
+                    const ok = await sendBot(id, compose(id, items), botToken);
+                    if (!ok) { failed.push(id); continue; }
+                    sent++;
+                    const now = Date.now();
+                    await patch(`achievementNotices/${id}`, token, Object.fromEntries(items.map(i => [i.id, now]))).catch(() => {});
+                    await new Promise(r => setTimeout(r, 60)); // лимиты Telegram
+                }
+                return res.status(200).json({ sent, total: ids.length, failed });
+            }
+            if (!['list', 'roster', 'get', 'save', 'set_medal', 'collection', 'seen', 'attendance', 'notify_list', 'notify_send'].includes(body.action)) throw fail(400, 'неизвестное действие');
             let targetIds;
             if (collection) {
                 targetIds = body.userIds || [String(user.id)];
@@ -159,14 +255,17 @@ function createHandler(deps = {}) {
                     const [member, profile] = await Promise.all([read(`members/${user.id}`, token), read(`userProfiles/${user.id}`, token)]);
                     if (!member.value?.user_id || !profile.value) throw fail(403, 'профили доступны участникам клуба');
                 }
-                const snapshot = await read('clubAchievements', token);
+                const own = targetIds.length === 1 && targetIds[0] === String(user.id);
+                const [snapshot, seen] = await Promise.all([read('clubAchievements', token),
+                    own ? read(`achievementSeen/${user.id}`, token) : Promise.resolve({ value: {} })]);
                 const collections = Object.fromEntries(targetIds.map(id => [id, []]));
                 for (const record of Object.values(snapshot.value || {})) {
                     if (!record?.medal || record.publicationStatus !== 'published') continue;
                     for (const id of targetIds) {
                         const grant = record.grants?.[id];
                         if (!grant?.issuedAt) continue;
-                        collections[id].push({ id: record.id, title: record.title, rarity: record.rarity, kind: record.kind,
+                        collections[id].push({ id: record.id, title: record.title, description: record.description || '', rarity: record.rarity, kind: record.kind,
+                            ...(own ? { seenAt: Number(seen.value?.[record.id]) || null } : {}),
                             medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
                             grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt } });
                     }
@@ -175,9 +274,12 @@ function createHandler(deps = {}) {
                 return res.status(200).json({ collections });
             }
             if (body.action === 'list') {
-                const [snapshot, list] = await Promise.all([read('clubAchievements', token), people(token)]);
+                const [snapshot, list, notices] = await Promise.all([read('clubAchievements', token), people(token), read('achievementNotices', token)]);
                 const records = Object.values(snapshot.value || {}).filter(r => r && UUID.test(r.id || ''));
-                return res.status(200).json({ achievements: records.map(publicRecord).sort((a, b) => b.createdAt - a.createdAt), people: list });
+                const n = notices.value || {};
+                const achievements = records.map(publicRecord).map(a => ({ ...a,
+                    notified: Object.keys(a.grants || {}).filter(id => n[id]?.[a.id]).length }));
+                return res.status(200).json({ achievements: achievements.sort((a, b) => b.createdAt - a.createdAt), people: list });
             }
             if (body.action === 'roster') return res.status(200).json({ people: await people(token, hikeDate), hikeDate });
             const current = await read(`clubAchievements/${body.id}`, token);

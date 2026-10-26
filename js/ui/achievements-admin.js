@@ -7,7 +7,8 @@ const rarityName = key => ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || k
 const yes = value => value === true || String(value).toLowerCase() === 'yes';
 const dateLabel = date => /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date.split('-').reverse().join('.') : '';
 const count = a => Object.keys(a.recipients || {}).length;
-const statusLabel = a => a.status === 'ready' ? 'выдана' : 'черновик · ожидает медаль';
+const statusLabel = a => a.status !== 'ready' ? 'черновик · ожидает медаль'
+    : `выдана · ${a.notified ? `сообщение: ${a.notified} из ${Object.keys(a.grants || {}).length}` : 'сообщение не отправляли'}`;
 
 export async function renderAchievementsAdmin(body) {
     const ui = { screen: 'list', filter: 'all', people: [], achievements: [], selected: new Map(),
@@ -51,7 +52,7 @@ export async function renderAchievementsAdmin(body) {
         rosterVersion++;
         const hike = hikes.find(h => h.date <= today());
         ui.screen = 'edit'; ui.id = crypto.randomUUID(); ui.revision = 'null_etag'; ui.original = null;
-        ui.draft = { title: '', rarity: 'common', kind: 'special', hikeDate: hike?.date || '', date: hike?.date || today() };
+        ui.draft = { title: '', description: '', rarity: 'common', kind: 'special', hikeDate: hike?.date || '', date: hike?.date || today() };
         ui.selected = new Map(); ui.search = ''; ui.scope = hike ? 'roster' : 'all'; ui.conflict = false; dirty();
         roster();
     }
@@ -63,18 +64,39 @@ export async function renderAchievementsAdmin(body) {
             if (!body.isConnected) return;
             const a = data.achievement;
             ui.screen = 'edit'; ui.id = id; ui.revision = data.revision; ui.original = a;
-            ui.draft = { title: a.title, rarity: a.rarity, kind: a.kind, date: a.date, hikeDate: a.hikeDate || '' };
+            ui.draft = { title: a.title, description: a.description || '', rarity: a.rarity, kind: a.kind, date: a.date, hikeDate: a.hikeDate || '' };
             ui.selected = new Map(Object.values(a.recipients).map(p => [p.userId, { ...p }]));
             ui.search = ''; ui.scope = a.hikeDate ? 'roster' : 'all'; dirty();
             await roster();
         } catch (error) { ui.error = error.message; }
         finally { ui.busy = false; paint(); }
     }
+    // «был на хайке» хранится на сервере по дате хайка – отмечаешь один раз и пользуешься для всех ачивок этого хайка
+    async function setAttended(ids, attended) {
+        const hikeDate = ui.draft.hikeDate;
+        if (!hikeDate || !ids.length) return;
+        const before = new Map(ui.people.map(p => [p.userId, p.attended]));
+        ui.people = ui.people.map(p => ids.includes(p.userId) ? { ...p, attended } : p);
+        paintPeople();
+        try { await achievementRequest('attendance', { hikeDate, userIds: ids, attended }); }
+        catch (error) {
+            ui.people = ui.people.map(p => ids.includes(p.userId) ? { ...p, attended: before.get(p.userId) } : p);
+            ui.error = error.message; paint();
+        }
+    }
+    function copyFrom(id) {
+        const source = ui.achievements.find(a => a.id === id);
+        if (!source) return;
+        Object.values(source.recipients || {}).forEach(p => {
+            if (!ui.selected.has(p.userId)) ui.selected.set(p.userId, { userId: p.userId, name: p.name, date: ui.draft.date });
+        });
+        dirty(); paintPeople(); paintSelected();
+    }
     function visiblePeople() {
         const query = ui.search.trim().replace(/^@/, '').toLocaleLowerCase('ru');
         const people = new Map(ui.people.map(p => [p.userId, p]));
         ui.selected.forEach(p => { if (!people.has(p.userId)) people.set(p.userId, p); });
-        return [...people.values()].filter(p => (ui.scope === 'all' || p.registered)
+        return [...people.values()].filter(p => (ui.scope === 'all' || (ui.scope === 'attended' ? p.attended : p.registered))
             && (!query || `${p.name} ${p.username || ''} ${p.userId}`.toLocaleLowerCase('ru').includes(query)));
     }
     function paintPeople() {
@@ -82,8 +104,9 @@ export async function renderAchievementsAdmin(body) {
         if (!container) return;
         const people = visiblePeople();
         container.innerHTML = ui.rosterLoading ? '<p class="adm-muted" role="status">загружаю участников…</p>'
-            : people.length ? people.map(p => `<label class="aw-person"><input type="checkbox" data-pick="${esc(p.userId)}" ${ui.selected.has(p.userId) ? 'checked' : ''}>
-                <span><b>${esc(p.name)}</b><small>${p.username ? '@' + esc(p.username) + ' · ' : ''}${p.member ? 'карта клуба' : 'участник'} · ${esc(p.userId)}</small></span></label>`).join('')
+            : people.length ? people.map(p => `<div class="aw-person-row"><label class="aw-person"><input type="checkbox" data-pick="${esc(p.userId)}" ${ui.selected.has(p.userId) ? 'checked' : ''}>
+                <span><b>${esc(p.name)}</b><small>${p.username ? '@' + esc(p.username) + ' · ' : ''}${p.member ? 'карта клуба' : 'участник'}${p.registered ? ' · записан' : ''}</small></span></label>
+                ${ui.draft.hikeDate ? `<button type="button" class="aw-att${p.attended ? ' is-on' : ''}" data-att="${esc(p.userId)}" aria-pressed="${p.attended ? 'true' : 'false'}" title="отметка сохраняется для всех ачивок этого хайка">${p.attended ? '✓ был' : 'был?'}</button>` : ''}</div>`).join('')
                 : '<p class="adm-muted" role="status">никого не найдено</p>';
         container.querySelectorAll('[data-pick]').forEach(input => input.onchange = () => {
             const id = input.dataset.pick;
@@ -93,6 +116,7 @@ export async function renderAchievementsAdmin(body) {
             } else ui.selected.delete(id);
             dirty(); paintSelected();
         });
+        container.querySelectorAll('[data-att]').forEach(button => button.onclick = () => setAttended([button.dataset.att], button.getAttribute('aria-pressed') !== 'true'));
         body.querySelector('#awSelectVisible').disabled = ui.busy || ui.rosterLoading || !people.length;
     }
     function paintSelected() {
@@ -125,13 +149,16 @@ export async function renderAchievementsAdmin(body) {
             <form id="awForm"><fieldset ${ui.busy ? 'disabled' : ''}>
             <label class="adm-field"><span>тип</span><select id="awKind"><option value="special" ${d.kind === 'special' ? 'selected' : ''}>особая ачивка</option><option value="route" ${d.kind === 'route' ? 'selected' : ''}>за пройденный маршрут</option></select></label>
             <label class="adm-field"><span>название ачивки</span><input id="awTitle" maxlength="120" value="${esc(d.title)}" autocomplete="off" required></label>
+            <label class="adm-field"><span>описание · одна строка, её увидят в поп-апе и в сообщении</span><input id="awDescription" maxlength="200" value="${esc(d.description || '')}" placeholder="спустились туда, куда не ходят туристы" autocomplete="off"></label>
             <fieldset class="aw-rarities"><legend>редкость</legend>${ACHIEVEMENT_RARITIES.map(([key, label]) => `<label class="aw-rarity-option is-${key}"><input type="radio" name="awRarity" value="${key}" ${d.rarity === key ? 'checked' : ''}><span class="aw-swatch" aria-hidden="true"></span><span>${label}</span></label>`).join('')}</fieldset>
             <div class="aw-form-row"><label class="adm-field"><span>хайк</span><select id="awHike"><option value="">без привязки к хайку</option>${options.map(h => `<option value="${h.date}" ${h.date === d.hikeDate ? 'selected' : ''}>${dateLabel(h.date)} · ${esc(h.title)}</option>`).join('')}</select></label>
             <label class="adm-field"><span>дата ачивки</span><input id="awDate" type="date" value="${esc(d.date)}" required></label></div>
             <div class="adm-label">получатели</div>
             <div class="aw-form-row"><label class="adm-field"><span>поиск по имени или Telegram</span><input type="search" id="awSearch" value="${esc(ui.search)}" autocomplete="off"></label>
-                <label class="adm-field"><span>список</span><select id="awScope"><option value="all" ${ui.scope === 'all' ? 'selected' : ''}>все участники</option>${d.hikeDate ? `<option value="roster" ${ui.scope === 'roster' ? 'selected' : ''}>записаны на этот хайк</option>` : ''}</select></label></div>
+                <label class="adm-field"><span>список</span><select id="awScope"><option value="all" ${ui.scope === 'all' ? 'selected' : ''}>все участники</option>${d.hikeDate ? `<option value="attended" ${ui.scope === 'attended' ? 'selected' : ''}>были на хайке</option><option value="roster" ${ui.scope === 'roster' ? 'selected' : ''}>записаны на этот хайк</option>` : ''}</select></label></div>
             <div class="aw-pick-toolbar"><button type="button" class="adm-link" id="awSelectVisible">выбрать список</button><button type="button" class="adm-link" id="awClear">снять выбор</button></div>
+            ${ui.achievements.some(a => a.id !== ui.id && count(a)) ? `<label class="adm-field"><span>добавить людей из другой ачивки</span><select id="awCopyFrom"><option value="">выбрать ачивку…</option>${ui.achievements.filter(a => a.id !== ui.id && count(a)).map(a => `<option value="${a.id}">${esc(a.title)} · ${esc(dateLabel(a.date))} · ${count(a)} чел.</option>`).join('')}</select></label>` : ''}
+            ${d.hikeDate ? '<button type="button" class="adm-link" id="awMarkSelected">отметить выбранных: были на хайке</button>' : ''}
             <div class="aw-people" id="awPeople"></div><div class="adm-label" id="awSelectedCount"></div><div id="awSelected"></div>
             ${ui.original?.medal ? '<p class="adm-muted">при изменении названия, редкости или типа потребуется новая медаль</p>' : ''}
             <button type="submit" class="btn btn-yellow adm-primary" id="awSave">${ui.busy ? 'сохраняю…' : ui.original ? 'сохранить изменения' : 'выдать ачивку'}</button>
@@ -140,7 +167,7 @@ export async function renderAchievementsAdmin(body) {
     function detailHtml() {
         const a = ui.result;
         return `<div class="aw-toolbar"><button class="adm-link" id="awBack">к списку</button><span class="aw-rarity is-${a.rarity}">${rarityName(a.rarity)}</span></div>
-            <h2 class="aw-detail-title">${esc(a.title)}</h2><p class="adm-muted">${dateLabel(a.date)} · участников: ${count(a)} · ${statusLabel(a)}</p>
+            <h2 class="aw-detail-title">${esc(a.title)}</h2>${a.description ? `<p class="aw-detail-desc">${esc(a.description)}</p>` : ''}<p class="adm-muted">${dateLabel(a.date)} · участников: ${count(a)} · ${statusLabel(a)}</p>
             ${a.medal ? `<img class="aw-medal-preview" src="${esc(a.medal.imageUrl)}" alt="${esc(a.title)}">` : ''}
             <div class="aw-saved-people">${Object.values(a.recipients).map(p => `<div><b>${esc(p.name)}</b><span>${dateLabel(p.date)}</span></div>`).join('')}</div>
             <div class="aw-detail-actions"><button class="adm-ghost" id="awEditSaved">редактировать</button><button class="adm-ghost" id="awCopy">скопировать задание для медали</button><button class="adm-ghost" id="awNew">ещё ачивка</button></div>
@@ -161,6 +188,9 @@ export async function renderAchievementsAdmin(body) {
         if (ui.screen === 'edit') {
             paintPeople(); paintSelected();
             body.querySelector('#awTitle').oninput = e => { ui.draft.title = e.target.value; dirty(); };
+            body.querySelector('#awDescription').oninput = e => { ui.draft.description = e.target.value; dirty(); };
+            body.querySelector('#awCopyFrom')?.addEventListener('change', e => { copyFrom(e.target.value); e.target.value = ''; });
+            body.querySelector('#awMarkSelected')?.addEventListener('click', () => setAttended([...ui.selected.keys()], true));
             body.querySelectorAll('[name="awRarity"]').forEach(input => input.onchange = () => { ui.draft.rarity = input.value; dirty(); });
             body.querySelector('#awKind').onchange = e => {
                 ui.draft.kind = e.target.value;
@@ -205,7 +235,7 @@ export async function renderAchievementsAdmin(body) {
     }
     async function copyTask() {
         const a = ui.result;
-        const text = [`Медаль клуба. ID ачивки: ${a.id}`, `Название: ${a.title}`, `Редкость: ${rarityName(a.rarity)}`,
+        const text = [`Медаль клуба. ID ачивки: ${a.id}`, `Название: ${a.title}`, `Редкость: ${rarityName(a.rarity)}`, ...(a.description ? [`Описание: ${a.description}`] : []),
             `Дата: ${a.date}`, 'Стиль: объёмный металл, цветная эмаль, встроенная нижняя подпись, лаймовый акцент #D9FD19',
             'Получатели:', ...Object.values(a.recipients).map(p => `${p.userId} | ${p.name} | ${p.date}`)].join('\n');
         try {

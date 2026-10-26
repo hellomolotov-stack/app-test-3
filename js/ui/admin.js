@@ -1,3 +1,4 @@
+import { mountAchievementNotify } from './achievements-notify.js';
 // js/ui/admin.js – админка клуба: хайки (создание, правка, GPX-трек, участники) и рассылки.
 // Кнопку видят только ADMIN_USERNAMES, но это лишь удобство: каждое действие сервер
 // (Apps Script, handleAdmin) проверяет по подписи Telegram initData.
@@ -1627,6 +1628,7 @@ function renderBroadcast(body) {
         <div id="admSched" class="adm-drafts-box"></div>
         <div id="admDrafts" class="adm-drafts-box"></div>
         ${recent[0] ? `<button class="adm-quick" id="admFeedback">📝 собрать отзывы о хайке<small>${esc(dateLabel(recent[0].date))} – ${esc(recent[0].title)} · кнопка в общий чат</small></button>` : ''}
+        <div id="admAchNotify"></div>
         ${bc.draftId ? '<div class="adm-hint">открыт черновик – «сохранить черновик» обновит его</div>' : ''}
         <div class="adm-label">кому</div>
         ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
@@ -1691,6 +1693,7 @@ function renderBroadcast(body) {
         <div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
         <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`;
 
+    mountAchievementNotify(body.querySelector('#admAchNotify'));
     const update = () => { renderPreview(); updateSendLabel(); };
     body.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
         haptic();

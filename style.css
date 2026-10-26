@@ -6519,3 +6519,56 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .analytics-funnel small { font-size: 11px; color: #aaa; }
 .analytics-insights { margin-top: 24px; border-top: 1px solid #ffffff20; }
 .analytics-insights p { font-size: 14px; line-height: 1.6; }
+
+/* ачивки в админке: отметка «был на хайке», описание */
+.aw-person-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.aw-person-row .aw-person { flex: 1; min-width: 0; border-bottom: 0; }
+.aw-att { flex: none; border: 1px solid rgba(255,255,255,.18); background: transparent; color: rgba(255,255,255,.6); border-radius: 20px; padding: 6px 11px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.aw-att.is-on { background: rgba(217,253,25,.14); border-color: rgba(217,253,25,.5); color: var(--yellow); }
+.aw-detail-desc { margin: 4px 0 0; color: rgba(255,255,255,.75); font-size: 14px; }
+
+/* рассылки → новые ачивки */
+.an-panel { margin: -4px 0 14px; padding: 12px 14px 14px; border-radius: 20px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); }
+.an-tools { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+.an-list { max-height: 320px; overflow-y: auto; margin-bottom: 12px; }
+.an-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.06); cursor: pointer; }
+.an-row input { flex: none; width: 18px; height: 18px; margin: 0; accent-color: var(--yellow); }
+.an-row > span:nth-child(2) { flex: 1; min-width: 0; font-size: 14px; }
+.an-row small { color: rgba(255,255,255,.5); font-size: 12px; }
+.an-row em { display: block; margin-top: 3px; font-style: normal; font-size: 12px; color: rgba(255,255,255,.65); overflow-wrap: anywhere; }
+.an-status { flex: none; font-size: 11.5px; font-weight: 700; color: rgba(255,255,255,.5); }
+.an-status.is-new { color: var(--yellow); }
+.an-note { color: var(--yellow); }
+
+/* поп-ап «новые ачивки» – карусель медалей (js/ui/achievements-popup.js) */
+.ach-overlay { position: fixed; inset: 0; z-index: 2300; display: flex; align-items: flex-end; justify-content: center; background: rgba(5, 8, 12, 0); transition: background .3s ease; }
+.ach-overlay.is-on { background: rgba(5, 8, 12, .62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.ach-sheet { position: relative; width: calc(100% - 20px); max-width: 520px; margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); padding: 22px 18px 18px; box-sizing: border-box;
+    border-radius: 34px; background: rgba(22, 28, 36, .94); border: 1px solid rgba(255,255,255,.14); color: #fff; text-align: center;
+    transform: translateY(40px); opacity: 0; transition: transform .38s cubic-bezier(.2,.9,.3,1.08), opacity .25s ease; }
+.ach-overlay.is-on .ach-sheet { transform: none; opacity: 1; }
+.ach-close { position: absolute; right: 14px; top: 14px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: rgba(255,255,255,.7); font-size: 15px; cursor: pointer; }
+.ach-title { margin: 0 34px; font-size: 22px; line-height: 1.15; font-weight: 800; }
+.ach-title b { color: var(--yellow); }
+.ach-sub { margin: 6px 0 0; font-size: 13.5px; color: rgba(255,255,255,.6); }
+.ach-track { display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; margin: 10px -18px 0; padding: 18px 0; scrollbar-width: none;
+    padding-inline: calc(50% - 105px); scroll-padding-inline: calc(50% - 105px); }
+.ach-track::-webkit-scrollbar { display: none; }
+.ach-slide { flex: none; width: 210px; height: 210px; scroll-snap-align: center; display: grid; place-items: center; cursor: pointer; }
+.ach-slide img { width: 100%; height: 100%; object-fit: contain; transform: scale(.58); opacity: .45; transition: transform .3s ease, opacity .3s ease;
+    filter: drop-shadow(0 12px 26px rgba(0,0,0,.55)); user-select: none; -webkit-user-drag: none; }
+.ach-slide.is-on img { transform: scale(1); opacity: 1; }
+.ach-dots { display: flex; gap: 6px; justify-content: center; margin: 2px 0 10px; }
+.ach-dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.25); transition: width .25s ease, background .25s ease; cursor: pointer; }
+.ach-dots i.is-on { width: 18px; background: var(--yellow); }
+.ach-info { min-height: 92px; margin-bottom: 14px; }
+.ach-rar { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 4px 10px; border-radius: 20px; background: rgba(255,255,255,.1); color: #ddd; }
+.ach-rar.is-rare { background: rgba(81,154,191,.22); color: #8fd0f2; }
+.ach-rar.is-legendary { background: rgba(217,253,25,.16); color: var(--yellow); }
+.ach-rar.is-mythical { background: rgba(190,120,255,.2); color: #d6b0ff; }
+.ach-name { margin: 8px 0 4px; font-size: 18px; font-weight: 800; }
+.ach-desc { font-size: 13.5px; line-height: 1.4; color: rgba(255,255,255,.65); }
+.ach-btn { display: block; width: 100%; margin: 0; border-radius: 30px; font-weight: 800; }
+.ach-btn + .ach-btn { margin-top: 8px; }
+.ach-note { margin: 8px 0 0; min-height: 0; font-size: 12.5px; color: rgba(255,255,255,.6); }
+.ach-note:empty { display: none; }

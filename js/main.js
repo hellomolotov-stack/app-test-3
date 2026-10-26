@@ -528,6 +528,10 @@ function handleDeepLink(startParam) {
             window._deepLinkPageChanged = true;
             renderProfiles();
             break;
+        case 'ach':
+            // ссылка из бота «🏅 посмотреть ачивки» – поп-ап с новыми медалями
+            setTimeout(() => import('./ui/achievements-popup.js').then(m => m.maybeShowNewAchievements({ fromLink: true })), 400);
+            break;
         case 'zapovednik':
             // ссылка для текстов: t.me/yaltahiking_bot?startapp=zapovednik – инструкция по пропуску в заповедник
             setTimeout(() => import('./ui/zapovednik.js').then(m => m.openZapovednikGuide('ссылка')), 600);
