@@ -1,0 +1,100 @@
+// Экран «все ачивки» (макет В): три уровня – обычные, редкие, очень редкие; у каждого полоса «N из M»
+// и ряд-карусель медалей. Не полученные – серые, тап показывает, как получить.
+// Без карты интеллигента видны только три последние полученные ачивки, остальные полученные размыты –
+// внизу плашка «чтобы увидеть все свои открытые ачивки, оформи карту интеллигента».
+import { state } from '../state.js';
+import { haptic } from '../utils.js';
+import { log } from '../api.js';
+import { ACHIEVEMENT_TIERS, ACHIEVEMENT_CATALOG, catalogByTitle, tierOf } from '../achievements-catalog.js';
+import { medalForTitle } from '../achievements-medals.js';
+import { openAchievementsPopup } from './achievements-popup.js';
+
+const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+export const GUEST_VISIBLE = 3;
+export const isCardMember = () => state.userCard?.status === 'active';
+
+// какие из полученных видны: владельцу карты – все, без карты – три последние (items уже от новых к старым)
+export function visibleEarned(items) {
+    return isCardMember() ? items : items.slice(0, GUEST_VISIBLE);
+}
+
+function openCard(source) {
+    import('./card-sheet.js').then(m => m.openCardSheet({ source })).catch(() => {});
+}
+
+export function openAchievementsCollection(items = []) {
+    document.querySelector('.acol-overlay')?.remove();
+    const member = isCardMember();
+    const visible = visibleEarned(items);
+    const visibleIds = new Set(visible.map(a => a.id));
+    log(`ачивки: все ачивки (${items.length})`, !member, state.user);
+
+    // строим уровни: полученные (по дате) + не полученные из каталога
+    const earnedByCatalog = new Map();
+    items.forEach(a => { const c = catalogByTitle(a.title); if (c && !earnedByCatalog.has(c.id)) earnedByCatalog.set(c.id, a); });
+    const tiers = ACHIEVEMENT_TIERS.map(([key, label, about]) => {
+        const earned = items.filter(a => tierOf(catalogByTitle(a.title)?.rarity || a.rarity) === key);
+        const missing = ACHIEVEMENT_CATALOG.filter(c => c.tier === key && !earnedByCatalog.has(c.id));
+        const total = ACHIEVEMENT_CATALOG.filter(c => c.tier === key).length + earned.filter(a => !catalogByTitle(a.title)).length;
+        return { key, label, about, earned, missing, total };
+    });
+    const totalAll = tiers.reduce((n, t) => n + t.total, 0);
+
+    const tile = (inner, cls, attrs, name, nameOff) => `<button type="button" class="acol-it ${cls}" ${attrs}>
+        <span class="acol-pic">${inner}</span><span class="acol-name${nameOff ? ' is-off' : ''}">${esc(name)}</span></button>`;
+    const earnedTile = a => visibleIds.has(a.id)
+        ? tile(`<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy">`, 'is-on', `data-open="${esc(a.id)}"`, a.title)
+        : tile(`<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy" class="is-blur"><b class="acol-lock">🔒</b>`, 'is-hidden', 'data-card', 'открыта с картой', true);
+    const missingTile = c => {
+        const art = medalForTitle(c.title);
+        return tile(art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy" class="is-gray">` : `<i class="acol-blank is-${c.tier}"></i>`,
+            'is-missing', `data-how="${esc(c.id)}"`, c.title, true);
+    };
+
+    const overlay = document.createElement('div');
+    overlay.className = 'acol-overlay';
+    overlay.innerHTML = `<div class="acol-sheet" role="dialog" aria-modal="true" aria-label="все ачивки">
+        <div class="acol-top"><h2>все ачивки</h2><button type="button" class="acol-close" aria-label="закрыть">✕</button></div>
+        <div class="acol-sub">собрано <b>${items.length} из ${totalAll}</b></div>
+        <div class="acol-scroll">
+        ${tiers.map(t => `<section class="acol-tier is-${t.key}">
+            <div class="acol-head"><b><i></i>${t.label}</b><small>${t.earned.length} из ${t.total}</small></div>
+            <div class="acol-bar"><i style="width:${t.total ? Math.round(t.earned.length / t.total * 100) : 0}%"></i></div>
+            <div class="acol-about">${esc(t.about)}</div>
+            <div class="acol-strip">${t.earned.map(earnedTile).join('')}${t.missing.map(missingTile).join('')}</div>
+        </section>`).join('')}
+        <div class="acol-how" hidden></div>
+        </div>
+        ${member ? '' : `<button type="button" class="acol-cta" data-card>${items.length > GUEST_VISIBLE
+            ? `открыто ${GUEST_VISIBLE} из ${items.length} твоих ачивок. <b>чтобы увидеть все свои открытые ачивки, оформи карту интеллигента</b> ›`
+            : '<b>чтобы видеть все свои открытые ачивки, оформи карту интеллигента</b> – без карты видны только три последние ›'}</button>`}
+    </div>`;
+    document.body.appendChild(overlay);
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => overlay.classList.add('is-on'));
+
+    const close = () => {
+        overlay.classList.remove('is-on');
+        setTimeout(() => { overlay.remove(); if (!document.querySelector('.bottom-sheet.visible, .cs-overlay, .ach-overlay')) document.body.style.overflow = ''; }, 280);
+    };
+    overlay.querySelector('.acol-close').onclick = () => { haptic(); close(); };
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    overlay.querySelectorAll('[data-open]').forEach(b => b.onclick = () => {
+        haptic();
+        openAchievementsPopup(visible, { fresh: false, source: 'все ачивки', initialIndex: visible.findIndex(a => a.id === b.dataset.open) });
+    });
+    overlay.querySelectorAll('[data-card]').forEach(b => b.onclick = () => {
+        haptic(); log('ачивки: открыть все – карта', true, state.user);
+        close(); openCard('ачивки');
+    });
+    const how = overlay.querySelector('.acol-how');
+    overlay.querySelectorAll('[data-how]').forEach(b => b.onclick = () => {
+        haptic();
+        const c = ACHIEVEMENT_CATALOG.find(x => x.id === b.dataset.how);
+        if (!c) return;
+        overlay.querySelectorAll('[data-how]').forEach(x => x.classList.toggle('is-picked', x === b));
+        how.hidden = false;
+        how.innerHTML = `<b>${esc(c.title)}</b><small>${esc(c.description)}</small>`;
+        how.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+}
