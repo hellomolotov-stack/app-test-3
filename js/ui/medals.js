@@ -68,14 +68,15 @@ const HIKE_GOALS = [[1, 'первый хайк с интеллигенцией']
 const hikesWord = n => n % 10 === 1 && n % 100 !== 11 ? 'хайк' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'хайка' : 'хайков';
 function nextGoalHtml(items) {
     const progress = achievementMeta().progress;
-    if (!progress) return '';
+    // у гостей хайки до приложения не записаны – прогресс был бы неверным, показываем только владельцам карты
+    if (!progress || !progress.member) return '';
     const owned = new Set(items.map(a => catalogByTitle(a.title)?.id || a.title));
     const goal = HIKE_GOALS.find(([min, title]) => min > progress.hikes && !owned.has(catalogByTitle(title)?.id || title));
     if (!goal) return '';
     const [min, title] = goal, left = min - progress.hikes, art = medalForTitle(title);
     return `<div class="mya-goal">${art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy">` : '<i class="mya-goal-blank"></i>'}
         <div><b>ещё ${left} ${hikesWord(left)} до «${esc(title)}»</b><span class="mya-goal-bar"><i style="width:${Math.round(progress.hikes / min * 100)}%"></i></span>
-        <small>${progress.hikes} из ${min}${progress.member ? '' : ' · считаем прошедшие хайки, на которые ты записывался'}</small></div></div>`;
+        <small>${progress.hikes} из ${min}</small></div></div>`;
 }
 
 export function openMedal(achievement) {

@@ -103,6 +103,9 @@ function publicRecord(record) {
 // Ачивки, которые выдаются сами (кнопка админа не нужна): по числу пройденных хайков и по карте.
 // Работают только те, у которых уже есть значок (imageUrl). У владельца карты счётчик – members/<id>/hikes_count,
 // у гостя – записи на прошедшие хайки (без городских событий и книжного клуба).
+// Автовыдача выключена по решению Макса (27.10.2026): пока все ачивки выдаются вручную в админке.
+// Включить (true), когда будут готовы все медали и стартовые счета ветеранов.
+const AUTO_GRANT_ENABLED = false;
 const AUTO_ACHIEVEMENTS = [
     { key: 'first-hike', title: 'первый хайк с интеллигенцией', rarity: 'common', min: 1, imageUrl: null,
         description: 'первый раз вышел на тропу с клубом – дальше только выше' },
@@ -193,7 +196,7 @@ function createHandler(deps = {}) {
         const progress = await hikeProgress(token, userId);
         const snapshot = (await read('clubAchievements', token)).value || {};
         const owned = new Set(Object.values(snapshot).filter(r => r?.grants?.[userId]?.issuedAt && r.publicationStatus === 'published').map(r => titleKey(r.title)));
-        const due = AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
+        const due = !AUTO_GRANT_ENABLED ? [] : AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
             && (a.card ? progress.member : progress.hikes >= a.min));
         const granted = [];
         const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || userId).slice(0, 100);
