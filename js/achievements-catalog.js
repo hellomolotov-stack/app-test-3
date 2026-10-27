@@ -56,3 +56,25 @@ export const CLUB_ACHIEVEMENTS = ACHIEVEMENT_CATALOG.map(a => a.title);
 
 const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'–—-]/g, ' ').replace(/\s+/g, ' ').trim();
 export const catalogByTitle = title => ACHIEVEMENT_CATALOG.find(a => norm(a.title) === norm(title)) || null;
+
+// Разделы экрана «значки» (как «Награды» в Apple): карточка раздела – последний значок, стопка и «N из M».
+export const ACHIEVEMENT_CATEGORIES = [
+    { key: 'routes', title: 'маршруты', hint: 'пройди маршрут с клубом – за каждый свой значок',
+        ids: id => id.startsWith('route-') || id === 'all-routes' },
+    { key: 'moments', title: 'моменты на тропе', hint: 'дождь, фонарики, рассвет – то, что запоминается',
+        ids: id => ['headlamps', 'rain', 'wim-hof', 'above-1500', 'swim', 'four-seasons'].includes(id) },
+    { key: 'hikes', title: 'хайки с клубом', hint: '5, 10, 25 и 50 хайков с клубом',
+        ids: id => id.startsWith('hikes-') },
+    { key: 'city', title: 'после тропы и в городе', hint: 'бухайкинг, встречи в городе и хайкинг бокс',
+        ids: id => ['after-hike-drinks', 'first-city-event', 'hiking-box'].includes(id) },
+    { key: 'circle', title: 'знакомства и круг', hint: 'приведи своего +1, поделись отзывом или вынеси вопрос на мастермайнд',
+        ids: id => ['mastermind-request', 'plus-one', 'gift-card', 'honest-review', 'story'].includes(id) },
+    { key: 'first', title: 'первые шаги', hint: 'первый хайк, карта интеллигента и профиль в «интеллигентах»',
+        ids: id => ['first-hike', 'card-owner', 'profile'].includes(id) },
+];
+// значки вне каталога (шуточные, особые) – свой раздел, только если такие есть
+export const EXTRA_CATEGORY = { key: 'extra', title: 'особые', hint: '' };
+export const categoryOf = title => {
+    const c = catalogByTitle(title);
+    return c ? (ACHIEVEMENT_CATEGORIES.find(k => k.ids(c.id))?.key || 'extra') : 'extra';
+};
