@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible } from '../achievements.js';
 import { haptic } from '../utils.js';
 import { openAchievementsPopup } from './achievements-popup.js';
-import { CLUB_ACHIEVEMENTS, catalogByTitle, tierOf } from '../achievements-catalog.js';
+import { catalogByTitle } from '../achievements-catalog.js';
 import { medalForTitle } from '../achievements-medals.js';
 import { openAchievementsCollection, visibleEarned } from './achievements-collection.js';
 
@@ -34,21 +34,19 @@ export async function mountMyAchievements() {
         const items = data[userId] || [];
         // блок видят все, у кого есть ачивки, и владельцы карты – им «замочки» показывают, что собирать
         if (!items.length && state.userCard?.status !== 'active') return;
-        const total = CLUB_ACHIEVEMENTS.length + items.filter(a => !catalogByTitle(a.title)).length;
         // без карты видны три последние полученные, остальные полученные – размытые с замком
         const visible = visibleEarned(items);
         const hidden = items.filter(a => !visible.includes(a));
-        const locks = Math.min(Math.max(0, total - items.length), items.length ? 2 : 4);
-        host.innerHTML = `<div class="mya-head"><h2 class="section-title">🏅 мои значки</h2><button type="button" class="mya-all" data-mya-all>все ›</button></div>
-            <div class="mya-shelf">${visible.map((a, i) => `<button type="button" class="mya-it" data-medal="${i}" aria-label="${esc(a.title)}">
+        // три значка, четвёртая плитка – «все значки»
+        const shelf = visible.slice(0, 3);
+        host.innerHTML = `<div class="mya-head"><h2 class="section-title">🏅 мои значки</h2></div>
+            <div class="mya-shelf">${shelf.map((a, i) => `<button type="button" class="mya-it" data-medal="${i}" aria-label="${esc(a.title)}">
                 <span class="mya-pic">${a.seenAt === null ? '<span class="mya-new">new</span>' : ''}<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy"></span><span class="mya-name">${esc(a.title)}</span></button>`).join('')}
-            ${hidden.map(a => `<button type="button" class="mya-it is-hidden" data-mya-card aria-label="значок откроется с картой"><span class="mya-pic"><img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy"><b>🔒</b></span><span class="mya-name">с картой</span></button>`).join('')}
-            ${Array.from({ length: locks }, () => '<div class="mya-it is-lock" aria-hidden="true"><span class="mya-pic"><b>🔒</b></span><span class="mya-name">???</span></div>').join('')}</div>
-            ${tierCountsHtml(items, total)}
+            <button type="button" class="mya-it is-all" data-mya-all aria-label="все значки"><span class="mya-pic"><b>${items.length > shelf.length ? `+${items.length - shelf.length}` : '›'}</b></span><span class="mya-name">все значки</span></button></div>
             ${nextGoalHtml(items)}
             ${hidden.length ? `<button type="button" class="mya-card-hint" data-mya-card>ещё ${hidden.length} ${hidden.length % 10 === 1 && hidden.length % 100 !== 11 ? 'твой значок скрыт' : hidden.length % 10 >= 2 && hidden.length % 10 <= 4 && (hidden.length % 100 < 10 || hidden.length % 100 >= 20) ? 'твоих значка скрыты' : 'твоих значков скрыты'} – <b>оформи карту интеллигента, чтобы видеть все</b> ›</button>` : ''}`;
         host.hidden = false;
-        wireMedalStrip(host, visible);
+        wireMedalStrip(host, shelf);
         host.querySelector('[data-mya-all]')?.addEventListener('click', () => { haptic(); openAchievementsCollection(items); });
         host.querySelectorAll('[data-mya-card]').forEach(b => b.addEventListener('click', () => {
             haptic(); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'ачивки на главной' })).catch(() => {});
@@ -56,13 +54,6 @@ export async function mountMyAchievements() {
     } catch { /* Unavailable collections never block the homepage or expose drafts. */ }
 }
 
-// счётчик по уровням: серебро · золото · фиолет
-function tierCountsHtml(items, total) {
-    const n = { common: 0, rare: 0, very: 0 };
-    items.forEach(a => { n[tierOf(catalogByTitle(a.title)?.rarity || a.rarity)]++; });
-    return `<div class="mya-tiers"><span class="is-common"><i></i>${n.common}</span><span class="is-rare"><i></i>${n.rare}</span><span class="is-very"><i></i>${n.very}</span>
-        <small>${items.length} из ${total}</small></div>`;
-}
 // «почти получено»: ближайшая медаль за число хайков
 const HIKE_GOALS = [[1, 'первый хайк с интеллигенцией'], [5, '5 хайков'], [10, '10 хайков'], [20, '20 хайков'], [30, '30 хайков'], [50, '50 хайков']];
 const hikesWord = n => n % 10 === 1 && n % 100 !== 11 ? 'хайк' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'хайка' : 'хайков';

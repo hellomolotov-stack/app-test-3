@@ -78,6 +78,12 @@ function onEnd(e) {
     const recentSpeed = !e?.timeStamp || e.timeStamp - s.last[1] < 120 ? s.speed : 0;
     if (e?.type !== 'touchcancel' && (s.dy > CLOSE_DY || (recentSpeed > CLOSE_SPEED && s.dy > 30))) {
         window.Telegram?.WebApp?.HapticFeedback?.impactOccurred?.('light');
+        // шторка с вложенным экраном (раздел значков) – свайп возвращает назад, а не закрывает
+        if (s.sheet.onDragBack?.()) {
+            s.sheet.style.transform = '';
+            if (s.handle) s.handle.style.setProperty('--pull', '0');
+            return;
+        }
         s.sheet.style.transform = 'translateY(100%)';
         s.overlay?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     } else {

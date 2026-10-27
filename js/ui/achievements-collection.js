@@ -126,6 +126,9 @@ export function openAchievementsCollection(items = []) {
         e.stopPropagation(); haptic(); log('значки: открыть все – карта', true, state.user); close(); openCard('значки');
     });
 
+    const back = () => { how.hidden = true; catView.hidden = true; main.hidden = false; titleEl.textContent = 'значки'; };
+    // свайп вниз внутри раздела – назад к значкам, а не закрыть всё
+    overlay.querySelector('.acol-sheet').onDragBack = () => { if (catView.hidden) return false; back(); return true; };
     // раздел целиком
     const openCat = key => {
         const c = cats.find(x => x.key === key);
@@ -141,7 +144,7 @@ export function openAchievementsCollection(items = []) {
                 return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}">${art ? `<img src="${esc(art.imageUrl)}" alt="" class="is-gray">` : '<i class="acol-blank">?</i>'}<span>${esc(m.title)}</span></button>`; }).join('')}</div>`;
         titleEl.textContent = c.title;
         main.hidden = true; catView.hidden = false; catView.scrollTop = 0;
-        catView.querySelector('[data-back]').onclick = () => { haptic(); how.hidden = true; catView.hidden = true; main.hidden = false; titleEl.textContent = 'значки'; };
+        catView.querySelector('[data-back]').onclick = () => { haptic(); back(); };
         catView.querySelectorAll('[data-open]').forEach(b => b.onclick = () => slider(earned, b.dataset.open, `значки: ${c.title}`));
         catView.querySelectorAll('[data-how]').forEach(b => b.onclick = () => {
             haptic();

@@ -69,7 +69,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         <h2 class="ach-title">${fresh ? (n === 1 ? 'у тебя <b>новый</b> значок' : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : 'твои значки'}</h2>
         <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : 'значок клуба – только твой'}</p>
         <div class="ach-track">${items.map((a, i) => `<div class="ach-slide" data-i="${i}"><img src="${esc(a.medal.imageUrl)}" alt="${esc(a.title)}" draggable="false"></div>`).join('')}</div>
-        ${n > 1 ? `<div class="ach-dots">${items.map((_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
+        ${n > 1 ? `<div class="ach-dots">${Array.from({ length: Math.min(3, n) }, (_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
         <div class="ach-with" hidden></div>
         <button type="button" class="btn btn-yellow ach-btn" data-share-one>поделиться в сторис</button>
@@ -106,14 +106,16 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         if (i === current) return;
         current = i;
         const a = items[i];
-        info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}</span>` : ''}
+        info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}</span>` : '<span class="ach-rar is-empty">&nbsp;</span>'}
             <div class="ach-name">${esc(a.title)}</div>
-            <div class="ach-desc">${esc(a.description || '')}</div>
+            <div class="ach-desc">${esc(a.description || '') || '&nbsp;'}</div>
             <div class="ach-meta">${a.grant?.date ? `<span>${esc(dateRu(a.grant.date))}</span>` : ''}${a.holders > 1 ? `<button type="button" data-with>вместе с ${a.holders - 1} ${a.holders - 1 === 1 ? 'интеллигентом' : 'интеллигентами'} ›</button>` : ''}<span>${esc(rarityShare(a.title))}</span></div>`;
         withBox.hidden = true;
         info.querySelector('[data-with]')?.addEventListener('click', () => openWith(a));
         overlay.querySelectorAll('.ach-slide').forEach((s, k) => s.classList.toggle('is-on', k === i));
-        overlay.querySelectorAll('[data-dot]').forEach((d, k) => d.classList.toggle('is-on', k === i));
+        // точек максимум три: первая – начало, последняя – конец, средняя – всё между
+        const dot = i === 0 ? 0 : i === n - 1 ? Math.min(2, n - 1) : 1;
+        overlay.querySelectorAll('[data-dot]').forEach((d, k) => d.classList.toggle('is-on', k === dot));
     };
     // какая медаль ближе к центру – та и «текущая»
     const onScroll = () => {
@@ -132,7 +134,11 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     track.querySelectorAll('.ach-slide').forEach((s, k) => s.addEventListener('click', () => {
         if (k !== current) centerSlide(s, 'smooth');
     }));
-    overlay.querySelectorAll('[data-dot]').forEach(d => d.addEventListener('click', () => track.querySelectorAll('.ach-slide')[Number(d.dataset.dot)].click()));
+    // левая точка – назад, правая – вперёд
+    overlay.querySelectorAll('[data-dot]').forEach(d => d.addEventListener('click', () => {
+        const k = Number(d.dataset.dot), step = k === 0 ? -1 : k === Math.min(2, n - 1) ? 1 : 0;
+        track.querySelectorAll('.ach-slide')[Math.max(0, Math.min(n - 1, current + step))]?.click();
+    }));
     const selected = Math.max(0, Math.min(n - 1, initialIndex));
     show(selected);
     // Percent padding uses the narrower parent, not the full-bleed track width.
