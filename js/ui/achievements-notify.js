@@ -1,11 +1,11 @@
-// Рассылки → «🏅 новые ачивки»: кому недавно выдали ачивки, отправляли ли им сообщение, и отправка через бота.
+// Рассылки → «🏅 новые ачивки»: кому недавно выдали значки, отправляли ли им сообщение, и отправка через бота.
 // Отправляет сервер (/api/achievements, notify_send) и сам отмечает, кому сообщение ушло.
 import { achievementRequest } from '../achievements.js';
 import { haptic } from '../utils.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const ddmm = ts => { const d = new Date(ts); return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`; };
-export const DEFAULT_TEXT = '[имя], у тебя новая ачивка в клубе 🏅\n\n<b>[ачивки]</b>\n\nзагляни – там твоя медаль, её можно посмотреть и поделиться в сторис';
+export const DEFAULT_TEXT = '[имя], у тебя новый значок клуба 🏅\n\n<b>[значки]</b>\n\nзагляни – его можно посмотреть и поделиться в сторис';
 
 const ui = { open: false, people: null, picked: new Set(), text: DEFAULT_TEXT, busy: false, note: '', error: '' };
 
@@ -15,7 +15,7 @@ export function mountAchievementNotify(host) {
         if (!host.isConnected) return;
         const people = ui.people || [];
         const waiting = people.filter(p => p.items.some(i => !i.notifiedAt));
-        host.innerHTML = `<button class="adm-quick" data-an-toggle>🏅 новые ачивки<small>${ui.people == null ? 'кому недавно выдали ачивки и отправляли ли сообщение'
+        host.innerHTML = `<button class="adm-quick" data-an-toggle>🏅 новые значки<small>${ui.people == null ? 'кому недавно выдали значки и отправляли ли сообщение'
             : waiting.length ? `ждут сообщения: ${waiting.length} чел.` : 'всем уже отправили'}</small></button>
             ${ui.open ? panel(people) : ''}`;
         host.querySelector('[data-an-toggle]').onclick = () => {
@@ -46,8 +46,8 @@ export function mountAchievementNotify(host) {
                 <em>${p.items.map(i => `${i.notifiedAt ? '' : '🆕 '}${esc(i.title)}`).join(' · ')}</em></span>
                 <span class="an-status${fresh.length ? ' is-new' : ''}">${fresh.length ? 'не отправляли' : `✓ ушло ${ddmm(last)}`}</span></label>`;
         }).join('')}</div>`}
-        <label class="adm-field"><span>текст · [имя] – имя, [ачивки] – названия новых ачивок</span><textarea rows="6" data-an-text>${esc(ui.text)}</textarea></label>
-        <div class="adm-hint">под сообщением кнопка «🏅 посмотреть ачивки» – откроет приложение сразу на поп-апе с медалями. повторно человеку уходят только ачивки, о которых ещё не писали</div>
+        <label class="adm-field"><span>текст · [имя] – имя, [значки] – названия новых значков</span><textarea rows="6" data-an-text>${esc(ui.text)}</textarea></label>
+        <div class="adm-hint">под сообщением кнопка «🏅 посмотреть значки» – откроет приложение сразу на поп-апе с медалями. повторно человеку уходят только ачивки, о которых ещё не писали</div>
         <button class="adm-link" data-an-reset>вернуть текст по умолчанию</button>
         ${ui.note ? `<p class="adm-hint an-note" role="status">${esc(ui.note)}</p>` : ''}
         <div class="adm-row2"><button class="adm-ghost" data-an-test ${ui.busy || !ui.picked.size ? 'disabled' : ''}>отправить себе</button>
@@ -64,7 +64,7 @@ export function mountAchievementNotify(host) {
     }
     async function send(test) {
         if (ui.busy || !ui.picked.size) return;
-        if (!test && !confirm(`отправить сообщение об ачивках: ${ui.picked.size} чел.?`)) return;
+        if (!test && !confirm(`отправить сообщение о значках: ${ui.picked.size} чел.?`)) return;
         haptic(); ui.busy = true; ui.note = ''; ui.error = ''; paint();
         try {
             const r = await achievementRequest('notify_send', { userIds: [...ui.picked], text: ui.text, test });

@@ -52,7 +52,7 @@ export function openAchievementsCollection(items = []) {
         <span class="acol-pic">${inner}</span><span class="acol-name${nameOff ? ' is-off' : ''}">${esc(name)}</span>${sub ? `<span class="acol-date">${esc(sub)}</span>` : ''}</button>`;
     const earnedTile = a => visibleIds.has(a.id)
         ? tile(`<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy">`, 'is-on', `data-open="${esc(a.id)}"`, a.title, false, '', isRoute(a.title))
-        : tile(`<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy" class="is-blur"><b class="acol-lock">🔒</b>`, 'is-hidden', 'data-card', 'открыта с картой', true);
+        : tile(`<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy" class="is-blur"><b class="acol-lock">🔒</b>`, 'is-hidden', 'data-card', 'откроется с картой', true);
     const missingTile = c => {
         const art = medalForTitle(c.title);
         return tile(art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy" class="is-gray">` : `<i class="acol-blank is-${c.tier}">?</i>`,
@@ -61,8 +61,9 @@ export function openAchievementsCollection(items = []) {
 
     const overlay = document.createElement('div');
     overlay.className = 'acol-overlay';
-    overlay.innerHTML = `<div class="acol-sheet" role="dialog" aria-modal="true" aria-label="все ачивки">
-        <div class="acol-top"><h2>все ачивки</h2><button type="button" class="acol-close" aria-label="закрыть">✕</button></div>
+    overlay.innerHTML = `<div class="acol-sheet" role="dialog" aria-modal="true" aria-label="все значки">
+        <div class="cs-grab acol-grab" aria-hidden="true"></div>
+        <div class="acol-top"><h2>все значки</h2><button type="button" class="acol-close" aria-label="закрыть">✕</button></div>
         <div class="acol-sub">собрано <b>${items.length} из ${totalAll}</b></div>
         <div class="acol-filters" role="group" aria-label="фильтр">${[['all', 'все'], ['mine', 'мои'], ['todo', 'ещё не получены'], ['routes', 'маршруты']]
             .map(([k, l]) => `<button type="button" class="acol-filter${k === 'all' ? ' is-on' : ''}" data-filter="${k}">${l}</button>`).join('')}</div>
@@ -75,7 +76,7 @@ export function openAchievementsCollection(items = []) {
         </section>`).join('')}
         </div>
         <div class="acol-how" hidden></div>
-        ${member || items.length <= GUEST_VISIBLE ? '' : `<button type="button" class="acol-cta" data-card>открыто ${GUEST_VISIBLE} из ${items.length} твоих ачивок. <b>чтобы увидеть все свои открытые ачивки, оформи карту интеллигента</b> ›</button>`}
+        ${member || items.length <= GUEST_VISIBLE ? '' : `<button type="button" class="acol-cta" data-card>открыто ${GUEST_VISIBLE} из ${items.length} твоих значков. <b>чтобы увидеть все свои открытые значки, оформи карту интеллигента</b> ›</button>`}
     </div>`;
     // в полноэкранном Телеграме сверху системные кнопки («закрыть», «⋯») – шторка начинается ниже них
     const tgw = window.Telegram?.WebApp;

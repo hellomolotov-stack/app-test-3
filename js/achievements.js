@@ -9,10 +9,10 @@ export const ACHIEVEMENTS_TEST_IDS = ['163665735', '7845375334'];
 export const achievementsVisible = () => ACHIEVEMENTS_TEST_IDS.includes(String(state.user?.id || ''));
 
 export const ACHIEVEMENT_RARITIES = [
-    ['common', 'базовая'], ['legendary', 'легендарная'], ['mythical', 'мифическая'],
+    ['common', 'базовый'], ['legendary', 'легендарный'], ['mythical', 'мифический'],
 ];
 // старое значение «rare» из ранних записей показываем как легендарную
-export const rarityLabel = key => key === 'rare' ? 'легендарная' : (ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || '');
+export const rarityLabel = key => key === 'rare' ? 'легендарный' : (ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || '');
 
 export async function achievementRequest(action, data = {}) {
     const response = await fetch('/api/achievements', {
@@ -20,7 +20,7 @@ export async function achievementRequest(action, data = {}) {
         signal: AbortSignal.timeout(25000), body: JSON.stringify({ ...data, action, initData: tg?.initData || '' }),
     });
     const result = await response.json();
-    if (!response.ok) throw Object.assign(new Error(result.error || 'не удалось загрузить ачивки'), { status: response.status });
+    if (!response.ok) throw Object.assign(new Error(result.error || 'не удалось загрузить значки'), { status: response.status });
     return result;
 }
 

@@ -6754,3 +6754,10 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .acol-how { position: absolute; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); margin: 0; z-index: 2; padding: 12px 40px 12px 14px;
     border-radius: 20px; background: #1d2630; border: 1px solid rgba(255,255,255,.16); box-shadow: 0 10px 30px rgba(0,0,0,.5); }
 .acol-how-x { position: absolute; right: 8px; top: 8px; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgba(255,255,255,.08); color: rgba(255,255,255,.7); cursor: pointer; }
+
+/* слайдер значков: одно перелистывание – ровно один значок; ручка сверху для свайпа вниз */
+.ach-slide { scroll-snap-stop: always; }
+.ach-grab { position: absolute; left: 0; right: 0; top: 4px; height: 22px; }
+.acol-grab { flex: none; height: 22px; margin-top: 6px; }
+.acol-top { padding-top: 4px; }
+.ach-sheet.is-dragging, .acol-sheet.is-dragging { transition: none !important; }

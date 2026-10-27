@@ -63,18 +63,17 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const n = items.length;
     const overlay = document.createElement('div');
     overlay.className = 'ach-overlay';
-    overlay.innerHTML = `<div class="ach-sheet" role="dialog" aria-modal="true" aria-label="новые ачивки">
+    overlay.innerHTML = `<div class="ach-sheet" role="dialog" aria-modal="true" aria-label="новые значки">
+        <div class="cs-grab ach-grab" aria-hidden="true"></div>
         <button type="button" class="ach-close" aria-label="закрыть">✕</button>
-        <h2 class="ach-title">${fresh ? (n === 1 ? 'у тебя <b>новая</b> ачивка' : `у тебя <b>${n} ${plural(n, 'новая', 'новые', 'новых')}</b> ачивки`) : 'твои ачивки'}</h2>
-        <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : 'медаль клуба – только твоя'}</p>
+        <h2 class="ach-title">${fresh ? (n === 1 ? 'у тебя <b>новый</b> значок' : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : 'твои значки'}</h2>
+        <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : 'значок клуба – только твой'}</p>
         <div class="ach-track">${items.map((a, i) => `<div class="ach-slide" data-i="${i}"><img src="${esc(a.medal.imageUrl)}" alt="${esc(a.title)}" draggable="false"></div>`).join('')}</div>
         ${n > 1 ? `<div class="ach-dots">${items.map((_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
         <div class="ach-with" hidden></div>
         <button type="button" class="btn btn-yellow ach-btn" data-share-one>поделиться в сторис</button>
-        ${n > 1 ? `<button type="button" class="btn btn-outline ach-btn" data-share-all>все ${n} в одну сторис</button>` : ''}
-        <button type="button" class="btn btn-outline ach-btn" data-share-group hidden></button>
-        ${isGuest() && owned > 3 ? `<button type="button" class="ach-card-hint" data-ach-card>у тебя ${owned} ачивок, видны только 3 – <b>открой все с картой интеллигента</b> ›</button>` : ''}
+        ${isGuest() && owned > 3 ? `<button type="button" class="ach-card-hint" data-ach-card>у тебя ${owned} ${plural(owned, 'значок', 'значка', 'значков')}, видны только 3 – <b>открой все с картой интеллигента</b> ›</button>` : ''}
         <p class="ach-note" role="status"></p>
     </div>`;
     document.body.appendChild(overlay);
@@ -93,7 +92,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         withBox.innerHTML = '<small>загружаю…</small>';
         try {
             const r = await achievementHolders(a.id);
-            if (!r.people) { withBox.innerHTML = `<small>имена тех, кто получил ачивку вместе с тобой, видны владельцам карты интеллигента</small>`; return; }
+            if (!r.people) { withBox.innerHTML = `<small>имена тех, кто получил значок вместе с тобой, видны владельцам карты интеллигента</small>`; return; }
             const others = r.people.filter(p => p.userId !== String(state.user?.id));
             withBox.innerHTML = `<small>вместе с тобой «${esc(a.title)}» получили:</small><div class="ach-with-list">${others.map(p => `<span>${esc(p.name || 'участник клуба')}</span>`).join('')}</div>`;
             log(`ачивки: с кем – ${a.title}`, isGuest(), state.user);
@@ -113,9 +112,6 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
             <div class="ach-meta">${a.grant?.date ? `<span>${esc(dateRu(a.grant.date))}</span>` : ''}${a.holders > 1 ? `<button type="button" data-with>вместе с ${a.holders - 1} ${a.holders - 1 === 1 ? 'интеллигентом' : 'интеллигентами'} ›</button>` : ''}<span>${esc(rarityShare(a.title))}</span></div>`;
         withBox.hidden = true;
         info.querySelector('[data-with]')?.addEventListener('click', () => openWith(a));
-        const group = overlay.querySelector('[data-share-group]');
-        group.hidden = !(a.holders > 1) || isGuest();
-        group.textContent = `общая сторис · ${a.holders} ${plural(a.holders, 'человек', 'человека', 'человек')}`;
         overlay.querySelectorAll('.ach-slide').forEach((s, k) => s.classList.toggle('is-on', k === i));
         overlay.querySelectorAll('[data-dot]').forEach((d, k) => d.classList.toggle('is-on', k === i));
     };
@@ -176,23 +172,6 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     };
     const oneBtn = overlay.querySelector('[data-share-one]');
     oneBtn.onclick = () => share([items[current]], oneBtn, items[current].title);
-    const allBtn = overlay.querySelector('[data-share-all]');
-    if (allBtn) allBtn.onclick = () => share(items, allBtn, `все ${n}`);
-    const groupBtn = overlay.querySelector('[data-share-group]');
-    groupBtn.onclick = async () => {
-        if (groupBtn.dataset.busy) return;
-        haptic();
-        if (!tg?.shareToStory || !tg.isVersionAtLeast?.('7.8')) { note.textContent = 'в этой версии Telegram сторис из приложения недоступны – обнови Telegram'; return; }
-        const a = items[current];
-        groupBtn.dataset.busy = '1'; const text = groupBtn.textContent; groupBtn.textContent = 'рисуем сторис…'; note.textContent = '';
-        try {
-            const r = await achievementHolders(a.id);
-            const canvas = await drawGroupStory(a, (r.people || []).map(p => p.name).filter(Boolean));
-            tg.shareToStory(await upload(canvas.toDataURL('image/jpeg', 0.9)));
-            log(`ачивки: общая сторис – ${a.title}`, isGuest(), state.user);
-        } catch { note.textContent = 'не получилось – проверь интернет и попробуй ещё раз'; }
-        groupBtn.textContent = text; delete groupBtn.dataset.busy;
-    };
     overlay.querySelector('[data-ach-card]')?.addEventListener('click', () => {
         haptic(); log('ачивки: поп-ап – карта', true, state.user); close();
         import('./card-sheet.js').then(m => m.openCardSheet({ source: 'ачивки поп-ап' })).catch(() => {});
@@ -231,7 +210,7 @@ export async function drawAchievementsStory(list) {
     const name = String(list[0]?.grant?.name || state.user?.first_name || '').trim();
     ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
     ctx.font = `800 64px ${FONT}`;
-    ctx.fillText(list.length === 1 ? 'моя новая ачивка' : 'мои ачивки', W / 2, 250);
+    ctx.fillText(list.length === 1 ? 'мой новый значок' : 'мои значки', W / 2, 250);
     if (name) { ctx.font = `600 40px ${FONT}`; ctx.fillStyle = 'rgba(255,255,255,.65)'; ctx.fillText(name, W / 2, 318); }
     ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 24;
     if (list.length === 1) {

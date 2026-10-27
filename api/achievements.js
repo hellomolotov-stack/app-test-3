@@ -161,7 +161,7 @@ function createHandler(deps = {}) {
         const response = await fetcher(`https://api.telegram.org/bot${botToken}/sendMessage`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(10000),
             body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true,
-                reply_markup: { inline_keyboard: [[{ text: '🏅 посмотреть ачивки', url: 'https://t.me/yaltahiking_bot?startapp=ach' }]] } }),
+                reply_markup: { inline_keyboard: [[{ text: '🏅 посмотреть значки', url: 'https://t.me/yaltahiking_bot?startapp=ach' }]] } }),
         });
         const result = await response.json().catch(() => ({}));
         return !!result.ok;
@@ -296,11 +296,11 @@ function createHandler(deps = {}) {
                     const list = (fresh.length ? fresh : items).map(i => `«${esc(i.title)}»`).join(', ');
                     const first = String(items[0]?.name || '').trim().split(/\s+/)[0];
                     // текст админа может содержать <b>/<i>; имя и названия экранируем
-                    return template.replace(/\[имя\]/g, esc(first || 'друг')).replace(/\[ачивки\]/g, list);
+                    return template.replace(/\[имя\]/g, esc(first || 'друг')).replace(/\[(ачивки|значки)\]/g, list);
                 };
                 if (body.test) {
                     const sample = ids.find(id => byUser[id]) || ids[0];
-                    const ok = await sendBot(user.id, compose(sample, byUser[sample] || [{ title: 'пример ачивки', name: 'друг' }]), botToken);
+                    const ok = await sendBot(user.id, compose(sample, byUser[sample] || [{ title: 'пример значка', name: 'друг' }]), botToken);
                     return res.status(200).json({ sent: ok ? 1 : 0, total: 1, test: true });
                 }
                 let sent = 0;

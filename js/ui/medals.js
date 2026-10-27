@@ -39,14 +39,14 @@ export async function mountMyAchievements() {
         const visible = visibleEarned(items);
         const hidden = items.filter(a => !visible.includes(a));
         const locks = Math.min(Math.max(0, total - items.length), items.length ? 2 : 4);
-        host.innerHTML = `<div class="mya-head"><h2 class="section-title">🏅 мои ачивки</h2><button type="button" class="mya-all" data-mya-all>все ›</button></div>
+        host.innerHTML = `<div class="mya-head"><h2 class="section-title">🏅 мои значки</h2><button type="button" class="mya-all" data-mya-all>все ›</button></div>
             <div class="mya-shelf">${visible.map((a, i) => `<button type="button" class="mya-it" data-medal="${i}" aria-label="${esc(a.title)}">
                 <span class="mya-pic">${a.seenAt === null ? '<span class="mya-new">new</span>' : ''}<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy"></span><span class="mya-name">${esc(a.title)}</span></button>`).join('')}
-            ${hidden.map(a => `<button type="button" class="mya-it is-hidden" data-mya-card aria-label="ачивка откроется с картой"><span class="mya-pic"><img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy"><b>🔒</b></span><span class="mya-name">с картой</span></button>`).join('')}
+            ${hidden.map(a => `<button type="button" class="mya-it is-hidden" data-mya-card aria-label="значок откроется с картой"><span class="mya-pic"><img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy"><b>🔒</b></span><span class="mya-name">с картой</span></button>`).join('')}
             ${Array.from({ length: locks }, () => '<div class="mya-it is-lock" aria-hidden="true"><span class="mya-pic"><b>🔒</b></span><span class="mya-name">???</span></div>').join('')}</div>
             ${tierCountsHtml(items, total)}
             ${nextGoalHtml(items)}
-            ${hidden.length ? `<button type="button" class="mya-card-hint" data-mya-card>ещё ${hidden.length} ${hidden.length === 1 ? 'твоя ачивка скрыта' : 'твоих ачивки скрыты'} – <b>оформи карту интеллигента, чтобы видеть все</b> ›</button>` : ''}`;
+            ${hidden.length ? `<button type="button" class="mya-card-hint" data-mya-card>ещё ${hidden.length} ${hidden.length % 10 === 1 && hidden.length % 100 !== 11 ? 'твой значок скрыт' : hidden.length % 10 >= 2 && hidden.length % 10 <= 4 && (hidden.length % 100 < 10 || hidden.length % 100 >= 20) ? 'твоих значка скрыты' : 'твоих значков скрыты'} – <b>оформи карту интеллигента, чтобы видеть все</b> ›</button>` : ''}`;
         host.hidden = false;
         wireMedalStrip(host, visible);
         host.querySelector('[data-mya-all]')?.addEventListener('click', () => { haptic(); openAchievementsCollection(items); });
