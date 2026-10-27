@@ -64,7 +64,7 @@ function tierCountsHtml(items, total) {
         <small>${items.length} из ${total}</small></div>`;
 }
 // «почти получено»: ближайшая медаль за число хайков
-const HIKE_GOALS = [[1, 'первый хайк с интеллигенцией'], [5, '5 хайков'], [10, '10 хайков'], [25, '25 хайков'], [50, '50 хайков']];
+const HIKE_GOALS = [[1, 'первый хайк с интеллигенцией'], [5, '5 хайков'], [10, '10 хайков'], [20, '20 хайков'], [30, '30 хайков'], [50, '50 хайков']];
 const hikesWord = n => n % 10 === 1 && n % 100 !== 11 ? 'хайк' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'хайка' : 'хайков';
 function nextGoalHtml(items) {
     const progress = achievementMeta().progress;

@@ -4,10 +4,6 @@
 export const MEDAL_LIBRARY = [
     { title: 'залез в пещеру пауков', imageUrl: '/assets/achievements/spider-cave-transparent-v2.png' },
     // значки из папки «значки» (26.10.2026): количество хайков, особые моменты, после тропы и город
-    { title: '5 хайков', imageUrl: '/assets/achievements/badges/hikes-5.png' },
-    { title: '10 хайков', imageUrl: '/assets/achievements/badges/hikes-10.png' },
-    { title: '25 хайков', imageUrl: '/assets/achievements/badges/hikes-25.png' },
-    { title: '50 хайков', imageUrl: '/assets/achievements/badges/hikes-50.png' },
     { title: 'выше 1500 метров', imageUrl: '/assets/achievements/badges/above-1500.png' },
     { title: 'четыре сезона в горах', imageUrl: '/assets/achievements/badges/four-seasons.png' },
     { title: 'спуск с фонариками', imageUrl: '/assets/achievements/badges/headlamps.png' },
@@ -48,6 +44,12 @@ export const MEDAL_LIBRARY = [
     { title: 'Царская тропа', imageUrl: '/assets/achievements/badges/route-tsarskaya-v1.png' },
     { title: 'хайк на Ай-Йори', imageUrl: '/assets/achievements/badges/route-ai-yori-v1.png' },
     { title: 'хайк на Ат-Баш', imageUrl: '/assets/achievements/badges/route-at-bash-v2.png' },
+    // количество хайков – серия 5/10/20/30/50 (27.10.2026, фон убран)
+    { title: '5 хайков', imageUrl: '/assets/achievements/badges/hikes-5-v2.png' },
+    { title: '10 хайков', imageUrl: '/assets/achievements/badges/hikes-10-v2.png' },
+    { title: '20 хайков', imageUrl: '/assets/achievements/badges/hikes-20-v1.png' },
+    { title: '30 хайков', imageUrl: '/assets/achievements/badges/hikes-30-v1.png' },
+    { title: '50 хайков', imageUrl: '/assets/achievements/badges/hikes-50-v2.png' },
 ];
 
 const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();

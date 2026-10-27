@@ -29,7 +29,7 @@ function openCard(source) {
 
 const ddmmyyyy = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : '';
 const byDate = list => [...list].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0));
-const HIKE_GOALS = [[5, '5 хайков'], [10, '10 хайков'], [25, '25 хайков'], [50, '50 хайков']];
+const HIKE_GOALS = [[5, '5 хайков'], [10, '10 хайков'], [20, '20 хайков'], [30, '30 хайков'], [50, '50 хайков']];
 
 export function openAchievementsCollection(items = []) {
     document.querySelector('.acol-overlay')?.remove();
