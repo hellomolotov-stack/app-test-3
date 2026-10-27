@@ -6812,3 +6812,13 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .bdg-it .acol-lock { position: absolute; top: 34%; }
 .bdg-sheet .acol-cta { width: 100%; margin: 14px 0 0; }
 .bdg-sheet [hidden] { display: none !important; }
+
+/* админка: сетка всех значков – тап, чтобы выдать */
+.aw-badges-head { margin: 4px 0 8px; }
+.aw-badges-head h3 { margin: 0; font-size: 17px; }
+.aw-badges-head small { font-size: 12px; color: rgba(255,255,255,.55); }
+.aw-badges { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 6px; margin-bottom: 16px; }
+.aw-badge { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 6px 2px; border: 1px solid rgba(255,255,255,.08); border-radius: 16px; background: rgba(255,255,255,.03); color: #fff; font: inherit; cursor: pointer; }
+.aw-badge img { width: 100%; aspect-ratio: 1; object-fit: contain; }
+.aw-badge span { margin-top: 2px; font-size: 10.5px; line-height: 1.2; text-align: center; overflow-wrap: anywhere; }
+.aw-badge em { margin-top: 2px; font-style: normal; font-size: 9.5px; color: rgba(255,255,255,.45); }

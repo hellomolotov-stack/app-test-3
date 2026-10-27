@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest } from '../achievements.js';
 import { MEDAL_LIBRARY, medalForTitle, medalByUrl } from '../achievements-medals.js';
+import { ACHIEVEMENT_CATEGORIES, catalogByTitle, categoryOf } from '../achievements-catalog.js';
 import { DEFAULT_TEXT } from './achievements-notify.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -57,12 +58,12 @@ export async function renderAchievementsAdmin(body, opts = {}) {
         } catch (error) { if (version === rosterVersion) ui.error = error.message; }
         finally { if (version === rosterVersion) { ui.rosterLoading = false; paint(); } }
     }
-    function startNew(forHike = '') {
+    function startNew(forHike = '', preset = null) {
         rosterVersion++;
-        const hike = (forHike && hikes.find(h => h.date === forHike)) || hikes.find(h => h.date <= today());
+        const hike = preset ? null : (forHike && hikes.find(h => h.date === forHike)) || hikes.find(h => h.date <= today());
         ui.preselect = typeof forHike === 'string' && !!forHike;
         ui.screen = 'edit'; ui.id = crypto.randomUUID(); ui.revision = 'null_etag'; ui.original = null;
-        ui.draft = { title: '', description: '', rarity: 'common', kind: 'special', hikeDate: hike?.date || '', date: hike?.date || today(), medalUrl: '', medalAuto: true };
+        ui.draft = { title: '', description: '', rarity: 'common', kind: 'special', hikeDate: hike?.date || '', date: hike?.date || today(), medalUrl: '', medalAuto: true, ...(preset || {}) };
         ui.selected = new Map(); ui.search = ''; ui.scope = hike ? 'roster' : 'all'; ui.conflict = false; dirty();
         roster();
     }
@@ -104,7 +105,7 @@ export async function renderAchievementsAdmin(body, opts = {}) {
         dirty(); paintPeople(); paintSelected();
     }
     function saveLabel() {
-        if (ui.draft.medalUrl) return ui.original?.status === 'ready' ? 'сохранить изменения' : 'выдать ачивку';
+        if (ui.draft.medalUrl) return ui.original?.status === 'ready' ? 'сохранить изменения' : 'выдать значок';
         return ui.original ? 'сохранить черновик' : 'сохранить черновик';
     }
     // медаль: готовая из библиотеки приложения → ачивка выдаётся при сохранении; нет → черновик
@@ -162,9 +163,37 @@ export async function renderAchievementsAdmin(body, opts = {}) {
         container.querySelectorAll('[data-remove]').forEach(button => button.onclick = () => { ui.selected.delete(button.dataset.remove); dirty(); paintPeople(); paintSelected(); });
         body.querySelector('#awSave').disabled = ui.busy || ui.rosterLoading || !ui.selected.size;
     }
+    // «все значки»: тап по значку – выдать его людям (если такая ачивка уже есть – дополнить её получателей)
+    const normT = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'–—-]/g, ' ').replace(/\s+/g, ' ').trim();
+    const EXTRA_RARITY = { 'залез в пещеру пауков': 'mythical', 'откусил волшебный гриб': 'legendary' };
+    function badgeList() {
+        const order = [...ACHIEVEMENT_CATEGORIES.map(c => c.key), 'extra'];
+        return [...MEDAL_LIBRARY].sort((a, b) => order.indexOf(categoryOf(a.title)) - order.indexOf(categoryOf(b.title)));
+    }
+    function badgeHolders(title) {
+        const ids = new Set();
+        ui.achievements.filter(a => normT(a.title) === normT(title)).forEach(a => Object.keys(a.recipients || {}).forEach(id => ids.add(id)));
+        return ids.size;
+    }
+    function pickBadge(title) {
+        const m = MEDAL_LIBRARY.find(x => x.title === title);
+        if (!m) return;
+        const existing = ui.achievements.find(a => normT(a.title) === normT(title));
+        if (existing) return edit(existing.id);
+        const c = catalogByTitle(title);
+        startNew('', { title: m.title, description: c?.description || '', rarity: c?.rarity || EXTRA_RARITY[normT(title)] || 'common',
+            kind: categoryOf(title) === 'routes' ? 'route' : 'special', hikeDate: '', date: today(), medalUrl: m.imageUrl, medalAuto: false });
+    }
+    function badgesHtml() {
+        return `<div class="aw-badges-head"><h3>все значки</h3><small>тап по значку – выбрать, кому выдать и с какой датой</small></div>
+            <div class="aw-badges">${badgeList().map(m => { const n = badgeHolders(m.title);
+                return `<button type="button" class="aw-badge" data-badge="${esc(m.title)}"><img src="${esc(m.imageUrl)}" alt="" loading="lazy"><span>${esc(m.title)}</span><em>${n ? `у ${n} чел.` : 'ещё ни у кого'}</em></button>`; }).join('')}</div>`;
+    }
     function listHtml() {
         const items = ui.achievements.filter(a => ui.filter === 'all' || a.status === ui.filter);
-        return `<div class="aw-toolbar"><h2>ачивки</h2><button class="adm-ghost" id="awNew">новая ачивка</button></div>
+        return `<div class="aw-toolbar"><h2>значки</h2><button class="adm-ghost" id="awNew">новый значок</button></div>
+            ${badgesHtml()}
+            <div class="adm-label">выданные и черновики</div>
             <div class="aw-filters" role="group" aria-label="статус ачивки">${[['all', 'все'], ['draft', 'черновики'], ['ready', 'выданы']].map(([key, label]) => `<button class="aw-filter" data-filter="${key}" aria-pressed="${ui.filter === key}">${label}</button>`).join('')}</div>
             <div class="aw-list">${items.length ? items.map(a => `<button class="aw-award" data-edit="${a.id}">
                 <span class="aw-award-main"><b>${esc(a.title)}</b><span>${esc(dateLabel(a.date))} · участников: ${count(a)}</span></span>
@@ -236,6 +265,7 @@ export async function renderAchievementsAdmin(body, opts = {}) {
             <p class="aw-error" id="awError" role="alert">${esc(ui.error)}</p><p class="aw-success" id="awSuccess" role="status">${esc(ui.success)}</p>
             ${ui.conflict ? '<button class="adm-link" id="awReload">загрузить сохранённую версию</button>' : ''}</section>`;
         body.querySelector('#awNew')?.addEventListener('click', () => startNew());
+        body.querySelectorAll('[data-badge]').forEach(b => b.onclick = () => pickBadge(b.dataset.badge));
         body.querySelector('#awBack')?.addEventListener('click', () => { rosterVersion++; ui.screen = 'list'; ui.conflict = false; dirty(); paint(); });
         body.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { ui.filter = b.dataset.filter; paint(); });
         body.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => edit(b.dataset.edit));
