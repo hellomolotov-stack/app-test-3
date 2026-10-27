@@ -6716,3 +6716,36 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .acol-blank.is-rare { border-color: rgba(237,199,110,.3); color: rgba(237,199,110,.45); }
 .acol-blank.is-very { border-color: rgba(170,113,239,.35); color: rgba(170,113,239,.55); }
 .mya-goal-blank { background: none; border: 2px dashed rgba(255,255,255,.2); opacity: 1; }
+
+/* «все ачивки» v2 (макет А + витрина): последняя медаль крупно, ниже сетка по 4 */
+.acol-hero { margin: 12px 16px 4px; padding: 14px 16px 14px; border-radius: 28px; text-align: center; border: 1px solid rgba(255,255,255,.1);
+    background: radial-gradient(circle at 50% 28%, rgba(214,220,226,.16), rgba(255,255,255,.02) 70%); }
+.acol-hero.is-rare { background: radial-gradient(circle at 50% 28%, rgba(237,199,110,.22), rgba(255,255,255,.02) 70%); }
+.acol-hero.is-very { background: radial-gradient(circle at 50% 28%, rgba(170,113,239,.24), rgba(255,255,255,.02) 70%); }
+.acol-hero[hidden] { display: none; }
+.acol-hero-pic { display: grid; place-items: center; width: 170px; height: 170px; margin: 0 auto; padding: 0; border: 0; background: none; cursor: pointer; }
+.acol-hero-pic img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 10px 22px rgba(0,0,0,.55)); }
+.acol-hero-pic img.is-gray { filter: grayscale(1) brightness(.55); opacity: .75; }
+.acol-hero-pic .acol-blank { width: 120px; height: 120px; font-size: 40px; }
+.acol-hero-rar { display: inline-block; margin-top: 6px; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 12px; background: rgba(214,220,226,.14); color: #e6ebef; }
+.acol-hero.is-rare .acol-hero-rar { background: rgba(237,199,110,.18); color: #f1ce75; }
+.acol-hero.is-very .acol-hero-rar { background: rgba(170,113,239,.2); color: #d6b0ff; }
+.acol-hero.is-missing .acol-hero-rar { background: rgba(255,255,255,.08); color: rgba(255,255,255,.6); }
+.acol-hero-title { margin-top: 6px; font-size: 18px; font-weight: 800; }
+.acol-hero-desc { margin-top: 3px; font-size: 12.5px; line-height: 1.4; color: rgba(255,255,255,.62); }
+.acol-hero-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 10px; margin-top: 6px; font-size: 11.5px; color: rgba(255,255,255,.5); }
+.acol-hero-meta button { border: 0; background: none; padding: 0; font: inherit; color: var(--yellow); font-weight: 700; cursor: pointer; }
+.acol-hero-share { margin-top: 10px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); color: #fff; border-radius: 18px; padding: 8px 14px; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+.acol-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px 4px; padding: 12px 12px 4px; }
+.acol-grid .acol-it { width: auto; min-width: 0; }
+.acol-grid .acol-pic { width: 100%; height: auto; aspect-ratio: 1; }
+.acol-grid .acol-pic img { width: 88%; height: 88%; }
+.acol-grid .acol-pic::after { content: ''; position: absolute; left: 18%; right: 18%; bottom: 0; height: 6px; border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(214,220,226,.35), transparent 70%); }
+.acol-tier.is-rare .acol-grid .acol-pic::after { background: radial-gradient(ellipse, rgba(237,199,110,.45), transparent 70%); }
+.acol-tier.is-very .acol-grid .acol-pic::after { background: radial-gradient(ellipse, rgba(170,113,239,.45), transparent 70%); }
+.acol-grid .acol-it.is-missing .acol-pic::after { opacity: .3; }
+.acol-grid .acol-blank { width: 64%; height: 64%; font-size: 20px; }
+.acol-grid .acol-name { font-size: 10.5px; margin-top: 4px; }
+.acol-grid .acol-it.is-picked .acol-pic { box-shadow: none; }
+.acol-grid .acol-it.is-picked .acol-name { color: var(--yellow); }
