@@ -6861,3 +6861,6 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .mya-it.is-next .mya-name { color: rgba(255,255,255,.55); }
 .mya-step small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; color: rgba(255,255,255,.6); }
 .mya-step-go { flex: none; border: 0; background: none; padding: 6px 0; color: var(--yellow); font: inherit; font-size: 13px; font-weight: 800; white-space: nowrap; cursor: pointer; }
+/* пустой раздел: серые значки вместо вопроса */
+.bdg-cat-pic img.is-gray, .bdg-stack img.is-gray { filter: grayscale(1) brightness(.5); opacity: .75; }
+.bdg-cat.is-empty .bdg-hint { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }

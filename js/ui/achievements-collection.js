@@ -78,8 +78,14 @@ export function openAchievementsCollection(items = []) {
     const catCard = c => {
         const top = byDate(c.earned.filter(a => visibleIds.has(a.id)))[0];
         const others = sortByValue(c.earned.filter(a => a !== top));
-        if (!c.earned.length) return `<button type="button" class="bdg-cat is-empty" data-cat="${c.key}"><h4>${esc(c.title)}</h4>
-            <i class="acol-blank">?</i><span class="bdg-hint">${esc(c.hint)}</span></button>`;
+        // пустой раздел: значки раздела серым – видно, что можно собрать
+        if (!c.earned.length) {
+            const arts = c.missing.map(m => medalForTitle(m.title)).filter(Boolean);
+            const gray = (m, cls = 'is-gray') => `<img ${medalSrc(m.imageUrl)} alt="" loading="lazy" class="${cls}">`;
+            return `<button type="button" class="bdg-cat is-empty" data-cat="${c.key}"><h4>${esc(c.title)}</h4>
+            ${arts[0] ? `<span class="bdg-cat-pic">${gray(arts[0])}</span>` : '<i class="acol-blank">?</i>'}<span class="bdg-hint">${esc(c.hint)}</span>
+            ${arts.length > 1 ? `<span class="bdg-foot"><span class="bdg-stack">${arts.slice(1, 5).map(m => gray(m)).join('')}</span><span class="bdg-more">0 из ${c.total}<b>все</b></span></span>` : ''}</button>`;
+        }
         return `<button type="button" class="bdg-cat" data-cat="${c.key}"><h4>${esc(c.title)}</h4>
             ${top ? `<span class="bdg-cat-pic">${img(top)}</span><span class="bdg-t">${esc(top.title)}</span><span class="bdg-d">${esc(ddmmyyyy(top.grant?.date))}</span>`
                 : `<span class="bdg-cat-pic">${img(c.earned[0], 'is-blur')}<b class="acol-lock">🔒</b></span><span class="bdg-t is-off">откроется с картой</span>`}
