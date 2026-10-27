@@ -62,13 +62,15 @@ export const catalogByTitle = title => ACHIEVEMENT_CATALOG.find(a => norm(a.titl
 export const ACHIEVEMENT_CATEGORIES = [
     { key: 'routes', title: 'локации', hint: 'пройди маршрут с клубом – за каждый свой значок',
         ids: id => id.startsWith('route-') || id === 'all-routes' },
-    { key: 'moments', title: 'события на хайке', hint: 'дождь, фонарики, рассвет, 5–50 хайков с клубом и особые моменты',
-        ids: id => ['headlamps', 'rain', 'wim-hof', 'above-1500', 'swim', 'four-seasons'].includes(id) || id.startsWith('hikes-') },
+    { key: 'moments', title: 'моменты на хайке', hint: 'дождь, фонарики, рассвет и особые моменты',
+        ids: id => ['headlamps', 'rain', 'wim-hof', 'above-1500', 'swim', 'four-seasons'].includes(id) },
+    { key: 'hikes', title: 'хайки с клубом', hint: '5, 10, 20, 30 и 50 хайков с клубом',
+        ids: id => id.startsWith('hikes-') },
     { key: 'first', title: 'первые шаги', hint: 'первый хайк, карта интеллигента, +1, отзыв, бухайкинг и встречи в городе',
         ids: id => ['first-hike', 'card-owner', 'profile', 'mastermind-request', 'plus-one', 'gift-card', 'honest-review', 'story',
             'after-hike-drinks', 'first-city-event', 'hiking-box'].includes(id) },
 ];
-// значки вне каталога (шуточные, особые) идут в «события на хайке»; отдельный раздел остался на случай пустого id
+// значки вне каталога (шуточные, особые) идут в «моменты на хайке»; отдельный раздел остался на случай пустого id
 export const EXTRA_CATEGORY = { key: 'extra', title: 'особые', hint: '' };
 // маршруты вне 18 основных (Ат-Баш) – тоже в разделе «маршруты»
 const EXTRA_ROUTE_TITLES = ['хайк на ат баш']; // в виде после norm()
