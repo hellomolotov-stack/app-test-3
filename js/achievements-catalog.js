@@ -14,10 +14,10 @@ export const ACHIEVEMENT_CATALOG = [
     { id: "first-hike", title: "первый хайк с интеллигенцией", rarity: 'common', tier: 'common', description: "первый раз вышел на тропу с клубом – дальше только выше" },
     { id: "card-owner", title: "владелец карты интеллигента", rarity: 'legendary', tier: 'rare', description: "теперь ты – часть клуба, а клуб растёт вместе с тобой" },
     { id: "profile", title: "показал себя клубу", rarity: 'common', tier: 'common', description: "заполнил профиль – теперь тебя легко найти и позвать на хайк" },
-    { id: "mastermind-request", title: "мой вопрос на мастермайнде", rarity: 'legendary', tier: 'rare', description: "вынес свой вопрос на вершину и услышал десять взглядов" },
-    { id: "plus-one", title: "привёл своего +1", rarity: 'common', tier: 'common', description: "позвал друга в клуб – вас стало на одного больше" },
+    { id: "mastermind-request", title: "мой вопрос на мастермайнде", rarity: 'common', tier: 'common', description: "вынес свой вопрос на вершину и услышал десять взглядов" },
+    { id: "plus-one", title: "привёл своего +1", rarity: 'legendary', tier: 'rare', description: "позвал друга в клуб – вас стало на одного больше" },
     { id: "gift-card", title: "подарил карту другу", rarity: 'legendary', tier: 'rare', description: "подарил кому-то целый сезон в горах" },
-    { id: "honest-review", title: "искренний отзыв", rarity: 'legendary', tier: 'rare', description: "рассказал честно, как это было – так клуб становится лучше" },
+    { id: "honest-review", title: "искренний отзыв", rarity: 'common', tier: 'common', description: "рассказал честно, как это было – так клуб становится лучше" },
     { id: "story", title: "показал горы в сторис", rarity: 'common', tier: 'common', description: "поделился маршрутом – пусть все видят, где мы были" },
     { id: "after-hike-drinks", title: "первый бухайкинг", rarity: 'common', tier: 'common', description: "после вершины – за стол: лучшие разговоры случаются именно тут" },
     { id: "first-city-event", title: "свои в городе", rarity: 'common', tier: 'common', description: "пришёл на встречу клуба в городе – пицца, пикник или вечер в заведении" },
@@ -74,7 +74,10 @@ export const ACHIEVEMENT_CATEGORIES = [
 ];
 // значки вне каталога (шуточные, особые) – свой раздел, только если такие есть
 export const EXTRA_CATEGORY = { key: 'extra', title: 'особые', hint: '' };
+// маршруты вне 18 основных (Ат-Баш) – тоже в разделе «маршруты»
+const EXTRA_ROUTE_TITLES = ['хайк на ат баш']; // в виде после norm()
 export const categoryOf = title => {
     const c = catalogByTitle(title);
-    return c ? (ACHIEVEMENT_CATEGORIES.find(k => k.ids(c.id))?.key || 'extra') : 'extra';
+    if (!c) return EXTRA_ROUTE_TITLES.includes(norm(title)) ? 'routes' : 'extra';
+    return ACHIEVEMENT_CATEGORIES.find(k => k.ids(c.id))?.key || 'extra';
 };
