@@ -3,10 +3,8 @@ import { state } from './state.js';
 import { catalogByTitle, tierOf } from './achievements-catalog.js';
 
 // три уровня: базовая – серебро, легендарная – золото, мифическая – фиолетовый металл
-// Ачивки пока в тесте: всё, что с ними связано, видят только @maxmolotov и @hellointelligent (27.10.2026).
-// Открыть всем – вернуть true из achievementsVisible().
-export const ACHIEVEMENTS_TEST_IDS = ['163665735', '7845375334'];
-export const achievementsVisible = () => ACHIEVEMENTS_TEST_IDS.includes(String(state.user?.id || ''));
+// Значки открыты всем с 27.10.2026. Скрыть снова – вернуть проверку по id в achievementsVisible().
+export const achievementsVisible = () => true;
 
 export const ACHIEVEMENT_RARITIES = [
     ['common', 'базовый'], ['legendary', 'легендарный'], ['mythical', 'мифический'],
