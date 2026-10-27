@@ -6,7 +6,7 @@ export const MEDAL_LIBRARY = [
     // значки из папки «значки» (26.10.2026): количество хайков, особые моменты, после тропы и город
     { title: 'выше 1500 метров', imageUrl: '/assets/achievements/badges/above-1500-v2.png' },
     { title: 'четыре сезона в горах', imageUrl: '/assets/achievements/badges/four-seasons.png' },
-    { title: 'спуск с фонариками', imageUrl: '/assets/achievements/badges/headlamps-v2.png' },
+    { title: 'спуск с фонариком', imageUrl: '/assets/achievements/badges/headlamps-v2.png' },
     { title: 'промок, но дошёл', imageUrl: '/assets/achievements/badges/rain.png' },
     { title: 'нырнул после тропы', imageUrl: '/assets/achievements/badges/swim.png' },
     { title: 'дыхание по Хофу', imageUrl: '/assets/achievements/badges/wim-hof-v2.png' },
@@ -18,7 +18,7 @@ export const MEDAL_LIBRARY = [
     { title: 'Форосский кант', imageUrl: '/assets/achievements/badges/route-kant-v5.png' },
     { title: 'тропа Палласа', imageUrl: '/assets/achievements/badges/route-pallasa-v4.png' },
     { title: 'хайк на Эклизи-Бурун', imageUrl: '/assets/achievements/badges/route-eklizi-v1.png' },
-    { title: 'хайк на Ильяс-Каю', imageUrl: '/assets/achievements/badges/route-ilyas-v2.png' },
+    { title: 'хайк на Ильяс-Кая', imageUrl: '/assets/achievements/badges/route-ilyas-v2.png' },
     { title: 'хайк на Биюк-Исар', imageUrl: '/assets/achievements/badges/route-biuk-v1.png' },
     { title: 'мыс Айя – Балаклава', imageUrl: '/assets/achievements/badges/route-balaklava-v1.png' },
     { title: 'Чернореченский каньон', imageUrl: '/assets/achievements/badges/route-kanyon-v1.png' },
