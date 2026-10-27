@@ -3,14 +3,14 @@ import { loadAchievementCollections, claimAchievements, achievementMeta, achieve
 import { haptic } from '../utils.js';
 import { openAchievementsPopup } from './achievements-popup.js';
 import { catalogByTitle } from '../achievements-catalog.js';
-import { medalForTitle } from '../achievements-medals.js';
+import { medalForTitle, medalSrc } from '../achievements-medals.js';
 import { openAchievementsCollection, visibleEarned } from './achievements-collection.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 export function medalStripHtml(items, compact = false) {
     return `<div class="medal-strip${compact ? ' is-compact' : ''}">${items.map((a, index) => `<button type="button" class="medal-miniature" data-medal="${index}" aria-label="${esc(a.title)}" title="${esc(a.title)}">
-        <img src="${esc(a.medal.imageUrl)}" width="88" height="88" alt="" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>`;
+        <img ${medalSrc(a.medal.imageUrl)} width="88" height="88" alt="" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>`;
 }
 
 export function wireMedalStrip(host, items) {
@@ -42,9 +42,9 @@ export async function mountMyAchievements() {
         host.innerHTML = `<div class="mya-head"><h2 class="section-title">🏅 мои значки</h2></div>
             ${items.length ? '' : '<p class="mya-sub">собирай значки за хайки, маршруты и моменты на тропе</p>'}
             <div class="mya-shelf">${shelf.map((a, i) => `<button type="button" class="mya-it" data-medal="${i}" aria-label="${esc(a.title)}">
-                <span class="mya-pic">${a.seenAt === null ? '<span class="mya-new">new</span>' : ''}<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy"></span><span class="mya-name">${esc(a.title)}</span></button>`).join('')}
+                <span class="mya-pic">${a.seenAt === null ? '<span class="mya-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy"></span><span class="mya-name">${esc(a.title)}</span></button>`).join('')}
             ${nextSteps.map(st => { const art = medalForTitle(st.title);
-                return `<button type="button" class="mya-it is-next" data-mya-all aria-label="${esc(st.title)}"><span class="mya-pic">${art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy">` : '<b>?</b>'}</span><span class="mya-name">${esc(st.short)}</span></button>`; }).join('')}
+                return `<button type="button" class="mya-it is-next" data-mya-all aria-label="${esc(st.title)}"><span class="mya-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy">` : '<b>?</b>'}</span><span class="mya-name">${esc(st.short)}</span></button>`; }).join('')}
             <button type="button" class="mya-it is-all" data-mya-all aria-label="все значки"><span class="mya-pic"><b>${items.length > shelf.length ? `+${items.length - shelf.length}` : '›'}</b></span><span class="mya-name">все значки</span></button></div>
             ${(items.length < 3 && nextStepHtml(owned)) || nextGoalHtml(items)}
             ${hidden.length ? `<button type="button" class="mya-card-hint" data-mya-card>ещё ${hidden.length} ${hidden.length % 10 === 1 && hidden.length % 100 !== 11 ? 'твой значок скрыт' : hidden.length % 10 >= 2 && hidden.length % 10 <= 4 && (hidden.length % 100 < 10 || hidden.length % 100 >= 20) ? 'твоих значка скрыты' : 'твоих значков скрыты'} – <b>оформи карту интеллигента, чтобы видеть все</b> ›</button>` : ''}`;
@@ -71,7 +71,7 @@ function nextStepHtml(owned) {
     const st = FIRST_STEPS.find(x => x.action && !owned.has(x.id) && !(x.id === 'first-hike' && hiked));
     if (!st) return '';
     const art = medalForTitle(st.title);
-    return `<div class="mya-goal mya-step">${art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy">` : '<i class="mya-goal-blank"></i>'}
+    return `<div class="mya-goal mya-step">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy">` : '<i class="mya-goal-blank"></i>'}
         <div><b>следующий – «${esc(st.short)}»</b><small>${esc(st.hint)}</small></div>
         <button type="button" class="mya-step-go" data-mya-step="${st.action}">${esc(st.button)} ›</button></div>`;
 }
@@ -98,7 +98,7 @@ function nextGoalHtml(items) {
     const goal = HIKE_GOALS.find(([min, title]) => min > progress.hikes && !owned.has(catalogByTitle(title)?.id || title));
     if (!goal) return '';
     const [min, title] = goal, left = min - progress.hikes, art = medalForTitle(title);
-    return `<div class="mya-goal">${art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy">` : '<i class="mya-goal-blank"></i>'}
+    return `<div class="mya-goal">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy">` : '<i class="mya-goal-blank"></i>'}
         <div><b>ещё ${left} ${hikesWord(left)} до «${esc(title)}»</b><span class="mya-goal-bar"><i style="width:${Math.round(progress.hikes / min * 100)}%"></i></span>
         <small>${progress.hikes} из ${min}</small></div></div>`;
 }

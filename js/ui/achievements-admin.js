@@ -1,5 +1,5 @@
 import { rarityLabel, achievementRequest } from '../achievements.js';
-import { MEDAL_LIBRARY } from '../achievements-medals.js';
+import { MEDAL_LIBRARY, medalSrc } from '../achievements-medals.js';
 import { ACHIEVEMENT_CATEGORIES, catalogByTitle, categoryOf } from '../achievements-catalog.js';
 import { DEFAULT_TEXT } from './achievements-notify.js';
 
@@ -72,7 +72,7 @@ export async function renderAchievementsAdmin(body) {
         return `<div class="aw-toolbar"><h2>значки</h2></div>
             <div class="aw-badges-head"><small>выбери значок – дальше кому и за какую дату</small></div>
             <div class="aw-badges">${badgeList().map(m => { const n = holders(m.title);
-                return `<button type="button" class="aw-badge" data-badge="${esc(m.title)}"><img src="${esc(m.imageUrl)}" alt="" loading="lazy"><span>${esc(m.title)}</span><em>${n ? `у ${n} чел.` : 'ещё ни у кого'}</em></button>`; }).join('')}</div>`;
+                return `<button type="button" class="aw-badge" data-badge="${esc(m.title)}"><img ${medalSrc(m.imageUrl)} alt="" loading="lazy"><span>${esc(m.title)}</span><em>${n ? `у ${n} чел.` : 'ещё ни у кого'}</em></button>`; }).join('')}</div>`;
     }
     function formHtml() {
         const fresh = [...ui.selected.values()].filter(p => !p.saved).length;

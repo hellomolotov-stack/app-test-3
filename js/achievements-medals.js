@@ -55,3 +55,23 @@ export const MEDAL_LIBRARY = [
 const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();
 export const medalForTitle = title => MEDAL_LIBRARY.find(m => norm(m.title) === norm(title)) || null;
 export const medalByUrl = url => MEDAL_LIBRARY.find(m => m.imageUrl === url) || null;
+
+// Лёгкие копии значков (WebP): thumbs – 256 px для сеток и полок, md – 512 px для слайдера.
+// Делаются из PNG скриптом scripts/medal-thumbs.py; если копии нет – картинка сама откатывается на исходный PNG.
+const variant = (url, dir) => typeof url === 'string' && url.startsWith('/assets/achievements/') && url.endsWith('.png')
+    ? url.replace('/assets/achievements/', `/assets/achievements/${dir}/`).replace(/\.png$/, '.webp') : url;
+export const medalThumb = url => variant(url, 'thumbs');
+export const medalMd = url => variant(url, 'md');
+// <img src=копия data-orig=исходник>: при ошибке загрузки подставляем исходник
+export const medalSrc = (url, size = 'thumbs') => {
+    const src = variant(url, size);
+    const e = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+    return src === url ? `src="${e(url)}"` : `src="${e(src)}" data-orig="${e(url)}" decoding="async"`;
+};
+if (typeof document !== 'undefined' && !window.__medalFallback) {
+    window.__medalFallback = true;
+    document.addEventListener('error', e => {
+        const img = e.target;
+        if (img?.tagName === 'IMG' && img.dataset.orig) { const orig = img.dataset.orig; delete img.dataset.orig; img.src = orig; }
+    }, true);
+}

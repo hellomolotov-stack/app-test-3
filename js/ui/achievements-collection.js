@@ -8,7 +8,7 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { ACHIEVEMENT_CATALOG, ACHIEVEMENT_CATEGORIES, EXTRA_CATEGORY, categoryOf, catalogByTitle } from '../achievements-catalog.js';
-import { medalForTitle } from '../achievements-medals.js';
+import { medalForTitle, medalSrc } from '../achievements-medals.js';
 import { openAchievementsPopup } from './achievements-popup.js';
 import { rarityShare, rarityLabel, achievementMeta, sortByValue } from '../achievements.js';
 
@@ -53,7 +53,7 @@ export function openAchievementsCollection(items = []) {
     cats.sort((a, b) => (b.earned.length > 0) - (a.earned.length > 0));
     const totalAll = cats.reduce((n, c) => n + c.total, 0);
 
-    const img = (a, cls = '') => `<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy" class="${cls}">`;
+    const img = (a, cls = '', size = 'thumbs') => `<img ${medalSrc(a.medal.imageUrl, size)} alt="" loading="lazy" class="${cls}">`;
     const stackHtml = list => `<span class="bdg-stack">${list.slice(0, 4).map(a => visibleIds.has(a.id) ? img(a) : img(a, 'is-blur')).join('')}</span>`;
 
     // «вперёд!» – ближайшая цель по хайкам
@@ -61,7 +61,7 @@ export function openAchievementsCollection(items = []) {
     const goal = progress?.member ? HIKE_GOALS.find(([min, t]) => min > progress.hikes && !ownedTitles.has(t)) : null;
     const goalHtml = goal ? (() => {
         const [min, title] = goal, art = medalForTitle(title);
-        return `<div class="bdg-card bdg-goal">${art ? `<img src="${esc(art.imageUrl)}" alt="" class="is-gray">` : '<i class="acol-blank">?</i>'}
+        return `<div class="bdg-card bdg-goal">${art ? `<img ${medalSrc(art.imageUrl)} alt="" class="is-gray">` : '<i class="acol-blank">?</i>'}
             <div><b>вперёд!</b><span>${esc(title)} с клубом</span><small>${progress.hikes} из ${min}</small><i class="bdg-bar"><i style="width:${Math.round(progress.hikes / min * 100)}%"></i></i></div></div>`;
     })() : '';
 
@@ -70,7 +70,7 @@ export function openAchievementsCollection(items = []) {
     const restForStack = sortByValue(items.filter(a => a !== latest));
     const featHtml = latest ? `<div class="bdg-card bdg-feat">
         <h3>последний значок</h3>
-        <button type="button" class="bdg-feat-pic" data-open="${esc(latest.id)}">${img(latest)}</button>
+        <button type="button" class="bdg-feat-pic" data-open="${esc(latest.id)}">${img(latest, '', 'md')}</button>
         <div class="bdg-t">${esc(latest.title)}</div><div class="bdg-d">${esc([ddmmyyyy(latest.grant?.date), rarityLabel(latest.rarity)].filter(Boolean).join(' · '))}</div>
         ${items.length > 1 ? `<button type="button" class="bdg-foot" data-open-all>${stackHtml(restForStack)}<span class="bdg-more">и ещё ${items.length - 1}<b>показать все</b></span></button>` : ''}
     </div>` : '';
@@ -141,7 +141,7 @@ export function openAchievementsCollection(items = []) {
                 ? `<button type="button" class="bdg-it" data-open="${esc(a.id)}">${img(a)}<span>${esc(a.title)}</span><em>${esc(ddmmyyyy(a.grant?.date))}</em></button>`
                 : `<button type="button" class="bdg-it is-hidden" data-card>${img(a, 'is-blur')}<b class="acol-lock">🔒</b><span>откроется с картой</span></button>`).join('')}
             ${c.missing.map(m => { const art = medalForTitle(m.title);
-                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}">${art ? `<img src="${esc(art.imageUrl)}" alt="" class="is-gray">` : '<i class="acol-blank">?</i>'}<span>${esc(m.title)}</span></button>`; }).join('')}</div>`;
+                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}<span>${esc(m.title)}</span></button>`; }).join('')}</div>`;
         titleEl.textContent = c.title;
         main.hidden = true; catView.hidden = false; catView.scrollTop = 0;
         catView.querySelector('[data-back]').onclick = () => { haptic(); back(); };
