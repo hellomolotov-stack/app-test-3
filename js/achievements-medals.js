@@ -17,6 +17,10 @@ export const MEDAL_LIBRARY = [
     { title: 'первый бухайкинг', imageUrl: '/assets/achievements/badges/after-hike-drinks.png' },
     { title: 'свои в городе', imageUrl: '/assets/achievements/badges/first-city-event.png' },
     { title: 'хайкинг бокс', imageUrl: '/assets/achievements/badges/hiking-box.png' },
+    // маршруты (первые три, 26.10.2026)
+    { title: 'хайк на Крестовую гору', imageUrl: '/assets/achievements/badges/route-krestovaya.png' },
+    { title: 'Форосский кант', imageUrl: '/assets/achievements/badges/route-kant.png' },
+    { title: 'тропа Палласа', imageUrl: '/assets/achievements/badges/route-pallasa.png' },
 ];
 
 const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();
