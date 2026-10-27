@@ -6864,3 +6864,5 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 /* пустой раздел: серые значки вместо вопроса */
 .bdg-cat-pic img.is-gray, .bdg-stack img.is-gray { filter: grayscale(1) brightness(.5); opacity: .75; }
 .bdg-cat.is-empty .bdg-hint { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.is-compact .medal-miniature span { display: none; }
+.is-compact .medal-miniature img { margin-bottom: 0; }
