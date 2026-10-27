@@ -17,7 +17,10 @@ export const isCardMember = () => state.userCard?.status === 'active';
 
 // какие из полученных видны: владельцу карты – все, без карты – три последние (items уже от новых к старым)
 export function visibleEarned(items) {
-    return isCardMember() ? items : items.slice(0, GUEST_VISIBLE);
+    if (isCardMember()) return items;
+    // без карты видны три последние по дате, показываем их в порядке ценности
+    const latest = new Set([...items].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0)).slice(0, GUEST_VISIBLE).map(a => a.id));
+    return items.filter(a => latest.has(a.id));
 }
 
 function openCard(source) {
@@ -34,7 +37,8 @@ export function openAchievementsCollection(items = []) {
     // строим уровни: полученные (по дате) + не полученные из каталога
     const earnedByCatalog = new Map();
     items.forEach(a => { const c = catalogByTitle(a.title); if (c && !earnedByCatalog.has(c.id)) earnedByCatalog.set(c.id, a); });
-    const tiers = ACHIEVEMENT_TIERS.map(([key, label, about]) => {
+    // сначала самые ценные уровни: мифические → легендарные → базовые
+    const tiers = [...ACHIEVEMENT_TIERS].reverse().map(([key, label, about]) => {
         const earned = items.filter(a => tierOf(catalogByTitle(a.title)?.rarity || a.rarity) === key);
         const missing = ACHIEVEMENT_CATALOG.filter(c => c.tier === key && !earnedByCatalog.has(c.id));
         const total = ACHIEVEMENT_CATALOG.filter(c => c.tier === key).length + earned.filter(a => !catalogByTitle(a.title)).length;

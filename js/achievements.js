@@ -1,5 +1,6 @@
 import { tg } from './utils.js';
 import { state } from './state.js';
+import { catalogByTitle, tierOf } from './achievements-catalog.js';
 
 // три уровня: базовая – серебро, легендарная – золото, мифическая – фиолетовый металл
 // Ачивки пока в тесте: всё, что с ними связано, видят только @maxmolotov и @hellointelligent (27.10.2026).
@@ -35,6 +36,8 @@ export async function loadAchievementCollections(userIds) {
     if (!pendingCollections.has(key)) {
         pendingCollections.set(key, achievementRequest('collection', { userIds: ids }).then(data => {
             if (String(state.user?.id || '') !== viewer) return {};
+            // везде сначала самые ценные: мифические → легендарные → базовые, внутри уровня – от новых к старым
+            Object.values(data.collections || {}).forEach(sortByValue);
             collections.set(key, { at: Date.now(), value: data.collections });
             // своя коллекция: редкость (у скольких есть) и прогресс по хайкам
             if (data.stats) ownMeta = { stats: data.stats, clubSize: data.clubSize || 0, progress: data.progress || null };
@@ -70,4 +73,10 @@ const holdersCache = new Map();
 export function achievementHolders(id) {
     if (!holdersCache.has(id)) holdersCache.set(id, achievementRequest('holders', { id }).catch(e => { holdersCache.delete(id); throw e; }));
     return holdersCache.get(id);
+}
+
+const TIER_RANK = { very: 0, rare: 1, common: 2 };
+export const achievementValue = a => TIER_RANK[tierOf(catalogByTitle(a.title)?.rarity || a.rarity)] ?? 3;
+export function sortByValue(items) {
+    return items.sort((a, b) => achievementValue(a) - achievementValue(b) || (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0));
 }

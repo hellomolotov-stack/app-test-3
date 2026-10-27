@@ -37,7 +37,7 @@ export async function mountMyAchievements() {
         const total = CLUB_ACHIEVEMENTS.length + items.filter(a => !catalogByTitle(a.title)).length;
         // без карты видны три последние полученные, остальные полученные – размытые с замком
         const visible = visibleEarned(items);
-        const hidden = items.slice(visible.length);
+        const hidden = items.filter(a => !visible.includes(a));
         const locks = Math.min(Math.max(0, total - items.length), items.length ? 2 : 4);
         host.innerHTML = `<div class="mya-head"><h2 class="section-title">🏅 мои ачивки</h2><button type="button" class="mya-all" data-mya-all>все ›</button></div>
             <div class="mya-shelf">${visible.map((a, i) => `<button type="button" class="mya-it" data-medal="${i}" aria-label="${esc(a.title)}">
