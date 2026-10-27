@@ -27,9 +27,10 @@ function revision(value) {
     return typeof value === 'string' && value.length <= 256 && /^(?:[A-Za-z0-9_+/=-]+|"[A-Za-z0-9_+/=-]+")$/.test(value);
 }
 
-function person(id, profile, member, participant) {
+// appUser – запись из app_users (все, кто хоть раз открывал приложение): имя и @ из Telegram
+function person(id, profile, member, participant, appUser) {
     if (!UID.test(id)) return null;
-    const sources = [profile, member, participant].filter(object);
+    const sources = [profile, member, participant, appUser].filter(object);
     if (!sources.length) return null;
     const name = sources.map(p => p.name || p.full_name || [p.first_name, p.last_name].filter(Boolean).join(' ')).find(Boolean);
     const username = sources.map(p => p.username).find(Boolean);
@@ -145,14 +146,15 @@ function createHandler(deps = {}) {
         return { value: await response.json(), revision: response.headers.get('etag') };
     }
     async function people(token, hikeDate = '') {
-        const [profiles, members, roster, attendance] = await Promise.all([
+        const [profiles, members, roster, attendance, appUsers] = await Promise.all([
             read('userProfiles', token), read('members', token),
             hikeDate ? read(`hikeParticipants/${hikeDate}`, token) : Promise.resolve({ value: {} }),
             hikeDate ? read(`hikeAttendance/${hikeDate}`, token) : Promise.resolve({ value: {} }),
+            read('app_users', token).catch(() => ({ value: {} })),
         ]);
-        const p = profiles.value || {}, m = members.value || {}, r = roster.value || {}, att = attendance.value || {};
-        const ids = new Set([...Object.keys(p), ...Object.keys(m), ...Object.keys(r)]);
-        return [...ids].map(id => person(id, p[id], m[id], r[id])).filter(Boolean)
+        const p = profiles.value || {}, m = members.value || {}, r = roster.value || {}, att = attendance.value || {}, au = appUsers.value || {};
+        const ids = new Set([...Object.keys(p), ...Object.keys(m), ...Object.keys(r), ...Object.keys(au)]);
+        return [...ids].map(id => person(id, p[id], m[id], r[id], au[id])).filter(Boolean)
             .map(p => ({ ...p, registered: Object.hasOwn(r, p.userId), attended: att[p.userId] === true }))
             .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
     }
