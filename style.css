@@ -6853,3 +6853,11 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .aw-to input { width: 100%; box-sizing: border-box; padding: 8px 8px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 13px; color-scheme: dark; }
 .aw-saved-people small { font-weight: 400; color: rgba(255,255,255,.55); }
 #awSave { margin-top: 16px; }
+/* главная: значков ещё мало – следующие шаги серым и подсказка «следующий» с кнопкой */
+.mya-sub { margin: -6px 16px 4px; font-size: 13px; line-height: 1.4; color: rgba(255,255,255,.6); }
+.mya-it.is-next .mya-pic { border-style: dashed; background: rgba(255,255,255,.03); }
+.mya-it.is-next .mya-pic img { filter: grayscale(1) brightness(.55); opacity: .85; }
+.mya-it.is-next .mya-pic b { font-size: 22px; color: rgba(255,255,255,.35); }
+.mya-it.is-next .mya-name { color: rgba(255,255,255,.55); }
+.mya-step small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.35; color: rgba(255,255,255,.6); }
+.mya-step-go { flex: none; border: 0; background: none; padding: 6px 0; color: var(--yellow); font: inherit; font-size: 13px; font-weight: 800; white-space: nowrap; cursor: pointer; }

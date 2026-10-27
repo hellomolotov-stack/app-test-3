@@ -11,6 +11,7 @@ export const ACHIEVEMENT_TIERS = [
 export const tierOf = rarity => rarity === 'mythical' ? 'very' : rarity === 'rare' || rarity === 'legendary' ? 'rare' : 'common';
 
 export const ACHIEVEMENT_CATALOG = [
+    { id: "welcome", title: "добро пожаловать", rarity: 'common', tier: 'common', description: "ты в клубе интеллигенции – дальше значки за хайки, маршруты и всё, что случится на тропе" },
     { id: "first-hike", title: "первый хайк с интеллигенцией", rarity: 'common', tier: 'common', description: "первый раз вышел на тропу с клубом – дальше только выше" },
     { id: "card-owner", title: "владелец карты интеллигента", rarity: 'legendary', tier: 'rare', description: "теперь ты – часть клуба, а клуб растёт вместе с тобой" },
     { id: "profile", title: "показал себя клубу", rarity: 'common', tier: 'common', description: "заполнил профиль – теперь тебя легко найти и позвать на хайк" },
@@ -67,7 +68,7 @@ export const ACHIEVEMENT_CATEGORIES = [
     { key: 'hikes', title: 'хайки с клубом', hint: '5, 10, 20, 30 и 50 хайков с клубом',
         ids: id => id.startsWith('hikes-') },
     { key: 'first', title: 'первые шаги', hint: 'первый хайк, карта интеллигента, +1, отзыв, бухайкинг и встречи в городе',
-        ids: id => ['first-hike', 'card-owner', 'profile', 'mastermind-request', 'plus-one', 'gift-card', 'honest-review', 'story',
+        ids: id => ['welcome', 'first-hike', 'card-owner', 'profile', 'mastermind-request', 'plus-one', 'gift-card', 'honest-review', 'story',
             'after-hike-drinks', 'first-city-event', 'hiking-box'].includes(id) },
 ];
 // значки вне каталога (шуточные, особые) идут в «моменты на хайке»; отдельный раздел остался на случай пустого id

@@ -107,6 +107,10 @@ function publicRecord(record) {
 // Включить (true), когда будут готовы все медали и стартовые счета ветеранов.
 const AUTO_GRANT_ENABLED = false;
 const AUTO_ACHIEVEMENTS = [
+    // стартовый значок – единственный, который выдаётся сам и при выключенной автовыдаче: при первом входе в приложение.
+    // начнёт выдаваться, как только появится картинка: впиши сюда imageUrl (и добавь её в js/achievements-medals.js)
+    { key: 'welcome', title: 'добро пожаловать', rarity: 'common', always: true, imageUrl: null,
+        description: 'ты в клубе интеллигенции – дальше значки за хайки, маршруты и всё, что случится на тропе' },
     { key: 'first-hike', title: 'первый хайк с интеллигенцией', rarity: 'common', min: 1, imageUrl: null,
         description: 'первый раз вышел на тропу с клубом – дальше только выше' },
     { key: 'hikes-5', title: '5 хайков', rarity: 'common', min: 5, imageUrl: '/assets/achievements/badges/hikes-5-v2.png',
@@ -198,8 +202,8 @@ function createHandler(deps = {}) {
         const progress = await hikeProgress(token, userId);
         const snapshot = (await read('clubAchievements', token)).value || {};
         const owned = new Set(Object.values(snapshot).filter(r => r?.grants?.[userId]?.issuedAt && r.publicationStatus === 'published').map(r => titleKey(r.title)));
-        const due = !AUTO_GRANT_ENABLED ? [] : AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
-            && (a.card ? progress.member : progress.hikes >= a.min));
+        const due = AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
+            && (a.always || (AUTO_GRANT_ENABLED && (a.card ? progress.member : progress.hikes >= a.min))));
         const granted = [];
         const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || userId).slice(0, 100);
         for (const a of due) {
