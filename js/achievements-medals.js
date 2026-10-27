@@ -17,10 +17,19 @@ export const MEDAL_LIBRARY = [
     { title: 'первый бухайкинг', imageUrl: '/assets/achievements/badges/after-hike-drinks.png' },
     { title: 'свои в городе', imageUrl: '/assets/achievements/badges/first-city-event.png' },
     { title: 'хайкинг бокс', imageUrl: '/assets/achievements/badges/hiking-box.png' },
-    // маршруты (первые три, 26.10.2026)
-    { title: 'хайк на Крестовую гору', imageUrl: '/assets/achievements/badges/route-krestovaya.png' },
-    { title: 'Форосский кант', imageUrl: '/assets/achievements/badges/route-kant.png' },
-    { title: 'тропа Палласа', imageUrl: '/assets/achievements/badges/route-pallasa.png' },
+    // маршруты – актуальные значки из «⛰️ интеллигенция/Передача-значков-2026-10-27/значки» (27.10.2026)
+    { title: 'хайк на Крестовую гору', imageUrl: '/assets/achievements/badges/route-krestovaya-v4.png' },
+    { title: 'Форосский кант', imageUrl: '/assets/achievements/badges/route-kant-v5.png' },
+    { title: 'тропа Палласа', imageUrl: '/assets/achievements/badges/route-pallasa-v4.png' },
+    { title: 'хайк на Эклизи-Бурун', imageUrl: '/assets/achievements/badges/route-eklizi-v1.png' },
+    { title: 'хайк на Ильяс-Каю', imageUrl: '/assets/achievements/badges/route-ilyas-v1.png' },
+    { title: 'хайк на Биюк-Исар', imageUrl: '/assets/achievements/badges/route-biuk-v1.png' },
+    { title: 'мыс Айя – Балаклава', imageUrl: '/assets/achievements/badges/route-balaklava-v1.png' },
+    { title: 'Чернореченский каньон', imageUrl: '/assets/achievements/badges/route-kanyon-v1.png' },
+    { title: 'Долина привидений', imageUrl: '/assets/achievements/badges/route-demerdji-v1.png' },
+    { title: 'ущелье Уч-Кош', imageUrl: '/assets/achievements/badges/route-ushchelye-v1.png' },
+    { title: 'хайк на Аю-Даг', imageUrl: '/assets/achievements/badges/route-ayudag-v1.png' },
+    { title: 'Массандровская тропа', imageUrl: '/assets/achievements/badges/route-massandra-v1.png' },
 ];
 
 const norm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"']/g, '').replace(/\s+/g, ' ').trim();
