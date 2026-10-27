@@ -6697,3 +6697,22 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .acol-how em { display: block; margin-top: 4px; font-style: normal; font-size: 12px; color: var(--yellow); }
 .medal-more b { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 6px; border-radius: 50%; background: rgba(255,255,255,.08); border: 1px dashed rgba(255,255,255,.25); font-size: 16px; color: var(--yellow); }
 .adm-ach-grant { display: block; width: 100%; margin-top: 10px; padding: 12px; font-size: 14px; }
+
+/* «все ачивки»: шторка ниже системных кнопок Телеграма, значки по одной линии, без квадратных подложек */
+.acol-sheet { height: calc(100% - var(--acol-top, 40px)); }
+.acol-strip { align-items: flex-start; }
+.acol-it { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+.acol-pic, .acol-it.is-on .acol-pic { background: none; border: 0; border-radius: 50%; overflow: visible; }
+.acol-it.is-on .acol-pic::before { content: ''; position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle, rgba(217,253,25,.16), transparent 70%); }
+.acol-pic img { position: relative; width: 96px; height: 96px; }
+.acol-it.is-picked .acol-pic { box-shadow: 0 0 0 2px rgba(217,253,25,.6); }
+.acol-name { width: 100%; }
+/* главная: тоже по одной линии */
+.mya-shelf { align-items: flex-start; }
+.mya-it { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; }
+/* значка ещё нет – пунктирный круг с «?» вместо тёмного пятна */
+.acol-blank, .acol-blank.is-rare, .acol-blank.is-very { display: grid; place-items: center; width: 76px; height: 76px; opacity: 1; box-shadow: none;
+    background: none; border: 2px dashed rgba(255,255,255,.18); font-style: normal; font-size: 24px; font-weight: 700; color: rgba(255,255,255,.28); }
+.acol-blank.is-rare { border-color: rgba(237,199,110,.3); color: rgba(237,199,110,.45); }
+.acol-blank.is-very { border-color: rgba(170,113,239,.35); color: rgba(170,113,239,.55); }
+.mya-goal-blank { background: none; border: 2px dashed rgba(255,255,255,.2); opacity: 1; }

@@ -50,7 +50,7 @@ export function openAchievementsCollection(items = []) {
         : tile(`<img src="${esc(a.medal.imageUrl)}" alt="" loading="lazy" class="is-blur"><b class="acol-lock">🔒</b>`, 'is-hidden', 'data-card', 'открыта с картой', true);
     const missingTile = c => {
         const art = medalForTitle(c.title);
-        return tile(art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy" class="is-gray">` : `<i class="acol-blank is-${c.tier}"></i>`,
+        return tile(art ? `<img src="${esc(art.imageUrl)}" alt="" loading="lazy" class="is-gray">` : `<i class="acol-blank is-${c.tier}">?</i>`,
             'is-missing', `data-how="${esc(c.id)}"`, c.title, true, '', c.id.startsWith('route-'));
     };
 
@@ -72,6 +72,10 @@ export function openAchievementsCollection(items = []) {
         </div>
         ${member || items.length <= GUEST_VISIBLE ? '' : `<button type="button" class="acol-cta" data-card>открыто ${GUEST_VISIBLE} из ${items.length} твоих ачивок. <b>чтобы увидеть все свои открытые ачивки, оформи карту интеллигента</b> ›</button>`}
     </div>`;
+    // в полноэкранном Телеграме сверху системные кнопки («закрыть», «⋯») – шторка начинается ниже них
+    const tgw = window.Telegram?.WebApp;
+    const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    overlay.style.setProperty('--acol-top', `${Math.max(40, inset + 8)}px`);
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
