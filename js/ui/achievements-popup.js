@@ -154,7 +154,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         resizeObserver.disconnect();
         if (activeResizeObserver === resizeObserver) activeResizeObserver = null;
         overlay.classList.remove('is-on');
-        setTimeout(() => { overlay.remove(); if (!document.querySelector('.bottom-sheet.visible, .cs-overlay')) document.body.style.overflow = ''; }, 300);
+        setTimeout(() => { overlay.remove(); if (!document.querySelector('.bottom-sheet.visible, .cs-overlay, .acol-overlay')) document.body.style.overflow = ''; }, 300);
     };
     overlay.querySelector('.ach-close').onclick = () => { haptic(); close(); };
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
