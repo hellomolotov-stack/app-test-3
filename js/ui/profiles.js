@@ -10,7 +10,7 @@ import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, 
 import { renderGuestPrivileges } from './privileges.js';
 import { showGuestBookingPopup, showBottomSheet } from './calendar.js';
 import { renderPersonalRoutesMap, isPersonalMapPilotUser } from './personal-routes-map.js';
-import { loadAchievementCollections } from '../achievements.js';
+import { loadAchievementCollections, achievementsVisible } from '../achievements.js';
 import { medalStripHtml, wireMedalStrip } from './medals.js';
 
 let profiles = {};
@@ -81,7 +81,7 @@ async function renderProfileCard(profile, isBlurred = false) {
         </div>
     ` : '';
 
-    const medals = !isBlurred ? medalsByUser[String(profile.userId)] || [] : [];
+    const medals = !isBlurred && achievementsVisible() ? medalsByUser[String(profile.userId)] || [] : [];
     // в карточке – три последние медали и «+N»: повод заговорить («ты тоже промок на Демерджи?»)
     const medalsHtml = medals.length ? `<div class="profile-section-title">🏅 ${medals.length} ${medals.length % 10 === 1 && medals.length % 100 !== 11 ? 'ачивка' : medals.length % 10 >= 2 && medals.length % 10 <= 4 && (medals.length % 100 < 10 || medals.length % 100 >= 20) ? 'ачивки' : 'ачивок'}</div>${medalStripHtml(medals.slice(0, 3), true).replace(/<\/div>$/, medals.length > 3 ? `<button type="button" class="medal-miniature medal-more" data-medal="3" aria-label="все ачивки"><b>+${medals.length - 3}</b><span>ещё</span></button></div>` : '</div>')}` : '';
     const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
@@ -176,7 +176,7 @@ export async function renderProfiles() {
     const sorted = Object.entries(profiles).map(([id, profile]) => [id, { ...profile, userId: profile.userId || id }])
         .sort((a,b)=>(b[1].updatedAt||0)-(a[1].updatedAt||0));
     medalsByUser = {};
-    if (!shouldAnimate) {
+    if (!shouldAnimate && achievementsVisible()) {
         try { medalsByUser = await loadAchievementCollections(sorted.map(([, p]) => String(p.userId))); }
         catch { /* Unavailable medals must not hide otherwise accessible member profiles. */ }
     }

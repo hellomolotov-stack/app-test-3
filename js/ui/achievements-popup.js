@@ -4,7 +4,7 @@
 import { state } from '../state.js';
 import { tg, haptic } from '../utils.js';
 import { log } from '../api.js';
-import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare } from '../achievements.js';
+import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare, achievementsVisible } from '../achievements.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const rarityName = key => rarityLabel(key);
@@ -20,7 +20,7 @@ let activeResizeObserver = null;
 // новые (ещё не показанные) ачивки – сами при заходе; по ссылке из бота – новые, а если их нет, последние
 export async function maybeShowNewAchievements({ fromLink = false } = {}) {
     const userId = String(state.user?.id || '');
-    if (!userId || shown) return;
+    if (!userId || shown || !achievementsVisible()) return;
     try {
         await Promise.race([claimAchievements(), new Promise(r => setTimeout(r, 4000))]);
         const items = (await loadAchievementCollections([userId]))[userId] || [];
@@ -40,7 +40,7 @@ export async function maybeShowNewAchievements({ fromLink = false } = {}) {
 // (счётчик хайков растёт на следующий день после хайка) – проверяем авто-ачивки и показываем новые
 let lastCheck = Date.now();
 async function recheckAchievements(source) {
-    if (!state.user?.id || document.querySelector('.ach-overlay')) return;
+    if (!state.user?.id || document.querySelector('.ach-overlay') || !achievementsVisible()) return;
     lastCheck = Date.now();
     const r = await claimAchievements(true);
     if (!r.granted?.length) return;

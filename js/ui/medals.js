@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { loadAchievementCollections, claimAchievements, achievementMeta } from '../achievements.js';
+import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible } from '../achievements.js';
 import { haptic } from '../utils.js';
 import { openAchievementsPopup } from './achievements-popup.js';
 import { CLUB_ACHIEVEMENTS, catalogByTitle, tierOf } from '../achievements-catalog.js';
@@ -22,7 +22,7 @@ export function wireMedalStrip(host, items) {
 export async function mountMyAchievements() {
     const card = document.getElementById('cardBlock');
     const userId = String(state.user?.id || '');
-    if (!card || !userId || document.getElementById('myAchievements')) return;
+    if (!card || !userId || document.getElementById('myAchievements') || !achievementsVisible()) return;
     const host = document.createElement('section');
     host.id = 'myAchievements'; host.className = 'card-container achievements-home'; host.hidden = true;
     card.after(host);

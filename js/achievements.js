@@ -2,6 +2,11 @@ import { tg } from './utils.js';
 import { state } from './state.js';
 
 // три уровня: базовая – серебро, легендарная – золото, мифическая – фиолетовый металл
+// Ачивки пока в тесте: всё, что с ними связано, видят только @maxmolotov и @hellointelligent (27.10.2026).
+// Открыть всем – вернуть true из achievementsVisible().
+export const ACHIEVEMENTS_TEST_IDS = ['163665735', '7845375334'];
+export const achievementsVisible = () => ACHIEVEMENTS_TEST_IDS.includes(String(state.user?.id || ''));
+
 export const ACHIEVEMENT_RARITIES = [
     ['common', 'базовая'], ['legendary', 'легендарная'], ['mythical', 'мифическая'],
 ];
