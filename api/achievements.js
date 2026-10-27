@@ -100,6 +100,31 @@ function publicRecord(record) {
         publishedAt: published ? record.publishedAt || record.medal.attachedAt : null };
 }
 
+// Ачивки, которые выдаются сами (кнопка админа не нужна): по числу пройденных хайков и по карте.
+// Работают только те, у которых уже есть значок (imageUrl). У владельца карты счётчик – members/<id>/hikes_count,
+// у гостя – записи на прошедшие хайки (без городских событий и книжного клуба).
+const AUTO_ACHIEVEMENTS = [
+    { key: 'first-hike', title: 'первый хайк с интеллигенцией', rarity: 'common', min: 1, imageUrl: null,
+        description: 'первый раз вышел на тропу с клубом – дальше только выше' },
+    { key: 'hikes-5', title: '5 хайков', rarity: 'common', min: 5, imageUrl: '/assets/achievements/badges/hikes-5.png',
+        description: 'пять раз выходили вместе – это уже привычка' },
+    { key: 'hikes-10', title: '10 хайков', rarity: 'legendary', min: 10, imageUrl: '/assets/achievements/badges/hikes-10.png',
+        description: 'десять вершин с клубом' },
+    { key: 'hikes-25', title: '25 хайков', rarity: 'legendary', min: 25, imageUrl: '/assets/achievements/badges/hikes-25.png',
+        description: 'четверть сотни троп – ты один из тех, на ком держится клуб' },
+    { key: 'hikes-50', title: '50 хайков', rarity: 'mythical', min: 50, imageUrl: '/assets/achievements/badges/hikes-50.png',
+        description: 'полсотни хайков – легенда клуба' },
+    { key: 'card-owner', title: 'владелец карты интеллигента', rarity: 'legendary', card: true, imageUrl: null,
+        description: 'теперь ты – часть клуба, а клуб растёт вместе с тобой' },
+];
+const titleKey = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'–—-]/g, ' ').replace(/\s+/g, ' ').trim();
+// постоянный номер записи для авто-ачивки: одна запись на всех получателей
+function autoId(key) {
+    const h = crypto.createHash('sha256').update('auto-achievement:' + key).digest('hex');
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-4${h.slice(13, 16)}-${'89ab'[parseInt(h[16], 16) % 4]}${h.slice(17, 20)}-${h.slice(20, 32)}`;
+}
+const moscowToday = () => new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+
 function createHandler(deps = {}) {
     const fetcher = deps.fetch || ((...args) => fetch(...args));
     const accessToken = deps.getAccessToken || getAccessToken;
@@ -153,6 +178,43 @@ function createHandler(deps = {}) {
         }
         return byUser;
     }
+    async function hikeProgress(token, userId) {
+        const member = (await read(`members/${userId}`, token)).value;
+        if (member?.user_id) return { hikes: Number(member.hikes_count) || 0, member: true };
+        const [regs, hikes] = await Promise.all([read(`userRegistrations/${userId}`, token), read('hikes', token)]);
+        const today = moscowToday();
+        const yes = v => v === true || String(v).toLowerCase() === 'yes';
+        const count = Object.entries(regs.value || {}).filter(([d, on]) => on === true && d < today && hikes.value?.[d]
+            && !yes(hikes.value[d].city) && !yes(hikes.value[d].book_club) && !yes(hikes.value[d].cancelled)).length;
+        return { hikes: count, member: false };
+    }
+    async function claimAuto(token, user) {
+        const userId = String(user.id);
+        const progress = await hikeProgress(token, userId);
+        const snapshot = (await read('clubAchievements', token)).value || {};
+        const owned = new Set(Object.values(snapshot).filter(r => r?.grants?.[userId]?.issuedAt && r.publicationStatus === 'published').map(r => titleKey(r.title)));
+        const due = AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
+            && (a.card ? progress.member : progress.hikes >= a.min));
+        const granted = [];
+        const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || userId).slice(0, 100);
+        for (const a of due) {
+            const id = autoId(a.key);
+            for (let attempt = 0; attempt < 3; attempt++) {
+                const current = await read(`clubAchievements/${id}`, token);
+                const now = Date.now(), day = moscowToday();
+                const old = current.value || { id, schemaVersion: 2, title: a.title, description: a.description, rarity: a.rarity, kind: 'auto',
+                    hikeDate: '', date: day, recipients: {}, grants: {}, medal: { imageUrl: a.imageUrl, attachedAt: now, attachedBy: 'auto' },
+                    publicationStatus: 'published', publishedAt: now, createdAt: now, createdBy: 'auto', history: [] };
+                if (old.grants?.[userId]?.issuedAt) break;
+                const record = { ...old, updatedAt: now, updatedBy: 'auto',
+                    recipients: { ...(old.recipients || {}), [userId]: { userId, name, date: day } },
+                    grants: { ...(old.grants || {}), [userId]: { userId, name, date: day, issuedAt: now, issuedBy: 'auto' } } };
+                try { await write(id, token, current.revision, record); granted.push(a.title); break; }
+                catch (error) { if (error.status !== 409) throw error; }
+            }
+        }
+        return { granted, progress };
+    }
     async function write(id, token, etag, record) {
         if (!revision(etag)) throw fail(502, 'не удалось проверить версию ачивки');
         const response = await fetcher(`${DB}/clubAchievements/${id}.json`, {
@@ -181,6 +243,24 @@ function createHandler(deps = {}) {
                 const now = Date.now();
                 await patch(`achievementSeen/${user.id}`, await accessToken(), Object.fromEntries(ids.map(id => [id, now])));
                 return res.status(200).json({ ok: true });
+            }
+            // сами себе: авто-ачивки по хайкам и карте
+            if (body.action === 'claim') {
+                const result = await claimAuto(await accessToken(), user);
+                return res.status(200).json(result);
+            }
+            // с кем вместе получена ачивка: имена – владельцам карты и админам, остальным – только число
+            if (body.action === 'holders') {
+                if (typeof body.id !== 'string' || !UUID.test(body.id)) throw fail(400, 'неверный номер ачивки');
+                const token = await accessToken();
+                const record = (await read(`clubAchievements/${body.id}`, token)).value;
+                if (!record?.medal || record.publicationStatus !== 'published') throw fail(404, 'ачивка не найдена');
+                const ids = Object.keys(record.grants || {}).filter(id => record.grants[id]?.issuedAt);
+                const member = isAdminUser(user) || !!(await read(`members/${user.id}`, token)).value?.user_id;
+                if (!member) return res.status(200).json({ count: ids.length, people: null });
+                const profiles = (await read('userProfiles', token)).value || {};
+                const people = ids.map(id => ({ userId: id, name: String(profiles[id]?.name || record.grants[id].name || '').slice(0, 64), profile: !!profiles[id] }));
+                return res.status(200).json({ count: ids.length, people });
             }
             if (!collection && !isAdminUser(user)) throw fail(403, 'только для администраторов');
             if (body.action === 'attendance') {
@@ -234,7 +314,7 @@ function createHandler(deps = {}) {
                 }
                 return res.status(200).json({ sent, total: ids.length, failed });
             }
-            if (!['list', 'roster', 'get', 'save', 'set_medal', 'collection', 'seen', 'attendance', 'notify_list', 'notify_send'].includes(body.action)) throw fail(400, 'неизвестное действие');
+            if (!['list', 'roster', 'get', 'save', 'set_medal', 'collection', 'seen', 'attendance', 'notify_list', 'notify_send', 'claim', 'holders'].includes(body.action)) throw fail(400, 'неизвестное действие');
             let targetIds;
             if (collection) {
                 targetIds = body.userIds || [String(user.id)];
@@ -259,8 +339,19 @@ function createHandler(deps = {}) {
                     if (!member.value?.user_id || !profile.value) throw fail(403, 'профили доступны участникам клуба');
                 }
                 const own = targetIds.length === 1 && targetIds[0] === String(user.id);
-                const [snapshot, seen] = await Promise.all([read('clubAchievements', token),
-                    own ? read(`achievementSeen/${user.id}`, token) : Promise.resolve({ value: {} })]);
+                const [snapshot, seen, club, progress] = await Promise.all([read('clubAchievements', token),
+                    own ? read(`achievementSeen/${user.id}`, token) : Promise.resolve({ value: {} }),
+                    own ? fetcher(`${DB}/app_users.json?shallow=true`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) })
+                        .then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
+                    own ? hikeProgress(token, String(user.id)).catch(() => null) : Promise.resolve(null)]);
+                // редкость: у скольких есть ачивка с таким названием (все записи вместе)
+                const stats = {};
+                if (own) Object.values(snapshot.value || {}).forEach(r => {
+                    if (!r?.medal || r.publicationStatus !== 'published') return;
+                    const k = titleKey(r.title);
+                    Object.values(r.grants || {}).forEach(g => { if (g?.issuedAt) (stats[k] ||= new Set()).add(String(g.userId)); });
+                });
+                const clubSize = club && typeof club === 'object' ? Object.keys(club).length : 0;
                 const collections = Object.fromEntries(targetIds.map(id => [id, []]));
                 for (const record of Object.values(snapshot.value || {})) {
                     if (!record?.medal || record.publicationStatus !== 'published') continue;
@@ -268,13 +359,15 @@ function createHandler(deps = {}) {
                         const grant = record.grants?.[id];
                         if (!grant?.issuedAt) continue;
                         collections[id].push({ id: record.id, title: record.title, description: record.description || '', rarity: record.rarity, kind: record.kind,
-                            ...(own ? { seenAt: Number(seen.value?.[record.id]) || null } : {}),
+                            ...(own ? { seenAt: Number(seen.value?.[record.id]) || null, holders: Object.values(record.grants || {}).filter(g => g?.issuedAt).length } : {}),
                             medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
                             grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt } });
                     }
                 }
                 Object.values(collections).forEach(items => items.sort((a, b) => b.grant.issuedAt - a.grant.issuedAt));
-                return res.status(200).json({ collections });
+                if (!own) return res.status(200).json({ collections });
+                return res.status(200).json({ collections, progress, clubSize,
+                    stats: Object.fromEntries(Object.entries(stats).map(([k, set]) => [k, set.size])) });
             }
             if (body.action === 'list') {
                 const [snapshot, list, notices] = await Promise.all([read('clubAchievements', token), people(token), read('achievementNotices', token)]);

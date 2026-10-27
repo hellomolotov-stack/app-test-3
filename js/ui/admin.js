@@ -249,7 +249,7 @@ function render() {
     else if (view.tab === 'pass') renderPass(body);
     else if (view.tab === 'home') renderHomepage(body);
     else if (view.tab === 'admissions') renderAdmissionAdmin(body);
-    else if (view.tab === 'achievements') renderAchievementsAdmin(body);
+    else if (view.tab === 'achievements') { const achHike = view.achHike; delete view.achHike; renderAchievementsAdmin(body, { hikeDate: achHike }); }
     else renderHikeList(body);
     if (holdHeight) {
         body.style.minHeight = holdHeight + 'px';
@@ -608,6 +608,7 @@ function renderEditor(body) {
 
         <button class="btn btn-yellow adm-primary adm-save" id="admSave">сохранить</button>
         <div class="adm-error" id="admSaveError" hidden></div>
+        ${d.original && d.original <= todayStr() && !d.city && !d.book_club ? '<button class="adm-ghost adm-ach-grant" id="admAchGrant">🏅 выдать ачивку участникам</button>' : ''}
         ${d.original ? `<div class="adm-label">участники</div><div id="admPeople" class="adm-hint">загружаю…</div>
             <button class="adm-delete" id="admDelete">🗑 удалить событие полностью</button>` : ''}`;
 
@@ -638,6 +639,8 @@ function renderEditor(body) {
     body.querySelector('#admImgFile')?.addEventListener('change', e => uploadHikeImage(e.target.files && e.target.files[0]));
     body.querySelector('#admEmoImgMake')?.addEventListener('click', () => makeEmojiImage(body.querySelector('#admEmoImgText').value));
     body.querySelector('#admDelete')?.addEventListener('click', deleteHike);
+    // новая ачивка за этот хайк: участники уже отмечены (кто был, иначе – кто записан)
+    body.querySelector('#admAchGrant')?.addEventListener('click', () => { haptic(); view = { tab: 'achievements', achHike: d.original }; render(); });
     body.querySelector('#admRoute').addEventListener('change', e => onRouteChange(e.target.value));
     body.querySelector('#admGpx')?.addEventListener('change', e => onGpxFile(e.target.files && e.target.files[0]));
     body.querySelector('#admTrackRemove')?.addEventListener('click', () => {

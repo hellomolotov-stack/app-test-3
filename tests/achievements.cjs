@@ -20,6 +20,8 @@ const handler = createHandler({ getAccessToken: async () => 'test-db-token', fet
     if (path === 'members') return Response.json(members);
     if (path === 'hikeParticipants/2026-10-25') return Response.json(participants);
     if (path === 'clubAchievements') return Response.json(records);
+    if (path?.startsWith('app_users')) return Response.json({ '101': true, '102': true });
+    if (path?.startsWith('userRegistrations/') || path === 'hikes') return Response.json({});
     if (path === 'achievementNotices' || path?.startsWith('hikeAttendance/') || path?.startsWith('achievementSeen/')) {
         if (options.method === 'PATCH') return Response.json({});
         return Response.json(null);
@@ -157,7 +159,7 @@ const save = (id = crypto.randomUUID(), value = draft, revision = 'null_etag') =
     assert.deepEqual(Object.keys(own.body.collections), ['101']);
     assert.equal(own.body.collections['101'].length, 1, 'Only the published medal, never unrendered drafts');
     const publicMedal = own.body.collections['101'][0];
-    assert.deepEqual(Object.keys(publicMedal).sort(), ['description', 'grant', 'id', 'kind', 'medal', 'rarity', 'seenAt', 'title']);
+    assert.deepEqual(Object.keys(publicMedal).sort(), ['description', 'grant', 'holders', 'id', 'kind', 'medal', 'rarity', 'seenAt', 'title']);
     assert.equal(publicMedal.grant.name, 'Анна');
     assert.equal(publicMedal.grant.date, '2026-10-25');
     assert.ok(!('attachedBy' in publicMedal.medal));

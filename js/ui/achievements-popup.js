@@ -4,7 +4,7 @@
 import { state } from '../state.js';
 import { tg, haptic } from '../utils.js';
 import { log } from '../api.js';
-import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections } from '../achievements.js';
+import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare } from '../achievements.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const rarityName = key => rarityLabel(key);
@@ -22,6 +22,7 @@ export async function maybeShowNewAchievements({ fromLink = false } = {}) {
     const userId = String(state.user?.id || '');
     if (!userId || shown) return;
     try {
+        await Promise.race([claimAchievements(), new Promise(r => setTimeout(r, 4000))]);
         const items = (await loadAchievementCollections([userId]))[userId] || [];
         if (String(state.user?.id || '') !== userId || shown) return;
         const fresh = items.filter(i => !i.seenAt);
@@ -30,12 +31,31 @@ export async function maybeShowNewAchievements({ fromLink = false } = {}) {
         shown = true;
         // не поверх других шторок: подождём, пока закроются
         const open = () => document.querySelector('.bottom-sheet.visible, .cs-overlay, .hb-overlay, .modal-overlay')
-            ? setTimeout(open, 1500) : openAchievementsPopup(list, { fresh: fresh.length > 0, source: fromLink ? 'ссылка из бота' : 'заход в приложение' });
+            ? setTimeout(open, 1500) : openAchievementsPopup(list, { fresh: fresh.length > 0, source: fromLink ? 'ссылка из бота' : 'заход в приложение', owned: items.length });
         setTimeout(open, fromLink ? 500 : 1200);
     } catch { /* ачивки не мешают работе приложения */ }
 }
 
-export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0 } = {}) {
+// ачивка сразу после события: после записи на хайк и когда человек возвращается в приложение
+// (счётчик хайков растёт на следующий день после хайка) – проверяем авто-ачивки и показываем новые
+let lastCheck = Date.now();
+async function recheckAchievements(source) {
+    if (!state.user?.id || document.querySelector('.ach-overlay')) return;
+    lastCheck = Date.now();
+    const r = await claimAchievements(true);
+    if (!r.granted?.length) return;
+    shown = false;
+    maybeShowNewAchievements();
+    // блок на главной – заново, с новыми медалями
+    if (document.getElementById('myAchievements')) { document.getElementById('myAchievements').remove(); import('./medals.js').then(m => m.mountMyAchievements()).catch(() => {}); }
+    log(`ачивки: выдано само (${r.granted.join(', ')}) · ${source}`, isGuest(), state.user);
+}
+window.addEventListener('club:act', e => { if (e.detail?.type === 'hike_registered') setTimeout(() => recheckAchievements('запись на хайк'), 2500); });
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60000) recheckAchievements('вернулся в приложение');
+});
+
+export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0 } = {}) {
     if (!items?.length) return;
     activeResizeObserver?.disconnect();
     document.querySelector('.ach-overlay')?.remove();
@@ -50,8 +70,11 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         <div class="ach-track">${items.map((a, i) => `<div class="ach-slide" data-i="${i}"><img src="${esc(a.medal.imageUrl)}" alt="${esc(a.title)}" draggable="false"></div>`).join('')}</div>
         ${n > 1 ? `<div class="ach-dots">${items.map((_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
+        <div class="ach-with" hidden></div>
         <button type="button" class="btn btn-yellow ach-btn" data-share-one>поделиться в сторис</button>
         ${n > 1 ? `<button type="button" class="btn btn-outline ach-btn" data-share-all>все ${n} в одну сторис</button>` : ''}
+        <button type="button" class="btn btn-outline ach-btn" data-share-group hidden></button>
+        ${isGuest() && owned > 3 ? `<button type="button" class="ach-card-hint" data-ach-card>у тебя ${owned} ачивок, видны только 3 – <b>открой все с картой интеллигента</b> ›</button>` : ''}
         <p class="ach-note" role="status"></p>
     </div>`;
     document.body.appendChild(overlay);
@@ -61,7 +84,21 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const track = overlay.querySelector('.ach-track');
     const info = overlay.querySelector('.ach-info');
     const note = overlay.querySelector('.ach-note');
+    const withBox = overlay.querySelector('.ach-with');
     let current = -1;
+    // кто ещё получил эту ачивку: имена – владельцам карты, гостю – предложение карты
+    const openWith = async a => {
+        haptic();
+        withBox.hidden = false;
+        withBox.innerHTML = '<small>загружаю…</small>';
+        try {
+            const r = await achievementHolders(a.id);
+            if (!r.people) { withBox.innerHTML = `<small>имена тех, кто получил ачивку вместе с тобой, видны владельцам карты интеллигента</small>`; return; }
+            const others = r.people.filter(p => p.userId !== String(state.user?.id));
+            withBox.innerHTML = `<small>вместе с тобой «${esc(a.title)}» получили:</small><div class="ach-with-list">${others.map(p => `<span>${esc(p.name || 'участник клуба')}</span>`).join('')}</div>`;
+            log(`ачивки: с кем – ${a.title}`, isGuest(), state.user);
+        } catch { withBox.innerHTML = '<small>не получилось загрузить – попробуй ещё раз</small>'; }
+    };
     const centerSlide = (slide, behavior = 'instant') => {
         const s = slide.getBoundingClientRect(), t = track.getBoundingClientRect();
         track.scrollTo({ left: track.scrollLeft + s.left + s.width / 2 - t.left - t.width / 2, behavior });
@@ -72,7 +109,13 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         const a = items[i];
         info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}</span>` : ''}
             <div class="ach-name">${esc(a.title)}</div>
-            <div class="ach-desc">${esc([a.description, dateRu(a.grant?.date)].filter(Boolean).join(' · '))}</div>`;
+            <div class="ach-desc">${esc(a.description || '')}</div>
+            <div class="ach-meta">${a.grant?.date ? `<span>${esc(dateRu(a.grant.date))}</span>` : ''}${a.holders > 1 ? `<button type="button" data-with>вместе с ${a.holders - 1} ${a.holders - 1 === 1 ? 'интеллигентом' : 'интеллигентами'} ›</button>` : ''}<span>${esc(rarityShare(a.title))}</span></div>`;
+        withBox.hidden = true;
+        info.querySelector('[data-with]')?.addEventListener('click', () => openWith(a));
+        const group = overlay.querySelector('[data-share-group]');
+        group.hidden = !(a.holders > 1) || isGuest();
+        group.textContent = `общая сторис · ${a.holders} ${plural(a.holders, 'человек', 'человека', 'человек')}`;
         overlay.querySelectorAll('.ach-slide').forEach((s, k) => s.classList.toggle('is-on', k === i));
         overlay.querySelectorAll('[data-dot]').forEach((d, k) => d.classList.toggle('is-on', k === i));
     };
@@ -135,6 +178,25 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     oneBtn.onclick = () => share([items[current]], oneBtn, items[current].title);
     const allBtn = overlay.querySelector('[data-share-all]');
     if (allBtn) allBtn.onclick = () => share(items, allBtn, `все ${n}`);
+    const groupBtn = overlay.querySelector('[data-share-group]');
+    groupBtn.onclick = async () => {
+        if (groupBtn.dataset.busy) return;
+        haptic();
+        if (!tg?.shareToStory || !tg.isVersionAtLeast?.('7.8')) { note.textContent = 'в этой версии Telegram сторис из приложения недоступны – обнови Telegram'; return; }
+        const a = items[current];
+        groupBtn.dataset.busy = '1'; const text = groupBtn.textContent; groupBtn.textContent = 'рисуем сторис…'; note.textContent = '';
+        try {
+            const r = await achievementHolders(a.id);
+            const canvas = await drawGroupStory(a, (r.people || []).map(p => p.name).filter(Boolean));
+            tg.shareToStory(await upload(canvas.toDataURL('image/jpeg', 0.9)));
+            log(`ачивки: общая сторис – ${a.title}`, isGuest(), state.user);
+        } catch { note.textContent = 'не получилось – проверь интернет и попробуй ещё раз'; }
+        groupBtn.textContent = text; delete groupBtn.dataset.busy;
+    };
+    overlay.querySelector('[data-ach-card]')?.addEventListener('click', () => {
+        haptic(); log('ачивки: поп-ап – карта', true, state.user); close();
+        import('./card-sheet.js').then(m => m.openCardSheet({ source: 'ачивки поп-ап' })).catch(() => {});
+    });
 }
 
 async function upload(dataUrl) {
@@ -203,6 +265,57 @@ export async function drawAchievementsStory(list) {
         if (list.length > 6) { ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.font = `600 36px ${FONT}`; ctx.fillText(`и ещё ${list.length - 6}`, W / 2, 1640); }
     }
     ctx.shadowColor = 'transparent';
+    ctx.textAlign = 'left'; ctx.fillStyle = '#D9FD19'; ctx.font = `800 40px ${FONT}`;
+    ctx.fillText('@yaltahiking', 80, H - 110);
+    const hw = ctx.measureText('@yaltahiking').width;
+    ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.font = `500 34px ${FONT}`;
+    ctx.fillText('хайкинг интеллигенция', 80 + hw + 24, H - 110);
+    return c;
+}
+
+// общая сторис: «мы получили «…»» – медаль крупно и имена всех, кто её получил
+export async function drawGroupStory(a, names) {
+    const W = 1080, H = 1920;
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const ctx = c.getContext('2d');
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#16202b'); bg.addColorStop(1, '#0A0B09');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    const glow = ctx.createRadialGradient(W / 2, 640, 40, W / 2, 640, 560);
+    glow.addColorStop(0, 'rgba(217,253,25,.22)'); glow.addColorStop(1, 'rgba(217,253,25,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = `800 60px ${FONT}`;
+    ctx.fillText(`нас ${names.length} – и у всех`, W / 2, 230);
+    const img = await loadImg(a.medal.imageUrl);
+    ctx.shadowColor = 'rgba(0,0,0,.55)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 24;
+    ctx.drawImage(img, (W - 560) / 2, 300, 560, 560);
+    ctx.shadowColor = 'transparent';
+    ctx.fillStyle = '#fff'; ctx.font = `800 70px ${FONT}`;
+    let y = 960;
+    wrap(ctx, `«${a.title}»`, W - 160).slice(0, 2).forEach(l => { ctx.fillText(l, W / 2, y); y += 82; });
+    // имена – плашками по строкам
+    ctx.font = `600 36px ${FONT}`;
+    const chips = names.slice(0, 24), padX = 26, h = 64, gap = 14;
+    let line = [], lines = [], width = 0;
+    chips.forEach(n => {
+        const w = ctx.measureText(n).width + padX * 2;
+        if (width + w > W - 140 && line.length) { lines.push(line); line = []; width = 0; }
+        line.push([n, w]); width += w + gap;
+    });
+    if (line.length) lines.push(line);
+    y += 40;
+    lines.slice(0, 7).forEach(l => {
+        const total = l.reduce((s, [, w]) => s + w, 0) + gap * (l.length - 1);
+        let x = (W - total) / 2;
+        l.forEach(([n, w]) => {
+            ctx.fillStyle = 'rgba(255,255,255,.1)';
+            ctx.beginPath(); ctx.roundRect(x, y, w, h, 32); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.fillText(n, x + w / 2, y + 44);
+            x += w + gap;
+        });
+        y += h + gap;
+    });
+    if (names.length > 24) { ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillText(`и ещё ${names.length - 24}`, W / 2, y + 40); }
     ctx.textAlign = 'left'; ctx.fillStyle = '#D9FD19'; ctx.font = `800 40px ${FONT}`;
     ctx.fillText('@yaltahiking', 80, H - 110);
     const hw = ctx.measureText('@yaltahiking').width;

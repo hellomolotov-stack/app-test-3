@@ -31,8 +31,38 @@ export async function loadAchievementCollections(userIds) {
         pendingCollections.set(key, achievementRequest('collection', { userIds: ids }).then(data => {
             if (String(state.user?.id || '') !== viewer) return {};
             collections.set(key, { at: Date.now(), value: data.collections });
+            // своя коллекция: редкость (у скольких есть) и прогресс по хайкам
+            if (data.stats) ownMeta = { stats: data.stats, clubSize: data.clubSize || 0, progress: data.progress || null };
             return data.collections;
         }).finally(() => pendingCollections.delete(key)));
     }
     return pendingCollections.get(key);
+}
+
+let ownMeta = { stats: {}, clubSize: 0, progress: null };
+export const achievementMeta = () => ownMeta;
+const titleKey = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'–—-]/g, ' ').replace(/\s+/g, ' ').trim();
+// «есть у 4% клуба» / «есть у 3 человек»
+export function rarityShare(title) {
+    const n = ownMeta.stats?.[titleKey(title)] || 0;
+    if (!n) return 'ещё ни у кого нет';
+    const pct = ownMeta.clubSize ? n / ownMeta.clubSize * 100 : 0;
+    const people = `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'человека' : 'человек'}`;
+    return pct >= 1 ? `есть у ${Math.round(pct)}% клуба` : `есть у ${people}`;
+}
+export function clearAchievementCache() { collections.clear(); }
+
+// авто-ачивки (по хайкам и карте): раз за запуск и после важных моментов – записи, покупки карты
+let claimPromise = null;
+export function claimAchievements(force = false) {
+    if (!tg?.initData) return Promise.resolve({ granted: [] });
+    if (claimPromise && !force) return claimPromise;
+    claimPromise = achievementRequest('claim').then(r => { if (r.granted?.length) collections.clear(); return r; })
+        .catch(() => ({ granted: [] }));
+    return claimPromise;
+}
+const holdersCache = new Map();
+export function achievementHolders(id) {
+    if (!holdersCache.has(id)) holdersCache.set(id, achievementRequest('holders', { id }).catch(e => { holdersCache.delete(id); throw e; }));
+    return holdersCache.get(id);
 }

@@ -12,7 +12,7 @@ const count = a => Object.keys(a.recipients || {}).length;
 const statusLabel = a => a.status !== 'ready' ? (medalForTitle(a.title) ? 'черновик · медаль есть – открой и сохрани, чтобы выдать' : 'черновик · ожидает медаль')
     : `выдана · ${a.notified ? `сообщение: ${a.notified} из ${Object.keys(a.grants || {}).length}` : 'сообщение не отправляли'}`;
 
-export async function renderAchievementsAdmin(body) {
+export async function renderAchievementsAdmin(body, opts = {}) {
     const ui = { screen: 'list', filter: 'all', people: [], achievements: [], selected: new Map(),
         search: '', scope: 'all', busy: false, rosterLoading: false, error: '', success: '' };
     const hikes = Object.entries(state.hikesData || {}).map(([date, h]) => ({ ...h, date }))
@@ -47,12 +47,20 @@ export async function renderAchievementsAdmin(body) {
             const data = await achievementRequest('roster', { hikeDate: ui.draft.hikeDate });
             if (version !== rosterVersion || !body.isConnected) return;
             ui.people = data.people;
+            if (ui.preselect) {
+                ui.preselect = false;
+                const attended = ui.people.filter(p => p.attended);
+                (attended.length ? attended : ui.people.filter(p => p.registered))
+                    .forEach(p => ui.selected.set(p.userId, { userId: p.userId, name: p.name, date: ui.draft.date }));
+                ui.scope = attended.length ? 'attended' : 'roster';
+            }
         } catch (error) { if (version === rosterVersion) ui.error = error.message; }
         finally { if (version === rosterVersion) { ui.rosterLoading = false; paint(); } }
     }
-    function startNew() {
+    function startNew(forHike = '') {
         rosterVersion++;
-        const hike = hikes.find(h => h.date <= today());
+        const hike = (forHike && hikes.find(h => h.date === forHike)) || hikes.find(h => h.date <= today());
+        ui.preselect = typeof forHike === 'string' && !!forHike;
         ui.screen = 'edit'; ui.id = crypto.randomUUID(); ui.revision = 'null_etag'; ui.original = null;
         ui.draft = { title: '', description: '', rarity: 'common', kind: 'special', hikeDate: hike?.date || '', date: hike?.date || today(), medalUrl: '', medalAuto: true };
         ui.selected = new Map(); ui.search = ''; ui.scope = hike ? 'roster' : 'all'; ui.conflict = false; dirty();
@@ -227,7 +235,7 @@ export async function renderAchievementsAdmin(body) {
         body.innerHTML = `<section class="aw-admin">${ui.screen === 'list' ? listHtml() : ui.screen === 'edit' ? formHtml() : detailHtml()}
             <p class="aw-error" id="awError" role="alert">${esc(ui.error)}</p><p class="aw-success" id="awSuccess" role="status">${esc(ui.success)}</p>
             ${ui.conflict ? '<button class="adm-link" id="awReload">загрузить сохранённую версию</button>' : ''}</section>`;
-        body.querySelector('#awNew')?.addEventListener('click', startNew);
+        body.querySelector('#awNew')?.addEventListener('click', () => startNew());
         body.querySelector('#awBack')?.addEventListener('click', () => { rosterVersion++; ui.screen = 'list'; ui.conflict = false; dirty(); paint(); });
         body.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { ui.filter = b.dataset.filter; paint(); });
         body.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => edit(b.dataset.edit));
@@ -306,4 +314,5 @@ export async function renderAchievementsAdmin(body) {
         }
     }
     await load();
+    if (opts.hikeDate && body.isConnected) startNew(opts.hikeDate);
 }

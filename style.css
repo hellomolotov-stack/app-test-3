@@ -6662,3 +6662,38 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .acol-blank { background: radial-gradient(circle at 35% 30%, #8e959c, #3c4248); }
 .acol-blank.is-rare { background: radial-gradient(circle at 35% 30%, #a8925a, #43392a); }
 .acol-blank.is-very { background: radial-gradient(circle at 35% 30%, #7d5fa8, #352a46); }
+
+/* поп-ап ачивок: дата, с кем, редкость, плашка карты */
+.ach-meta { display: flex; flex-wrap: wrap; gap: 4px 10px; justify-content: center; margin-top: 8px; font-size: 12px; color: rgba(255,255,255,.55); }
+.ach-meta button { border: 0; background: none; padding: 0; font: inherit; color: var(--yellow); font-weight: 700; cursor: pointer; }
+.ach-with { margin: -6px 0 14px; padding: 10px 12px; border-radius: 16px; background: rgba(255,255,255,.05); text-align: left; }
+.ach-with small { display: block; font-size: 12px; color: rgba(255,255,255,.65); }
+.ach-with-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ach-with-list span { font-size: 12.5px; padding: 4px 10px; border-radius: 14px; background: rgba(255,255,255,.08); }
+.ach-card-hint { display: block; width: 100%; margin-top: 10px; padding: 11px 14px; border-radius: 18px; border: 1px solid rgba(217,253,25,.45);
+    background: rgba(217,253,25,.08); color: #fff; font: inherit; font-size: 12.5px; line-height: 1.4; text-align: left; cursor: pointer; }
+.ach-card-hint b { color: var(--yellow); }
+/* главная: счётчик по уровням и ближайшая цель */
+.mya-tiers { display: flex; align-items: center; gap: 14px; margin: 14px 16px 0; font-size: 14px; font-weight: 800; }
+.mya-tiers span { display: flex; align-items: center; gap: 6px; }
+.mya-tiers i { width: 10px; height: 10px; border-radius: 50%; background: #d6dce2; }
+.mya-tiers .is-rare i { background: #edc76e; }
+.mya-tiers .is-very i { background: #aa71ef; }
+.mya-tiers small { margin-left: auto; font-size: 12px; font-weight: 600; color: rgba(255,255,255,.55); }
+.mya-goal { display: flex; align-items: center; gap: 12px; margin: 12px 16px 0; padding: 10px 12px; border-radius: 18px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); }
+.mya-goal img { flex: none; width: 48px; height: 48px; object-fit: contain; filter: grayscale(1) brightness(.7); }
+.mya-goal-blank { flex: none; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8e959c, #3c4248); opacity: .5; }
+.mya-goal > div { flex: 1; min-width: 0; }
+.mya-goal b { display: block; font-size: 13.5px; }
+.mya-goal-bar { display: block; height: 5px; margin: 6px 0 4px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
+.mya-goal-bar i { display: block; height: 100%; min-width: 5px; border-radius: 3px; background: var(--yellow); }
+.mya-goal small { font-size: 11.5px; color: rgba(255,255,255,.55); }
+.acol-filters { display: flex; gap: 6px; overflow-x: auto; padding: 4px 16px 0; scrollbar-width: none; }
+.acol-filters::-webkit-scrollbar { display: none; }
+.acol-filter { flex: none; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.04); color: rgba(255,255,255,.75); border-radius: 18px; padding: 7px 13px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.acol-filter.is-on { background: #fff; color: #000; border-color: #fff; }
+.acol-tier[hidden], .acol-it[hidden] { display: none; }
+.acol-date { display: block; margin-top: 2px; font-size: 10.5px; color: rgba(255,255,255,.45); }
+.acol-how em { display: block; margin-top: 4px; font-style: normal; font-size: 12px; color: var(--yellow); }
+.medal-more b { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 6px; border-radius: 50%; background: rgba(255,255,255,.08); border: 1px dashed rgba(255,255,255,.25); font-size: 16px; color: var(--yellow); }
+.adm-ach-grant { display: block; width: 100%; margin-top: 10px; padding: 12px; font-size: 14px; }
