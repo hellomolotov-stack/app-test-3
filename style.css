@@ -6836,3 +6836,20 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .ach-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ach-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: calc(13.5px * 1.4 * 2); }
 .ach-meta { align-content: flex-start; height: 36px; overflow: hidden; line-height: 16px; }
+/* админка → значки: выдача в три шага – значок, кому, дата */
+.aw-pick-badge { display: flex; align-items: center; gap: 14px; margin: 4px 0 16px; }
+.aw-pick-badge img { flex: none; width: 72px; height: 72px; object-fit: contain; }
+.aw-pick-badge b { display: block; font-size: 17px; }
+.aw-pick-badge small { display: block; margin-top: 3px; font-size: 12.5px; color: rgba(255,255,255,.6); }
+.aw-found { display: flex; flex-direction: column; gap: 6px; margin: -4px 0 12px; }
+.aw-found:empty { display: none; }
+.aw-found-it { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 14px; background: rgba(255,255,255,.04); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.aw-found-it b { font-size: 14px; font-weight: 600; }
+.aw-found-it small { flex: 1; font-size: 12.5px; color: rgba(255,255,255,.55); }
+.aw-found-it i { font-style: normal; font-size: 20px; font-weight: 700; color: var(--yellow); }
+.aw-to { display: grid; grid-template-columns: minmax(0, 1fr) 140px 32px; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.aw-to b { display: block; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.aw-to small { display: block; margin-top: 2px; font-size: 12px; color: rgba(255,255,255,.55); }
+.aw-to input { width: 100%; box-sizing: border-box; padding: 8px 8px; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; background: rgba(255,255,255,.06); color: #fff; font: inherit; font-size: 13px; color-scheme: dark; }
+.aw-saved-people small { font-weight: 400; color: rgba(255,255,255,.55); }
+#awSave { margin-top: 16px; }
