@@ -173,7 +173,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         clearInterval(offerTimer);
         act('card_sheet_close', { bought, ms: Date.now() - openedAt });
         overlay.classList.remove('is-on');
-        document.body.style.overflow = '';
+        // под шторкой мог остаться открытый раздел значков – тогда прокрутку страницы не возвращаем
+        if (!document.querySelector('.acol-overlay')) document.body.style.overflow = '';
         setTimeout(() => overlay.remove(), 300);
     };
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });

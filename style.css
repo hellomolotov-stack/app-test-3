@@ -6944,3 +6944,5 @@ img.is-glow-vio { filter: drop-shadow(0 0 6px rgba(176,124,255,.65)) !important;
 .mya-wait small { display: block; margin-top: 2px; font-size: 12px; color: rgba(255,255,255,.65); }
 .mya-wait i { font-style: normal; color: var(--yellow); font-weight: 800; }
 .ach-overlay .ach-sheet { position: relative; z-index: 1; }
+/* шторка карты, открытая из раздела значков, – поверх него */
+.acol-overlay ~ .cs-overlay { z-index: 2260; }

@@ -94,7 +94,7 @@ export function openAchievementsCollection(items = []) {
     const cardOnlyLeft = ACHIEVEMENT_CATALOG.filter(c => isCardOnly(c.id) && !items.some(a => catalogByTitle(a.title)?.id === c.id)).length;
     const cardCta = () => (waiting.length || cardOnlyLeft) ? `<button type="button" class="acol-cta" data-card><b>с картой интеллигента</b> – ${[
         waiting.length ? `активируются твои ${waiting.length} ${plural(waiting.length, 'значок', 'значка', 'значков')}` : '',
-        cardOnlyLeft ? `откроются ещё ${cardOnlyLeft} ${plural(cardOnlyLeft, 'значок', 'значка', 'значков')} клуба` : ''].filter(Boolean).join(' и ')} ›</button>` : '';
+        cardOnlyLeft ? `откроются ещё ${cardOnlyLeft} ${plural(cardOnlyLeft, 'значок', 'значка', 'значков')} клуба` : ''].filter(Boolean).join(' и ')}&nbsp;›</button>` : '';
 
     const overlay = document.createElement('div');
     overlay.className = 'acol-overlay';
@@ -134,7 +134,8 @@ export function openAchievementsCollection(items = []) {
         openAchievementsPopup(shown, { fresh: false, source, initialIndex: Math.max(0, shown.findIndex(a => a.id === id)) });
     };
     const wireCard = root => root.querySelectorAll('[data-card]').forEach(b => b.onclick = e => {
-        e.stopPropagation(); haptic(); log('значки: нажал «карта интеллигента» в разделе значков', true, state.user); close(); openCard('значки');
+        // шторка карты открывается поверх раздела значков: свернул её – раздел на месте
+        e.stopPropagation(); haptic(); log('значки: нажал «карта интеллигента» в разделе значков', true, state.user); openCard('значки');
     });
 
     const back = () => { how.hidden = true; catView.hidden = true; main.hidden = false; titleEl.textContent = 'значки'; };
