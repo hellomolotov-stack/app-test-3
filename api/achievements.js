@@ -42,7 +42,8 @@ function normalizeDraft(input) {
     if (!object(input)) throw fail(400, 'проверь ачивку');
     const title = text(input.title, 120, 'название ачивки');
     if (!RARITIES.includes(input.rarity)) throw fail(400, 'выбери редкость');
-    if (!['special', 'route'].includes(input.kind)) throw fail(400, 'выбери тип ачивки');
+    // auto – запись значка, который выдаётся сам («добро пожаловать»); в неё тоже можно дописывать людей вручную
+    if (!['special', 'route', 'auto'].includes(input.kind)) throw fail(400, 'неизвестный тип значка');
     const hikeDate = input.hikeDate ? date(input.hikeDate) : '';
     const awardDate = date(input.date);
     if (!Array.isArray(input.recipients) || !input.recipients.length || input.recipients.length > 300) {
