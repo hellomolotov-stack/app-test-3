@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible, isWaiting, metalOf, isCardHolder } from '../achievements.js';
+import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible, isWaiting, metalOf, isCardHolder, sortByValue } from '../achievements.js';
 import { haptic } from '../utils.js';
 import { openAchievementsPopup } from './achievements-popup.js';
 import { catalogByTitle, routeBadgeForHike } from '../achievements-catalog.js';
@@ -13,9 +13,10 @@ export function medalStripHtml(items, compact = false) {
         <img ${medalSrc(a.medal.imageUrl)} width="88" height="88" alt="" loading="lazy"><span>${esc(a.title)}</span></button>`).join('')}</div>`;
 }
 
-export function wireMedalStrip(host, items) {
+// all – все значки человека: в окне появится серая «смотреть все» (слайдер по всем значкам)
+export function wireMedalStrip(host, items, all = null) {
     host.querySelectorAll('[data-medal]').forEach(button => button.addEventListener('click', () => {
-        haptic(); openAchievementsPopup(items, { fresh: false, source: 'коллекция медалей', initialIndex: Number(button.dataset.medal) });
+        haptic(); openAchievementsPopup(items, { fresh: false, source: 'коллекция медалей', initialIndex: Number(button.dataset.medal), all });
     }));
 }
 
@@ -52,7 +53,7 @@ export async function mountMyAchievements() {
             ${waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
                 <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
         host.hidden = false;
-        wireMedalStrip(host, shelf);
+        wireMedalStrip(host, shelf, sortByValue([...items]));
         host.querySelectorAll('[data-mya-all]').forEach(b => b.addEventListener('click', () => { haptic(); openAchievementsCollection(items); }));
         host.querySelectorAll('[data-mya-step]').forEach(b => b.addEventListener('click', e => { haptic(); runStep(e.currentTarget.dataset.myaStep); }));
         wireGoals(host);

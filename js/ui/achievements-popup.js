@@ -61,7 +61,7 @@ document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60000) recheckAchievements('вернулся в приложение');
 });
 
-export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0, title = '' } = {}) {
+export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0, title = '', all = null } = {}) {
     if (!items?.length) return;
     items.forEach(a => shownIds.add(a.id));
     activeResizeObserver?.disconnect();
@@ -83,6 +83,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         <div class="ach-with" hidden></div>
         <p class="ach-why" hidden>легендарные и эпические значки <b>активируются с картой интеллигента</b> – он уже твой и будет ждать</p>
         <button type="button" class="btn btn-yellow ach-btn" data-share-one>поделиться в сторис</button>
+        ${all && all.length > items.length ? `<button type="button" class="btn ach-btn ach-btn-all" data-all>смотреть все · ${all.length}</button>` : ''}
 
         <p class="ach-note" role="status"></p>
     </div>`;
@@ -229,6 +230,12 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         } catch { note.textContent = 'не получилось – проверь интернет и попробуй ещё раз'; }
         btn.textContent = text; delete btn.dataset.busy;
     };
+    // «смотреть все»: тот же слайдер, но по всем значкам человека, на текущем значке
+    overlay.querySelector('[data-all]')?.addEventListener('click', () => {
+        haptic(); const cur = items[current];
+        close();
+        setTimeout(() => openAchievementsPopup(all, { fresh: false, source: 'смотреть все', initialIndex: Math.max(0, all.findIndex(a => a.id === cur?.id)) }), 320);
+    });
     const oneBtn = overlay.querySelector('[data-share-one]');
     oneBtn.onclick = () => {
         if (!isWaiting(items[current])) return share([items[current]], oneBtn, items[current].title);

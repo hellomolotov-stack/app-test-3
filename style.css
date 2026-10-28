@@ -6946,3 +6946,5 @@ img.is-glow-vio { filter: drop-shadow(0 0 6px rgba(176,124,255,.65)) !important;
 .ach-overlay .ach-sheet { position: relative; z-index: 1; }
 /* шторка карты, открытая из раздела значков, – поверх него */
 .acol-overlay ~ .cs-overlay { z-index: 2260; }
+/* поп-ап значка: серая «смотреть все» под «поделиться в сторис» */
+.ach-btn.ach-btn-all { background: rgba(255,255,255,.1); color: #fff; box-shadow: none; border: 0; }
