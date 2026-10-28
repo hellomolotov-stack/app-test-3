@@ -200,6 +200,21 @@ function createHandler(deps = {}) {
             && !yes(hikes.value[d].city) && !yes(hikes.value[d].book_club) && !yes(hikes.value[d].cancelled)).length;
         return { hikes: count, member: false };
     }
+    // «клуб» для процентов редкости: кто хоть раз ходил с нами (остался в записи на прошедший хайк) + владельцы карты.
+    // Не все, кто открывал приложение, – иначе маршруты выглядят как «у 1% клуба».
+    async function clubMembers(token) {
+        const [parts, hikes, members] = await Promise.all([read('hikeParticipants', token), read('hikes', token), read('members', token)]);
+        const today = moscowToday();
+        const yes = v => v === true || String(v).toLowerCase() === 'yes';
+        const ids = new Set();
+        for (const [d, list] of Object.entries(parts.value || {})) {
+            const h = hikes.value?.[d];
+            if (!h || d >= today || !String(h.title || '').trim() || yes(h.city) || yes(h.book_club) || yes(h.cancelled)) continue;
+            Object.keys(list || {}).forEach(id => ids.add(id));
+        }
+        Object.entries(members.value || {}).forEach(([id, m]) => { if (m?.user_id) ids.add(id); });
+        return ids;
+    }
     async function claimAuto(token, user) {
         const userId = String(user.id);
         const progress = await hikeProgress(token, userId);
@@ -354,8 +369,7 @@ function createHandler(deps = {}) {
                 const own = targetIds.length === 1 && targetIds[0] === String(user.id);
                 const [snapshot, seen, club, progress] = await Promise.all([read('clubAchievements', token),
                     own ? read(`achievementSeen/${user.id}`, token) : Promise.resolve({ value: {} }),
-                    own ? fetcher(`${DB}/app_users.json?shallow=true`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) })
-                        .then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null),
+                    own ? clubMembers(token).catch(() => null) : Promise.resolve(null),
                     own ? hikeProgress(token, String(user.id)).catch(() => null) : Promise.resolve(null)]);
                 // редкость: у скольких есть ачивка с таким названием (все записи вместе)
                 const stats = {};
@@ -364,7 +378,7 @@ function createHandler(deps = {}) {
                     const k = titleKey(r.title);
                     Object.values(r.grants || {}).forEach(g => { if (g?.issuedAt) (stats[k] ||= new Set()).add(String(g.userId)); });
                 });
-                const clubSize = club && typeof club === 'object' ? Object.keys(club).length : 0;
+                const clubSize = club ? club.size : 0;
                 const collections = Object.fromEntries(targetIds.map(id => [id, []]));
                 for (const record of Object.values(snapshot.value || {})) {
                     if (!record?.medal || record.publicationStatus !== 'published') continue;

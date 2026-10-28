@@ -48,13 +48,15 @@ export async function loadAchievementCollections(userIds) {
 let ownMeta = { stats: {}, clubSize: 0, progress: null };
 export const achievementMeta = () => ownMeta;
 const titleKey = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'–—-]/g, ' ').replace(/\s+/g, ' ').trim();
-// «есть у 4% клуба» / «есть у 3 человек»
+// редкость: «клуб» – кто хоть раз ходил с нами и владельцы карты (не все, кто открывал приложение).
+// стартовый значок – без процентов; меньше 5 человек – числом («у 3 интеллигентов»), иначе – «у 17% клуба»
 export function rarityShare(title) {
+    if (titleKey(title) === 'добро пожаловать') return 'стартовый значок – есть у каждого в клубе';
     const n = ownMeta.stats?.[titleKey(title)] || 0;
     if (!n) return 'ещё ни у кого нет';
-    const pct = ownMeta.clubSize ? n / ownMeta.clubSize * 100 : 0;
-    const people = `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'человека' : 'человек'}`;
-    return pct >= 1 ? `есть у ${Math.round(pct)}% клуба` : `есть у ${people}`;
+    const people = `${n} ${n % 10 === 1 && n % 100 !== 11 ? 'интеллигента' : 'интеллигентов'}`;
+    if (n < 5 || !ownMeta.clubSize) return `есть у ${people}`;
+    return `есть у ${Math.min(100, Math.max(1, Math.round(n / ownMeta.clubSize * 100)))}% клуба`;
 }
 export function clearAchievementCache() { collections.clear(); }
 
