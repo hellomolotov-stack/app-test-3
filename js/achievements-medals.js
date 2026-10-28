@@ -33,7 +33,7 @@ export const MEDAL_LIBRARY = [
     { title: 'привёл своего +1', imageUrl: '/assets/achievements/badges/plus-one-v2.png' },
     { title: 'владелец карты интеллигента', imageUrl: '/assets/achievements/badges/card-owner-v2.png' },
     { title: 'подарил карту другу', imageUrl: '/assets/achievements/badges/gift-card-v1.png' },
-    { title: 'запрос на мастермайнде', imageUrl: '/assets/achievements/badges/mastermind-v2.png' },
+    { title: 'запрос на мастермайнде', imageUrl: '/assets/achievements/badges/mastermind-v3.png' },
     { title: 'искренний отзыв', imageUrl: '/assets/achievements/badges/honest-review-v1.png' },
     { title: 'показал горы в сторис', imageUrl: '/assets/achievements/badges/story-v2.png' },
     { title: 'промочил правую ногу', imageUrl: '/assets/achievements/badges/wet-boot-v2.png' },

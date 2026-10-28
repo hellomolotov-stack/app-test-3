@@ -36,7 +36,8 @@ export async function mountMyAchievements() {
         const visible = visibleEarned(items);
         const hidden = items.filter(a => !visible.includes(a));
         // три плитки: полученные значки, а если их меньше трёх – следующие шаги серым; четвёртая – «все значки»
-        const shelf = visible.slice(0, 3);
+        // на главной – сначала недавно полученные (в разделе и профилях – по ценности)
+        const shelf = [...visible].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0)).slice(0, 3);
         const owned = new Set(items.map(a => catalogByTitle(a.title)?.id || a.title));
         const nextSteps = FIRST_STEPS.filter(st => !owned.has(st.id)).slice(0, 3 - shelf.length);
         host.innerHTML = `<div class="mya-head"><h2 class="section-title">🏅 мои значки</h2></div>
