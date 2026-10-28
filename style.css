@@ -6879,3 +6879,12 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .mya-next-dots { display: flex; gap: 4px; justify-content: center; margin-top: 7px; }
 .mya-next-dots i { width: 5px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.25); transition: width .2s ease, background .2s ease; }
 .mya-next-dots i.is-on { width: 14px; background: var(--yellow); }
+/* «вместе с тобой получили»: аватарка + имя, тап – профиль */
+.ach-with-list { flex-direction: column; flex-wrap: nowrap; gap: 4px; max-height: 190px; overflow-y: auto; }
+.ach-with-p { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 4px; border: 0; border-radius: 12px; background: none; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.ach-with-p:active { background: rgba(255,255,255,.06); }
+.ach-with-p img, .ach-with-p i { flex: none; width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.ach-with-p i { display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 13px; background: rgba(217,253,25,.16); color: var(--yellow); }
+.ach-with-p span { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0; background: none; border-radius: 0; }
+.ach-with-p b { color: var(--yellow); font-size: 16px; }
+.ach-with-p.is-off { cursor: default; opacity: .7; }

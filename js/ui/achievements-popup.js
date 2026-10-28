@@ -86,16 +86,21 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const note = overlay.querySelector('.ach-note');
     const withBox = overlay.querySelector('.ach-with');
     let current = -1;
-    // кто ещё получил эту ачивку: имена – владельцам карты, гостю – предложение карты
+    // кто ещё получил этот значок: имя и аватарка, тап – профиль
     const openWith = async a => {
         haptic();
         withBox.hidden = false;
         withBox.innerHTML = '<small>загружаю…</small>';
         try {
             const r = await achievementHolders(a.id);
-            if (!r.people) { withBox.innerHTML = `<small>имена тех, кто получил значок вместе с тобой, видны владельцам карты интеллигента</small>`; return; }
-            const others = r.people.filter(p => p.userId !== String(state.user?.id));
-            withBox.innerHTML = `<small>вместе с тобой «${esc(a.title)}» получили:</small><div class="ach-with-list">${others.map(p => `<span>${esc(p.name || 'участник клуба')}</span>`).join('')}</div>`;
+            const others = (r.people || []).filter(p => p.userId !== String(state.user?.id));
+            if (!others.length) { withBox.innerHTML = '<small>пока больше ни у кого нет</small>'; return; }
+            withBox.innerHTML = `<small>вместе с тобой «${esc(a.title)}» получили:</small><div class="ach-with-list">${others.map(p => {
+                const name = p.name || 'участник клуба';
+                const pic = p.avatarUrl ? `<img src="${esc(p.avatarUrl)}" alt="" loading="lazy">` : `<i>${esc(name.slice(0, 1).toUpperCase())}</i>`;
+                return p.profile ? `<button type="button" class="ach-with-p" data-uid="${esc(p.userId)}">${pic}<span>${esc(name)}</span><b>›</b></button>`
+                    : `<div class="ach-with-p is-off">${pic}<span>${esc(name)}</span></div>`; }).join('')}</div>`;
+            withBox.querySelectorAll('[data-uid]').forEach(b => b.onclick = () => openProfile(b.dataset.uid, b.querySelector('span').textContent, b.querySelector('img')?.src));
             log(`ачивки: с кем – ${a.title}`, isGuest(), state.user);
         } catch { withBox.innerHTML = '<small>не получилось загрузить – попробуй ещё раз</small>'; }
     };
@@ -153,6 +158,28 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     activeResizeObserver = resizeObserver;
     resizeObserver.observe(track);
 
+    // профиль из «вместе с тобой»: закрываем значки и открываем раздел профилей на этом человеке.
+    // гостю раздел сам покажет превью и предложение карты – как при переходе из списка участников хайка
+    const openProfile = (userId, name, photoUrl) => {
+        haptic();
+        log('значки: профиль из «вместе с тобой»', isGuest(), state.user);
+        close();
+        document.querySelector('.acol-overlay')?.remove();
+        document.body.style.overflow = '';
+        state.pendingProfileClick = { userId, name, photoUrl: photoUrl || null };
+        Promise.all([import('./profiles.js'), import('./common.js')]).then(([m, nav]) => {
+            nav.setManualNav?.('profiles'); nav.cleanupProfileOverlays?.();
+            m.renderProfiles();
+            nav.updateActiveNav?.();
+            setTimeout(() => {
+                const card = document.querySelector(`.profile-card[data-user-id="${CSS.escape(userId)}"]`);
+                if (!card) return;
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                card.classList.add('highlight-pulse');
+                setTimeout(() => card.classList.remove('highlight-pulse'), 2000);
+            }, 500);
+        }).catch(() => {});
+    };
     const close = () => {
         resizeObserver.disconnect();
         if (activeResizeObserver === resizeObserver) activeResizeObserver = null;

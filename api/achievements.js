@@ -266,10 +266,11 @@ function createHandler(deps = {}) {
                 const record = (await read(`clubAchievements/${body.id}`, token)).value;
                 if (!record?.medal || record.publicationStatus !== 'published') throw fail(404, 'ачивка не найдена');
                 const ids = Object.keys(record.grants || {}).filter(id => record.grants[id]?.issuedAt);
-                const member = isAdminUser(user) || !!(await read(`members/${user.id}`, token)).value?.user_id;
-                if (!member) return res.status(200).json({ count: ids.length, people: null });
+                // имена и аватарки видят все: тап ведёт в профили, а там гостя встречает предложение карты
                 const profiles = (await read('userProfiles', token)).value || {};
-                const people = ids.map(id => ({ userId: id, name: String(profiles[id]?.name || record.grants[id].name || '').slice(0, 64), profile: !!profiles[id] }));
+                const avatar = id => { const u = String(profiles[id]?.avatarUrl || ''); return /^https:\/\//.test(u) ? u.slice(0, 500) : ''; };
+                const people = ids.map(id => ({ userId: id, name: String(profiles[id]?.name || record.grants[id].name || '').slice(0, 64),
+                    profile: !!profiles[id], avatarUrl: avatar(id) }));
                 return res.status(200).json({ count: ids.length, people });
             }
             if (!collection && !isAdminUser(user)) throw fail(403, 'только для администраторов');
