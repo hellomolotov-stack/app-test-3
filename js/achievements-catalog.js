@@ -80,3 +80,16 @@ export const categoryOf = title => {
     if (!c) return EXTRA_ROUTE_TITLES.includes(norm(title)) ? 'routes' : 'moments';
     return ACHIEVEMENT_CATEGORIES.find(k => k.ids(c.id))?.key || 'moments';
 };
+
+// значок маршрута по названию хайка из календаря («хайк на Кант» → «Форосский кант»); null – маршрута нет в серии
+const ROUTE_KEYS = { 'route-krestovaya': ['крестов'], 'route-kant': ['кант', 'форос'], 'route-pallasa': ['паллас'], 'route-eklizi': ['эклизи'],
+    'route-ilyas': ['ильяс'], 'route-biuk': ['биюк'], 'route-balaklava': ['балаклав', 'айя'], 'route-kanyon': ['каньон', 'черноречен'],
+    'route-demerdji': ['демерджи', 'привидени'], 'route-ushchelye': ['уч кош'], 'route-ayudag': ['аю даг'], 'route-massandra': ['массандр'],
+    'route-paragilmen': ['парагильмен'], 'route-kushkaya': ['куш ка'], 'route-evrejskaya': ['еврейск'], 'route-biruzovoe': ['бирюзов'],
+    'route-tsarskaya': ['царск'], 'route-ai-yori': ['ай йори'], 'at-bash': ['ат баш'] };
+export function routeBadgeForHike(hikeTitle) {
+    const t = norm(hikeTitle);
+    const id = Object.keys(ROUTE_KEYS).find(k => ROUTE_KEYS[k].some(w => t.includes(w)));
+    if (!id) return null;
+    return id === 'at-bash' ? 'хайк на Ат-Баш' : ACHIEVEMENT_CATALOG.find(a => a.id === id)?.title || null;
+}

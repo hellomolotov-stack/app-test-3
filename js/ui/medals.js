@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible } from '../achievements.js';
 import { haptic } from '../utils.js';
 import { openAchievementsPopup } from './achievements-popup.js';
-import { ACHIEVEMENT_CATALOG, catalogByTitle } from '../achievements-catalog.js';
+import { catalogByTitle, routeBadgeForHike } from '../achievements-catalog.js';
 import { medalForTitle, medalSrc } from '../achievements-medals.js';
 import { openAchievementsCollection, visibleEarned } from './achievements-collection.js';
 
@@ -70,13 +70,6 @@ const FIRST_STEPS = [
 // порядок: маршрут ближайшего хайка, где человек ещё не был → значок за число хайков, если до него 1–2 →
 // первый хайк (новичкам) → сторис → +1 (владельцам карты) → встреча в городе. 50 хайков «через год» не показываем.
 const normT = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'–—-]/g, ' ').replace(/\s+/g, ' ').trim();
-// по каким словам название хайка в календаре узнаётся как маршрут значка
-const ROUTE_KEYS = { 'route-krestovaya': ['крестов'], 'route-kant': ['кант', 'форос'], 'route-pallasa': ['паллас'], 'route-eklizi': ['эклизи'],
-    'route-ilyas': ['ильяс'], 'route-biuk': ['биюк'], 'route-balaklava': ['балаклав', 'айя'], 'route-kanyon': ['каньон', 'черноречен'],
-    'route-demerdji': ['демерджи', 'привидени'], 'route-ushchelye': ['уч кош'], 'route-ayudag': ['аю даг'], 'route-massandra': ['массандр'],
-    'route-paragilmen': ['парагильмен'], 'route-kushkaya': ['куш ка'], 'route-evrejskaya': ['еврейск'], 'route-biruzovoe': ['бирюзов'],
-    'route-tsarskaya': ['царск'], 'route-ai-yori': ['ай йори'], 'at-bash': ['ат баш'] };
-const routeTitle = id => id === 'at-bash' ? 'хайк на Ат-Баш' : ACHIEVEMENT_CATALOG.find(a => a.id === id)?.title;
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const dayLabel = d => `${Number(d.slice(8, 10))} ${MONTHS[Number(d.slice(5, 7)) - 1]}`;
 const HIKE_GOALS = [[5, '5 хайков'], [10, '10 хайков'], [20, '20 хайков'], [30, '30 хайков'], [50, '50 хайков']];
@@ -92,8 +85,8 @@ function nearestGoals(owned) {
     // 1. маршрут ближайшего хайка, значка которого ещё нет
     const hikes = (state.hikesWithTitle || []).map((h, index) => ({ ...h, index })).filter(h => h.date >= today && isTrailHike(h));
     for (const h of hikes.slice(0, 4)) {
-        const key = Object.keys(ROUTE_KEYS).find(id => ROUTE_KEYS[id].some(k => normT(h.title).includes(k)));
-        const title = key && routeTitle(key);
+        const title = routeBadgeForHike(h.title);
+        const key = title && (catalogByTitle(title)?.id || title);
         if (!title || owned.has(key) || ownedTitles.has(normT(title))) continue;
         const booked = !!state.hikeBookingStatus?.[h.index];
         goals.push({ title, sub: `${booked ? 'ты записан' : 'новый маршрут'} · ${dayLabel(h.date)}`, action: `hike:${h.index}`, button: booked ? 'открыть' : 'записаться' });
