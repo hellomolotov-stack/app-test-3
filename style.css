@@ -6906,3 +6906,40 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .aw-hike em { font-style: normal; font-size: 11px; color: rgba(255,255,255,.5); }
 .aw-hike-people { max-height: 320px; overflow-y: auto; margin-bottom: 12px; border-block: 1px solid rgba(255,255,255,.08); }
 .aw-admin .aw-badges + .adm-label, .aw-admin .aw-badges + .aw-to { margin-top: 14px; }
+/* значки без карты: легендарные (золото) и эпические (фиолет) «ждут активации» – в цвете, свечение металла, замок */
+.wait-pic { position: relative; display: block; }
+.wait-pic.is-gold img { filter: drop-shadow(0 0 10px rgba(237,199,110,.55)) saturate(.85) brightness(.88); }
+.wait-pic.is-vio img { filter: drop-shadow(0 0 10px rgba(176,124,255,.6)) saturate(.85) brightness(.88); }
+.wait-lock { position: absolute; right: 2px; bottom: 4px; width: 22px; height: 22px; border-radius: 50%; background: #14181d; border: 1.5px solid #edc76e; display: grid; place-items: center; font-size: 11px; line-height: 1; }
+.is-vio .wait-lock, .wait-pic.is-vio .wait-lock { border-color: #b07cff; }
+img.is-glow-gold { filter: drop-shadow(0 0 6px rgba(237,199,110,.6)) !important; }
+img.is-glow-vio { filter: drop-shadow(0 0 6px rgba(176,124,255,.65)) !important; }
+.bdg-it em.is-wait-gold, .bdg-d .is-wait-gold { color: #edc76e; font-weight: 700; }
+.bdg-it em.is-wait-vio { color: #d6b8ff; font-weight: 700; }
+.bdg-it em.is-card { color: var(--yellow); font-weight: 700; }
+.card-only { position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); padding: 2px 6px; border-radius: 8px; background: var(--yellow); color: #000; font-size: 8.5px; font-weight: 900; text-transform: uppercase; white-space: nowrap; }
+.bdg-cat-pic .wait-pic { display: inline-block; }
+/* поп-ап */
+.ach-slide.is-wait { position: relative; }
+.ach-slide.is-wait.is-gold img { filter: drop-shadow(0 0 22px rgba(237,199,110,.55)) saturate(.85) brightness(.9); }
+.ach-slide.is-wait.is-vio img { filter: drop-shadow(0 0 22px rgba(176,124,255,.6)) saturate(.85) brightness(.9); }
+.ach-slide.is-wait .wait-lock { right: 24px; bottom: 24px; width: 34px; height: 34px; font-size: 15px; opacity: 0; transition: opacity .2s ease; }
+.ach-slide.is-wait.is-on .wait-lock { opacity: 1; }
+.ach-why { margin: -4px 0 12px; padding: 9px 12px; border-radius: 14px; background: rgba(237,199,110,.08); border: 1px solid rgba(237,199,110,.35); font-size: 12.5px; line-height: 1.4; text-align: left; color: rgba(255,255,255,.85); }
+.ach-why b { color: #edc76e; }
+.ach-why[hidden] { display: none; }
+/* главная */
+.mya-it.is-wait .mya-pic { border-color: rgba(237,199,110,.5); background: radial-gradient(circle at 50% 40%, rgba(237,199,110,.18), rgba(255,255,255,.02)); }
+.mya-it.is-wait.is-vio .mya-pic { border-color: rgba(176,124,255,.55); background: radial-gradient(circle at 50% 40%, rgba(176,124,255,.2), rgba(255,255,255,.02)); }
+.mya-it.is-wait .mya-pic img { filter: drop-shadow(0 0 8px rgba(237,199,110,.5)) saturate(.85) brightness(.88); }
+.mya-it.is-wait.is-vio .mya-pic img { filter: drop-shadow(0 0 8px rgba(176,124,255,.55)) saturate(.85) brightness(.88); }
+.mya-it.is-wait .wait-lock { right: -4px; bottom: -4px; }
+.mya-it.is-wait .mya-name { color: #edc76e; }
+.mya-it.is-wait.is-vio .mya-name { color: #d6b8ff; }
+.mya-wait { display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 12px 16px 0; padding: 10px 12px; border-radius: 16px; border: 1px solid rgba(237,199,110,.45); background: rgba(237,199,110,.08); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.mya-wait-stack { display: flex; flex: none; }
+.mya-wait-stack img { width: 32px; height: 32px; object-fit: contain; margin-right: -10px; }
+.mya-wait > span:nth-child(2) { flex: 1; min-width: 0; margin-left: 6px; }
+.mya-wait b { display: block; font-size: 13.5px; color: #edc76e; }
+.mya-wait small { display: block; margin-top: 2px; font-size: 12px; color: rgba(255,255,255,.65); }
+.mya-wait i { font-style: normal; color: var(--yellow); font-weight: 800; }

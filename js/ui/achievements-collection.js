@@ -3,30 +3,26 @@
 //   • «последний значок» крупно + стопка и «и ещё N · показать все» (слайдер);
 //   • разделы карточками по два в ряд: последний значок раздела, стопка, «N из M · все»;
 //   • тап по разделу – все его значки по 3 в ряд; тап по полученному – слайдер, по не полученному – «как получить».
-// Без карты интеллигента видны три последние полученные, остальные полученные размыты с замком – и плашка про карту.
+// Без карты интеллигента: базовые – полностью, легендарные и эпические «ждут активации» (в цвете, свечение, замок),
+// значки «только с картой» – серые с плашкой; внизу – что откроет карта.
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { ACHIEVEMENT_CATALOG, ACHIEVEMENT_CATEGORIES, EXTRA_CATEGORY, categoryOf, catalogByTitle } from '../achievements-catalog.js';
 import { medalForTitle, medalSrc } from '../achievements-medals.js';
 import { openAchievementsPopup } from './achievements-popup.js';
-import { rarityShare, rarityLabel, achievementMeta, sortByValue } from '../achievements.js';
+import { rarityShare, rarityLabel, achievementMeta, sortByValue, isWaiting, metalOf, isCardOnly } from '../achievements.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-export const GUEST_VISIBLE = 3;
 export const isCardMember = () => state.userCard?.status === 'active';
-
-// какие из полученных видны: владельцу карты – все, без карты – три последние по дате (в порядке ценности)
-export function visibleEarned(items) {
-    if (isCardMember()) return items;
-    const latest = new Set([...items].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0)).slice(0, GUEST_VISIBLE).map(a => a.id));
-    return items.filter(a => latest.has(a.id));
-}
+// все полученные видны всегда; без карты легендарные и эпические – «ждут активации»
+export const visibleEarned = items => items;
 
 function openCard(source) {
     import('./card-sheet.js').then(m => m.openCardSheet({ source })).catch(() => {});
 }
 
+const plural = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many;
 const ddmmyyyy = d => /^\d{4}-\d{2}-\d{2}$/.test(d || '') ? `${d.slice(8, 10)}.${d.slice(5, 7)}.${d.slice(0, 4)}` : '';
 const byDate = list => [...list].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0));
 const HIKE_GOALS = [[5, '5 хайков'], [10, '10 хайков'], [20, '20 хайков'], [30, '30 хайков'], [50, '50 хайков']];
@@ -34,9 +30,7 @@ const HIKE_GOALS = [[5, '5 хайков'], [10, '10 хайков'], [20, '20 х�
 export function openAchievementsCollection(items = []) {
     document.querySelector('.acol-overlay')?.remove();
     const member = isCardMember();
-    const visible = visibleEarned(items);
-    const visibleIds = new Set(visible.map(a => a.id));
-    const hiddenCount = items.length - visible.length;
+    const waiting = items.filter(isWaiting);
     log(`значки: все значки (${items.length})`, !member, state.user);
 
     // разделы: полученные (видимые и скрытые) + не полученные из каталога
@@ -53,8 +47,13 @@ export function openAchievementsCollection(items = []) {
     cats.sort((a, b) => (b.earned.length > 0) - (a.earned.length > 0));
     const totalAll = cats.reduce((n, c) => n + c.total, 0);
 
-    const img = (a, cls = '', size = 'thumbs') => `<img ${medalSrc(a.medal.imageUrl, size)} alt="" loading="lazy" class="${cls}">`;
-    const stackHtml = list => `<span class="bdg-stack">${list.slice(0, 4).map(a => visibleIds.has(a.id) ? img(a) : img(a, 'is-blur')).join('')}</span>`;
+    // ждущий активации – в цвете со свечением своего металла и замком
+    const img = (a, cls = '', size = 'thumbs') => {
+        const tag = `<img ${medalSrc(a.medal.imageUrl, size)} alt="" loading="lazy" class="${cls}">`;
+        return isWaiting(a) ? `<span class="wait-pic is-${metalOf(a)}">${tag}<b class="wait-lock">🔒</b></span>` : tag;
+    };
+    const stackHtml = list => `<span class="bdg-stack">${list.slice(0, 4).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy" class="${isWaiting(a) ? `is-glow-${metalOf(a)}` : ''}">`).join('')}</span>`;
+    const dateOrWait = a => isWaiting(a) ? `<em class="is-wait-${metalOf(a)}">ждёт активации</em>` : `<em>${esc(ddmmyyyy(a.grant?.date))}</em>`;
 
     // «вперёд!» – ближайшая цель по хайкам
     const progress = achievementMeta().progress;
@@ -66,17 +65,17 @@ export function openAchievementsCollection(items = []) {
     })() : '';
 
     // последний полученный (из видимых)
-    const latest = byDate(visible)[0];
+    const latest = byDate(items)[0];
     const restForStack = sortByValue(items.filter(a => a !== latest));
     const featHtml = latest ? `<div class="bdg-card bdg-feat">
         <h3>последний значок</h3>
         <button type="button" class="bdg-feat-pic" data-open="${esc(latest.id)}">${img(latest, '', 'md')}</button>
-        <div class="bdg-t">${esc(latest.title)}</div><div class="bdg-d">${esc([ddmmyyyy(latest.grant?.date), rarityLabel(latest.rarity)].filter(Boolean).join(' · '))}</div>
+        <div class="bdg-t">${esc(latest.title)}</div><div class="bdg-d">${esc([isWaiting(latest) ? 'ждёт активации' : ddmmyyyy(latest.grant?.date), rarityLabel(latest.rarity)].filter(Boolean).join(' · '))}</div>
         ${items.length > 1 ? `<button type="button" class="bdg-foot" data-open-all>${stackHtml(restForStack)}<span class="bdg-more">и ещё ${items.length - 1}<b>показать все</b></span></button>` : ''}
     </div>` : '';
 
     const catCard = c => {
-        const top = byDate(c.earned.filter(a => visibleIds.has(a.id)))[0];
+        const top = byDate(c.earned)[0];
         const others = sortByValue(c.earned.filter(a => a !== top));
         // пустой раздел: значки раздела серым – видно, что можно собрать
         if (!c.earned.length) {
@@ -87,10 +86,15 @@ export function openAchievementsCollection(items = []) {
             ${arts.length > 1 ? `<span class="bdg-foot"><span class="bdg-stack">${arts.slice(1, 5).map(m => gray(m)).join('')}</span><span class="bdg-more">0 из ${c.total}<b>все</b></span></span>` : ''}</button>`;
         }
         return `<button type="button" class="bdg-cat" data-cat="${c.key}"><h4>${esc(c.title)}</h4>
-            ${top ? `<span class="bdg-cat-pic">${img(top)}</span><span class="bdg-t">${esc(top.title)}</span><span class="bdg-d">${esc(ddmmyyyy(top.grant?.date))}</span>`
-                : `<span class="bdg-cat-pic">${img(c.earned[0], 'is-blur')}<b class="acol-lock">🔒</b></span><span class="bdg-t is-off">откроется с картой</span>`}
+            <span class="bdg-cat-pic">${img(top)}</span><span class="bdg-t">${esc(top.title)}</span><span class="bdg-d">${isWaiting(top) ? 'ждёт активации' : esc(ddmmyyyy(top.grant?.date))}</span>
             <span class="bdg-foot">${stackHtml(others)}<span class="bdg-more">${c.earned.length} из ${c.total}<b>все</b></span></span></button>`;
     };
+
+    // что откроет карта: свои ждущие значки + значки только для владельцев карты
+    const cardOnlyLeft = ACHIEVEMENT_CATALOG.filter(c => isCardOnly(c.id) && !items.some(a => catalogByTitle(a.title)?.id === c.id)).length;
+    const cardCta = () => (waiting.length || cardOnlyLeft) ? `<button type="button" class="acol-cta" data-card><b>с картой интеллигента</b> – ${[
+        waiting.length ? `активируются твои ${waiting.length} ${plural(waiting.length, 'значок', 'значка', 'значков')}` : '',
+        cardOnlyLeft ? `откроются ещё ${cardOnlyLeft} ${plural(cardOnlyLeft, 'значок', 'значка', 'значков')} клуба` : ''].filter(Boolean).join(' и ')} ›</button>` : '';
 
     const overlay = document.createElement('div');
     overlay.className = 'acol-overlay';
@@ -101,7 +105,7 @@ export function openAchievementsCollection(items = []) {
             <div class="acol-sub">собрано <b>${items.length} из ${totalAll}</b></div>
             ${goalHtml}${featHtml}
             <div class="bdg-grid">${cats.map(catCard).join('')}</div>
-            ${!member && hiddenCount > 0 ? `<button type="button" class="acol-cta" data-card>открыто ${visible.length} из ${items.length} твоих значков. <b>чтобы увидеть все свои открытые значки, оформи карту интеллигента</b> ›</button>` : ''}
+            ${member ? '' : cardCta()}
         </div>
         <div class="acol-scroll" data-view="cat" hidden></div>
         <div class="acol-how" hidden></div>
@@ -124,7 +128,7 @@ export function openAchievementsCollection(items = []) {
     };
     const slider = (list, id, source) => {
         haptic(); how.hidden = true;
-        const shown = list.filter(a => visibleIds.has(a.id));
+        const shown = list;
         if (!shown.length) return;
         openAchievementsPopup(shown, { fresh: false, source, initialIndex: Math.max(0, shown.findIndex(a => a.id === id)) });
     };
@@ -143,11 +147,10 @@ export function openAchievementsCollection(items = []) {
         const earned = sortByValue([...c.earned]);
         catView.innerHTML = `<button type="button" class="bdg-back" data-back>‹ значки</button>
             <div class="acol-sub">${c.key === 'routes' ? 'пройдено' : 'получено'} <b>${c.earned.length} из ${c.total}</b></div>
-            <div class="bdg-g3">${earned.map(a => visibleIds.has(a.id)
-                ? `<button type="button" class="bdg-it" data-open="${esc(a.id)}">${img(a)}<span>${esc(a.title)}</span><em>${esc(ddmmyyyy(a.grant?.date))}</em></button>`
-                : `<button type="button" class="bdg-it is-hidden" data-card>${img(a, 'is-blur')}<b class="acol-lock">🔒</b><span>откроется с картой</span></button>`).join('')}
-            ${c.missing.map(m => { const art = medalForTitle(m.title);
-                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}<span>${esc(m.title)}</span></button>`; }).join('')}</div>`;
+            <div class="bdg-g3">${earned.map(a => `<button type="button" class="bdg-it" data-open="${esc(a.id)}">${img(a)}<span>${esc(a.title)}</span>${dateOrWait(a)}</button>`).join('')}
+            ${c.missing.map(m => { const art = medalForTitle(m.title), only = !member && isCardOnly(m.id);
+                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}"><span class="wait-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}${only ? '<b class="card-only">с картой</b>' : ''}</span><span>${esc(m.title)}</span>${only ? '<em class="is-card">только с картой</em>' : ''}</button>`; }).join('')}</div>
+            ${member ? '' : cardCta()}`;
         titleEl.textContent = c.title;
         main.hidden = true; catView.hidden = false; catView.scrollTop = 0;
         catView.querySelector('[data-back]').onclick = () => { haptic(); back(); };
@@ -157,7 +160,7 @@ export function openAchievementsCollection(items = []) {
             const m = ACHIEVEMENT_CATALOG.find(x => x.id === b.dataset.how);
             catView.querySelectorAll('.bdg-it').forEach(x => x.classList.toggle('is-picked', x === b));
             how.hidden = false;
-            how.innerHTML = `<button type="button" class="acol-how-x" aria-label="скрыть">✕</button><b>${esc(m.title)}</b><small>${esc(m.description)}</small><em>${esc(rarityShare(m.title))}</em>`;
+            how.innerHTML = `<button type="button" class="acol-how-x" aria-label="скрыть">✕</button><b>${esc(m.title)}</b><small>${esc(m.description)}</small><em>${!member && isCardOnly(m.id) ? 'доступен владельцам карты интеллигента' : esc(rarityShare(m.title))}</em>`;
             how.querySelector('.acol-how-x').onclick = () => { how.hidden = true; catView.querySelectorAll('.bdg-it').forEach(x => x.classList.remove('is-picked')); };
         });
         wireCard(catView);

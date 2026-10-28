@@ -2,12 +2,12 @@ import { tg } from './utils.js';
 import { state } from './state.js';
 import { catalogByTitle, tierOf } from './achievements-catalog.js';
 
-// три уровня: базовая – серебро, легендарная – золото, мифическая – фиолетовый металл
+// три уровня: базовая – серебро, легендарная – золото, эпическая (в базе – mythical) – фиолетовый металл
 // Значки открыты всем с 27.10.2026. Скрыть снова – вернуть проверку по id в achievementsVisible().
 export const achievementsVisible = () => true;
 
 export const ACHIEVEMENT_RARITIES = [
-    ['common', 'базовый'], ['legendary', 'легендарный'], ['mythical', 'мифический'],
+    ['common', 'базовый'], ['legendary', 'легендарный'], ['mythical', 'эпический'],
 ];
 // старое значение «rare» из ранних записей показываем как легендарную
 export const rarityLabel = key => key === 'rare' ? 'легендарный' : (ACHIEVEMENT_RARITIES.find(r => r[0] === key)?.[1] || '');
@@ -34,7 +34,7 @@ export async function loadAchievementCollections(userIds) {
     if (!pendingCollections.has(key)) {
         pendingCollections.set(key, achievementRequest('collection', { userIds: ids }).then(data => {
             if (String(state.user?.id || '') !== viewer) return {};
-            // везде сначала самые ценные: мифические → легендарные → базовые, внутри уровня – от новых к старым
+            // везде сначала самые ценные: эпические → легендарные → базовые, внутри уровня – от новых к старым
             Object.values(data.collections || {}).forEach(sortByValue);
             collections.set(key, { at: Date.now(), value: data.collections });
             // своя коллекция: редкость (у скольких есть) и прогресс по хайкам
@@ -78,3 +78,11 @@ export const achievementValue = a => TIER_RANK[tierOf(catalogByTitle(a.title)?.r
 export function sortByValue(items) {
     return items.sort((a, b) => achievementValue(a) - achievementValue(b) || (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0));
 }
+
+// Без карты интеллигента: базовые значки – полностью; легендарные и эпические получены, но «ждут активации»
+// (в цвете, со свечением металла и замком) – карта активирует их все разом. Часть значков – только с картой.
+export const isCardHolder = () => state.userCard?.status === 'active';
+export const CARD_ONLY_IDS = ['card-owner', 'plus-one', 'gift-card', 'hikes-10', 'hikes-20', 'hikes-30', 'hikes-50'];
+export const metalOf = a => ({ rare: 'gold', very: 'vio' })[tierOf(catalogByTitle(a.title)?.rarity || a.rarity)] || '';
+export const isWaiting = a => !isCardHolder() && !!metalOf(a);
+export const isCardOnly = id => CARD_ONLY_IDS.includes(id);

@@ -1,10 +1,10 @@
 import { state } from '../state.js';
-import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible } from '../achievements.js';
+import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible, isWaiting, metalOf, isCardHolder } from '../achievements.js';
 import { haptic } from '../utils.js';
 import { openAchievementsPopup } from './achievements-popup.js';
 import { catalogByTitle, routeBadgeForHike } from '../achievements-catalog.js';
 import { medalForTitle, medalSrc } from '../achievements-medals.js';
-import { openAchievementsCollection, visibleEarned } from './achievements-collection.js';
+import { openAchievementsCollection } from './achievements-collection.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -32,34 +32,55 @@ export async function mountMyAchievements() {
         const data = await loadAchievementCollections([userId]);
         if (!host.isConnected || String(state.user?.id || '') !== userId) return;
         const items = data[userId] || [];
-        // без карты видны три последние полученные, остальные полученные – размытые с замком
-        const visible = visibleEarned(items);
-        const hidden = items.filter(a => !visible.includes(a));
+        // без карты легендарные и эпические «ждут активации»: в цвете, со свечением и замком
+        const waiting = items.filter(isWaiting);
+        rememberWaiting(userId, items);
         // три плитки: полученные значки, а если их меньше трёх – следующие шаги серым; четвёртая – «все значки»
         // на главной – сначала недавно полученные (в разделе и профилях – по ценности)
-        const shelf = [...visible].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0)).slice(0, 3);
+        const shelf = [...items].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0)).slice(0, 3);
         const owned = new Set(items.map(a => catalogByTitle(a.title)?.id || a.title));
         const nextSteps = FIRST_STEPS.filter(st => !owned.has(st.id)).slice(0, 3 - shelf.length);
         host.innerHTML = `<div class="mya-head"><h2 class="section-title">🎒 мои значки</h2></div>
             ${items.length ? '' : '<p class="mya-sub">собирай значки за хайки, маршруты и моменты на тропе</p>'}
-            <div class="mya-shelf">${shelf.map((a, i) => `<button type="button" class="mya-it" data-medal="${i}" aria-label="${esc(a.title)}">
-                <span class="mya-pic">${a.seenAt === null ? '<span class="mya-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy"></span><span class="mya-name">${esc(a.title)}</span></button>`).join('')}
+            <div class="mya-shelf">${shelf.map((a, i) => { const w = isWaiting(a) ? metalOf(a) : '';
+                return `<button type="button" class="mya-it${w ? ` is-wait is-${w}` : ''}" data-medal="${i}" aria-label="${esc(a.title)}">
+                <span class="mya-pic">${a.seenAt === null ? '<span class="mya-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy">${w ? '<b class="wait-lock">🔒</b>' : ''}</span><span class="mya-name">${esc(a.title)}</span></button>`; }).join('')}
             ${nextSteps.map(st => { const art = medalForTitle(st.title);
                 return `<button type="button" class="mya-it is-next" data-mya-all aria-label="${esc(st.title)}"><span class="mya-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy">` : '<b>?</b>'}</span><span class="mya-name">${esc(st.short)}</span></button>`; }).join('')}
             <button type="button" class="mya-it is-all" data-mya-all aria-label="все значки"><span class="mya-pic"><b>${items.length > shelf.length ? `+${items.length - shelf.length}` : '›'}</b></span><span class="mya-name">все значки</span></button></div>
             ${goalsHtml(owned)}
-            ${hidden.length ? `<button type="button" class="mya-card-hint" data-mya-card>ещё ${hidden.length} ${hidden.length % 10 === 1 && hidden.length % 100 !== 11 ? 'твой значок скрыт' : hidden.length % 10 >= 2 && hidden.length % 10 <= 4 && (hidden.length % 100 < 10 || hidden.length % 100 >= 20) ? 'твоих значка скрыты' : 'твоих значков скрыты'} – <b>оформи карту интеллигента, чтобы видеть все</b> ›</button>` : ''}`;
+            ${waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
+                <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
         host.hidden = false;
         wireMedalStrip(host, shelf);
         host.querySelectorAll('[data-mya-all]').forEach(b => b.addEventListener('click', () => { haptic(); openAchievementsCollection(items); }));
         host.querySelectorAll('[data-mya-step]').forEach(b => b.addEventListener('click', e => { haptic(); runStep(e.currentTarget.dataset.myaStep); }));
         wireGoals(host);
         host.querySelectorAll('[data-mya-card]').forEach(b => b.addEventListener('click', () => {
-            haptic(); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'ачивки на главной' })).catch(() => {});
+            haptic(); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значки ждут активации' })).catch(() => {});
         }));
+        showActivated(userId, items);
     } catch { /* Unavailable collections never block the homepage or expose drafts. */ }
 }
 
+const plural = (n, one, few, many) => n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many;
+// значки, ждавшие активации, запоминаем в браузере; когда человек стал владельцем карты – показываем их разом:
+// «открыто N значков» (сам «владелец карты интеллигента» выдаётся автоматически и попадает туда же как новый)
+const waitKey = id => `ach_waiting_${id}`;
+function rememberWaiting(userId, items) {
+    if (isCardHolder()) return;
+    try { localStorage.setItem(waitKey(userId), JSON.stringify(items.filter(isWaiting).map(a => a.id))); } catch { /* storage is optional */ }
+}
+function showActivated(userId, items) {
+    if (!isCardHolder()) return;
+    let ids = [];
+    try { ids = JSON.parse(localStorage.getItem(waitKey(userId)) || '[]'); localStorage.removeItem(waitKey(userId)); } catch { return; }
+    const opened = items.filter(a => ids.includes(a.id) || (a.seenAt === null && catalogByTitle(a.title)?.id === 'card-owner'));
+    if (!opened.length || !ids.length) return;
+    const n = opened.length;
+    setTimeout(() => openAchievementsPopup(opened, { fresh: true, source: 'карта активировала значки',
+        title: `открыто <b>${n} ${plural(n, 'значок', 'значка', 'значков')}</b>` }), 900);
+}
 // первые шаги – серые плитки на полке, пока значков меньше трёх
 const FIRST_STEPS = [
     { id: 'welcome', title: 'добро пожаловать', short: 'добро пожаловать' },

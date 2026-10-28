@@ -124,7 +124,8 @@ const AUTO_ACHIEVEMENTS = [
         description: 'тридцать вершин – ты один из тех, на ком держится клуб' },
     { key: 'hikes-50', title: '50 хайков', rarity: 'mythical', min: 50, imageUrl: '/assets/achievements/badges/hikes-50-v3.png',
         description: 'полсотни хайков – легенда клуба' },
-    { key: 'card-owner', title: 'владелец карты интеллигента', rarity: 'legendary', card: true, imageUrl: null,
+    // владелец карты – тоже сам и при выключенной автовыдаче: как только карта активна (28.10.2026)
+    { key: 'card-owner', title: 'владелец карты интеллигента', rarity: 'legendary', card: true, always: true, imageUrl: '/assets/achievements/badges/card-owner-v2.png',
         description: 'теперь ты – часть клуба, а клуб растёт вместе с тобой' },
 ];
 const titleKey = t => String(t || '').toLowerCase().replace(/ё/g, 'е').replace(/[«»"'–—-]/g, ' ').replace(/\s+/g, ' ').trim();
@@ -205,7 +206,7 @@ function createHandler(deps = {}) {
         const snapshot = (await read('clubAchievements', token)).value || {};
         const owned = new Set(Object.values(snapshot).filter(r => r?.grants?.[userId]?.issuedAt && r.publicationStatus === 'published').map(r => titleKey(r.title)));
         const due = AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
-            && (a.always || (AUTO_GRANT_ENABLED && (a.card ? progress.member : progress.hikes >= a.min))));
+            && (a.card ? progress.member : a.always || progress.hikes >= a.min) && (a.always || AUTO_GRANT_ENABLED));
         const granted = [];
         const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || userId).slice(0, 100);
         for (const a of due) {

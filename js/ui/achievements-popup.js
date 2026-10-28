@@ -4,7 +4,7 @@
 import { state } from '../state.js';
 import { tg, haptic } from '../utils.js';
 import { log } from '../api.js';
-import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare, achievementsVisible } from '../achievements.js';
+import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare, achievementsVisible, isWaiting, metalOf } from '../achievements.js';
 import { medalSrc } from '../achievements-medals.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -16,6 +16,8 @@ const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
 const isGuest = () => state.userCard?.status !== 'active';
 
 let shown = false;
+// уже показанные в этом запуске – чтобы один значок не всплыл дважды (например, после «открыто N значков»)
+const shownIds = new Set();
 let activeResizeObserver = null;
 
 // новые (ещё не показанные) ачивки – сами при заходе; по ссылке из бота – новые, а если их нет, последние
@@ -31,8 +33,11 @@ export async function maybeShowNewAchievements({ fromLink = false } = {}) {
         if (!list.length) return;
         shown = true;
         // не поверх других шторок: подождём, пока закроются
-        const open = () => document.querySelector('.bottom-sheet.visible, .cs-overlay, .hb-overlay, .modal-overlay')
-            ? setTimeout(open, 1500) : openAchievementsPopup(list, { fresh: fresh.length > 0, source: fromLink ? 'ссылка из бота' : 'заход в приложение', owned: items.length });
+        const open = () => {
+            if (document.querySelector('.bottom-sheet.visible, .cs-overlay, .hb-overlay, .modal-overlay, .ach-overlay')) return setTimeout(open, 1500);
+            const rest = list.filter(a => !shownIds.has(a.id));
+            if (rest.length) openAchievementsPopup(rest, { fresh: fresh.length > 0, source: fromLink ? 'ссылка из бота' : 'заход в приложение', owned: items.length });
+        };
         setTimeout(open, fromLink ? 500 : 1200);
     } catch { /* ачивки не мешают работе приложения */ }
 }
@@ -56,8 +61,9 @@ document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60000) recheckAchievements('вернулся в приложение');
 });
 
-export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0 } = {}) {
+export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0, title = '' } = {}) {
     if (!items?.length) return;
+    items.forEach(a => shownIds.add(a.id));
     activeResizeObserver?.disconnect();
     document.querySelector('.ach-overlay')?.remove();
     log(`ачивки: поп-ап (${items.length}) · ${source}`, isGuest(), state.user);
@@ -67,14 +73,15 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     overlay.innerHTML = `<div class="ach-sheet" role="dialog" aria-modal="true" aria-label="новые значки">
         <div class="cs-grab ach-grab" aria-hidden="true"></div>
         <button type="button" class="ach-close" aria-label="закрыть">✕</button>
-        <h2 class="ach-title">${fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b>первый</b> значок' : 'у тебя <b>новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : 'твои значки'}</h2>
+        <h2 class="ach-title">${title ? title : fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b>первый</b> значок' : 'у тебя <b>новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : 'твои значки'}</h2>
         <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : 'значок клуба – только твой'}</p>
-        <div class="ach-track">${items.map((a, i) => `<div class="ach-slide" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false"></div>`).join('')}</div>
+        <div class="ach-track">${items.map((a, i) => `<div class="ach-slide${isWaiting(a) ? ` is-wait is-${metalOf(a)}` : ''}" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false">${isWaiting(a) ? '<b class="wait-lock">🔒</b>' : ''}</div>`).join('')}</div>
         ${n > 1 ? `<div class="ach-dots">${Array.from({ length: Math.min(3, n) }, (_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
         <div class="ach-with" hidden></div>
+        <p class="ach-why" hidden>легендарные и эпические значки <b>активируются с картой интеллигента</b> – он уже твой и будет ждать</p>
         <button type="button" class="btn btn-yellow ach-btn" data-share-one>поделиться в сторис</button>
-        ${isGuest() && owned > 3 ? `<button type="button" class="ach-card-hint" data-ach-card>у тебя ${owned} ${plural(owned, 'значок', 'значка', 'значков')}, видны только 3 – <b>открой все с картой интеллигента</b> ›</button>` : ''}
+
         <p class="ach-note" role="status"></p>
     </div>`;
     document.body.appendChild(overlay);
@@ -112,11 +119,16 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         if (i === current) return;
         current = i;
         const a = items[i];
-        info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}</span>` : '<span class="ach-rar is-empty">&nbsp;</span>'}
+        const wait = isWaiting(a);
+        info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}${wait ? ' · ждёт активации' : ''}</span>` : '<span class="ach-rar is-empty">&nbsp;</span>'}
             <div class="ach-name">${esc(a.title)}</div>
             <div class="ach-desc">${esc(a.description || '') || '&nbsp;'}</div>
             <div class="ach-meta">${a.grant?.date ? `<span>${esc(dateRu(a.grant.date))}</span>` : ''}${a.holders > 1 ? `<button type="button" data-with>вместе с ${a.holders - 1} ${a.holders - 1 === 1 ? 'интеллигентом' : 'интеллигентами'} ›</button>` : ''}<span>${esc(rarityShare(a.title))}</span></div>`;
         withBox.hidden = true;
+        // ждёт активации: вместо «поделиться» – активировать с картой
+        overlay.querySelector('.ach-why').hidden = !wait;
+        const btn = overlay.querySelector('[data-share-one]');
+        if (btn && !btn.dataset.busy) btn.textContent = wait ? 'активировать с картой' : 'поделиться в сторис';
         info.querySelector('[data-with]')?.addEventListener('click', () => openWith(a));
         overlay.querySelectorAll('.ach-slide').forEach((s, k) => s.classList.toggle('is-on', k === i));
         // точек максимум три: первая – начало, последняя – конец, средняя – всё между
@@ -205,11 +217,11 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         btn.textContent = text; delete btn.dataset.busy;
     };
     const oneBtn = overlay.querySelector('[data-share-one]');
-    oneBtn.onclick = () => share([items[current]], oneBtn, items[current].title);
-    overlay.querySelector('[data-ach-card]')?.addEventListener('click', () => {
-        haptic(); log('ачивки: поп-ап – карта', true, state.user); close();
-        import('./card-sheet.js').then(m => m.openCardSheet({ source: 'ачивки поп-ап' })).catch(() => {});
-    });
+    oneBtn.onclick = () => {
+        if (!isWaiting(items[current])) return share([items[current]], oneBtn, items[current].title);
+        haptic(); log(`значки: активировать с картой – ${items[current].title}`, true, state.user); close();
+        import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значок ждёт активации' })).catch(() => {});
+    };
 }
 
 async function upload(dataUrl) {
