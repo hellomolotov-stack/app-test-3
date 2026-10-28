@@ -2,7 +2,7 @@
 // под медалью название, редкость и описание. Сторис – текущей медалью или всеми сразу.
 // Открывается сам при первом заходе после выдачи и по ссылке из бота (startapp=ach).
 import { state } from '../state.js';
-import { tg, haptic } from '../utils.js';
+import { tg, haptic, showConfetti } from '../utils.js';
 import { log } from '../api.js';
 import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare, achievementsVisible, isWaiting, metalOf } from '../achievements.js';
 import { medalSrc } from '../achievements-medals.js';
@@ -87,6 +87,8 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
+    // новые значки – конфетти на фоне, как при нажатии на карту
+    if (fresh) setTimeout(() => overlay.isConnected && showConfetti({ into: overlay }), 250);
 
     const track = overlay.querySelector('.ach-track');
     const info = overlay.querySelector('.ach-info');

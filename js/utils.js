@@ -115,8 +115,9 @@ export function parseLinks(text, isGuest) {
     });
 }
 
-// soft: меньше частиц, сыплются сверху (экран после записи), иначе – взрыв по всему экрану
-export function showConfetti({ soft = false } = {}) {
+// soft: меньше частиц, сыплются сверху (экран после записи), иначе – взрыв по всему экрану.
+// into: элемент, внутрь которого положить конфетти (например, фон поп-апа – тогда они под шторкой)
+export function showConfetti({ soft = false, into = null } = {}) {
     const canvas = document.createElement('canvas');
     canvas.style.position = 'fixed';
     canvas.style.top = '0';
@@ -124,8 +125,8 @@ export function showConfetti({ soft = false } = {}) {
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '9999';
-    document.body.appendChild(canvas);
+    canvas.style.zIndex = into ? '0' : '9999';
+    (into || document.body).appendChild(canvas);
     const ctx = canvas.getContext('2d');
     let width = window.innerWidth, height = window.innerHeight;
     canvas.width = width; canvas.height = height;
@@ -150,7 +151,7 @@ export function showConfetti({ soft = false } = {}) {
     }
     let frame = 0;
     function animate() {
-        if (frame > (soft ? 170 : 120)) { document.body.removeChild(canvas); return; }
+        if (frame > (soft ? 170 : 120)) { canvas.remove(); return; }
         ctx.clearRect(0, 0, width, height);
         if (soft && frame > 120) ctx.globalAlpha = Math.max(0, 1 - (frame - 120) / 50);
         particles.forEach(p => {
@@ -172,8 +173,8 @@ export function showUnicornConfetti() {
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '9999';
-    document.body.appendChild(canvas);
+    canvas.style.zIndex = into ? '0' : '9999';
+    (into || document.body).appendChild(canvas);
     const ctx = canvas.getContext('2d');
     let width = window.innerWidth, height = window.innerHeight;
     canvas.width = width; canvas.height = height;
