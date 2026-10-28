@@ -24,7 +24,7 @@ export function openLink(url, action, isGuest) {
     if (url.startsWith('https://t.me/')) {
         // переход в Telegram сворачивает приложение – сначала предупреждаем
         if (/^https:\/\/t\.me\/(share\/|[^?]*\?startapp)/.test(url)) return tg.openTelegramLink(url);
-        confirmTelegramLeave(url, () => tg.openTelegramLink(url));
+        confirmTelegramLeave(url, () => leaveToTelegram(url));
     } else {
         tg.openLink(url);
     }
@@ -41,6 +41,24 @@ function telegramPlace(url) {
 }
 
 // opts – своё оформление окна: { cls, icon, title, text, stay, go, place }
+// Переход к посту/чату в Telegram. В полноэкранном режиме Telegram открывает пост позади приложения
+// и не сворачивает его – человек ничего не видит. Поэтому: выходим из полноэкранного, открываем ссылку,
+// и если через секунду приложение всё ещё на экране (Telegram его не свернул) – закрываем, чтобы был виден пост.
+// Вернуться – через бота клуба, приложение откроется заново.
+export function leaveToTelegram(url) {
+    const tg = window.Telegram?.WebApp;
+    if (!tg) return window.open(url, '_blank');
+    let hidden = false;
+    const onHide = () => { if (document.visibilityState === 'hidden') hidden = true; };
+    document.addEventListener('visibilitychange', onHide);
+    try { if (tg.isFullscreen) tg.exitFullscreen?.(); } catch (e) {}
+    tg.openTelegramLink(url);
+    setTimeout(() => {
+        document.removeEventListener('visibilitychange', onHide);
+        if (!hidden && document.visibilityState === 'visible' && ['ios', 'android'].includes(tg.platform)) tg.close();
+    }, 1000);
+}
+
 function confirmTelegramLeave(url, go, opts = {}) {
     document.querySelector('.tg-leave')?.remove();
     const place = opts.place || telegramPlace(url);
@@ -71,7 +89,7 @@ export function openLetterLink(url, hikeTitle, isGuest) {
     log(`письмо после хайка: ${hikeTitle || ''}`, isGuest, state.user);
     const tg = window.Telegram?.WebApp;
     if (!tg) return window.open(url, '_blank');
-    const go = () => (url.startsWith('https://t.me/') ? tg.openTelegramLink(url) : tg.openLink(url));
+    const go = () => (url.startsWith('https://t.me/') ? leaveToTelegram(url) : tg.openLink(url));
     confirmTelegramLeave(url, go, {
         cls: 'tg-leave-letter',
         icon: '✉️',
