@@ -54,7 +54,7 @@ async function recheckAchievements(source) {
     maybeShowNewAchievements();
     // блок на главной – заново, с новыми медалями
     if (document.getElementById('myAchievements')) { document.getElementById('myAchievements').remove(); import('./medals.js').then(m => m.mountMyAchievements()).catch(() => {}); }
-    log(`ачивки: выдано само (${r.granted.join(', ')}) · ${source}`, isGuest(), state.user);
+    log(`значки: выданы сами – ${r.granted.map(t => `«${t}»`).join(', ')} (${source})`, isGuest(), state.user);
 }
 window.addEventListener('club:act', e => { if (e.detail?.type === 'hike_registered') setTimeout(() => recheckAchievements('запись на хайк'), 2500); });
 document.addEventListener('visibilitychange', () => {
@@ -66,7 +66,9 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     items.forEach(a => shownIds.add(a.id));
     activeResizeObserver?.disconnect();
     document.querySelector('.ach-overlay')?.remove();
-    log(`ачивки: поп-ап (${items.length}) · ${source}`, isGuest(), state.user);
+    // в сводку действий человека: что получил (новые) или что открыл посмотреть
+    const names = items.map(a => `«${a.title}»${isWaiting(a) ? ' (ждёт активации)' : ''}`);
+    log(fresh ? `значки: получил ${names.join(', ')}` : `значки: смотрел ${names[Math.max(0, Math.min(items.length - 1, initialIndex))]}${items.length > 1 ? ` и ещё ${items.length - 1}` : ''}`, isGuest(), state.user);
     const n = items.length;
     const overlay = document.createElement('div');
     overlay.className = 'ach-overlay';
@@ -95,6 +97,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const note = overlay.querySelector('.ach-note');
     const withBox = overlay.querySelector('.ach-with');
     let current = -1;
+    const viewed = new Set();
     // кто ещё получил этот значок: имя и аватарка, тап – профиль
     const openWith = async a => {
         haptic();
@@ -110,7 +113,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
                 return p.profile ? `<button type="button" class="ach-with-p" data-uid="${esc(p.userId)}">${pic}<span>${esc(name)}</span><b>›</b></button>`
                     : `<div class="ach-with-p is-off">${pic}<span>${esc(name)}</span></div>`; }).join('')}</div>`;
             withBox.querySelectorAll('[data-uid]').forEach(b => b.onclick = () => openProfile(b.dataset.uid, b.querySelector('span').textContent, b.querySelector('img')?.src));
-            log(`ачивки: с кем – ${a.title}`, isGuest(), state.user);
+            log(`значки: смотрел, кто ещё получил «${a.title}»`, isGuest(), state.user);
         } catch { withBox.innerHTML = '<small>не получилось загрузить – попробуй ещё раз</small>'; }
     };
     const centerSlide = (slide, behavior = 'instant') => {
@@ -120,6 +123,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const show = i => {
         if (i === current) return;
         current = i;
+        viewed.add(i);
         const a = items[i];
         const wait = isWaiting(a);
         info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}${wait ? ' · ждёт активации' : ''}</span>` : '<span class="ach-rar is-empty">&nbsp;</span>'}
@@ -195,6 +199,10 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         }).catch(() => {});
     };
     const close = () => {
+        if (!overlay.dataset.closed) {
+            overlay.dataset.closed = '1';
+            log(`значки: закрыл окно${n > 1 ? ` (посмотрел ${viewed.size} из ${n})` : ''}`, isGuest(), state.user);
+        }
         resizeObserver.disconnect();
         if (activeResizeObserver === resizeObserver) activeResizeObserver = null;
         overlay.classList.remove('is-on');
@@ -214,14 +222,14 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
             const canvas = await drawAchievementsStory(list);
             const url = await upload(canvas.toDataURL('image/jpeg', 0.9));
             tg.shareToStory(url);
-            log(`ачивки: сторис – ${label}`, isGuest(), state.user);
+            log(`значки: поделился в сторис «${label}»`, isGuest(), state.user);
         } catch { note.textContent = 'не получилось – проверь интернет и попробуй ещё раз'; }
         btn.textContent = text; delete btn.dataset.busy;
     };
     const oneBtn = overlay.querySelector('[data-share-one]');
     oneBtn.onclick = () => {
         if (!isWaiting(items[current])) return share([items[current]], oneBtn, items[current].title);
-        haptic(); log(`значки: активировать с картой – ${items[current].title}`, true, state.user); close();
+        haptic(); log(`значки: нажал «активировать с картой» на «${items[current].title}»`, true, state.user); close();
         import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значок ждёт активации' })).catch(() => {});
     };
 }

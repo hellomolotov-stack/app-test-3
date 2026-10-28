@@ -31,7 +31,7 @@ export function openAchievementsCollection(items = []) {
     document.querySelector('.acol-overlay')?.remove();
     const member = isCardMember();
     const waiting = items.filter(isWaiting);
-    log(`значки: все значки (${items.length})`, !member, state.user);
+    log(`значки: открыл все значки (у него ${items.length})`, !member, state.user);
 
     // разделы: полученные (видимые и скрытые) + не полученные из каталога
     const ownedTitles = new Set(items.map(a => a.title));
@@ -123,6 +123,7 @@ export function openAchievementsCollection(items = []) {
     const titleEl = overlay.querySelector('.acol-top h2');
     const how = overlay.querySelector('.acol-how');
     const close = () => {
+        if (!overlay.dataset.closed) { overlay.dataset.closed = '1'; log('значки: закрыл все значки', !member, state.user); }
         overlay.classList.remove('is-on');
         setTimeout(() => { overlay.remove(); if (!document.querySelector('.bottom-sheet.visible, .cs-overlay, .ach-overlay')) document.body.style.overflow = ''; }, 280);
     };
@@ -133,7 +134,7 @@ export function openAchievementsCollection(items = []) {
         openAchievementsPopup(shown, { fresh: false, source, initialIndex: Math.max(0, shown.findIndex(a => a.id === id)) });
     };
     const wireCard = root => root.querySelectorAll('[data-card]').forEach(b => b.onclick = e => {
-        e.stopPropagation(); haptic(); log('значки: открыть все – карта', true, state.user); close(); openCard('значки');
+        e.stopPropagation(); haptic(); log('значки: нажал «карта интеллигента» в разделе значков', true, state.user); close(); openCard('значки');
     });
 
     const back = () => { how.hidden = true; catView.hidden = true; main.hidden = false; titleEl.textContent = 'значки'; };
@@ -164,7 +165,7 @@ export function openAchievementsCollection(items = []) {
             how.querySelector('.acol-how-x').onclick = () => { how.hidden = true; catView.querySelectorAll('.bdg-it').forEach(x => x.classList.remove('is-picked')); };
         });
         wireCard(catView);
-        log(`значки: раздел ${c.title}`, !member, state.user);
+        log(`значки: открыл раздел «${c.title}»`, !member, state.user);
     };
 
     overlay.querySelector('.acol-close').onclick = () => { haptic(); close(); };
