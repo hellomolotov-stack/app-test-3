@@ -2,6 +2,8 @@
 // админка сохраняет её сразу выданной – и уведомление можно отправлять сразу.
 // Новую медаль добавлять сюда, когда её файл (прозрачный PNG/WebP) уже выложен в assets/achievements.
 export const MEDAL_LIBRARY = [
+    { title: 'из идеи в реальность', imageUrl: '/assets/achievements/badges/idea-to-reality-v1.png' },
+    { title: 'читерский проспект', imageUrl: '/assets/achievements/badges/cheater-prospect-v1.png' },
     { title: 'добро пожаловать', imageUrl: '/assets/achievements/badges/welcome-v2.png' },
     { title: 'залез в пещеру пауков', imageUrl: '/assets/achievements/spider-cave-transparent-v2.png' },
     // значки из папки «значки» (26.10.2026): количество хайков, особые моменты, после тропы и город

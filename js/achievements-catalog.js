@@ -29,6 +29,8 @@ export const ACHIEVEMENT_CATALOG = [
     { id: "above-1500", title: "выше 1500 метров", rarity: 'legendary', tier: 'rare', description: "поднялся выше полутора километров – Крым под ногами" },
     { id: "swim", title: "нырнул после тропы", rarity: 'legendary', tier: 'rare', description: "искупался в море или горном озере сразу после хайка" },
     { id: "four-seasons", title: "четыре сезона в горах", rarity: 'mythical', tier: 'very', description: "ходил с клубом зимой, весной, летом и осенью" },
+    { id: "idea-to-reality", title: "из идеи в реальность", rarity: 'mythical', tier: 'very', description: "предложил клубу идею – и её воплотили в жизнь" },
+    { id: "cheater-prospect", title: "читерский проспект", rarity: 'mythical', tier: 'very', description: "прошёл по дороге, по которой не ходят" },
     { id: "all-routes", title: "все 18 маршрутов клуба", rarity: 'mythical', tier: 'very', description: "прошёл каждый маршрут клуба – ты знаешь эти горы лучше всех" },
     { id: "hikes-5", title: "5 хайков", rarity: 'common', tier: 'common', description: "пять раз выходили вместе – это уже привычка" },
     { id: "hikes-10", title: "10 хайков", rarity: 'common', tier: 'common', description: "десять вершин с клубом" },
@@ -64,11 +66,11 @@ export const ACHIEVEMENT_CATEGORIES = [
     { key: 'routes', title: 'локации', hint: 'пройди маршрут с клубом – за каждый свой значок',
         ids: id => id.startsWith('route-') || id === 'all-routes' },
     { key: 'moments', title: 'моменты на хайке', hint: 'дождь, фонарики, рассвет и особые моменты',
-        ids: id => ['headlamps', 'rain', 'wim-hof', 'above-1500', 'swim', 'four-seasons'].includes(id) },
+        ids: id => ['headlamps', 'rain', 'wim-hof', 'above-1500', 'swim', 'four-seasons', 'cheater-prospect'].includes(id) },
     { key: 'hikes', title: 'хайки с клубом', hint: '5, 10, 20, 30 и 50 хайков с клубом',
         ids: id => id.startsWith('hikes-') },
     { key: 'first', title: 'первые шаги', hint: 'первый хайк, карта интеллигента, +1, отзыв, бухайкинг и встречи в городе',
-        ids: id => ['welcome', 'first-hike', 'card-owner', 'profile', 'mastermind-request', 'plus-one', 'gift-card', 'honest-review', 'story',
+        ids: id => ['welcome', 'first-hike', 'card-owner', 'profile', 'mastermind-request', 'idea-to-reality', 'plus-one', 'gift-card', 'honest-review', 'story',
             'after-hike-drinks', 'first-city-event', 'hiking-box'].includes(id) },
 ];
 // значки вне каталога (шуточные, особые) идут в «моменты на хайке»; отдельный раздел остался на случай пустого id
