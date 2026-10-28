@@ -15,7 +15,7 @@ export const ACHIEVEMENT_CATALOG = [
     { id: "first-hike", title: "первый хайк с интеллигенцией", rarity: 'common', tier: 'common', description: "первый раз вышел на тропу с клубом – дальше только выше" },
     { id: "card-owner", title: "владелец карты интеллигента", rarity: 'legendary', tier: 'rare', description: "теперь ты – часть клуба, а клуб растёт вместе с тобой" },
     { id: "profile", title: "показал себя клубу", rarity: 'common', tier: 'common', description: "заполнил профиль – теперь тебя легко найти и позвать на хайк" },
-    { id: "mastermind-request", title: "мой вопрос на мастермайнде", rarity: 'common', tier: 'common', description: "вынес свой вопрос на вершину и услышал десять взглядов" },
+    { id: "mastermind-request", title: "запрос на мастермайнде", rarity: 'common', tier: 'common', description: "вынес свой вопрос на вершину и услышал десять взглядов" },
     { id: "plus-one", title: "привёл своего +1", rarity: 'legendary', tier: 'rare', description: "позвал друга в клуб – вас стало на одного больше" },
     { id: "gift-card", title: "подарил карту другу", rarity: 'legendary', tier: 'rare', description: "подарил кому-то целый сезон в горах" },
     { id: "honest-review", title: "искренний отзыв", rarity: 'common', tier: 'common', description: "рассказал честно, как это было – так клуб становится лучше" },

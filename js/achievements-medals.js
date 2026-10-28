@@ -2,6 +2,7 @@
 // админка сохраняет её сразу выданной – и уведомление можно отправлять сразу.
 // Новую медаль добавлять сюда, когда её файл (прозрачный PNG/WebP) уже выложен в assets/achievements.
 export const MEDAL_LIBRARY = [
+    { title: 'добро пожаловать', imageUrl: '/assets/achievements/badges/welcome-v1.png' },
     { title: 'залез в пещеру пауков', imageUrl: '/assets/achievements/spider-cave-transparent-v2.png' },
     // значки из папки «значки» (26.10.2026): количество хайков, особые моменты, после тропы и город
     { title: 'выше 1500 метров', imageUrl: '/assets/achievements/badges/above-1500-v2.png' },
@@ -10,7 +11,7 @@ export const MEDAL_LIBRARY = [
     { title: 'промок, но дошёл', imageUrl: '/assets/achievements/badges/rain.png' },
     { title: 'нырнул после тропы', imageUrl: '/assets/achievements/badges/swim.png' },
     { title: 'дыхание по Хофу', imageUrl: '/assets/achievements/badges/wim-hof-v2.png' },
-    { title: 'первый бухайкинг', imageUrl: '/assets/achievements/badges/after-hike-drinks.png' },
+    { title: 'первый бухайкинг', imageUrl: '/assets/achievements/badges/after-hike-drinks-v2.png' },
     { title: 'свои в городе', imageUrl: '/assets/achievements/badges/first-city-event-v2.png' },
     { title: 'хайкинг бокс', imageUrl: '/assets/achievements/badges/hiking-box.png' },
     // маршруты – актуальные значки из «⛰️ интеллигенция/Передача-значков-2026-10-27/значки» (27.10.2026)
@@ -32,7 +33,7 @@ export const MEDAL_LIBRARY = [
     { title: 'привёл своего +1', imageUrl: '/assets/achievements/badges/plus-one-v2.png' },
     { title: 'владелец карты интеллигента', imageUrl: '/assets/achievements/badges/card-owner-v2.png' },
     { title: 'подарил карту другу', imageUrl: '/assets/achievements/badges/gift-card-v1.png' },
-    { title: 'мой вопрос на мастермайнде', imageUrl: '/assets/achievements/badges/mastermind-v1.png' },
+    { title: 'запрос на мастермайнде', imageUrl: '/assets/achievements/badges/mastermind-v2.png' },
     { title: 'искренний отзыв', imageUrl: '/assets/achievements/badges/honest-review-v1.png' },
     { title: 'показал горы в сторис', imageUrl: '/assets/achievements/badges/story-v2.png' },
     { title: 'промочил правую ногу', imageUrl: '/assets/achievements/badges/wet-boot-v2.png' },
