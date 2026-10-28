@@ -202,7 +202,7 @@ function createHandler(deps = {}) {
     }
     // «клуб» для процентов редкости: кто хоть раз ходил с нами (остался в записи на прошедший хайк) + владельцы карты.
     // Не все, кто открывал приложение, – иначе маршруты выглядят как «у 1% клуба».
-    async function clubMembers(token) {
+    async function clubMembers(token, snapshot) {
         const [parts, hikes, members] = await Promise.all([read('hikeParticipants', token), read('hikes', token), read('members', token)]);
         const today = moscowToday();
         const yes = v => v === true || String(v).toLowerCase() === 'yes';
@@ -213,6 +213,8 @@ function createHandler(deps = {}) {
             Object.keys(list || {}).forEach(id => ids.add(id));
         }
         Object.entries(members.value || {}).forEach(([id, m]) => { if (m?.user_id) ids.add(id); });
+        // хайки до приложения (опросы в чате) – у этих людей есть значок «первый хайк с интеллигенцией»
+        Object.values(snapshot || {}).forEach(r => { if (titleKey(r?.title) === 'первый хайк с интеллигенцией') Object.keys(r.grants || {}).forEach(id => ids.add(id)); });
         return ids;
     }
     async function claimAuto(token, user) {
@@ -369,7 +371,7 @@ function createHandler(deps = {}) {
                 const own = targetIds.length === 1 && targetIds[0] === String(user.id);
                 const [snapshot, seen, club, progress] = await Promise.all([read('clubAchievements', token),
                     own ? read(`achievementSeen/${user.id}`, token) : Promise.resolve({ value: {} }),
-                    own ? clubMembers(token).catch(() => null) : Promise.resolve(null),
+                    own ? read('clubAchievements', token).then(r => clubMembers(token, r.value)).catch(() => null) : Promise.resolve(null),
                     own ? hikeProgress(token, String(user.id)).catch(() => null) : Promise.resolve(null)]);
                 // редкость: у скольких есть ачивка с таким названием (все записи вместе)
                 const stats = {};
