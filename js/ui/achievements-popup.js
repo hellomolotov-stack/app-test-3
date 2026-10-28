@@ -101,6 +101,9 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     // кто ещё получил этот значок: имя и аватарка, тап – профиль
     const openWith = async a => {
         haptic();
+        // повторное нажатие сворачивает список
+        if (!withBox.hidden && withBox.dataset.for === a.id) { withBox.hidden = true; return; }
+        withBox.dataset.for = a.id;
         withBox.hidden = false;
         withBox.innerHTML = '<small>загружаю…</small>';
         try {

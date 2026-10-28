@@ -284,7 +284,12 @@ function createHandler(deps = {}) {
                 const token = await accessToken();
                 const record = (await read(`clubAchievements/${body.id}`, token)).value;
                 if (!record?.medal || record.publicationStatus !== 'published') throw fail(404, 'ачивка не найдена');
-                const ids = Object.keys(record.grants || {}).filter(id => record.grants[id]?.issuedAt);
+                let ids = Object.keys(record.grants || {}).filter(id => record.grants[id]?.issuedAt);
+                // «добро пожаловать» есть у всех, кто открывал приложение – «вместе с тобой» показываем только тех, кто ходил с клубом
+                if (titleKey(record.title) === 'добро пожаловать') {
+                    const club = await clubMembers(token, (await read('clubAchievements', token)).value).catch(() => null);
+                    if (club) ids = ids.filter(id => club.has(id));
+                }
                 // имена и аватарки видят все: тап ведёт в профили, а там гостя встречает предложение карты
                 const profiles = (await read('userProfiles', token)).value || {};
                 const avatar = id => { const u = String(profiles[id]?.avatarUrl || ''); return /^https:\/\//.test(u) ? u.slice(0, 500) : ''; };
@@ -388,7 +393,8 @@ function createHandler(deps = {}) {
                         const grant = record.grants?.[id];
                         if (!grant?.issuedAt) continue;
                         collections[id].push({ id: record.id, title: record.title, description: record.description || '', rarity: record.rarity, kind: record.kind,
-                            ...(own ? { seenAt: Number(seen.value?.[record.id]) || null, holders: Object.values(record.grants || {}).filter(g => g?.issuedAt).length } : {}),
+                            ...(own ? { seenAt: Number(seen.value?.[record.id]) || null, holders: Object.values(record.grants || {}).filter(g => g?.issuedAt
+                                && (titleKey(record.title) !== 'добро пожаловать' || !club || club.has(String(g.userId)))).length } : {}),
                             medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
                             grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt } });
                     }
