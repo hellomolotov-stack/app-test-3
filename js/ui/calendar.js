@@ -384,9 +384,8 @@ function feedNearestCard(h) {
     }
     if (!h.title || !h.title.trim()) {
         const waiting = !!feedWaitlist()[h.date];
-        const note = waiting
-            ? `<div class="ef-wait-note"><span>🔔</span><div>ты в листе ожидания. <b>напишем в бота</b>, как только объявим маршрут – запишешься в пару касаний</div></div>`
-            : '';
+        // плашку «ты в листе ожидания» не показываем – хватает жёлтой «✓ сообщим об открытии», блок не растягивается
+        const note = '';
         return `<div class="ef-next ef-next-teaser${waiting ? ' is-waiting' : ''}${feedIsCity(h) ? ' is-city' : ''}"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">${h.emoji || '⛰️'} ${feedTeaserLabel(h)}</div><div class="ef-next-sub">${feedWhen(h.date)}. откроем запись, как только объявим ${feedIsCity(h) ? 'программу' : 'маршрут'}</div></div></div>${feedNotifyButton(h.date)}${note}</div>`;
     }
     // плашка-билет без карты: дата · название · «записаться» (открывает шторку хайка с записью)
