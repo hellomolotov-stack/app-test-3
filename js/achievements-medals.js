@@ -41,7 +41,7 @@ export const MEDAL_LIBRARY = [
     { title: 'промочил правую ногу', imageUrl: '/assets/achievements/badges/wet-boot-v2.png' },
     { title: 'откусил волшебный гриб', imageUrl: '/assets/achievements/badges/mushroom-v1.png' },
     { title: 'хайк на Парагильмен', imageUrl: '/assets/achievements/badges/route-paragilmen-v1.png' },
-    { title: 'хайк на Куш-Каю', imageUrl: '/assets/achievements/badges/route-kushkaya-v1.png' },
+    { title: 'хайк на Куш-Кая', imageUrl: '/assets/achievements/badges/route-kushkaya-v1.png' },
     { title: 'Еврейская тропа', imageUrl: '/assets/achievements/badges/route-evrejskaya-v1.png' },
     { title: 'Бирюзовое озеро', imageUrl: '/assets/achievements/badges/route-biruzovoe-v1.png' },
     { title: 'Царская тропа', imageUrl: '/assets/achievements/badges/route-tsarskaya-v1.png' },

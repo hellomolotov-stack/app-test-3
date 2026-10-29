@@ -50,7 +50,7 @@ export const ACHIEVEMENT_CATALOG = [
     { id: "route-ayudag", title: "хайк на Аю-Даг", rarity: 'common', tier: 'common', description: "на спину Медведь-горы" },
     { id: "route-massandra", title: "Массандровская тропа", rarity: 'common', tier: 'common', description: "из парка – вверх по тропе к яйле" },
     { id: "route-paragilmen", title: "хайк на Парагильмен", rarity: 'common', tier: 'common', description: "на скалу над Алуштой" },
-    { id: "route-kushkaya", title: "хайк на Куш-Каю", rarity: 'common', tier: 'common', description: "скала-птица над Ласпи" },
+    { id: "route-kushkaya", title: "хайк на Куш-Кая", rarity: 'common', tier: 'common', description: "скала-птица над Ласпи" },
     { id: "route-evrejskaya", title: "Еврейская тропа", rarity: 'common', tier: 'common', description: "старой тропой через лес" },
     { id: "route-biruzovoe", title: "Бирюзовое озеро", rarity: 'common', tier: 'common', description: "к озеру, вода в котором и правда бирюзовая" },
     { id: "route-tsarskaya", title: "Царская тропа", rarity: 'common', tier: 'common', description: "по тропе, где гуляли императоры" },
