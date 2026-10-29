@@ -111,7 +111,7 @@ const AUTO_GRANT_ENABLED = false;
 const AUTO_ACHIEVEMENTS = [
     // стартовый значок – единственный, который выдаётся сам и при выключенной автовыдаче: при первом входе в приложение.
     { key: 'welcome', title: 'добро пожаловать', rarity: 'common', always: true, imageUrl: '/assets/achievements/badges/welcome-v2.png',
-        description: 'ты в клубе интеллигенции – дальше значки за хайки, маршруты и всё, что случится на тропе' },
+        description: 'впервые зашёл в приложение клуба – дальше значки за хайки, маршруты и всё, что случится на тропе' },
     { key: 'first-hike', title: 'первый хайк с интеллигенцией', rarity: 'common', min: 1, imageUrl: null,
         description: 'первый раз вышел на тропу с клубом – дальше только выше' },
     { key: 'hikes-5', title: '5 хайков', rarity: 'common', min: 5, imageUrl: '/assets/achievements/badges/hikes-5-v2.png',

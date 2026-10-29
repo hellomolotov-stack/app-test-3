@@ -11,7 +11,7 @@ export const ACHIEVEMENT_TIERS = [
 export const tierOf = rarity => rarity === 'mythical' ? 'very' : rarity === 'rare' || rarity === 'legendary' ? 'rare' : 'common';
 
 export const ACHIEVEMENT_CATALOG = [
-    { id: "welcome", title: "добро пожаловать", rarity: 'common', tier: 'common', description: "ты в клубе интеллигенции – дальше значки за хайки, маршруты и всё, что случится на тропе" },
+    { id: "welcome", title: "добро пожаловать", rarity: 'common', tier: 'common', description: "впервые зашёл в приложение клуба – дальше значки за хайки, маршруты и всё, что случится на тропе" },
     { id: "first-hike", title: "первый хайк с интеллигенцией", rarity: 'common', tier: 'common', description: "первый раз вышел на тропу с клубом – дальше только выше" },
     { id: "card-owner", title: "владелец карты интеллигента", rarity: 'legendary', tier: 'rare', description: "теперь ты – часть клуба, а клуб растёт вместе с тобой" },
     { id: "profile", title: "показал себя клубу", rarity: 'common', tier: 'common', description: "заполнил профиль – теперь тебя легко найти и позвать на хайк" },
