@@ -1192,7 +1192,8 @@ export function catalogRouteTrack(route) {
 }
 
 // Маршруты, у которых рельеф с усилением 1.8 выглядит остриём (плато Ильяс-Кая в данных высот узкое)
-const ROUTE_TERRAIN_EXAGGERATION = { 'ilyas-kaya': 0.8 };
+// маршруты по краю обрыва: при сильном рельефе трек «сползает» на склон и прячется за гребнем
+const ROUTE_TERRAIN_EXAGGERATION = { 'ilyas-kaya': 0.8, 'foros-kant': 1.0 };
 
 // точки трека [[lat, lon], …] – для подсчёта высот в сторис
 export function hikeTrackPoints(hike) {
