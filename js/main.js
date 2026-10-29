@@ -867,6 +867,14 @@ async function loadAppData() {
             pMe.then(me => (me ? [me.card, me.regs] : new Promise(() => {}))),
             Promise.all([pUserData, pUserRegs])
         ]);
+        // счётчик хайков считает только сервер (история до приложения + хайки в приложении):
+        // если первым ответил Firebase, число под картой подменяем, когда придёт /api/me
+        pMe.then(me => {
+            const n = Number(me?.card?.hikes) || 0;
+            if (!n || !state.userCard || n <= (Number(state.userCard.hikes) || 0)) return;
+            state.userCard.hikes = n;
+            document.querySelectorAll('.hike-counter .counter-number').forEach(el => { el.textContent = n; });
+        }).catch(() => {});
         const pRegsPopup = loadRegistrationsPopup();
         const pPopupConfig = loadPopupConfig();
         const pPopups = loadPopups().catch(() => null);

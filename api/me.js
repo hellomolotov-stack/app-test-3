@@ -5,6 +5,7 @@
 // Firebase в приложении остаётся – для живых обновлений и как запасной путь, если тут ошибка.
 const { verifyInitData } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
+const { hikeCount } = require('../lib/hike-count');
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -76,9 +77,11 @@ module.exports = async (req, res) => {
             offerFor(id, token),
         ]);
         // тот же вид, что отдаёт loadUserData() в js/firebase.js
+        // пройдено хайков – и с картой, и без: история до приложения + хайки через приложение
+        const hikes = await hikeCount(id, token, { member }).catch(() => Number(member?.hikes_count) || 0);
         const card = member && member.user_id
-            ? { status: 'active', hikes: member.hikes_count || 0, cardUrl: member.card_image_url || '' }
-            : { status: 'inactive', hikes: 0, cardUrl: '' };
+            ? { status: 'active', hikes, cardUrl: member.card_image_url || '' }
+            : { status: 'inactive', hikes, cardUrl: '' };
         return res.status(200).json({ uid: id, card, regs: regs || {}, passes, offer: card.status === 'active' ? null : offer });
     } catch (e) {
         console.error('me:', e.message);

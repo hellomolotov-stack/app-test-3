@@ -559,6 +559,7 @@ function renderGuestHome() {
     const cardHtml = `
         <div class="card-container" id="cardBlock">
             ${cardScratchHtml()}
+            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes || 0}</span></div>
             <div class="sc-row">
                 <div class="sc-text"><b>карта интеллигента</b><span>что за ней скрывается?</span></div>
                 <button type="button" class="btn btn-yellow sc-btn" id="cardBadgeBtn">узнать</button>

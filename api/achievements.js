@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const { verifyInitData, isAdminUser } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
+const { hikeCount } = require('../lib/hike-count');
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -192,6 +193,8 @@ function createHandler(deps = {}) {
     }
     async function hikeProgress(token, userId) {
         const member = (await read(`members/${userId}`, token)).value;
+        // тот же счётчик, что под картой на главной (история до приложения + хайки в приложении)
+        try { return { hikes: await hikeCount(userId, token, { member, fetcher }), member: !!member?.user_id }; } catch (e) { /* ниже – запасной подсчёт */ }
         if (member?.user_id) return { hikes: Number(member.hikes_count) || 0, member: true };
         const [regs, hikes] = await Promise.all([read(`userRegistrations/${userId}`, token), read('hikes', token)]);
         const today = moscowToday();
