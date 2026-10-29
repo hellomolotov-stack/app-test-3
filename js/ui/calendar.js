@@ -1194,6 +1194,9 @@ export function catalogRouteTrack(route) {
 // Маршруты, у которых рельеф с усилением 1.8 выглядит остриём (плато Ильяс-Кая в данных высот узкое)
 // маршруты по краю обрыва: при сильном рельефе трек «сползает» на склон и прячется за гребнем
 const ROUTE_TERRAIN_EXAGGERATION = { 'ilyas-kaya': 0.8, 'foros-kant': 1.0 };
+// Маршруты по гребню над морем: со стороны гор трек скрывается за гребнем, поэтому камера
+// не облетает полный круг, а покачивается со стороны моря на столько градусов
+const ROUTE_ORBIT_ARC = { 'foros-kant': 100 };
 
 // точки трека [[lat, lon], …] – для подсчёта высот в сторис
 export function hikeTrackPoints(hike) {
@@ -1205,7 +1208,8 @@ function getHikeTrack(hike) {
     const track = getHikeTrackRaw(hike);
     const route = track && findCatalogRoute(hike);
     const exaggeration = route && ROUTE_TERRAIN_EXAGGERATION[route.id];
-    return exaggeration ? { ...track, exaggeration } : track;
+    const orbitArc = route && ROUTE_ORBIT_ARC[route.id];
+    return exaggeration || orbitArc ? { ...track, ...(exaggeration ? { exaggeration } : {}), ...(orbitArc ? { orbitArc } : {}) } : track;
 }
 
 function getHikeTrackRaw(hike) {
@@ -1595,7 +1599,7 @@ function reliefAt(profile, azimuthDeg) {
     return profile[i0] * (1 - f) + profile[i1] * f;
 }
 
-function startHikeMapOrbit(map, camera, radiusDeg, standalone = false) {
+function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0) {
     let rafId = null;
     let cancelled = false;
 
@@ -1625,7 +1629,8 @@ function startHikeMapOrbit(map, camera, radiusDeg, standalone = false) {
         if (cancelled || (!standalone && map !== currentHikeMap) || map._removed) return;
         const progress = Math.min((now - startedAt) / HIKE_MAP_ORBIT_DURATION, 1);
         const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
-        const bearing = startBearing + eased * 360;
+        // arc – покачивание в секторе (туда-обратно) вместо полного круга
+        const bearing = arc ? startBearing + Math.sin(progress * Math.PI * 2) * arc / 2 : startBearing + eased * 360;
 
         // На первом кадре и наклон-ниже, и рельеф уже не нулевые на текущем азимуте,
         // поэтому обе поправки вводим плавно за RELIEF_FADE_MS – иначе в момент
@@ -1792,11 +1797,13 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         map.addSource('route', { type: 'geojson', data: geojson });
         map.addLayer({
             id: 'route-glow', type: 'line', source: 'route',
-            paint: { 'line-color': '#D9FD19', 'line-width': 7, 'line-opacity': 0.35, 'line-blur': 5 }
+            // тонкий ореол: на маленькой карте толстое свечение превращало трек в размытую полосу
+            paint: { 'line-color': '#D9FD19', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 3.5, 15, 6], 'line-opacity': 0.25, 'line-blur': 2 },
+            layout: { 'line-cap': 'round', 'line-join': 'round' }
         });
         map.addLayer({
             id: 'route-line', type: 'line', source: 'route',
-            paint: { 'line-color': '#D9FD19', 'line-width': 3.5, 'line-opacity': 0.95 },
+            paint: { 'line-color': '#D9FD19', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 1.8, 15, 3.2], 'line-opacity': 1 },
             layout: { 'line-cap': 'round', 'line-join': 'round' }
         });
 
@@ -1843,10 +1850,10 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
                 // посадка сверху вниз с поворотом, затем оборот
                 map.easeTo({ ...target, duration: 3200, essential: true,
                     easing: t => 1 - Math.pow(1 - t, 3) });
-                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone));
+                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0));
             } else {
                 map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
-                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone));
+                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0));
             }
         });
     });
