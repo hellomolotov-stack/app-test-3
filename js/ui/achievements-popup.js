@@ -71,8 +71,24 @@ document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60000) recheckAchievements('вернулся в приложение');
 });
 
-export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0, title = '', all = null, onClose = null } = {}) {
+// «значки Ксении», «значки Андрея»: родительный падеж русского имени (берём первое слово)
+function nameGenitive(full) {
+    const name = String(full || '').trim().split(/\s+/)[0] || '';
+    if (!/^[А-ЯЁа-яё-]+$/.test(name)) return name;
+    if (/ия$/i.test(name)) return name.slice(0, -1) + 'и';
+    if (/[гкхжчшщ]а$/i.test(name)) return name.slice(0, -1) + 'и';
+    if (/а$/i.test(name)) return name.slice(0, -1) + 'ы';
+    if (/я$/i.test(name)) return name.slice(0, -1) + 'и';
+    if (/^любовь$/i.test(name)) return name.slice(0, -1) + 'и';
+    if (/[йь]$/i.test(name)) return name.slice(0, -1) + 'я';
+    if (/[бвгджзклмнпрстфхцчшщ]$/i.test(name)) return name + 'а';
+    return name;
+}
+
+export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0, title = '', all = null, onClose = null, owner = '' } = {}) {
     if (!items?.length) return;
+    // owner – имя другого участника (значки из его профиля): «значки Ксении», без «ждёт активации» и сторис
+    const waiting = a => !owner && isWaiting(a);
     items.forEach(a => shownIds.add(a.id));
     activeResizeObserver?.disconnect();
     document.querySelector('.ach-overlay')?.remove();
@@ -87,15 +103,15 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     overlay.innerHTML = `<div class="ach-sheet" role="dialog" aria-modal="true" aria-label="новые значки">
         <div class="cs-grab ach-grab" aria-hidden="true"></div>
         <button type="button" class="ach-close" aria-label="закрыть">✕</button>
-        <h2 class="ach-title">${title ? title : fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b>первый</b> значок' : 'у тебя <b>новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : 'твои значки'}</h2>
-        <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : 'значок клуба – только твой'}</p>
-        <div class="ach-track">${items.map((a, i) => `<div class="ach-slide${isWaiting(a) ? ` is-wait is-${metalOf(a)}` : ''}" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false">${isWaiting(a) ? '<b class="wait-lock">🔒</b>' : ''}</div>`).join('')}</div>
+        <h2 class="ach-title">${title ? title : fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b>первый</b> значок' : 'у тебя <b>новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : owner ? `значки <b>${esc(nameGenitive(owner))}</b>` : 'твои значки'}</h2>
+        <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : owner ? 'значок клуба' : 'значок клуба – только твой'}</p>
+        <div class="ach-track">${items.map((a, i) => `<div class="ach-slide${waiting(a) ? ` is-wait is-${metalOf(a)}` : ''}" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false">${waiting(a) ? '<b class="wait-lock">🔒</b>' : ''}</div>`).join('')}</div>
         ${n > 1 ? `<div class="ach-dots">${Array.from({ length: Math.min(3, n) }, (_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
         <div class="ach-with" hidden></div>
         <p class="ach-why" hidden>легендарные и эпические значки <b>активируются с картой интеллигента</b> – он уже твой и будет ждать</p>
         ${firstVisit ? '<button type="button" class="btn btn-yellow ach-btn" data-first-hike>записаться на хайк</button>' : ''}
-        <button type="button" class="btn ${firstVisit ? 'ach-btn-all' : 'btn-yellow'} ach-btn" data-share-one>поделиться в сторис</button>
+        ${owner ? '' : `<button type="button" class="btn ${firstVisit ? 'ach-btn-all' : 'btn-yellow'} ach-btn" data-share-one>поделиться в сторис</button>`}
         ${all && all.length > items.length ? `<button type="button" class="btn ach-btn ach-btn-all" data-all>смотреть все · ${all.length}</button>` : ''}
 
         <p class="ach-note" role="status"></p>
@@ -142,7 +158,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         current = i;
         viewed.add(i);
         const a = items[i];
-        const wait = isWaiting(a);
+        const wait = waiting(a);
         info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}${wait ? ' · ждёт активации' : ''}</span>` : '<span class="ach-rar is-empty">&nbsp;</span>'}
             <div class="ach-name">${esc(a.title)}</div>
             <div class="ach-desc">${esc(a.description || '') || '&nbsp;'}</div>
@@ -248,7 +264,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     overlay.querySelector('[data-all]')?.addEventListener('click', () => {
         haptic(); const cur = items[current];
         close();
-        setTimeout(() => openAchievementsPopup(all, { fresh: false, source: 'смотреть все', initialIndex: Math.max(0, all.findIndex(a => a.id === cur?.id)) }), 320);
+        setTimeout(() => openAchievementsPopup(all, { fresh: false, source: 'смотреть все', owner, initialIndex: Math.max(0, all.findIndex(a => a.id === cur?.id)) }), 320);
     });
     overlay.querySelector('[data-first-hike]')?.addEventListener('click', () => {
         haptic(); log('значки: «записаться на хайк» из окна первого значка', isGuest(), state.user);
@@ -263,7 +279,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         }, 320);
     });
     const oneBtn = overlay.querySelector('[data-share-one]');
-    oneBtn.onclick = () => {
+    if (oneBtn) oneBtn.onclick = () => {
         if (!isWaiting(items[current])) return share([items[current]], oneBtn, items[current].title);
         haptic(); log(`значки: нажал «активировать с картой» на «${items[current].title}»`, true, state.user); close();
         import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значок ждёт активации' })).catch(() => {});

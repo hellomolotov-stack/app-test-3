@@ -122,7 +122,8 @@ function cleanupProfileOverlays() {
 function wireProfileCardActions(container) {
     container.querySelectorAll('.profile-card:not(.profile-preview-card)').forEach(card => {
         const items = medalsByUser[String(card.dataset.userId)] || [];
-        if (items.length) wireMedalStrip(card, items);
+        const mine = String(card.dataset.userId) === String(state.user?.id || '');
+        if (items.length) wireMedalStrip(card, items, null, mine ? '' : card.querySelector('.profile-name')?.textContent || 'Участник');
     });
     container.querySelectorAll('.profile-hike-link').forEach(link => {
         link.addEventListener('click', event => {

@@ -14,9 +14,10 @@ export function medalStripHtml(items, compact = false) {
 }
 
 // all – все значки человека: в окне появится серая «смотреть все» (слайдер по всем значкам)
-export function wireMedalStrip(host, items, all = null) {
+// owner – имя, если это значки другого участника (из профилей)
+export function wireMedalStrip(host, items, all = null, owner = '') {
     host.querySelectorAll('[data-medal]').forEach(button => button.addEventListener('click', () => {
-        haptic(); openAchievementsPopup(items, { fresh: false, source: 'коллекция медалей', initialIndex: Number(button.dataset.medal), all });
+        haptic(); openAchievementsPopup(items, { fresh: false, source: owner ? 'значки участника' : 'коллекция медалей', initialIndex: Number(button.dataset.medal), all, owner });
     }));
 }
 

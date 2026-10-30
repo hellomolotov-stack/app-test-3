@@ -1,0 +1,11 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"></head>
+<body style="background:#0e141b"><div id="main-content" style="padding-top:12px"></div>
+<script type="module">
+window.Telegram={WebApp:{initData:''}};
+const st=(await import('/js/state.js')).state; st.user={id:163665735,first_name:'Макс'}; st.userCard={status:'active'};
+const m=await import('/js/ui/food-home.js');
+const box=document.getElementById('main-content');
+box.innerHTML='<div class="card-container">'+m.foodHomeHtml()+'<h2 class="section-title" style="font-style:italic">в клубе</h2><div class="partner-item"><strong>бесплатные хайки</strong><p>по карте участие без оплаты</p></div></div>';
+m.bindFoodHome(box);
+window.__links=[]; window.open=u=>{window.__links.push(u)}; 
+</script></body></html>
