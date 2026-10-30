@@ -20,26 +20,36 @@ let shown = false;
 const shownIds = new Set();
 let activeResizeObserver = null;
 
+// Ворота для переходов по ссылке («календарь» и т.п.): сначала окно новых значков, потом прокрутка.
+// Открываются, когда стало ясно, что новых значков нет, или когда окно с ними закрыли (не дольше timeout).
+let gateOpen = null;
+const gate = new Promise(r => { gateOpen = r; });
+// Пока окно открыто – ждём его закрытия без ограничения. 'handled' – человек уже ушёл к хайку сам, прокручивать не нужно.
+let autoPopupOpen = false;
+export const afterNewAchievements = (timeout = 9000) => Promise.race([gate, new Promise(r => setTimeout(() => { if (!autoPopupOpen) r(); }, timeout))]);
+
 // новые (ещё не показанные) ачивки – сами при заходе; по ссылке из бота – новые, а если их нет, последние
 export async function maybeShowNewAchievements({ fromLink = false } = {}) {
     const userId = String(state.user?.id || '');
-    if (!userId || shown || !achievementsVisible()) return;
+    if (!userId || shown || !achievementsVisible()) return gateOpen();
     try {
         await Promise.race([claimAchievements(), new Promise(r => setTimeout(r, 4000))]);
         const items = (await loadAchievementCollections([userId]))[userId] || [];
-        if (String(state.user?.id || '') !== userId || shown) return;
+        if (String(state.user?.id || '') !== userId || shown) return gateOpen();
         const fresh = items.filter(i => !i.seenAt);
         const list = fresh.length ? fresh : fromLink ? items.slice(0, 6) : [];
-        if (!list.length) return;
+        if (!list.length) return gateOpen();
         shown = true;
         // не поверх других шторок: подождём, пока закроются
         const open = () => {
             if (document.querySelector('.bottom-sheet.visible, .cs-overlay, .hb-overlay, .modal-overlay, .ach-overlay')) return setTimeout(open, 1500);
             const rest = list.filter(a => !shownIds.has(a.id));
-            if (rest.length) openAchievementsPopup(rest, { fresh: fresh.length > 0, source: fromLink ? 'ссылка из бота' : 'заход в приложение', owned: items.length });
+            if (rest.length) autoPopupOpen = true;
+            if (rest.length) openAchievementsPopup(rest, { fresh: fresh.length > 0, source: fromLink ? 'ссылка из бота' : 'заход в приложение', owned: items.length, onClose: gateOpen });
+            else gateOpen();
         };
         setTimeout(open, fromLink ? 500 : 1200);
-    } catch { /* ачивки не мешают работе приложения */ }
+    } catch { gateOpen(); /* ачивки не мешают работе приложения */ }
 }
 
 // ачивка сразу после события: после записи на хайк и когда человек возвращается в приложение
@@ -61,7 +71,7 @@ document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && Date.now() - lastCheck > 30 * 60000) recheckAchievements('вернулся в приложение');
 });
 
-export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0, title = '', all = null } = {}) {
+export function openAchievementsPopup(items, { fresh = true, source = '', initialIndex = 0, owned = 0, title = '', all = null, onClose = null } = {}) {
     if (!items?.length) return;
     items.forEach(a => shownIds.add(a.id));
     activeResizeObserver?.disconnect();
@@ -70,6 +80,8 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const names = items.map(a => `«${a.title}»${isWaiting(a) ? ' (ждёт активации)' : ''}`);
     log(fresh ? `значки: получил ${names.join(', ')}` : `значки: смотрел ${names[Math.max(0, Math.min(items.length - 1, initialIndex))]}${items.length > 1 ? ` и ещё ${items.length - 1}` : ''}`, isGuest(), state.user);
     const n = items.length;
+    // первый вход («добро пожаловать» среди новых): главная кнопка – записаться на ближайший хайк
+    const firstVisit = fresh && items.some(a => a.title === 'добро пожаловать');
     const overlay = document.createElement('div');
     overlay.className = 'ach-overlay';
     overlay.innerHTML = `<div class="ach-sheet" role="dialog" aria-modal="true" aria-label="новые значки">
@@ -82,7 +94,8 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         <div class="ach-info" aria-live="polite"></div>
         <div class="ach-with" hidden></div>
         <p class="ach-why" hidden>легендарные и эпические значки <b>активируются с картой интеллигента</b> – он уже твой и будет ждать</p>
-        <button type="button" class="btn btn-yellow ach-btn" data-share-one>поделиться в сторис</button>
+        ${firstVisit ? '<button type="button" class="btn btn-yellow ach-btn" data-first-hike>записаться на хайк</button>' : ''}
+        <button type="button" class="btn ${firstVisit ? 'ach-btn-all' : 'btn-yellow'} ach-btn" data-share-one>поделиться в сторис</button>
         ${all && all.length > items.length ? `<button type="button" class="btn ach-btn ach-btn-all" data-all>смотреть все · ${all.length}</button>` : ''}
 
         <p class="ach-note" role="status"></p>
@@ -203,6 +216,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         }).catch(() => {});
     };
     const close = () => {
+        if (onClose) { const cb = onClose; onClose = null; setTimeout(cb, 320); }
         if (!overlay.dataset.closed) {
             overlay.dataset.closed = '1';
             log(`значки: закрыл окно${n > 1 ? ` (посмотрел ${viewed.size} из ${n})` : ''}`, isGuest(), state.user);
@@ -235,6 +249,18 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         haptic(); const cur = items[current];
         close();
         setTimeout(() => openAchievementsPopup(all, { fresh: false, source: 'смотреть все', initialIndex: Math.max(0, all.findIndex(a => a.id === cur?.id)) }), 320);
+    });
+    overlay.querySelector('[data-first-hike]')?.addEventListener('click', () => {
+        haptic(); log('значки: «записаться на хайк» из окна первого значка', isGuest(), state.user);
+        onClose = null; close();
+        // ближайший хайк (не городская встреча) – его шторка; нет такого – календарь
+        const today = new Date().toISOString().slice(0, 10);
+        const idx = (state.hikesWithTitle || []).findIndex(h => h.date >= today && h.cancelled !== true && h.city !== true && h.city !== 'yes' && h.book_club !== true);
+        setTimeout(() => {
+            if (idx >= 0) import('./calendar.js').then(m => m.showBottomSheet(idx)).catch(() => {});
+            else document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            gateOpen('handled');
+        }, 320);
     });
     const oneBtn = overlay.querySelector('[data-share-one]');
     oneBtn.onclick = () => {

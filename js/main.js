@@ -308,8 +308,14 @@ function glideTo(targetY, duration = 1200) {
 const loaderGone = () => { const l = document.getElementById('initial-loader'); return !l || l.classList.contains('fade-out') || l.style.display === 'none'; };
 
 // диплинк на блок главной: после заставки сначала видно верх приложения, затем плавный доскролл к блоку
-function scrollToWhenReady(getter, { pause = 900, interval = 100, timeout = 12000 } = {}) {
+// По ссылке («календарь» и т.п.): если при входе всплывает окно новых значков – сначала оно,
+// прокрутка к нужному блоку – после его закрытия. Нажал в окне «записаться на хайк» – не прокручиваем.
+function scrollToWhenReady(getter, opts = {}) {
     window.scrollTo(0, 0);
+    import('./ui/achievements-popup.js').then(m => m.afterNewAchievements()).catch(() => null)
+        .then(r => { if (r !== 'handled') scrollToWhenReadyNow(getter, opts); });
+}
+function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 12000 } = {}) {
     const t0 = Date.now();
     let goneAt = 0;
     const iv = setInterval(() => {
