@@ -6948,3 +6948,17 @@ img.is-glow-vio { filter: drop-shadow(0 0 6px rgba(176,124,255,.65)) !important;
 .acol-overlay ~ .cs-overlay { z-index: 2260; }
 /* поп-ап значка: серая «смотреть все» под «поделиться в сторис» */
 .ach-btn.ach-btn-all { background: rgba(255,255,255,.1); color: #fff; box-shadow: none; border: 0; }
+.fh-block { margin: 0 16px 18px; padding: 14px 12px 12px; border-radius: 18px; background: linear-gradient(180deg, rgba(214, 170, 110, .16), rgba(214, 170, 110, .06)); border: 1px solid rgba(214, 170, 110, .35); }
+.fh-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.fh-head b { font-size: 16px; color: #F3D9B1; }
+.fh-chip { font-size: 11px; font-weight: 800; color: #1d2200; background: var(--yellow, #d9fd19); border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.fh-sub { margin: 4px 0 10px; font-size: 12.5px; line-height: 1.4; color: rgba(255, 255, 255, .62); }
+.fh-search { display: flex; align-items: center; background: rgba(0, 0, 0, .3); border-radius: 12px; padding: 0 4px 0 12px; }
+.fh-search input { flex: 1; min-width: 0; height: 40px; border: 0; background: none; color: #fff; font: inherit; font-size: 14px; outline: none; -webkit-appearance: none; }
+.fh-search input::placeholder { color: rgba(255, 255, 255, .45); }
+.fh-search button { width: 34px; height: 34px; border: 0; border-radius: 10px; background: var(--yellow, #d9fd19); color: #1d2200; font-size: 20px; font-weight: 800; cursor: pointer; }
+.fh-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 9px; }
+.fh-tile { border: 0; border-radius: 13px; padding: 10px 4px 9px; background: rgba(255, 255, 255, .07); color: #fff; font: inherit; font-size: 11.5px; line-height: 1.2; text-align: center; cursor: pointer; }
+.fh-tile span { display: block; font-size: 22px; margin-bottom: 4px; }
+.fh-tile:active { transform: scale(.97); }
+.fh-foot { margin-top: 10px; font-size: 11px; line-height: 1.35; color: rgba(255, 255, 255, .5); }

@@ -6,6 +6,7 @@ import { log } from '../api.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop, cleanupProfileOverlays } from './common.js';
 import { renderHome } from './home.js';
+import { foodHomeHtml, bindFoodHome } from './food-home.js';
 
 export function renderNewcomerPage(isGuest = false) {
     cleanupProfileOverlays();
@@ -192,12 +193,14 @@ export function renderPriv() {
 
     mainDiv().innerHTML = `
         <div class="card-container">
+            ${foodHomeHtml()}
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>
             ${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>
             ${cityHtml}
         </div>
     `;
+    bindFoodHome(mainDiv());
 }
 
 export function renderGift(isGuest = false) {
