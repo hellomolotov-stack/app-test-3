@@ -133,4 +133,38 @@ check('Other content untouched', HI_Club_Checkout::local_frontend('<p>текст
 $GLOBALS['options'][HI_Club_Checkout::FRONTEND] = 'vercel';
 check('Vercel option keeps original script', HI_Club_Checkout::local_frontend($page) === $page);
 
+// ---- обычный каталог: карта из ссылки (kind=catalog) ----
+function catalog_case($on, $card) {
+    global $KEY;
+    start_case(true, false, 'pickup', false);              // покупатель без клубного контекста хайка
+    if ($on) { $GLOBALS['options'][HI_Club_Checkout::LOYALTY] = 'on'; $GLOBALS['options'][HI_Club_Checkout::LOYALTY_KEY] = $KEY; }
+    $GLOBALS['hooks'] = array(); HI_Club_Checkout::boot(); include __DIR__ . '/fixtures/dietcakes-checkout.php'; do_action('woocommerce_blocks_loaded');
+    WC()->cart->base = 1000;
+    if ($card) { try { call_user_func($GLOBALS['store_callback'], array('source' => 'intelligentsia', 'pilot' => '1', 'kind' => 'catalog', 'card' => $card)); } catch (Exception $e) { $GLOBALS['catalog_error'] = $e->getMessage(); } }
+    $GLOBALS['api_calls'] = array();
+}
+catalog_case(true, $CARD); $GLOBALS['api_reply'] = $quote10; WC()->cart->recalculate();
+check('Catalog link card: discount 10% applied', count(fees_named(HI_Club_Checkout::CARD_FEE)) === 1 && local_total() === 900.0);
+check('Catalog link: no hike context created', HI_Club_Checkout::context() === null);
+check('Catalog link: shipping/fulfillment settings untouched', WC()->session->get('chosen_shipping_methods') === array('local_pickup:8') && WC()->session->get('eco_fulfillment_type') === 'pickup');
+ob_start(); HI_Club_Checkout::render(); $ui = ob_get_clean();
+check('Catalog link: no hike UI at checkout', $ui === '');
+$o = new WC_Order(); HI_Club_Checkout::stamp_order($o, array());
+check('Catalog order stamped for ledger without hike meta', $o->get_meta('_hi_club_card') === $CARD && $o->get_meta('_hi_club_card_discount') === 10000 && $o->get_meta('_hi_club_way') === '' && $o->get_meta('_hi_club_source') === 'intelligentsia_catalog');
+$GLOBALS['api_calls'] = array(); HI_Club_Checkout::ledger_confirm($o);
+check('Catalog order is written to the shared ledger on payment', array_column(array_column($GLOBALS['api_calls'], 'body'), 'action') === array('reserve', 'confirm'));
+HI_Club_Checkout::clear();
+check('Cart emptied: catalog card forgotten', HI_Club_Checkout::catalog_card() === '');
+catalog_case(true, 'dc1_1_bad');
+check('Malformed catalog card rejected and not stored', HI_Club_Checkout::catalog_card() === '' && !empty($GLOBALS['catalog_error']));
+catalog_case(false, $CARD); $GLOBALS['api_reply'] = $quote10; WC()->cart->recalculate();
+check('Loyalty off: catalog link has no effect, ordinary 970', count($GLOBALS['api_calls']) === 0 && local_total() === 970.0);
+catalog_case(true, null); WC()->cart->recalculate();
+check('Ordinary shopper without card is untouched (970, no API)', local_total() === 970.0 && count($GLOBALS['api_calls']) === 0);
+catalog_case(true, $CARD); $GLOBALS['api_reply'] = array('code' => 403, 'body' => array('error' => 'inactive_card')); WC()->cart->recalculate();
+check('Catalog card rejected by club: ordinary pickup 3% stays', count(fees_named(HI_Club_Checkout::CARD_FEE)) === 0);
+ob_start(); HI_Club_Checkout::catalog_script(); $js = ob_get_clean();
+check('Footer script reads #card= only and posts kind=catalog', strpos($js, 'kind:\'catalog\'') !== false && strpos($js, 'hi-root') !== false);
+catalog_case(false, null); ob_start(); HI_Club_Checkout::catalog_script(); check('Footer script silent when loyalty is off', ob_get_clean() === '');
+
 echo json_encode(array('engine' => PHP_VERSION, 'checks' => $checks), JSON_UNESCAPED_UNICODE);

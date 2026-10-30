@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.4.4
+ * Version: 0.5.0
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -27,6 +27,8 @@ final class HI_Club_Checkout {
     const LOYALTY_API_URL = 'hi_club_api_url';
     const CARD_FEE = 'Скидка по карте интеллигента';
     const QUOTE = 'hi_club_card_quote';
+    // Карта из ссылки каталога (приложение → любая страница магазина): отдельно от клубного контекста хайка
+    const CATALOG = 'hi_club_catalog_card';
     private static $adding_box = false;
     // Сроки заказа «на хайк»: магазин доставляет 10–20 (последний выезд 19:30); готовую еду готовит за 2 дня.
     const READY_FOOD = 'Готовая еда';
@@ -48,6 +50,7 @@ final class HI_Club_Checkout {
     public static function boot() {
         HI_Club_Stock_Policy::boot();
         add_action('admin_menu', array(__CLASS__, 'admin_menu'));
+        add_action('wp_footer', array(__CLASS__, 'catalog_script'), 99);
         add_filter('the_content', array(__CLASS__, 'local_frontend'), 99);
         // Сводка заказов «на хайк» в бот клуба: оплачен / отменён (ключ магазина тот же, что для скидки).
         if (strlen((string) get_option(self::LOYALTY_KEY, '')) >= 32) {
@@ -101,6 +104,19 @@ final class HI_Club_Checkout {
         return is_array($context) && ($context['source'] ?? '') === 'intelligentsia'
             && ($context['pilot'] ?? false) === true
             && ($context['expires'] ?? 0) > time() ? $context : null;
+    }
+
+    // Подписанный ID карты, пришедший по ссылке каталога из приложения (2 часа). Подлинность и активность проверяет сервер клуба.
+    public static function catalog_card() {
+        $session = self::session();
+        $c = $session ? $session->get(self::CATALOG) : null;
+        return is_array($c) && ($c['expires'] ?? 0) > time() && preg_match('/^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', (string) ($c['card'] ?? '')) ? $c['card'] : '';
+    }
+
+    // Карта текущего покупателя: из клубного контекста (хайк) или из ссылки каталога
+    public static function card_token() {
+        $context = self::context();
+        return $context && !empty($context['card']) ? $context['card'] : self::catalog_card();
     }
 
     public static function valid_date($date) {
@@ -233,10 +249,10 @@ final class HI_Club_Checkout {
     }
 
     public static function card_notice() {
-        $context = self::context();
-        if (!$context || empty($context['card']) || !WC()->cart) return;
+        $card = self::card_token();
+        if ($card === '' || !WC()->cart) return;
         $quote = self::session()->get(self::QUOTE);
-        if (!is_array($quote) || ($quote['card'] ?? '') !== $context['card'] || ($quote['gross'] ?? -1) !== self::gross_kopecks(WC()->cart)) return;
+        if (!is_array($quote) || ($quote['card'] ?? '') !== $card || ($quote['gross'] ?? -1) !== self::gross_kopecks(WC()->cart)) return;
         $applied = 0;
         foreach (WC()->cart->fees_api()->get_fees() as $fee) { if ($fee->name === self::CARD_FEE && (float) $fee->amount < 0) $applied -= (float) $fee->amount; }
         // Сама скидка уже есть отдельной строкой в итогах – повторную строку не выводим, только предупреждение при сбое.
@@ -249,6 +265,15 @@ final class HI_Club_Checkout {
         if (self::scalar($data, 'source') !== 'intelligentsia'
             || self::scalar($data, 'pilot') !== '1') {
             throw new Exception('Пилот доступен только по тестовой клубной ссылке.');
+        }
+        if (self::scalar($data, 'kind') === 'catalog') {
+            // Обычные покупки из каталога: запоминаем только карту; доставку, способ получения и корзину не трогаем.
+            $token = self::scalar($data, 'card');
+            if (!preg_match('/^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', $token)) throw new Exception('Карта не распознана. Открой магазин из приложения ещё раз.');
+            $session->set(self::CATALOG, array('card' => $token, 'expires' => time() + 7200));
+            $session->__unset(self::QUOTE);
+            if (method_exists($session, 'set_customer_session_cookie')) $session->set_customer_session_cookie(true);
+            return;
         }
         $way = self::scalar($data, 'way');
         if (!in_array($way, array('home', 'pickup', 'hike'), true)) throw new Exception('Выбери способ получения.');
@@ -356,7 +381,9 @@ final class HI_Club_Checkout {
 
     public static function should_skip_pickup_discount($cart) {
         $context = self::context();
-        return $context && self::pickup_selected() && ($context['way'] === 'hike' || $cart->has_discount(self::COUPON) || self::card_active());
+        // обычная покупка из каталога с картой: 3% за самовывоз не складываем с картой (общий потолок 10%)
+        if (!$context) return self::card_active() && self::pickup_selected();
+        return self::pickup_selected() && ($context['way'] === 'hike' || $cart->has_discount(self::COUPON) || self::card_active());
     }
 
     // ---- скидка по карте интеллигента ----
@@ -365,8 +392,7 @@ final class HI_Club_Checkout {
     }
 
     public static function card_active() {
-        $context = self::context();
-        return self::loyalty_enabled() && $context && !empty($context['card']);
+        return self::loyalty_enabled() && self::card_token() !== '';
     }
 
     // Только https-адрес, оканчивающийся на /api/dc-loyalty; иначе – адрес по умолчанию.
@@ -401,17 +427,17 @@ final class HI_Club_Checkout {
     }
 
     public static function quote($cart) {
-        $context = self::context();
+        $card = self::card_token();
         $gross = self::gross_kopecks($cart);
         if (!self::card_active() || $gross <= 0) return null;
         $session = self::session();
         $cached = $session ? $session->get(self::QUOTE) : null;
         // Корзина пересчитывается много раз – сервер спрашиваем не чаще раза в 5 минут для той же суммы.
-        if (is_array($cached) && $cached['card'] === $context['card'] && $cached['gross'] === $gross && $cached['at'] > time() - 300 && (!empty($cached['ok']) || ($cached['error'] ?? '') !== 'unavailable')) return $cached;
-        $result = self::api(array('action' => 'quote', 'card' => $context['card'], 'gross' => $gross));
+        if (is_array($cached) && $cached['card'] === $card && $cached['gross'] === $gross && $cached['at'] > time() - 300 && (!empty($cached['ok']) || ($cached['error'] ?? '') !== 'unavailable')) return $cached;
+        $result = self::api(array('action' => 'quote', 'card' => $card, 'gross' => $gross));
         $quote = $result && isset($result['discount']) && is_int($result['discount']) && $result['discount'] >= 0 && $result['discount'] <= $gross
-            ? array('card' => $context['card'], 'gross' => $gross, 'discount' => $result['discount'], 'at' => time(), 'ok' => true)
-            : array('card' => $context['card'], 'gross' => $gross, 'discount' => 0, 'at' => time(), 'ok' => false,
+            ? array('card' => $card, 'gross' => $gross, 'discount' => $result['discount'], 'at' => time(), 'ok' => true)
+            : array('card' => $card, 'gross' => $gross, 'discount' => 0, 'at' => time(), 'ok' => false,
                 'error' => $result['error'] ?? 'invalid_quote');
         if ($session) $session->set(self::QUOTE, $quote);
         return $quote;
@@ -568,7 +594,7 @@ final class HI_Club_Checkout {
 
     public static function stamp_order($order, $data) {
         $context = self::context();
-        if (!$context) return;
+        if (!$context) { self::stamp_catalog_order($order); return; }
         $order->update_meta_data('_hi_club_source', 'intelligentsia');
         HI_Club_Stock_Policy::stamp($order);
         $order->update_meta_data('_hi_club_way', $context['way']);
@@ -597,6 +623,28 @@ final class HI_Club_Checkout {
         }
     }
 
+    // Обычный заказ из каталога с картой из приложения: только метки для журнала скидок; остальное как у любого заказа магазина.
+    public static function stamp_catalog_order($order) {
+        if (!self::card_active() || !WC()->cart) return;
+        $quote = self::quote(WC()->cart);
+        if (!$quote || !$quote['ok'] || $quote['discount'] <= 0) return;
+        $order->update_meta_data('_hi_club_source', 'intelligentsia_catalog');
+        $order->update_meta_data('_hi_club_card', self::card_token());
+        $order->update_meta_data('_hi_club_gross', $quote['gross']);
+        $order->update_meta_data('_hi_club_card_discount', $quote['discount']);
+    }
+
+    // Ссылка из приложения несёт #card=…: на любой странице магазина один раз отправляем карту в сессию корзины (Store API).
+    public static function catalog_script() {
+        if (is_admin() || !self::loyalty_enabled()) return;
+        echo "<script>(function(){var m=/[#&]card=(dc1_\\d{1,16}_[A-Za-z0-9_-]{28})/.exec(location.hash);if(!m||document.getElementById('hi-root'))return;"
+            . "try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}"
+            . "try{if(sessionStorage.getItem('hiCard')===m[1])return}catch(e){}"
+            . "fetch('/wp-json/wc/store/v1/cart',{credentials:'same-origin',cache:'no-store'}).then(function(r){var n=r.headers.get('Nonce');if(!n)throw 0;"
+            . "return fetch('/wp-json/wc/store/v1/cart/extensions',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json',Nonce:n},body:JSON.stringify({namespace:'hiking-club',data:{source:'intelligentsia',pilot:'1',kind:'catalog',card:m[1]}})})})"
+            . ".then(function(r){if(r.ok){try{sessionStorage.setItem('hiCard',m[1])}catch(e){}}}).catch(function(){});})();</script>";
+    }
+
     public static function package_name($name, $index, $package) {
         return self::is_hike() ? 'Получить на хайке' : $name;
     }
@@ -617,13 +665,13 @@ final class HI_Club_Checkout {
 
     public static function clear() {
         $session = self::session();
-        if ($session) $session->__unset(self::SESSION);
+        if ($session) { $session->__unset(self::SESSION); $session->__unset(self::CATALOG); }
     }
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.4.4', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.4.4');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.5.0', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.5.0');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.
