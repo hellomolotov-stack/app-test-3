@@ -746,11 +746,19 @@ async function loadAppData() {
             }
         };
 
-        // Быстрый первый запуск: список хайков с CDN (/api/hikes), запрошен ещё в index.html.
-        // Если Firebase успел раньше – ответ CDN просто игнорируем.
+        // Быстрый первый запуск: список хайков с нашего сервера (/api/hikes), запрошен ещё в index.html.
+        // Применяем всегда, пока не ответил Firebase: раньше при старом списке из памяти телефона ответ
+        // сервера отбрасывался, и у кого Firebase не подключается (Android без VPN) новые хайки не появлялись.
         window.__hikesBoot?.then(raw => {
-            if (raw && !hikesFromFirebase && !state.hikesWithTitle.length) applyHikes(hikesFromSnapshot(raw));
+            if (raw && !hikesFromFirebase) applyHikes(hikesFromSnapshot(raw));
         });
+        // Firebase так и не ответил – раз в 2 минуты подтягиваем свежий список с сервера
+        const hikesPoll = setInterval(() => {
+            if (hikesFromFirebase) return clearInterval(hikesPoll);
+            fetch('/api/hikes', { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(raw => {
+                if (raw && !hikesFromFirebase) applyHikes(hikesFromSnapshot(raw));
+            }).catch(() => {});
+        }, 120000);
 
         // Статус карты и записи: применяем один раз – из /api/me (наш домен, обычно < 1 с)
         // или из Firebase, смотря кто ответит первым. Firebase остаётся запасным путём.
