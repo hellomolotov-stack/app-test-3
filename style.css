@@ -6921,9 +6921,13 @@ img.is-glow-vio { filter: drop-shadow(0 0 6px rgba(176,124,255,.65)) !important;
 .bdg-cat-pic .wait-pic { display: inline-block; }
 /* поп-ап */
 .ach-slide.is-wait { position: relative; }
-.ach-slide.is-wait.is-gold img { filter: drop-shadow(0 0 22px rgba(237,199,110,.55)) saturate(.85) brightness(.9); }
-.ach-slide.is-wait.is-vio img { filter: drop-shadow(0 0 22px rgba(176,124,255,.6)) saturate(.85) brightness(.9); }
-.ach-slide.is-wait .wait-lock { right: 24px; bottom: 24px; width: 34px; height: 34px; font-size: 15px; opacity: 0; transition: opacity .2s ease; }
+/* свечение – круглым пятном за значком: drop-shadow на картинке iOS обрезает по её квадрату */
+.ach-slide.is-wait img { position: relative; z-index: 1; filter: saturate(.85) brightness(.9); }
+.ach-slide.is-wait::before { content: ""; position: absolute; left: 50%; top: 50%; width: 200px; height: 200px; margin: -100px 0 0 -100px; border-radius: 50%; pointer-events: none; opacity: 0; transition: opacity .3s ease;
+    background: radial-gradient(circle, rgba(237,199,110,.42) 0%, rgba(237,199,110,.16) 42%, rgba(237,199,110,0) 70%); }
+.ach-slide.is-wait.is-vio::before { background: radial-gradient(circle, rgba(176,124,255,.45) 0%, rgba(176,124,255,.17) 42%, rgba(176,124,255,0) 70%); }
+.ach-slide.is-wait.is-on::before { opacity: 1; }
+.ach-slide.is-wait .wait-lock { z-index: 2; right: 24px; bottom: 24px; width: 34px; height: 34px; font-size: 15px; opacity: 0; transition: opacity .2s ease; }
 .ach-slide.is-wait.is-on .wait-lock { opacity: 1; }
 .ach-why { margin: -4px 0 12px; padding: 9px 12px; border-radius: 14px; background: rgba(237,199,110,.08); border: 1px solid rgba(237,199,110,.35); font-size: 12.5px; line-height: 1.4; text-align: left; color: rgba(255,255,255,.85); }
 .ach-why b { color: #edc76e; }
