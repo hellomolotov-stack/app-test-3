@@ -689,6 +689,8 @@ async function loadAppData() {
         const bcMatch = /^bc([a-z0-9]{4,16})_(.*)$/.exec(startParam);
         if (bcMatch) {
             startParam = bcMatch[2];
+            // пришёл из рассылки на хайк: если мест уже нет – покажем баннер «место уже заняли»
+            if (startParam.startsWith('hike_')) state.bcHikeDate = decodeURIComponent(startParam.substring(5)).split('T')[0];
             try {
                 fetch('/api/bc', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ b: bcMatch[1], initData: tg?.initData || '' }) }).catch(() => {});

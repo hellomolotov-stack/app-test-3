@@ -779,6 +779,32 @@ function feedNotifyToast(date, container) {
     el.addEventListener('click', hide);
 }
 
+// Пришёл по рассылке «освободилось место», а его уже заняли: лаймовая плашка сверху, висит до нажатия.
+function spotTakenBanner(hike) {
+    document.querySelector('.spot-taken')?.remove();
+    const tgw = window.Telegram?.WebApp;
+    const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    const el = document.createElement('div');
+    el.className = 'spot-taken';
+    el.style.top = (inset ? inset + 8 : 12) + 'px';
+    el.innerHTML = `
+        <b>упс! место уже заняли 🙈</b>
+        <span>кто-то успел раньше тебя. но места иногда освобождаются – напиши нам, если очень хочешь пойти</span>
+        <div class="spot-taken-btns">
+            <button type="button" class="spot-taken-write" data-log-label="место заняли: напиши нам">напиши нам</button>
+            <button type="button" class="spot-taken-ok" data-log-label="место заняли: ок">ок</button>
+        </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('is-on'));
+    log('место заняли: баннер из рассылки', true, state.user, { hike_date: hike.date });
+    const hide = () => { el.classList.remove('is-on'); setTimeout(() => el.remove(), 300); };
+    el.querySelector('.spot-taken-ok').addEventListener('click', () => { haptic(); hide(); });
+    el.querySelector('.spot-taken-write').addEventListener('click', () => {
+        haptic(); hide();
+        openLink('https://t.me/hellointelligent', 'место заняли: написать организатору', true);
+    });
+}
+
 function feedToast(text) {
     const el = document.createElement('div');
     el.className = 'ef-toast';
@@ -3126,6 +3152,10 @@ function updateFloatingSheetButtons() {
         noteRow.appendChild(note);
         container.appendChild(noteRow);
         // дальше – обычный слайдер записи
+    }
+    if (soldOutForMe && !hasCard && !viaPass && state.bcHikeDate && normalizeDate(state.bcHikeDate) === normalizeDate(hike.date)) {
+        state.bcHikeDate = '';
+        setTimeout(() => spotTakenBanner(hike), 350);
     }
     if (soldOutForMe && !hasCard && !viaPass) {
         // мест нет: сверху – прийти с картой (шторка карты), снизу – написать организатору лично
