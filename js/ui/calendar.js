@@ -3156,10 +3156,13 @@ function updateFloatingSheetButtons() {
     }
     if (soldOutForMe && hasCard) {
         const note = document.createElement('div');
-        note.className = 'availability-floating so-card-plate';
+        // та же плашка, что без карты, но без «напиши нам» и без перехода – запись слайдером ниже
+        note.className = 'availability-floating so-card-plate so-full';
         note.innerHTML = `
-            <img src="assets/card-front.jpg" alt="" class="so-card-img is-small">
-            <div class="so-card-text"><b>набор закрыт</b><span>но не для тех, у кого карта</span></div>`;
+            <div class="so-full-top" style="cursor:default">
+                <img src="assets/card-front.jpg" alt="" class="so-card-img">
+                <div class="so-card-text"><b>места закончились</b><span>но с картой интеллигента можно прийти</span></div>
+            </div>`;
         const noteRow = document.createElement('div');
         noteRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
         noteRow.appendChild(note);
