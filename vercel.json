@@ -82,6 +82,10 @@
     {
       "path": "/api/dc-loyalty",
       "schedule": "5 14 * * *"
+    },
+    {
+      "path": "/api/hike-badges",
+      "schedule": "0 15 * * *"
     }
   ]
 }
