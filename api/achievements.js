@@ -265,7 +265,9 @@ function createHandler(deps = {}) {
             const secret = process.env.CRON_SECRET || '', got = String(req.headers.authorization || '').replace(/^Bearer /, '');
             const cron = !!secret && got.length === secret.length && crypto.timingSafeEqual(Buffer.from(got), Buffer.from(secret));
             try {
-                const day = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+                const today = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+                // проверка без секрета может посмотреть и другой день – выдачи при этом нет
+                const day = !cron && /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.date || '')) ? String(req.query.date) : today;
                 const result = await grantHikeBadges(day, await accessToken(), { dryRun: !cron });
                 if (cron) return res.status(200).json(result);
                 return res.status(200).json({ date: result.date, route: result.route || null, people: result.people?.length || 0, skipped: result.skipped || null });
