@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { grantHikeBadges } = require('../lib/hike-badges');
 const { verifyInitData, isAdminUser } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
@@ -258,6 +259,21 @@ function createHandler(deps = {}) {
     }
     return async (req, res) => {
         res.setHeader('Cache-Control', 'no-store');
+        // Vercel Cron в 18:00 по Москве: значки участникам сегодняшнего хайка (lib/hike-badges.js).
+        // Без секрета крона – только проверка (маршрут и сколько человек), без имён и без выдачи.
+        if (req.method === 'GET' && req.query?.cron === 'hike-badges') {
+            const secret = process.env.CRON_SECRET || '', got = String(req.headers.authorization || '').replace(/^Bearer /, '');
+            const cron = !!secret && got.length === secret.length && crypto.timingSafeEqual(Buffer.from(got), Buffer.from(secret));
+            try {
+                const day = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+                const result = await grantHikeBadges(day, await accessToken(), { dryRun: !cron });
+                if (cron) return res.status(200).json(result);
+                return res.status(200).json({ date: result.date, route: result.route || null, people: result.people?.length || 0, skipped: result.skipped || null });
+            } catch (e) {
+                console.error('hike-badges:', e.message);
+                return res.status(502).json({ error: 'не получилось' });
+            }
+        }
         if (req.method !== 'POST') return res.status(405).json({ error: 'метод не поддерживается' });
         const botToken = process.env.TELEGRAM_BOT_TOKEN;
         if (!botToken) return res.status(503).json({ error: 'сервер не настроен' });
