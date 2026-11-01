@@ -256,7 +256,9 @@ function renderMastermindSummaries() {
     // саммари из листа + те, что добавлены к хайкам в админке (summary_link), без повторов по ссылке
     const listed = state.mastermindSummaries || [];
     const links = new Set(listed.map(s => String(s.link || '').trim()));
-    const fromHikes = (state.hikesWithTitle || []).filter(h => /^https?:\/\//.test(String(h.summary_link || '').trim()) && !links.has(String(h.summary_link).trim()))
+    // дата уже есть в списке (например, поправили в админке) – саммари этого хайка не дублируем
+    const days = new Set(listed.map(s => String(s.date || '').slice(0, 10)));
+    const fromHikes = (state.hikesWithTitle || []).filter(h => /^https?:\/\//.test(String(h.summary_link || '').trim()) && !links.has(String(h.summary_link).trim()) && !days.has(String(h.date).slice(0, 10)))
         .map(h => ({ date: h.date, title: String(h.summary_title || '').trim() || h.title, link: String(h.summary_link).trim() }));
     const summaries = [...listed, ...fromHikes].sort((a, b) => String(b.date).localeCompare(String(a.date)));
     const isGuest = state.userCard.status !== 'active';
@@ -437,6 +439,8 @@ window.addEventListener('club:content-updated', () => {
         current.querySelector('.updates-scroll').innerHTML = next.querySelector('.updates-scroll').innerHTML;
     } else if (current) current.remove();
     else if (next) mainDiv().querySelector('.maker-credit')?.before(next);
+    const mm = document.getElementById('mastermindSummariesContainer');
+    if (mm) mm.innerHTML = renderMastermindSummaries();
 });
 
 function handleGuestRead(e) {

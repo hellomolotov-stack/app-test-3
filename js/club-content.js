@@ -16,6 +16,7 @@ export function loadClubContent() {
 export function applyClubContent(content) {
     if (content.metrics) state.metrics = content.metrics;
     if (content.updates) state.updates = content.updates;
+    if (content.masterminds) state.mastermindSummaries = content.masterminds;
     saveCachedState();
     window.dispatchEvent(new CustomEvent('club:content-updated'));
 }

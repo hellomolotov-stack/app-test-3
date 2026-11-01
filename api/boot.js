@@ -17,9 +17,18 @@ module.exports = async (req, res) => {
             if (!r.ok) throw new Error(`${node} ${r.status}`);
             return r.json();
         }));
+        const out = Object.fromEntries(NODES.map((n, i) => [n, values[i]]));
+        // мастермайнды, поправленные в админке, лежат в закрытом adminContent – подменяем ими лист таблицы
+        try {
+            const { getAccessToken, normalizeMasterminds } = require('./club-content');
+            const token = await getAccessToken();
+            const r = await fetch(`${DB}/adminContent/masterminds.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });
+            const o = r.ok ? await r.json() : null;
+            if (o?.hasValue) { out.mastermindSummaries = normalizeMasterminds(o.value); out.mastermindAdmin = true; }
+        } catch (e) { console.error('boot masterminds:', e.message); }
         res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
-        res.status(200).send(JSON.stringify(Object.fromEntries(NODES.map((n, i) => [n, values[i]]))));
+        res.status(200).send(JSON.stringify(out));
     } catch (e) {
         console.error('boot:', e.message);
         res.setHeader('Cache-Control', 'no-store');

@@ -301,6 +301,9 @@ export async function loadUpdates() {
 }
 
 export async function loadMastermindSummaries() {
+    // поправленные в админке приходят через /api/boot (лист таблицы их не видит)
+    const boot = await Promise.resolve(window.__bootData).catch(() => null);
+    if (boot?.mastermindAdmin) return parseNode.mastermindSummaries(boot.mastermindSummaries);
     if (!database) return [];
     const snapshot = await database.ref('mastermindSummaries').once('value');
     return parseNode.mastermindSummaries(snapshot.val());

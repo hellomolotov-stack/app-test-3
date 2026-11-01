@@ -45,11 +45,57 @@ async function readSection(section, token) {
     return { value: await base.json(), revision: response.headers.get('etag') };
 }
 
+// мастермайнды: своя правка из админки (adminContent/masterminds) или собранные по умолчанию
+async function readMasterminds(token) {
+    const response = await fetch(`${DB}/adminContent/masterminds.json`, {
+        headers: { Authorization: `Bearer ${token}`, 'X-Firebase-ETag': 'true' },
+        signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error('content unavailable');
+    const override = await response.json();
+    const value = override?.hasValue ? normalizeMasterminds(override.value) : await defaultMasterminds(token);
+    return { value, revision: response.headers.get('etag') };
+}
+
 function normalizeUpdates(value) {
     const list = Array.isArray(value) ? value : Object.values(value || {});
     return list.filter(item => item && item.date && typeof item.update === 'string')
         .map(item => ({ date: String(item.date).slice(0, 10), update: item.update }))
         .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// дата из таблицы приходит полночью по Москве в UTC (…T21:00:00Z) – берём день по Москве
+function mskDay(value) {
+    const raw = String(value || '').trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    const d = new Date(raw);
+    return Number.isFinite(d.getTime()) ? new Date(d.getTime() + 3 * 3600000).toISOString().slice(0, 10) : '';
+}
+
+function normalizeMasterminds(value) {
+    const list = Array.isArray(value) ? value : Object.values(value || {});
+    return list.filter(item => item && item.date && item.title && item.link)
+        .map(item => ({ date: mskDay(item.date), title: String(item.title).trim(), link: String(item.link).trim() }))
+        .filter(item => item.date)
+        .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+// пока мастермайнды не правили в админке – собираем их как на главной: лист таблицы + саммари у хайков
+async function defaultMasterminds(token) {
+    const get = async path => {
+        const r = await fetch(`${DB}/${path}.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000) });
+        if (!r.ok) throw new Error('content unavailable');
+        return r.json();
+    };
+    const [listed, hikes] = await Promise.all([get('mastermindSummaries'), get('hikes')]);
+    const items = normalizeMasterminds(listed);
+    const links = new Set(items.map(item => item.link));
+    for (const [date, hike] of Object.entries(hikes || {})) {
+        const link = String(hike?.summary_link || '').trim();
+        if (!/^https?:\/\//.test(link) || links.has(link)) continue;
+        items.push({ date: mskDay(hike.date || date), title: String(hike.summary_title || '').trim() || String(hike.title || '').trim(), link });
+    }
+    return normalizeMasterminds(items);
 }
 
 function isValidRevision(value) {
@@ -71,6 +117,21 @@ function validateValue(section, value) {
             metrics[key] = String(number);
         }
         return metrics;
+    }
+    if (section === 'masterminds') {
+        if (!Array.isArray(value) || value.length > 300) throw new Error('слишком много мастермайндов');
+        return normalizeMasterminds(value.map(item => {
+            const date = String(item?.date || '');
+            const title = String(item?.title || '').trim();
+            const link = String(item?.link || '').trim();
+            const parsed = new Date(`${date}T12:00:00Z`);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+                throw new Error('укажи корректную дату мастермайнда');
+            }
+            if (!title || title.length > 300) throw new Error('название мастермайнда должно быть от 1 до 300 символов');
+            if (!/^https?:\/\/\S+$/.test(link) || link.length > 2000) throw new Error('ссылка должна начинаться с https://');
+            return { date, title, link };
+        }));
     }
     if (!Array.isArray(value) || value.length > 300) throw new Error('слишком много обновлений');
     const updates = value.map(item => {
@@ -99,7 +160,7 @@ module.exports = async (req, res) => {
         user = verifyInitData(String(body.initData || ''), token);
         if (!user?.id) return res.status(401).json({ error: 'открой админку внутри Telegram' });
         if (!isAdminUser(user)) return res.status(403).json({ error: 'только для администраторов' });
-        if (!['metrics', 'updates'].includes(body.section) || !isValidRevision(body.revision)) {
+        if (!['metrics', 'updates', 'masterminds'].includes(body.section) || !isValidRevision(body.revision)) {
             return res.status(400).json({ error: 'обнови данные редактора' });
         }
         try { value = validateValue(body.section, body.value); }
@@ -108,11 +169,12 @@ module.exports = async (req, res) => {
     try {
         const token = await getAccessToken();
         if (req.method === 'GET') {
-            const [metrics, updates] = await Promise.all([readSection('metrics', token), readSection('updates', token)]);
+            const [metrics, updates, masterminds] = await Promise.all([readSection('metrics', token), readSection('updates', token), readMasterminds(token)]);
             return res.status(200).json({
                 metrics: metrics.value || Object.fromEntries(METRICS.map(key => [key, '0'])),
                 updates: normalizeUpdates(updates.value),
-                revisions: { metrics: metrics.revision, updates: updates.revision },
+                masterminds: masterminds.value,
+                revisions: { metrics: metrics.revision, updates: updates.revision, masterminds: masterminds.revision },
             });
         }
         const response = await fetch(`${DB}/adminContent/${body.section}.json`, {
@@ -130,3 +192,4 @@ module.exports = async (req, res) => {
 };
 
 module.exports.getAccessToken = getAccessToken;
+module.exports.normalizeMasterminds = normalizeMasterminds;

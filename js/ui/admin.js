@@ -128,6 +128,7 @@ let templatesLoading = null;
 let homepage = null;
 let homepageLoading = false;
 let updateDraft = null;
+let mmDraft = null;
 let homepageBusy = false;
 
 export function isAdminUser() {
@@ -266,7 +267,7 @@ function loadHomepage() {
     if (homepageLoading) return;
     homepageLoading = true;
     loadClubContent().then(data => {
-        homepage = { ...data, metrics: { ...data.metrics }, updates: data.updates.map(item => ({ ...item })) };
+        homepage = { ...data, metrics: { ...data.metrics }, updates: data.updates.map(item => ({ ...item })), masterminds: (data.masterminds || []).map(item => ({ ...item })) };
         applyClubContent(data);
     }).catch(error => { homepage = { error: error.message }; })
         .finally(() => { homepageLoading = false; if (root && view.tab === 'home') render(); });
@@ -284,6 +285,7 @@ function renderHomepage(body) {
         return;
     }
     updateDraft = updateDraft || { index: null, date: todayStr(), update: '' };
+    mmDraft = mmDraft || { index: null, date: todayStr(), title: '', link: '' };
     const fields = [['hikes', 'хайков'], ['locations', 'локаций'], ['kilometers', 'километров'], ['meetings', 'знакомств']];
     body.innerHTML = `
         <div class="adm-label">клуб в цифрах</div>
@@ -303,7 +305,21 @@ function renderHomepage(body) {
                 <div class="adm-content-update-date">${esc(dateLabel(item.date))} · ${esc(item.date.slice(0, 4))}</div>
                 <div class="adm-content-update-text">${esc(item.update)}</div>
                 <div class="adm-content-update-actions"><button class="adm-link" data-edit-update="${index}">редактировать</button><button class="adm-link is-danger" data-remove-update="${index}">убрать</button></div>
-            </div>`).join('') : '<div class="adm-empty">пока нет обновлений</div>'}</div>`;
+            </div>`).join('') : '<div class="adm-empty">пока нет обновлений</div>'}</div>
+        <div class="adm-label">🧠 мастермайнды</div>
+        <form id="admMmForm">
+            <label class="adm-field"><span>дата</span><input id="admMmDate" type="date" value="${esc(mmDraft.date)}" required></label>
+            <label class="adm-field"><span>название</span><input id="admMmTitle" type="text" maxlength="300" value="${esc(mmDraft.title)}" placeholder="о чём говорили" required></label>
+            <label class="adm-field"><span>ссылка на саммари</span><input id="admMmLink" type="url" maxlength="2000" value="${esc(mmDraft.link)}" placeholder="https://…" required></label>
+            <button type="submit" class="btn btn-yellow adm-primary">${mmDraft.index === null ? 'добавить мастермайнд' : 'сохранить мастермайнд'}</button>
+            ${mmDraft.index !== null ? '<button type="button" class="adm-link" id="admMmCancel">отменить редактирование</button>' : ''}
+        </form>
+        <div class="adm-content-updates">${homepage.masterminds.length ? homepage.masterminds.map((item, index) => `
+            <div class="adm-content-update">
+                <div class="adm-content-update-date">${esc(dateLabel(item.date))} · ${esc(item.date.slice(0, 4))}</div>
+                <div class="adm-content-update-text"><b>${esc(item.title)}</b><br><a href="${esc(item.link)}" target="_blank" rel="noopener" style="word-break:break-all;opacity:.7">${esc(item.link.length > 60 ? item.link.slice(0, 60) + '…' : item.link)}</a></div>
+                <div class="adm-content-update-actions"><button class="adm-link" data-edit-mm="${index}">редактировать</button><button class="adm-link is-danger" data-remove-mm="${index}">убрать</button></div>
+            </div>`).join('') : '<div class="adm-empty">пока нет мастермайндов</div>'}</div>`;
     body.querySelectorAll('[data-metric-key]').forEach(input => input.addEventListener('input', () => { homepage.metrics[input.dataset.metricKey] = input.value; }));
     body.querySelector('#admUpdateDate').addEventListener('input', event => { updateDraft.date = event.target.value; });
     body.querySelector('#admUpdateText').addEventListener('input', event => { updateDraft.update = event.target.value; });
@@ -321,6 +337,29 @@ function renderHomepage(body) {
         saveHomepageSection('updates', items);
     });
     body.querySelector('#admUpdateCancel')?.addEventListener('click', () => { updateDraft = null; render(); });
+    body.querySelector('#admMmDate').addEventListener('input', event => { mmDraft.date = event.target.value; });
+    body.querySelector('#admMmTitle').addEventListener('input', event => { mmDraft.title = event.target.value; });
+    body.querySelector('#admMmLink').addEventListener('input', event => { mmDraft.link = event.target.value; });
+    body.querySelector('#admMmForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const item = { date: mmDraft.date, title: mmDraft.title.trim(), link: mmDraft.link.trim() };
+        if (!item.title) return toast('напиши название', true);
+        if (!/^https?:\/\//.test(item.link)) return toast('ссылка должна начинаться с https://', true);
+        const items = homepage.masterminds.slice();
+        if (mmDraft.index === null) items.unshift(item);
+        else items[mmDraft.index] = item;
+        saveHomepageSection('masterminds', items);
+    });
+    body.querySelector('#admMmCancel')?.addEventListener('click', () => { mmDraft = null; render(); });
+    body.querySelectorAll('[data-edit-mm]').forEach(button => button.addEventListener('click', () => {
+        mmDraft = { index: Number(button.dataset.editMm), ...homepage.masterminds[Number(button.dataset.editMm)] };
+        render();
+        root.querySelector('#admMmTitle')?.focus();
+    }));
+    body.querySelectorAll('[data-remove-mm]').forEach(button => button.addEventListener('click', async () => {
+        if (!await confirmAsync('Убрать этот мастермайнд с главной?')) return;
+        await saveHomepageSection('masterminds', homepage.masterminds.filter((_, index) => index !== Number(button.dataset.removeMm)));
+    }));
     body.querySelectorAll('[data-edit-update]').forEach(button => button.addEventListener('click', () => {
         updateDraft = { index: Number(button.dataset.editUpdate), ...homepage.updates[Number(button.dataset.editUpdate)] };
         render();
@@ -337,12 +376,14 @@ async function saveHomepageSection(section, value) {
     if (homepageBusy) return;
     const editing = homepage;
     const draftToRestore = updateDraft;
+    const mmToRestore = mmDraft;
     homepageBusy = true;
     render();
     try {
         const saved = await saveClubContent(section, value, editing.revisions[section], tg?.initData || '');
         editing[section] = saved;
         if (section === 'updates') updateDraft = null;
+        if (section === 'masterminds') mmDraft = null;
         // Refresh only the saved section's version, preserving other unsaved fields.
         try {
             const fresh = await loadClubContent();
@@ -351,10 +392,11 @@ async function saveHomepageSection(section, value) {
         } catch {
             homepage = { error: 'сохранено, но не удалось обновить редактор — загрузи данные ещё раз' };
         }
-        toast(section === 'metrics' ? 'цифры сохранены' : 'обновления сохранены');
+        toast(section === 'metrics' ? 'цифры сохранены' : section === 'masterminds' ? 'мастермайнды сохранены' : 'обновления сохранены');
         haptic();
     } catch (error) {
         updateDraft = draftToRestore;
+        mmDraft = mmToRestore;
         toast(error.message, true);
     } finally {
         homepageBusy = false;
