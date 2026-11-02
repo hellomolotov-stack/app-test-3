@@ -203,16 +203,15 @@ export function openCircleSheet() {
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
             <div class="cs2-h">🫂 твои связи</div>
-            <div class="cs2-sub">люди, с которыми ты был на хайках клуба. листай – сеть покажет, где человек и с кем он связан</div>
+            <div class="cs2-sub">люди, с которыми ты был на хайках клуба. близкий круг – те, с кем вы ходили вместе хотя бы дважды</div>
             <div class="cs2-net" id="cs2Net">${netSvg(d, { W: 358, H: 300, cx: 179, cy: 150, sx: 1.12, sy: 1, big: true, uid: 'csb' })}</div>
-            <div class="cs2-stats"><div><b>${d.total}</b>${plural(d.total, 'человек', 'человека', 'человек')} в связях</div><div><b style="color:var(--yellow)">${d.strong}</b>не раз вместе</div><div><b>${d.hikes}</b>${plural(d.hikes, 'твой хайк', 'твоих хайка', 'твоих хайков')}</div></div>
+            <div class="cs2-stats"><div><b>${d.total}</b>${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках</div><div><b style="color:var(--yellow)">${d.strong}</b>близкий круг</div><div><b>${d.hikes}</b>${plural(d.hikes, 'твой хайк', 'твоих хайка', 'твоих хайков')}</div></div>
             <div class="cs2-car" id="cs2Car">${cards}</div>
             ${d.more ? `<div class="cs2-org" style="margin-top:10px">в сети – ${d.people.length} самых близких, и ещё ${d.more} ${plural(d.more, 'человек', 'человека', 'человек')} в твоих связях</div>` : ''}
             ${nx ? `<div class="cs2-sec">🗓 ближайший хайк</div>
             <div class="cs2-next"><div class="top"><b>${dayLabel(nx.date)}${nx.title ? ' · ' + esc(nx.title) : ''}</b></div>
                 <div class="row"><div class="cs2-stack">${stack}</div><span>${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em></span></div>
                 <button type="button" class="cs2-go" data-cs2-hike>открыть хайк</button></div>` : ''}
-            <div class="cs2-org">и организаторы Макс и Неля – они есть в связях у каждого&nbsp;🤍</div>
         </div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
