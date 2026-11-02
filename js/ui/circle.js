@@ -5,8 +5,9 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 
+// видят владельцы карты (и maxmolotov для теста); для гостей – придумываем отдельно
 const CIRCLE_USERS = ['maxmolotov'];
-export const circleEnabled = () => CIRCLE_USERS.includes(String(state.user?.username || '').toLowerCase());
+export const circleEnabled = () => state.userCard?.status === 'active' || CIRCLE_USERS.includes(String(state.user?.username || '').toLowerCase());
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const MON3 = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -20,12 +21,17 @@ const firstName = n => String(n || '').trim().split(/\s+/)[0] || 'участни
 const short = n => { const p = String(n || '').trim().split(/\s+/); return p[1] ? `${p[0]} ${p[1][0]}.` : (p[0] || 'участник'); };
 
 const STYLE = `
-.cc-panel { position: relative; margin: 0 16px; height: 200px; border-radius: 20px; background: rgba(0,0,0,.28); overflow: hidden; cursor: pointer; }
-.cc-panel svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-.cc-fade { position: absolute; left: 0; right: 0; bottom: 0; height: 78px; background: linear-gradient(180deg, rgba(14,20,28,0), rgba(14,20,28,.92) 65%); pointer-events: none; }
-.cc-foot { position: absolute; left: 12px; right: 12px; bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
+#circleContainer.cc-card { position: relative; overflow: hidden; padding-bottom: 0; }
+.cc-card .cc-hdr { position: relative; z-index: 2; }
+.cc-panel { position: relative; height: 250px; margin-top: -40px; cursor: pointer; }
+/* сеть во всю карточку: уходит за края, сверху и снизу мягко растворяется */
+.cc-panel svg { position: absolute; inset: 0; width: 100%; height: 100%;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 70px, #000 150px, rgba(0,0,0,.2) 100%); mask-image: linear-gradient(180deg, transparent 0, #000 70px, #000 150px, rgba(0,0,0,.2) 100%); }
+.cc-fade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(90% 75% at 0% 100%, rgba(10,16,24,.78), rgba(10,16,24,0) 70%); }
+.cc-foot { position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; gap: 8px; }
 .cc-foot .t { font-size: 13px; line-height: 1.35; color: rgba(255,255,255,.8); }
-.cc-foot .t b { font-size: 22px; color: #fff; }
+.cc-foot .t b { font-size: 26px; font-weight: 800; color: #fff; }
+.cc-foot .t { text-shadow: 0 1px 8px rgba(10,16,24,.8); }
 .cc-foot .t i { font-style: normal; color: var(--yellow); font-weight: 700; }
 .cc-pill { flex: none; font-size: 12.5px; font-weight: 800; padding: 7px 10px; border-radius: 12px; background: var(--yellow); color: #1d2200; border: 0; font-family: inherit; cursor: pointer; }
 .cc-hdr { display: flex; justify-content: space-between; align-items: baseline; margin: 0 16px 14px; }
@@ -149,7 +155,7 @@ function blockHtml(d) {
     return `
         <div class="cc-hdr"><h2>🫂 твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
         <div class="cc-panel" data-cc-open>
-            ${netSvg(d, { W: 358, H: 200, cx: 179, cy: 92, sx: 1.25, sy: .82, big: false, uid: 'ccm' })}
+            ${netSvg(d, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccm' })}
             <div class="cc-fade"></div>
             <div class="cc-foot">
                 <div class="t"><b>${n}</b> ${plural(n, 'знакомство', 'знакомства', 'знакомств')}<br><i>${d.strong}</i> – твой близкий круг</div>
@@ -161,7 +167,7 @@ function blockHtml(d) {
 export async function mountCircle(container) {
     if (!container || !circleEnabled()) return;
     ensureCss();
-    container.className = 'card-container';
+    container.className = 'card-container cc-card';
     container.innerHTML = '<div class="cc-hdr"><h2>🫂 твои связи</h2></div><div class="cc-load">собираю твои связи…</div>';
     try {
         data = data || await load();
