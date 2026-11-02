@@ -6,6 +6,9 @@
 const { verifyInitData } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
+const { circleFor } = require('../lib/circle');
+// «твои связи» – пока только для теста
+const CIRCLE_USERS = new Set(['maxmolotov']);
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -65,6 +68,17 @@ module.exports = async (req, res) => {
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
     const user = verifyInitData(String((body && body.initData) || ''), botToken);
     if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
+
+    // «твои связи»: люди с общих хайков и связи между ними (lib/circle.js)
+    if (body && body.action === 'circle') {
+        if (!CIRCLE_USERS.has(String(user.username || '').toLowerCase())) return res.status(403).json({ error: 'not available' });
+        try {
+            return res.status(200).json(await circleFor(user.id, await getAccessToken()));
+        } catch (e) {
+            console.error('me circle:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
 
     try {
         const id = String(user.id);

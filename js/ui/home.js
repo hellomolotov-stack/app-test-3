@@ -19,6 +19,7 @@ import { cardScratchHtml, mountCardScratch } from './card-scratch.js';
 import { openOnboardingChat } from './onboarding-chat.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
+import { mountCircle } from './circle.js';
 import { mountAdminEntry } from './admin.js';
 import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
@@ -588,6 +589,7 @@ function renderGuestHome() {
         ${askBarHtml()}
         ${cardHtml}
         <div id="userBookingsContainer"></div>
+        <div id="circleContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
         ${!isLumenPilotUser(state.user) ? `
         <div class="card-container">
@@ -774,6 +776,7 @@ function renderGuestHome() {
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
+    mountCircle(document.getElementById('circleContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
@@ -812,6 +815,7 @@ function renderOwnerHome() {
             <button type="button" class="gift-text-link" id="giftCardBtn">подарить карту другу ›</button>
         </div>
         <div id="userBookingsContainer"></div>
+        <div id="circleContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
@@ -874,6 +878,7 @@ function renderOwnerHome() {
 
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
+    mountCircle(document.getElementById('circleContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
