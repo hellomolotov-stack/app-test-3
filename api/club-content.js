@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { verifyInitData, isAdminUser } = require('./tg-auth');
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const METRICS = ['hikes', 'locations', 'kilometers', 'meetings'];
+const { clubPairs } = require('../lib/circle');
 let accessToken = null;
 let tokenRequest = null;
 
@@ -169,9 +170,13 @@ module.exports = async (req, res) => {
     try {
         const token = await getAccessToken();
         if (req.method === 'GET') {
-            const [metrics, updates, masterminds] = await Promise.all([readSection('metrics', token), readSection('updates', token), readMasterminds(token)]);
+            const [metrics, updates, masterminds, pairs] = await Promise.all([readSection('metrics', token), readSection('updates', token), readMasterminds(token),
+                clubPairs(token).catch(e => { console.error('club-content pairs:', e.message); return 0; })]);
+            const m = metrics.value || Object.fromEntries(METRICS.map(key => [key, '0']));
+            // «знакомств» считаем сами: разные пары людей, которые были на одном хайке (lib/circle.js)
+            if (pairs) m.meetings = String(pairs);
             return res.status(200).json({
-                metrics: metrics.value || Object.fromEntries(METRICS.map(key => [key, '0'])),
+                metrics: m,
                 updates: normalizeUpdates(updates.value),
                 masterminds: masterminds.value,
                 revisions: { metrics: metrics.revision, updates: updates.revision, masterminds: masterminds.revision },

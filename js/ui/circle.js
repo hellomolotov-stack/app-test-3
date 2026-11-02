@@ -38,7 +38,7 @@ const STYLE = `
   padding: 10px 0 calc(env(safe-area-inset-bottom, 0px) + 22px); border-radius: 28px 28px 0 0; background: rgba(16,22,30,.96); color: #fff;
   border: 1px solid rgba(255,255,255,.1); border-bottom: 0; transform: translateY(100%); transition: transform .32s cubic-bezier(.2,.9,.25,1); }
 .cs2-overlay.is-on .cs2-sheet { transform: none; }
-.cs2-grab { width: 40px; height: 5px; margin: 0 auto 12px; border-radius: 3px; background: rgba(255,255,255,.25); }
+.cs2-grab { margin: -6px 0 4px; } /* полоска-ручка – общая .cs-grab, свайп вниз закрывает (sheet-drag.js) */
 .cs2-x { position: absolute; top: 14px; right: 16px; width: 32px; height: 32px; border: 0; border-radius: 50%; background: rgba(255,255,255,.1); color: #fff; font-size: 14px; cursor: pointer; }
 .cs2-h { text-align: center; font-size: 21px; font-weight: 800; }
 .cs2-sub { text-align: center; font-size: 13px; line-height: 1.4; color: rgba(255,255,255,.6); margin: 4px 24px 0; }
@@ -194,7 +194,7 @@ export function openCircleSheet() {
     const stack = nx ? [...nx.known.slice(0, 2).map((p, i) => `<i style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</i>`), nx.freshCount ? `<i class="new">+${nx.freshCount}</i>` : ''].join('') : '';
     overlay.innerHTML = `
         <div class="cs2-sheet" role="dialog" aria-label="твои связи">
-            <div class="cs2-grab"></div>
+            <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
             <div class="cs2-h">🫂 твои связи</div>
             <div class="cs2-sub">люди, с которыми ты был на хайках клуба. листай – сеть покажет, где человек и с кем он связан</div>
