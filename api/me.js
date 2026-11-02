@@ -77,12 +77,14 @@ module.exports = async (req, res) => {
                 || !!(await read(`members/${user.id}`, token).catch(() => null))?.user_id;
             const c = await circleFor(user.id, token);
             if (full) return res.status(200).json(c);
-            // без карты: видно 5 самых близких, остальные – без имён и фото (их не отдаём вовсе)
-            const OPEN = 5;
-            const open = new Set(c.people.slice(0, OPEN).map(p => p.id));
+            // без карты: открыты люди с первого хайка; остальные знакомые и весь клуб – «?» без имён (их не отдаём)
+            const open = new Set(c.firstIds);
+            const opened = c.people.filter(p => open.has(p.id));
+            const known = c.people.filter(p => !open.has(p.id)).map((p, i) => ({ id: 'k' + i, hidden: true, known: true, n: p.n }));
+            const { firstIds, ...rest } = c;
             return res.status(200).json({
-                ...c, locked: true, open: open.size,
-                people: c.people.map((p, i) => (i < OPEN ? p : { id: 'h' + i, hidden: true, n: p.n })),
+                ...rest, locked: true, open: opened.length, known: known.length,
+                people: [...opened, ...known],
                 links: c.links.filter(([a, b]) => open.has(a) && open.has(b)),
             });
         } catch (e) {

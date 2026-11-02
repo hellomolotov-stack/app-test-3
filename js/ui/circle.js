@@ -135,7 +135,7 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
     // связи к тебе: толще и ярче – чем чаще вместе
     const me = { x: cx, y: cy };
     pts.forEach(p => {
-        if (p.hidden) { out += `<path d="${curve(me, p)}" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
+        if (p.hidden) { out += `<path d="${curve(me, p)}" fill="none" stroke="${p.known ? '#D9FD19' : '#fff'}" stroke-opacity="${p.known ? .25 : .08}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
         const strong = p.n > 1, dim = sel && p.id !== sel;
         const op = dim ? (strong ? .15 : .06) : (strong ? .35 + .5 * p.n / maxN : .3);
         out += `<path d="${curve(me, p)}" fill="none" stroke="${strong ? '#D9FD19' : '#d6aa6e'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${(strong ? 1 + 2.4 * p.n / maxN : .8) * (big ? 1 : .8)}" stroke-linecap="round"/>`;
@@ -147,7 +147,7 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
         const ring = strong ? '#D9FD19' : 'rgba(255,255,255,.5)';
         if (p.hidden) {
             const rh = base;
-            out += `<g opacity=".8"><circle cx="${p.x}" cy="${p.y}" r="${rh}" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.32)" stroke-dasharray="2 2"/><text x="${p.x}" y="${p.y + rh * .36}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
+            out += `<g opacity="${p.known ? .95 : .55}"><circle cx="${p.x}" cy="${p.y}" r="${p.known ? rh : rh * .8}" fill="rgba(255,255,255,.07)" stroke="${p.known ? 'rgba(217,253,25,.75)' : 'rgba(255,255,255,.3)'}" stroke-width="${p.known ? 1.4 : 1}" stroke-dasharray="${p.known ? '' : '2 2'}"/><text x="${p.x}" y="${p.y + rh * .36}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
             return;
         }
         out += `<g opacity="${dim ? .4 : 1}" data-id="${esc(p.id)}">`;
@@ -179,15 +179,15 @@ function blockHtml(d) {
     return `
         <div class="cc-hdr"><h2>🫂 твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
         <div class="cc-panel" data-cc-open>
-            ${netSvg({ ...d, people: d.people.slice(0, NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccm' })}
+            ${netSvg({ ...d, people: d.people.slice(0, d.locked ? 90 : NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccm' })}
             <div class="cc-fade"></div>
             <div class="cc-foot">
-                <div class="t"><b>${n}</b> ${plural(n, 'знакомство', 'знакомства', 'знакомств')}<br>${d.locked ? `<i>${d.open}</i> видно сейчас` : `<i>${d.strong}</i> – твой близкий круг`}</div>
+                <div class="t"><b>${d.locked ? d.open : n}</b> ${plural(d.locked ? d.open : n, 'знакомство', 'знакомства', 'знакомств')}<br>${d.locked ? `с первого хайка · ещё <i>${d.known + (d.clubCount || 0)}</i> откроются с картой` : `<i>${d.strong}</i> – твой близкий круг`}</div>
                 ${nx && nx.freshCount && !d.locked ? `<button type="button" class="cc-pill" data-cc-next>${dayShort(nx.date)} +${nx.freshCount} ›</button>` : ''}
             </div>
         </div>${d.locked ? lockHtml(d) : ''}`;
 }
-const lockHtml = d => `<button type="button" class="cc-lock" data-cc-card><img src="assets/card-front.jpg" alt=""><span><b>обрети больше связей</b>с картой интеллигента откроются все ${d.total} – и те, с кем вы были вместе не раз</span><em>›</em></button>`;
+const lockHtml = d => `<button type="button" class="cc-lock" data-cc-card><img src="assets/card-front.jpg" alt=""><span><b>обрети больше связей</b>с картой интеллигента откроются все твои ${d.total} ${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} и весь клуб</span><em>›</em></button>`;
 async function openCard(source) {
     log(`твои связи: карта (${source})`, true, state.user);
     const { openCardSheet } = await import('./card-sheet.js');
@@ -203,6 +203,13 @@ export async function mountCircle(container) {
         data = data || await load();
     } catch (e) { data = null; }
     if (!data || !data.total) { container.remove(); return; }
+    if (data.locked && !data.clubAdded) {
+        // весь остальной клуб – серые «?» (только число, без людей)
+        const n = Math.min(Number(data.clubCount) || 0, 200);
+        for (let i = 0; i < n; i++) data.people.push({ id: 'c' + i, hidden: true, club: true, n: 0 });
+        data.nearN = Math.min(Math.max(data.open + data.known, 12), 60);
+        data.clubAdded = true;
+    }
     container.innerHTML = blockHtml(data);
     container.addEventListener('click', e => {
         if (e.target.closest('[data-cc-next]')) { e.stopPropagation(); haptic(); openNextHike(); return; }
@@ -223,7 +230,7 @@ async function openNextHike() {
 // первый слой – 40 самых близких, второй – остальные. «близкие»: первый крупно, второй мелко и размыто снаружи;
 // «все»: первый сжимается к центру, второй проявляется. Точки едут через CSS transform, линии перерисовываем после.
 const SW = 358, SH = 300, SCX = 179, SCY = 150;
-function placeAll(people) {
+function placeAll(people, NEAR) {
     const m = Math.min(SW, SH), sx = 1.12;
     const near = people.slice(0, NEAR), far = people.slice(NEAR);
     const pos = (list, a0, rFrom, rTo) => list.map((p, i) => {
@@ -237,7 +244,7 @@ function placeAll(people) {
         : { ...p, layer: 2, a: f1[i - NEAR], b: f2[i - NEAR] });
 }
 function sheetNet(d) {
-    const pts = placeAll(d.people), maxN = Math.max(1, ...d.people.map(p => p.n));
+    const pts = placeAll(d.people, d.nearN || NEAR), maxN = Math.max(1, ...d.people.map(p => p.n));
     let defs = `<radialGradient id="csbgl"><stop offset="0" stop-color="#D9FD19" stop-opacity=".35"/><stop offset="1" stop-color="#D9FD19" stop-opacity="0"/></radialGradient>`;
     GRADS.forEach((g, k) => { defs += `<linearGradient id="csbg${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${g[0]}"/><stop offset="1" stop-color="${g[1]}"/></linearGradient>`; });
     let nodes = '';
@@ -245,8 +252,8 @@ function sheetNet(d) {
         const strong = p.n > 1, r = p.layer === 1 ? 10 + 6 * Math.sqrt(p.n / maxN) : 8;
         const s1 = p.layer === 1 ? 1 : .55, s2 = p.layer === 1 ? .62 : .85;
         if (p.hidden) {
-            const rh = p.layer === 1 ? 11 : 8;
-            nodes += `<g class="cs2-node l${p.layer} q" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${p.layer === 1 ? 1 : .55};--s2:${p.layer === 1 ? .62 : .85}"><circle r="${rh}" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.32)" stroke-dasharray="2 2"/><text y="${(rh * .36).toFixed(1)}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
+            const rh = p.known ? (p.layer === 1 ? 11 : 9) : 7;
+            nodes += `<g class="cs2-node l${p.layer} q${p.known ? ' kn' : ''}" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${p.layer === 1 ? 1 : .55};--s2:${p.layer === 1 ? .62 : .85}"><circle r="${rh}" fill="rgba(255,255,255,.07)" stroke="${p.known ? 'rgba(217,253,25,.8)' : 'rgba(255,255,255,.3)'}" stroke-width="${p.known ? 1.6 : 1}" stroke-dasharray="${p.known ? '' : '2 2'}"/><text y="${(rh * .36).toFixed(1)}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
             return;
         }
         nodes += `<g class="cs2-node l${p.layer}" data-id="${esc(p.id)}" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${s1};--s2:${s2}">`
@@ -276,7 +283,7 @@ function sheetLines(net, d, mode, sel) {
     });
     net.pts.forEach(p => {
         const strong = p.n > 1, dim = sel && p.id !== sel;
-        if (p.hidden) { if (vis(p)) out += `<path d="${cv([SCX, SCY], P(p))}" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
+        if (p.hidden) { out += `<path d="${cv([SCX, SCY], P(p))}" fill="none" stroke="${p.known ? '#D9FD19' : '#fff'}" stroke-opacity="${(p.known ? .28 : .07) * (vis(p) ? 1 : .6)}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
         if (!vis(p)) { out += `<path d="${cv([SCX, SCY], p.a)}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width=".6"/>`; return; }
         const op = dim ? .06 : (strong ? .3 + .5 * p.n / net.maxN : .25) * (mode === 'all' && p.layer === 2 ? .7 : 1);
         const w = (strong ? 1 + 2.2 * p.n / net.maxN : .8) * (mode === 'all' ? .7 : 1);
@@ -293,11 +300,11 @@ export function openCircleSheet() {
     const d = data, nx = d.next;
     overlay = document.createElement('div');
     overlay.className = 'cs2-overlay';
-    const net = sheetNet(d), near = Math.min(NEAR, d.people.length), far = d.people.length - near;
+    const net = sheetNet(d), near = Math.min(d.nearN || NEAR, d.people.length), far = d.people.length - near;
     let mode = 'near', sel = null;
-    const hiddenN = d.people.filter(p => p.hidden).length;
+    const hiddenN = d.people.filter(p => p.hidden && p.known).length;
     const cardsFor = list => list.filter(p => !p.hidden).map((p, i) => `<button type="button" class="cs2-pc" data-pid="${esc(p.id)}"><div class="cs2-av" style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</div><b>${esc(short(p.name))}</b><span>${p.n} ${plural(p.n, 'общий хайк', 'общих хайка', 'общих хайков')}</span></button>`).join('')
-        + (hiddenN ? `<button type="button" class="cs2-pc q" data-cs2-card><div class="cs2-av">?</div><b>ещё ${hiddenN}</b><span>откроются с картой</span></button>` : '');
+        + (hiddenN ? `<button type="button" class="cs2-pc q" data-cs2-card><div class="cs2-av">?</div><b>ещё ${hiddenN}</b><span>${plural(hiddenN, 'знакомый', 'знакомых', 'знакомых')} – с картой</span></button>` : '');
     const cards = cardsFor(d.people.slice(0, near));
     const stack = nx ? [...nx.known.slice(0, 2).map((p, i) => `<i style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</i>`), nx.freshCount ? `<i class="new">+${nx.freshCount}</i>` : ''].join('') : '';
     overlay.innerHTML = `
@@ -305,8 +312,8 @@ export function openCircleSheet() {
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
             <div class="cs2-h">🫂 твои связи</div>
-            <div class="cs2-sub">${d.locked ? `${d.open} самых близких видно сразу, остальные ${hiddenN} откроются с картой интеллигента` : 'люди, с которыми ты был на хайках клуба. близкий круг – те, с кем вы ходили вместе хотя бы дважды'}</div>
-            ${far ? `<div class="cs2-tg" id="cs2Tg"><button type="button" class="on" data-mode="near">близкие · ${near}</button><button type="button" data-mode="all">все · ${d.people.length}</button></div>` : ''}
+            <div class="cs2-sub">${d.locked ? `${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб. всё откроется с картой интеллигента` : 'люди, с которыми ты был на хайках клуба. близкий круг – те, с кем вы ходили вместе хотя бы дважды'}</div>
+            ${far ? `<div class="cs2-tg" id="cs2Tg"><button type="button" class="on" data-mode="near">${d.locked ? `знакомые · ${d.total}` : `близкие · ${near}`}</button><button type="button" data-mode="all">${d.locked ? `весь клуб · ${d.total + (d.clubCount || 0)}` : `все · ${d.people.length}`}</button></div>` : ''}
             <div class="cs2-net" id="cs2Net">${net.svg}</div>
             <div class="cs2-stats"><div><b>${d.total}</b>${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках</div><div><b style="color:var(--yellow)">${d.strong}</b>близкий круг</div><div><b>${d.hikes}</b>${plural(d.hikes, 'твой хайк', 'твоих хайка', 'твоих хайков')}</div></div>
             <div class="cs2-car" id="cs2Car">${cards}</div>
