@@ -7,7 +7,7 @@ const { verifyInitData } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
 const { circleFor } = require('../lib/circle');
-// «твои связи» – владельцам карты; этим – и без карты (тест)
+// «твои связи»: владельцам карты – все связи, без карты – 5 самых близких; этим – всё (тест)
 const CIRCLE_USERS = new Set(['maxmolotov']);
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
@@ -73,12 +73,18 @@ module.exports = async (req, res) => {
     if (body && body.action === 'circle') {
         try {
             const token = await getAccessToken();
-            // пока только владельцам карты (и для теста – CIRCLE_USERS)
-            if (!CIRCLE_USERS.has(String(user.username || '').toLowerCase())) {
-                const member = await read(`members/${user.id}`, token);
-                if (!member || !member.user_id) return res.status(403).json({ error: 'not available' });
-            }
-            return res.status(200).json(await circleFor(user.id, token));
+            const full = CIRCLE_USERS.has(String(user.username || '').toLowerCase())
+                || !!(await read(`members/${user.id}`, token).catch(() => null))?.user_id;
+            const c = await circleFor(user.id, token);
+            if (full) return res.status(200).json(c);
+            // без карты: видно 5 самых близких, остальные – без имён и фото (их не отдаём вовсе)
+            const OPEN = 5;
+            const open = new Set(c.people.slice(0, OPEN).map(p => p.id));
+            return res.status(200).json({
+                ...c, locked: true, open: open.size,
+                people: c.people.map((p, i) => (i < OPEN ? p : { id: 'h' + i, hidden: true, n: p.n })),
+                links: c.links.filter(([a, b]) => open.has(a) && open.has(b)),
+            });
         } catch (e) {
             console.error('me circle:', e.message);
             return res.status(502).json({ error: 'db unavailable' });

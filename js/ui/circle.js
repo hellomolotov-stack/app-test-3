@@ -5,9 +5,8 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 
-// видят владельцы карты (и maxmolotov для теста); для гостей – придумываем отдельно
-const CIRCLE_USERS = ['maxmolotov'];
-export const circleEnabled = () => state.userCard?.status === 'active' || CIRCLE_USERS.includes(String(state.user?.username || '').toLowerCase());
+// видят все: с картой – все связи, без карты – 5 самых близких, остальные «?» (сервер их имён не отдаёт)
+export const circleEnabled = () => !!state.user?.id;
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const MON3 = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -34,6 +33,12 @@ const STYLE = `
 .cc-foot .t { text-shadow: 0 1px 8px rgba(10,16,24,.8); }
 .cc-foot .t i { font-style: normal; color: var(--yellow); font-weight: 700; }
 .cc-pill { flex: none; font-size: 12.5px; font-weight: 800; padding: 7px 10px; border-radius: 12px; background: var(--yellow); color: #1d2200; border: 0; font-family: inherit; cursor: pointer; }
+.cc-lock { display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 10px 16px 16px; padding: 12px 14px; border-radius: 18px; background: rgba(217,253,25,.1); border: 1px solid rgba(217,253,25,.3); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.cc-lock img { flex: none; width: 46px; height: 30px; border-radius: 5px; object-fit: cover; transform: rotate(-6deg); }
+.cc-lock span { flex: 1; font-size: 13px; line-height: 1.35; color: rgba(255,255,255,.8); }
+.cc-lock span b { display: block; font-size: 14.5px; color: #fff; }
+.cc-lock em { font-style: normal; font-weight: 800; color: var(--yellow); }
+.cs2-pc.q .cs2-av { background: rgba(255,255,255,.08); color: rgba(255,255,255,.45); border: 1.5px dashed rgba(255,255,255,.28); }
 .cc-hdr { display: flex; justify-content: space-between; align-items: baseline; margin: 0 16px 14px; }
 .cc-hdr h2 { margin: 0; font-size: 18px; font-weight: 700; color: #fff; }
 .cc-hdr button { border: 0; background: none; color: var(--yellow); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; padding: 0; }
@@ -130,6 +135,7 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
     // связи к тебе: толще и ярче – чем чаще вместе
     const me = { x: cx, y: cy };
     pts.forEach(p => {
+        if (p.hidden) { out += `<path d="${curve(me, p)}" fill="none" stroke="#fff" stroke-opacity=".12" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
         const strong = p.n > 1, dim = sel && p.id !== sel;
         const op = dim ? (strong ? .15 : .06) : (strong ? .35 + .5 * p.n / maxN : .3);
         out += `<path d="${curve(me, p)}" fill="none" stroke="${strong ? '#D9FD19' : '#d6aa6e'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${(strong ? 1 + 2.4 * p.n / maxN : .8) * (big ? 1 : .8)}" stroke-linecap="round"/>`;
@@ -139,6 +145,11 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
     pts.forEach((p, i) => {
         const strong = p.n > 1, r = base + (big ? 6 : 4) * Math.sqrt(p.n / maxN), dim = sel && p.id !== sel;
         const ring = strong ? '#D9FD19' : 'rgba(255,255,255,.5)';
+        if (p.hidden) {
+            const rh = base;
+            out += `<g opacity=".8"><circle cx="${p.x}" cy="${p.y}" r="${rh}" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.32)" stroke-dasharray="2 2"/><text x="${p.x}" y="${p.y + rh * .36}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
+            return;
+        }
         out += `<g opacity="${dim ? .4 : 1}" data-id="${esc(p.id)}">`;
         if (p.id === sel) out += `<circle cx="${p.x}" cy="${p.y}" r="${r * 2.3}" fill="url(#${uid}gl)"/>`;
         if (p.photo) {
@@ -171,10 +182,16 @@ function blockHtml(d) {
             ${netSvg({ ...d, people: d.people.slice(0, NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccm' })}
             <div class="cc-fade"></div>
             <div class="cc-foot">
-                <div class="t"><b>${n}</b> ${plural(n, 'знакомство', 'знакомства', 'знакомств')}<br><i>${d.strong}</i> – твой близкий круг</div>
-                ${nx && nx.freshCount ? `<button type="button" class="cc-pill" data-cc-next>${dayShort(nx.date)} +${nx.freshCount} ›</button>` : ''}
+                <div class="t"><b>${n}</b> ${plural(n, 'знакомство', 'знакомства', 'знакомств')}<br>${d.locked ? `<i>${d.open}</i> видно сейчас` : `<i>${d.strong}</i> – твой близкий круг`}</div>
+                ${nx && nx.freshCount && !d.locked ? `<button type="button" class="cc-pill" data-cc-next>${dayShort(nx.date)} +${nx.freshCount} ›</button>` : ''}
             </div>
-        </div>`;
+        </div>${d.locked ? lockHtml(d) : ''}`;
+}
+const lockHtml = d => `<button type="button" class="cc-lock" data-cc-card><img src="assets/card-front.jpg" alt=""><span><b>обрети больше связей</b>с картой интеллигента откроются все ${d.total} – и те, с кем вы были вместе не раз</span><em>›</em></button>`;
+async function openCard(source) {
+    log(`твои связи: карта (${source})`, true, state.user);
+    const { openCardSheet } = await import('./card-sheet.js');
+    openCardSheet({ source: 'твои связи' });
 }
 
 export async function mountCircle(container) {
@@ -189,6 +206,7 @@ export async function mountCircle(container) {
     container.innerHTML = blockHtml(data);
     container.addEventListener('click', e => {
         if (e.target.closest('[data-cc-next]')) { e.stopPropagation(); haptic(); openNextHike(); return; }
+        if (e.target.closest('[data-cc-card]')) { haptic(); openCard('плашка на главной'); return; }
         if (e.target.closest('[data-cc-open]')) { haptic(); openCircleSheet(); }
     });
 }
@@ -226,6 +244,11 @@ function sheetNet(d) {
     pts.forEach((p, i) => {
         const strong = p.n > 1, r = p.layer === 1 ? 10 + 6 * Math.sqrt(p.n / maxN) : 8;
         const s1 = p.layer === 1 ? 1 : .55, s2 = p.layer === 1 ? .62 : .85;
+        if (p.hidden) {
+            const rh = p.layer === 1 ? 11 : 8;
+            nodes += `<g class="cs2-node l${p.layer} q" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${p.layer === 1 ? 1 : .55};--s2:${p.layer === 1 ? .62 : .85}"><circle r="${rh}" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.32)" stroke-dasharray="2 2"/><text y="${(rh * .36).toFixed(1)}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
+            return;
+        }
         nodes += `<g class="cs2-node l${p.layer}" data-id="${esc(p.id)}" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${s1};--s2:${s2}">`
             + `<circle class="halo" r="${r * 2.3}" fill="url(#csbgl)"/>`;
         if (p.photo) nodes += `<clipPath id="csbc${i}"><circle r="${r}"/></clipPath><circle r="${r}" fill="url(#csbg${i % 6})"/><image href="${esc(p.photo)}" x="${-r}" y="${-r}" width="${r * 2}" height="${r * 2}" clip-path="url(#csbc${i})" preserveAspectRatio="xMidYMid slice"/>`;
@@ -253,6 +276,7 @@ function sheetLines(net, d, mode, sel) {
     });
     net.pts.forEach(p => {
         const strong = p.n > 1, dim = sel && p.id !== sel;
+        if (p.hidden) { if (vis(p)) out += `<path d="${cv([SCX, SCY], P(p))}" fill="none" stroke="#fff" stroke-opacity=".1" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
         if (!vis(p)) { out += `<path d="${cv([SCX, SCY], p.a)}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width=".6"/>`; return; }
         const op = dim ? .06 : (strong ? .3 + .5 * p.n / net.maxN : .25) * (mode === 'all' && p.layer === 2 ? .7 : 1);
         const w = (strong ? 1 + 2.2 * p.n / net.maxN : .8) * (mode === 'all' ? .7 : 1);
@@ -271,7 +295,9 @@ export function openCircleSheet() {
     overlay.className = 'cs2-overlay';
     const net = sheetNet(d), near = Math.min(NEAR, d.people.length), far = d.people.length - near;
     let mode = 'near', sel = null;
-    const cardsFor = list => list.map((p, i) => `<button type="button" class="cs2-pc" data-pid="${esc(p.id)}"><div class="cs2-av" style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</div><b>${esc(short(p.name))}</b><span>${p.n} ${plural(p.n, 'общий хайк', 'общих хайка', 'общих хайков')}</span></button>`).join('');
+    const hiddenN = d.people.filter(p => p.hidden).length;
+    const cardsFor = list => list.filter(p => !p.hidden).map((p, i) => `<button type="button" class="cs2-pc" data-pid="${esc(p.id)}"><div class="cs2-av" style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</div><b>${esc(short(p.name))}</b><span>${p.n} ${plural(p.n, 'общий хайк', 'общих хайка', 'общих хайков')}</span></button>`).join('')
+        + (hiddenN ? `<button type="button" class="cs2-pc q" data-cs2-card><div class="cs2-av">?</div><b>ещё ${hiddenN}</b><span>откроются с картой</span></button>` : '');
     const cards = cardsFor(d.people.slice(0, near));
     const stack = nx ? [...nx.known.slice(0, 2).map((p, i) => `<i style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</i>`), nx.freshCount ? `<i class="new">+${nx.freshCount}</i>` : ''].join('') : '';
     overlay.innerHTML = `
@@ -279,11 +305,12 @@ export function openCircleSheet() {
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
             <div class="cs2-h">🫂 твои связи</div>
-            <div class="cs2-sub">люди, с которыми ты был на хайках клуба. близкий круг – те, с кем вы ходили вместе хотя бы дважды</div>
+            <div class="cs2-sub">${d.locked ? `${d.open} самых близких видно сразу, остальные ${hiddenN} откроются с картой интеллигента` : 'люди, с которыми ты был на хайках клуба. близкий круг – те, с кем вы ходили вместе хотя бы дважды'}</div>
             ${far ? `<div class="cs2-tg" id="cs2Tg"><button type="button" class="on" data-mode="near">близкие · ${near}</button><button type="button" data-mode="all">все · ${d.people.length}</button></div>` : ''}
             <div class="cs2-net" id="cs2Net">${net.svg}</div>
             <div class="cs2-stats"><div><b>${d.total}</b>${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках</div><div><b style="color:var(--yellow)">${d.strong}</b>близкий круг</div><div><b>${d.hikes}</b>${plural(d.hikes, 'твой хайк', 'твоих хайка', 'твоих хайков')}</div></div>
             <div class="cs2-car" id="cs2Car">${cards}</div>
+            ${d.locked ? '<button type="button" class="cs2-go" style="width:calc(100% - 32px);margin:12px 16px 0" data-cs2-card>открыть все связи с картой</button>' : ''}
             ${nx ? `<div class="cs2-sec">🗓 ближайший хайк</div>
             <div class="cs2-next"><div class="top"><b>${dayLabel(nx.date)}${nx.title ? ' · ' + esc(nx.title) : ''}</b></div>
                 <div class="row"><div class="cs2-stack">${stack}</div><span>${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em></span></div>
@@ -314,12 +341,13 @@ export function openCircleSheet() {
         if (sel) overlay.querySelector(`.cs2-pc[data-pid="${CSS.escape(sel)}"]`)?.classList.add('on');
     };
     overlay.addEventListener('click', e => {
+        if (e.target.closest('[data-cs2-card]')) { haptic(); closeCircleSheet(); setTimeout(() => openCard('шторка'), 320); return; }
         const tg = e.target.closest('#cs2Tg button');
         if (tg) { haptic(); setMode(tg.dataset.mode); return; }
-        const pc = e.target.closest('.cs2-pc');
+        const pc = e.target.closest('.cs2-pc:not(.q)');
         if (pc) { haptic(); select(pc.classList.contains('on') ? null : pc.dataset.pid); return; }
         const node = e.target.closest('#cs2Net .cs2-node');
-        if (node && (mode === 'all' || node.classList.contains('l1'))) {
+        if (node && !node.classList.contains('q') && (mode === 'all' || node.classList.contains('l1'))) {
             haptic(); select(node.dataset.id);
             overlay.querySelector(`.cs2-pc[data-pid="${CSS.escape(node.dataset.id)}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
             return;
