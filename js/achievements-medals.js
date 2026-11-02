@@ -51,6 +51,7 @@ export const MEDAL_LIBRARY = [
     { title: '5 хайков', imageUrl: '/assets/achievements/badges/hikes-5-v2.png' },
     { title: '10 хайков', imageUrl: '/assets/achievements/badges/hikes-10-v3.png' },
     { title: '20 хайков', imageUrl: '/assets/achievements/badges/hikes-20-v2.png' },
+    { title: 'год с клубом', imageUrl: '/assets/achievements/badges/one-year-v1.png' },
     { title: '30 хайков', imageUrl: '/assets/achievements/badges/hikes-30-v2.png' },
     { title: '50 хайков', imageUrl: '/assets/achievements/badges/hikes-50-v3.png' },
 ];
@@ -62,7 +63,7 @@ export const medalByUrl = url => MEDAL_LIBRARY.find(m => m.imageUrl === url) || 
 // Лёгкие копии значков (WebP): thumbs – 256 px для сеток и полок, md – 512 px для слайдера.
 // Делаются из PNG скриптом scripts/medal-thumbs.py; если копии нет – картинка сама откатывается на исходный PNG.
 // MEDAL_REV – поднять, когда картинки значков перерисованы (иначе телефоны неделю держат старые из кэша)
-const MEDAL_REV = 2;
+const MEDAL_REV = 3;
 const variant = (url, dir) => typeof url === 'string' && url.startsWith('/assets/achievements/') && url.endsWith('.png')
     ? url.replace('/assets/achievements/', `/assets/achievements/${dir}/`).replace(/\.png$/, `.webp?v=${MEDAL_REV}`) : url;
 export const medalThumb = url => variant(url, 'thumbs');
