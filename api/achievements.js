@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const { grantHikeBadges } = require('../lib/hike-badges');
+const { noShows } = require('../lib/no-shows');
 const { verifyInitData, isAdminUser } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
@@ -207,14 +208,14 @@ function createHandler(deps = {}) {
     // «клуб» для процентов редкости: кто хоть раз ходил с нами (остался в записи на прошедший хайк) + владельцы карты.
     // Не все, кто открывал приложение, – иначе маршруты выглядят как «у 1% клуба».
     async function clubMembers(token, snapshot) {
-        const [parts, hikes, members] = await Promise.all([read('hikeParticipants', token), read('hikes', token), read('members', token)]);
+        const [parts, hikes, members, skip] = await Promise.all([read('hikeParticipants', token), read('hikes', token), read('members', token), noShows(token)]);
         const today = moscowToday();
         const yes = v => v === true || String(v).toLowerCase() === 'yes';
         const ids = new Set();
         for (const [d, list] of Object.entries(parts.value || {})) {
             const h = hikes.value?.[d];
             if (!h || d >= today || !String(h.title || '').trim() || yes(h.city) || yes(h.book_club) || yes(h.cancelled)) continue;
-            Object.keys(list || {}).forEach(id => ids.add(id));
+            Object.keys(list || {}).forEach(id => { if (!skip.has(d + '|' + id)) ids.add(id); });
         }
         Object.entries(members.value || {}).forEach(([id, m]) => { if (m?.user_id) ids.add(id); });
         // хайки до приложения (опросы в чате) – у этих людей есть значок «первый хайк с интеллигенцией»
