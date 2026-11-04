@@ -245,7 +245,7 @@ function render() {
     const body = root.querySelector('.adm-body');
     if (view.sub === 'edit') renderEditor(body);
     else if (view.tab === 'today') renderToday(body);
-    else if (view.tab === 'analytics') renderAnalytics(body, adminCall);
+    else if (view.tab === 'analytics') { if (isRedesign()) renderRdAnalytics(body); else renderAnalytics(body, adminCall); }
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'flows') renderFlows(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);
@@ -374,6 +374,54 @@ function loadHomepage() {
         applyClubContent(data);
     }).catch(error => { homepage = { error: error.message }; })
         .finally(() => { homepageLoading = false; if (root && view.tab === 'home') render(); });
+}
+
+// ---------- аналитика в новом дизайне ----------
+// сверху – живые записи на ближайшие события (из /api/going), ниже – серверная воронка как была
+const RD_AN_COLORS = ['#D9FD19', '#6FC1F5', '#F38CC6'];
+const RD_WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+function renderRdAnalytics(body) {
+    const today = todayStr();
+    const events = allHikes().filter(h => h.title && h.title.trim() && !isYes(h.cancelled) && h.date >= today).slice(0, 3);
+    const m = state.metrics || {};
+    body.innerHTML = `
+        <div class="rd-adm-sec">записи на ближайшие события</div>
+        <div id="rdAnLive">${events.length ? '<div class="adm-muted rd-adm-empty">смотрю записи…</div>' : '<div class="adm-muted rd-adm-empty">впереди нет событий с названием</div>'}</div>
+        <div class="rd-adm-sec">путь гостя до оплаты</div>
+        <div id="rdAnSrv"></div>
+        <div class="rd-an-digest"><span class="rd-adm-ico" style="color:#F6B26B;background:#F6B26B22">${rdIcon('chart')}</span><span class="rd-adm-row-main"><b>дайджест около 20:30</b><small>каждый вечер график и цифры приходят в бот</small></span></div>
+        ${Number(m.hikes) > 0 ? `<div class="rd-adm-sec">клуб за всё время</div>
+        <div class="rd-an-club">${[['hikes', 'хайков'], ['kilometers', 'км'], ['locations', 'локаций'], ['meetings', 'знакомств']].map(([k, l]) => `<div><b>${esc(m[k])}</b><span>${l}</span></div>`).join('')}</div>` : ''}`;
+    renderAnalytics(body.querySelector('#rdAnSrv'), adminCall);
+    if (!events.length) return;
+    fetchGoingFromServer(events.map(h => h.date), true).then(g => {
+        const box = root?.querySelector('#rdAnLive');
+        if (!box || view.tab !== 'analytics') return;
+        if (!g) { box.innerHTML = '<div class="adm-error-inline">не удалось получить записи – попробуй открыть вкладку ещё раз</div>'; return; }
+        const days = [];
+        for (let i = 6; i >= 0; i--) { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i); days.push(d.getTime()); }
+        const dayIdx = ts => { const t = new Date(ts); t.setHours(0, 0, 0, 0); return days.indexOf(t.getTime()); };
+        const per = events.map(h => {
+            const list = g[h.date] || [];
+            const byDay = days.map(() => 0);
+            list.forEach(p => { const i = p.timestamp ? dayIdx(p.timestamp) : -1; if (i >= 0) byDay[i]++; });
+            return { h, n: list.length, byDay, cap: capacityFor(h) };
+        });
+        const sumDay = i => per.reduce((s, e) => s + e.byDay[i], 0);
+        const total = days.reduce((s, _, i) => s + sumDay(i), 0);
+        const max = Math.max(1, ...days.map((_, i) => sumDay(i)));
+        box.innerHTML = `<div class="rd-an-card">
+            <div class="rd-an-big"><b>${total}</b><span>${total === 1 ? 'новая запись' : 'новых записей'} за 7 дней</span></div>
+            <div class="rd-an-chart">${days.map((d, i) => `<div class="rd-an-col"><small>${sumDay(i) || ''}</small><div class="rd-an-stack">${per.map((e, k) => e.byDay[i] ? `<i style="height:${e.byDay[i] / max * 100}%;background:${RD_AN_COLORS[k]}"></i>` : '').join('')}</div><span${i === 6 ? ' class="is-today"' : ''}>${i === 6 ? 'сег' : RD_WD[new Date(d).getDay()]}</span></div>`).join('')}</div>
+            <div class="rd-an-legend">${per.map((e, k) => `<span><i style="background:${RD_AN_COLORS[k]}"></i>${esc(e.h.title)}</span>`).join('')}</div>
+            <small class="rd-an-note">считаются те, кто записан сейчас – отменившие запись сюда не попадают</small>
+        </div>
+        <div class="rd-an-card">
+            <div class="rd-an-card-h">заполненность</div>
+            ${per.map((e, k) => `<div class="rd-an-fill"><div class="rd-an-fill-top"><span><b>${esc(e.h.title)}</b><small>${esc(dateLabel(e.h.date))}</small></span><em${e.n >= e.cap ? ' class="is-full"' : ''}>${e.n} / ${e.cap}${e.n >= e.cap ? ' · полный' : ''}</em></div>
+                <div class="rd-adm-bar"><span style="width:${Math.min(100, Math.round(e.n / e.cap * 100))}%;background:${RD_AN_COLORS[k]}"></span></div></div>`).join('')}
+        </div>`;
+    }).catch(() => {});
 }
 
 function renderHomepage(body) {
@@ -1249,11 +1297,12 @@ function flowNodeHtml(f, nodeId, depth, seen) {
     const pct = n => (sent ? ` · ${Math.round(n / sent * 100)}%` : '');
     const text = esc(String(node.text || '')).replace(/\[имя\]/gi, '<i>[имя]</i>').replace(/\n/g, '<br>');
     const btns = node.buttons || [];
+    const rd = isRedesign();
     return `<div class="fl-node">
         <div class="fl-msg"><div class="fl-text">${text}</div>
             <div class="fl-pills"><span>ушло ${sent}</span>${btns.length ? `<span>не нажали ${Math.max(0, sent - totalClicks)}</span>` : ''}</div></div>
         ${btns.length ? `<div class="fl-branches" style="grid-template-columns:repeat(${btns.length},minmax(0,1fr))">${btns.map((b, i) => `<div class="fl-branch">
-            <div class="fl-line"></div><div class="fl-btn">${esc(b.label)}<small>нажали ${clicks[i]}${pct(clicks[i])}</small></div>
+            <div class="fl-line"></div><div class="fl-btn" style="--p:${sent ? Math.round(clicks[i] / sent * 100) : 0}%">${esc(b.label)}<small>нажали ${clicks[i]}${pct(clicks[i])}</small>${rd && !b.next ? '<em>отмечает выбор</em>' : ''}</div>
             ${b.next ? `<div class="fl-line"></div>${flowNodeHtml(f, b.next, depth + 1, seen)}` : ''}</div>`).join('')}</div>` : ''}
     </div>`;
 }
@@ -1360,12 +1409,25 @@ function renderFlows(body) {
     if (d.loading) { body.innerHTML = '<div class="adm-muted" style="padding:12px 2px">загружаю цепочки…</div>'; return; }
     if (d.error) { body.innerHTML = `<div class="adm-error-inline">не удалось загрузить: ${esc(d.error)}</div><button class="adm-link" id="flRetry">ещё раз</button>`; body.querySelector('#flRetry').addEventListener('click', () => loadFlows(body)); return; }
     const f = d.list.find(x => x.id === flowOpen);
-    if (!f) {
+    const rdState = x => (x.flow.enabled === false ? ['выкл', ' is-off'] : x.flow.trigger === 'postpone' ? ['авто', ' is-auto'] : ['вручную', '']);
+    if (!f && isRedesign()) {
+        body.innerHTML = `<div class="rd-adm-note rd-fl-intro">несколько сообщений в боте: первое уходит само по событию или вручную из рассылки, кнопки ведут к следующим. здесь видно, как каждая отработала</div>
+            ${d.list.length ? `<div class="rd-adm-list">${d.list.map(x => {
+                const auto = x.flow.trigger === 'postpone';
+                const c = auto ? '#8FCBF0' : '#C7B8E6';
+                const [st, cls] = rdState(x);
+                return `<button type="button" class="rd-adm-row" data-flow="${esc(x.id)}"><span class="rd-adm-ico" style="color:${c};background:${c}22">${rdIcon(auto ? 'rain' : 'flows')}</span><span class="rd-adm-row-main"><b>${esc(x.flow.title || x.id)}</b><small>${esc(x.flow.trigger_text || 'вручную из рассылки')}</small><small>получили ${x.people} · запусков ${x.runs}</small></span><em class="rd-fl-state${cls}">${st}</em><i>›</i></button>`;
+            }).join('')}</div>` : '<div class="adm-muted rd-adm-empty">цепочек пока нет</div>'}
+            <button class="fl-new" id="flNew">+ новая цепочка</button>
+            <button class="adm-link" id="flReload">обновить цифры</button>`;
+    } else if (!f) {
         body.innerHTML = `<div class="adm-hint">цепочка – несколько сообщений в боте: первое уходит само по событию, кнопки ведут к следующим. здесь видно, как каждая отработала</div>
             ${d.list.map(x => `<button class="fl-item" data-flow="${esc(x.id)}"><b>${esc(x.flow.title || x.id)} <span class="fl-state${x.flow.enabled === false ? ' is-off' : ''}">${x.flow.enabled === false ? 'выключена' : 'включена'}</span></b>
                 <small>${esc(x.flow.trigger_text || '')}</small><small>получили ${x.people} чел. · запусков ${x.runs}</small></button>`).join('') || '<div class="adm-muted">цепочек пока нет</div>'}
             <button class="fl-new" id="flNew">+ новая цепочка</button>
             <button class="adm-link" id="flReload">обновить цифры</button>`;
+    }
+    if (!f) {
         body.querySelector('#flNew').addEventListener('click', () => {
             haptic();
             flowEdit = { id: '', title: '', enabled: true, start: 'n1', trigger: 'manual', nodes: { n1: { text: '', buttons: [] } } };
@@ -1375,7 +1437,27 @@ function renderFlows(body) {
         body.querySelector('#flReload').addEventListener('click', () => { haptic(); loadFlows(body); });
         return;
     }
-    body.innerHTML = `<button class="adm-back" id="flBack">‹ все цепочки</button>
+    if (isRedesign()) {
+        const presses = Object.values(f.stats || {}).reduce((s, st) => s + (st.clicks || []).reduce((a, b) => a + Number(b || 0), 0), 0);
+        const [st, cls] = rdState(f);
+        body.innerHTML = `<button class="adm-back" id="flBack">‹ все цепочки</button>
+        <div class="rd-fl-head"><b>${esc(f.flow.title || f.id)}</b><em class="rd-fl-state${cls}">${st}</em></div>
+        <div class="fl-trigger">⚡ <b>запуск:</b> ${esc(f.flow.trigger_text || f.flow.trigger || 'вручную из рассылки')}</div>
+        <div class="rd-fl-stats"><div><b>${f.people}</b><span>получили</span></div><div><b>${presses}</b><span>нажатий на кнопки</span></div><div><b>${f.runs}</b><span>запусков</span></div></div>
+        <div class="rd-adm-sec">как отработала</div>
+        <div class="fl-map">${flowNodeHtml(f, f.flow.start, 0, new Set())}</div>
+        <div class="rd-bc-actions is-static">${f.flow.enabled !== false ? '<button class="btn btn-yellow adm-primary" id="rdFlRun">запустить из рассылки</button>' : ''}<button class="adm-ghost" id="flEdit">✎ изменить цепочку</button></div>
+        <button class="adm-link" id="flReload">обновить цифры</button>`;
+        body.querySelector('#rdFlRun')?.addEventListener('click', () => {
+            haptic();
+            // по умолчанию – участники подходящего хайка, а не «всем»: перенос – ближайший, остальное – прошедший
+            const today = todayStr();
+            const titled = allHikes().filter(h => h.title && h.title.trim() && !isYes(h.cancelled));
+            const h = f.flow.trigger === 'postpone' ? titled.find(x => x.date >= today) : titled.filter(x => x.date < today).pop();
+            bc = { ...newBroadcast(), mode: 'flow', flowId: f.id, ...(h ? { segment: 'hike', extra: [], hikeDate: h.date } : {}) };
+            view = { tab: 'broadcast' }; render(); refreshAudience(true);
+        });
+    } else body.innerHTML = `<button class="adm-back" id="flBack">‹ все цепочки</button>
         <div class="adm-h1">${esc(f.flow.title || f.id)}</div>
         <div class="fl-trigger">⚡ <b>запуск:</b> ${esc(f.flow.trigger_text || f.flow.trigger || '')}<br><small>получили ${f.people} чел. · запусков ${f.runs}</small></div>
         <div class="fl-line"></div>
