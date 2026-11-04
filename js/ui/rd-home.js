@@ -1,0 +1,240 @@
+// Верх новой главной (редизайн, пока только для html.rd):
+// шапка с маленькой картой, «свежее в клубе», карточка ближайшего события с теми, кто идёт.
+// Всё ниже (связи, календарь, саммари, погода, цифры) – прежние блоки в новых стилях.
+import { state } from '../state.js';
+import { haptic, openLink, parseLinks } from '../utils.js';
+import { log } from '../api.js';
+import { isUpcomingHike, moscowDateKey } from '../hike-timing.js';
+import { capacityFor, isPostponed, fetchGoingFromServer, showBottomSheet, snapshotHikeMap } from './calendar.js';
+import { renderPriv } from './privileges.js';
+import { openCardSheet } from './card-sheet.js';
+import { setRdGlow } from '../redesign.js';
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const WEEKDAYS = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+const WD_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+const GRADS = [['#F6B26B', '#E06666'], ['#6FA8DC', '#3D85C6'], ['#93C47D', '#38761D'], ['#C27BA0', '#741B47'], ['#FFD966', '#BF9000'], ['#8E7CC3', '#351C75']];
+const yes = v => v === true || String(v).toLowerCase() === 'yes';
+const plural = (n, a, b, c) => { const x = n % 10, y = n % 100; return x === 1 && y !== 11 ? a : x >= 2 && x <= 4 && (y < 12 || y > 14) ? b : c; };
+const firstName = n => String(n || '').trim().split(/\s+/)[0] || 'участник';
+const dayDiff = date => Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(moscowDateKey() + 'T12:00:00Z')) / 86400000);
+
+function eventKind(h) {
+    if (isPostponed(h)) return 'rain';
+    if (yes(h.city)) return 'city';
+    if (yes(h.woman)) return 'woman';
+    return 'hike';
+}
+
+function whenLabel(h) {
+    const d = dayDiff(h.date);
+    const t = h.start_time ? ` · ${h.start_time}` : '';
+    if (d === 0) return `сегодня${t}`;
+    if (d === 1) return `завтра${t}`;
+    if (d > 1 && d < 7) return `через ${d} ${plural(d, 'день', 'дня', 'дней')}${t}`;
+    const dt = new Date(h.date + 'T12:00:00');
+    return `${WD_SHORT[dt.getDay()]}, ${dt.getDate()} ${MONTHS[dt.getMonth()]}${t}`;
+}
+
+function nextEvent() {
+    const list = state.hikesWithTitle || [];
+    for (let i = 0; i < list.length; i++) {
+        const h = list[i];
+        if (!yes(h.cancelled) && !yes(h.book_club) && isUpcomingHike(h)) return { hike: h, index: i };
+    }
+    return null;
+}
+
+// ---------- «свежее в клубе» ----------
+const SEEN_KEY = 'rdSeenStories';
+function seenSet() { try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')); } catch (e) { return new Set(); } }
+function markSeen(key) {
+    try { const s = seenSet(); s.add(key); localStorage.setItem(SEEN_KEY, JSON.stringify([...s].slice(-200))); } catch (e) {}
+}
+
+const ICONS = {
+    news: '<path d="M12 3l1.8 4.6L18.5 9l-4.7 1.5L12 15l-1.8-4.5L5.5 9l4.7-1.4z"/>',
+    letter: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+    report: '<rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/>',
+    talk: '<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>',
+};
+const STORY_BG = { news: 'linear-gradient(135deg,#3B4A12,#1A200A)', letter: 'linear-gradient(135deg,#F3E3C3,#C9A66B)', report: 'linear-gradient(135deg,#3E5A6E,#1B2A36)', talk: 'linear-gradient(135deg,#3A2A55,#1A1524)' };
+const STORY_FG = { news: '#D9FD19', letter: '#5A3E14', report: '#CFE3F0', talk: '#C7B8E6' };
+
+// подпись под кружком – начало новости до тире или первые слова
+function storyLabel(text) {
+    const t = String(text || '').replace(/^(в приложении|теперь|сделали|добавили|запустили)\s+/i, '').split(/\s[–—-]\s|[,.:]/)[0].trim();
+    const words = t.split(/\s+/).slice(0, 4).join(' ');
+    return words.length > 26 ? words.slice(0, 25) + '…' : words || 'новое';
+}
+
+function buildStories() {
+    const today = moscowDateKey();
+    const out = [];
+    const recent = d => d && dayDiff(String(d).slice(0, 10)) >= -21 && String(d).slice(0, 10) <= today;
+    (state.updates || []).filter(u => recent(u.date)).sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 2)
+        .forEach(u => out.push({ key: 'u:' + u.date + ':' + String(u.update).slice(0, 24), kind: 'news', label: storyLabel(u.update), text: u.update, date: u.date }));
+    // последний прошедший хайк: письмо и отчёт
+    const past = (state.hikesWithTitle || []).filter(h => h.date < today && !yes(h.city) && !yes(h.cancelled)).sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (past && /^https?:\/\//.test(String(past.letter_link || ''))) out.push({ key: 'l:' + past.date, kind: 'letter', label: 'письмо Макса', link: past.letter_link, date: past.date });
+    if (past && /^https?:\/\//.test(String(past.report_link || ''))) out.push({ key: 'r:' + past.date, kind: 'report', label: 'отчёт: ' + String(past.title).replace(/^хайк (на|по|в)\s+/i, ''), link: past.report_link, date: past.date });
+    const sums = [...(state.mastermindSummaries || [])].filter(s => s && s.link).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    if (sums[0]) out.push({ key: 's:' + sums[0].date, kind: 'talk', label: 'саммари', link: sums[0].link, date: sums[0].date, text: sums[0].title });
+    return out;
+}
+
+function storiesHtml(stories) {
+    if (!stories.length) return '';
+    const seen = seenSet();
+    const unread = stories.filter(s => !seen.has(s.key)).length;
+    return `
+        <div class="rd-fresh">
+            <div class="rd-fresh-head"><span>свежее в клубе</span>${unread ? `<b>${unread}</b>` : ''}</div>
+            <div class="rd-stories">
+                ${stories.map((s, i) => `
+                    <button type="button" class="rd-story${seen.has(s.key) ? '' : ' is-new'}" data-story="${i}">
+                        <span class="rd-story-ring"><span class="rd-story-pic" style="background:${STORY_BG[s.kind]};color:${STORY_FG[s.kind]}">
+                            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[s.kind]}</svg>
+                        </span></span>
+                        <span class="rd-story-label">${esc(s.label)}</span>
+                    </button>`).join('')}
+            </div>
+        </div>`;
+}
+
+function openStory(s) {
+    haptic();
+    markSeen(s.key);
+    log('rd: свежее', state.userCard.status !== 'active', state.user, { kind: s.kind });
+    if (s.link) { openLink(s.link, s.label, state.userCard.status !== 'active'); return; }
+    const ov = document.createElement('div');
+    ov.className = 'rd-story-overlay';
+    const dt = new Date(String(s.date).slice(0, 10) + 'T12:00:00');
+    ov.innerHTML = `<div class="rd-story-card" role="dialog" aria-label="${esc(s.label)}">
+        <span class="rd-story-date">${dt.getDate()} ${MONTHS[dt.getMonth()]}</span>
+        <p>${parseLinks(esc(s.text), state.userCard.status !== 'active')}</p>
+        <button type="button" class="rd-story-close">понятно</button></div>`;
+    ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('.rd-story-close')) ov.remove(); });
+    document.body.appendChild(ov);
+}
+
+// ---------- карточка ближайшего события ----------
+function heroHtml(ev) {
+    if (!ev) return '';
+    const h = ev.hike;
+    const kind = eventKind(h);
+    const tags = (Array.isArray(h.tags) ? h.tags : []).slice(0, 4);
+    const img = /^https?:\/\/|^\//.test(String(h.image || '')) ? h.image : '';
+    return `
+        <div class="rd-hero is-${kind}" id="rdHero" data-index="${ev.index}">
+            <div class="rd-hero-cover" id="rdHeroCover">
+                ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}
+                <span class="rd-hero-when"><i></i>${esc(whenLabel(h))}</span>
+            </div>
+            <div class="rd-hero-body">
+                <span class="rd-hero-title">${esc(h.title)}</span>
+                ${tags.length ? `<div class="rd-tags">${tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+                <div class="rd-going" id="rdGoing"><span class="rd-going-wait">смотрю, кто идёт…</span></div>
+                <button type="button" class="rd-cta" id="rdHeroCta">${state.hikeBookingStatus[ev.index] === true ? 'ты идёшь · детали' : 'подробнее и запись'}</button>
+            </div>
+        </div>`;
+}
+
+function avatarHtml(p, i) {
+    const g = GRADS[i % GRADS.length];
+    const photo = String(p.photoUrl || '');
+    return `<span class="rd-av" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${photo ? `<img src="${esc(photo)}" alt="" onerror="this.remove()">` : ''}${esc(firstName(p.name)[0] || '?').toUpperCase()}</span>`;
+}
+
+function agoLabel(ts) {
+    const h = Math.max(1, Math.floor((Date.now() - Number(ts)) / 3600000));
+    if (h < 24) return `${h} ч назад`;
+    const d = Math.floor(h / 24);
+    return d === 1 ? 'вчера' : `${d} ${plural(d, 'день', 'дня', 'дней')} назад`;
+}
+
+function fillGoing(ev, list) {
+    const box = document.getElementById('rdGoing');
+    if (!box) return;
+    const h = ev.hike;
+    const me = String(state.user?.id || '');
+    const people = (Array.isArray(list) ? list : []).filter(p => p && p.userId);
+    const cap = capacityFor(h);
+    const n = people.length;
+    const left = Math.max(0, cap - n);
+    const others = people.filter(p => String(p.userId) !== me);
+    const names = others.slice(0, 2).map(p => esc(firstName(p.name)));
+    const rest = others.length - names.length;
+    const latest = others.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0];
+    const showSeats = !yes(h.city) || Number(h.capacity) > 0;
+    box.innerHTML = n ? `
+        <div class="rd-going-row">
+            <span class="rd-avs">${others.slice(0, 4).map(avatarHtml).join('')}</span>
+            <span class="rd-going-text">${names.length ? `<b>${names.join(', ')}</b>` : ''}${rest > 0 ? `<br><span>и ещё ${rest} ${plural(rest, 'идёт', 'идут', 'идут')}</span>` : names.length ? '<br><span>уже идут</span>' : ''}</span>
+            ${showSeats ? `<span class="rd-going-n">${n} / ${cap}</span>` : ''}
+        </div>
+        ${latest?.timestamp ? `<div class="rd-live"><i></i>новая запись: ${esc(latest.name)} · ${agoLabel(latest.timestamp)}</div>` : ''}
+        ${showSeats ? `<div class="rd-seats"><span style="width:${Math.min(100, Math.round(n / cap * 100))}%"></span></div><div class="rd-seats-note">${left ? `осталось ${left} ${plural(left, 'место', 'места', 'мест')}` : 'мест нет – можно в лист ожидания'}</div>` : ''}`
+        : `<div class="rd-live"><i></i>запись открыта – будь первым</div>`;
+}
+
+function mountCover(h) {
+    const cover = document.getElementById('rdHeroCover');
+    if (!cover || cover.querySelector('img')) return;
+    // 3D-рельеф маршрута тем же снимком, что и для сторис; без трека – остаётся градиент
+    setTimeout(() => {
+        snapshotHikeMap(h, { width: 390, height: 230, ratio: 2, colorful: true }).then(canvas => {
+            if (!canvas || !cover.isConnected) return;
+            canvas.className = 'rd-hero-map';
+            cover.prepend(canvas);
+        }).catch(() => {});
+    }, 700);
+}
+
+// ---------- сборка ----------
+export function rdHomeTopHtml() {
+    const user = state.user;
+    const now = new Date();
+    const owner = state.userCard.status === 'active';
+    const cardImg = owner && state.userCard.cardUrl ? state.userCard.cardUrl : 'assets/card-front.jpg';
+    const ev = nextEvent();
+    setRdGlow(ev ? eventKind(ev.hike) : 'hike');
+    return `
+        <div class="rd-head">
+            <div class="rd-head-text">
+                <span class="rd-date">${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span>
+                <span class="rd-hello">привет, ${esc(user?.first_name || 'друг')}</span>
+            </div>
+            <button type="button" class="rd-mini-card" id="rdMiniCard" aria-label="${owner ? 'моя карта интеллигента' : 'карта интеллигента'}">
+                <img src="${esc(cardImg)}" alt="">
+                <span>${owner ? Number(state.userCard.hikes || 0) : '?'}</span>
+            </button>
+        </div>
+        ${storiesHtml(buildStories())}
+        ${heroHtml(ev)}`;
+}
+
+export function wireRdHomeTop() {
+    const owner = state.userCard.status === 'active';
+    const ev = nextEvent();
+    document.getElementById('rdMiniCard')?.addEventListener('click', () => {
+        haptic();
+        log('rd: мини-карта', !owner, state.user);
+        if (owner) renderPriv();
+        else openCardSheet({ source: 'главная (новый дизайн)', hikeDate: ev?.hike.date, hikeTitle: ev?.hike.title });
+    });
+    const stories = buildStories();
+    document.querySelectorAll('.rd-story').forEach(btn => btn.addEventListener('click', () => {
+        const s = stories[Number(btn.dataset.story)];
+        if (!s) return;
+        btn.classList.remove('is-new');
+        openStory(s);
+    }));
+    if (!ev) return;
+    const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
+    document.getElementById('rdHeroCta')?.addEventListener('click', open);
+    document.getElementById('rdHeroCover')?.addEventListener('click', open);
+    fetchGoingFromServer([ev.hike.date]).then(([list]) => fillGoing(ev, list)).catch(() => fillGoing(ev, []));
+    mountCover(ev.hike);
+}

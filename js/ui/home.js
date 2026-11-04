@@ -23,6 +23,8 @@ import { mountCircle } from './circle.js';
 import { mountAdminEntry } from './admin.js';
 import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
+import { isRedesign, applyRedesignFlag } from '../redesign.js';
+import { rdHomeTopHtml, wireRdHomeTop } from './rd-home.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -895,6 +897,53 @@ function renderOwnerHome() {
     setupBottomNav();
 }
 
+// новая главная (редизайн, пока только для isRedesign()): верх – rd-home.js, ниже прежние живые блоки
+function renderRdHome() {
+    cleanupProfileOverlays();
+    subtitle().textContent = '';
+    subtitle().classList.remove('subtitle-guest');
+    showBottomNav(true);
+    const isGuest = state.userCard.status !== 'active';
+    const main = mainDiv();
+    main.innerHTML = `
+        ${rdHomeTopHtml()}
+        ${askBarHtml()}
+        <div id="circleContainer"></div>
+        <div id="rdMedalsAnchor"></div>
+        <div class="card-container" id="calendarContainer"></div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
+        ${renderWeatherBlock()}
+        <div class="card-container">
+            <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-grid">
+                <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
+                <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
+                <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
+                <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
+            </div>
+        </div>
+        ${renderUpdatesBlock()}
+        ${renderSafetyBanner()}
+        ${renderMakerCredit()}
+    `;
+    wireRdHomeTop();
+    wireSafetyBanner();
+    wireAskBar();
+    fitMastermindScroll();
+    document.querySelectorAll('.mastermind-read-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            haptic();
+            log('мастермайнд', isGuest, state.user);
+            openLink(link.href, 'мастермайнд', isGuest);
+        });
+    });
+    mountCircle(document.getElementById('circleContainer'));
+    renderCalendar(document.getElementById('calendarContainer'));
+    initWeatherBlock();
+    setupBottomNav();
+}
+
 export function renderHome() {
     setLumenContext({ screen: 'home', scenario: localStorage.getItem('chatOnboardingVisited') ? 'home' : 'first_visit' });
     document.querySelector('.profile-edit-fab')?.remove();
@@ -922,7 +971,10 @@ export function renderHome() {
         console.warn('Не удалось загрузить попапы при старте:', err);
     });
 
-    if (state.userCard.status === 'active' && state.userCard.cardUrl) {
+    applyRedesignFlag();
+    if (isRedesign()) {
+        renderRdHome();
+    } else if (state.userCard.status === 'active' && state.userCard.cardUrl) {
         renderOwnerHome();
     } else {
         renderGuestHome();

@@ -22,7 +22,8 @@ export function wireMedalStrip(host, items, all = null, owner = '') {
 }
 
 export async function mountMyAchievements() {
-    const card = document.getElementById('cardBlock');
+    // в новом дизайне большой карты на главной нет – значки встают под «твои связи»
+    const card = document.getElementById('cardBlock') || document.getElementById('rdMedalsAnchor');
     const userId = String(state.user?.id || '');
     if (!card || !userId || document.getElementById('myAchievements') || !achievementsVisible()) return;
     const host = document.createElement('section');
