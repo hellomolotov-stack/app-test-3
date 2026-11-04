@@ -7,7 +7,8 @@ import { haptic, tg } from '../utils.js';
 import { REGISTRATION_API_URL } from '../config.js';
 import { renderAnalytics } from './admin-analytics.js';
 import { loadAllParticipants } from '../firebase.js';
-import { previewHikeTrack, findCatalogRoute, catalogRouteTrack } from './calendar.js';
+import { previewHikeTrack, findCatalogRoute, catalogRouteTrack, fetchGoingFromServer, capacityFor } from './calendar.js';
+import { isRedesign } from '../redesign.js';
 import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
 import { renderAdmissionAdmin } from './admission-admin.js';
 import { renderAchievementsAdmin } from './achievements-admin.js';
@@ -149,10 +150,11 @@ export function mountAdminEntry() {
     header.appendChild(btn);
 }
 
-export function openAdmin(tab = 'hikes') {
+export function openAdmin(tab) {
     if (!isAdminUser()) return;
     closeAdmin();
-    view = { tab };
+    // новый дизайн открывается обзором «сегодня»
+    view = { tab: tab || (isRedesign() ? 'today' : 'hikes') };
     homepage = null;
     updateDraft = null;
     loadTemplates().catch(() => {});
@@ -226,7 +228,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -242,6 +244,7 @@ function render() {
     }));
     const body = root.querySelector('.adm-body');
     if (view.sub === 'edit') renderEditor(body);
+    else if (view.tab === 'today') renderToday(body);
     else if (view.tab === 'analytics') renderAnalytics(body, adminCall);
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'flows') renderFlows(body);
@@ -260,6 +263,106 @@ function render() {
     root.scrollTop = keepTop;
     if (keepTop) requestAnimationFrame(() => { if (root) root.scrollTop = keepTop; });
     root.querySelector('.adm-tab.is-on')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+
+// ---------- новый дизайн: обзор «сегодня» ----------
+// что сделать сегодня: ближайшее событие и действия по нему, дела после прошедших, разделы
+const RD_ICON = {
+    send: '<path d="M22 3L11 14"/><path d="M22 3l-7 19-4-8-8-4z"/>',
+    rain: '<path d="M7 15a4 4 0 0 1-.5-8A6 6 0 0 1 18 6a4.5 4.5 0 0 1-.5 9z"/><path d="M8 18l-1 2M12 18l-1 2M16 18l-1 2"/>',
+    edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+    medal: '<circle cx="12" cy="9" r="6"/><path d="M8.5 14l-1.5 7 5-3 5 3-1.5-7"/>',
+    chat: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+    flows: '<circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="12" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8.5 6h3a3 3 0 0 1 3 3v.5M8.5 18h3a3 3 0 0 0 3-3v-.5"/>',
+    card: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/>',
+    plus: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M16 11h6"/>',
+    hike: '<path d="M3 20l6-16 4 9 3-5 5 12z"/>',
+    home: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 13h8M8 16h5"/>',
+    chart: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3"/>',
+    form: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+};
+const rdIcon = (k, color = 'currentColor') => `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${RD_ICON[k]}</svg>`;
+
+function renderToday(body) {
+    const today = todayStr();
+    const titled = allHikes().filter(h => h.title && h.title.trim() && !isYes(h.cancelled));
+    const next = titled.find(h => h.date >= today);
+    // в таблице часто стоят будущие даты без названия – их тоже показываем, чтобы было что заполнить
+    const slot = next ? null : allHikes().find(h => h.date >= today && !isYes(h.cancelled));
+    const lastHike = titled.filter(h => h.date < today && !isYes(h.city)).pop();
+    const lastAny = titled.filter(h => h.date < today).pop();
+    const kind = next ? (/🌧/.test(next.emoji || '') ? 'rain' : isYes(next.city) ? 'city' : isYes(next.woman) ? 'woman' : 'hike') : 'hike';
+    const row = (key, icon, color, title, sub) => `<button type="button" class="rd-adm-row" data-rd-go="${key}"><span class="rd-adm-ico" style="color:${color};background:${color}22">${rdIcon(icon)}</span><span class="rd-adm-row-main"><b>${title}</b><small>${sub}</small></span><i>›</i></button>`;
+    const tile = (key, icon, color, title, sub) => `<button type="button" class="rd-adm-tile" data-rd-go="${key}" style="background:radial-gradient(120% 100% at 100% 0%, ${color}33 0%, #15181D 70%)">${rdIcon(icon, color)}<span><b>${title}</b><small>${sub}</small></span></button>`;
+    body.innerHTML = `
+        ${next ? `<div class="rd-adm-next is-${kind}">
+            <span class="rd-adm-when"><i></i>${esc(dateLabel(next.date))}${next.start_time ? ' · ' + esc(next.start_time) : ''}</span>
+            <div class="rd-adm-next-top"><b>${esc(next.title)}</b><span id="rdAdmCount"></span></div>
+            <div class="rd-adm-bar"><span id="rdAdmBar" style="width:0%"></span></div>
+            <small id="rdAdmLast">смотрю записи…</small>
+            <div class="rd-adm-acts">
+                <button type="button" class="rd-adm-act is-main" data-rd-go="write">${rdIcon('send')}написать идущим</button>
+                <button type="button" class="rd-adm-act" data-rd-go="edit">${rdIcon('rain', '#8FCBF0')}перенести</button>
+                <button type="button" class="rd-adm-act" data-rd-go="edit">${rdIcon('edit')}изменить</button>
+            </div>
+            <small class="rd-adm-note">перенос – в карточке хайка: «дата перенесена» сама запустит цепочку и бот спросит у записавшихся, как им удобнее</small>
+        </div>` : slot ? `<button type="button" class="rd-adm-slot" data-rd-go="slot"><span class="rd-adm-when"><i></i>${esc(dateLabel(slot.date))}${slot.start_time ? ' · ' + esc(slot.start_time) : ''}</span><b>впереди дата без названия</b><small>заполни карточку – и хайк появится в приложении</small><span class="rd-adm-slot-cta">заполнить ›</span></button>` : '<div class="adm-muted rd-adm-empty">впереди пока нет событий – добавь хайк во вкладке «хайки»</div>'}
+        ${lastHike || lastAny ? `<div class="rd-adm-sec">ждёт тебя</div><div class="rd-adm-list">
+            ${lastHike ? row('badges', 'medal', '#C7B8E6', `значки за ${esc(lastHike.title.replace(/^хайк\s+(на|по|в)\s+/i, ''))}`, `${esc(dateLabel(lastHike.date))} · отметь, кто пришёл`) : ''}
+            ${lastAny ? row('feedback', 'chat', '#6FC1F5', `отзывы: ${esc(lastAny.title)}`, 'кнопка в сообщении ведёт в общий чат') : ''}
+        </div>` : ''}
+        <div class="rd-adm-sec">связь с людьми</div>
+        <div class="rd-adm-tiles">
+            ${tile('broadcast', 'send', '#D9FD19', 'рассылка', '25 сегментов, шаблоны, отложенная отправка')}
+            ${tile('flows', 'flows', '#C7B8E6', 'цепочки', 'сценарии бота с кнопками и автозапуском')}
+            ${tile('newcomers', 'card', '#6FA8DC', 'продажа карты', 'личная цена с учётом оплаченных билетов')}
+            ${tile('plus1', 'plus', '#F38CC6', '+1', 'приглашения друзей владельцев карты')}
+        </div>
+        <div class="rd-adm-sec">клуб</div>
+        <div class="rd-adm-list">
+            ${row('hikes', 'hike', '#D9FD19', 'хайки и события', 'новый хайк, трек из GPX, обложка, места')}
+            ${row('achievements', 'medal', '#C7B8E6', 'значки', 'выдача пачкой, редкость, гравировка')}
+            ${row('home', 'home', '#F5F5F7', 'главная приложения', 'обновления, саммари, цифры клуба')}
+            ${row('analytics', 'chart', '#F6B26B', 'аналитика', 'воронка до оплаты · дайджест в 20:30')}
+            ${row('admissions', 'form', '#93C47D', 'заявки', 'анкеты вступления')}
+            ${row('pass', 'key', '#A3A8AE', 'место', 'ручная запись на хайк')}
+        </div>`;
+    body.querySelectorAll('[data-rd-go]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        const go = b.dataset.rdGo;
+        if (go === 'write' && next) {
+            bc = { ...newBroadcast(), segment: 'hike', extra: [], hikeDate: next.date, kind: 'important', btnType: 'app', section: 'hike', btnHike: next.date, btnText: 'детали хайка' };
+            view = { tab: 'broadcast' }; render(); refreshAudience(true); return;
+        }
+        if (go === 'edit' && next) { openEditor(next.date); return; }
+        if (go === 'slot' && slot) { openEditor(slot.date); return; }
+        if (go === 'badges' && lastHike) { view = { tab: 'achievements', achHike: lastHike.date }; render(); return; }
+        if (go === 'feedback' && lastAny) {
+            bc = { ...newBroadcast() };
+            applyFeedbackPreset(lastAny);
+            view = { tab: 'broadcast' }; render(); refreshAudience(true); return;
+        }
+        view = { tab: go }; render();
+    }));
+    if (next) fetchGoingFromServer([next.date], true).then(g => {
+        const list = (g && g[next.date]) || [];
+        if (!root || view.tab !== 'today') return;
+        const cap = capacityFor(next);
+        const n = list.length;
+        const cnt = root.querySelector('#rdAdmCount');
+        if (cnt) cnt.innerHTML = `${n}<small> / ${cap}</small>`;
+        const bar = root.querySelector('#rdAdmBar');
+        if (bar) bar.style.width = Math.min(100, Math.round(n / cap * 100)) + '%';
+        const last = list.slice().sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0))[0];
+        const lastEl = root.querySelector('#rdAdmLast');
+        if (lastEl) {
+            if (last?.timestamp) {
+                const h = Math.max(1, Math.floor((Date.now() - last.timestamp) / 3600000));
+                lastEl.textContent = `последняя запись – ${last.name || 'участник'}, ${h < 24 ? h + ' ч' : Math.floor(h / 24) + ' дн.'} назад`;
+            } else lastEl.textContent = n ? '' : 'пока никто не записался';
+        }
+    }).catch(() => { const el = root?.querySelector('#rdAdmLast'); if (el) el.textContent = ''; });
 }
 
 // ---------- главная: ручные цифры и журнал обновлений ----------
@@ -1668,21 +1771,31 @@ function renderBroadcast(body) {
     const tip = SEGMENT_TIPS[bc.segment];
     const chip = (k, l, attr, on) => `<button class="adm-chip${on ? ' is-on' : ''}" ${attr}="${k}">${l} <span class="adm-chip-n" data-n="${k}"></span></button>`;
 
-    body.innerHTML = `
-        <div id="admStats" class="adm-drafts-box"></div>
+    const P = {
+        top: `<div id="admStats" class="adm-drafts-box"></div>
         <div id="admSched" class="adm-drafts-box"></div>
         <div id="admDrafts" class="adm-drafts-box"></div>
         ${recent[0] ? `<button class="adm-quick" id="admFeedback">📝 собрать отзывы о хайке<small>${esc(dateLabel(recent[0].date))} – ${esc(recent[0].title)} · кнопка в общий чат</small></button>` : ''}
         <div id="admAchNotify"></div>
         ${bc.draftId ? '<div class="adm-hint">открыт черновик – «сохранить черновик» обновит его</div>' : ''}
-        <div class="adm-label">кому</div>
-        ${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
+        `,
+        mid: `<div class="adm-label">кому</div>
+        `,
+        segs: `${SEGMENT_GROUPS.map(([group, list]) => `<div class="adm-seg-group">${group}</div>
             <div class="adm-chips">${list.map(([k, l]) => chip(k, l, 'data-seg', bcHas(k))).join('')}</div>`).join('')}
         <div class="adm-hint">можно выбрать несколько сегментов – люди сложатся; повторное нажатие снимает сегмент</div>
         ${bcHas('hike') ? `<label class="adm-field"><span>хайк</span><select id="admBcHike">${hikeOptions(bc.hikeDate)}</select></label>` : ''}
         ${bcHas('waitlist_date') ? waitlistDateHtml() : ''}
 
-        <div class="adm-label">кроме</div>
+        `,
+        segsRd: `<div class="rd-bc-groups">${SEGMENT_GROUPS.map(([group, list]) => `<details class="rd-bc-group"${list.some(([k]) => bcHas(k)) ? ' open' : ''}><summary><span>${group}</span><small>${list.filter(([k]) => bcHas(k)).map(([, l]) => l).join(', ') || list.length + ' ' + (list.length < 5 ? 'сегмента' : 'сегментов')}</small></summary>
+            <div class="adm-chips">${list.map(([k, l]) => chip(k, l, 'data-seg', bcHas(k))).join('')}</div></details>`).join('')}</div>
+        <div class="adm-hint">можно выбрать несколько сегментов – люди сложатся; повторное нажатие снимает сегмент</div>
+        ${bcHas('hike') ? `<label class="adm-field"><span>хайк</span><select id="admBcHike">${hikeOptions(bc.hikeDate)}</select></label>` : ''}
+        ${bcHas('waitlist_date') ? waitlistDateHtml() : ''}
+
+        `,
+        excl: `<div class="adm-label">кроме</div>
         <div class="adm-excl">
             ${bc.excl.map(k => `<button class="adm-pill" data-unexcl="${k}">${esc(SEG_LABEL[k] || k)} <b>×</b></button>`).join('')}
             <button class="adm-link" id="admExclToggle">${bc.showExcl ? 'готово' : '+ исключить сегмент'}</button>
@@ -1692,13 +1805,16 @@ function renderBroadcast(body) {
             return items.length ? `<div class="adm-seg-group">${group}</div><div class="adm-chips">${items.map(([k, l]) => chip(k, l, 'data-excl', bc.excl.includes(k))).join('')}</div>` : '';
         }).join('')}</div>` : ''}
 
-        <div class="adm-label">тип сообщения</div>
+        `,
+        kind: `<div class="adm-label">тип сообщения</div>
         <div class="adm-chips">${KINDS.map(([k, l]) => `<button class="adm-chip${bc.kind === k ? ' is-on' : ''}" data-kind="${k}">${l}</button>`).join('')}</div>
         <div class="adm-hint">кто попросил писать реже, получит только «важное» или «анонс хайка» – смотря что выбрал</div>
 
-        <div class="adm-sum" id="admSum">считаю получателей…</div>
+        `,
+        summ: `<div class="adm-sum" id="admSum">считаю получателей…</div>
         <div id="admUnreach"></div>
-        <div class="adm-label">добавить вручную</div>
+        `,
+        add: `<div class="adm-label">добавить вручную</div>
         <input class="adm-people-search" id="admAddQ" placeholder="найти человека по имени или @username" value="${esc(bc.addQ || '')}" autocomplete="off">
         <div id="admAddRes"></div>
         <div class="adm-excl" id="admAdded"></div>
@@ -1706,7 +1822,8 @@ function renderBroadcast(body) {
         ${bc.showPeople ? `<input class="adm-people-search" id="admPeopleQ" placeholder="поиск по имени или @username" value="${esc(bc.q)}">
             <div class="adm-people" id="admPeople"></div>` : ''}
 
-        <div class="adm-label">что отправить</div>
+        `,
+        what: `<div class="adm-label">что отправить</div>
         <div class="adm-chips"><button class="adm-chip${bc.mode !== 'flow' ? ' is-on' : ''}" data-mode="msg">сообщение</button><button class="adm-chip${bc.mode === 'flow' ? ' is-on' : ''}" data-mode="flow">🔗 цепочку</button></div>
         ${bc.mode === 'flow' ? bcFlowPickHtml() : ''}
         <div id="admMsgPart"${bc.mode === 'flow' ? ' hidden' : ''}>
@@ -1728,15 +1845,43 @@ function renderBroadcast(body) {
         <div class="adm-label">так увидят</div>
         <div class="adm-preview" id="admPreview"></div>
         </div>
-        <div${bc.mode === 'flow' ? ' hidden' : ''}>
+        `,
+        when: `<div${bc.mode === 'flow' ? ' hidden' : ''}>
         <div class="adm-label">когда отправить</div>
         <div class="adm-chips"><button class="adm-chip${bc.when !== 'later' ? ' is-on' : ''}" data-when="now">сейчас</button><button class="adm-chip${bc.when === 'later' ? ' is-on' : ''}" data-when="later">⏰ запланировать</button></div>
         ${bc.when === 'later' ? `<label class="adm-field"><span>дата и время (по времени телефона)</span><input type="datetime-local" id="admBcAt" value="${esc(bc.sendAt)}" min="${localInputValue(new Date(Date.now() + 5 * 60000))}"></label>
             <div class="adm-hint">список получателей фиксируется сейчас. уйдёт в течение 5 минут после выбранного времени, в бот придёт отчёт</div>` : ''}
         </div>
 
-        <div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
-        <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`;
+        `,
+        acts: `<div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
+        <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`,
+    };
+    if (isRedesign()) {
+        // новый дизайн: три шага – кому, что, когда; история и черновики внизу
+        const segLabels = bcSegs().map(k => SEG_LABEL[k] || k);
+        const hikeTitle = bcHas('hike') ? (allHikes().find(h => h.date === bc.hikeDate)?.title || '') : '';
+        const step = (n, t) => `<div class="rd-bc-step"><span>${n}</span><b>${t}</b></div>`;
+        body.innerHTML = `
+            ${bc.draftId ? '<div class="adm-hint">открыт черновик – «сохранить черновик» обновит его</div>' : ''}
+            ${step(1, 'кому')}
+            <div class="rd-bc-sel"><span class="rd-bc-sel-main"><b>${esc(segLabels.join(' + ') || 'выбери сегмент')}</b>${hikeTitle ? `<small>${esc(hikeTitle)} · ${esc(dateLabel(bc.hikeDate))}</small>` : ''}</span><span class="rd-bc-count" id="rdBcCount">…</span></div>
+            ${P.summ}
+            ${P.segsRd}
+            ${P.excl}
+            ${P.add}
+            ${step(2, 'что')}
+            ${P.kind}
+            ${P.what}
+            ${step(3, 'когда')}
+            ${P.when}
+            <div class="rd-bc-actions">${P.acts}</div>
+            <div class="rd-bc-step is-soft"><b>история и черновики</b></div>
+            ${P.top}`;
+    } else {
+        body.innerHTML = `
+        ` + P.top + P.mid + P.segs + P.excl + P.kind + P.summ + P.add + P.what + P.when + P.acts;
+    }
 
     mountAchievementNotify(body.querySelector('#admAchNotify'));
     const update = () => { renderPreview(); updateSendLabel(); };
@@ -1942,6 +2087,8 @@ function updateAudienceViews(withList) {
     const r = bcRecipients();
     bc.count = r.final.length;
     renderUnreach();
+    const rdCount = root.querySelector('#rdBcCount');
+    if (rdCount) rdCount.textContent = String(r.final.length);
     const sum = root.querySelector('#admSum');
     if (sum) sum.innerHTML = `получат <b>${r.final.length}</b>${r.manual.length ? ` · вручную −${r.manual.length}` : ''}${r.bySeg.length ? ` · сегментами −${r.bySeg.length}` : ''}${r.byPref.length ? ` · по их настройкам −${r.byPref.length}` : ''}`;
     const pn = root.querySelector('#admPeopleN');
