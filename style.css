@@ -7255,3 +7255,48 @@ html.rd .analytics-insights p { color: #E6E8EA; margin: 0 0 12px; }
 html.rd .analytics-coverage { color: #8A9097; }
 .rd-bc-actions.is-static { position: static; background: none; margin: 18px 0 0; padding: 0 0 6px; }
 html.rd .adm .fl-map + .rd-bc-actions { margin-top: 18px; }
+
+/* --- редизайн: продажа карты (приглашение в круг) --- */
+.rd-nc-hero { border-radius: 28px; padding: 18px; margin: 0 0 18px; display: flex; flex-direction: column; gap: 14px; background: radial-gradient(120% 120% at 100% 0%, rgba(111, 168, 220, .28) 0%, #13171C 60%); border: 1px solid rgba(111, 168, 220, .4); box-shadow: 0 0 60px rgba(111, 168, 220, .1); }
+.rd-nc-hero-h { display: flex; flex-direction: column; gap: 3px; }
+.rd-nc-hero-h b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.rd-nc-hero-h small { font-size: 14px; color: #B8C2CC; }
+.rd-nc-formula { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 6px; }
+.rd-nc-formula > span { border-radius: 16px; background: rgba(11, 13, 16, .55); padding: 10px 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rd-nc-formula b { font-size: 15px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-nc-formula small { font-size: 11px; color: #A3A8AE; line-height: 1.2; }
+.rd-nc-formula i { font-style: normal; font-size: 18px; font-weight: 700; color: #6FA8DC; }
+.rd-nc-formula .is-res { background: #D9FD19; }
+.rd-nc-formula .is-res b, .rd-nc-formula .is-res small { color: #141800; }
+.rd-nc-hero-note { font-size: 12px; color: #A3A8AE; line-height: 1.4; }
+.rd-nc-seg { display: flex; gap: 4px; padding: 3px; border-radius: 30px; background: #15181D; border: 1px solid #23272E; margin: 0 0 12px; }
+.rd-nc-seg button { flex: 1; min-width: 0; border: 0; border-radius: 30px; background: none; color: #F5F5F7; font: inherit; font-size: 14px; font-weight: 600; padding: 9px 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-nc-seg button.is-on { background: #F5F5F7; color: #0B0D10; }
+.rd-nc-seg em { font-style: normal; opacity: .6; margin-left: 2px; }
+.rd-nc-ready { display: block; margin: 0 4px 10px; font-size: 13px; }
+.rd-nc-ready b { color: #D9FD19; }
+.rd-nc-list { display: flex; flex-direction: column; gap: 10px; margin: 0 0 22px; }
+.rd-nc-person { border-radius: 24px; background: #15181D; border: 1px solid #23272E; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.rd-nc-person.is-ready { border-color: #2F3540; }
+.rd-nc-top { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.rd-nc-top .rd-sg-av { width: 44px; height: 44px; border-radius: 22px; font-size: 16px; }
+.rd-nc-who { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.rd-nc-who b { font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-nc-who b small { font-size: 13px; font-weight: 500; color: #8A9097; }
+.rd-nc-who > small { font-size: 12.5px; color: #A3A8AE; line-height: 1.3; }
+.rd-nc-price { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.rd-nc-price > span:not(.rd-nc-arrow) { border-radius: 16px; background: #1A1F25; padding: 9px 11px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.rd-nc-price small { font-size: 11px; color: #8A9097; }
+.rd-nc-price b { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rd-nc-price .is-card { background: rgba(217, 253, 25, .1) !important; border: 1px solid rgba(217, 253, 25, .3); }
+.rd-nc-price .is-card b { font-size: 18px; font-weight: 800; color: #D9FD19; }
+.rd-nc-arrow { color: #5C626A; font-size: 16px; }
+.rd-nc-person .adm-nc-badges { margin-top: -4px; }
+html.rd .adm-badge { border-radius: 9px; background: #23272E; color: #C9CDD2; }
+html.rd .adm-badge.is-on { background: rgba(217, 253, 25, .14); color: #D9FD19; }
+html.rd .adm-badge.is-ok { background: rgba(147, 196, 125, .16); color: #A8D98F; }
+html.rd .adm-badge.is-off { background: rgba(243, 140, 140, .14); color: #F3A0A0; }
+.rd-nc-act .adm-nc-note { font-size: 12.5px; color: #8A9097; }
+.rd-nc-invite { width: 100%; height: 44px; border-radius: 22px; border: 0; background: #D9FD19; color: #141800; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.rd-nc-preview { border-radius: 24px; background: #15181D; border: 1px solid #23272E; padding: 14px; margin-bottom: 22px; }
+.rd-nc-bot { font-size: 13px; font-weight: 700; color: #6FC1F5; margin: 0 0 6px 4px; }

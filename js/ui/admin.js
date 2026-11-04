@@ -1147,6 +1147,7 @@ const OFFER_TEXT_DEFAULT = '[имя], спасибо, что ходишь с н�
 // Цена = 7 500 − все оплаченные билеты (не дороже 5 500 и не дешевле 1 500), считает сервер.
 const CIRCLE_TEXT = '[имя], мы рады знакомству с тобой и хотим видеть тебя в нашем близком кругу 🤍\n\nпоэтому засчитываем все твои билеты в карту интеллигента: [билеты] на [сумма] уже учтены, и бессрочная карта для тебя стоит [цена] вместо 7 500 ₽.\n\nнам хочется, чтобы хайки с нами были для тебя свободными, без билетов, а клуб стал твоей компанией';
 let nc = null;
+const RD_NC_GRADS = [['#6FA8DC', '#2E5C8A'], ['#C7B8E6', '#6B5A9A'], ['#F38CC6', '#8A3A68'], ['#93C47D', '#3E6B2E'], ['#F6B26B', '#8A5A26'], ['#8FCBF0', '#2F6A8F']];
 function ncTickets(n) {
     const a = n % 10, b = n % 100;
     return `${n} ${a === 1 && b !== 11 ? 'билет' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'билета' : 'билетов'}`;
@@ -1236,7 +1237,43 @@ function renderNewcomers(body) {
             <div class="adm-nc-badges">${ncBadges(p)}</div>${act}</div>
         </div>`;
     };
-    body.innerHTML = `
+    const preview = circleMessage(all.find(x => x.tickets_count) || { name: 'Аня', tickets_count: 3, tickets_sum: 4500, circle_price: 3000 });
+    if (isRedesign()) {
+        const canInvite = p => p.tickets_count && p.can_message !== false && !(p.offer && p.offer.kind === 'circle' && !p.offer.closed_at && !p.offer.used_at && p.offer.expires_at * 1000 > Date.now());
+        const ready = list.filter(canInvite).length;
+        const rdRow = (p, i) => {
+            const g = RD_NC_GRADS[i % RD_NC_GRADS.length];
+            const first = String(p.name || '').trim() || 'без имени';
+            const n = p.hikes.length;
+            const lastT = p.hikes[p.hikes.length - 1].title;
+            const invited = p.offer && p.offer.kind === 'circle' && !p.offer.closed_at && !p.offer.used_at && p.offer.expires_at * 1000 > Date.now();
+            let act = '';
+            if (!p.tickets_count) act = '<span class="adm-nc-note">билетов не оплачивал – засчитывать нечего</span>';
+            else if (p.can_message === false) act = ''; // плашка «бот не может писать» уже стоит в бейджах
+            else if (!invited) act = `<button type="button" class="rd-nc-invite" data-circle="${esc(p.id)}">пригласить в круг</button>`;
+            return `<div class="rd-nc-person${canInvite(p) ? ' is-ready' : ''}">
+                <div class="rd-nc-top"><span class="rd-sg-av" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${esc(first[0]).toUpperCase()}</span>
+                    <span class="rd-nc-who"><b>${esc(first)}${p.username ? ` <small>@${esc(p.username)}</small>` : ''}</b><small>${n} ${n === 1 ? 'хайк' : n < 5 ? 'хайка' : 'хайков'} · последний ${esc(dateLabel(p.last))}${lastT ? ' – ' + esc(lastT) : ''}</small></span></div>
+                ${p.tickets_count ? `<div class="rd-nc-price"><span><small>оплачено ${ncTickets(p.tickets_count)}</small><b>${ncRub(p.tickets_sum)}</b></span><span class="rd-nc-arrow">→</span><span class="is-card"><small>личная цена карты</small><b>${ncRub(p.circle_price)}</b></span></div>` : ''}
+                <div class="adm-nc-badges">${ncBadges(p)}</div>
+                ${act ? `<div class="rd-nc-act">${act}</div>` : ''}
+            </div>`;
+        };
+        body.innerHTML = `
+        <div class="rd-nc-hero">
+            <div class="rd-nc-hero-h"><b>билеты засчитываются в карту</b><small>приглашение в близкий круг с личной ценой</small></div>
+            <div class="rd-nc-formula"><span><b>7 500 ₽</b><small>бессрочная</small></span><i>−</i><span><b>билеты</b><small>уже оплачены</small></span><i>=</i><span class="is-res"><b>цена</b><small>1 500 – 5 500 ₽</small></span></div>
+            <small class="rd-nc-hero-note">выбери тех, кого хочешь видеть в близком кругу – бот напишет приглашение. оно действует 30 дней, срок человеку не показываем</small>
+        </div>
+        <div class="rd-nc-seg">
+            <button type="button" class="${nc.filter === 'recent' ? 'is-on' : ''}" data-f="recent">ходили за 2 недели <em>${recent.length}</em></button>
+            <button type="button" class="${nc.filter === 'all' ? 'is-on' : ''}" data-f="all">все, кто ходил <em>${all.length}</em></button>
+        </div>
+        ${list.length ? `<div class="rd-adm-note rd-nc-ready">можно пригласить сейчас: <b>${ready}</b> из ${list.length}</div>` : ''}
+        <div class="rd-nc-list">${list.length ? list.map(rdRow).join('') : '<div class="adm-muted rd-adm-empty">пока никого</div>'}</div>
+        <div class="rd-adm-sec">так напишет бот</div>
+        <div class="adm-preview rd-nc-preview"><div class="rd-nc-bot">хайкинг интеллигенция</div><div class="adm-bubble">${esc(preview).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть карту</div></div>`;
+    } else body.innerHTML = `
         <div class="adm-hint" style="margin-top:0">выбери тех, кого хочешь видеть в близком кругу. бот напишет приглашение, а все оплаченные билеты засчитаются в бессрочную карту: 7 500 − билеты, но не дороже 5 500 и не дешевле 1 500. приглашение действует 30 дней, срок человеку не показываем</div>
         <div class="adm-chips">
             <button class="adm-chip${nc.filter === 'recent' ? ' is-on' : ''}" data-f="recent">ходили за 2 недели · ${recent.length}</button>
@@ -1244,7 +1281,7 @@ function renderNewcomers(body) {
         </div>
         <div class="adm-nc-list">${list.length ? list.map(row).join('') : '<div class="adm-muted" style="padding:12px 4px">пока никого</div>'}</div>
         <div class="adm-label">так напишет бот</div>
-        <div class="adm-preview"><div class="adm-bubble">${esc(circleMessage(all.find(x => x.tickets_count) || { name: 'Аня', tickets_count: 3, tickets_sum: 4500, circle_price: 3000 })).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть карту</div></div>`;
+        <div class="adm-preview"><div class="adm-bubble">${esc(preview).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть карту</div></div>`;
     body.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { haptic(); nc.filter = b.dataset.f; render(); }));
     body.querySelectorAll('[data-circle]').forEach(b => b.addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation(); haptic();
