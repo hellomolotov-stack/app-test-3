@@ -7,6 +7,9 @@ import { openOnboardingChat } from './onboarding-chat.js';
 import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop, cleanupProfileOverlays } from './common.js';
 import { renderHome } from './home.js';
 import { foodHomeHtml, bindFoodHome } from './food-home.js';
+import { isRedesign, setRdGlow } from '../redesign.js';
+import { cardQrEnabled, openCardQr } from './card-qr.js';
+import { openCardSheet } from './card-sheet.js';
 
 export function renderNewcomerPage(isGuest = false) {
     cleanupProfileOverlays();
@@ -191,7 +194,23 @@ export function renderPriv() {
         cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
     }
 
-    mainDiv().innerHTML = `
+    // новый дизайн: сверху сама карта, счётчик хайков, QR и «подарить другу»
+    const rd = isRedesign();
+    if (rd) { subtitle().textContent = ''; setRdGlow('card'); }
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const rdHero = rd ? `
+        <div class="rd-cardhero">
+            <span class="rd-page-title">карта интеллигента</span>
+            <img src="${esc(state.userCard.cardUrl || 'assets/card-front.jpg')}" alt="моя карта интеллигента" class="rd-cardhero-img">
+            <div class="rd-cardhero-row">
+                <div class="rd-cardhero-count"><b>${Number(state.userCard.hikes || 0)}</b><span>хайков пройдено</span></div>
+                ${cardQrEnabled() ? `<button type="button" class="rd-cardhero-qr" id="rdCardQr"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7"/></svg><b>показать QR</b><span>для партнёров</span></button>` : ''}
+            </div>
+            <button type="button" class="rd-cardhero-gift" id="rdCardGift"><span><b>подарить карту другу</b><span>он увидит, от кого подарок</span></span><i>›</i></button>
+            <h2 class="rd-section-title">что открывает карта</h2>
+        </div>` : '';
+
+    mainDiv().innerHTML = `${rdHero}
         <div class="card-container">
             ${foodHomeHtml()}
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>
@@ -201,6 +220,8 @@ export function renderPriv() {
         </div>
     `;
     bindFoodHome(mainDiv());
+    document.getElementById('rdCardQr')?.addEventListener('click', () => { haptic(); setUserInteracted(); openCardQr(); });
+    document.getElementById('rdCardGift')?.addEventListener('click', () => { haptic(); openCardSheet({ source: 'привилегии (новый дизайн)', gift: true }); });
 }
 
 export function renderGift(isGuest = false) {

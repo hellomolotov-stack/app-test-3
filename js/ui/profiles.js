@@ -8,7 +8,9 @@ import {
 import { getFavoriteRoutesForUser, setIntelligentsiaRouteFavorites } from './intelligentsia-routes.js';
 import { showBottomNav, setupBottomNav, setActiveNav, resetNavActive, hideBack, scrollPageToTop } from './common.js';
 import { renderGuestPrivileges } from './privileges.js';
-import { showGuestBookingPopup, showBottomSheet } from './calendar.js';
+import { showGuestBookingPopup, showBottomSheet, fetchGoingFromServer } from './calendar.js';
+import { isRedesign, setRdGlow } from '../redesign.js';
+import { mountCircle } from './circle.js';
 import { renderPersonalRoutesMap, isPersonalMapPilotUser } from './personal-routes-map.js';
 import { loadAchievementCollections, achievementsVisible } from '../achievements.js';
 import { medalStripHtml, wireMedalStrip } from './medals.js';
@@ -215,8 +217,17 @@ export async function renderProfiles() {
         <button type="button" class="profiles-filter" data-profile-filter="all" aria-pressed="true">все</button>
         <button type="button" class="profiles-filter" data-profile-filter="nearest" aria-pressed="false">идут на ближайший хайк</button>
     </div>` : '';
-    mainDiv().innerHTML = `${filtersHtml}<div id="profilesResults" aria-live="polite">${html}</div>`;
+    // новый дизайн: заголовок, «на ближайший хайк с тобой» и твои связи над сеткой профилей
+    const rd = isRedesign();
+    if (rd) { subtitle().textContent = ''; setRdGlow('people'); }
+    const rdTop = rd ? `<div class="rd-people-head"><span class="rd-page-title">люди клуба</span></div>
+        <div id="rdPeopleNext"></div><div id="rdPeopleCircle"></div>` : '';
+    mainDiv().innerHTML = `${rdTop}${filtersHtml}<div id="profilesResults" aria-live="polite">${html}</div>`;
     wireProfileCardActions(mainDiv());
+    if (rd) {
+        mountCircle(document.getElementById('rdPeopleCircle'));
+        rdPeopleNext(document.getElementById('rdPeopleNext'));
+    }
 
     mainDiv().querySelectorAll('[data-profile-filter]').forEach(button => {
         button.addEventListener('click', () => {
@@ -459,3 +470,29 @@ async function renderEditProfile() {
 }
 
 function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;' })[m]); }
+
+// ---------- новый дизайн: кто идёт на ближайшее событие ----------
+const RD_GRADS = [['#F6B26B', '#E06666'], ['#6FA8DC', '#3D85C6'], ['#93C47D', '#38761D'], ['#C27BA0', '#741B47'], ['#FFD966', '#BF9000'], ['#8E7CC3', '#351C75']];
+async function rdPeopleNext(box) {
+    if (!box || !nearestHikeDate) { box?.remove(); return; }
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const index = (state.hikesWithTitle || []).findIndex(h => h.date === nearestHikeDate);
+    const hike = state.hikesWithTitle[index];
+    let list = null;
+    try { [list] = await fetchGoingFromServer([nearestHikeDate]); } catch (e) { list = null; }
+    const me = String(state.user?.id || '');
+    const people = (Array.isArray(list) ? list : []).filter(p => p && p.userId && String(p.userId) !== me);
+    if (!box.isConnected || !hike || !people.length) { box.remove(); return; }
+    const iAmIn = (Array.isArray(list) ? list : []).some(p => String(p.userId) === me);
+    const title = String(hike.title || '').replace(/^хайк\s+/i, '');
+    box.innerHTML = `<div class="rd-pnext">
+        <div class="rd-pnext-head"><span>${iAmIn ? `на ${esc(title)} с тобой` : `идут на ${esc(title)}`}</span><button type="button" id="rdPeopleNextOpen">открыть ›</button></div>
+        <div class="rd-pnext-row">${people.slice(0, 12).map((p, i) => {
+            const g = RD_GRADS[i % RD_GRADS.length];
+            const name = String(p.name || '').trim().split(/\s+/)[0] || 'участник';
+            const photo = String(p.photoUrl || '');
+            return `<div class="rd-pnext-cell"><span class="rd-sg-av" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${photo ? `<img src="${esc(photo)}" alt="" onerror="this.remove()">` : ''}${esc(name[0] || '?').toUpperCase()}</span><span>${esc(name)}</span></div>`;
+        }).join('')}</div>
+    </div>`;
+    box.querySelector('#rdPeopleNextOpen')?.addEventListener('click', () => { haptic(); if (index !== -1) showBottomSheet(index); });
+}

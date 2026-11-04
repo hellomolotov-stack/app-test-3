@@ -28,6 +28,7 @@ import { openOnboardingChat } from './onboarding-chat.js';
 import { maybeAskNotifications, ensureCanMessage, needsWriteAccess } from './notify-optin.js';
 import { getRouteForHikeTitle } from './personal-routes-map.js';
 import { setLumenContext } from './lumen.js';
+import { isRedesign } from '../redesign.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
 import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
 
@@ -2278,12 +2279,20 @@ export function showBottomSheet(index) {
             </div>
             ${state.pendingInvite?.date === hike.date && !state.hikeBookingStatus[state.hikesWithTitle.findIndex(h => h.date === hike.date)] ? `<div class="inv-sheet-banner" id="inviteSheetBanner">🎟️ ${String(state.pendingInvite.name || 'член клуба').replace(/</g, '&lt;')} берёт тебя своим +1 – для тебя <b>без билета</b>. сдвинь «иду» внизу, чтобы записаться</div>` : ''}
             ${imageHtml}
+            ${isRedesign() && !isPlaceholder && !isCancelled ? '<div class="rd-sheet-going" id="rdSheetGoing"></div>' : ''}
             ${extraInfoHtml}
             ${sectionsHtml}
             ${inviteButtonHtml}
             ${shareButtonHtml}
             ${!isPlaceholder && !hike.cancelled && new Date(hike.date) >= new Date().setHours(0, 0, 0, 0) ? `<button class="hike-ask-row" id="hikeAskBtn">есть вопрос про ${isCity || isBookClub ? 'это событие' : 'этот хайк'}? <b>спросить ›</b></button>` : ''}
         `;
+
+        // новый дизайн: цвет шторки по типу события и сетка «кто идёт» с именами
+        if (isRedesign()) {
+            document.getElementById('hikeBottomSheet')?.setAttribute('data-rd-kind', isPostponed(hike) ? 'rain' : isCity ? 'city' : isWoman ? 'woman' : 'hike');
+            const rdBox = contentWrapper.querySelector('#rdSheetGoing');
+            if (rdBox) fetchGoingFromServer([hike.date]).then(([list]) => rdFillSheetGoing(rdBox, hike, list, isPast)).catch(() => {});
+        }
 
         contentWrapper.querySelector('#hikeAskBtn')?.addEventListener('click', () => {
             haptic();
@@ -4812,3 +4821,28 @@ document.addEventListener('click', function(e) {
         return;
     }
 });
+
+// ---------- новый дизайн: «кто идёт» в шторке ----------
+const RD_GRADS = [['#F6B26B', '#E06666'], ['#6FA8DC', '#3D85C6'], ['#93C47D', '#38761D'], ['#C27BA0', '#741B47'], ['#FFD966', '#BF9000'], ['#8E7CC3', '#351C75']];
+function rdFillSheetGoing(box, hike, list, isPast) {
+    if (!box?.isConnected) return;
+    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const people = (Array.isArray(list) ? list : []).filter(p => p && p.userId);
+    const me = String(state.user?.id || '');
+    const cap = capacityFor(hike);
+    const isCity = hike.city === true || hike.city === 'yes';
+    const showCap = !isCity || Number(hike.capacity) > 0;
+    const iAmIn = people.some(p => String(p.userId) === me);
+    if (!people.length && isPast) { box.remove(); return; }
+    const cells = people.slice(0, iAmIn || isPast || people.length >= cap ? 10 : 9).map((p, i) => {
+        const g = RD_GRADS[i % RD_GRADS.length];
+        const name = String(p.name || '').trim().split(/\s+/)[0] || 'участник';
+        const photo = String(p.photoUrl || '');
+        return `<div class="rd-sg-cell"><span class="rd-sg-av" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${photo ? `<img src="${esc(photo)}" alt="" onerror="this.remove()">` : ''}${esc(name[0] || '?').toUpperCase()}</span><span class="rd-sg-name">${String(p.userId) === me ? 'ты' : esc(name)}</span></div>`;
+    }).join('');
+    const free = !isPast && !iAmIn && people.length < cap ? '<div class="rd-sg-cell is-free"><span class="rd-sg-av">+</span><span class="rd-sg-name">ты?</span></div>' : '';
+    box.innerHTML = `
+        <div class="rd-sg-head"><span>${isPast ? 'кто был' : 'кто идёт'}</span>${showCap ? `<b>${people.length} из ${cap}</b>` : `<b>${people.length}</b>`}</div>
+        ${people.length || free ? `<div class="rd-sg-grid">${cells}${free}</div>` : ''}
+        ${people.length > 10 ? `<div class="rd-sg-more">и ещё ${people.length - 10}</div>` : ''}`;
+}
