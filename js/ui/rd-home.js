@@ -211,7 +211,7 @@ export function rdHomeTopHtml({ stories = true, teaser = false } = {}) {
                 <span>${owner ? Number(state.userCard.hikes || 0) : '?'}</span>
             </button>
         </div>
-        ${stories ? storiesHtml(buildStories()) : ''}
+        ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : ''}
         ${ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
 }
 
@@ -235,6 +235,9 @@ function teaserHtml() {
 }
 
 export function wireRdHomeTop() {
+    // сторис клуба (js/ui/club-stories.js) заменяют «свежее в клубе», когда есть опубликованные
+    const csHost = document.getElementById('clubStoriesHost');
+    if (csHost) import('./club-stories.js').then(m => m.mountClubStories(csHost)).catch(e => console.error(e));
     const owner = state.userCard.status === 'active';
     const ev = nextEvent();
     document.getElementById('rdMiniCard')?.addEventListener('click', () => {

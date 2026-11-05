@@ -8,6 +8,7 @@ const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
 const { circleFor } = require('../lib/circle');
 const { notesFor } = require('../lib/mm-notes');
+const { storiesFor, markView } = require('../lib/club-stories');
 // «твои связи»: владельцам карты – все связи, без карты – 5 самых близких; этим – всё (тест)
 const CIRCLE_USERS = new Set(['maxmolotov']);
 
@@ -161,6 +162,18 @@ module.exports = async (req, res) => {
             return res.status(200).json({ notes: await notesFor(token, !!member?.user_id) });
         } catch (e) {
             console.error('me notes:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
+
+    // сторис клуба на главной (lib/club-stories.js)
+    if (body && (body.action === 'stories' || body.action === 'story_view')) {
+        try {
+            const token = await getAccessToken();
+            if (body.action === 'story_view') { await markView(token, String(body.id || ''), String(user.id)); return res.status(200).json({ ok: true }); }
+            return res.status(200).json({ stories: await storiesFor(token, String(user.id)) });
+        } catch (e) {
+            console.error('me stories:', e.message);
             return res.status(502).json({ error: 'db unavailable' });
         }
     }

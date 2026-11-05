@@ -213,7 +213,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -236,6 +236,7 @@ function render() {
     else if (view.tab === 'newcomers') renderNewcomers(body);
     else if (view.tab === 'plus1') renderPlus1(body);
     else if (view.tab === 'pass') renderPass(body);
+    else if (view.tab === 'stories') renderStoriesAdmin(body);
     else if (view.tab === 'home') renderHomepage(body);
     else if (view.tab === 'admissions') renderAdmissionAdmin(body);
     else if (view.tab === 'achievements') { const achHike = view.achHike; delete view.achHike; renderAchievementsAdmin(body, { hikeDate: achHike }); }
@@ -538,6 +539,97 @@ async function saveHomepageSection(section, value) {
         homepageBusy = false;
         if (root && view.tab === 'home') render();
     }
+}
+
+// ---------- сторис клуба (lib/club-stories.js, js/ui/club-stories.js) ----------
+// список: сверху черновики (автоматические – новый владелец карты, саммари, значки за хайк), ниже опубликованные
+let storiesAdm = null, storyDraft = null, storiesBusy = false;
+const ST_TYPES = [['member', '🎉 новый член клуба'], ['app', '✨ новое в приложении'], ['event', '📅 событие'], ['summary', '🧠 саммари'], ['badges', '🏅 значки'], ['custom', '✍️ свой']];
+const ST_ACTIONS = [['', 'без кнопки'], ['hike', 'записаться на хайк'], ['card', 'карта интеллигента'], ['badges', 'мои значки'], ['calendar', 'календарь'], ['circle', 'твои связи'], ['url', 'ссылка…']];
+async function storiesCall(action, story = null) {
+    const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
+        body: JSON.stringify({ action, story, initData: tg?.initData || '' }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'не удалось');
+    return d;
+}
+function loadStoriesAdm() {
+    storiesCall('stories').then(d => { storiesAdm = d; if (d.created) toast(`новых автоматических черновиков: ${d.created}`); })
+        .catch(e => { storiesAdm = { error: e.message }; })
+        .finally(() => { if (root && view.tab === 'stories') render(); });
+}
+function storyFromDraft() {
+    const a = storyDraft.action === 'url' ? (storyDraft.url ? 'url:' + storyDraft.url.trim() : '') : storyDraft.action;
+    return { id: storyDraft.id || '', type: storyDraft.type, title: storyDraft.title, text: storyDraft.text, image: storyDraft.image.trim(),
+        button: a ? { label: storyDraft.label || ST_ACTIONS.find(x => x[0] === storyDraft.action)?.[1] || 'подробнее', action: a } : null,
+        days: storyDraft.days, pinned: storyDraft.pinned };
+}
+function editStory(s) {
+    const act = s?.button?.action || '';
+    storyDraft = { id: s?.id || '', type: s?.type || 'app', title: s?.title || '', text: s?.text || '', image: s?.image || '',
+        action: act.startsWith('url:') ? 'url' : act.startsWith('mm:') ? act : act, url: act.startsWith('url:') ? act.slice(4) : '',
+        label: s?.button?.label || '', days: s?.days || 7, pinned: !!s?.pinned, status: s?.status || 'new' };
+}
+async function saveStory(op) {
+    if (storiesBusy) return;
+    if (!storyDraft.title.trim()) return toast('напиши заголовок', true);
+    storiesBusy = true; render();
+    try {
+        storiesAdm = await storiesCall('story_save', { ...storyFromDraft(), op });
+        toast(op === 'publish' ? 'сторис опубликована' : op === 'hide' ? 'сторис убрана' : 'сохранено'); haptic();
+        storyDraft = null;
+    } catch (e) { toast(e.message, true); }
+    finally { storiesBusy = false; if (root && view.tab === 'stories') render(); }
+}
+function renderStoriesAdmin(body) {
+    if (!storiesAdm) { body.innerHTML = '<div class="adm-muted" style="padding:12px 2px">загружаю сторис и ищу новые события…</div>'; loadStoriesAdm(); return; }
+    if (storiesAdm.error) { body.innerHTML = `<div class="adm-empty">${esc(storiesAdm.error)}</div><button class="adm-link" id="admStRetry">ещё раз</button>`; body.querySelector('#admStRetry').addEventListener('click', () => { storiesAdm = null; render(); }); return; }
+    const list = storiesAdm.stories || [];
+    const drafts = list.filter(s => s.status === 'draft'), live = list.filter(s => s.status === 'published');
+    const item = s => `<div class="adm-content-update">
+        <div class="adm-content-update-date">${s.status === 'draft' ? (s.source === 'auto' ? '🤖 автоматический черновик' : '📝 черновик') : s.expired ? '⌛ срок вышел' : s.pinned ? '📌 закреплена' : `в ленте ещё ${s.days} дн.`}${s.status === 'published' ? ` · 👀 ${s.views}` : ''} · ${esc(ST_TYPES.find(t => t[0] === s.type)?.[1] || s.type)}</div>
+        <div class="adm-content-update-text"><b>${esc(s.title)}</b>${s.text ? '<br>' + esc(s.text.slice(0, 160)) : ''}</div>
+        <div class="adm-content-update-actions">${s.status === 'draft' ? `<button class="adm-link" data-st-pub="${esc(s.id)}">опубликовать</button>` : ''}<button class="adm-link" data-st-view="${esc(s.id)}">посмотреть</button><button class="adm-link" data-st-edit="${esc(s.id)}">изменить</button><button class="adm-link is-danger" data-st-hide="${esc(s.id)}">${s.status === 'draft' ? 'не публиковать' : 'убрать'}</button></div>
+    </div>`;
+    const d = storyDraft;
+    body.innerHTML = `
+        ${d ? `<form class="adm-content-form" id="admStForm">
+            <div class="adm-label">${d.id ? 'сторис' : 'новая сторис'}</div>
+            <label class="adm-field"><span>тип</span><select id="admStType">${ST_TYPES.map(([k, l]) => `<option value="${k}"${d.type === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+            <label class="adm-field"><span>заголовок</span><input id="admStTitle" maxlength="120" value="${esc(d.title)}" placeholder="коротко и крупно" required></label>
+            <label class="adm-field"><span>текст</span><textarea id="admStText" rows="4" maxlength="600">${esc(d.text)}</textarea></label>
+            <label class="adm-field"><span>картинка – ссылка https:// (для «нового члена клуба» – карта, для «значков» – значок, для «нового в приложении» – скриншот). можно пусто</span><input id="admStImage" value="${esc(d.image)}" placeholder="https://…"></label>
+            <label class="adm-field"><span>кнопка</span><select id="admStAction">${(d.action.startsWith('mm:') ? [[d.action, 'читать саммари'], ...ST_ACTIONS] : ST_ACTIONS).map(([k, l]) => `<option value="${esc(k)}"${d.action === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+            ${d.action === 'url' ? `<label class="adm-field"><span>ссылка для кнопки</span><input id="admStUrl" value="${esc(d.url)}" placeholder="https://…"></label>` : ''}
+            ${d.action ? `<label class="adm-field"><span>текст кнопки</span><input id="admStLabel" maxlength="40" value="${esc(d.label)}" placeholder="${esc(ST_ACTIONS.find(x => x[0] === d.action)?.[1] || 'подробнее')}"></label>` : ''}
+            <label class="adm-field"><span>сколько дней в ленте</span><input id="admStDays" type="number" min="1" max="60" value="${esc(d.days)}"></label>
+            <label class="adm-field" style="flex-direction:row;align-items:center;gap:8px"><input id="admStPin" type="checkbox"${d.pinned ? ' checked' : ''} style="width:auto"><span>закрепить первой и не убирать по сроку</span></label>
+            <div class="adm-row2"><button type="button" class="adm-ghost" id="admStPreview">предпросмотр</button><button type="button" class="adm-ghost" id="admStDraft">${d.status === 'published' ? 'сохранить' : 'в черновики'}</button></div>
+            ${d.status === 'published' ? '' : `<button type="submit" class="btn btn-yellow adm-primary"${storiesBusy ? ' disabled' : ''}>опубликовать</button>`}
+            <button type="button" class="adm-link" id="admStCancel">отменить</button>
+        </form>` : `<button class="btn btn-yellow adm-primary" id="admStNew">＋ новая сторис</button>
+        <div class="adm-muted" style="margin:8px 2px 0">сторис видны на главной в новом дизайне (пока только тебе). автоматические черновики появляются сами: новый владелец карты, саммари мастермайнда, значки за хайк</div>`}
+        ${drafts.length ? `<div class="adm-label">черновики · ${drafts.length}</div><div class="adm-content-updates">${drafts.map(item).join('')}</div>` : ''}
+        <div class="adm-label">в ленте · ${live.length}</div>
+        <div class="adm-content-updates">${live.length ? live.map(item).join('') : '<div class="adm-empty">пока ничего не опубликовано</div>'}</div>`;
+    const byId = id => list.find(s => s.id === id);
+    const preview = s => import('./club-stories.js').then(m => m.openStories([s], 0, null, { preview: true }));
+    body.querySelector('#admStNew')?.addEventListener('click', () => { haptic(); editStory(null); render(); });
+    body.querySelectorAll('[data-st-edit]').forEach(b => b.addEventListener('click', () => { editStory(byId(b.dataset.stEdit)); render(); root.scrollTop = 0; }));
+    body.querySelectorAll('[data-st-view]').forEach(b => b.addEventListener('click', () => preview(byId(b.dataset.stView))));
+    body.querySelectorAll('[data-st-pub]').forEach(b => b.addEventListener('click', () => { editStory(byId(b.dataset.stPub)); saveStory('publish'); }));
+    body.querySelectorAll('[data-st-hide]').forEach(b => b.addEventListener('click', async () => {
+        if (!await confirmAsync('Убрать эту сторис?')) return;
+        editStory(byId(b.dataset.stHide)); saveStory('hide');
+    }));
+    if (!d) return;
+    const bind = (sel, key, ev = 'input', rer = false) => body.querySelector(sel)?.addEventListener(ev, e => { d[key] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (rer) render(); });
+    bind('#admStType', 'type', 'change'); bind('#admStTitle', 'title'); bind('#admStText', 'text'); bind('#admStImage', 'image');
+    bind('#admStAction', 'action', 'change', true); bind('#admStUrl', 'url'); bind('#admStLabel', 'label'); bind('#admStDays', 'days'); bind('#admStPin', 'pinned', 'change');
+    body.querySelector('#admStCancel').addEventListener('click', () => { storyDraft = null; render(); });
+    body.querySelector('#admStPreview').addEventListener('click', () => { const s = storyFromDraft(); preview({ ...s, date: Date.now() }); });
+    body.querySelector('#admStDraft').addEventListener('click', () => saveStory(d.status === 'published' ? 'save' : 'draft'));
+    body.querySelector('#admStForm').addEventListener('submit', e => { e.preventDefault(); saveStory('publish'); });
 }
 
 // ---------- список хайков ----------

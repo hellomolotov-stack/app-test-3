@@ -7399,3 +7399,48 @@ html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 .v2-teaser-text { font-size: 14px; line-height: 1.4; color: rgba(255,255,255,.7); }
 .v2-teaser-btn { height: 48px; margin-top: 4px; border: 0; border-radius: 999px; background: var(--yellow); color: #141800; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
 .v2-teaser-btn.is-on { background: rgba(217,253,25,.12); color: var(--yellow); box-shadow: inset 0 0 0 1.5px rgba(217,253,25,.5); }
+
+/* ==================== сторис клуба (js/ui/club-stories.js) ==================== */
+.cst-host { margin: 18px -16px 4px; }
+.cst-row { display: flex; gap: 14px; overflow-x: auto; padding: 2px 16px 6px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.cst-row::-webkit-scrollbar { display: none; }
+.cst { flex: none; width: 70px; border: 0; background: none; padding: 0; color: #fff; font: inherit; text-align: center; cursor: pointer; }
+.cst-ring { position: relative; display: block; width: 70px; height: 70px; border-radius: 50%; padding: 3px; background: rgba(255,255,255,.16); }
+.cst.is-new .cst-ring { background: conic-gradient(from 210deg, #D9FD19, #9be15d, #3fd0ff, #D9FD19); }
+.cst:active .cst-ring { transform: scale(.94); }
+.cst-pic { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 50%; border: 3px solid #0a1018; background: #16222e center/cover no-repeat; font-size: 27px; }
+.cst-nb { position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); background: #D9FD19; color: #111; font-size: 9.5px; font-weight: 900; padding: 2px 6px; border-radius: 8px; border: 2px solid #0a1018; letter-spacing: .04em; }
+.cst-lab { display: block; margin-top: 7px; font-size: 11.5px; line-height: 1.2; font-weight: 600; color: rgba(255,255,255,.88); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.cst:not(.is-new) .cst-lab { color: rgba(255,255,255,.45); }
+
+.csv-overlay { position: fixed; inset: 0; z-index: 3500; background: #000; color: #fff; touch-action: none; user-select: none; -webkit-user-select: none; animation: csvIn .22s ease; }
+.csv-overlay.is-out { opacity: 0; transition: opacity .2s; }
+@keyframes csvIn { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+.csv-bars { position: absolute; z-index: 5; top: calc(10px + env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; gap: 4px; }
+.csv-bars i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.3); overflow: hidden; }
+.csv-bars b { display: block; height: 100%; width: 0; background: #fff; }
+.csv-body { position: absolute; inset: 0; transition: transform .15s; overflow: hidden; border-radius: 0; }
+.csv-bg { position: absolute; inset: 0; }
+.csv-cover { position: absolute; inset: 0; background: center/cover no-repeat; }
+.csv-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 42%, rgba(0,0,0,.9) 78%); pointer-events: none; }
+.csv-head { position: absolute; z-index: 4; top: calc(24px + env(safe-area-inset-top)); left: 14px; right: 10px; display: flex; align-items: center; gap: 9px; font-size: 14px; }
+.csv-head > span:not(.csv-av) { color: rgba(255,255,255,.6); }
+.csv-av { width: 32px; height: 32px; border-radius: 50%; background: #D9FD19 url(assets/logo-hiking.png) center/70% no-repeat; flex: none; }
+.csv-x { margin-left: auto; width: 36px; height: 36px; border: 0; background: none; color: #fff; font-size: 20px; opacity: .85; }
+.csv-stage { position: absolute; left: 0; right: 0; top: 13%; height: 46%; display: flex; align-items: center; justify-content: center; }
+.csv-cardimg { width: 76%; max-width: 320px; border-radius: 18px; animation: csvCard 6s ease-in-out infinite; box-shadow: 0 30px 60px rgba(0,0,0,.6), 0 0 90px rgba(217,253,25,.25); }
+@keyframes csvCard { 0%,100% { transform: perspective(900px) rotateX(8deg) rotateY(-12deg) rotate(-4deg); } 50% { transform: perspective(900px) rotateX(4deg) rotateY(10deg) rotate(-2deg); } }
+.csv-halo { position: absolute; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(255,214,77,.35), rgba(255,214,77,0) 65%); animation: csvSpin 9s linear infinite; }
+@keyframes csvSpin { to { transform: rotate(360deg); } }
+.csv-badge { position: relative; width: 62%; max-width: 260px; filter: drop-shadow(0 20px 40px rgba(0,0,0,.6)); animation: csvFloat 4s ease-in-out infinite; }
+@keyframes csvFloat { 50% { transform: translateY(-10px); } }
+.csv-phone { width: 52%; max-width: 220px; aspect-ratio: 9 / 19; border-radius: 30px; background: #000; padding: 6px; box-shadow: 0 0 0 2px #333, 0 30px 60px rgba(0,0,0,.6); }
+.csv-phone img { width: 100%; height: 100%; object-fit: cover; border-radius: 24px; }
+.csv-quote { font-size: 220px; line-height: 1; font-weight: 800; color: rgba(199,184,230,.35); font-family: Georgia, serif; }
+.csv-big { font-size: 120px; filter: drop-shadow(0 20px 40px rgba(0,0,0,.5)); animation: csvFloat 4s ease-in-out infinite; }
+.csv-text { position: absolute; z-index: 4; left: 20px; right: 20px; bottom: calc(28px + env(safe-area-inset-bottom)); }
+.csv-tag { display: inline-block; background: #D9FD19; color: #111; font-size: 12px; font-weight: 900; padding: 5px 10px; border-radius: 10px; letter-spacing: .05em; text-transform: uppercase; }
+.csv-text h2 { margin: 12px 0 0; font-size: 30px; line-height: 1.08; font-weight: 800; color: #fff; }
+.csv-text p { margin-top: 10px; font-size: 15.5px; line-height: 1.45; color: rgba(255,255,255,.82); display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.csv-btn { display: block; width: 100%; margin-top: 18px; height: 54px; border: 0; border-radius: 18px; background: #D9FD19; color: #111; font: inherit; font-size: 16px; font-weight: 800; }
+.csv-overlay.is-paused .csv-head, .csv-overlay.is-paused .csv-bars { opacity: .3; transition: opacity .2s; }

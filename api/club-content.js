@@ -170,6 +170,18 @@ module.exports = async (req, res) => {
         user = verifyInitData(String(body.initData || ''), token);
         if (!user?.id) return res.status(401).json({ error: 'открой админку внутри Telegram' });
         if (!isAdminUser(user)) return res.status(403).json({ error: 'только для администраторов' });
+        // сторис клуба (lib/club-stories.js): список с автоматическими черновиками и сохранение
+        if (body.action === 'stories' || body.action === 'story_save') {
+            try {
+                const { adminList, adminSave } = require('../lib/club-stories');
+                const t = await getAccessToken();
+                if (body.action === 'story_save') await adminSave(t, body.story || {}, user.id);
+                return res.status(200).json(await adminList(t));
+            } catch (e) {
+                console.error('stories admin:', e.message);
+                return res.status(400).json({ error: e.message });
+            }
+        }
         if (!['metrics', 'updates', 'masterminds'].includes(body.section) || !isValidRevision(body.revision)) {
             return res.status(400).json({ error: 'обнови данные редактора' });
         }
