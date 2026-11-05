@@ -141,6 +141,31 @@ module.exports = async (req, res) => {
         }
     }
 
+    // экран «карта твоя» с привилегиями – один раз новому владельцу карты (js/ui/card-welcome.js).
+    // Новый = оплатил карту за последние 30 дней. Показ отмечается в cardWelcome/<id>, старым владельцам –
+    // отметка skip при первой проверке, чтобы больше не читать список оплат.
+    if (body && (body.action === 'card_welcome' || body.action === 'card_welcome_seen')) {
+        try {
+            const id = String(user.id);
+            const token = await getAccessToken();
+            const put = v => fetch(`${DB}/cardWelcome/${id}.json`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(v), signal: AbortSignal.timeout(6000) });
+            if (body.action === 'card_welcome_seen') { await put({ seen_at: Date.now() }); return res.status(200).json({ ok: true }); }
+            const [member, mark] = await Promise.all([read(`members/${id}`, token), read(`cardWelcome/${id}`, token)]);
+            if (!member?.user_id || mark) return res.status(200).json({ show: false });
+            const pays = (await read('pending_payments', token)) || {};
+            const since = Date.now() / 1000 - 30 * 86400;
+            const paid = Object.values(pays).filter(p => p && String(p.user_id) === id && p.completed && Number(p.ts) > since
+                && ['permanent', 'season', 'offer'].includes(p.card_type)).sort((a, b) => b.ts - a.ts)[0];
+            if (!paid) { await put({ skip: Date.now() }); return res.status(200).json({ show: false }); }
+            const hikes = await hikeCount(id, token, { member }).catch(() => Number(member.hikes_count) || 0);
+            return res.status(200).json({ show: true, name: String(member.user_name || '').split(' ')[0] || user.first_name || '',
+                cardUrl: member.card_image_url || '', plan: paid.card_type === 'season' ? 'season' : 'permanent', hikes });
+        } catch (e) {
+            console.error('me card_welcome:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
+
     // «твои связи»: люди с общих хайков и связи между ними (lib/circle.js)
     if (body && body.action === 'circle') {
         try {

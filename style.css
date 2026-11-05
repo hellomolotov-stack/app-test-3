@@ -7300,3 +7300,26 @@ html.rd .adm-badge.is-off { background: rgba(243, 140, 140, .14); color: #F3A0A0
 .rd-nc-invite { width: 100%; height: 44px; border-radius: 22px; border: 0; background: #D9FD19; color: #141800; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .rd-nc-preview { border-radius: 24px; background: #15181D; border: 1px solid #23272E; padding: 14px; margin-bottom: 22px; }
 .rd-nc-bot { font-size: 13px; font-weight: 700; color: #6FC1F5; margin: 0 0 6px 4px; }
+
+/* ==================== экран «карта твоя» (js/ui/card-welcome.js) ==================== */
+.cw-overlay{position:fixed;inset:0;z-index:3000;background:#06090d;color:#fff;text-align:center;animation:cwIn .3s ease}
+.cw-overlay.is-out{opacity:0;transition:opacity .25s}
+@keyframes cwIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.cw-scroll{position:relative;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(48px + env(safe-area-inset-top)) 22px 0;background:radial-gradient(120% 420px at 50% 0%,#24330f 0%,#0b1208 55%,#06090d 100%) no-repeat}
+.cw-scroll>*:not(.cw-conf){position:relative;z-index:1}
+.cw-conf{position:absolute;width:8px;height:12px;border-radius:2px;opacity:.9;z-index:0}
+.cw-k{font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--yellow)}
+.cw-overlay h1{margin:10px 0 0;font-size:30px;line-height:1.1;font-weight:800;color:#fff}
+.cw-sub{margin-top:10px;font-size:15px;line-height:1.45;color:rgba(255,255,255,.72)}
+.cw-stage{perspective:900px;margin:28px auto 10px;max-width:300px}
+.cw-card{position:relative;border-radius:18px;overflow:hidden;animation:cwTilt 6s ease-in-out infinite;box-shadow:0 30px 60px rgba(0,0,0,.6),0 0 80px rgba(217,253,25,.22)}
+.cw-card img{display:block;width:100%}
+.cw-card:after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 45%,transparent 60%);background-size:250% 100%;animation:cwShine 4s ease-in-out infinite}
+@keyframes cwTilt{0%,100%{transform:rotateX(8deg) rotateY(-12deg)}50%{transform:rotateX(4deg) rotateY(10deg)}}
+@keyframes cwShine{0%,100%{background-position:100% 0}50%{background-position:0 0}}
+.cw-meta{display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:16px}
+.cw-meta span{padding:6px 12px;border-radius:20px;background:rgba(255,255,255,.08);font-size:13px;font-weight:700}
+.cw-meta b{color:var(--yellow)}
+.cw-overlay .cs-sec{text-align:left}
+.cw-foot{z-index:5;box-sizing:border-box;position:absolute;left:0;right:0;bottom:0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#06090d 40%)}
+.cw-foot .btn{display:block;width:100%;margin:0;box-sizing:border-box}

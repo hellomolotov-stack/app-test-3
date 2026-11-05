@@ -72,12 +72,8 @@ async function showCardSuccess(pending, me) {
         showRegistrationSuccess(hikeDate, pending.hikeTitle || state.hikesWithTitle.find(h => h.date === hikeDate)?.title || '');
         return;
     }
-    showConfetti();
-    overlay(`
-        <div style="font-size:52px; margin-bottom:16px;">🎉</div>
-        <div class="modal-title" style="text-align:center; color: var(--yellow);">карта твоя!</div>
-        <div class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">оплата прошла, карта интеллигента уже в приложении – записывайся на хайки без билетов</div>
-        <button class="btn btn-yellow" data-close style="margin-top:20px; width:100%;">отлично!</button>`);
+    const { showCardWelcomeNow } = await import('./card-welcome.js');
+    showCardWelcomeNow(me);
 }
 
 let watch = null;

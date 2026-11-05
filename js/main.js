@@ -969,6 +969,8 @@ async function loadAppData() {
             // оплатил карту, но подтверждения не дождался – проверим тихо, покажем «карта твоя»
             import('./ui/payment-return.js').then(m => m.offerPendingCardRecovery()).catch(e => console.error(e));
         }, 2500);
+        // новый владелец карты: один раз экран «карта твоя» с привилегиями
+        setTimeout(() => import('./ui/card-welcome.js').then(m => m.maybeShowCardWelcome()).catch(e => console.error(e)), 3500);
 
     } catch (e) {
         console.error('Unhandled error in loadData:', e);
