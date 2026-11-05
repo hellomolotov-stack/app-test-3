@@ -9,7 +9,7 @@ import { haptic, openLink } from '../utils.js';
 const SEEN_KEY = 'clubStoriesSeen';
 const DURATION = 7000;
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'саммари мастермайнда', app: 'новое в приложении', event: 'событие', custom: 'клуб' };
+const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая summary мастермайнда', app: 'новое в приложении', event: 'событие', custom: 'клуб' };
 const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', app: '✨', event: '📅', custom: '⛰️' };
 const BG = {
     member: 'radial-gradient(100% 60% at 50% 32%,#1d3a55,#0a1018 72%)',
@@ -29,6 +29,7 @@ const isSeen = s => s.seen || seenSet().has(s.id);
 const imgUrl = u => (u && u.startsWith('/') ? u : u && !/^https?:/.test(u) ? '/' + u : u);
 // в кружке – картинка (карта, значок) или эмодзи типа
 function thumb(s) {
+    if (s.type === 'summary') return `<span class="cst-pic cst-plaud"></span>`;
     if (s.image && s.type !== 'app') return `<span class="cst-pic" style="background-image:url('${esc(imgUrl(s.image))}')${s.type === 'badges' ? ';background-size:82%;background-color:#16222e' : ''}"></span>`;
     return `<span class="cst-pic cst-emoji" style="background:${BG[s.type] || BG.custom}">${EMOJI[s.type] || '⛰️'}</span>`;
 }
@@ -68,7 +69,7 @@ function visual(s) {
     if (s.type === 'member' && img) return `<div class="csv-stage"><img class="csv-cardimg" src="${esc(img)}" alt=""></div>`;
     if (s.type === 'badges' && img) return `<div class="csv-stage"><div class="csv-halo"></div><img class="csv-badge" src="${esc(img)}" alt=""></div>`;
     if (s.type === 'app' && img) return `<div class="csv-stage"><div class="csv-phone"><img src="${esc(img)}" alt=""></div></div>`;
-    if (s.type === 'summary') return `<div class="csv-stage"><div class="csv-quote">“</div></div>`;
+    if (s.type === 'summary') return `<div class="csv-stage"><div class="csv-plaud-halo"></div><img class="csv-plaud" src="assets/plaud.webp" alt=""></div>`;
     if (img) return `<div class="csv-cover" style="background-image:url('${esc(img)}')"></div>`;
     return `<div class="csv-stage"><div class="csv-big">${EMOJI[s.type] || '⛰️'}</div></div>`;
 }

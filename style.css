@@ -7507,3 +7507,8 @@ html.v2 #myAchievements { padding: 16px; }
 .vt-bar { display: block; height: 6px; border-radius: 3px; background: rgba(255,255,255,.1); overflow: hidden; }
 .vt-bar u { display: block; height: 100%; border-radius: 3px; background: #E8B446; }
 html.v2 #myAchievements .mya-wait { margin: 12px 0 0; }
+
+.cst-plaud { background: url(assets/plaud.webp) center/46% no-repeat, linear-gradient(135deg, #7B5CC4, #3a2a6e); }
+.csv-plaud-halo { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(160,130,240,.4), rgba(160,130,240,0) 65%); }
+.csv-plaud { position: relative; width: 34%; max-width: 150px; border-radius: 16px; filter: drop-shadow(0 24px 40px rgba(0,0,0,.6)); animation: csvPlaud 4s ease-in-out infinite; }
+@keyframes csvPlaud { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(-5deg) translateY(-10px); } }
