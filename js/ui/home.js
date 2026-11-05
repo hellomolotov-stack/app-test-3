@@ -928,7 +928,6 @@ function renderRdHome() {
     const main = mainDiv();
     main.innerHTML = `
         ${rdHomeTopHtml()}
-        ${askBarHtml()}
         <div id="circleContainer"></div>
         <div id="rdMedalsAnchor"></div>
         <div class="card-container" id="calendarContainer"></div>
@@ -949,7 +948,6 @@ function renderRdHome() {
     `;
     wireRdHomeTop();
     wireSafetyBanner();
-    wireAskBar();
     fitMastermindScroll();
     document.querySelectorAll('.mastermind-read-link').forEach(link => {
         link.addEventListener('click', (e) => {

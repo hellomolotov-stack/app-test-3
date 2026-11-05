@@ -6986,8 +6986,10 @@ img.is-glow-vio { filter: none; }
    Включается классом html.rd – пока только для тех, кто в списке js/redesign.js.
    Фон: одна тёмная основа и мягкое свечение сверху цвета главного элемента экрана (--rd-glow). */
 html.rd { background: #0B0D10; }
-html.rd body::before { display: none; }
-html.rd body { background: #0B0D10 radial-gradient(130% 560px at 50% 0, var(--rd-glow, #1A2610) 0%, rgba(11, 13, 16, 0) 100%) no-repeat !important; }
+/* вариант Б (05.11): фото клуба только в шапке – уезжает вместе со страницей и растворяется в тёмной основе */
+html.rd body { background: #0B0D10 !important; position: relative; }
+html.rd body::before { position: absolute; height: 420px; background-position: 50% 30%; filter: brightness(.82) saturate(.95);
+  -webkit-mask-image: linear-gradient(#000 30%, transparent); mask-image: linear-gradient(#000 30%, transparent); }
 html.rd .header-blur { background: rgba(11, 13, 16, .55); }
 html.rd #subtitle:empty { display: none; }
 html.rd .card-container { background: #15181D; border: 1px solid #23272E; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; border-radius: 28px; }
@@ -7353,3 +7355,15 @@ html.rd .mmr-btn { border-radius: 27px; height: 54px; font-size: 16px; }
 html.rd .mmr-item { border-radius: 20px; background: #15181D; border: 1px solid #23272E; padding: 14px 16px; }
 html.rd .mmr-item.on { background: #1A1F25; box-shadow: none; border-color: rgba(199, 184, 230, .5); }
 html.rd .mmr-item .d { color: #C7B8E6; font-style: normal; font-weight: 800; }
+
+/* --- редизайн: единые скругления и отступы (05.11) – карточка 24, внутри 16, кнопки и плашки круглые; 12 между карточками --- */
+html.rd .card-container { border-radius: 24px; margin-bottom: 12px; }
+html.rd .rd-hero { border-radius: 24px; margin: 0 0 12px; }
+html.rd .rd-head { margin-bottom: 18px; }
+html.rd .rd-fresh { margin-bottom: 16px; }
+html.rd .rd-story-card { border-radius: 24px; }
+html.rd .rd-going { border-radius: 16px; }
+html.rd .rd-tags span, html.rd .rd-hero-when { border-radius: 999px; }
+html.rd .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
+html.rd .rd-hero-cover { height: 200px; }
+html.rd .rd-hero-title { font-size: 27px; }
