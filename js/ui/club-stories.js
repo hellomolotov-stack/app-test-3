@@ -29,7 +29,7 @@ const isSeen = s => s.seen || seenSet().has(s.id);
 const imgUrl = u => (u && u.startsWith('/') ? u : u && !/^https?:/.test(u) ? '/' + u : u);
 // в кружке – картинка (карта, значок) или эмодзи типа
 function thumb(s) {
-    if (s.type === 'summary') return `<span class="cst-pic cst-plaud"></span>`;
+    if (s.type === 'summary') return `<span class="cst-pic cst-plaud"><img src="assets/plaud.webp" alt=""></span>`;
     if (s.image && s.type !== 'app') return `<span class="cst-pic" style="background-image:url('${esc(imgUrl(s.image))}')${s.type === 'badges' ? ';background-size:82%;background-color:#16222e' : ''}"></span>`;
     return `<span class="cst-pic cst-emoji" style="background:${BG[s.type] || BG.custom}">${EMOJI[s.type] || '⛰️'}</span>`;
 }

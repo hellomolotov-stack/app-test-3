@@ -7509,7 +7509,8 @@ html.v2 #myAchievements { padding: 16px; }
 .vt-bar u { display: block; height: 100%; border-radius: 3px; background: #E8B446; }
 html.v2 #myAchievements .mya-wait { margin: 12px 0 0; }
 
-.cst-plaud { background: url(assets/plaud.webp) center/46% no-repeat, linear-gradient(135deg, #7B5CC4, #3a2a6e); }
+.cst-plaud { background: radial-gradient(circle at 50% 55%, rgba(190,155,255,1) 0%, rgba(150,110,245,.75) 28%, rgba(90,60,180,.3) 48%, rgba(13,17,24,0) 66%), #0d1118 !important; overflow: hidden; }
+.cst-plaud img { width: 30%; transform: rotate(-16deg); filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
 .csv-plaud-halo { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(160,130,240,.4), rgba(160,130,240,0) 65%); }
 .csv-plaud { position: relative; width: 34%; max-width: 150px; border-radius: 16px; filter: drop-shadow(0 24px 40px rgba(0,0,0,.6)); animation: csvPlaud 4s ease-in-out infinite; }
 @keyframes csvPlaud { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(-5deg) translateY(-10px); } }
