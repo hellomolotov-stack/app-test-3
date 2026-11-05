@@ -63,17 +63,32 @@ export async function maybeShowCardWelcome() {
         try { if (localStorage.getItem(DONE_KEY)) return; } catch (e) {}
         if (document.querySelector('.card-payment-overlay, .cw-overlay')) return;
         const r = await meCall('card_welcome', {}, 8000);
-        if (!r?.show) { if (r) try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {} return; }
+        if (!r?.show) { if (r && !r.wait) try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {} return; }
         log('карта твоя: экран показан', false, state.user);
         showCardWelcome(r);
         markSeen();
     } catch (e) { /* сеть – попробуем при следующем запуске */ }
 }
 
-// сразу после оплаты (payment-return.js) – тот же экран
-export function showCardWelcomeNow(me) {
+// сразу после оплаты (payment-return.js): карта уже с картинкой – экран «карта твоя»;
+// картинки ещё нет – короткая плашка, а экран и значок придут, когда Макс добавит карту
+export function showCardWelcomeNow() {
     meCall('card_welcome', {}, 8000).then(r => {
-        showCardWelcome(r?.show ? r : { name: state.user?.first_name || '', cardUrl: me?.card?.cardUrl || '', hikes: Number(me?.card?.hikes) || 0 });
-        markSeen();
-    }).catch(() => { showCardWelcome({ name: state.user?.first_name || '', cardUrl: me?.card?.cardUrl || '' }); markSeen(); });
+        if (r?.show) { showCardWelcome(r); markSeen(); } else showCardPaid();
+    }).catch(() => showCardPaid());
+}
+
+function showCardPaid() {
+    document.querySelector('.cw-paid')?.remove();
+    const el = document.createElement('div');
+    el.className = 'modal-overlay cw-paid';
+    el.innerHTML = `<div class="modal-content" style="max-width:340px;text-align:center">
+        <div style="font-size:44px;line-height:1">🎉</div>
+        <h2 style="margin:10px 0 6px">оплата прошла – карта твоя</h2>
+        <p style="margin:0 0 16px;opacity:.75;line-height:1.4">привилегии уже работают. саму карту с твоим номером мы нарисуем и добавим в приложение – обычно в течение дня</p>
+        <button class="btn btn-yellow" data-close style="width:100%">отлично</button></div>`;
+    document.body.appendChild(el);
+    try { showConfetti(); } catch (e) {}
+    log('карта оплачена: ждём картинку', false, state.user);
+    el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-close]')) { haptic(); el.remove(); } });
 }

@@ -1,0 +1,100 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+*{box-sizing:border-box}html,body{overflow-x:hidden}
+body{margin:0;min-height:100vh;background:#0A0B09 var(--app-background-image, url(https://i.postimg.cc/CLMkCQCK/lrms-2-2.png)) center top/cover fixed;font-family:Inter,-apple-system,system-ui,sans-serif;color:#fff;padding:20px 12px}
+.wrap{max-width:420px;margin:0 auto}
+.lab{font-size:12px;color:rgba(255,255,255,.75);margin:0 6px 8px;letter-spacing:.04em;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.card-container{margin-bottom:26px}
+.hdr{display:flex;justify-content:space-between;align-items:baseline;margin:0 16px 14px}
+.hdr h2{margin:0;font-size:18px;font-weight:700}
+.hdr a{font-size:14px;color:var(--yellow);text-decoration:none;font-weight:600}
+.topo{display:block}
+/* 1 */
+.v1{display:flex;gap:10px;margin:0 16px}
+.v1 .map{flex:none;width:132px;height:132px;border-radius:20px;background:rgba(0,0,0,.28);overflow:hidden}
+.v1 .side{flex:1;display:flex;flex-direction:column;gap:8px}
+.tile{flex:1;border-radius:18px;background:rgba(0,0,0,.28);padding:10px 12px;display:flex;flex-direction:column;justify-content:center}
+.tile b{font-size:24px;font-weight:800;line-height:1}
+.tile span{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px;line-height:1.25}
+.tile.y b{color:var(--yellow)}
+.next{display:flex;align-items:center;justify-content:space-between;margin:10px 16px 0;padding:12px 14px;border-radius:18px;background:rgba(0,0,0,.28);font-size:14px}
+.next em{font-style:normal;color:var(--yellow);font-weight:700}
+/* 2 */
+.v2{position:relative;margin:0 16px;height:150px;border-radius:20px;background:rgba(0,0,0,.28);overflow:hidden}
+.v2 svg{position:absolute;right:-10px;top:-30px;width:210px;height:210px}
+.v2 .t{position:absolute;left:14px;top:14px;width:48%}
+.v2 .t b{display:block;font-size:40px;font-weight:800;line-height:1}
+.v2 .t span{display:block;font-size:13px;color:rgba(255,255,255,.75);margin-top:6px;line-height:1.35}
+.v2 .t span i{font-style:normal;color:var(--yellow);font-weight:700}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 16px 0}
+.grid3 .tile{padding:10px;text-align:center}
+.grid3 .tile b{font-size:20px}
+/* 3 */
+.v3{display:flex;align-items:center;gap:14px;margin:0 16px;padding:12px;border-radius:20px;background:rgba(0,0,0,.28)}
+.v3 .map{flex:none;width:76px;height:76px;border-radius:50%;background:rgba(255,255,255,.06);overflow:hidden}
+.v3 .tx{flex:1;min-width:0}
+.v3 .tx b{display:block;font-size:17px;font-weight:700}
+.v3 .tx span{display:block;font-size:13px;color:rgba(255,255,255,.7);margin-top:3px;line-height:1.35}
+.v3 .tx span i{font-style:normal;color:var(--yellow);font-weight:700}
+.v3 .ch{font-size:22px;color:rgba(255,255,255,.5)}
+.chips{display:flex;gap:6px;margin:10px 16px 0;flex-wrap:wrap}
+.chips span{font-size:12.5px;padding:7px 11px;border-radius:14px;background:rgba(0,0,0,.28);color:rgba(255,255,255,.85)}
+.chips span.y{background:rgba(217,253,25,.14);color:var(--yellow);font-weight:700}
+</style></head><body><div class="wrap">
+
+<div class="lab">1 · КАРТА + ДВЕ ПЛИТКИ</div>
+<div class="card-container">
+  <div class="hdr"><h2>🏔 твой круг</h2><a href="#">все 23 ›</a></div>
+  <div class="v1">
+    <div class="map"><svg class="topo" data-s="1" viewBox="0 0 132 132" width="132" height="132"></svg></div>
+    <div class="side">
+      <div class="tile y"><b>6</b><span>ходили вместе не раз</span></div>
+      <div class="tile"><b>17</b><span>один общий хайк</span></div>
+    </div>
+  </div>
+  <div class="next"><span>9 ноября – <em>4 новых человека</em></span><em>›</em></div>
+</div>
+
+<div class="lab">2 · ВНУТРЕННЯЯ ПАНЕЛЬ + ЦИФРЫ, КАК «КЛУБ В ЦИФРАХ»</div>
+<div class="card-container">
+  <div class="hdr"><h2>🏔 твой круг</h2><a href="#">открыть ›</a></div>
+  <div class="v2">
+    <svg class="topo" data-s="2" viewBox="0 0 210 210"></svg>
+    <div class="t"><b>23</b><span>человека с тобой на хайках, <i>6</i> – ближе к вершине</span></div>
+  </div>
+  <div class="grid3">
+    <div class="tile"><b>5</b><span>твоих хайков</span></div>
+    <div class="tile"><b style="color:var(--yellow)">6</b><span>не раз вместе</span></div>
+    <div class="tile"><b>+4</b><span>9 ноября</span></div>
+  </div>
+</div>
+
+<div class="lab">3 · КОМПАКТНАЯ СТРОКА, КАК «МОИ ЗАПИСИ»</div>
+<div class="card-container">
+  <div class="hdr"><h2>🏔 твой круг</h2></div>
+  <div class="v3">
+    <div class="map"><svg class="topo" data-s="3" viewBox="0 0 76 76" width="76" height="76"></svg></div>
+    <div class="tx"><b>23 человека</b><span>с тобой на хайках, <i>6</i> из них – не раз</span></div>
+    <div class="ch">›</div>
+  </div>
+  <div class="chips"><span class="y">9 ноября · +4 новых</span><span>5 твоих хайков</span></div>
+</div>
+
+</div>
+<script>
+const ns='http://www.w3.org/2000/svg';
+const el=(p,t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+// та же топокарта: изолинии, ты – вершина, ближний круг на внутренней линии, остальные на внешней
+document.querySelectorAll('svg.topo').forEach(s=>{
+ const vb=s.viewBox.baseVal, W=vb.width, cx=W/2, cy=vb.height/2, step=W/(s.dataset.s==='3'?13:16), sc=W/250;
+ let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;
+ const ring=k=>{let d='';for(let a=0;a<=72;a++){const t=a/72*Math.PI*2,rr=k*step*(1+.08*Math.sin(t*3+k)+.05*Math.cos(t*5-k));d+=(a?'L':'M')+(cx+Math.cos(t)*rr*1.1).toFixed(1)+' '+(cy+Math.sin(t)*rr).toFixed(1);}return d+'Z';};
+ const K=s.dataset.s==='3'?6:8;
+ for(let k=K;k>=1;k--)el(s,'path',{d:ring(k),fill:'none',stroke:'#F3D9B1','stroke-opacity':k===2||k===5?.5:.16,'stroke-width':(k===2||k===5?1.2:.8)*Math.max(.7,sc*1.6)});
+ for(let i=0;i<23;i++){const st=i<6,t=(st?i/6:(i-6)/17)*Math.PI*2+r()*.3,k=st?2:5,rr=k*step*(1+.08*Math.sin(t*3+k)+.05*Math.cos(t*5-k));
+  el(s,'circle',{cx:cx+Math.cos(t)*rr*1.1,cy:cy+Math.sin(t)*rr,r:(st?4.2:3)*Math.max(.6,sc*1.7),fill:st?'#D9FD19':'#d6aa6e'});}
+ const h=7*Math.max(.7,sc*1.7);el(s,'path',{d:`M${cx-h} ${cy+h*.7} L${cx} ${cy-h} L${cx+h} ${cy+h*.7} Z`,fill:'#fff'});
+});
+</script>
+</body></html>

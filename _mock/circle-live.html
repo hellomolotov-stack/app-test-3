@@ -1,0 +1,10 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css">
+<style>body{margin:0;background:#0A0B09 url(https://i.postimg.cc/CLMkCQCK/lrms-2-2.png) center top/cover fixed;font-family:Inter,system-ui;padding:20px 0}#circleContainer{max-width:420px;margin:0 auto}</style></head>
+<body><div id="circleContainer"></div><script type="module">
+window.Telegram={WebApp:{initData:'x'}};
+const realFetch=window.fetch; window.fetch=(u,o)=>u==='/api/me'?realFetch(location.search.includes('g=1')?'/_mock/circle-data-guest.json':'/_mock/circle-data.json'):realFetch(u,o);
+import { state } from '/js/state.js'; state.user={id:163665735,username:'maxmolotov',first_name:'Макс'};
+const m=await import('/js/ui/circle.js?v='+Date.now());
+await m.mountCircle(document.getElementById('circleContainer'));
+if(location.hash.startsWith('#sheet')){m.openCircleSheet(); if(location.hash==='#sheetall') setTimeout(()=>document.querySelector('[data-mode=all]')?.click(),400);}
+</script></body></html>

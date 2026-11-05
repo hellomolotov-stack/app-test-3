@@ -1,0 +1,89 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+*{box-sizing:border-box}html,body{overflow-x:hidden}
+body{margin:0;min-height:100vh;background:#0b1118 url(/assets/box/bg-rock.jpg) center/cover fixed;font-family:Inter,-apple-system,system-ui,sans-serif;color:#fff;padding:22px 16px}
+.lab{font-size:12px;color:rgba(255,255,255,.6);margin:0 4px 8px;letter-spacing:.04em}
+.card{position:relative;width:100%;max-width:420px;margin:0 auto 26px;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.k{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.y{color:#D9FD19}
+/* 1 – связка */
+.r{padding:16px 18px 14px;background:rgba(22,30,40,.6);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px)}
+.r h4{margin:6px 0 0;font-size:19px;font-weight:800;line-height:1.25}
+.r svg{display:block;width:calc(100% + 36px);margin:10px -18px 4px;height:92px}
+.r .f{display:flex;justify-content:space-between;font-size:12.5px;color:rgba(255,255,255,.65)}
+/* 2 – костёр */
+.f2{height:210px;background:radial-gradient(70% 90% at 72% 62%,rgba(255,150,60,.42),rgba(120,60,30,.25) 40%,rgba(16,18,22,.92) 75%)}
+.f2 svg{position:absolute;right:0;top:0;width:220px;height:210px}
+.f2 .t{position:absolute;left:18px;top:16px;width:52%}
+.f2 .n{font-size:42px;font-weight:800;line-height:1;margin-top:8px;color:#FFD9A8}
+.f2 .s{font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.75);margin-top:6px}
+.f2 .go{position:absolute;left:18px;bottom:14px;font-size:12.5px;font-weight:800;color:#FFD9A8}
+/* 3 – лица */
+.m{padding:16px 18px;background:rgba(22,30,40,.6);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px)}
+.wall{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:12px}
+.wall i{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;font-weight:800;color:#1d2200;background-size:cover}
+.wall i.s{box-shadow:0 0 0 2px #D9FD19}
+.wall i.e{background:transparent;border:1.5px dashed rgba(217,253,25,.55);color:#D9FD19}
+.m .row{display:flex;justify-content:space-between;align-items:baseline}
+.m .row b{font-size:22px;font-weight:800}.m .row b span{font-size:13px;color:rgba(255,255,255,.7);margin-left:4px}
+.m .cap{font-size:12.5px;color:rgba(255,255,255,.65);margin-top:10px;line-height:1.4}
+</style></head><body>
+
+<div class="lab">1 · СВЯЗКА – КАК У АЛЬПИНИСТОВ</div>
+<div class="card r">
+  <div class="k">твой круг</div>
+  <h4>в связке с тобой <span class="y">23 человека</span></h4>
+  <svg id="rope" viewBox="0 0 400 92" preserveAspectRatio="none"></svg>
+  <div class="f"><span>6 – в связке не раз</span><span class="y" style="font-weight:800">9 ноября +4 ›</span></div>
+</div>
+
+<div class="lab">2 · КОСТЁР</div>
+<div class="card f2">
+  <svg id="fire" viewBox="0 0 220 210"></svg>
+  <div class="t"><div class="k">твой круг</div><div class="n">23</div><div class="s">человека у твоего костра. 6 сидят ближе – с ними вы ходили не раз</div></div>
+  <div class="go">9 ноября подсядут ещё 4 ›</div>
+</div>
+
+<div class="lab">3 · ЛИЦА – НАСТОЯЩИЕ ФОТО ИЗ ТЕЛЕГРАМА</div>
+<div class="card m">
+  <div class="row"><span class="k">твой круг</span><b>23<span>человека</span></b></div>
+  <div class="wall" id="wall"></div>
+  <div class="cap">в рамке – те, с кем ты был не раз. пунктир – места для тех, с кем познакомишься 9 ноября ›</div>
+</div>
+
+<script>
+const ns='http://www.w3.org/2000/svg';
+const el=(p,t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+const ini=['АС','МК','ОД','ИП','ЛМ','СР','ВЛ','НК','ЕБ','ТГ','ДА','КЗ','ЮВ','РМ','ГС','ПТ','ЖО','БЛ','ЗН','ФК','ЭМ','ЯШ','ХУ'];
+// 1: верёвка-провисание, на ней «карабины» с людьми; ты в начале, ближний круг рядом
+(function(){const s=document.getElementById('rope');
+ const y=x=>40+Math.sin(x/400*Math.PI)*26+Math.sin(x/30)*1.5;
+ let d='';for(let x=0;x<=400;x+=4)d+=(x?'L':'M')+x+' '+y(x).toFixed(1);
+ el(s,'path',{d,fill:'none',stroke:'#d6aa6e','stroke-width':3,'stroke-linecap':'round'});
+ el(s,'path',{d,fill:'none',stroke:'#fff','stroke-width':1,'stroke-dasharray':'2 5','stroke-opacity':.5});
+ const xs=[];for(let i=0;i<14;i++)xs.push(30+i*26);
+ xs.forEach((x,i)=>{const st=i>0&&i<=6,me=i===0,cy=y(x)+(i%2?14:-14);
+  el(s,'line',{x1:x,y1:y(x),x2:x,y2:cy,stroke:'#d6aa6e','stroke-width':1.2});
+  el(s,'circle',{cx:x,cy:cy,r:me?12:(st?10:8.5),fill:me?'#fff':(st?'#D9FD19':'#d6aa6e')});
+  const t=el(s,'text',{x:x,y:cy+3.2,'text-anchor':'middle','font-size':me?9:8,'font-weight':800,fill:'#1d2200'});t.textContent=me?'ты':(i===13?'+10':ini[i-1]);});
+})();
+// 2: костёр в центре, люди по кругу – ближний круг ближе к огню
+(function(){const s=document.getElementById('fire');const cx=125,cy=125;
+ const g=el(s,'defs',{});const rg=el(g,'radialGradient',{id:'gl'});el(rg,'stop',{offset:'0','stop-color':'#ffb347','stop-opacity':.9});el(rg,'stop',{offset:'1','stop-color':'#ff7a1a','stop-opacity':0});
+ el(s,'circle',{cx,cy,r:44,fill:'url(#gl)'});
+ el(s,'path',{d:`M${cx} ${cy-22} C ${cx+12} ${cy-6}, ${cx+10} ${cy+8}, ${cx} ${cy+10} C ${cx-10} ${cy+8}, ${cx-12} ${cy-6}, ${cx} ${cy-22} Z`,fill:'#FFB347'});
+ el(s,'path',{d:`M${cx} ${cy-10} C ${cx+6} ${cy}, ${cx+5} ${cy+7}, ${cx} ${cy+8} C ${cx-5} ${cy+7}, ${cx-6} ${cy}, ${cx} ${cy-10} Z`,fill:'#FFF1C9'});
+ el(s,'line',{x1:cx-14,y1:cy+14,x2:cx+14,y2:cy+8,stroke:'#6b4a2e','stroke-width':4,'stroke-linecap':'round'});
+ el(s,'line',{x1:cx-14,y1:cy+8,x2:cx+14,y2:cy+14,stroke:'#7d5735','stroke-width':4,'stroke-linecap':'round'});
+ for(let i=0;i<23;i++){const st=i<6,a=(st?i/6:(i-6)/17)*Math.PI*2+(st?.4:0),R=st?46:78;
+  el(s,'circle',{cx:cx+Math.cos(a)*R*1.05,cy:cy+Math.sin(a)*R*.82,r:st?6:4.5,fill:st?'#FFD9A8':'#c98b55',opacity:st?1:.85});}
+})();
+// 3: стена лиц – вместо фото цветные кружки с инициалами
+(function(){const w=document.getElementById('wall');const pal=['#e9c39b','#cfa27c','#b98d6b','#d9b48f','#c4997a','#e2b98f'];
+ for(let i=0;i<23;i++){const e=document.createElement('i');e.textContent=ini[i];e.style.background=pal[i%pal.length];if(i<6)e.className='s';w.appendChild(e);}
+ for(let i=0;i<4;i++){const e=document.createElement('i');e.className='e';e.textContent='+';w.appendChild(e);}
+ const l=document.createElement('i');l.style.background='#fff';l.textContent='ты';w.prepend(l);
+})();
+</script>
+</body></html>

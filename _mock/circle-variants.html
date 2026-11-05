@@ -1,0 +1,93 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+*{box-sizing:border-box}html,body{overflow-x:hidden}.card{width:100%}
+body{margin:0;min-height:100vh;background:#0b1118 url(/assets/box/bg-rock.jpg) center/cover fixed;font-family:Inter,-apple-system,system-ui,sans-serif;color:#fff;padding:22px 16px}
+.lab{font-size:12px;color:rgba(255,255,255,.55);margin:0 4px 8px;letter-spacing:.04em}
+.card{position:relative;max-width:420px;margin:0 auto 26px;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.k{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.go{font-weight:800;color:var(--yellow)}
+/* A – созвездие */
+.a{height:212px;background:radial-gradient(120% 90% at 70% 0%,#24395a 0%,#101a2a 55%,#0a1019 100%)}
+.a svg{position:absolute;inset:0;width:100%;height:100%}
+.a .t{position:absolute;left:18px;top:16px;right:18px}
+.a .n{margin-top:6px;font-size:15px;line-height:1.35;color:rgba(255,255,255,.8);max-width:58%}
+.a .n b{display:block;font-size:30px;line-height:1.05;color:#fff;font-weight:800}
+.a .f{position:absolute;left:18px;right:18px;bottom:14px;display:flex;justify-content:space-between;font-size:12.5px;color:rgba(255,255,255,.7)}
+/* B – изолинии */
+.b{height:204px;background:linear-gradient(160deg,rgba(214,170,110,.22),rgba(28,34,40,.78) 55%);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px)}
+.b svg{position:absolute;right:-30px;top:-22px;width:250px;height:250px}
+.b .t{position:absolute;left:18px;top:16px;width:52%}
+.b .num{font-size:44px;font-weight:800;line-height:1;margin-top:8px;color:#F3D9B1}
+.b .num span{font-size:14px;font-weight:700;color:#fff;margin-left:2px}
+.b .s{font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.7);margin-top:6px}
+.b .leg{position:absolute;left:18px;bottom:14px;display:flex;gap:12px;font-size:11.5px;color:rgba(255,255,255,.65)}
+.b .leg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+/* C – тропа */
+.c{padding:16px 0 14px;background:rgba(22,30,40,.62);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px)}
+.c .head{display:flex;justify-content:space-between;align-items:baseline;padding:0 18px}
+.c .head b{font-size:22px;font-weight:800;color:var(--yellow)}
+.c .head b small{font-size:13px;color:#fff;margin-left:4px}
+.c .trail{position:relative;display:flex;gap:0;overflow-x:auto;padding:16px 18px 6px;scrollbar-width:none}
+.c .trail::before{content:"";position:absolute;left:18px;right:0;top:53px;border-top:2px dashed rgba(217,253,25,.45)}
+.st{flex:none;width:86px;position:relative;text-align:center}
+.st .faces{height:30px;display:flex;justify-content:center;align-items:flex-end;margin-bottom:6px}
+.st .faces i{width:20px;height:20px;border-radius:50%;margin-left:-6px;border:2px solid #18212c;background:#d6aa6e;color:#1d2200;font-style:normal;font-size:8px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.st .faces i:first-child{margin-left:0}
+.st .dot{width:12px;height:12px;border-radius:50%;margin:0 auto;background:var(--yellow);box-shadow:0 0 0 4px rgba(217,253,25,.18)}
+.st .nm{font-size:11.5px;font-weight:700;margin-top:8px;line-height:1.2}
+.st .pl{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.st.next .dot{background:transparent;border:2px dashed var(--yellow);box-shadow:none}
+.st.next .faces i{background:rgba(217,253,25,.2);color:var(--yellow);border-color:rgba(217,253,25,.4)}
+.st.next .nm{color:var(--yellow)}
+</style></head><body>
+
+<div class="lab">A · СОЗВЕЗДИЕ</div>
+<div class="card a">
+  <svg id="sky" viewBox="0 0 400 212" preserveAspectRatio="xMidYMid slice"></svg>
+  <div class="t"><div class="k">твой круг</div><div class="n"><b>23 звезды</b>в твоём созвездии клуба. 6 светят ярче – с ними ты был не раз</div></div>
+  <div class="f"><span>за 5 хайков</span><span class="go">9 ноября – ещё 4 ›</span></div>
+</div>
+
+<div class="lab">B · ИЗОЛИНИИ, КАК НА ТОПОКАРТЕ</div>
+<div class="card b">
+  <svg id="topo" viewBox="0 0 250 250"></svg>
+  <div class="t"><div class="k">твой круг</div><div class="num">23<span>человека</span></div><div class="s">ближе к вершине – те, с кем вы ходили не раз</div></div>
+  <div class="leg"><span><i style="background:#D9FD19"></i>2+ хайка · 6</span><span><i style="background:#d6aa6e"></i>один · 17</span></div>
+</div>
+
+<div class="lab">C · ТРОПА ЗНАКОМСТВ</div>
+<div class="card c">
+  <div class="head"><span class="k">твой круг</span><b>23<small>знакомства</small></b></div>
+  <div class="trail">
+    <div class="st"><div class="faces"><i>АС</i><i>МК</i><i>ОД</i><i>+3</i></div><div class="dot"></div><div class="nm">Ай-Петри</div><div class="pl">+6 · 14 июн</div></div>
+    <div class="st"><div class="faces"><i>ИП</i><i>ЛМ</i><i>+2</i></div><div class="dot"></div><div class="nm">Эклизи</div><div class="pl">+4 · 6 июл</div></div>
+    <div class="st"><div class="faces"><i>СР</i><i>ВЛ</i><i>НК</i><i>+4</i></div><div class="dot"></div><div class="nm">Демерджи</div><div class="pl">+7 · 30 авг</div></div>
+    <div class="st"><div class="faces"><i>ЕБ</i><i>+2</i></div><div class="dot"></div><div class="nm">Чёртова лестница</div><div class="pl">+3 · 6 сен</div></div>
+    <div class="st"><div class="faces"><i>ТГ</i><i>ДА</i><i>+1</i></div><div class="dot"></div><div class="nm">Ай-Петри</div><div class="pl">+3 · 19 окт</div></div>
+    <div class="st next"><div class="faces"><i>?</i><i>?</i><i>?</i><i>?</i></div><div class="dot"></div><div class="nm">9 ноября ›</div><div class="pl">ещё 4 новых</div></div>
+  </div>
+</div>
+
+<script>
+const ns='http://www.w3.org/2000/svg';
+const el=(p,t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;
+// A: звёздное небо, созвездие справа
+(function(){const s=document.getElementById('sky');
+ for(let i=0;i<70;i++)el(s,'circle',{cx:r()*400,cy:r()*212,r:r()*.9+.2,fill:'#fff',opacity:.15+r()*.35});
+ const cx=300,cy=92,pts=[];for(let i=0;i<23;i++){const a=r()*Math.PI*2,d=(i<6?28:52)+r()*(i<6?14:30);pts.push({x:cx+Math.cos(a)*d*1.25,y:cy+Math.sin(a)*d*.95,s:i<6});}
+ pts.forEach((p,i)=>{if(r()<.55)el(s,'line',{x1:p.x,y1:p.y,x2:pts[(i+1+Math.floor(r()*4))%23].x,y2:pts[(i+1+Math.floor(r()*4))%23].y,stroke:'#cfe0ff','stroke-opacity':.16,'stroke-width':.7});});
+ pts.forEach(p=>el(s,'line',{x1:cx,y1:cy,x2:p.x,y2:p.y,stroke:p.s?'#D9FD19':'#cfe0ff','stroke-opacity':p.s?.55:.12,'stroke-width':p.s?1.2:.6}));
+ pts.forEach(p=>{if(p.s)el(s,'circle',{cx:p.x,cy:p.y,r:6,fill:'#D9FD19',opacity:.18});el(s,'circle',{cx:p.x,cy:p.y,r:p.s?2.8:1.7,fill:p.s?'#F4FFB0':'#fff'});});
+ el(s,'circle',{cx,cy,r:12,fill:'#fff',opacity:.15});el(s,'circle',{cx,cy,r:5,fill:'#fff'});
+})();
+// B: изолинии вокруг «вершины» – тебя
+(function(){const s=document.getElementById('topo');const cx=135,cy=120;
+ for(let k=8;k>=1;k--){let d='';for(let a=0;a<=64;a++){const t=a/64*Math.PI*2,rr=k*13*(1+.08*Math.sin(t*3+k)+.05*Math.cos(t*5-k));d+=(a?'L':'M')+(cx+Math.cos(t)*rr*1.1).toFixed(1)+' '+(cy+Math.sin(t)*rr).toFixed(1);}
+  el(s,'path',{d:d+'Z',fill:'none',stroke:'#F3D9B1','stroke-opacity':k===2||k===5?.5:.18,'stroke-width':k===2||k===5?1.2:.8});}
+ for(let i=0;i<23;i++){const st=i<6,t=r()*Math.PI*2,rr=(st?26:65)*(1+.08*Math.sin(t*3+(st?2:5)))+(r()-.5)*6;el(s,'circle',{cx:cx+Math.cos(t)*rr*1.1,cy:cy+Math.sin(t)*rr,r:st?4.2:3,fill:st?'#D9FD19':'#d6aa6e'});}
+ el(s,'path',{d:`M${cx-9} ${cy+6} L${cx} ${cy-9} L${cx+9} ${cy+6} Z`,fill:'#fff'});
+})();
+</script>
+</body></html>

@@ -1,0 +1,8 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/style.css"></head>
+<body style="margin:0;background:#0A0B09"><script type="module">
+window.Telegram={WebApp:{initData:'x'}};
+const rf=window.fetch; window.fetch=(u,o)=>u==='/api/me'?rf(location.search.includes('g=1')?'/_mock/mm-notes-guest.json':'/_mock/mm-notes.json'):rf(u,o);
+import { state } from '/js/state.js'; state.user={id:1};
+const m=await import('/js/ui/mm-reader.js?v='+Date.now()); await m.openMmReader('f1');
+if(location.hash==='#all') setTimeout(()=>document.querySelector('[data-v=all]').click(),300);
+</script></body></html>

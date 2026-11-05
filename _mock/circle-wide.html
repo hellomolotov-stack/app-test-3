@@ -1,0 +1,85 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#0A0B09 url(https://i.postimg.cc/CLMkCQCK/lrms-2-2.png) center top/cover fixed;font-family:Inter,-apple-system,system-ui,sans-serif;color:#fff;padding:20px 12px}
+.cols{display:flex;gap:22px;justify-content:center;align-items:flex-start}
+.col{width:390px;flex:none}
+.vt{font-size:15px;font-weight:800;margin:0 6px 10px;text-shadow:0 1px 6px rgba(0,0,0,.6)}
+.card-container{position:relative;overflow:hidden;margin-bottom:0}
+.hdr{position:relative;z-index:2;display:flex;justify-content:space-between;align-items:baseline;margin:0 16px 8px}
+.hdr h2{margin:0;font-size:18px;font-weight:700}.hdr a{font-size:14px;color:var(--yellow);font-weight:600}
+.y{color:var(--yellow)}
+.pill{font-size:12.5px;font-weight:800;padding:8px 11px;border-radius:12px;background:var(--yellow);color:#1d2200;white-space:nowrap}
+/* A */
+.a{padding-bottom:0}
+.a .net{position:relative;height:250px;margin-top:-34px}
+.a svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.a .tfade{position:absolute;left:0;right:0;top:0;height:60px;background:linear-gradient(180deg,rgba(28,46,64,.85),rgba(28,46,64,0))}
+.a .fade{position:absolute;left:0;right:0;bottom:0;height:96px;background:linear-gradient(180deg,rgba(18,26,34,0),rgba(18,26,34,.9) 70%)}
+.a .foot{position:absolute;left:16px;right:16px;bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}
+.a .foot .t{font-size:13px;line-height:1.35;color:rgba(255,255,255,.8)}.a .foot .t b{font-size:26px;color:#fff;font-weight:800}
+/* B */
+.b .net{position:relative;height:150px;margin:0 -1px}
+.b svg{position:absolute;left:0;top:0;width:100%;height:100%}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:8px 16px 0}
+.tile{border-radius:18px;background:rgba(0,0,0,.28);padding:10px;text-align:center}
+.tile b{display:block;font-size:20px;font-weight:800;line-height:1}.tile span{display:block;font-size:11.5px;color:rgba(255,255,255,.7);margin-top:5px;line-height:1.25}
+/* C */
+.c-wrap{position:relative;padding-top:46px}
+.c{overflow:visible!important;min-height:178px}
+.c .t{position:relative;z-index:2;margin:0 16px;width:50%;text-shadow:0 1px 8px rgba(10,20,30,.9)}
+.c .t b{display:block;font-size:40px;font-weight:800;line-height:1}
+.c .t span{display:block;font-size:13px;color:rgba(255,255,255,.75);margin-top:6px;line-height:1.35}
+.c .t .pill{display:inline-block;margin-top:12px}
+.c svg{position:absolute;right:-78px;top:-60px;width:270px;height:270px;z-index:1;pointer-events:none}
+</style></head><body>
+<div class="cols">
+ <div class="col"><div class="vt">A · сеть во всю карточку, уходит за края</div>
+  <div class="card-container a">
+   <div class="hdr"><h2>🫂 твои связи</h2><a>128 ›</a></div>
+   <div class="net"><svg id="A" viewBox="0 0 390 250" preserveAspectRatio="xMidYMid slice"></svg><div class="tfade"></div><div class="fade"></div>
+    <div class="foot"><div class="t"><b>128</b> знакомств<br><span class="y" style="font-weight:700">58</span> – твой близкий круг</div><span class="pill">9 ноя +2 ›</span></div></div>
+  </div>
+ </div>
+ <div class="col"><div class="vt">B · широкая лента сети + цифры</div>
+  <div class="card-container b">
+   <div class="hdr"><h2>🫂 твои связи</h2><a>открыть ›</a></div>
+   <div class="net"><svg id="B" viewBox="0 0 390 150" preserveAspectRatio="xMidYMid slice"></svg></div>
+   <div class="grid3"><div class="tile"><b>128</b><span>знакомств</span></div><div class="tile"><b class="y">58</b><span>не раз вместе</span></div><div class="tile"><b>+2</b><span>9 ноября</span></div></div>
+  </div>
+ </div>
+ <div class="col"><div class="vt">C · сеть выходит за карточку</div>
+  <div class="c-wrap"><div class="card-container c">
+   <svg id="C" viewBox="0 0 270 270"></svg>
+   <div class="hdr" style="margin-bottom:12px"><h2>🫂 твои связи</h2></div>
+   <div class="t"><b>128</b><span>знакомств на хайках, <span class="y" style="display:inline;font-weight:700">58</span> – твой близкий круг</span><span class="pill">9 ноя +2 ›</span></div>
+  </div></div>
+ </div>
+</div>
+<script>
+const ns='http://www.w3.org/2000/svg';
+const GR=[['#f6b26b','#e06666'],['#6fa8dc','#3d85c6'],['#93c47d','#38761d'],['#c27ba0','#741b47'],['#ffd966','#bf9000'],['#8e7cc3','#351c75']];
+const ini=n=>String(n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+fetch('/_mock/circle-data.json').then(r=>r.json()).then(d=>{
+ // раскладка: по эллипсу, самые близкие – ближе к тебе, дальние выходят за края
+ function draw(id,{W,H,cx,cy,rx,ry,r0=.2,r1=1.15,base=7,me=16,maxN=40,label=true}){
+  const s=document.getElementById(id); let h='<defs>';
+  GR.forEach((g,k)=>h+=`<linearGradient id="${id}g${k}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${g[0]}"/><stop offset="1" stop-color="${g[1]}"/></linearGradient>`);
+  h+=`<radialGradient id="${id}gl"><stop offset="0" stop-color="#D9FD19" stop-opacity=".35"/><stop offset="1" stop-color="#D9FD19" stop-opacity="0"/></radialGradient></defs>`;
+  const P=d.people.slice(0,maxN), N=P.length, top=Math.max(...P.map(p=>p.n));
+  const pts=P.map((p,i)=>{const t=i/(N-1),a=i*2.39996+.6,R=r0+(r1-r0)*Math.sqrt(t);return {...p,x:cx+Math.cos(a)*R*rx,y:cy+Math.sin(a)*R*ry};});
+  const at=new Map(pts.map(p=>[p.id,p]));
+  const cv=(a,b)=>`M${a.x} ${a.y} Q${(a.x+b.x)/2+(a.y-b.y)*.12} ${(a.y+b.y)/2+(b.x-a.x)*.12} ${b.x} ${b.y}`;
+  d.links.forEach(([a,b,w])=>{const A=at.get(a),B=at.get(b);if(A&&B)h+=`<path d="${cv(A,B)}" fill="none" stroke="#a9bccf" stroke-opacity="${Math.min(.05+w*.025,.2)}" stroke-width=".7"/>`;});
+  pts.forEach(p=>{const st=p.n>1;h+=`<path d="${cv({x:cx,y:cy},p)}" fill="none" stroke="${st?'#D9FD19':'#d6aa6e'}" stroke-opacity="${st?(.3+.5*p.n/top).toFixed(2):.3}" stroke-width="${st?1+2.2*p.n/top:.8}" stroke-linecap="round"/>`;});
+  pts.forEach((p,i)=>{const st=p.n>1,r=base+5*Math.sqrt(p.n/top);h+=`<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="url(#${id}g${i%6})" stroke="${st?'#D9FD19':'rgba(255,255,255,.5)'}" stroke-width="${st?1.6:1}"/>`;
+   if(label&&r>=8)h+=`<text x="${p.x}" y="${p.y+r*.33}" text-anchor="middle" font-size="${(r*.8).toFixed(1)}" font-weight="800" fill="#fff">${ini(p.name)}</text>`;});
+  h+=`<circle cx="${cx}" cy="${cy}" r="${me*1.9}" fill="url(#${id}gl)"/><circle cx="${cx}" cy="${cy}" r="${me}" fill="#fff" stroke="#D9FD19" stroke-width="2.5"/><text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="10" font-weight="800" fill="#121a23">ты</text>`;
+  s.innerHTML=h;}
+ draw('A',{W:390,H:250,cx:236,cy:118,rx:210,ry:120,r0:.16,r1:1.05,maxN:40});
+ draw('B',{W:390,H:150,cx:195,cy:75,rx:240,ry:92,r0:.14,r1:1.08,maxN:40,base:6,me:14});
+ draw('C',{W:270,H:270,cx:150,cy:132,rx:130,ry:125,r0:.18,r1:1,maxN:34,base:6.5,me:15});
+});
+</script>
+</body></html>

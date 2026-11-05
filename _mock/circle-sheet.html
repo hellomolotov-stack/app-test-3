@@ -1,0 +1,86 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+*{box-sizing:border-box}html,body{overflow-x:hidden}
+body{margin:0;min-height:100vh;background:#0A0B09 url(https://i.postimg.cc/CLMkCQCK/lrms-2-2.png) center top/cover fixed;font-family:Inter,-apple-system,system-ui,sans-serif;color:#fff;padding:40px 0 0}
+.sheet{max-width:420px;margin:0 auto;border-radius:28px 28px 0 0;padding:10px 0 28px;
+  background:linear-gradient(180deg,rgba(214,170,110,.16),rgba(214,170,110,.05) 40%),rgba(18,24,32,.86);backdrop-filter:blur(36px) saturate(160%);-webkit-backdrop-filter:blur(36px) saturate(160%);
+  border:1px solid rgba(214,170,110,.32);border-bottom:0;position:relative}
+.grab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin:0 auto 14px}
+.x{position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:13px}
+.ttl{text-align:center;font-size:22px;font-weight:800}
+.sub{text-align:center;font-size:13.5px;color:rgba(255,255,255,.62);margin:4px 24px 0;line-height:1.4}
+.panel{position:relative;margin:16px 16px 0;border-radius:22px;background:rgba(0,0,0,.28);overflow:hidden}
+.panel svg{display:block;width:100%;height:auto}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 16px 0}
+.tile{border-radius:18px;background:rgba(0,0,0,.28);padding:10px;text-align:center}
+.tile b{display:block;font-size:20px;font-weight:800;line-height:1}
+.tile span{display:block;font-size:12px;color:rgba(255,255,255,.7);margin-top:5px;line-height:1.25}
+.seg{display:flex;margin:18px 16px 10px;padding:4px;border-radius:16px;background:rgba(0,0,0,.28)}
+.seg span{flex:1;text-align:center;padding:9px 6px;border-radius:12px;font-size:13.5px;font-weight:700;color:rgba(255,255,255,.65)}
+.seg span.on{background:var(--yellow);color:#1d2200}
+.list{margin:0 16px}
+.p{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:18px;background:rgba(0,0,0,.28);margin-bottom:8px}
+.av{position:relative;width:42px;height:42px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#1d2200;background:#e2c19c}
+.av.s{box-shadow:0 0 0 2px var(--yellow)}
+.p .tx{flex:1;min-width:0}
+.p .tx b{display:block;font-size:15px;font-weight:700}
+.p .tx span{display:block;font-size:12.5px;color:rgba(255,255,255,.6);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p .n{flex:none;font-size:12px;font-weight:800;padding:4px 8px;border-radius:10px;background:rgba(217,253,25,.14);color:var(--yellow)}
+.more{text-align:center;font-size:13.5px;color:rgba(255,255,255,.6);padding:4px 0 2px}
+.sec{font-size:18px;font-weight:700;margin:22px 16px 12px}
+.next{margin:0 16px;border-radius:22px;background:rgba(0,0,0,.28);padding:14px}
+.next .top{display:flex;justify-content:space-between;align-items:baseline}
+.next .top b{font-size:16px}.next .top span{font-size:13px;color:rgba(255,255,255,.6)}
+.next .row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.stack{display:flex}.stack i{width:30px;height:30px;border-radius:50%;margin-left:-9px;border:2px solid #1c232c;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;font-weight:800;color:#1d2200;background:#e2c19c}
+.stack i:first-child{margin-left:0}.stack i.new{background:rgba(217,253,25,.18);color:var(--yellow);border-style:dashed;border-color:rgba(217,253,25,.6)}
+.next .row span{font-size:13px;line-height:1.35;color:rgba(255,255,255,.75)}.next .row span em{font-style:normal;color:var(--yellow);font-weight:700}
+.btn-y{display:block;margin-top:12px;text-align:center;padding:14px;border-radius:16px;background:var(--yellow);color:#1d2200;font-weight:800;font-size:15px}
+.org{margin:16px 24px 0;text-align:center;font-size:12.5px;line-height:1.45;color:rgba(255,255,255,.5)}
+</style></head><body>
+<div class="sheet">
+  <div class="grab"></div><div class="x">✕</div>
+  <div class="ttl">🏔 твой круг</div>
+  <div class="sub">люди, с которыми ты был на хайках клуба. чем ближе к вершине – тем чаще вы ходили вместе</div>
+
+  <div class="panel"><svg id="big" viewBox="0 0 388 300"></svg></div>
+  <div class="grid3">
+    <div class="tile"><b>23</b><span>человека в круге</span></div>
+    <div class="tile"><b style="color:var(--yellow)">6</b><span>не раз вместе</span></div>
+    <div class="tile"><b>5</b><span>твоих хайков</span></div>
+  </div>
+
+  <div class="seg"><span class="on">ближе к вершине · 6</span><span>один хайк · 17</span></div>
+  <div class="list">
+    <div class="p"><div class="av s">АС</div><div class="tx"><b>Аня Смирнова</b><span>Ай-Петри, Эклизи-Бурун, Демерджи</span></div><div class="n">3 хайка</div></div>
+    <div class="p"><div class="av s">МК</div><div class="tx"><b>Миша Королёв</b><span>Эклизи-Бурун, Демерджи</span></div><div class="n">2 хайка</div></div>
+    <div class="p"><div class="av s">ОД</div><div class="tx"><b>Оля Дьякова</b><span>Ай-Петри, Чёртова лестница</span></div><div class="n">2 хайка</div></div>
+    <div class="more">показать всех ›</div>
+  </div>
+
+  <div class="sec">🗓 ближайший хайк</div>
+  <div class="next">
+    <div class="top"><b>9 ноября · Ай-Тодор</b><span>вс, 9:00</span></div>
+    <div class="row"><div class="stack"><i>АС</i><i>ИП</i><i class="new">+4</i></div><span>двое из твоего круга и <em>4 новых человека</em></span></div>
+    <span class="btn-y">открыть хайк</span>
+  </div>
+  <div class="org">и организаторы Макс и Неля – они есть в круге у&nbsp;каждого&nbsp;🤍</div>
+</div>
+<script>
+const ns='http://www.w3.org/2000/svg';
+const el=(p,t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+(function(){const s=document.getElementById('big'),cx=194,cy=150,step=24;
+ let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;
+ const ring=k=>{let d='';for(let a=0;a<=72;a++){const t=a/72*Math.PI*2,rr=k*step*(1+.08*Math.sin(t*3+k)+.05*Math.cos(t*5-k));d+=(a?'L':'M')+(cx+Math.cos(t)*rr*1.15).toFixed(1)+' '+(cy+Math.sin(t)*rr).toFixed(1);}return d+'Z';};
+ for(let k=8;k>=1;k--)el(s,'path',{d:ring(k),fill:'none',stroke:'#F3D9B1','stroke-opacity':k===2||k===5?.5:.15,'stroke-width':k===2||k===5?1.3:.8});
+ const ini=['АС','МК','ОД','ИП','ЛМ','СР','ВЛ','НК','ЕБ','ТГ','ДА','КЗ','ЮВ','РМ','ГС','ПТ','ЖО','БЛ','ЗН','ФК','ЭМ','ЯШ','ХУ'];
+ for(let i=0;i<23;i++){const st=i<6,t=(st?i/6:(i-6)/17)*Math.PI*2+r()*.25,k=st?2:5,rr=k*step*(1+.08*Math.sin(t*3+k)+.05*Math.cos(t*5-k));
+  const x=cx+Math.cos(t)*rr*1.15,y=cy+Math.sin(t)*rr;
+  el(s,'circle',{cx:x,cy:y,r:st?13:10.5,fill:st?'#D9FD19':'#d6aa6e',stroke:'rgba(0,0,0,.35)','stroke-width':1});
+  const tx=el(s,'text',{x:x,y:y+3.6,'text-anchor':'middle','font-size':st?9.5:8.5,'font-weight':800,fill:'#1d2200'});tx.textContent=ini[i];}
+ el(s,'path',{d:`M${cx-13} ${cy+9} L${cx} ${cy-13} L${cx+13} ${cy+9} Z`,fill:'#fff'});
+ const t=el(s,'text',{x:cx,y:cy+24,'text-anchor':'middle','font-size':11,'font-weight':800,fill:'#fff'});t.textContent='ты';
+})();
+</script>
+</body></html>

@@ -1,0 +1,87 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+body{margin:0;min-height:100vh;background:#0b1118 url(/assets/box/bg-rock.jpg) center/cover fixed;font-family:Inter,-apple-system,system-ui,sans-serif;color:#fff;padding:24px 16px}
+.lab{font-size:12px;color:rgba(255,255,255,.5);margin:0 4px 8px;letter-spacing:.04em}
+.yc{position:relative;max-width:420px;margin:0 auto 26px;border-radius:28px;padding:18px 18px 16px;background:rgba(22,30,40,.62);backdrop-filter:blur(30px) saturate(160%);-webkit-backdrop-filter:blur(30px) saturate(160%);border:1px solid rgba(255,255,255,.1);overflow:hidden}
+.yc-k{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.yc-row{display:flex;align-items:center;gap:14px;margin-top:6px}
+.yc-txt{flex:1;min-width:0}
+.yc-n{font-size:34px;font-weight:800;line-height:1;color:var(--yellow)}
+.yc-n small{font-size:15px;font-weight:700;color:#fff;margin-left:4px}
+.yc-s{margin-top:6px;font-size:13px;line-height:1.4;color:rgba(255,255,255,.7)}
+.yc-s b{color:#fff}
+.yc-web{flex:none;width:132px;height:132px}
+.yc-next{display:flex;align-items:center;gap:10px;margin-top:14px;padding:10px 12px;border-radius:16px;background:rgba(217,253,25,.1);border:1px solid rgba(217,253,25,.28);font-size:13px;line-height:1.35}
+.yc-next .av{display:flex}
+.yc-next .av i{width:24px;height:24px;border-radius:50%;margin-left:-7px;border:2px solid #1b2430;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:9.5px;font-weight:800;color:#1d2200;background:var(--yellow)}
+.yc-next .av i:first-child{margin-left:0}
+.yc-next span{flex:1}.yc-next em{font-style:normal;font-weight:800;color:var(--yellow)}
+/* развёрнутый экран */
+.sh{max-width:420px;margin:0 auto;border-radius:28px;padding:18px;background:rgba(18,26,35,.9);border:1px solid rgba(255,255,255,.08)}
+.sh h3{margin:0;text-align:center;font-size:20px;font-weight:800}
+.sh .sub{text-align:center;font-size:13px;color:rgba(255,255,255,.6);margin-top:4px}
+.big{display:block;width:100%;height:auto;margin:6px 0}
+.chips{display:flex;gap:6px;justify-content:center;margin-bottom:6px}
+.chips span{font-size:12px;padding:5px 10px;border-radius:12px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.75)}
+.chips span.on{background:var(--yellow);color:#1d2200;font-weight:700}
+.ppl{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.p{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.05)}
+.p i{width:34px;height:34px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:12px;color:#1d2200;background:var(--yellow)}
+.p i.w{background:#d6aa6e}
+.p div{flex:1;font-size:14px;font-weight:700}.p small{display:block;font-size:12px;font-weight:400;color:rgba(255,255,255,.55);margin-top:2px}
+</style></head><body>
+
+<div class="lab">ПЛАШКА НА ГЛАВНОЙ</div>
+<div class="yc">
+  <div class="yc-k">твой круг</div>
+  <div class="yc-row">
+    <div class="yc-txt">
+      <div class="yc-n">23<small>знакомства</small></div>
+      <div class="yc-s">за 5 хайков. с <b>6 людьми</b> ты ходил больше одного раза</div>
+    </div>
+    <svg class="yc-web" id="mini" viewBox="0 0 132 132"></svg>
+  </div>
+  <div class="yc-next"><div class="av"><i>ОК</i><i>Д</i><i>ЛМ</i><i>+1</i></div><span>на хайке 9 ноября – <em>4 новых человека</em> для тебя</span><em>›</em></div>
+</div>
+
+<div class="lab">ПО НАЖАТИЮ – ШТОРКА</div>
+<div class="sh">
+  <h3>твой круг</h3>
+  <div class="sub">люди, с которыми ты был на хайках</div>
+  <svg class="big" id="big" viewBox="0 0 340 300"></svg>
+  <div class="chips"><span class="on">все · 23</span><span>ходили вместе 2+ · 6</span></div>
+  <div class="ppl">
+    <div class="p"><i>АС</i><div>Аня С.<small>3 общих хайка · последний – Ай-Петри, 19 окт</small></div></div>
+    <div class="p"><i>МК</i><div>Миша К.<small>2 общих хайка · Эклизи-Бурун, Демерджи</small></div></div>
+    <div class="p"><i class="w">ВЛ</i><div>Вера Л.<small>1 хайк · Чёртова лестница, 6 сен</small></div></div>
+  </div>
+</div>
+
+<script>
+// схематичная паутина: ты в центре, ближний круг (2+ хайка) – жёлтые, остальные – тёплые, видны нити между ними
+function web(svg, W, H, R1, R2, rN, rMe, labels) {
+  const ns = 'http://www.w3.org/2000/svg', cx = W / 2, cy = H / 2;
+  const strong = 6, all = 23, pts = [];
+  let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < all; i++) {
+    const isS = i < strong, a = (isS ? i / strong : (i - strong) / (all - strong)) * Math.PI * 2 + (isS ? .3 : 0) + (rnd() - .5) * .25;
+    const r = (isS ? R1 : R2) * (0.9 + rnd() * 0.2);
+    pts.push({ x: cx + Math.cos(a) * r, y: cy + Math.sin(a) * r, s: isS });
+  }
+  const line = (a, b, op, c, w) => { const l = document.createElementNS(ns, 'line'); l.setAttribute('x1', a.x); l.setAttribute('y1', a.y); l.setAttribute('x2', b.x); l.setAttribute('y2', b.y); l.setAttribute('stroke', c); l.setAttribute('stroke-opacity', op); l.setAttribute('stroke-width', w); svg.appendChild(l); };
+  // нити между остальными (они тоже знакомы друг с другом)
+  for (let i = 0; i < all; i++) for (let j = i + 1; j < all; j++) if (rnd() < .09) line(pts[i], pts[j], .14, '#9fb3c8', .8);
+  pts.forEach(p => line({ x: cx, y: cy }, p, p.s ? .85 : .3, p.s ? '#D9FD19' : '#d6aa6e', p.s ? 2 : 1));
+  const ini = ['АС','МК','ОД','ИП','ЛМ','СР','ВЛ','НК','ЕБ','ТГ','ДА','КЗ','ЮВ','РМ','ГС','ПТ','ЖО','БЛ','ЗН','ФК','ЭМ','ЯШ','ХУ'];
+  pts.forEach((p, i) => {
+    const c = document.createElementNS(ns, 'circle'); c.setAttribute('cx', p.x); c.setAttribute('cy', p.y); c.setAttribute('r', p.s ? rN * 1.25 : rN); c.setAttribute('fill', p.s ? '#D9FD19' : '#d6aa6e'); svg.appendChild(c);
+    if (labels) { const t = document.createElementNS(ns, 'text'); t.setAttribute('x', p.x); t.setAttribute('y', p.y + 3.5); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', p.s ? 10 : 8.5); t.setAttribute('font-weight', 800); t.setAttribute('fill', '#1d2200'); t.textContent = ini[i]; svg.appendChild(t); }
+  });
+  const me = document.createElementNS(ns, 'circle'); me.setAttribute('cx', cx); me.setAttribute('cy', cy); me.setAttribute('r', rMe); me.setAttribute('fill', '#fff'); svg.appendChild(me);
+  const t = document.createElementNS(ns, 'text'); t.setAttribute('x', cx); t.setAttribute('y', cy + 4); t.setAttribute('text-anchor', 'middle'); t.setAttribute('font-size', labels ? 12 : 9); t.setAttribute('font-weight', 800); t.setAttribute('fill', '#121a23'); t.textContent = 'ты'; svg.appendChild(t);
+}
+web(document.getElementById('mini'), 132, 132, 30, 56, 4, 11, false);
+web(document.getElementById('big'), 340, 300, 68, 128, 11, 20, true);
+</script>
+</body></html>

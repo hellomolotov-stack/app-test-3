@@ -98,6 +98,30 @@ async function registration(action, user, date, res) {
     }
 }
 
+// значок «владелец карты интеллигента» – вместе с экраном «карта твоя» (когда у карты появилась картинка).
+// Записей с этим названием бывает несколько – берём ту, у которой больше всего получателей.
+async function grantCardOwnerBadge(uid, name, token) {
+    const TITLE = 'владелец карты интеллигента';
+    const all = (await read('clubAchievements', token)) || {};
+    const list = Object.entries(all).filter(([, r]) => r?.title === TITLE && r.publicationStatus !== 'draft');
+    if (list.some(([, r]) => r.grants?.[uid]?.issuedAt)) return;
+    const id = list.sort((a, b) => Object.keys(b[1].grants || {}).length - Object.keys(a[1].grants || {}).length)[0]?.[0];
+    if (!id) return;
+    const day = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const r = await fetch(`${DB}/clubAchievements/${id}.json`, { headers: { Authorization: `Bearer ${token}`, 'X-Firebase-ETag': 'true' }, signal: AbortSignal.timeout(6000) });
+        const etag = r.headers.get('etag'); const rec = await r.json();
+        if (rec?.grants?.[uid]?.issuedAt) return;
+        const now = Date.now(), entry = { userId: uid, name: name.slice(0, 100), date: day };
+        rec.recipients = { ...(rec.recipients || {}), [uid]: entry };
+        rec.grants = { ...(rec.grants || {}), [uid]: { ...entry, issuedAt: now, issuedBy: 'auto-card' } };
+        rec.updatedAt = now; rec.updatedBy = 'auto-card';
+        rec.history = [...(rec.history || []), { action: 'auto_card', at: now, by: 'auto-card', added: [uid] }];
+        const w = await fetch(`${DB}/clubAchievements/${id}.json`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'If-Match': etag }, body: JSON.stringify(rec), signal: AbortSignal.timeout(6000) });
+        if (w.ok || w.status !== 412) return;
+    }
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -152,12 +176,15 @@ module.exports = async (req, res) => {
             if (body.action === 'card_welcome_seen') { await put({ seen_at: Date.now() }); return res.status(200).json({ ok: true }); }
             const [member, mark] = await Promise.all([read(`members/${id}`, token), read(`cardWelcome/${id}`, token)]);
             if (!member?.user_id || mark) return res.status(200).json({ show: false });
+            // карта оплачена, но картинку Макс ещё не добавил – экран и значок ждут её (клиент спросит снова)
+            if (!String(member.card_image_url || '').trim()) return res.status(200).json({ show: false, wait: true });
             const pays = (await read('pending_payments', token)) || {};
-            const since = Date.now() / 1000 - 30 * 86400;
+            const since = Date.now() / 1000 - 60 * 86400;
             const paid = Object.values(pays).filter(p => p && String(p.user_id) === id && p.completed && Number(p.ts) > since
                 && ['permanent', 'season', 'offer'].includes(p.card_type)).sort((a, b) => b.ts - a.ts)[0];
             if (!paid) { await put({ skip: Date.now() }); return res.status(200).json({ show: false }); }
             const hikes = await hikeCount(id, token, { member }).catch(() => Number(member.hikes_count) || 0);
+            await grantCardOwnerBadge(id, String(member.user_name || user.first_name || id), token).catch(e => console.error('card badge:', e.message));
             return res.status(200).json({ show: true, name: String(member.user_name || '').split(' ')[0] || user.first_name || '',
                 cardUrl: member.card_image_url || '', plan: paid.card_type === 'season' ? 'season' : 'permanent', hikes });
         } catch (e) {

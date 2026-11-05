@@ -1,0 +1,89 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/style.css">
+<style>
+*{box-sizing:border-box}html,body{overflow-x:hidden}
+body{margin:0;min-height:100vh;background:#0b1118 url(/assets/box/bg-rock.jpg) center/cover fixed;font-family:Inter,-apple-system,system-ui,sans-serif;color:#fff;padding:22px 16px}
+.lab{font-size:12px;color:rgba(255,255,255,.6);margin:0 4px 8px;letter-spacing:.04em}
+.k{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.b{position:relative;width:100%;max-width:420px;height:204px;margin:0 auto 26px;border-radius:28px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,rgba(214,170,110,.22),rgba(28,34,40,.78) 55%);backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px)}
+.b svg{position:absolute;right:-30px;top:-22px;width:250px;height:250px}
+.b .t{position:absolute;left:18px;top:16px;width:54%}
+.b .num{font-size:44px;font-weight:800;line-height:1;margin-top:8px;color:#F3D9B1}
+.b .num span{font-size:14px;font-weight:700;color:#fff;margin-left:2px}
+.b .s{font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.72);margin-top:6px}
+.b .s b{color:#D9FD19;font-weight:700}
+.b .nx{position:absolute;left:18px;bottom:14px;font-size:12.5px;font-weight:800;color:#D9FD19}
+/* шторка */
+.sh{width:100%;max-width:420px;margin:0 auto;border-radius:28px 28px 0 0;padding:10px 18px 22px;background:linear-gradient(180deg,rgba(214,170,110,.16),rgba(18,24,30,.96) 40%);border:1px solid rgba(214,170,110,.3);border-bottom:0}
+.grab{width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.25);margin:0 auto 12px}
+.sh h3{margin:0;text-align:center;font-size:21px;font-weight:800}
+.sh .sub{text-align:center;font-size:13px;color:rgba(255,255,255,.6);margin-top:4px}
+.big{display:block;width:100%;height:auto;margin:4px 0 0}
+.stats{display:flex;gap:8px;margin-top:4px}
+.stats div{flex:1;padding:10px 6px;border-radius:14px;background:rgba(255,255,255,.06);text-align:center;font-size:11.5px;line-height:1.3;color:rgba(255,255,255,.6)}
+.stats b{display:block;font-size:20px;font-weight:800;color:#F3D9B1}
+.stats div:first-child b{color:#D9FD19}
+.sec{font-size:11.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.45);margin:18px 2px 8px}
+.p{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:14px;background:rgba(255,255,255,.05);margin-bottom:6px}
+.p i{width:36px;height:36px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-style:normal;font-weight:800;font-size:12px;color:#1d2200;background:#D9FD19}
+.p i.w{background:#d6aa6e}
+.p div{flex:1;font-size:14px;font-weight:700}.p small{display:block;font-size:12px;font-weight:400;color:rgba(255,255,255,.55);margin-top:2px}
+.more{text-align:center;font-size:13px;color:rgba(255,255,255,.55);padding:6px}
+.next{margin-top:16px;padding:14px;border-radius:18px;background:rgba(217,253,25,.1);border:1px solid rgba(217,253,25,.3)}
+.next b{display:block;font-size:15px}.next small{display:block;font-size:12.5px;color:rgba(255,255,255,.65);margin-top:4px;line-height:1.4}
+.next .av{display:flex;margin-top:10px}.next .av i{width:28px;height:28px;border-radius:50%;margin-left:-8px;border:2px solid #1d2630;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:10px;font-weight:800;background:rgba(217,253,25,.2);color:#D9FD19}.next .av i:first-child{margin-left:0}
+.btn2{display:block;margin-top:12px;text-align:center;padding:13px;border-radius:14px;background:#D9FD19;color:#1d2200;font-weight:800;font-size:15px}
+.org{margin-top:14px;font-size:12.5px;color:rgba(255,255,255,.5);text-align:center}
+</style></head><body>
+
+<div class="lab">ПЛАШКА НА ГЛАВНОЙ</div>
+<div class="b">
+  <svg id="topo" viewBox="0 0 250 250"></svg>
+  <div class="t"><div class="k">твой круг</div><div class="num">23<span>человека</span></div>
+  <div class="s">с кем ты был на хайках. <b>6</b> из них – ближе к вершине: вы ходили вместе не раз</div></div>
+  <div class="nx">9 ноября – ещё 4 новых ›</div>
+</div>
+
+<div class="lab">ПО НАЖАТИЮ – ШТОРКА</div>
+<div class="sh">
+  <div class="grab"></div>
+  <h3>твой круг</h3>
+  <div class="sub">люди, с которыми ты был на хайках клуба</div>
+  <svg class="big" id="topoBig" viewBox="0 0 340 290"></svg>
+  <div class="stats"><div><b>6</b>не раз вместе</div><div><b>17</b>один общий хайк</div><div><b>5</b>твоих хайков</div></div>
+
+  <div class="sec">ближе к вершине · 6</div>
+  <div class="p"><i>АС</i><div>Аня С.<small>3 общих хайка · последний – Ай-Петри, 19 окт</small></div></div>
+  <div class="p"><i>МК</i><div>Миша К.<small>2 общих хайка · Эклизи-Бурун, Демерджи</small></div></div>
+  <div class="more">ещё 4 ›</div>
+
+  <div class="sec">один общий хайк · 17</div>
+  <div class="p"><i class="w">ВЛ</i><div>Вера Л.<small>Чёртова лестница, 6 сен</small></div></div>
+  <div class="p"><i class="w">НК</i><div>Никита К.<small>Демерджи, 30 авг</small></div></div>
+  <div class="more">ещё 15 ›</div>
+
+  <div class="next"><b>9 ноября · Ай-Тодор</b><small>на хайк записаны 4 человека, которых ты ещё не знаешь, и двое из твоего круга</small>
+    <div class="av"><i>?</i><i>?</i><i>?</i><i>?</i></div>
+    <span class="btn2">открыть хайк</span></div>
+  <div class="org">и организаторы Макс и Неля – они есть в круге у каждого 🤍</div>
+</div>
+
+<script>
+const ns='http://www.w3.org/2000/svg';
+const el=(p,t,a)=>{const e=document.createElementNS(ns,t);for(const k in a)e.setAttribute(k,a[k]);p.appendChild(e);return e;};
+function topo(s,cx,cy,step,labels){
+ let seed=11;const r=()=>(seed=(seed*9301+49297)%233280)/233280;
+ const ring=(k)=>{let d='';for(let a=0;a<=72;a++){const t=a/72*Math.PI*2,rr=k*step*(1+.08*Math.sin(t*3+k)+.05*Math.cos(t*5-k));d+=(a?'L':'M')+(cx+Math.cos(t)*rr*1.1).toFixed(1)+' '+(cy+Math.sin(t)*rr).toFixed(1);}return d+'Z';};
+ for(let k=8;k>=1;k--)el(s,'path',{d:ring(k),fill:'none',stroke:'#F3D9B1','stroke-opacity':k===2||k===5?.5:.16,'stroke-width':k===2||k===5?1.2:.8});
+ const ini=['АС','МК','ОД','ИП','ЛМ','СР','ВЛ','НК','ЕБ','ТГ','ДА','КЗ','ЮВ','РМ','ГС','ПТ','ЖО','БЛ','ЗН','ФК','ЭМ','ЯШ','ХУ'];
+ for(let i=0;i<23;i++){const st=i<6,t=(st?i/6:(i-6)/17)*Math.PI*2+r()*.3,k=st?2:5,rr=k*step*(1+.08*Math.sin(t*3+k)+.05*Math.cos(t*5-k));
+  const x=cx+Math.cos(t)*rr*1.1,y=cy+Math.sin(t)*rr;
+  el(s,'circle',{cx:x,cy:y,r:labels?(st?12:10):(st?4.2:3),fill:st?'#D9FD19':'#d6aa6e'});
+  if(labels){const tx=el(s,'text',{x:x,y:y+3.5,'text-anchor':'middle','font-size':st?9.5:8.5,'font-weight':800,fill:'#1d2200'});tx.textContent=ini[i];}}
+ const h=labels?14:9;el(s,'path',{d:`M${cx-h} ${cy+h*.7} L${cx} ${cy-h} L${cx+h} ${cy+h*.7} Z`,fill:'#fff'});
+ if(labels){const t=el(s,'text',{x:cx,y:cy+h*.7+14,'text-anchor':'middle','font-size':11,'font-weight':800,fill:'#fff'});t.textContent='ты';}
+}
+topo(document.getElementById('topo'),135,120,13,false);
+topo(document.getElementById('topoBig'),170,145,25,true);
+</script>
+</body></html>
