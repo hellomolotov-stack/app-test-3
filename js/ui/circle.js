@@ -5,6 +5,7 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { fetchWithTimeout } from '../net.js';
+import { isRedesign } from '../redesign.js';
 
 // видят все: с картой – все связи, без карты – 5 самых близких, остальные «?» (сервер их имён не отдаёт)
 export const circleEnabled = () => !!state.user?.id;
@@ -55,6 +56,9 @@ const STYLE = `
 .cs2-h { text-align: center; font-size: 21px; font-weight: 800; }
 .cs2-sub { text-align: center; font-size: 13px; line-height: 1.4; color: rgba(255,255,255,.6); margin: 4px 24px 0; }
 .cs2-net { margin: 14px 16px 12px; border-radius: 20px; background: rgba(0,0,0,.28); }
+.cs2-net { position: relative; }
+.cs2-net.is-zoomed { border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(217,253,25,.25); }
+.cs2-net.is-zoomed::after { content: 'двойной тап – обычный вид'; position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,.45); pointer-events: none; }
 .cs2-net svg { display: block; width: 100%; height: auto; overflow: hidden; }
 .cs2-tg { display: flex; margin: 12px 16px 0; padding: 4px; border-radius: 14px; background: rgba(0,0,0,.28); }
 .cs2-tg button { flex: 1; border: 0; background: none; color: rgba(255,255,255,.65); font: inherit; font-size: 13px; font-weight: 700; padding: 8px 6px; border-radius: 11px; cursor: pointer; }
@@ -295,6 +299,69 @@ function sheetLines(net, d, mode, sel) {
     return out;
 }
 
+
+// зум сети связей (пока только для isRedesign()): двумя пальцами – ближе/дальше, одним – двигать
+// приближенную сеть, двойной тап – обычный вид. В обычном масштабе один палец листает шторку как раньше.
+function wireNetZoom(svg, host) {
+    let s = 1, cx = SCX, cy = SCY, moved = false, lastTap = 0, g = null;
+    const MAX = 4;
+    const apply = () => {
+        const w = SW / s, h = SH / s;
+        cx = Math.min(Math.max(cx, w / 2), SW - w / 2);
+        cy = Math.min(Math.max(cy, h / 2), SH - h / 2);
+        svg.setAttribute('viewBox', `${(cx - w / 2).toFixed(2)} ${(cy - h / 2).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
+        host.style.touchAction = s > 1.01 ? 'none' : 'pan-y';
+        host.classList.toggle('is-zoomed', s > 1.01);
+    };
+    const toSvg = (x, y) => {
+        const r = svg.getBoundingClientRect(), w = SW / s, h = SH / s;
+        return [cx - w / 2 + (x - r.left) / r.width * w, cy - h / 2 + (y - r.top) / r.height * h];
+    };
+    const mid = t => [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
+    const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1;
+    host.addEventListener('touchstart', e => {
+        const t = e.touches;
+        if (t.length === 2) { const m = mid(t); g = { pinch: true, d: dist(t), s, p: toSvg(m[0], m[1]) }; moved = true; e.preventDefault(); }
+        else if (t.length === 1) { g = { pinch: false, x: t[0].clientX, y: t[0].clientY, cx, cy }; moved = false; }
+    }, { passive: false });
+    host.addEventListener('touchmove', e => {
+        if (!g) return;
+        const t = e.touches;
+        if (g.pinch && t.length === 2) {
+            e.preventDefault();
+            s = Math.min(MAX, Math.max(1, g.s * dist(t) / g.d));
+            const m = mid(t), r = svg.getBoundingClientRect(), w = SW / s, h = SH / s;
+            cx = g.p[0] - (m[0] - r.left) / r.width * w + w / 2;
+            cy = g.p[1] - (m[1] - r.top) / r.height * h + h / 2;
+            apply();
+        } else if (!g.pinch && t.length === 1 && s > 1.01) {
+            const dx = t[0].clientX - g.x, dy = t[0].clientY - g.y;
+            if (Math.abs(dx) + Math.abs(dy) > 6) moved = true;
+            if (!moved) return;
+            e.preventDefault();
+            const r = svg.getBoundingClientRect();
+            cx = g.cx - dx / r.width * (SW / s);
+            cy = g.cy - dy / r.height * (SH / s);
+            apply();
+        } else if (!g.pinch && t.length === 1) {
+            if (Math.abs(t[0].clientX - g.x) + Math.abs(t[0].clientY - g.y) > 6) moved = true;
+        }
+    }, { passive: false });
+    host.addEventListener('touchend', e => {
+        if (e.touches.length) { if (e.touches.length === 1 && g?.pinch) g = { pinch: false, x: e.touches[0].clientX, y: e.touches[0].clientY, cx, cy }; return; }
+        if (!moved && !e.target.closest('.cs2-node:not(.q)')) {
+            const now = Date.now();
+            if (now - lastTap < 300) { s = 1; cx = SCX; cy = SCY; svg.classList.add('cs2-zoomanim'); apply(); setTimeout(() => svg.classList.remove('cs2-zoomanim'), 300); lastTap = 0; }
+            else lastTap = now;
+        }
+        g = null;
+    });
+    // после сдвига или щипка не считать это нажатием на человека
+    host.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+    apply();
+    return { reset() { s = 1; cx = SCX; cy = SCY; apply(); } };
+}
+
 let overlay = null;
 export function openCircleSheet() {
     if (overlay || !data) return;
@@ -332,6 +399,7 @@ export function openCircleSheet() {
     const svg = overlay.querySelector('#cs2Net svg'), lines = svg.querySelector('.cs2-lines');
     const drawLines = () => { lines.innerHTML = sheetLines(net, d, mode, sel); };
     drawLines();
+    const zoom = isRedesign() ? wireNetZoom(svg, overlay.querySelector('#cs2Net')) : null;
     const select = id => {
         sel = id;
         svg.querySelectorAll('.cs2-node').forEach(n => n.classList.toggle('sel', n.dataset.id === id));
@@ -342,6 +410,7 @@ export function openCircleSheet() {
     const setMode = m => {
         if (m === mode) return;
         mode = m;
+        zoom?.reset();
         log(`твои связи: слой ${m === 'all' ? 'все' : 'близкие'}`, false, state.user);
         overlay.querySelectorAll('#cs2Tg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
         lines.style.opacity = '0';
