@@ -7323,3 +7323,33 @@ html.rd .adm-badge.is-off { background: rgba(243, 140, 140, .14); color: #F3A0A0
 .cw-overlay .cs-sec{text-align:left}
 .cw-foot{z-index:5;box-sizing:border-box;position:absolute;left:0;right:0;bottom:0;padding:24px 22px calc(22px + env(safe-area-inset-bottom));background:linear-gradient(transparent,#06090d 40%)}
 .cw-foot .btn{display:block;width:100%;margin:0;box-sizing:border-box}
+
+/* --- редизайн: читалка саммари мастермайнда (js/ui/mm-reader.js) --- */
+html.rd .mmr-overlay.is-on { background: rgba(5, 7, 10, .72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+html.rd .mmr-sheet { width: 100%; max-width: 600px; height: 86vh; height: 86dvh; margin-bottom: 0; border-radius: 32px 32px 0 0; background: #13171C radial-gradient(120% 360px at 50% 0, rgba(199, 184, 230, .16) 0%, rgba(19, 23, 28, 0) 100%) no-repeat; backdrop-filter: none; -webkit-backdrop-filter: none; border: 1px solid rgba(199, 184, 230, .32); border-bottom: none; box-shadow: 0 -10px 60px rgba(199, 184, 230, .12); }
+html.rd .mmr-sheet::before { content: ''; position: absolute; top: 8px; left: 50%; width: 40px; height: 5px; margin-left: -20px; border-radius: 3px; background: #2A2E35; }
+html.rd .mmr-top { padding: 22px 16px 12px 20px; border-bottom: 1px solid #23272E; gap: 8px; }
+html.rd .mmr-top .k { color: #C7B8E6; font-style: normal; font-size: 13px; font-weight: 800; }
+html.rd .mmr-ib { width: 38px; height: 38px; background: #1A1F25; border: 1px solid #2A2E35; color: #F5F5F7; }
+html.rd .mmr-ib.on { background: #F5F5F7; color: #0B0D10; border-color: #F5F5F7; }
+html.rd .mmr-cnt { color: #8A9097; font-weight: 700; }
+html.rd .mmr-scroll { padding: 20px 20px 40px; }
+html.rd .mmr-head { gap: 14px; margin-bottom: 18px; }
+html.rd .mmr-head img { width: 56px; height: 56px; }
+html.rd .mmr-title { font-size: 26px; line-height: 1.12; letter-spacing: -.03em; }
+html.rd .mmr-sub { color: #C7B8E6; font-weight: 700; }
+html.rd .mmr-info { border-radius: 20px; background: #1A1F25; border: 1px solid #23272E; padding: 14px 16px; color: #C9CDD2; }
+html.rd .mmr-sec { color: #8A9097; letter-spacing: .06em; }
+html.rd .mmr-h3 { margin: 28px 0 10px; font-size: 20px; letter-spacing: -.02em; line-height: 1.25; }
+html.rd .mmr-who { border-radius: 12px; background: rgba(199, 184, 230, .14); color: #C7B8E6; }
+html.rd .mmr-take { border-left: 0; border-radius: 20px; background: #1A1F25; border: 1px solid rgba(217, 253, 25, .28); padding: 14px 16px; }
+html.rd .mmr-q { border-left-color: #C7B8E6; }
+html.rd .mmr-ul { padding-left: 20px; }
+html.rd .mmr-ul li { color: #E6E8EA; line-height: 1.55; margin: 8px 0; }
+html.rd .mmr-ul li::marker { color: #C7B8E6; }
+html.rd .mmr-nm { color: #F5F5F7; background: rgba(199, 184, 230, .14); border-radius: 6px; padding: 0 5px; }
+html.rd .mmr-lock { background: linear-gradient(180deg, rgba(19, 23, 28, 0), #13171C 85px); }
+html.rd .mmr-btn { border-radius: 27px; height: 54px; font-size: 16px; }
+html.rd .mmr-item { border-radius: 20px; background: #15181D; border: 1px solid #23272E; padding: 14px 16px; }
+html.rd .mmr-item.on { background: #1A1F25; box-shadow: none; border-color: rgba(199, 184, 230, .5); }
+html.rd .mmr-item .d { color: #C7B8E6; font-style: normal; font-weight: 800; }
