@@ -1,0 +1,19 @@
+# не загружать на Vercel то, что приложению не нужно (меньше Deployment Storage)
+.git
+.claude
+.graphify
+node_modules
+dist
+_mock
+_sessions
+docs
+integrations
+tests
+appscript
+*.gs
+appscript-*.json
+firebase-rules*.json
+3d-map-preview.html
+AGENTS.md
+CLAUDE.md
+__pycache__
