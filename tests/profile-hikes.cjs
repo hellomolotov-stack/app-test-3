@@ -63,6 +63,9 @@ const context = vm.createContext({
     formatDateForDisplay: d => d, showBottomSheet: i => opened.push(i),
     isPersonalMapPilotUser: () => false, haptic() {}, log() {}, hideBack() {},
     resetNavActive() {}, setActiveNav() {}, showBottomNav() {}, setupBottomNav() {},
+    // модули, которые profiles.js импортирует позже, чем написан тест
+    achievementsVisible: () => false, loadAchievementCollections: async () => ({}),
+    isRedesign: () => false, setRdGlow() {}, fetchGoingFromServer: async () => ({}), mountCircle() {},
 });
 vm.runInContext(source, context);
 

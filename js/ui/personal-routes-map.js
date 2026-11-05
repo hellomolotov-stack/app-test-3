@@ -6,6 +6,7 @@ import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { loadUserRegistrations } from '../firebase.js';
+import { ensureMapLibre } from './maplibre-loader.js';
 
 const PILOT_USERNAMES = new Set(['hellointelligent']);
 const YELLOW = '#D9FD19';
@@ -94,25 +95,6 @@ export function computeVisitedRouteIds(routes, hikes, registrations, today = new
 
 // ───────────────────────── карта ─────────────────────────
 
-let maplibreLoading = null;
-function ensureMapLibre() {
-    if (window.maplibregl) return Promise.resolve();
-    if (maplibreLoading) return maplibreLoading;
-    maplibreLoading = new Promise((resolve, reject) => {
-        if (!document.querySelector('link[href*="maplibre-gl"]')) {
-            const css = document.createElement('link');
-            css.rel = 'stylesheet';
-            css.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
-            document.head.appendChild(css);
-        }
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
-    return maplibreLoading;
-}
 
 // Камера «панорама вдоль берега»: от Балаклавы на северо-восток, весь южный берег уходит к горизонту.
 const OVERVIEW = { center: [33.97, 44.555], zoom: 8.8, pitch: 66, bearing: 37 };

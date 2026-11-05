@@ -26,12 +26,27 @@ window.firebase = {
     }) }),
 };
 window.firebase.database.ServerValue = { TIMESTAMP: Date.now() };
+// Запись по карте идёт через сервер (/api/me register / unregister, js/registration.js): сервер пишет
+// в ту же базу, поэтому здесь он меняет те же данные, что и раньше прямые записи из приложения.
+const serverCalls = [];
+const realFetch = window.fetch.bind(window);
+window.fetch = async (url, options = {}) => {
+    if (String(url) === '/api/me' && options.body) {
+        const body = JSON.parse(options.body);
+        if (body.action === 'register' || body.action === 'unregister') {
+            serverCalls.push([body.action, body.date]);
+            paid = body.action === 'register';
+            return new Response(JSON.stringify({ ok: true, date: body.date, registered: paid }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }
+    }
+    return realFetch(url, options);
+};
 initFirebase();
 document.getElementById('initial-loader')?.remove();
 document.documentElement.classList.add('app-ready');
 window.toggleShareButton = () => {};
 window.previewTicket = {
-    state, haptics, links, writes, date, showBottomSheet, closeBottomSheet, renderCalendar,
+    state, haptics, links, writes, serverCalls, date, showBottomSheet, closeBottomSheet, renderCalendar,
     paid(value = true) { paid = value; },
     confirm: () => confirmTicketPaymentReturn(date), offerPendingTicketRecovery,
 };

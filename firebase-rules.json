@@ -24,13 +24,26 @@
     "hikeParticipants": {
       "$hikeDate": {
         ".read": true,
-        "$userId": { ".write": true, ".validate": "newData.hasChildren(['timestamp'])" }
+        "$userId": {
+          ".write": "auth != null && auth.uid === $userId",
+          ".validate": "newData.hasChildren(['timestamp'])"
+        }
       }
     },
-    "userRegistrations": { "$uid": { ".read": true, "$hikeDate": { ".write": true } } },
-    "userProfiles": { ".read": true, "$uid": { ".write": true } },
-    "userAvatars": { "$uid": { ".read": true, ".write": true } },
-    "support_messages": { "$uid": { ".read": true, "$msgId": { ".write": true } } },
-    "routeFavorites": { ".read": true, "$routeId": { "$userId": { ".write": true } } }
+    "userRegistrations": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$hikeDate": { ".write": "auth != null && auth.uid === $uid" }
+      }
+    },
+    "userProfiles": { ".read": true, "$uid": { ".write": "auth != null && auth.uid === $uid" } },
+    "userAvatars": { "$uid": { ".read": true, ".write": "auth != null && auth.uid === $uid" } },
+    "support_messages": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$msgId": { ".write": "auth != null && auth.uid === $uid" }
+      }
+    },
+    "routeFavorites": { ".read": true, "$routeId": { "$userId": { ".write": "auth != null && auth.uid === $userId" } } }
   }
 }

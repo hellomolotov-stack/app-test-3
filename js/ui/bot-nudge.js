@@ -5,7 +5,7 @@
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
-import { openOnboardingChat } from './onboarding-chat.js';
+import { openOnboardingChat } from './chat-entry.js';
 
 const BUBBLE_AUTO_HIDE_MS = 7000;
 const K_LAST_PHRASE = 'botNudge_lastPhrase';

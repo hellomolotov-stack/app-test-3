@@ -11,9 +11,6 @@ import { state, saveBookingStatusToLocal } from '../state.js';
 import { log, updateRegistrationInSheet, initPayment, sendBookingNotification, setHikeWaitlist, markPaymentSeen, paymentErrorText } from '../api.js';
 import {
     getDatabase,
-    addParticipant,
-    removeParticipant,
-    setUserRegistrationStatus,
     subscribeToParticipantCount,
     loadAllParticipants,
     loadAllProfiles,
@@ -24,13 +21,17 @@ import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
-import { openOnboardingChat } from './onboarding-chat.js';
+import { openOnboardingChat } from './chat-entry.js';
 import { maybeAskNotifications, ensureCanMessage, needsWriteAccess } from './notify-optin.js';
 import { getRouteForHikeTitle } from './personal-routes-map.js';
 import { setLumenContext } from './lumen.js';
 import { isRedesign } from '../redesign.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
 import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
+import { bookHike, cancelHike, bookingErrorText } from '../registration.js';
+import { rememberCardPayment } from './payment-return.js';
+import { fetchServerStatus, withTimeout, fetchWithTimeout } from '../net.js';
+import { ensureMapLibre } from './maplibre-loader.js';
 
 // лимит участников хайка: столько мест показываем и после стольких запись закрывается
 const HIKE_CAPACITY = 10;
@@ -1553,23 +1554,6 @@ const MAP_TWO_FINGERS = {
         'CooperativeGesturesHandler.MacHelpText': 'зажми ⌘ и крути колесо, чтобы приблизить'
     }
 };
-let _maplibreLoading = null;
-function ensureMapLibre() {
-    if (window.maplibregl) return Promise.resolve();
-    if (_maplibreLoading) return _maplibreLoading;
-    _maplibreLoading = new Promise((resolve, reject) => {
-        const css = document.createElement('link');
-        css.rel = 'stylesheet';
-        css.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
-        document.head.appendChild(css);
-        const s = document.createElement('script');
-        s.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-    });
-    return _maplibreLoading;
-}
 
 function _hvKm(a1, o1, a2, o2) {
     const R = 6371, dLa = (a2 - a1) * Math.PI / 180, dLo = (o2 - o1) * Math.PI / 180;
@@ -2816,30 +2800,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             isBooked = true;
             placeHint(maxLeft);
 
-            const hikeDate = hike.date;
-            const hikeTitle = hike.title;
-            const userId = state.user?.id;
-            setUserRegistrationStatus(userId, hikeDate, true)
-                .then(() => {
-                    state.hikeBookingStatus[curSheetIndex()] = true;
-                    return addParticipant(hikeDate, userId, {
-                        first_name: state.user?.first_name,
-                        photo_url: state.user?.photo_url,
-                    });
-                })
-                .then(() => {
-                    updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
-                    sendBookingNotification(hikeDate, hikeTitle, state.user);
-                    updateFloatingSheetButtons();
-                    renderUserBookings(document.getElementById('userBookingsContainer'));
-                    const cal = document.getElementById('calendarContainer');
-                    if (cal) renderCalendar(cal);
-                    showRegistrationSuccess(hikeDate, hikeTitle);
-                })
-                .catch(error => {
-                    console.error(error);
-                    updateFloatingSheetButtons();
-                });
+            bookWithoutPayment(hike);
             log('записаться', false, state.user);
         }
     };
@@ -2851,33 +2812,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
         const currentLeft = parseFloat(thumb.style.left) || THUMB_MARGIN;
         if (isBooked && currentLeft <= THUMB_MARGIN + 10) {
-            const hikeDate = hike.date;
-            const hikeTitle = hike.title;
-            const userId = state.user?.id;
-            if (isGuest) {
-                removeParticipant(hikeDate, userId)
-                    .then(() => {
-                        delete state.hikeBookingStatus[curSheetIndex()];
-                        saveBookingStatusToLocal();
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
-                        refreshFeedRegistration(hikeDate, false);
-                        updateFloatingSheetButtons();
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const cal = document.getElementById('calendarContainer');
-                        if (cal) renderCalendar(cal);
-                    });
-            } else {
-                Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
-                    .then(() => {
-                        delete state.hikeBookingStatus[curSheetIndex()];
-                        updateFloatingSheetButtons();
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                        refreshFeedRegistration(hikeDate, false);
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const cal = document.getElementById('calendarContainer');
-                        if (cal) renderCalendar(cal);
-                    });
-            }
+            cancelWithoutPayment(hike, isGuest);
             return;
         }
 
@@ -2943,6 +2878,65 @@ function fillPlus1Slot() {
     if (slot.dataset.date === hike.date && slot.firstChild) return;
     slot.dataset.date = hike.date;
     import('./invite.js').then(m => m.renderPlus1Block(slot, hike));
+}
+
+// ==================== ЗАПИСЬ БЕЗ ОПЛАТЫ: владелец карты, городские события ====================
+// Запись и отмена идут через сервер (js/registration.js). Успех показываем только после ответа:
+// раньше слайдер сразу писал «записан», а при сбое соединения с базой запись молча терялась.
+let bookingBusy = false;
+function setBookingFlag(hikeDate, booked, guest = false) {
+    const index = state.hikesWithTitle.findIndex(h => h.date === hikeDate);
+    if (index >= 0) {
+        if (booked) state.hikeBookingStatus[index] = true;
+        else delete state.hikeBookingStatus[index];
+    }
+    if (booked || !guest) state._userRegs = { ...(state._userRegs || {}), [hikeDate]: booked };
+    try { saveBookingStatusToLocal(); } catch (e) { /* хранилище может быть недоступно */ }
+}
+function refreshAfterBooking() {
+    updateFloatingSheetButtons();
+    renderUserBookings(document.getElementById('userBookingsContainer'));
+    const cal = document.getElementById('calendarContainer');
+    if (cal) renderCalendar(cal);
+}
+function bookWithoutPayment(hike) {
+    if (bookingBusy) return;
+    bookingBusy = true;
+    const { date: hikeDate, title: hikeTitle } = hike;
+    bookHike(hikeDate)
+        .then(() => {
+            setBookingFlag(hikeDate, true);
+            updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
+            sendBookingNotification(hikeDate, hikeTitle, state.user);
+            refreshAfterBooking();
+            showRegistrationSuccess(hikeDate, hikeTitle);
+        })
+        .catch(error => {
+            console.error('запись:', error);
+            log('запись не прошла', false, state.user, { hike_date: hikeDate, reason: String(error?.code || error?.message || '').slice(0, 60) });
+            refreshAfterBooking();
+            alert(bookingErrorText(error));
+        })
+        .finally(() => { bookingBusy = false; });
+}
+function cancelWithoutPayment(hike, isGuest) {
+    if (bookingBusy) return;
+    bookingBusy = true;
+    const { date: hikeDate, title: hikeTitle } = hike;
+    cancelHike(hikeDate, { guest: isGuest })
+        .then(() => {
+            setBookingFlag(hikeDate, false, isGuest);
+            updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, !isGuest);
+            refreshFeedRegistration(hikeDate, false);
+            refreshAfterBooking();
+        })
+        .catch(error => {
+            console.error('отмена записи:', error);
+            log('отмена записи не прошла', isGuest, state.user, { hike_date: hikeDate, reason: String(error?.code || error?.message || '').slice(0, 60) });
+            refreshAfterBooking();
+            alert(bookingErrorText(error, true));
+        })
+        .finally(() => { bookingBusy = false; });
 }
 
 function updateFloatingSheetButtons() {
@@ -3057,39 +3051,8 @@ function updateFloatingSheetButtons() {
             goBtn.style.color = (accentColor === '#41B5ED') ? '#ffffff' : '#000000';
             goBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                const userId = state.user?.id;
-                const hikeDate = hike.date;
-                const hikeTitle = hike.title;
-                if (isBooked) {
-                    Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
-                        .then(() => {
-                            delete state.hikeBookingStatus[curSheetIndex()];
-                            updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                            refreshFeedRegistration(hikeDate, false);
-                            updateFloatingSheetButtons();
-                            renderUserBookings(document.getElementById('userBookingsContainer'));
-                            const cal = document.getElementById('calendarContainer');
-                            if (cal) renderCalendar(cal);
-                        });
-                } else {
-                    setUserRegistrationStatus(userId, hikeDate, true)
-                        .then(() => {
-                            state.hikeBookingStatus[curSheetIndex()] = true;
-                            return addParticipant(hikeDate, userId, {
-                                first_name: state.user?.first_name,
-                                photo_url: state.user?.photo_url,
-                            });
-                        })
-                        .then(() => {
-                            updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
-                            sendBookingNotification(hikeDate, hikeTitle, state.user);
-                            updateFloatingSheetButtons();
-                            renderUserBookings(document.getElementById('userBookingsContainer'));
-                            const cal = document.getElementById('calendarContainer');
-                            if (cal) renderCalendar(cal);
-                            showRegistrationSuccess(hikeDate, hikeTitle);
-                        });
-                }
+                if (isBooked) cancelWithoutPayment(hike, false);
+                else bookWithoutPayment(hike);
                 log('городское событие', false, state.user);
             });
             row.appendChild(goBtn);
@@ -3326,33 +3289,7 @@ function updateFloatingSheetButtons() {
         cancelBtn.textContent = 'отменить';
         cancelBtn.addEventListener('click', e => {
             e.preventDefault();
-            const userId = state.user?.id;
-            const hikeDate = hike.date;
-            const hikeTitle = hike.title;
-            if (isGuest) {
-                removeParticipant(hikeDate, userId)
-                    .then(() => {
-                        delete state.hikeBookingStatus[curSheetIndex()];
-                        saveBookingStatusToLocal();
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, false);
-                        refreshFeedRegistration(hikeDate, false);
-                        updateFloatingSheetButtons();
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const cal = document.getElementById('calendarContainer');
-                        if (cal) renderCalendar(cal);
-                    });
-            } else {
-                Promise.all([removeParticipant(hikeDate, userId), setUserRegistrationStatus(userId, hikeDate, false)])
-                    .then(() => {
-                        delete state.hikeBookingStatus[curSheetIndex()];
-                        updateFloatingSheetButtons();
-                        updateRegistrationInSheet(hikeDate, hikeTitle, 'cancelled', '', state.user, true);
-                        refreshFeedRegistration(hikeDate, false);
-                        renderUserBookings(document.getElementById('userBookingsContainer'));
-                        const cal = document.getElementById('calendarContainer');
-                        if (cal) renderCalendar(cal);
-                    });
-            }
+            cancelWithoutPayment(hike, isGuest);
             log('отменить запись', false, state.user);
         });
         row.appendChild(cancelBtn);
@@ -3423,30 +3360,7 @@ function updateFloatingSheetButtons() {
             return;
         }
         trackFunnel('booking_intent', hike.date);
-        const userId = state.user?.id;
-        const hikeDate = hike.date;
-        const hikeTitle = hike.title;
-        setUserRegistrationStatus(userId, hikeDate, true)
-            .then(() => {
-                state.hikeBookingStatus[curSheetIndex()] = true;
-                return addParticipant(hikeDate, userId, {
-                    first_name: state.user?.first_name,
-                    photo_url: state.user?.photo_url,
-                });
-            })
-            .then(() => {
-                updateRegistrationInSheet(hikeDate, hikeTitle, 'booked', 'card_holder', state.user, true);
-                sendBookingNotification(hikeDate, hikeTitle, state.user);
-                updateFloatingSheetButtons();
-                renderUserBookings(document.getElementById('userBookingsContainer'));
-                const cal = document.getElementById('calendarContainer');
-                if (cal) renderCalendar(cal);
-                showRegistrationSuccess(hikeDate, hikeTitle);
-            })
-            .catch(error => {
-                console.error(error);
-                updateFloatingSheetButtons();
-            });
+        bookWithoutPayment(hike);
         log('записаться', false, state.user);
     });
     row.appendChild(goBtn);
@@ -3835,7 +3749,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
             });
             stopSpinner();
             closePopup();
-            localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
+            rememberCardPayment({ hikeDate, hikeTitle });
             openLink(url, 'оплата сезонной карты', true);
         } catch (err) {
             stopSpinner();
@@ -3864,7 +3778,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
             });
             stopSpinner();
             closePopup();
-            localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
+            rememberCardPayment({ hikeDate, hikeTitle });
             openLink(url, 'оплата бессрочной карты', true);
         } catch (err) {
             stopSpinner();
@@ -4211,7 +4125,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     const lon = route?.bounds ? (route.bounds[0][0] + route.bounds[1][0]) / 2 : 34.0644;
     const daysAhead = Math.round((d - new Date(new Date().toDateString())) / 86400000);
     if (daysAhead >= 0 && daysAhead < 16) {
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max&timezone=Europe%2FMoscow&start_date=${hikeDate}&end_date=${hikeDate}`)
+        fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max&timezone=Europe%2FMoscow&start_date=${hikeDate}&end_date=${hikeDate}`)
             .then(r => r.json())
             .then(j => {
                 const t = j?.daily?.temperature_2m_max?.[0];
@@ -4453,9 +4367,9 @@ function watchTicketReturn(hikeDate) {
         if (Date.now() - started > 30 * 60 * 1000 || readPendingTicket()?.hikeDate !== hikeDate) return stop();
         busy = true;
         try {
-            const regs = await loadUserRegistrations(state.user.id);
+            const registered = await isRegisteredFor(hikeDate);
             if (stopped) return;
-            if (regs?.[hikeDate] === true) {
+            if (registered) {
                 stop();
                 log('вернулся из оплаты сам (без ссылки возврата)', true, state.user, { hike_date: hikeDate });
                 confirmTicketPaymentReturn(hikeDate);
@@ -4484,6 +4398,24 @@ function watchTicketReturn(hikeDate) {
 
 // Срок хранения контекста быстрого возврата с оплаты.
 export const TICKET_PENDING_TTL = 6 * 60 * 60 * 1000;
+
+// Записан ли человек на хайк. Спрашиваем наш сервер (/api/me, лёгкое действие status): он отвечает
+// за доли секунды и не зависит от соединения телефона с Firebase – раньше без Firebase экран успеха
+// не приходил вовсе. Не ответил сервер – Firebase, тоже не дольше 6 с.
+async function isRegisteredFor(hikeDate) {
+    const me = await fetchServerStatus(6000);
+    if (me) {
+        state._userRegs = { ...(state._userRegs || {}), ...(me.regs || {}) };
+        return me.regs?.[hikeDate] === true;
+    }
+    try {
+        const regs = await withTimeout(loadUserRegistrations(state.user?.id), 6000, 'записи');
+        return regs?.[hikeDate] === true;
+    } catch (e) {
+        return false;
+    }
+}
+
 // Если Robokassa не вернула человека в приложение, предлагаем проверить оплату
 // при следующих заходах — иначе оплаченный билет молча теряется.
 const TICKET_RECOVERY_TTL = 72 * 60 * 60 * 1000;
@@ -4589,13 +4521,13 @@ async function verifyTicketPaymentReturn(hikeDate) {
     if (!userId || !hikeDate) return false;
     updateTicketPaymentControls(hikeDate, 'waiting');
 
+    // ResultURL обычно записывает за несколько секунд: до 8 проверок раз в 2 с, не дольше ~25 с
     let registered = false;
+    const deadline = Date.now() + 25000;
     for (let attempt = 0; attempt < 8 && !registered; attempt++) {
-        try {
-            const regs = await loadUserRegistrations(userId);
-            registered = regs?.[hikeDate] === true;
-        } catch (e) { /* сеть моргнула – пробуем ещё */ }
-        if (!registered && attempt < 7) await new Promise(r => setTimeout(r, 2000));
+        registered = await isRegisteredFor(hikeDate);
+        if (registered || Date.now() > deadline || state.user?.id !== userId) break;
+        if (attempt < 7) await new Promise(r => setTimeout(r, 2000));
     }
 
     if (state.user?.id !== userId) return false;

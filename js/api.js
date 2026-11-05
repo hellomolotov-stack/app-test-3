@@ -5,6 +5,7 @@ import { state } from './state.js';
 import { hikeTiming } from './hike-timing.js';
 import { trackFunnel } from './analytics.js';
 import { passCodeFor } from './pass-store.js';
+import { timeoutSignal } from './net.js';
 
 // Счётчик явных логов: общий логгер кликов (ui/click-log.js) не дублирует уже залогированное нажатие.
 export let logSeq = 0;
@@ -211,7 +212,8 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
     });
     if (cardType === 'gift') params.set('gift_card_type', giftCardType || '');
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 12000);
+    // Apps Script при холодном старте отвечает 5–10 с: при 12 с счёт иногда создавался, а человек видел ошибку
+    const timer = setTimeout(() => controller.abort(), 20000);
     try {
         const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, signal: controller.signal });
         clearTimeout(timer);
@@ -235,7 +237,7 @@ export async function getCardOffer({ seen = false } = {}) {
     try {
         const body = { action: 'cardOffer', init_data: initData };
         if (seen) body.seen = '1';
-        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: new URLSearchParams(body) });
+        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: new URLSearchParams(body), signal: timeoutSignal(15000) });
         const data = JSON.parse(await resp.text());
         return data.status === 'ok' ? data : { active: false };
     } catch (e) { return { active: false }; }
@@ -245,7 +247,7 @@ export async function getCardOffer({ seen = false } = {}) {
 export async function inviteApi(action, data = {}) {
     if (!REGISTRATION_API_URL) throw new Error('нет связи с сервером');
     const params = new URLSearchParams({ action, init_data: window.Telegram?.WebApp?.initData || '', ...data });
-    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params });
+    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, signal: timeoutSignal(20000) });
     let json;
     try { json = JSON.parse(await resp.text()); } catch (e) { throw new Error('сервер не ответил, попробуй ещё раз'); }
     if (json.status !== 'ok') throw new Error(json.message || 'ошибка сервера');
@@ -290,7 +292,7 @@ export async function trackAppUser(user, event, canMessage = '') {
         can_message: canMessage
     });
     try {
-        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true });
+        const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, keepalive: true, signal: timeoutSignal(15000) });
         const data = JSON.parse(await resp.text());
         return data && data.status === 'ok' ? data : null;
     } catch (e) {
@@ -307,7 +309,7 @@ export async function setHikeWaitlist(hikeDate, on) {
         date: hikeDate,
         on: on ? 'yes' : 'no'
     });
-    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params });
+    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params, signal: timeoutSignal(20000) });
     const data = JSON.parse(await resp.text());
     if (data.status !== 'ok') throw new Error(data.message || 'не получилось');
     return data;

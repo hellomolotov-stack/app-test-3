@@ -77,7 +77,11 @@ export function showBottomNav(show = true) {
 let loaderInterval = null, loaderMessageTimer = null;
 // Заставка с эмодзи лежит прямо в index.html (стили там же) – видна с первого кадра,
 // ещё до загрузки скриптов и style.css. Здесь только «медленно? включи три буквы» и аккуратный уход.
-const LOADER_MIN_MS = 3000; // заставку видно минимум 3 с (два эмодзи), даже если всё прогрузилось мгновенно
+// Минимум показа заставки. Было 3 с всегда: главная готова за 0,6 с, а человек ждал ещё 2,5 с на каждом
+// запуске. Теперь: первый запуск – 1,5 с (одна сцена заставки целиком), повторный (данные в кэше) – 0,6 с.
+const LOADER_MIN_MS = (() => {
+    try { return localStorage.getItem('hikingAppCache') ? 600 : 1500; } catch (e) { return 1500; }
+})();
 
 export function showAnimatedLoader() {
     const loader = document.getElementById('initial-loader');

@@ -1,5 +1,6 @@
 // js/ui/card-sheet.js – шторка «карта интеллигента»: карта крутится в 3D, что внутри,
 // партнёры, клуб в цифрах и выбор карты. Открывается кнопкой «узнать» на главной.
+import { rememberCardPayment } from './payment-return.js';
 import { requireAdmission } from './admission.js';
 import { isAdmissionPilot } from '../admission.js';
 import { state } from '../state.js';
@@ -224,7 +225,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 giftCardType: gift ? plan : undefined,
                 expectedAmount: selectedPrice
             });
-            if (!gift) localStorage.setItem('pending_reg_celebration', JSON.stringify({ hikeDate, hikeTitle }));
+            if (!gift) rememberCardPayment({ hikeDate, hikeTitle, plan });
             close();
             openLink(url, gift ? 'оплата подарочной карты' : plan === 'offer' ? 'оплата карты по спецпредложению' : (plan === 'permanent' ? 'оплата бессрочной карты' : 'оплата сезонной карты'), true);
         } catch (err) {

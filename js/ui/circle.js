@@ -4,6 +4,7 @@
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
+import { fetchWithTimeout } from '../net.js';
 
 // видят все: с картой – все связи, без карты – 5 самых близких, остальные «?» (сервер их имён не отдаёт)
 export const circleEnabled = () => !!state.user?.id;
@@ -98,11 +99,12 @@ function ensureCss() {
 }
 
 let data = null;
+let dataRequest = null;
 const NEAR = 40; // первый слой – самые близкие
 async function load() {
     const initData = window.Telegram?.WebApp?.initData || '';
     if (!initData) return null;
-    const r = await fetch('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData, action: 'circle' }) });
+    const r = await fetchWithTimeout('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ initData, action: 'circle' }) });
     if (!r.ok) return null;
     return r.json();
 }
@@ -200,7 +202,8 @@ export async function mountCircle(container) {
     container.className = 'card-container cc-card';
     container.innerHTML = '<div class="cc-hdr"><h2>🫂 твои связи</h2></div><div class="cc-load">собираю твои связи…</div>';
     try {
-        data = data || await load();
+        // один запрос на запуск: главная перерисовывается 2–3 раза подряд, и каждый раз уходил новый запрос
+        data = data || await (dataRequest ||= load().catch(() => null).then(d => { if (!d) dataRequest = null; return d; }));
     } catch (e) { data = null; }
     if (!data || !data.total) { container.remove(); return; }
     if (data.locked && !data.clubAdded) {

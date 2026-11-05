@@ -96,9 +96,24 @@ async function processDirectory(srcDir, outDir) {
         await processDirectory('assets', path.join(outputDir, 'assets'));
     }
 
+    // Библиотека карт – со своего домена (js/ui/maplibre-loader.js): unpkg.com из России часто медленный.
+    // Папка с версией в имени кэшируется навсегда (vercel.json, /assets/vendor/).
+    try {
+        const mlDir = path.join('node_modules', 'maplibre-gl', 'dist');
+        const version = require('maplibre-gl/package.json').version;
+        const out = path.join(outputDir, 'assets', 'vendor', `maplibre-gl-${version}`);
+        for (const file of ['maplibre-gl.js', 'maplibre-gl.css', 'LICENSE.txt']) copyFile(path.join(mlDir, file), path.join(out, file));
+        console.log(`   копирован: maplibre-gl ${version} → ${path.relative('.', out)}`);
+    } catch (err) {
+        console.warn('⚠️  maplibre-gl не скопирован, карты пойдут с unpkg.com:', err.message);
+    }
+
+    // Картинки со стороннего хостинга – к себе и в WebP (см. localizeImages ниже)
+    const localImages = await localizeImages();
+
     // Один файл приложения вместо ~33 модулей (см. bundleApp ниже). Не получилось – остаются модули.
     try {
-        await bundleApp();
+        await bundleApp(localImages);
     } catch (err) {
         console.error('✖ бандл не собран, остаются отдельные модули:', err.message);
         copyFile('index.html', path.join(outputDir, 'index.html'));
@@ -111,28 +126,51 @@ async function processDirectory(srcDir, outDir) {
 // запуске сверял с сервером ~33 модуля js/ (no-cache). Собираем их в один файл с хэшем в имени:
 // он кэшируется навсегда (vercel.json, /js/b/), новая версия = новое имя, сверять нечего.
 // Исходные модули в dist остаются – на случай, если кто-то откроет старую страницу.
-async function bundleApp() {
+async function bundleApp(localImages = {}) {
     const esbuild = require('esbuild');
+    // адреса картинок со стороннего хостинга заменяем на свои ещё до сборки – хэш файла учитывает замену
+    const replaceImages = {
+        name: 'local-images',
+        setup(build) {
+            const urls = Object.keys(localImages);
+            if (!urls.length) return;
+            build.onLoad({ filter: /\.js$/ }, args => {
+                let contents = fs.readFileSync(args.path, 'utf8');
+                urls.forEach(url => { contents = contents.split(url).join(localImages[url]); });
+                return { contents, loader: 'js' };
+            });
+        }
+    };
     const outdir = path.join(outputDir, 'js', 'b');
     fs.rmSync(outdir, { recursive: true, force: true });
     const result = await esbuild.build({
         entryPoints: { app: 'js/main.js' },
         bundle: true,
         format: 'esm',
-        splitting: false,         // import() внутри кода тоже попадает в этот же файл – он и так грузится целиком
+        // import() – отдельные файлы: админка, чат-помощник и прочее редкое не грузятся у всех при запуске
+        splitting: true,
+        chunkNames: '[name]-[hash]',
         minify: true,
         legalComments: 'none',
         outdir,
         entryNames: '[name]-[hash]',
         metafile: true,
-        logLevel: 'warning'
+        logLevel: 'warning',
+        plugins: [replaceImages]
     });
     const outputs = result.metafile.outputs;
     const entry = Object.keys(outputs).find(f => outputs[f].entryPoint === 'js/main.js');
     if (!entry) throw new Error('нет входного файла');
     const rel = f => path.relative(outputDir, f).split(path.sep).join('/');
-    // всё, что входной файл тянет сразу, – качаем параллельно с ним
-    const eager = outputs[entry].imports.filter(i => i.kind === 'import-statement').map(i => rel(i.path));
+    // всё, что входной файл тянет сразу (со всеми вложенными общими частями), – качаем параллельно с ним
+    const eagerSet = new Set();
+    const walk = file => (outputs[file]?.imports || []).forEach(i => {
+        if (i.kind !== 'import-statement' || eagerSet.has(i.path)) return;
+        eagerSet.add(i.path);
+        walk(i.path);
+    });
+    walk(entry);
+    const eager = [...eagerSet].map(rel);
     const preload = [rel(entry), ...eager].map(h => `<link rel="modulepreload" href="${h}">`).join('\n    ');
 
     const htmlPath = path.join(outputDir, 'index.html');
@@ -156,4 +194,41 @@ async function bundleApp() {
     fs.writeFileSync(path.join(outputDir, 'sw.js'), worker, 'utf8');
     const kb = Object.keys(outputs).reduce((s, f) => s + outputs[f].bytes, 0) / 1024;
     console.log(`✔ бандл: ${rel(entry)} + ${Object.keys(outputs).length - 1} файл(ов), ${kb.toFixed(0)} КБ`);
+}
+
+// Фон приложения и пара картинок жили на i.postimg.cc: сторонний бесплатный хостинг, фон – PNG 752 КБ
+// при каждом первом запуске. При сборке скачиваем их, сжимаем в WebP и кладём в /assets/ext/.
+// Не получилось (нет сети, нет sharp) – адреса остаются прежними, приложение работает как раньше.
+async function localizeImages() {
+    const images = [
+        { url: 'https://i.postimg.cc/CLMkCQCK/lrms-2-2.png', file: 'app-bg.webp', quality: 72 },
+        { url: 'https://i.postimg.cc/hjdtPQgV/sdvsd.png', file: 'newcomer.webp', quality: 80, height: 220 },
+        { url: 'https://i.postimg.cc/zGR0SStj/ilrmdosl-2.png', file: 'hike-placeholder.webp', quality: 80 }
+    ];
+    const done = {};
+    let sharp;
+    try { sharp = require('sharp'); } catch (e) { console.warn('⚠️  sharp недоступен – картинки остаются на i.postimg.cc'); return done; }
+    const outDir = path.join(outputDir, 'assets', 'ext');
+    fs.mkdirSync(outDir, { recursive: true });
+    for (const img of images) {
+        try {
+            const r = await fetch(img.url, { signal: AbortSignal.timeout(20000) });
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            let pipeline = sharp(Buffer.from(await r.arrayBuffer()));
+            if (img.height) pipeline = pipeline.resize({ height: img.height });
+            const buf = await pipeline.webp({ quality: img.quality }).toBuffer();
+            fs.writeFileSync(path.join(outDir, img.file), buf);
+            done[img.url] = `/assets/ext/${img.file}`;
+            console.log(`✔ картинка: ${img.file} ${Math.round(buf.length / 1024)} КБ`);
+        } catch (err) {
+            console.warn(`⚠️  ${img.url} не скачан (${err.message}) – адрес остаётся прежним`);
+        }
+    }
+    const cssPath = path.join(outputDir, 'style.css');
+    if (Object.keys(done).length && fs.existsSync(cssPath)) {
+        let css = fs.readFileSync(cssPath, 'utf8');
+        Object.entries(done).forEach(([url, local]) => { css = css.split(url).join(local); });
+        fs.writeFileSync(cssPath, css, 'utf8');
+    }
+    return done;
 }

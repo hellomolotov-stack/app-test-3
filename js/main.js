@@ -6,8 +6,10 @@ import { state, loadCachedState, saveCachedState, loadBookingStatusFromLocal, sa
 import { startAnalytics } from './analytics.js';
 import { initFirebase, getDatabase, hikesFromSnapshot, subscribeToHikes, subscribeToRoutes, subscribeToRouteFavorites, loadUserData, loadMetrics, loadFaq, loadPrivileges, loadGuestPrivileges, loadPassInfo, loadGiftContent, loadRandomPhrases, loadLeaders, loadRegistrationsPopup, loadPopupConfig, loadUserRegistrations, loadUpdates, loadMastermindSummaries, loadTestimonials, loadSafety, loadPopups, parseNode } from './firebase.js';
 import { log, logAutoSendClick, markPaymentSeen } from './api.js';
+import { timeoutSignal, fetchServerStatus } from './net.js';
+import { initErrorReporting } from './error-report.js';
 import { pingAppUser, maybeShowHomeBanner } from './ui/notify-optin.js';
-import { openAdmin } from './ui/admin.js';
+import { openAdmin } from './ui/admin-entry.js';
 import { initClickLog } from './ui/click-log.js';
 import { initSheetDrag } from './ui/sheet-drag.js';
 import { initTypograph } from './typograph.js';
@@ -22,7 +24,7 @@ import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refres
 import { mountBotTab, showBotTabHint } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
-import { openOnboardingChat } from './ui/onboarding-chat.js';
+import { openOnboardingChat } from './ui/chat-entry.js';
 import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
 
 window.userInteracted = false;
@@ -332,6 +334,26 @@ function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 1
     }, interval);
 }
 
+// Ждём, пока в списке хайков появится нужный (main.js шлёт club:hikes-updated при каждом обновлении).
+// Раньше здесь была своя подписка на Firebase: без соединения с базой она отдавала пустой список
+// и стирала уже загруженные хайки. Возвращает true, если дождались, false – по истечении ms.
+function waitForHikes(ready, ms) {
+    return new Promise(resolve => {
+        let done = false;
+        const finish = ok => {
+            if (done) return;
+            done = true;
+            window.removeEventListener('club:hikes-updated', onUpdate);
+            clearTimeout(timer);
+            resolve(ok);
+        };
+        const onUpdate = () => { if (ready()) finish(true); };
+        const timer = setTimeout(() => finish(!!ready()), ms);
+        window.addEventListener('club:hikes-updated', onUpdate);
+        if (ready()) finish(true);
+    });
+}
+
 function handleDeepLink(startParam) {
     if (!startParam) return;
     if (startParam === 'admission' && isAdmissionPilot()) {
@@ -368,19 +390,7 @@ function handleDeepLink(startParam) {
             return false;
         };
         if (tryShow()) return;
-        const unsub = subscribeToHikes((newList) => {
-            state.hikesList = newList;
-            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
-            state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
-            saveCachedState();
-            if (tryShow()) {
-                unsub();
-            }
-        });
-        setTimeout(() => {
-            tryShow();
-            unsub();
-        }, 10000);
+        waitForHikes(tryShow, 10000);
         return;
     }
     // Возврат из оплаты билета: paid_<дата хайка>. Дата приходит в самой ссылке, поэтому возврат
@@ -417,19 +427,9 @@ function handleDeepLink(startParam) {
             setTimeout(run, 400);
             return;
         }
-        let started = false;
-        const start = () => { if (!started) { started = true; run(); } };
-        const unsub = subscribeToHikes((newList) => {
-            state.hikesList = newList;
-            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
-            state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
-            saveCachedState();
-            if (state.hikesWithTitle.some(h => normalizeDate(h.date) === paidDate)) {
-                unsub();
-                start();
-            }
-        });
-        setTimeout(() => { unsub(); start(); }, 8000);
+        // хайк ещё не в списке – ждём список (с нашего сервера или из Firebase), но не дольше 8 с:
+        // проверка оплаты нужна и без названия хайка
+        waitForHikes(() => state.hikesWithTitle.some(h => normalizeDate(h.date) === paidDate), 8000).then(run);
         return;
     }
     if (startParam.startsWith('hike_') && startParam !== 'hike_map') {
@@ -446,19 +446,7 @@ function handleDeepLink(startParam) {
             return false;
         };
         if (tryShow()) return;
-        const unsub = subscribeToHikes((newList) => {
-            state.hikesList = newList;
-            state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
-            state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
-            saveCachedState();
-            if (tryShow()) {
-                unsub();
-            }
-        });
-        setTimeout(() => {
-            tryShow();
-            unsub();
-        }, 10000);
+        waitForHikes(tryShow, 10000);
         return;
     }
     const isGuest = state.userCard.status !== 'active';
@@ -575,32 +563,14 @@ function handleDeepLink(startParam) {
                     }
                 } catch {}
                 // Билет на хайк: запись делает сервер по ResultURL Robokassa. Ждём её и показываем экран успеха.
-                const isFreshTicket = celebData?.type === 'ticket'
-                    && celebData.hikeDate
-                    && (!celebData.ts || Date.now() - celebData.ts < TICKET_PENDING_TTL);
-                if (isFreshTicket) {
+                // билет (даже давний) проверяем как билет: запись подтверждает только сервер
+                if (celebData?.type === 'ticket' && celebData.hikeDate) {
                     confirmTicketPaymentReturn(celebData.hikeDate);
                     return;
                 }
 
-                markPaymentSeen();
-                if (celebData?.hikeDate) {
-                    showRegistrationSuccess(celebData.hikeDate, celebData.hikeTitle);
-                } else {
-                    const overlay = document.createElement('div');
-                    overlay.className = 'modal-overlay';
-                    overlay.innerHTML = `
-                        <div class="modal-content" style="max-width:340px; text-align:center;">
-                            <div style="font-size:52px; margin-bottom:16px;">🎉</div>
-                            <div class="modal-title" style="text-align:center; color: var(--yellow);">оплата прошла!</div>
-                            <div class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">мы уже выпускаем твою карту интеллигента – скоро с тобой свяжется организатор</div>
-                            <button class="btn btn-yellow" id="closePaymentSuccessBtn" style="margin-top:20px; width:100%;">отлично!</button>
-                        </div>
-                    `;
-                    document.body.appendChild(overlay);
-                    overlay.addEventListener('click', e => { if (e.target === overlay) { haptic(); overlay.remove(); } });
-                    document.getElementById('closePaymentSuccessBtn')?.addEventListener('click', () => { haptic(); overlay.remove(); });
-                }
+                // Оплата карты: «карта твоя» – только после подтверждения сервера (js/ui/payment-return.js)
+                import('./ui/payment-return.js').then(m => m.confirmCardPaymentReturn(celebData));
             }, 800);
             break;
         case 'suggest':
@@ -699,13 +669,22 @@ async function loadAppData() {
         let firstRenderDone = false;
         let firstRenderWasEmpty = false;
         let deepLinkHandled = false;
-        // deep link выполняем, когда подключилась база: ему нужны хайки и записи из Firebase
+        // Deep link выполняем после первого экрана. Возврат из оплаты, хайк, карта, подарок, пропуск
+        // и приглашение Firebase не нужен: хватает списка хайков с нашего сервера и статуса из /api/me –
+        // их не ждём дольше 4 с. Остальным ссылкам (чат, карта маршрутов) нужна база – ждём Firebase SDK.
+        // Раньше все ссылки ждали SDK с серверов Google: на плохой сети – до ~12 с.
+        const EARLY_LINK = /^(paid|giftpaid_|gift_|card_|pass_|inv_|buy_card$|card_offer$|nudge_|hike_(?!map))/;
         let firebaseReady = false;
+        let statusKnown = false;
+        const linkStartedAt = Date.now();
         const ensureDeepLink = () => {
-            if (deepLinkHandled || !startParam || !firebaseReady) return;
+            if (deepLinkHandled || !startParam || !firstRenderDone) return;
+            const early = EARLY_LINK.test(startParam) && (statusKnown || Date.now() - linkStartedAt > 4000);
+            if (!firebaseReady && !early) return;
             deepLinkHandled = true;
             handleDeepLink(startParam);
         };
+        if (startParam && EARLY_LINK.test(startParam)) setTimeout(() => ensureDeepLink(), 4100);
         // Ранний рендер главной: как только есть список хайков (из кэша или первого ответа Firebase) —
         // показываем экран и сразу выполняем deep-link, не дожидаясь всех сетевых запросов
         const earlyRenderHome = (allowEmpty = false) => {
@@ -739,6 +718,7 @@ async function loadAppData() {
             state.hikesList = newList;
             state.hikesData = Object.fromEntries(newList.map(h => [h.date, h]));
             state.hikesWithTitle = newList.filter(h => h.title && h.title.trim() !== '');
+            window.dispatchEvent(new Event('club:hikes-updated'));
             applyOwnerBookings(); // #5: переприменить записи владельца при обновлении хайков
             saveCachedState();
             earlyRenderHome(); // показать экран сразу, как пришли хайки (для тех, у кого нет кэша)
@@ -757,7 +737,7 @@ async function loadAppData() {
         // Firebase так и не ответил – раз в 2 минуты подтягиваем свежий список с сервера
         const hikesPoll = setInterval(() => {
             if (hikesFromFirebase) return clearInterval(hikesPoll);
-            fetch('/api/hikes', { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).then(raw => {
+            fetch('/api/hikes', { cache: 'no-store', signal: timeoutSignal(10000) }).then(r => (r.ok ? r.json() : null)).then(raw => {
                 if (raw && !hikesFromFirebase) applyHikes(hikesFromSnapshot(raw));
             }).catch(() => {});
         }, 120000);
@@ -770,6 +750,8 @@ async function loadAppData() {
             userStatusFrom = from;
             state.userCard = userData;
             applyAdmissionVisitorMode();
+            statusKnown = true;
+            setTimeout(() => ensureDeepLink(), 0);
             // _userRegs нужен всем — по нему понятно, ходил ли человек уже на хайк (билет – только на первый).
             // Серверный источник правды → админ может сбросить право, удалив userRegistrations.
             state._userRegs = userRegs || {};
@@ -794,7 +776,7 @@ async function loadAppData() {
         const myId = state.user?.id;
         const pMe = (window.__meBoot || (tg?.initData && myId ? fetch('/api/me', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: tg.initData })
+            body: JSON.stringify({ initData: tg.initData }), signal: timeoutSignal(8000)
         }).then(r => (r.ok ? r.json() : null)) : null) || Promise.resolve(null))
             .catch(() => null)
             .then(me => (me && me.card && String(me.uid) === String(myId) ? me : null));
@@ -878,10 +860,22 @@ async function loadAppData() {
         // главной (карта, записи, настройки попапов, ЧС), потом остальное – как и раньше.
         // Firebase-путь как раньше; ответ /api/me его просто обгоняет (сломался сервер – ждём Firebase)
         const pUserData = loadUserData(state.user?.id);
-        const pUserRegs = loadUserRegistrations(state.user?.id).catch(() => ({}));
+        const pUserRegs = loadUserRegistrations(state.user?.id).catch(() => null);
+        // Ответ Firebase учитываем, только если он знает статус: null – нет соединения или ошибка.
+        // Раньше «не знаю» из Firebase приходило мгновенно, обгоняло /api/me, и владелец карты
+        // без VPN видел приложение как гость.
+        const pFirebaseStatus = Promise.all([pUserData, pUserRegs])
+            .then(([userData, regs]) => (userData ? [userData, regs || {}, 'firebase'] : null))
+            .catch(() => null);
+        const never = new Promise(() => {});
         const pStatus = Promise.race([
-            pMe.then(me => (me ? [me.card, me.regs] : new Promise(() => {}))),
-            Promise.all([pUserData, pUserRegs])
+            pMe.then(me => (me ? [me.card, me.regs, 'server'] : never)),
+            pFirebaseStatus.then(status => status || never),
+            // не ответил никто – остаёмся с тем, что было в кэше (нет кэша – гость)
+            Promise.all([pMe, pFirebaseStatus]).then(([me, fb]) => (me || fb ? never : [
+                ['active', 'inactive'].includes(state.userCard?.status) ? state.userCard : { status: 'inactive', hikes: 0, cardUrl: '' },
+                state._userRegs || {}, 'cache'
+            ]))
         ]);
         // счётчик хайков считает только сервер (история до приложения + хайки в приложении):
         // если первым ответил Firebase, число под картой подменяем, когда придёт /api/me
@@ -902,10 +896,11 @@ async function loadAppData() {
         ]);
 
         // ── очередь 1: карта, записи, настройки ──
-        const [[userData, userRegs], regsPopup, popupConfig, popups, safety] = await Promise.all([
+        const [[userData, userRegs, statusFrom], regsPopup, popupConfig, popups, safety] = await Promise.all([
             pStatus, pRegsPopup, pPopupConfig, pPopups, pSafety
         ]);
-        firebaseCommonApplied = true;
+        // данные /api/boot больше не нужны, только если Firebase действительно что-то вернул
+        firebaseCommonApplied = !!(regsPopup || popupConfig || popups || safety);
         if (safety) state.safety = safety;
         try { localStorage.setItem('safetyCache', JSON.stringify(state.safety)); } catch (e) {}
         const safetyMenuItem = document.getElementById('popupSafety');
@@ -918,7 +913,7 @@ async function loadAppData() {
         state.popupConfig.seasonCardLink = SEASON_CARD_LINK;
         state.popupConfig.permanentCardLink = PERMANENT_CARD_LINK;
 
-        applyUserStatus(userData, userRegs, 'firebase'); // если уже применено из /api/me – ничего не делает
+        applyUserStatus(userData, userRegs, statusFrom); // если уже применено из /api/me – ничего не делает
 
         // ── очередь 2: всё остальное ──
         const [metrics, faq, privileges, guestPrivileges, passInfo, giftContent,
@@ -971,6 +966,8 @@ async function loadAppData() {
         // предлагаем подтвердить оплату. Ждём, пока отработает deep link.
         setTimeout(() => {
             try { offerPendingTicketRecovery(); } catch (e) { console.error(e); }
+            // оплатил карту, но подтверждения не дождался – проверим тихо, покажем «карта твоя»
+            import('./ui/payment-return.js').then(m => m.offerPendingCardRecovery()).catch(e => console.error(e));
         }, 2500);
 
     } catch (e) {
@@ -1001,6 +998,7 @@ document.addEventListener('focusout', (e) => {
 // и на медленном интернете приложение стояло пустым лишние 10+ секунд.
 function startApp() {
     state.user = tg?.initDataUnsafe?.user;
+    initErrorReporting();
     if (!tg) window.dispatchEvent(new Event('club:connection-problem'));
     startAnalytics();
     // сразу на весь экран: кнопки бота открывают приложение в половину экрана, пока его не развернуть

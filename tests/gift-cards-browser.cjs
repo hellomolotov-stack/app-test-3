@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmolotov/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require('./_playwright.cjs');
 const source = fs.readFileSync('js/ui/card-sheet.js', 'utf8').replace(/import\s+[\s\S]*?\s+from\s+['"][^'"]+['"];?/g, '').replace(/export /g, '')
     .replaceAll('assets/card-front.jpg', 'data:image/jpeg;base64,' + fs.readFileSync('assets/card-front.jpg').toString('base64'));
 const fixture = `

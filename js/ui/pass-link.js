@@ -6,10 +6,11 @@ import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { REGISTRATION_API_URL } from '../config.js';
 import { savePass } from '../pass-store.js';
+import { fetchWithTimeout } from '../net.js';
 
 async function passInfo(code) {
     const params = new URLSearchParams({ action: 'passInfo', code, init_data: window.Telegram?.WebApp?.initData || '' });
-    const resp = await fetch(REGISTRATION_API_URL, { method: 'POST', body: params });
+    const resp = await fetchWithTimeout(REGISTRATION_API_URL, { method: 'POST', body: params });
     const json = JSON.parse(await resp.text());
     if (json.status !== 'ok') throw new Error(json.message || 'ошибка');
     return json;

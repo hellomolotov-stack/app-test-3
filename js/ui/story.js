@@ -6,6 +6,7 @@
 import { state } from '../state.js';
 import { haptic, tg } from '../utils.js';
 import { log } from '../api.js';
+import { fetchWithTimeout } from '../net.js';
 
 const W = 1080, H = 1920, PAD = 80;
 const YELLOW = '#D9FD19';
@@ -186,11 +187,11 @@ export async function drawStory(hike, { colorful = false, footer = true } = {}) 
 }
 
 async function upload(dataUrl, date) {
-    const r = await fetch('/api/story', {
+    const r = await fetchWithTimeout('/api/story', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ initData: tg?.initData || '', date, img: dataUrl.split(',')[1] })
-    });
+    }, 60000);
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.url) throw new Error(j.error || 'upload failed');
     return j.url;

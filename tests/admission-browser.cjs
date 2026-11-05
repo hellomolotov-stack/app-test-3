@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmolotov/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require('./_playwright.cjs');
 const BASE = 'http://localhost:4185';
 (async () => {
     const browser = await chromium.launch({ channel: 'chrome', headless: true });

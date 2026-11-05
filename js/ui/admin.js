@@ -12,8 +12,10 @@ import { isRedesign } from '../redesign.js';
 import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
 import { renderAdmissionAdmin } from './admission-admin.js';
 import { renderAchievementsAdmin } from './achievements-admin.js';
+import { fetchWithTimeout } from '../net.js';
+import { isAdminUser } from './admin-entry.js';
+export { isAdminUser };
 
-const ADMIN_USERNAMES = new Set(['maxmolotov', 'hellointelligent']);
 const WD = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
 const MS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 const PLACEHOLDER_EMOJI = [
@@ -132,23 +134,6 @@ let updateDraft = null;
 let mmDraft = null;
 let homepageBusy = false;
 
-export function isAdminUser() {
-    return ADMIN_USERNAMES.has(String(state.user?.username || '').replace(/^@/, '').toLowerCase());
-}
-
-// Полоска «⚙️ админка» сверху главной – только для админов.
-// Кнопка «⚙️ админка» справа от приветствия, в одной строке с ним.
-export function mountAdminEntry() {
-    const header = document.querySelector('.header');
-    if (!header || !isAdminUser()) return;
-    header.classList.add('has-adm');
-    if (header.querySelector('.adm-entry')) return;
-    const btn = document.createElement('button');
-    btn.className = 'adm-entry';
-    btn.textContent = '⚙️ админка';
-    btn.addEventListener('click', () => { haptic(); openAdmin(); });
-    header.appendChild(btn);
-}
 
 export function openAdmin(tab) {
     if (!isAdminUser()) return;
@@ -910,8 +895,8 @@ async function uploadHikeImage(file) {
         c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
         c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
         const img = c.toDataURL('image/jpeg', 0.85);
-        const r = await fetch('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: tg?.initData || '', date: d.date || 'cover', img }) });
+        const r = await fetchWithTimeout('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: tg?.initData || '', date: d.date || 'cover', img }) }, 60000);
         const j = await r.json();
         if (!r.ok || !j.url) throw new Error(j.error || 'не загрузилось');
         d.image = j.url;
@@ -941,8 +926,8 @@ async function makeEmojiImage(raw) {
     const btn = root?.querySelector('#admEmoImgMake');
     if (btn) { btn.disabled = true; btn.textContent = 'загружаю…'; }
     try {
-        const r = await fetch('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ initData: tg?.initData || '', date: draft?.date || 'cover', img: c.toDataURL('image/png') }) });
+        const r = await fetchWithTimeout('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ initData: tg?.initData || '', date: draft?.date || 'cover', img: c.toDataURL('image/png') }) }, 60000);
         const j = await r.json();
         if (!r.ok || !j.url) throw new Error(j.error || 'не загрузилось');
         draft.image = j.url;

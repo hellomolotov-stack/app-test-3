@@ -58,6 +58,45 @@ async function offerFor(id, token) {
     }
 }
 
+const yes = v => v === true || v === 'yes' || v === 'true' || v === '1';
+const moscowToday = () => new Date(Date.now() + 3 * 3600 * 1000).toISOString().slice(0, 10);
+
+// Запись (register) и отмена (unregister) одним атомарным обновлением базы.
+// Записаться без оплаты может владелец карты, на городское событие и книжный клуб – любой (как и в приложении).
+// Отмена: владельцу карты снимаем и отметку в userRegistrations; гостю оставляем – по ней видно, что билет уже был.
+async function registration(action, user, date, res) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'bad date', code: 'BAD_DATE' });
+    const id = String(user.id);
+    try {
+        const token = await getAccessToken();
+        const [hike, member] = await Promise.all([read(`hikes/${date}`, token), read(`members/${id}`, token)]);
+        const isMember = !!(member && member.user_id);
+        let patch;
+        if (action === 'register') {
+            if (!hike || !String(hike.title || '').trim()) return res.status(404).json({ error: 'no such event', code: 'NO_EVENT' });
+            if (yes(hike.cancelled)) return res.status(409).json({ error: 'event cancelled', code: 'CANCELLED' });
+            if (date < moscowToday()) return res.status(409).json({ error: 'registration closed', code: 'REGISTRATION_CLOSED' });
+            if (!isMember && !yes(hike.city) && !yes(hike.book_club)) return res.status(403).json({ error: 'card required', code: 'CARD_REQUIRED' });
+            patch = {
+                [`hikeParticipants/${date}/${id}`]: { userId: user.id, name: user.first_name || '', photoUrl: user.photo_url || null, timestamp: { '.sv': 'timestamp' } },
+                [`userRegistrations/${id}/${date}`]: true,
+            };
+        } else {
+            patch = { [`hikeParticipants/${date}/${id}`]: null };
+            if (isMember) patch[`userRegistrations/${id}/${date}`] = false;
+        }
+        const r = await fetch(`${DB}/.json`, {
+            method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(patch), signal: AbortSignal.timeout(6000),
+        });
+        if (!r.ok) throw new Error(`patch ${r.status}`);
+        return res.status(200).json({ ok: true, date, registered: action === 'register', member: isMember });
+    } catch (e) {
+        console.error(`me ${action}:`, e.message);
+        return res.status(502).json({ error: 'db unavailable' });
+    }
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -68,6 +107,26 @@ module.exports = async (req, res) => {
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
     const user = verifyInitData(String((body && body.initData) || ''), botToken);
     if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
+
+    // лёгкая проверка статуса – для возврата из оплаты: только карта и записи, без подсчёта хайков
+    if (body && body.action === 'status') {
+        try {
+            const id = String(user.id);
+            const token = await getAccessToken();
+            const [member, regs] = await Promise.all([read(`members/${id}`, token), read(`userRegistrations/${id}`, token)]);
+            const active = !!(member && member.user_id);
+            return res.status(200).json({ uid: id, card: { status: active ? 'active' : 'inactive', cardUrl: active ? member.card_image_url || '' : '' }, regs: regs || {} });
+        } catch (e) {
+            console.error('me status:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
+
+    // запись и отмена записи без оплаты (владельцы карты, городские события) – через сервер, а не напрямую
+    // в Firebase из телефона: у части людей соединение с базой не поднимается, и запись молча терялась
+    if (body && (body.action === 'register' || body.action === 'unregister')) {
+        return registration(body.action, user, String(body.date || ''), res);
+    }
 
     // «твои связи»: люди с общих хайков и связи между ними (lib/circle.js)
     if (body && body.action === 'circle') {

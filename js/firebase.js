@@ -1,6 +1,7 @@
 // js/firebase.js
 import { FIREBASE_CONFIG } from './config.js';
 import { loadClubContent } from './club-content.js';
+import { withTimeout, timeoutSignal } from './net.js';
 
 let database = null;
 let authReadyPromise = Promise.resolve(false);
@@ -38,6 +39,7 @@ export function signInWithTelegram() {
         if (auth.currentUser && auth.currentUser.uid === String(tgId)) return true;
         const resp = await fetch('/api/tg-auth', {
             method: 'POST',
+            signal: timeoutSignal(8000),
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ initData })
         });
@@ -140,11 +142,12 @@ export function subscribeToRouteFavorites(callback) {
 function restRead(path, ms = 5000) {
     const base = database?.app?.options?.databaseURL;
     if (!base) return Promise.reject(new Error('no db url'));
-    return fetch(`${base.replace(/\/$/, '')}/${path}.json`, { signal: AbortSignal.timeout?.(ms) })
+    return fetch(`${base.replace(/\/$/, '')}/${path}.json`, { signal: timeoutSignal(ms) })
         .then(r => { if (!r.ok) throw new Error(`${path} ${r.status}`); return r.json(); });
 }
 function fastRead(path) {
-    const viaSdk = database.ref(path).once('value').then(s => s.val());
+    // у SDK тоже предел: иначе при упавшем обычном запросе и зависшем соединении ответа не было бы никогда
+    const viaSdk = withTimeout(database.ref(path).once('value'), READ_MS, path).then(s => s.val());
     // Promise.any: ошибка одного пути не мешает другому
     return Promise.any([restRead(path), viaSdk]);
 }
@@ -167,25 +170,15 @@ export async function setRouteFavorite(routeId, userId, isFavorite) {
     return ref.set({ addedAt: firebase.database.ServerValue.TIMESTAMP });
 }
 
+// Карта человека из базы. null – «не знаем» (нет соединения, ошибка, нет ответа): такой ответ
+// не должен перебивать /api/me – раньше без Firebase владелец карты видел приложение как гость.
 export async function loadUserData(userId) {
-    if (!database || !userId) return { status: 'inactive', hikes: 0, cardUrl: '' };
+    if (!userId) return { status: 'inactive', hikes: 0, cardUrl: '' };
+    if (!database) return null;
     await authReady();
-    try {
-        const snapshot = await database.ref(`members/${userId}`).once('value');
-        const data = snapshot.val();
-        if (data && data.user_id) {
-            return {
-                status: 'active',
-                hikes: data.hikes_count || 0,
-                cardUrl: data.card_image_url || ''
-            };
-        } else {
-            return { status: 'inactive', hikes: 0, cardUrl: '' };
-        }
-    } catch (e) {
-        console.error('Error loading user data from Firebase:', e);
-        return { status: 'inactive', hikes: 0, cardUrl: '' };
-    }
+    return readNode(`members/${userId}`, data => (data && data.user_id
+        ? { status: 'active', hikes: data.hikes_count || 0, cardUrl: data.card_image_url || '' }
+        : { status: 'inactive', hikes: 0, cardUrl: '' }));
 }
 
 // Разбор сырых узлов базы – общий для Firebase и быстрого старта (/api/boot, см. main.js)
@@ -222,108 +215,50 @@ export const parseNode = {
     popups: v => v || {}
 };
 
+// Чтение узла базы не дольше READ_MS: на плохой связи once('value') может не ответить никогда,
+// и запуск ждал бы его вечно. null – «не знаем» (нет базы, ошибка, нет ответа): вызывающий оставляет
+// то, что уже есть (кэш, данные /api/boot), а не затирает их пустыми значениями – раньше без Firebase
+// после загрузки пропадали вопросы, привилегии и отзывы.
+const READ_MS = 8000;
+async function readNode(path, parse = v => v) {
+    if (!database) return null;
+    try {
+        const snapshot = await withTimeout(database.ref(path).once('value'), READ_MS, path);
+        return parse(snapshot.val());
+    } catch (error) {
+        console.warn(`Firebase ${path}:`, error?.message || error);
+        return null;
+    }
+}
+
 export async function loadMetrics() {
     try { return (await loadClubContent()).metrics; } catch (error) { console.warn('Club metrics fallback:', error.message); }
-    if (!database) return null;
-    const snapshot = await database.ref('metrics').once('value');
-    return snapshot.val() || { hikes: '0', kilometers: '0', locations: '0', meetings: '0' };
+    return readNode('metrics', v => v || { hikes: '0', kilometers: '0', locations: '0', meetings: '0' });
 }
 
-export async function loadFaq() {
-    if (!database) return [];
-    const snapshot = await database.ref('faq').once('value');
-    return parseNode.faq(snapshot.val());
-}
-
-export async function loadPrivileges() {
-    if (!database) return { club: [], city: [] };
-    const snapshot = await database.ref('privileges').once('value');
-    return parseNode.privileges(snapshot.val());
-}
-
-export async function loadGuestPrivileges() {
-    if (!database) return { club: [], city: [] };
-    const snapshot = await database.ref('guestPrivileges').once('value');
-    return parseNode.guestPrivileges(snapshot.val());
-}
-
-export async function loadPassInfo() {
-    if (!database) return { content: '', buttonLink: '' };
-    const snapshot = await database.ref('passInfo').once('value');
-    return parseNode.passInfo(snapshot.val());
-}
-
-export async function loadGiftContent() {
-    if (!database) return '';
-    const snapshot = await database.ref('gift').once('value');
-    return parseNode.gift(snapshot.val());
-}
-
-export async function loadSafety() {
-    const fallback = { active: false, banner: '', intro: '', page_title: '', items: [] };
-    if (!database) return fallback;
-    const snapshot = await database.ref('safety').once('value');
-    return safetyFromRaw(snapshot.val());
-}
-
-export async function loadRandomPhrases() {
-    if (!database) return [];
-    const snapshot = await database.ref('randomPhrases').once('value');
-    return parseNode.randomPhrases(snapshot.val());
-}
-
-export async function loadLeaders() {
-    if (!database) return {};
-    const snapshot = await database.ref('leaders').once('value');
-    return parseNode.leaders(snapshot.val());
-}
-
-export async function loadRegistrationsPopup() {
-    if (!database) return {};
-    const snapshot = await database.ref('registrationsPopup').once('value');
-    return parseNode.registrationsPopup(snapshot.val());
-}
-
-export async function loadPopupConfig() {
-    if (!database) return null;
-    const snapshot = await database.ref('popupConfig').once('value');
-    return snapshot.val();
-}
+export function loadFaq() { return readNode('faq', parseNode.faq); }
+export function loadPrivileges() { return readNode('privileges', parseNode.privileges); }
+export function loadGuestPrivileges() { return readNode('guestPrivileges', parseNode.guestPrivileges); }
+export function loadPassInfo() { return readNode('passInfo', parseNode.passInfo); }
+export function loadGiftContent() { return readNode('gift', parseNode.gift); }
+export function loadSafety() { return readNode('safety', safetyFromRaw); }
+export function loadRandomPhrases() { return readNode('randomPhrases', parseNode.randomPhrases); }
+export function loadLeaders() { return readNode('leaders', parseNode.leaders); }
+export function loadRegistrationsPopup() { return readNode('registrationsPopup', parseNode.registrationsPopup); }
+export function loadPopupConfig() { return readNode('popupConfig'); }
+export function loadTestimonials() { return readNode('testimonials', parseNode.testimonials); }
+export function loadPopups() { return readNode('popups', parseNode.popups); }
 
 export async function loadUpdates() {
     try { return (await loadClubContent()).updates; } catch (error) { console.warn('Club updates fallback:', error.message); }
-    if (!database) return [];
-    const snapshot = await database.ref('updates').once('value');
-    const data = snapshot.val();
-    if (Array.isArray(data)) return data;
-    if (data && typeof data === 'object') return Object.values(data);
-    return [];
+    return readNode('updates', data => (Array.isArray(data) ? data : (data && typeof data === 'object' ? Object.values(data) : [])));
 }
 
 export async function loadMastermindSummaries() {
     // поправленные в админке приходят через /api/boot (лист таблицы их не видит)
     const boot = await Promise.resolve(window.__bootData).catch(() => null);
     if (boot?.mastermindAdmin) return parseNode.mastermindSummaries(boot.mastermindSummaries);
-    if (!database) return [];
-    const snapshot = await database.ref('mastermindSummaries').once('value');
-    return parseNode.mastermindSummaries(snapshot.val());
-}
-
-export async function loadTestimonials() {
-    if (!database) return [];
-    const snapshot = await database.ref('testimonials').once('value');
-    return parseNode.testimonials(snapshot.val());
-}
-
-export async function loadPopups() {
-    if (!database) return {};
-    try {
-        const snapshot = await database.ref('popups').once('value');
-        return parseNode.popups(snapshot.val());
-    } catch (e) {
-        console.error('Ошибка загрузки попапов из Firebase:', e);
-        return {};
-    }
+    return readNode('mastermindSummaries', parseNode.mastermindSummaries);
 }
 
 export function subscribeToParticipantCount(hikeDate, callback) {
@@ -393,7 +328,7 @@ export async function setUserRegistrationStatus(userId, hikeDate, status) {
 export async function loadUserRegistrations(userId) {
     if (!database || !userId) return {};
     await authReady();
-    const snapshot = await database.ref(`userRegistrations/${userId}`).once('value');
+    const snapshot = await withTimeout(database.ref(`userRegistrations/${userId}`).once('value'), READ_MS, 'записи');
     return snapshot.val() || {};
 }
 

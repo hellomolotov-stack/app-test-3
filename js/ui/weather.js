@@ -2,6 +2,7 @@
 import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
+import { fetchWithTimeout } from '../net.js';
 
 const CITIES = [
     {
@@ -92,7 +93,7 @@ async function fetchZone(zone, withNow = false) {
         + `&daily=weathercode,temperature_2m_max,temperature_2m_min${withNow ? ',sunrise,sunset' : ''}`
         + (withNow ? `&current=temperature_2m,weathercode,cloudcover,windspeed_10m,winddirection_10m,windgusts_10m&windspeed_unit=ms` : '')
         + `&timezone=Europe%2FMoscow&forecast_days=7`;
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     return withNow ? { ...json.daily, now: json.current } : json.daily;

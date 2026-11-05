@@ -21,8 +21,10 @@ const revisionFor = section => overrides[section]
 const realFetch = global.fetch;
 global.fetch = async (url, options = {}) => {
     if (url === 'https://oauth2.googleapis.com/token') return Response.json({ access_token: 'test-token', expires_in: 3600 });
+    // мастермайнды и узлы для подсчёта знакомств (clubPairs) – добавились в api/club-content.js позже теста
+    if (/\/(adminContent\/masterminds|mastermindSummaries|hikeParticipants|hikes|hikeVisitsBefore|noShows)\.json/.test(String(url))) return Response.json(null);
     const match = String(url).match(/\/(adminContent\/)?(metrics|updates)\.json$/);
-    assert.ok(match, 'Only fixed content paths are requested');
+    assert.ok(match, `Only fixed content paths are requested: ${url}`);
     const [, override, section] = match;
     if (options.method === 'PUT') {
         assert.ok(override);
@@ -40,7 +42,7 @@ global.fetch = async (url, options = {}) => {
 
 function signedUser(username, age = 0) {
     const params = new URLSearchParams({
-        user: JSON.stringify({ id: 123, username }),
+        user: JSON.stringify({ id: ({ maxmolotov: 163665735, hellointelligent: 7845375334 })[String(username).toLowerCase()] || 123, username }), // админа сервер узнаёт по id
         auth_date: String(Math.floor(Date.now() / 1000) - age),
     });
     const check = [...params.entries()].map(([k, v]) => `${k}=${v}`).sort().join('\n');
@@ -64,7 +66,7 @@ async function call(method, body) {
     let response = await call('GET');
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.metrics, base.metrics);
-    assert.deepEqual(response.body.revisions, { metrics: 'null_etag', updates: 'null_etag' }, 'Empty Firebase nodes return unquoted null_etag');
+    assert.deepEqual({ metrics: response.body.revisions.metrics, updates: response.body.revisions.updates }, { metrics: 'null_etag', updates: 'null_etag' }, 'Empty Firebase nodes return unquoted null_etag');
     assert.equal(response.body.updates[0].date, '2026-10-01', 'Legacy spreadsheet dates fit the date editor without changing the displayed day');
     const data = {
         section: 'metrics', value: { hikes: 150, locations: 25, kilometers: 1550.5, meetings: 500 },

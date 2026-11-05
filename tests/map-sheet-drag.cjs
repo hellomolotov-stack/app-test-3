@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmolotov/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require('./_playwright.cjs');
 // Use the application's pinned MapLibre version, downloaded from its existing CDN URLs.
 async function pinnedAsset(path, url) {
     if (fs.existsSync(path)) return fs.readFileSync(path, 'utf8');

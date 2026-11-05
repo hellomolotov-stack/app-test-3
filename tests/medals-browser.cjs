@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { build } = require('esbuild');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmolotov/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require('./_playwright.cjs');
 
 const medal = { id: 'spider', title: 'залез в пещеру пауков', description: 'за смелость и любопытство', rarity: 'mythical',
     medal: { imageUrl: '/assets/achievements/spider-cave-transparent-v2.png' },

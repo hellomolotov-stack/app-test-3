@@ -4,6 +4,7 @@
 import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
+import { fetchWithTimeout } from '../net.js';
 
 // всем владельцам активной карты
 
@@ -31,7 +32,7 @@ function loadQrLib() {
 let cardUrl = null; // подпись не меняется – запрашиваем один раз за сессию
 async function fetchCardUrl() {
     if (cardUrl) return cardUrl;
-    const r = await fetch('/api/dc-loyalty', {
+    const r = await fetchWithTimeout('/api/dc-loyalty', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'app_card', initData: window.Telegram?.WebApp?.initData || '' })
     });

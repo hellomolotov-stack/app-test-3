@@ -6,6 +6,7 @@ import { tg, haptic, showConfetti } from '../utils.js';
 import { log } from '../api.js';
 import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare, achievementsVisible, isWaiting, metalOf } from '../achievements.js';
 import { medalSrc } from '../achievements-medals.js';
+import { fetchWithTimeout } from '../net.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const rarityName = key => rarityLabel(key);
@@ -287,8 +288,8 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
 }
 
 async function upload(dataUrl) {
-    const r = await fetch('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tg?.initData || '', date: 'ach', img: dataUrl.split(',')[1] }) });
+    const r = await fetchWithTimeout('/api/story', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initData: tg?.initData || '', date: 'ach', img: dataUrl.split(',')[1] }) }, 60000);
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.url) throw new Error(j.error || 'upload failed');
     return j.url;

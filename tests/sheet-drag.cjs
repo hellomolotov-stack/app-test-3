@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmolotov/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require('./_playwright.cjs');
 const dragSource = fs.readFileSync('js/ui/sheet-drag.js', 'utf8').replace('export function', 'function');
 const calendar = fs.readFileSync('js/ui/calendar.js', 'utf8');
 const closeSource = calendar.slice(calendar.indexOf('export function closeBottomSheet()'), calendar.indexOf('const isTouchDevice')).replace('export function', 'function');

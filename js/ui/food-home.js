@@ -3,6 +3,7 @@
 import { haptic, openLink } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
+import { fetchWithTimeout } from '../net.js';
 
 const FOOD_HOME_IDS = ['163665735']; // @maxmolotov
 const SHOP = 'https://dietcakes.ru/';
@@ -24,7 +25,7 @@ export function foodHomeEnabled() {
 let cardToken = '';
 function prefetchCardToken() {
     if (cardToken || state.userCard?.status !== 'active') return;
-    fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    fetchWithTimeout('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'app_card', initData: window.Telegram?.WebApp?.initData || '' }) })
         .then(r => r.ok ? r.json() : null)
         .then(b => { const m = /start=(dc1_\d{1,16}_[A-Za-z0-9_-]{28})$/.exec(b?.url || ''); if (m) cardToken = m[1]; })

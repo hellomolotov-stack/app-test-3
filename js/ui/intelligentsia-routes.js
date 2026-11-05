@@ -6,6 +6,7 @@ import { isRouteFavoritesPilotUser } from '../lumen/config.js';
 import { INTELLIGENTSIA_ROUTES as ROUTE_DATA } from './intelligentsia-routes-data.js';
 import { EXTRA_INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-extra-data.js';
 import { ROUTE_DESCRIPTIONS } from './intelligentsia-routes-catalog.js';
+import { ensureMapLibre } from './maplibre-loader.js';
 
 // Карту показываем только когда рельеф и снимки уже загрузились: иначе при входе
 // сначала видна плоская подложка, а потом горы «выпрыгивают». До этого – тёмный фон контейнера.
@@ -151,7 +152,6 @@ export function setIntelligentsiaRoutes(routes, { fromCache = false } = {}) {
     if (container) renderIntelligentsiaRoutes(container);
 }
 
-let maplibreLoading = null;
 let currentMap = null;
 let currentRouteIndex = 0;
 let flightTimer = null;
@@ -164,23 +164,6 @@ let revealFlightTimer = null;
 let revealFlightEndTimer = null;
 let isRouteRevealAnimating = false;
 
-function ensureMapLibre() {
-    if (window.maplibregl) return Promise.resolve();
-    if (maplibreLoading) return maplibreLoading;
-    maplibreLoading = new Promise((resolve, reject) => {
-        const css = document.createElement('link');
-        css.rel = 'stylesheet';
-        css.href = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css';
-        document.head.appendChild(css);
-
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js';
-        script.onload = resolve;
-        script.onerror = reject;
-        document.head.appendChild(script);
-    });
-    return maplibreLoading;
-}
 
 function injectStyles() {
     if (stylesInjected || document.getElementById('intelligentsiaRoutesStyles')) return;

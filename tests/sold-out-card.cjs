@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || '/Users/maksmolotov/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
+const { chromium } = require('./_playwright.cjs');
 const cardImage = 'data:image/jpeg;base64,' + fs.readFileSync('assets/card-front.jpg').toString('base64');
 const cardSource = fs.readFileSync('js/ui/card-sheet.js', 'utf8')
     .replace(/import\s+[\s\S]*?\s+from\s+['"][^'"]+['"];?/g, '').replace(/export /g, '')
@@ -21,6 +21,11 @@ const fixture = `
     const curSheetIndex = () => 0;
     const getPlaceWord = () => 'место';
     const renderSwipeControl = () => {const control=document.createElement('div');control.className='test-swipe';return control;};
+    const hikeTiming = () => ({ isClosed: false, isPast: false, isToday: false });
+    const passCodeFor = () => '';
+    const capacityFor = () => 10;
+    const isPostponed = () => undefined;
+    const hikingBoxEnabled = () => false;
 `;
 
 (async () => {
@@ -34,7 +39,7 @@ const fixture = `
             await page.addScriptTag({ content: fixture + cardSource + floatingSource });
             await page.evaluate(() => { window._participantCount=10;updateFloatingSheetButtons(); });
             assert.equal(await page.locator('.so-card-text b').textContent(), 'места закончились');
-            assert.equal(await page.locator('.so-card-text span').textContent(), 'но владельцы карты могут прийти');
+            assert.equal(await page.locator('.so-card-text span').textContent(), 'но с картой интеллигента можно прийти');
             await page.screenshot({ path: `/private/tmp/sold-out-plate-${width}.png` });
             await page.locator('.so-card-plate.is-link').click();
             await page.locator('.cs-overlay.is-on').waitFor();

@@ -3,7 +3,7 @@ import { isAdmissionPilot } from '../admission.js';
 import { haptic, openLink, mainDiv, subtitle, parseLinks, tg } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
-import { openOnboardingChat } from './onboarding-chat.js';
+import { openOnboardingChat } from './chat-entry.js';
 import { showBottomNav, setupBottomNav, showBack, setUserInteracted, resetNavActive, scrollPageToTop, cleanupProfileOverlays } from './common.js';
 import { renderHome } from './home.js';
 import { foodHomeHtml, bindFoodHome } from './food-home.js';

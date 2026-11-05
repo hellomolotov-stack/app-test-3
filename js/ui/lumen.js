@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
-import { openOnboardingChat } from './onboarding-chat.js';
+import { openOnboardingChat } from './chat-entry.js';
 import { getLumenGreeting, getLumenSegment } from '../lumen/config.js';
 import { canShowLumenPrompt, disableLumenPrompts, markLumenClosed, markLumenSeen, registerLumenVisit, isLumenDisabled, getLumenState } from '../lumen/state.js';
 

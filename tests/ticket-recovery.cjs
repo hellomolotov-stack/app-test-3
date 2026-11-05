@@ -8,11 +8,11 @@ const recovery = source.slice(source.indexOf('export const TICKET_PENDING_TTL'),
     .replace(/export /g, '');
 const date = '2099-01-10';
 
-function fixture(statuses = []) {
+function fixture(statuses = [], server = []) {
     const pending = JSON.stringify({ type: 'ticket', hikeDate: date, hikeTitle: 'Test hike', ts: Date.now() });
     const storage = new Map([['pending_reg_celebration', pending]]);
     const elements = new Map(), overlays = [], successes = [], writes = [];
-    let reads = 0;
+    let reads = 0, serverCalls = 0;
     const context = vm.createContext({
         Date, Promise, JSON, console,
         setTimeout: resolve => { resolve(); },
@@ -42,6 +42,12 @@ function fixture(statuses = []) {
                 },
             }),
         },
+        // наш сервер (/api/me status): null – не ответил, тогда проверка идёт через Firebase
+        fetchServerStatus: async () => {
+            const answer = server[Math.min(serverCalls++, Math.max(server.length - 1, 0))];
+            return answer === undefined ? null : answer;
+        },
+        withTimeout: promise => promise,
         loadUserRegistrations: async userId => {
             assert.equal(userId, 123);
             const status = statuses[Math.min(reads++, statuses.length - 1)];
@@ -57,7 +63,7 @@ function fixture(statuses = []) {
         haptic() {}, log() {}, markPaymentSeen() {}, openLink() {},
     });
     vm.runInContext(recovery, context);
-    return { context, storage, elements, overlays, successes, writes, get reads() { return reads; } };
+    return { context, storage, elements, overlays, successes, writes, get reads() { return reads; }, get serverCalls() { return serverCalls; } };
 }
 
 (async () => {
@@ -76,6 +82,14 @@ function fixture(statuses = []) {
     assert.equal(paid.writes.length, 0);
     assert.equal(paid.context.state.hikeBookingStatus[0], true);
     assert.ok(!paid.storage.has('pending_reg_celebration'));
+
+    // сервер отвечает: Firebase не нужен вовсе (раньше без Firebase экран успеха не приходил)
+    const viaServer = fixture([new Error('no firebase')], [{ card: { status: 'inactive' }, regs: {} }, { card: { status: 'inactive' }, regs: { [date]: true } }]);
+    assert.equal(await viaServer.context.completeTicketRegistration(date), true);
+    assert.equal(viaServer.serverCalls, 2, 'Server answers on the second check');
+    assert.equal(viaServer.reads, 0, 'Firebase is not touched when the server answers');
+    assert.equal(viaServer.successes.length, 1);
+    assert.equal(viaServer.writes.length, 0);
 
     const anonymous = fixture([{ [date]: true }]);
     anonymous.context.state.user = null;

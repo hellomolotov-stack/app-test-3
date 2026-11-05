@@ -5,6 +5,7 @@ import { state } from '../state.js';
 import { hikeTiming } from '../hike-timing.js';
 import { haptic, openLink } from '../utils.js';
 import { log, logSeq } from '../api.js';
+import { fetchWithTimeout } from '../net.js';
 
 export const HIKING_BOX_TEST_IDS = ['7845375334', '163665735']; // @hellointelligent, @maxmolotov
 const boxMember = () => state.userCard?.status === 'active';
@@ -13,11 +14,11 @@ const SHOP_URL = 'https://dietcakes.ru/hiking-intelligence/'; // наша стр
 let cardToken = '', tgRef = '';
 function prefetchCardToken() {
     // подписанный Telegram ID – всем (бот напишет человеку о его заказе бокса)
-    if (!tgRef && window.Telegram?.WebApp?.initData) fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    if (!tgRef && window.Telegram?.WebApp?.initData) fetchWithTimeout('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'app_ref', initData: window.Telegram.WebApp.initData }) })
         .then(r => r.ok ? r.json() : null).then(b => { if (/^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(b?.ref || '')) tgRef = b.ref; }).catch(() => {});
     if (cardToken || !boxMember()) return;
-    fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    fetchWithTimeout('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'app_card', initData: window.Telegram?.WebApp?.initData || '' }) })
         .then(r => r.ok ? r.json() : null)
         .then(b => { const m = /start=(dc1_\d{1,16}_[A-Za-z0-9_-]{28})$/.exec(b?.url || ''); if (m) cardToken = m[1]; })
@@ -158,7 +159,7 @@ function boxOrderFor(date) {
         boxTimer = setTimeout(() => {
             const queue = boxQueue; boxQueue = {};
             const dates = Object.keys(queue), done = orders => dates.forEach(d => queue[d].forEach(fn => fn(orders?.[d] || null)));
-            fetch('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'box_status', initData, dates }) })
+            fetchWithTimeout('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'box_status', initData, dates }) })
                 .then(r => r.ok ? r.json() : null).then(b => done(b?.orders)).catch(() => done(null));
         }, 60);
     });
