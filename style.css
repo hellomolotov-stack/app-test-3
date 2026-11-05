@@ -7446,9 +7446,13 @@ html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 .csv-quote { font-size: 220px; line-height: 1; font-weight: 800; color: rgba(199,184,230,.35); font-family: Georgia, serif; }
 .csv-big { font-size: 120px; filter: drop-shadow(0 20px 40px rgba(0,0,0,.5)); animation: csvFloat 4s ease-in-out infinite; }
 .csv-text { position: absolute; z-index: 4; left: 20px; right: 20px; bottom: calc(28px + env(safe-area-inset-bottom)); }
-.csv-tag { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px 6px 9px; border-radius: 20px; background: rgba(255,255,255,.12); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: rgba(255,255,255,.9); font-size: 12.5px; font-weight: 700; letter-spacing: .01em; }
-.csv-tag i { width: 7px; height: 7px; border-radius: 50%; background: #D9FD19; }
-.csv-t-summary i { background: #C7B8E6; } .csv-t-badges i { background: #F2C14E; } .csv-t-app i { background: #7fd0ff; } .csv-t-event i { background: #FF9F7A; }
+.csv-tag { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: 20px; background: rgba(255,255,255,.14); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); color: #fff; font-size: 12.5px; font-weight: 800; letter-spacing: .01em; }
+.csv-tag i { display: none; }
+.csv-t-member { background: #D9FD19; color: #111; }
+.csv-t-badges { background: #F28C28; color: #fff; }
+.csv-t-summary { background: #7B5CC4; color: #fff; }
+.csv-t-app { background: #2F8FC4; color: #fff; }
+.csv-t-event { background: #E0603A; color: #fff; }
 .csv-text h2 { margin: 12px 0 0; font-size: 30px; line-height: 1.08; font-weight: 800; color: #fff; }
 .csv-text p { margin-top: 10px; font-size: 15.5px; line-height: 1.45; color: rgba(255,255,255,.82); display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 .csv-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 18px; height: 54px; border: 1px solid rgba(255,255,255,.22); border-radius: 18px; background: rgba(255,255,255,.14); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); color: #fff; font: inherit; font-size: 16px; font-weight: 700; }
