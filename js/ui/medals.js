@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { loadAchievementCollections, claimAchievements, achievementMeta, achievementsVisible, isWaiting, metalOf, isCardHolder, sortByValue } from '../achievements.js';
 import { haptic } from '../utils.js';
 import { openAchievementsPopup } from './achievements-popup.js';
-import { catalogByTitle, routeBadgeForHike } from '../achievements-catalog.js';
+import { catalogByTitle, routeBadgeForHike, ACHIEVEMENT_CATALOG } from '../achievements-catalog.js';
 import { medalForTitle, medalSrc } from '../achievements-medals.js';
 import { openAchievementsCollection } from './achievements-collection.js';
 
@@ -54,6 +54,8 @@ export async function mountMyAchievements() {
             ${goalsHtml(owned)}
             ${waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
                 <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
+        // классика v2 (html.v2): «витрина» – последний значок крупно, два предыдущих по бокам, ниже следующая цель
+        if (document.documentElement.classList.contains('v2') && items.length) host.innerHTML = vitrineHtml(items, shelf, owned, waiting);
         host.hidden = false;
         wireMedalStrip(host, shelf, sortByValue([...items]));
         host.querySelectorAll('[data-mya-all]').forEach(b => b.addEventListener('click', () => { haptic(); openAchievementsCollection(items); }));
@@ -163,4 +165,35 @@ function runStep(action) {
 
 export function openMedal(achievement) {
     if (achievement?.medal) openAchievementsPopup([achievement], { fresh: false, source: 'медаль участника' });
+}
+
+// ---------- витрина (классика v2) ----------
+function grantDay(a) {
+    const g = a.grant || {};
+    const d = /^\d{4}-\d{2}-\d{2}/.test(g.date || '') ? g.date.slice(0, 10) : (g.issuedAt ? new Date(g.issuedAt + 3 * 3600e3).toISOString().slice(0, 10) : '');
+    return d ? dayLabel(d) : '';
+}
+function vitrineHtml(items, shelf, owned, waiting) {
+    const [a0, a1, a2] = shelf;
+    const pic = (a, i, cls) => a ? `<button type="button" class="vt-it ${cls}" data-medal="${i}" aria-label="${esc(a.title)}">${i === 0 && a.seenAt === null ? '<span class="vt-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy"></button>` : '<span class="vt-it vt-empty"></span>';
+    const day = grantDay(a0);
+    const total = ACHIEVEMENT_CATALOG.length;
+    // следующая цель: значок за число хайков с прогрессом, иначе первая из ближайших целей
+    const progress = achievementMeta().progress;
+    let goal = '';
+    const next = progress?.member && HIKE_GOALS.find(([min, t]) => min > progress.hikes && !owned.has(catalogByTitle(t)?.id));
+    if (next) {
+        const art = medalForTitle(next[1]);
+        goal = `<button type="button" class="vt-goal" data-mya-step="hike">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<div><b>следующий – ${esc(next[1])}</b><span class="vt-bar"><u style="width:${Math.round(100 * progress.hikes / next[0])}%"></u></span></div><small>${progress.hikes}/${next[0]}</small></button>`;
+    } else {
+        const g = nearestGoals(owned)[0];
+        if (g) { const art = medalForTitle(g.title); goal = `<button type="button" class="vt-goal" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<div><b>следующий – ${esc(g.title)}</b><small class="vt-sub">${esc(g.sub)}</small></div><small>›</small></button>`; }
+    }
+    return `<div class="vt-head"><b>мои значки<small>${items.length} из ${total}</small></b><button type="button" class="vt-all" data-mya-all>все ›</button></div>
+        <div class="vt-stage">${pic(a1, 1, 'vt-side vt-l')}${pic(a0, 0, 'vt-main')}${pic(a2, 2, 'vt-side vt-r')}</div>
+        <div class="vt-title">${esc(a0.title)}</div>
+        <div class="vt-date">${a0.seenAt === null ? 'новый · ' : ''}${day ? `получен ${day}` : ''}</div>
+        ${goal}
+        ${waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
+            <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
 }
