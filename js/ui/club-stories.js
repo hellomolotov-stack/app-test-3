@@ -108,8 +108,9 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     ov.className = 'csv-overlay';
     // в полноэкранном Telegram сверху его кнопки «закрыть» и «⋯» – полоски и шапку ставим ниже них
     const tgw = window.Telegram?.WebApp;
-    const top = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
-    ov.style.setProperty('--csv-top', `${top}px`);
+    // нет данных от Telegram (браузер) – отступ системной «чёлки»
+    const top = tgw?.isFullscreen ? (tgw.safeAreaInset?.top || 0) + (tgw.contentSafeAreaInset?.top || 0) : 0;
+    ov.style.setProperty('--csv-top', top ? `${top}px` : 'env(safe-area-inset-top)');
     ov.innerHTML = `<div class="csv-bars">${list.map(() => '<i><b></b></i>').join('')}</div><div class="csv-body"></div>`;
     document.body.appendChild(ov);
     document.body.style.overflow = 'hidden';
