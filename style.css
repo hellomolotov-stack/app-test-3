@@ -7367,3 +7367,21 @@ html.rd .rd-tags span, html.rd .rd-hero-when { border-radius: 999px; }
 html.rd .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 html.rd .rd-hero-cover { height: 200px; }
 html.rd .rd-hero-title { font-size: 27px; }
+
+/* ==================== КЛАССИКА v2 (05.11) – html.v2, пока только @maxmolotov (js/redesign.js) ====================
+   фото клуба только в шапке и растворяется в тёмной основе; карточки 24, элементы внутри 16, кнопки круглые; 12 между блоками */
+html.v2 { background: #0B0D10; }
+html.v2 body { background: #0B0D10 !important; position: relative; }
+html.v2 body::before { position: absolute; height: 440px; background-position: 50% 30%; filter: brightness(.85);
+  -webkit-mask-image: linear-gradient(#000 30%, transparent); mask-image: linear-gradient(#000 30%, transparent); }
+html.v2 #subtitle:empty { display: none; }
+html.v2 .card-container { border-radius: 24px; margin-bottom: 12px; padding: 16px 0; }
+html.v2 .btn { border-radius: 999px; }
+html.v2 .rd-head { margin: 6px 4px 16px; }
+html.v2 .rd-hello { text-shadow: 0 2px 12px rgba(0,0,0,.35); }
+html.v2 .rd-hero { border-radius: 24px; margin: 0 0 12px; background: rgba(19,23,28,.92); }
+html.v2 .rd-hero-cover { height: 190px; }
+html.v2 .rd-hero-title { font-size: 26px; }
+html.v2 .rd-going { border-radius: 16px; }
+html.v2 .rd-tags span, html.v2 .rd-hero-when { border-radius: 999px; }
+html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }

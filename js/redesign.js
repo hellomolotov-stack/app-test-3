@@ -3,7 +3,11 @@
 // Права – по числовому id, не по нику: ник можно сменить.
 import { state } from './state.js';
 
-const RD_USER_IDS = new Set(['163665735']); // @maxmolotov
+// 05.11: новый дизайн из облачной сессии выключен – Макс вернулся к классическому (с правками v2 ниже)
+const RD_USER_IDS = new Set([]);
+// v2 – классический дизайн с правками (карта в углу, ближайший хайк, фото только в шапке, единые скругления)
+const V2_USER_IDS = new Set(['163665735']); // @maxmolotov
+export function isV2() { return V2_USER_IDS.has(currentUserId()); }
 
 function currentUserId() {
     return String(state.user?.id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '');
@@ -26,6 +30,7 @@ export function isRedesign() {
 
 export function applyRedesignFlag() {
     document.documentElement.classList.toggle('rd', isRedesign());
+    document.documentElement.classList.toggle('v2', isV2());
     mountDesignToggle();
 }
 

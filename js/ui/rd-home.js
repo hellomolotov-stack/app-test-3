@@ -193,7 +193,7 @@ function mountCover(h) {
 }
 
 // ---------- сборка ----------
-export function rdHomeTopHtml() {
+export function rdHomeTopHtml({ stories = true } = {}) {
     const user = state.user;
     const now = new Date();
     const owner = state.userCard.status === 'active';
@@ -211,9 +211,12 @@ export function rdHomeTopHtml() {
                 <span>${owner ? Number(state.userCard.hikes || 0) : '?'}</span>
             </button>
         </div>
-        ${storiesHtml(buildStories())}
+        ${stories ? storiesHtml(buildStories()) : ''}
         ${heroHtml(ev)}`;
 }
+
+// классический дизайн v2: только шапка с мини-картой и ближайший хайк (без «свежего» и свечения)
+export function v2HomeTopHtml() { return rdHomeTopHtml({ stories: false }); }
 
 export function wireRdHomeTop() {
     const owner = state.userCard.status === 'active';

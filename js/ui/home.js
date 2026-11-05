@@ -24,8 +24,8 @@ import { ensureMmNotes, mmNotes, mmNoteForDate } from './mm-reader.js';
 import { mountAdminEntry } from './admin-entry.js';
 import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
-import { isRedesign, applyRedesignFlag } from '../redesign.js';
-import { rdHomeTopHtml, wireRdHomeTop } from './rd-home.js';
+import { isRedesign, applyRedesignFlag, isV2 } from '../redesign.js';
+import { rdHomeTopHtml, wireRdHomeTop, v2HomeTopHtml } from './rd-home.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -819,13 +819,14 @@ function renderOwnerHome() {
     cleanupProfileOverlays();
     const user = state.user;
     const firstName = user?.first_name || 'друг';
-    subtitle().textContent = greeting(firstName);
+    const v2 = isV2();
+    subtitle().textContent = v2 ? '' : greeting(firstName);
     subtitle().classList.remove('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
-        ${askBarHtml()}
-        <div class="card-container" id="cardBlock">
+        ${v2 ? v2HomeTopHtml() : askBarHtml()}
+        ${v2 ? '' : `<div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
             <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
@@ -835,7 +836,7 @@ function renderOwnerHome() {
                     : `<a href="#" class="btn btn-outline" id="supportBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">поддержка</a>`}
             </div>
             <button type="button" class="gift-text-link" id="giftCardBtn">подарить карту другу ›</button>
-        </div>
+        </div>`}
         <div id="userBookingsContainer"></div>
         <div id="circleContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
@@ -865,7 +866,7 @@ function renderOwnerHome() {
     `;
 
     wireSafetyBanner();
-    wireAskBar();
+    if (v2) wireRdHomeTop(); else wireAskBar();
     fitMastermindScroll();
     document.getElementById('giftCardBtn')?.addEventListener('click', () => {
         haptic();
