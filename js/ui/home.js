@@ -959,6 +959,7 @@ function renderRdHome() {
             openLink(link.href, 'мастермайнд', isGuest);
         });
     });
+    refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
