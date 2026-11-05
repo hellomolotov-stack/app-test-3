@@ -57,6 +57,8 @@ const STYLE = `
 .cs2-sub { text-align: center; font-size: 13px; line-height: 1.4; color: rgba(255,255,255,.6); margin: 4px 24px 0; }
 .cs2-net { margin: 14px 16px 12px; border-radius: 20px; background: rgba(0,0,0,.28); }
 .cs2-net { position: relative; }
+.cs2-lens .cs2-node, .cs2-me { transition: none !important; }
+.cs2-me { transform-box: view-box; }
 .cs2-net.is-zoomed { border-radius: 14px; box-shadow: inset 0 0 0 1px rgba(217,253,25,.25); }
 .cs2-net.is-zoomed::after { content: 'двойной тап – обычный вид'; position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font-size: 11px; color: rgba(255,255,255,.45); pointer-events: none; }
 .cs2-net svg { display: block; width: 100%; height: auto; overflow: hidden; }
@@ -260,10 +262,10 @@ function sheetNet(d) {
         const s1 = p.layer === 1 ? 1 : .55, s2 = p.layer === 1 ? .62 : .85;
         if (p.hidden) {
             const rh = p.known ? (p.layer === 1 ? 11 : 9) : 7;
-            nodes += `<g class="cs2-node l${p.layer} q${p.known ? ' kn' : ''}" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${p.layer === 1 ? 1 : .55};--s2:${p.layer === 1 ? .62 : .85}"><circle r="${rh}" fill="rgba(255,255,255,.07)" stroke="${p.known ? 'rgba(217,253,25,.8)' : 'rgba(255,255,255,.3)'}" stroke-width="${p.known ? 1.6 : 1}" stroke-dasharray="${p.known ? '' : '2 2'}"/><text y="${(rh * .36).toFixed(1)}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
+            nodes += `<g class="cs2-node l${p.layer} q${p.known ? ' kn' : ''}" data-i="${i}" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${p.layer === 1 ? 1 : .55};--s2:${p.layer === 1 ? .62 : .85}"><circle r="${rh}" fill="rgba(255,255,255,.07)" stroke="${p.known ? 'rgba(217,253,25,.8)' : 'rgba(255,255,255,.3)'}" stroke-width="${p.known ? 1.6 : 1}" stroke-dasharray="${p.known ? '' : '2 2'}"/><text y="${(rh * .36).toFixed(1)}" text-anchor="middle" font-size="${(rh * .95).toFixed(1)}" font-weight="800" fill="rgba(255,255,255,.45)">?</text></g>`;
             return;
         }
-        nodes += `<g class="cs2-node l${p.layer}" data-id="${esc(p.id)}" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${s1};--s2:${s2}">`
+        nodes += `<g class="cs2-node l${p.layer}" data-id="${esc(p.id)}" data-i="${i}" style="--x1:${p.a[0].toFixed(1)}px;--y1:${p.a[1].toFixed(1)}px;--x2:${p.b[0].toFixed(1)}px;--y2:${p.b[1].toFixed(1)}px;--s1:${s1};--s2:${s2}">`
             + `<circle class="halo" r="${r * 2.3}" fill="url(#csbgl)"/>`;
         if (p.photo) nodes += `<clipPath id="csbc${i}"><circle r="${r}"/></clipPath><circle r="${r}" fill="url(#csbg${i % 6})"/><image href="${esc(p.photo)}" x="${-r}" y="${-r}" width="${r * 2}" height="${r * 2}" clip-path="url(#csbc${i})" preserveAspectRatio="xMidYMid slice"/>`;
         else nodes += `<circle r="${r}" fill="url(#csbg${i % 6})"/><text y="${(r * .33).toFixed(1)}" text-anchor="middle" font-size="${(r * .85).toFixed(1)}" font-weight="800" fill="#fff">${esc(initials(p.name))}</text>`;
@@ -274,11 +276,12 @@ function sheetNet(d) {
         + (me ? `<clipPath id="csbme"><circle cx="${SCX}" cy="${SCY}" r="${mr}"/></clipPath><image href="${esc(me)}" x="${SCX - mr}" y="${SCY - mr}" width="${mr * 2}" height="${mr * 2}" clip-path="url(#csbme)" preserveAspectRatio="xMidYMid slice"/>`
             : `<circle cx="${SCX}" cy="${SCY}" r="${mr}" fill="#fff"/><text x="${SCX}" y="${SCY + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#121a23">ты</text>`)
         + `<circle cx="${SCX}" cy="${SCY}" r="${mr}" fill="none" stroke="#D9FD19" stroke-width="2.5"/>`;
-    return { pts, maxN, svg: `<svg viewBox="0 0 ${SW} ${SH}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><g class="cs2-lines"></g><g class="cs2-nodes">${nodes}</g>${meHtml}</svg>` };
+    return { pts, maxN, svg: `<svg viewBox="0 0 ${SW} ${SH}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><g class="cs2-lines"></g><g class="cs2-nodes">${nodes}</g><g class="cs2-me">${meHtml}</g></svg>` };
 }
-function sheetLines(net, d, mode, sel) {
+function sheetLines(net, d, mode, sel, L = null) {
     const at = new Map(net.pts.map(p => [p.id, p]));
-    const P = p => (mode === 'all' ? p.b : p.a);
+    const P = L ? p => L(mode === 'all' ? p.b : p.a) : p => (mode === 'all' ? p.b : p.a);
+    const ME = L ? L([SCX, SCY]) : [SCX, SCY];
     const vis = p => mode === 'all' || p.layer === 1;
     const cv = (A, B, k = .12) => `M${A[0].toFixed(1)} ${A[1].toFixed(1)} Q${((A[0] + B[0]) / 2 + (A[1] - B[1]) * k).toFixed(1)} ${((A[1] + B[1]) / 2 + (B[0] - A[0]) * k).toFixed(1)} ${B[0].toFixed(1)} ${B[1].toFixed(1)}`;
     let out = '';
@@ -290,76 +293,104 @@ function sheetLines(net, d, mode, sel) {
     });
     net.pts.forEach(p => {
         const strong = p.n > 1, dim = sel && p.id !== sel;
-        if (p.hidden) { out += `<path d="${cv([SCX, SCY], P(p))}" fill="none" stroke="${p.known ? '#D9FD19' : '#fff'}" stroke-opacity="${(p.known ? .28 : .07) * (vis(p) ? 1 : .6)}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
-        if (!vis(p)) { out += `<path d="${cv([SCX, SCY], p.a)}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width=".6"/>`; return; }
+        if (p.hidden) { out += `<path d="${cv(ME, P(p))}" fill="none" stroke="${p.known ? '#D9FD19' : '#fff'}" stroke-opacity="${(p.known ? .28 : .07) * (vis(p) ? 1 : .6)}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
+        if (!vis(p)) { out += `<path d="${cv(ME, L ? L(p.a) : p.a)}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width=".6"/>`; return; }
         const op = dim ? .06 : (strong ? .3 + .5 * p.n / net.maxN : .25) * (mode === 'all' && p.layer === 2 ? .7 : 1);
         const w = (strong ? 1 + 2.2 * p.n / net.maxN : .8) * (mode === 'all' ? .7 : 1);
-        out += `<path d="${cv([SCX, SCY], P(p))}" fill="none" stroke="${strong ? '#D9FD19' : '#d6aa6e'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${w.toFixed(2)}" stroke-linecap="round"/>`;
+        out += `<path d="${cv(ME, P(p))}" fill="none" stroke="${strong ? '#D9FD19' : '#d6aa6e'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${w.toFixed(2)}" stroke-linecap="round"/>`;
     });
     return out;
 }
 
 
-// зум сети связей (пока только для isRedesign()): двумя пальцами – ближе/дальше, одним – двигать
-// приближенную сеть, двойной тап – обычный вид. В обычном масштабе один палец листает шторку как раньше.
-function wireNetZoom(svg, host) {
-    let s = 1, cx = SCX, cy = SCY, moved = false, lastTap = 0, g = null;
-    const MAX = 4;
-    const apply = () => {
-        const w = SW / s, h = SH / s;
-        cx = Math.min(Math.max(cx, w / 2), SW - w / 2);
-        cy = Math.min(Math.max(cy, h / 2), SH - h / 2);
-        svg.setAttribute('viewBox', `${(cx - w / 2).toFixed(2)} ${(cy - h / 2).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)}`);
-        host.style.touchAction = s > 1.01 ? 'none' : 'pan-y';
-        host.classList.toggle('is-zoomed', s > 1.01);
+// «линза» как на Apple Watch (пока только для isRedesign()): двумя пальцами – сильнее/слабее, одним – вести
+// сеть под линзой. Ближние к центру точки раздуваются, дальние сжимаются к краю, линии едут за ними.
+// Двойной тап – обычный вид. Без линзы один палец листает шторку как раньше.
+function wireNetLens(svg, host, net, getMode, redraw) {
+    const R = 190, MAXZ = 4;
+    let z = 0, f = [SCX, SCY], moved = false, lastTap = 0, g = null, raf = 0, anim = 0;
+    const nodes = [...svg.querySelectorAll('.cs2-node')], me = svg.querySelector('.cs2-me');
+    const xs = net.pts.flatMap(p => [p.a[0], p.b[0]]), ys = net.pts.flatMap(p => [p.a[1], p.b[1]]);
+    const box = [Math.min(...xs, SCX), Math.max(...xs, SCX), Math.min(...ys, SCY), Math.max(...ys, SCY)];
+    const warp = q => {
+        const dx = q[0] - f[0], dy = q[1] - f[1], r = Math.hypot(dx, dy), rr = r / R;
+        if (z < .01) return { p: [SCX + dx, SCY + dy], k: 1 };
+        const r2 = rr < 1 ? R * (z + 1) * rr / (z * rr + 1) : R + (r - R) / (z + 1);
+        const der = rr < 1 ? (z + 1) / Math.pow(z * rr + 1, 2) : 1 / (z + 1);
+        const k = Math.min(2.1, Math.max(.35, 1 + (der - 1) * .45));
+        return { p: r ? [SCX + dx / r * r2, SCY + dy / r * r2] : [SCX, SCY], k };
     };
-    const toSvg = (x, y) => {
-        const r = svg.getBoundingClientRect(), w = SW / s, h = SH / s;
-        return [cx - w / 2 + (x - r.left) / r.width * w, cy - h / 2 + (y - r.top) / r.height * h];
+    const L = q => warp(q).p;
+    const draw = () => {
+        raf = 0;
+        const on = z > .01 || Math.hypot(f[0] - SCX, f[1] - SCY) > .5;
+        host.style.touchAction = on ? 'none' : 'pan-y';
+        host.classList.toggle('is-zoomed', on);
+        svg.classList.toggle('cs2-lens', on);
+        const all = getMode() === 'all';
+        nodes.forEach(n => {
+            const p = net.pts[+n.dataset.i]; if (!p) return;
+            if (!on) { n.style.transform = ''; return; }
+            const base = all ? (p.layer === 1 ? .62 : .85) : (p.layer === 1 ? 1 : .55);
+            const w = warp(all ? p.b : p.a);
+            n.style.transform = `translate(${w.p[0].toFixed(1)}px,${w.p[1].toFixed(1)}px) scale(${(base * w.k).toFixed(3)})`;
+        });
+        if (me) {
+            const w = warp([SCX, SCY]);
+            me.style.transform = on ? `translate(${w.p[0].toFixed(1)}px,${w.p[1].toFixed(1)}px) scale(${Math.min(1.3, w.k).toFixed(3)}) translate(${-SCX}px,${-SCY}px)` : '';
+        }
+        redraw(on ? L : null);
     };
+    const ask = () => { if (!raf) raf = requestAnimationFrame(draw); };
+    const clampF = () => { f = [Math.min(Math.max(f[0], box[0]), box[1]), Math.min(Math.max(f[1], box[2]), box[3])]; };
+    const toUnits = () => { const r = svg.getBoundingClientRect(); return SW / r.width; };
     const mid = t => [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
     const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY) || 1;
+    const reset = (smooth = true) => {
+        cancelAnimationFrame(anim);
+        if (!smooth) { z = 0; f = [SCX, SCY]; ask(); return; }
+        const z0 = z, f0 = f.slice(), t0 = performance.now();
+        const step = t => {
+            const k = Math.min(1, (t - t0) / 320), e = 1 - Math.pow(1 - k, 3);
+            z = z0 * (1 - e); f = [f0[0] + (SCX - f0[0]) * e, f0[1] + (SCY - f0[1]) * e]; draw();
+            if (k < 1) anim = requestAnimationFrame(step);
+        };
+        anim = requestAnimationFrame(step);
+    };
     host.addEventListener('touchstart', e => {
+        cancelAnimationFrame(anim);
         const t = e.touches;
-        if (t.length === 2) { const m = mid(t); g = { pinch: true, d: dist(t), s, p: toSvg(m[0], m[1]) }; moved = true; e.preventDefault(); }
-        else if (t.length === 1) { g = { pinch: false, x: t[0].clientX, y: t[0].clientY, cx, cy }; moved = false; }
+        if (t.length === 2) { g = { pinch: true, d: dist(t), z, m: mid(t), f: f.slice() }; moved = true; e.preventDefault(); }
+        else if (t.length === 1) { g = { pinch: false, x: t[0].clientX, y: t[0].clientY, f: f.slice() }; moved = false; }
     }, { passive: false });
     host.addEventListener('touchmove', e => {
         if (!g) return;
-        const t = e.touches;
+        const t = e.touches, u = toUnits();
         if (g.pinch && t.length === 2) {
             e.preventDefault();
-            s = Math.min(MAX, Math.max(1, g.s * dist(t) / g.d));
-            const m = mid(t), r = svg.getBoundingClientRect(), w = SW / s, h = SH / s;
-            cx = g.p[0] - (m[0] - r.left) / r.width * w + w / 2;
-            cy = g.p[1] - (m[1] - r.top) / r.height * h + h / 2;
-            apply();
-        } else if (!g.pinch && t.length === 1 && s > 1.01) {
+            z = Math.min(MAXZ, Math.max(0, g.z + Math.log(dist(t) / g.d) * 2.6));
+            const m = mid(t);
+            f = [g.f[0] - (m[0] - g.m[0]) * u / (z + 1), g.f[1] - (m[1] - g.m[1]) * u / (z + 1)];
+            clampF(); ask();
+        } else if (!g.pinch && t.length === 1) {
             const dx = t[0].clientX - g.x, dy = t[0].clientY - g.y;
             if (Math.abs(dx) + Math.abs(dy) > 6) moved = true;
-            if (!moved) return;
+            if (!moved || host.style.touchAction !== 'none') return;
             e.preventDefault();
-            const r = svg.getBoundingClientRect();
-            cx = g.cx - dx / r.width * (SW / s);
-            cy = g.cy - dy / r.height * (SH / s);
-            apply();
-        } else if (!g.pinch && t.length === 1) {
-            if (Math.abs(t[0].clientX - g.x) + Math.abs(t[0].clientY - g.y) > 6) moved = true;
+            f = [g.f[0] - dx * u / (z + 1), g.f[1] - dy * u / (z + 1)];
+            clampF(); ask();
         }
     }, { passive: false });
     host.addEventListener('touchend', e => {
-        if (e.touches.length) { if (e.touches.length === 1 && g?.pinch) g = { pinch: false, x: e.touches[0].clientX, y: e.touches[0].clientY, cx, cy }; return; }
+        if (e.touches.length) { if (e.touches.length === 1 && g?.pinch) g = { pinch: false, x: e.touches[0].clientX, y: e.touches[0].clientY, f: f.slice() }; return; }
         if (!moved && !e.target.closest('.cs2-node:not(.q)')) {
             const now = Date.now();
-            if (now - lastTap < 300) { s = 1; cx = SCX; cy = SCY; svg.classList.add('cs2-zoomanim'); apply(); setTimeout(() => svg.classList.remove('cs2-zoomanim'), 300); lastTap = 0; }
-            else lastTap = now;
+            if (now - lastTap < 300) { reset(); lastTap = 0; } else lastTap = now;
         }
         g = null;
     });
-    // после сдвига или щипка не считать это нажатием на человека
     host.addEventListener('click', e => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
-    apply();
-    return { reset() { s = 1; cx = SCX; cy = SCY; apply(); } };
+    return { reset: () => reset(false), map: () => (host.classList.contains('is-zoomed') ? L : null) };
 }
 
 let overlay = null;
@@ -397,9 +428,10 @@ export function openCircleSheet() {
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
     const svg = overlay.querySelector('#cs2Net svg'), lines = svg.querySelector('.cs2-lines');
-    const drawLines = () => { lines.innerHTML = sheetLines(net, d, mode, sel); };
+    let zoom = null;
+    const drawLines = (L = zoom?.map() || null) => { lines.innerHTML = sheetLines(net, d, mode, sel, L); };
     drawLines();
-    const zoom = isRedesign() ? wireNetZoom(svg, overlay.querySelector('#cs2Net')) : null;
+    zoom = isRedesign() ? wireNetLens(svg, overlay.querySelector('#cs2Net'), net, () => mode, L => drawLines(L)) : null;
     const select = id => {
         sel = id;
         svg.querySelectorAll('.cs2-node').forEach(n => n.classList.toggle('sel', n.dataset.id === id));
