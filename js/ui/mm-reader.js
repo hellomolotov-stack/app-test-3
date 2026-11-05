@@ -87,6 +87,8 @@ const STYLE = `
 .mmr-ib:disabled { opacity: .3; cursor: default; }
 .mmr-cnt { flex: none; min-width: 34px; text-align: center; font-size: 12px; color: rgba(255,255,255,.5); }
 .mmr-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 30px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.mmr-head { display: flex; gap: 14px; align-items: center; }
+.mmr-head img { flex: none; width: 52px; height: 52px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
 .mmr-title { margin: 0 0 6px; font-size: 23px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; }
 .mmr-sub { margin-bottom: 4px; font-size: 13px; color: rgba(255,255,255,.55); }
 .mmr-sec { margin: 26px 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.5); }
@@ -147,7 +149,7 @@ export async function openMmReader(id) {
         } else {
             const n = list[idx];
             log(`саммари: читает ${n.date} ${n.title}`, n.locked, state.user);
-            scroll.innerHTML = `<h2 class="mmr-title">${esc(n.title)}</h2><div class="mmr-sub">саммари мастермайнда</div>`
+            scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2><div class="mmr-sub">саммари мастермайнда</div></div></div>`
                 + render(n.body)
                 + (n.locked ? `<div class="mmr-lock"><p>целиком саммари мастермайндов читают владельцы карты интеллигента</p><button type="button" class="mmr-btn" data-card>открыть с картой</button></div>` : '');
         }
