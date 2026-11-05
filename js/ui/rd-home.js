@@ -224,16 +224,40 @@ export function v2HomeTopHtml() { return rdHomeTopHtml({ stories: false, teaser:
 const ALERTS_KEY = 'hikeAlertsOn';
 const MON3 = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 function alertsOn() { try { return localStorage.getItem(ALERTS_KEY) === '1'; } catch (e) { return false; } }
+// пейзажи с хайков клуба без людей (assets/teaser, отобраны из «Хайкинг интеллигенция фото»); при каждом заходе – новое
+const TEASER_PHOTOS = [
+    ['ayudag-1', 'на Аю-Даг'],
+    ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => [`demerdzhi-${n}`, 'на Демерджи']),
+    ['eklizi-1', 'на Эклизи-Бурун'], ['eklizi-3', 'на Эклизи-Бурун'], ['eklizi-5', 'на Эклизи-Бурун'],
+    ['kant-1', 'на Кант'],
+    ...[1, 2, 3, 4].map(n => [`krestovaya-${n}`, 'на Крестовую гору']),
+    ['tsarskaya-1', 'по Царской тропе'], ['tsarskaya-2', 'по Царской тропе'], ['tsarskaya-4', 'по Царской тропе'],
+];
+let teaserPhoto = null; // одна картинка на заход – перерисовки главной её не меняют
+function pickTeaserPhoto() {
+    if (teaserPhoto) return teaserPhoto;
+    let last = '';
+    try { last = localStorage.getItem('teaserPhotoLast') || ''; } catch (e) {}
+    const pool = TEASER_PHOTOS.filter(([f]) => f !== last);
+    teaserPhoto = pool[Math.floor(Math.random() * pool.length)];
+    try { localStorage.setItem('teaserPhotoLast', teaserPhoto[0]); } catch (e) {}
+    return teaserPhoto;
+}
+
 function teaserHtml() {
     const t = nextTeaser();
     if (!t) return '';
     const d = new Date(t.date + 'T12:00:00');
     const on = alertsOn() || isWaitlisted(t.date);
+    const [file, where] = pickTeaserPhoto();
     return `
         <div class="card-container v2-tg" id="v2Teaser">
-            <div class="v2-tg-date"><b>${d.getDate()}</b><small>${MON3[d.getMonth()]}</small></div>
-            <div class="v2-tg-text"><b>готовим хайк</b><span id="v2TgSub">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
-            <button type="button" class="v2-tg-sw${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}" role="switch" aria-checked="${on}" aria-label="уведомлять об открытии записи"></button>
+            <div class="v2-tg-photo" style="background-image:url('assets/teaser/${file}.webp')"><span>фото с хайка ${esc(where)}</span></div>
+            <div class="v2-tg-row">
+                <div class="v2-tg-date"><b>${d.getDate()}</b><small>${MON3[d.getMonth()]}</small></div>
+                <div class="v2-tg-text"><b>готовим хайк</b><span id="v2TgSub">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
+                <button type="button" class="v2-tg-sw${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}" role="switch" aria-checked="${on}" aria-label="уведомлять об открытии записи"></button>
+            </div>
         </div>`;
 }
 
