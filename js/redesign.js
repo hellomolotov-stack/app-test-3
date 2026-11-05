@@ -9,12 +9,45 @@ function currentUserId() {
     return String(state.user?.id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '');
 }
 
-export function isRedesign() {
+// кому доступен новый дизайн (и переключатель в меню)
+export function canUseRedesign() {
     return RD_USER_IDS.has(currentUserId());
+}
+
+// можно вернуться к старому дизайну – выбор хранится на телефоне
+const OFF_KEY = 'rdOff';
+function redesignOff() {
+    try { return localStorage.getItem(OFF_KEY) === '1'; } catch (e) { return false; }
+}
+
+export function isRedesign() {
+    return canUseRedesign() && !redesignOff();
 }
 
 export function applyRedesignFlag() {
     document.documentElement.classList.toggle('rd', isRedesign());
+    mountDesignToggle();
+}
+
+// пункт в меню «⋯»: «старый дизайн» / «новый дизайн» – только тем, кому доступен новый
+function mountDesignToggle() {
+    if (!canUseRedesign()) return;
+    const list = document.querySelector('#navPopup .ns-list');
+    if (!list) return;
+    let item = document.getElementById('popupDesign');
+    if (!item) {
+        item = document.createElement('a');
+        item.href = '#';
+        item.id = 'popupDesign';
+        item.className = 'popup-item';
+        item.addEventListener('click', e => {
+            e.preventDefault();
+            try { localStorage.setItem(OFF_KEY, isRedesign() ? '1' : '0'); } catch (err) {}
+            location.reload();
+        });
+        list.appendChild(item);
+    }
+    item.textContent = isRedesign() ? '🎨 вернуть старый дизайн' : '✨ включить новый дизайн';
 }
 
 // цвет свечения сверху экрана берётся у главного элемента экрана
