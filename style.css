@@ -7371,7 +7371,7 @@ html.rd .rd-hero-title { font-size: 27px; }
 /* ==================== КЛАССИКА v2 (05.11) – html.v2, пока только @maxmolotov (js/redesign.js) ====================
    фото клуба только в шапке и растворяется в тёмной основе; карточки 24, элементы внутри 16, кнопки круглые; 12 между блоками */
 html.v2 { background: #0B0D10; }
-html.v2 body { background: #0B0D10 !important; position: relative; }
+html.v2 body { background: transparent !important; position: relative; }
 html.v2 body::before { position: absolute; height: 440px; background-position: 50% 30%; filter: brightness(.85);
   -webkit-mask-image: linear-gradient(#000 30%, transparent); mask-image: linear-gradient(#000 30%, transparent); }
 html.v2 #subtitle:empty { display: none; }

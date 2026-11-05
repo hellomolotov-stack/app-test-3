@@ -825,7 +825,7 @@ function renderOwnerHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
-        ${v2 ? v2HomeTopHtml() : askBarHtml()}
+        ${v2 ? v2HomeTopHtml() + '<div id="rdMedalsAnchor"></div>' : askBarHtml()}
         ${v2 ? '' : `<div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
