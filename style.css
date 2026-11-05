@@ -7370,10 +7370,17 @@ html.rd .rd-hero-title { font-size: 27px; }
 
 /* ==================== КЛАССИКА v2 (05.11) – html.v2, пока только @maxmolotov (js/redesign.js) ====================
    фото клуба только в шапке и растворяется в тёмной основе; карточки 24, элементы внутри 16, кнопки круглые; 12 между блоками */
-html.v2 { background: #0B0D10; }
-html.v2 body { background: transparent !important; position: relative; }
-html.v2 body::before { position: absolute; height: 440px; background-position: 50% 30%; filter: brightness(.85);
-  -webkit-mask-image: linear-gradient(#000 30%, transparent); mask-image: linear-gradient(#000 30%, transparent); }
+/* фон (05.11, второй заход): ровный тёмный, мягкое голубое свечение от мини-карты; у главных блоков – свой ореол */
+html.v2 { background: #0A0C10; }
+html.v2 body { background: transparent !important; }
+html.v2 body::before { display: none; }
+html.v2 .rd-head { position: relative; }
+html.v2 .rd-head::after { content: ''; position: absolute; z-index: -1; right: -90px; top: -120px; width: 340px; height: 300px; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(70,150,255,.42), rgba(70,150,255,.12) 55%, rgba(70,150,255,0)); }
+html.v2 .rd-mini-card img { box-shadow: 0 0 28px rgba(90,180,255,.5), 0 0 0 1px rgba(255,255,255,.18); }
+html.v2 .rd-hero { box-shadow: 0 12px 70px -14px rgba(217,253,25,.32); }
+html.v2 #myAchievements { box-shadow: 0 12px 70px -16px rgba(232,180,70,.38); }
+html.v2 #circleContainer.cc-card { box-shadow: 0 12px 70px -16px rgba(60,200,190,.34); }
 html.v2 #subtitle:empty { display: none; }
 html.v2 .card-container { border-radius: 24px; margin-bottom: 12px; padding: 16px 0; }
 html.v2 .btn { border-radius: 999px; }
@@ -7444,3 +7451,16 @@ html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 .csv-text p { margin-top: 10px; font-size: 15.5px; line-height: 1.45; color: rgba(255,255,255,.82); display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
 .csv-btn { display: block; width: 100%; margin-top: 18px; height: 54px; border: 0; border-radius: 18px; background: #D9FD19; color: #111; font: inherit; font-size: 16px; font-weight: 800; }
 .csv-overlay.is-paused .csv-head, .csv-overlay.is-paused .csv-bars { opacity: .3; transition: opacity .2s; }
+
+/* классика v2: плашка «готовим хайк» с тумблером */
+html.v2 .v2-tg { display: flex; align-items: center; gap: 12px; padding: 14px; }
+.v2-tg-date { flex: none; width: 52px; height: 56px; border-radius: 16px; background: rgba(255,255,255,.06); display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+.v2-tg-date b { font-size: 24px; font-weight: 800; letter-spacing: -.03em; }
+.v2-tg-date small { font-size: 12px; font-weight: 700; color: var(--yellow); margin-top: 3px; }
+.v2-tg-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.v2-tg-text b { font-size: 16px; }
+.v2-tg-text span { font-size: 13px; line-height: 1.35; color: rgba(255,255,255,.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.v2-tg-sw { flex: none; position: relative; width: 50px; height: 30px; padding: 0; border: 0; border-radius: 15px; background: rgba(255,255,255,.16); cursor: pointer; transition: background .2s; -webkit-tap-highlight-color: transparent; }
+.v2-tg-sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform .2s, background .2s; }
+.v2-tg-sw.is-on { background: var(--yellow); }
+.v2-tg-sw.is-on::after { transform: translateX(20px); background: #141800; }

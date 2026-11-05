@@ -218,19 +218,22 @@ export function rdHomeTopHtml({ stories = true, teaser = false } = {}) {
 // классический дизайн v2: только шапка с мини-картой и ближайший хайк (без «свежего» и свечения)
 export function v2HomeTopHtml() { return rdHomeTopHtml({ stories: false, teaser: true }); }
 
-// хайка с названием пока нет – красивая заглушка «готовим следующий хайк» с подпиской на открытие записи
+// хайка с названием пока нет – компактная плашка «готовим хайк» с тумблером.
+// Тумблер – постоянная подписка (localStorage hikeAlertsOn): пока включён, человек подписан на открытие записи
+// каждой будущей даты-заглушки (тот же лист ожидания hike_waitlist, бот пишет при публикации хайка).
+const ALERTS_KEY = 'hikeAlertsOn';
+const MON3 = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+function alertsOn() { try { return localStorage.getItem(ALERTS_KEY) === '1'; } catch (e) { return false; } }
 function teaserHtml() {
     const t = nextTeaser();
-    const d = t ? new Date(t.date + 'T12:00:00') : null;
-    const when = d ? `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}` : 'скоро';
-    const on = t && isWaitlisted(t.date);
+    if (!t) return '';
+    const d = new Date(t.date + 'T12:00:00');
+    const on = alertsOn() || isWaitlisted(t.date);
     return `
-        <div class="v2-teaser" id="v2Teaser">
-            <div class="v2-teaser-art" aria-hidden="true"><svg viewBox="0 0 360 120" preserveAspectRatio="none"><path d="M0 120 L70 52 L105 80 L170 18 L230 74 L262 50 L360 120 Z" fill="rgba(217,253,25,.16)"/><path d="M0 120 L95 70 L150 96 L210 46 L300 104 L360 82 L360 120 Z" fill="rgba(217,253,25,.28)"/><circle cx="292" cy="30" r="12" fill="rgba(217,253,25,.5)"/></svg></div>
-            <span class="v2-teaser-when"><i></i>${esc(when)}</span>
-            <span class="v2-teaser-title">готовим следующий хайк</span>
-            <span class="v2-teaser-text">маршрут объявим совсем скоро. поставь уведомление – бот напишет, как только откроется запись</span>
-            ${t ? `<button type="button" class="v2-teaser-btn${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}">${on ? '✓ сообщим об открытии' : '🔔 сообщить, когда откроется запись'}</button>` : ''}
+        <div class="card-container v2-tg" id="v2Teaser">
+            <div class="v2-tg-date"><b>${d.getDate()}</b><small>${MON3[d.getMonth()]}</small></div>
+            <div class="v2-tg-text"><b>готовим хайк</b><span id="v2TgSub">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
+            <button type="button" class="v2-tg-sw${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}" role="switch" aria-checked="${on}" aria-label="уведомлять об открытии записи"></button>
         </div>`;
 }
 
@@ -254,12 +257,27 @@ export function wireRdHomeTop() {
         openStory(s);
     }));
     const tb = document.getElementById('v2TeaserBtn');
-    tb?.addEventListener('click', async () => {
-        log('главная: заглушка хайка – сообщить', !owner, state.user, { date: tb.dataset.date });
-        const on = await toggleTeaserNotify(tb.dataset.date);
-        tb.classList.toggle('is-on', on);
-        tb.textContent = on ? '✓ сообщим об открытии' : '🔔 сообщить, когда откроется запись';
-    });
+    if (tb) {
+        const date = tb.dataset.date;
+        // тумблер включён, а на эту дату ещё не подписан (новая заглушка) – подписываем тихо
+        if (alertsOn() && !isWaitlisted(date)) toggleTeaserNotify(date).catch(() => {});
+        tb.addEventListener('click', async () => {
+            haptic();
+            const want = !tb.classList.contains('is-on');
+            tb.classList.toggle('is-on', want); tb.setAttribute('aria-checked', want);
+            document.getElementById('v2TgSub').textContent = want ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи';
+            try { localStorage.setItem(ALERTS_KEY, want ? '1' : '0'); } catch (e) {}
+            log(want ? 'главная: уведомления о хайках – вкл' : 'главная: уведомления о хайках – выкл', !owner, state.user, { date });
+            if (isWaitlisted(date) !== want) {
+                const now = await toggleTeaserNotify(date).catch(() => isWaitlisted(date));
+                if (now !== want) {
+                    tb.classList.toggle('is-on', now); tb.setAttribute('aria-checked', now);
+                    document.getElementById('v2TgSub').textContent = now ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи';
+                    try { localStorage.setItem(ALERTS_KEY, now ? '1' : '0'); } catch (e) {}
+                }
+            }
+        });
+    }
     if (!ev) return;
     const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
     document.getElementById('rdHeroCta')?.addEventListener('click', open);
