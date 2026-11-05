@@ -170,7 +170,8 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     });
     ov.addEventListener('pointermove', e => {
         const dy = e.clientY - sy;
-        if (st && dy > 0) body.style.transform = `translateY(${dy * .6}px) scale(${1 - Math.min(dy, 300) / 2000})`;
+        if (st && dy < 0 && list[i].button) body.style.transform = `translateY(${Math.max(dy, -120) * .25}px)`;
+        else if (st && dy > 0) body.style.transform = `translateY(${dy * .6}px) scale(${1 - Math.min(dy, 300) / 2000})`;
     });
     ov.addEventListener('pointerup', e => {
         clearTimeout(holdTimer);
@@ -179,6 +180,8 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
         st = 0; body.style.transform = '';
         if (held) { pause(false); return; }
         if (dy > 90) return close();
+        // свайп вверх – то же, что кнопка внизу («потяни вверх»)
+        if (dy < -70 && list[i].button) { ov.querySelector('.csv-btn')?.click(); return; }
         if (Math.abs(dx) > 50) { haptic(); return go(dx < 0 ? 1 : -1); }
         if (Math.abs(dx) + Math.abs(dy) > 12) return;
         haptic();
