@@ -211,7 +211,7 @@ export function rdHomeTopHtml({ stories = true, teaser = false } = {}) {
                 <span>${owner ? Number(state.userCard.hikes || 0) : '?'}</span>
             </button>
         </div>
-        ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : ''}
+        ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : '<div id="clubStoriesHost"></div>'}
         ${ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
 }
 

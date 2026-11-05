@@ -5,7 +5,7 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { fetchWithTimeout } from '../net.js';
-import { isRedesign } from '../redesign.js';
+import { isRedesign, isV2 } from '../redesign.js';
 
 // видят все: с картой – все связи, без карты – 5 самых близких, остальные «?» (сервер их имён не отдаёт)
 export const circleEnabled = () => !!state.user?.id;
@@ -431,7 +431,7 @@ export function openCircleSheet() {
     let zoom = null;
     const drawLines = (L = zoom?.map() || null) => { lines.innerHTML = sheetLines(net, d, mode, sel, L); };
     drawLines();
-    zoom = isRedesign() ? wireNetLens(svg, overlay.querySelector('#cs2Net'), net, () => mode, L => drawLines(L)) : null;
+    zoom = isRedesign() || isV2() ? wireNetLens(svg, overlay.querySelector('#cs2Net'), net, () => mode, L => drawLines(L)) : null;
     const select = id => {
         sel = id;
         svg.querySelectorAll('.cs2-node').forEach(n => n.classList.toggle('sel', n.dataset.id === id));
