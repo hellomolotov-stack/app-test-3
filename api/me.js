@@ -7,6 +7,7 @@ const { verifyInitData } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
 const { circleFor } = require('../lib/circle');
+const { notesFor } = require('../lib/mm-notes');
 // «твои связи»: владельцам карты – все связи, без карты – 5 самых близких; этим – всё (тест)
 const CIRCLE_USERS = new Set(['maxmolotov']);
 
@@ -126,6 +127,18 @@ module.exports = async (req, res) => {
     // в Firebase из телефона: у части людей соединение с базой не поднимается, и запись молча терялась
     if (body && (body.action === 'register' || body.action === 'unregister')) {
         return registration(body.action, user, String(body.date || ''), res);
+    }
+
+    // саммари мастермайндов для читалки: владельцу карты – целиком, гостю – начало
+    if (body && body.action === 'notes') {
+        try {
+            const token = await getAccessToken();
+            const member = await read(`members/${user.id}`, token).catch(() => null);
+            return res.status(200).json({ notes: await notesFor(token, !!member?.user_id) });
+        } catch (e) {
+            console.error('me notes:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
     }
 
     // «твои связи»: люди с общих хайков и связи между ними (lib/circle.js)

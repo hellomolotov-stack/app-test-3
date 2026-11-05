@@ -3,6 +3,7 @@ const { verifyInitData, isAdminUser } = require('./tg-auth');
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const METRICS = ['hikes', 'locations', 'kilometers', 'meetings'];
 const { clubPairs } = require('../lib/circle');
+const { publishNotes } = require('../lib/mm-notes');
 let accessToken = null;
 let tokenRequest = null;
 
@@ -153,6 +154,14 @@ module.exports = async (req, res) => {
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'метод не поддерживается' });
     let body = req.body || {};
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'неверный запрос' }); } }
+    // публикация саммари мастермайндов воскресной задачей (Plaud → сюда); ключ – переменная SUMMARY_SECRET в Vercel
+    if (req.method === 'POST' && body.action === 'publishNotes') {
+        const secret = process.env.SUMMARY_SECRET || '';
+        const got = String(req.headers['x-summary-secret'] || '');
+        if (!secret || got.length !== secret.length || !crypto.timingSafeEqual(Buffer.from(got), Buffer.from(secret))) return res.status(401).json({ error: 'нет доступа' });
+        try { return res.status(200).json({ published: await publishNotes(await getAccessToken(), body.notes) }); }
+        catch (e) { console.error('publishNotes:', e.message); return res.status(400).json({ error: e.message }); }
+    }
     let user = null;
     let value;
     if (req.method === 'POST') {

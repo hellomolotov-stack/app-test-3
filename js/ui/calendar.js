@@ -1067,7 +1067,9 @@ export function hikeSummary(hike) {
     const own = String(hike.summary_link || '').trim();
     if (/^https?:\/\//.test(own)) return { link: own, title: String(hike.summary_title || '').trim() || hike.title };
     const item = (state.mastermindSummaries || []).find(s => s && s.link && (String(s.date).slice(0, 10) === hike.date || mskDay(s.date) === hike.date));
-    return item ? { link: String(item.link).trim(), title: item.title || hike.title } : null;
+    if (item) return { link: String(item.link).trim(), title: item.title || hike.title };
+    const note = (state.mmNotes || []).find(n => n.date === hike.date);
+    return note ? { link: '', title: note.title || hike.title } : null;
 }
 
 // пиксельная заглушка вместо скрытого текста (городские события для гостей): мозаика как в тетрисе
@@ -3217,7 +3219,8 @@ function updateFloatingSheetButtons() {
             // саммари мастермайнда с этого хайка – плашка как у письма, с диктофоном Plaud
             const sumRow = document.createElement('div');
             sumRow.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
-            sumRow.innerHTML = `<button type="button" class="letter-plate summary-plate">
+            const sumNote = (state.mmNotes || []).find(n => n.date === hike.date);
+            sumRow.innerHTML = `<button type="button" class="letter-plate summary-plate"${sumNote ? ` data-mm-note="${sumNote.id}"` : ''}>
                 <img class="summary-plate-img" src="assets/plaud.webp" alt="">
                 <span class="letter-plate-text"><b>саммари мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
                 <span class="letter-plate-go">${state.userCard.status === 'active' ? '›' : '🔒'}</span></button>`;

@@ -20,6 +20,7 @@ import { openOnboardingChat } from './chat-entry.js';
 import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
 import { mountCircle } from './circle.js';
+import { ensureMmNotes, mmNotes, mmNoteForDate } from './mm-reader.js';
 import { mountAdminEntry } from './admin-entry.js';
 import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
@@ -255,6 +256,18 @@ async function refreshPlus1Buttons(container) {
     });
 }
 
+const mskDayOf = d => { const s = String(d || ''); const t = new Date(s); return s.includes('T') && !isNaN(t) ? t.toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' }) : s.slice(0, 10); };
+// когда заметки Plaud загрузились – перерисовываем блок саммари (кнопки «читать» открывают читалку)
+function refreshMastermindBlock() {
+    ensureMmNotes().then(list => {
+        if (!list.length) return;
+        const c = document.getElementById('mastermindSummariesContainer');
+        if (!c) return;
+        c.innerHTML = renderMastermindSummaries();
+        c.querySelectorAll('.guest-read-btn').forEach(btn => btn.addEventListener('click', handleGuestRead));
+        try { fitMastermindScroll(); } catch (e) {}
+    });
+}
 function renderMastermindSummaries() {
     // саммари из листа + те, что добавлены к хайкам в админке (summary_link), без повторов по ссылке
     const listed = state.mastermindSummaries || [];
@@ -263,7 +276,10 @@ function renderMastermindSummaries() {
     const days = new Set(listed.map(s => String(s.date || '').slice(0, 10)));
     const fromHikes = (state.hikesWithTitle || []).filter(h => /^https?:\/\//.test(String(h.summary_link || '').trim()) && !links.has(String(h.summary_link).trim()) && !days.has(String(h.date).slice(0, 10)))
         .map(h => ({ date: h.date, title: String(h.summary_title || '').trim() || h.title, link: String(h.summary_link).trim() }));
-    const summaries = [...listed, ...fromHikes].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+    // саммари, которые читаются прямо в приложении (заметки Plaud), – тоже в списке, без повторов по дате
+    const known = new Set([...listed, ...fromHikes].map(s => mskDayOf(s.date)));
+    const fromNotes = mmNotes().filter(n => !known.has(n.date)).map(n => ({ date: n.date, title: n.title, link: '' }));
+    const summaries = [...listed, ...fromHikes, ...fromNotes].sort((a, b) => mskDayOf(b.date).localeCompare(mskDayOf(a.date)));
     const isGuest = state.userCard.status !== 'active';
     const currentYear = new Date().getFullYear();
     const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -298,7 +314,10 @@ function renderMastermindSummaries() {
                     formattedDate = item.date;
                 }
             }
-            const readBtn = isGuest
+            const note = mmNoteForDate(mskDayOf(item.date));
+            const readBtn = note
+                ? `<button type="button" data-mm-note="${note.id}" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: #ffffff; border-radius: 20px; font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap;">${isGuest ? '🔒 начало' : 'читать'}</button>`
+                : isGuest
                 ? `<button class="btn guest-read-btn" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: rgba(255,255,255,0.85); border-radius: 20px; font-size: 13px;">🔒</button>`
                 : `<a href="${item.link}" target="_blank" class="mastermind-read-link" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; text-decoration: none; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: #ffffff; border-radius: 20px; font-size: 13px; white-space: nowrap;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
@@ -778,6 +797,7 @@ function renderGuestHome() {
     });
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
+    refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
@@ -880,6 +900,7 @@ function renderOwnerHome() {
 
 
     renderUserBookings(document.getElementById('userBookingsContainer'));
+    refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
     renderCalendar(document.getElementById('calendarContainer'));
     initWeatherBlock();
