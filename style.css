@@ -7375,9 +7375,12 @@ html.v2 { background: #0A0C10; }
 html.v2 body { background: transparent !important; }
 html.v2 body::before { display: none; }
 html.v2 .rd-head { position: relative; }
-html.v2 .rd-head::after { content: ''; position: absolute; z-index: -1; right: -90px; top: -120px; width: 340px; height: 300px; pointer-events: none;
-  background: radial-gradient(closest-side, rgba(70,150,255,.42), rgba(70,150,255,.12) 55%, rgba(70,150,255,0)); }
-html.v2 .rd-mini-card img { box-shadow: 0 0 28px rgba(90,180,255,.5), 0 0 0 1px rgba(255,255,255,.18); }
+html.v2 { overflow-x: hidden; }
+html.v2 body { overflow-x: clip; }
+/* свечение от карты – широкое и очень мягкое, без видимого круга; не выходит за правый край (не даёт прокрутки вбок) */
+html.v2 .rd-head::after { content: ''; position: absolute; z-index: -1; right: -16px; top: -140px; width: 100vw; max-width: 520px; height: 420px; pointer-events: none;
+  background: radial-gradient(60% 55% at 88% 38%, rgba(70,150,255,.16), rgba(70,150,255,.07) 45%, rgba(70,150,255,0) 100%); }
+html.v2 .rd-mini-card img { box-shadow: 0 6px 22px rgba(90,180,255,.28), 0 0 0 1px rgba(255,255,255,.16); }
 html.v2 .rd-hero { box-shadow: 0 12px 70px -14px rgba(217,253,25,.32); }
 html.v2 #myAchievements { box-shadow: 0 12px 70px -16px rgba(232,180,70,.38); }
 html.v2 #circleContainer.cc-card { box-shadow: 0 12px 70px -16px rgba(60,200,190,.34); }
