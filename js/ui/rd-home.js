@@ -5,7 +5,7 @@ import { state } from '../state.js';
 import { haptic, openLink, parseLinks } from '../utils.js';
 import { log } from '../api.js';
 import { isUpcomingHike, moscowDateKey } from '../hike-timing.js';
-import { capacityFor, isPostponed, fetchGoingFromServer, showBottomSheet, snapshotHikeMap } from './calendar.js';
+import { capacityFor, isPostponed, fetchGoingFromServer, showBottomSheet, snapshotHikeMap, nextTeaser, isWaitlisted, toggleTeaserNotify } from './calendar.js';
 import { renderPriv } from './privileges.js';
 import { openCardSheet } from './card-sheet.js';
 import { setRdGlow } from '../redesign.js';
@@ -193,7 +193,7 @@ function mountCover(h) {
 }
 
 // ---------- сборка ----------
-export function rdHomeTopHtml({ stories = true } = {}) {
+export function rdHomeTopHtml({ stories = true, teaser = false } = {}) {
     const user = state.user;
     const now = new Date();
     const owner = state.userCard.status === 'active';
@@ -212,11 +212,27 @@ export function rdHomeTopHtml({ stories = true } = {}) {
             </button>
         </div>
         ${stories ? storiesHtml(buildStories()) : ''}
-        ${heroHtml(ev)}`;
+        ${ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
 }
 
 // классический дизайн v2: только шапка с мини-картой и ближайший хайк (без «свежего» и свечения)
-export function v2HomeTopHtml() { return rdHomeTopHtml({ stories: false }); }
+export function v2HomeTopHtml() { return rdHomeTopHtml({ stories: false, teaser: true }); }
+
+// хайка с названием пока нет – красивая заглушка «готовим следующий хайк» с подпиской на открытие записи
+function teaserHtml() {
+    const t = nextTeaser();
+    const d = t ? new Date(t.date + 'T12:00:00') : null;
+    const when = d ? `${WEEKDAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}` : 'скоро';
+    const on = t && isWaitlisted(t.date);
+    return `
+        <div class="v2-teaser" id="v2Teaser">
+            <div class="v2-teaser-art" aria-hidden="true"><svg viewBox="0 0 360 120" preserveAspectRatio="none"><path d="M0 120 L70 52 L105 80 L170 18 L230 74 L262 50 L360 120 Z" fill="rgba(217,253,25,.16)"/><path d="M0 120 L95 70 L150 96 L210 46 L300 104 L360 82 L360 120 Z" fill="rgba(217,253,25,.28)"/><circle cx="292" cy="30" r="12" fill="rgba(217,253,25,.5)"/></svg></div>
+            <span class="v2-teaser-when"><i></i>${esc(when)}</span>
+            <span class="v2-teaser-title">готовим следующий хайк</span>
+            <span class="v2-teaser-text">маршрут объявим совсем скоро. поставь уведомление – бот напишет, как только откроется запись</span>
+            ${t ? `<button type="button" class="v2-teaser-btn${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}">${on ? '✓ сообщим об открытии' : '🔔 сообщить, когда откроется запись'}</button>` : ''}
+        </div>`;
+}
 
 export function wireRdHomeTop() {
     const owner = state.userCard.status === 'active';
@@ -234,6 +250,13 @@ export function wireRdHomeTop() {
         btn.classList.remove('is-new');
         openStory(s);
     }));
+    const tb = document.getElementById('v2TeaserBtn');
+    tb?.addEventListener('click', async () => {
+        log('главная: заглушка хайка – сообщить', !owner, state.user, { date: tb.dataset.date });
+        const on = await toggleTeaserNotify(tb.dataset.date);
+        tb.classList.toggle('is-on', on);
+        tb.textContent = on ? '✓ сообщим об открытии' : '🔔 сообщить, когда откроется запись';
+    });
     if (!ev) return;
     const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
     document.getElementById('rdHeroCta')?.addEventListener('click', open);

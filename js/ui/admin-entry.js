@@ -19,15 +19,20 @@ export function openAdmin(tab) {
         });
 }
 
-// Кнопка «⚙️ админка» справа от приветствия, в одной строке с ним – только для админов.
+// 05.11: админка – пунктом в меню «⋯» (раздел «клуб»), а не кнопкой в шапке главной. Только для админов.
 export function mountAdminEntry() {
-    const header = document.querySelector('.header');
-    if (!header || !isAdminUser()) return;
-    header.classList.add('has-adm');
-    if (header.querySelector('.adm-entry')) return;
-    const btn = document.createElement('button');
-    btn.className = 'adm-entry';
-    btn.textContent = '⚙️ админка';
-    btn.addEventListener('click', () => { haptic(); openAdmin(); });
-    header.appendChild(btn);
+    document.querySelector('.header')?.classList.remove('has-adm');
+    document.querySelector('.header .adm-entry')?.remove();
+    const list = document.querySelector('#navPopup .ns-list');
+    if (!list || !isAdminUser() || document.getElementById('popupAdmin')) return;
+    const item = document.createElement('a');
+    item.href = '#'; item.id = 'popupAdmin'; item.className = 'popup-item';
+    item.textContent = '⚙️ админка';
+    item.addEventListener('click', e => {
+        e.preventDefault(); haptic();
+        document.getElementById('navPopup')?.classList.remove('show');
+        window.isMenuActive = false;
+        openAdmin();
+    });
+    list.prepend(item);
 }

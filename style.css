@@ -7385,3 +7385,17 @@ html.v2 .rd-hero-title { font-size: 26px; }
 html.v2 .rd-going { border-radius: 16px; }
 html.v2 .rd-tags span, html.v2 .rd-hero-when { border-radius: 999px; }
 html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
+
+/* классика v2: заглушка «готовим следующий хайк» на главной */
+.v2-teaser { position: relative; overflow: hidden; margin: 0 0 12px; padding: 18px 16px 16px; border-radius: 24px; display: flex; flex-direction: column; gap: 10px;
+  background: linear-gradient(160deg, rgba(34,44,18,.94), rgba(16,20,26,.94) 60%); border: 1px solid rgba(217,253,25,.3); box-shadow: 0 0 50px rgba(217,253,25,.1); }
+.v2-teaser-art { position: absolute; left: 0; right: 0; top: 0; height: 120px; opacity: .9; pointer-events: none; }
+.v2-teaser-art svg { width: 100%; height: 100%; display: block; }
+.v2-teaser > *:not(.v2-teaser-art) { position: relative; }
+.v2-teaser-when { align-self: flex-start; display: flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: rgba(11,13,16,.75); font-size: 13px; font-weight: 700; }
+.v2-teaser-when i { width: 7px; height: 7px; border-radius: 4px; background: var(--yellow); box-shadow: 0 0 0 4px rgba(217,253,25,.25); animation: v2pulse 1.8s ease-in-out infinite; }
+@keyframes v2pulse { 50% { box-shadow: 0 0 0 7px rgba(217,253,25,0); } }
+.v2-teaser-title { margin-top: 44px; font-size: 26px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; }
+.v2-teaser-text { font-size: 14px; line-height: 1.4; color: rgba(255,255,255,.7); }
+.v2-teaser-btn { height: 48px; margin-top: 4px; border: 0; border-radius: 999px; background: var(--yellow); color: #141800; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.v2-teaser-btn.is-on { background: rgba(217,253,25,.12); color: var(--yellow); box-shadow: inset 0 0 0 1.5px rgba(217,253,25,.5); }

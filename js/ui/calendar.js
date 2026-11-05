@@ -25,7 +25,7 @@ import { openOnboardingChat } from './chat-entry.js';
 import { maybeAskNotifications, ensureCanMessage, needsWriteAccess } from './notify-optin.js';
 import { getRouteForHikeTitle } from './personal-routes-map.js';
 import { setLumenContext } from './lumen.js';
-import { isRedesign } from '../redesign.js';
+import { isRedesign, isV2 } from '../redesign.js';
 import { INTELLIGENTSIA_ROUTES } from './intelligentsia-routes-data.js';
 import { getIntelligentsiaRouteTrack } from './intelligentsia-routes.js';
 import { bookHike, cancelHike, bookingErrorText } from '../registration.js';
@@ -515,6 +515,8 @@ function renderEventsFeed(container) {
         return `<button class="${cls}" data-month="${k}"><span class="ef-mbar${empty ? ' is-empty' : ''}">${segs}</span><small>${FEED_MONTHS_SHORT[Number(k.slice(5)) - 1]}</small></button>`;
     }).join('');
 
+    // классика v2: у владельца карты ближайший хайк – наверху главной, в календаре не дублируем
+    const hideFeatured = isV2() && state.userCard.status === 'active';
     const monthEvents = events.filter(h => h.date.startsWith(feedMonth));
     const future = monthEvents.filter(h => h.date >= today);
     const past = monthEvents.filter(h => h.date < today).reverse();
@@ -528,8 +530,8 @@ function renderEventsFeed(container) {
     container.innerHTML = `
         <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
         <div class="calendar-item events-feed">
-            <div class="ef-label is-soon">${featuredLabel}</div>
-            ${feedNearestCard(nearest)}
+            ${hideFeatured ? '' : `<div class="ef-label is-soon">${featuredLabel}</div>
+            ${feedNearestCard(nearest)}`}
             <div class="ef-label-row">
                 <div class="ef-label">события клуба</div>
                 <div class="ef-month-nav">
@@ -4780,4 +4782,15 @@ function rdFillSheetGoing(box, hike, list, isPast) {
         <div class="rd-sg-head"><span>${isPast ? 'кто был' : 'кто идёт'}</span>${showCap ? `<b>${people.length} из ${cap}</b>` : `<b>${people.length}</b>`}</div>
         ${people.length || free ? `<div class="rd-sg-grid">${cells}${free}</div>` : ''}
         ${people.length > 10 ? `<div class="rd-sg-more">и ещё ${people.length - 10}</div>` : ''}`;
+}
+
+// классика v2 (главная): ближайшая дата-заглушка «готовим хайк» и подписка «сообщить» – тем же листом ожидания
+export function nextTeaser() {
+    const n = feedNearest(feedEvents());
+    return n && !(n.title && n.title.trim()) && !/🏄/.test(n.emoji || '') ? n : null;
+}
+export const isWaitlisted = date => !!feedWaitlist()[date];
+export async function toggleTeaserNotify(date) {
+    await feedToggleNotify(date, feedClockContainer || document.createElement('div'), { silentOff: true });
+    return isWaitlisted(date);
 }
