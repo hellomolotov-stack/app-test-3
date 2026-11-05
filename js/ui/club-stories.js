@@ -12,7 +12,7 @@ const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').re
 const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'саммари мастермайнда', app: 'новое в приложении', event: 'событие', custom: 'клуб' };
 const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', app: '✨', event: '📅', custom: '⛰️' };
 const BG = {
-    member: 'radial-gradient(100% 60% at 50% 32%,#2d4410,#0a1018 72%)',
+    member: 'radial-gradient(100% 60% at 50% 32%,#1d3a55,#0a1018 72%)',
     badges: 'radial-gradient(100% 60% at 50% 32%,#3a3110,#0a1018 72%)',
     summary: 'radial-gradient(110% 70% at 30% 20%,#3a2a55,#120e1c 75%)',
     app: 'radial-gradient(100% 60% at 50% 30%,#123a4a,#0a1018 72%)',
@@ -102,10 +102,14 @@ async function runAction(action) {
 // просмотр; preview: true – из админки, без отметок о просмотре
 export function openStories(list, start = 0, onClose = null, { preview = false } = {}) {
     if (!list.length) return;
-    document.querySelector('.csv-overlay')?.remove();
+    document.querySelectorAll('.csv-overlay').forEach(o => o.remove());
     let i = Math.max(0, start), t0 = 0, elapsed = 0, paused = false, raf = 0;
     const ov = document.createElement('div');
     ov.className = 'csv-overlay';
+    // в полноэкранном Telegram сверху его кнопки «закрыть» и «⋯» – полоски и шапку ставим ниже них
+    const tgw = window.Telegram?.WebApp;
+    const top = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
+    ov.style.setProperty('--csv-top', `${top}px`);
     ov.innerHTML = `<div class="csv-bars">${list.map(() => '<i><b></b></i>').join('')}</div><div class="csv-body"></div>`;
     document.body.appendChild(ov);
     document.body.style.overflow = 'hidden';
@@ -120,7 +124,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             ${visual(s)}
             <div class="csv-shade"></div>
             <div class="csv-head"><span class="csv-av"></span><b>интеллигенция</b><span>· ${ago(s.date)}</span><button type="button" class="csv-x" aria-label="закрыть">✕</button></div>
-            <div class="csv-text"><span class="csv-tag">${esc(TAG[s.type] || 'клуб')}</span><h2>${esc(s.title)}</h2>${s.text ? `<p>${esc(s.text)}</p>` : ''}
+            <div class="csv-text"><span class="csv-tag csv-t-${esc(s.type)}"><i></i>${esc(TAG[s.type] || 'клуб')}</span><h2>${esc(s.title)}</h2>${s.text ? `<p>${esc(s.text)}</p>` : ''}
                 ${s.button ? `<button type="button" class="csv-btn">${esc(s.button.label)}</button>` : ''}</div>`;
         elapsed = 0; t0 = performance.now();
         if (!preview) {
@@ -132,6 +136,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     const close = () => {
         cancelAnimationFrame(raf);
         ov.classList.add('is-out');
+        ov.style.pointerEvents = 'none';
         document.body.style.overflow = '';
         setTimeout(() => ov.remove(), 220);
         onClose?.();
