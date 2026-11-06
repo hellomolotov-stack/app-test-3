@@ -483,7 +483,7 @@ export function renderIntelligentsiaRoutes(container) {
     container.innerHTML = `
         <div class="card-container intelligentsia-routes-card">
             <div class="intelligentsia-routes-header">
-                <h2 class="section-title">🖇️ карта хайков</h2>
+                <h2 class="section-title">карта хайков</h2>
             </div>
             <div class="intelligentsia-route-map-wrap">
                 <div id="intelligentsiaRoutesMap" class="intelligentsia-route-map"></div>

@@ -659,7 +659,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
     container.innerHTML = `
         <div class="card-container pmap-card">
             <div class="pmap-head">
-                <h2 class="section-title">🗺 мой Крым</h2>
+                <h2 class="section-title">мой Крым</h2>
                 <div class="pmap-count">${count}<small> / ${total}</small></div>
             </div>
             <div class="pmap-sub">${complete ? 'весь южный берег открыт' : `маршрутов пройдено · открыто ${percent}% гор`}</div>

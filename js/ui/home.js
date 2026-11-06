@@ -133,7 +133,7 @@ export function renderUserBookings(container) {
     const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
     let html = `
         <div class="card-container" id="userBookingsCard">
-            <h2 class="section-title">🎫 мои записи</h2>
+            <h2 class="section-title">мои записи</h2>
     `;
     bookings.forEach(booking => {
         const isWoman = booking.woman === 'yes';
@@ -334,8 +334,7 @@ function renderMastermindSummaries() {
 
     return `
         <div class="card-container" id="mastermindSummariesCard">
-            <h2 class="section-title" style="margin: 0 16px 16px 16px;">
-                🧠 саммари мастермайнда
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;">саммари мастермайнда
             </h2>
             <p style="margin: -8px 16px 16px; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.55);">здесь собраны записи всех ценных мыслей, которые были озвучены участниками на мастермайнд сессиях во время хайков на вершинах гор южного берега. материал записан Plaud Note Pro и обработан с помощью последних моделей ChatGPT и Claude</p>
             <div class="mm-scroll">${innerHtml}</div>
@@ -417,7 +416,7 @@ function renderTestimonialsBlock() {
 
     return `
         <div class="card-container" id="testimonialsContainer">
-            <h2 class="section-title" style="margin: 0 16px 16px 16px;">💬 почему остаются</h2>
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;">почему остаются</h2>
             <div class="tst-scroller">${cards}</div>
         </div>
     `;
@@ -442,8 +441,7 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <h2 class="section-title" style="margin: 0 16px 16px 16px;">
-                📨 обновления
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;">обновления
             </h2>
             <div class="updates-scroll">${itemsHtml}</div>
         </div>
@@ -593,7 +591,7 @@ function renderGuestHome() {
         </div>
         ${/* блок «интеллигентный помощник» на главной гостя убран (15.10) – спросить можно строкой сверху */ false ? `
         <div class="card-container" id="chatBlock">
-            <h2 class="section-title">💬 интеллигентный помощник</h2>
+            <h2 class="section-title">интеллигентный помощник</h2>
             <div class="guest-chat">
                 <div class="gc-inner">
                     <div class="gc-viewport">
@@ -614,7 +612,7 @@ function renderGuestHome() {
         <div class="card-container" id="calendarContainer"></div>
         ${!isLumenPilotUser(state.user) ? `
         <div class="card-container">
-            <h2 class="section-title">🫖 для новичков</h2>
+            <h2 class="section-title">для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
                 <span class="newcomer-text">как всё устроено</span>
                 <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
@@ -624,7 +622,7 @@ function renderGuestHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span class="ml-long">смотреть </span>отчёты ›</a></div>
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
                 <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
@@ -844,7 +842,7 @@ function renderOwnerHome() {
         ${renderWeatherBlock()}
         ${!isLumenPilotUser(state.user) ? `
         <div class="card-container">
-            <h2 class="section-title">🫖 для новичков</h2>
+            <h2 class="section-title">для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtn">
                 <span class="newcomer-text">как всё устроено</span>
                 <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
@@ -852,7 +850,7 @@ function renderOwnerHome() {
         </div>
         ` : ''}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title">🌍 клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span class="ml-long">смотреть </span>отчёты ›</a></div>
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
                 <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>

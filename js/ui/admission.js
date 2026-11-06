@@ -69,7 +69,7 @@ export function mountAdmissionEntry() {
         approved: ['добро пожаловать в клуб', 'мы прочитали анкету – теперь можно записаться на хайк или оформить карту', 'продолжить'],
         rejected: ['ответ по анкете', 'сейчас не получится позвать тебя в клуб – подробности внутри', 'посмотреть ответ'],
     }[status];
-    block.innerHTML = status === 'new' ? `<h2 class="section-title">🔑 как попасть в клуб</h2>
+    block.innerHTML = status === 'new' ? `<h2 class="section-title">как попасть в клуб</h2>
         <p class="adm-lead">в горы можно пойти с кем угодно – одному, с другом или с очередным походным чатом. к нам приходят не за маршрутом, а за людьми</p>
         <div class="calendar-item adm-inner">
             <div class="adm-paths" role="tablist">
@@ -92,7 +92,7 @@ export function mountAdmissionEntry() {
             </div>
             <p class="adm-entry-note adm-invite-note" data-for="invite" hidden>если тебя уже позвали – просто открой присланную ссылку</p>
         </div>
-        <button type="button" class="adm-why-row" id="admissionWhy"><span>почему вход не для всех</span><b>узнать ›</b></button>` : `<h2 class="section-title">✍️ ${copy[0]}</h2><div class="admission-entry-copy"><p>${copy[1]}</p>
+        <button type="button" class="adm-why-row" id="admissionWhy"><span>почему вход не для всех</span><b>узнать ›</b></button>` : `<h2 class="section-title">${copy[0]}</h2><div class="admission-entry-copy"><p>${copy[1]}</p>
         ${status === 'pending' ? reviewMarkup(application) : ''}
         ${status === 'approved' ? '<span class="admission-status-tag is-approved">заявка одобрена</span>' : ''}
         ${status === 'rejected' ? '<span class="admission-status-tag">заявка рассмотрена</span>' : ''}

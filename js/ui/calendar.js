@@ -71,7 +71,7 @@ export function renderCalendar(container) {
     const hasNextMonth = hasHikesInMonth(year, month + 1);
 
     let calendarHtml = `
-        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
+        <h2 class="section-title" style="margin:0 16px 16px 16px;">календарь</h2>
         <div class="calendar-item">
             <div class="calendar-header-with-legend">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
@@ -528,7 +528,7 @@ function renderEventsFeed(container) {
         : `<div class="ef-row-sub ef-empty-month">${feedMonth >= nowMonth ? 'планируем хайки и события' : 'в этом месяце событий не было'}</div>`;
 
     container.innerHTML = `
-        <h2 class="section-title" style="margin:0 16px 16px 16px;">🗓️ календарь</h2>
+        <h2 class="section-title" style="margin:0 16px 16px 16px;">календарь</h2>
         <div class="calendar-item events-feed">
             ${hideFeatured ? '' : `<div class="ef-label is-soon">${featuredLabel}</div>
             ${feedNearestCard(nearest)}`}
@@ -1266,7 +1266,7 @@ export function renderRoutesMap(container) {
     if (!container) return;
     container.innerHTML = `
         <div class="card-container">
-            <h2 class="section-title">🗺 наши маршруты</h2>
+            <h2 class="section-title">наши маршруты</h2>
             <div id="routesMapEl" style="height: 340px; border-radius: 14px; margin: 0 16px 16px; overflow: hidden; background: #0A0B09;"></div>
         </div>
     `;

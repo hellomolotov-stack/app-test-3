@@ -7429,7 +7429,7 @@ html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 .csv-bars { position: absolute; z-index: 5; top: calc(var(--csv-top, 0px) + 6px); left: 10px; right: 10px; display: flex; gap: 4px; }
 .csv-bars i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.3); overflow: hidden; }
 .csv-bars b { display: block; height: 100%; width: 0; background: #fff; }
-.csv-body { position: absolute; inset: 0; transition: transform .15s; overflow: hidden; border-radius: 0; }
+.csv-body { position: absolute; inset: 0; transition: none; overflow: hidden; border-radius: 0; }
 .csv-bg { position: absolute; inset: 0; }
 .csv-cover { position: absolute; inset: 0; background: center/cover no-repeat; }
 .csv-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 42%, rgba(0,0,0,.9) 78%); pointer-events: none; }
@@ -7514,3 +7514,13 @@ html.v2 #myAchievements .mya-wait { margin: 12px 0 0; }
 .csv-plaud-halo { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(160,130,240,.4), rgba(160,130,240,0) 65%); }
 .csv-plaud { position: relative; width: 34%; max-width: 150px; border-radius: 16px; filter: drop-shadow(0 24px 40px rgba(0,0,0,.6)); animation: csvPlaud 4s ease-in-out infinite; }
 @keyframes csvPlaud { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(-5deg) translateY(-10px); } }
+
+.csv-peek { position: fixed; inset: 0; z-index: 3600; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; background: rgba(5,8,12,0); transition: opacity .3s; }
+.csv-peek.is-out { opacity: 0; }
+.csv-peek-sheet { width: calc(100% - 20px); max-width: 560px; height: 68vh; height: 68dvh; margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); border-radius: 34px; background: rgba(18,26,36,.92); -webkit-backdrop-filter: blur(36px) saturate(180%); backdrop-filter: blur(36px) saturate(180%); border: 1px solid rgba(255,255,255,.2); color: #fff; display: flex; flex-direction: column; align-items: center; padding-top: 12px; transform: translateY(100%); }
+.csv-peek-grab { width: 40px; height: 5px; border-radius: 3px; background: rgba(255,255,255,.25); margin-bottom: 26px; }
+.csv-peek-sheet b { font-size: 20px; font-weight: 800; }
+.csv-peek-dots { display: flex; gap: 6px; margin-top: 16px; }
+.csv-peek-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.5); animation: csvDot 1s ease-in-out infinite; }
+.csv-peek-dots i:nth-child(2) { animation-delay: .15s; } .csv-peek-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes csvDot { 50% { opacity: .2; transform: translateY(-3px); } }

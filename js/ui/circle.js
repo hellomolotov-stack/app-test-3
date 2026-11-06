@@ -185,7 +185,7 @@ function avStyle(p, i) {
 function blockHtml(d) {
     const n = d.total, nx = d.next;
     return `
-        <div class="cc-hdr"><h2>🫂 твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
+        <div class="cc-hdr"><h2>твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
         <div class="cc-panel" data-cc-open>
             ${netSvg({ ...d, people: d.people.slice(0, d.locked ? 90 : NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccm' })}
             <div class="cc-fade"></div>
@@ -206,7 +206,7 @@ export async function mountCircle(container) {
     if (!container || !circleEnabled()) return;
     ensureCss();
     container.className = 'card-container cc-card';
-    container.innerHTML = '<div class="cc-hdr"><h2>🫂 твои связи</h2></div><div class="cc-load">собираю твои связи…</div>';
+    container.innerHTML = '<div class="cc-hdr"><h2>твои связи</h2></div><div class="cc-load">собираю твои связи…</div>';
     try {
         // один запрос на запуск: главная перерисовывается 2–3 раза подряд, и каждый раз уходил новый запрос
         data = data || await (dataRequest ||= load().catch(() => null).then(d => { if (!d) dataRequest = null; return d; }));
@@ -412,14 +412,14 @@ export function openCircleSheet() {
         <div class="cs2-sheet" role="dialog" aria-label="твои связи">
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
-            <div class="cs2-h">🫂 твои связи</div>
+            <div class="cs2-h">твои связи</div>
             <div class="cs2-sub">${d.locked ? `${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб. всё откроется с картой интеллигента` : 'люди, с которыми ты был на хайках клуба. близкий круг – те, с кем вы ходили вместе хотя бы дважды'}</div>
             ${far ? `<div class="cs2-tg" id="cs2Tg"><button type="button" class="on" data-mode="near">${d.locked ? `знакомые · ${d.total}` : `близкие · ${near}`}</button><button type="button" data-mode="all">${d.locked ? `весь клуб · ${d.total + (d.clubCount || 0)}` : `все · ${d.people.length}`}</button></div>` : ''}
             <div class="cs2-net" id="cs2Net">${net.svg}</div>
             <div class="cs2-stats"><div><b>${d.total}</b>${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках</div><div><b style="color:var(--yellow)">${d.strong}</b>близкий круг</div><div><b>${d.hikes}</b>${plural(d.hikes, 'твой хайк', 'твоих хайка', 'твоих хайков')}</div></div>
             <div class="cs2-car" id="cs2Car">${cards}</div>
             ${d.locked ? '<button type="button" class="cs2-go" style="width:calc(100% - 32px);margin:12px 16px 0" data-cs2-card>открыть все связи с картой</button>' : ''}
-            ${nx ? `<div class="cs2-sec">🗓 ближайший хайк</div>
+            ${nx ? `<div class="cs2-sec">ближайший хайк</div>
             <div class="cs2-next"><div class="top"><b>${dayLabel(nx.date)}${nx.title ? ' · ' + esc(nx.title) : ''}</b></div>
                 <div class="row"><div class="cs2-stack">${stack}</div><span>${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em></span></div>
                 <button type="button" class="cs2-go" data-cs2-hike>открыть хайк</button></div>` : ''}

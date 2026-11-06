@@ -43,7 +43,7 @@ export async function mountMyAchievements() {
         const shelf = [...items].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0)).slice(0, 3);
         const owned = new Set(items.map(a => catalogByTitle(a.title)?.id || a.title));
         const nextSteps = FIRST_STEPS.filter(st => !owned.has(st.id)).slice(0, 3 - shelf.length);
-        host.innerHTML = `<div class="mya-head"><h2 class="section-title">🎒 мои значки</h2></div>
+        host.innerHTML = `<div class="mya-head"><h2 class="section-title">твои значки</h2></div>
             ${items.length ? '' : '<p class="mya-sub">собирай значки за хайки, маршруты и моменты на тропе</p>'}
             <div class="mya-shelf">${shelf.map((a, i) => { const w = isWaiting(a) ? metalOf(a) : '';
                 return `<button type="button" class="mya-it${w ? ` is-wait is-${w}` : ''}" data-medal="${i}" aria-label="${esc(a.title)}">
@@ -189,7 +189,7 @@ function vitrineHtml(items, shelf, owned, waiting) {
         const g = nearestGoals(owned)[0];
         if (g) { const art = medalForTitle(g.title); goal = `<button type="button" class="vt-goal" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<div><b>следующий – ${esc(g.title)}</b><small class="vt-sub">${esc(g.sub)}</small></div><small>›</small></button>`; }
     }
-    return `<div class="vt-head"><b>мои значки<small>${items.length} из ${total}</small></b><button type="button" class="vt-all" data-mya-all>все ›</button></div>
+    return `<div class="vt-head"><b>твои значки<small>${items.length} из ${total}</small></b><button type="button" class="vt-all" data-mya-all>все ›</button></div>
         <div class="vt-stage">${pic(a1, 1, 'vt-side vt-l')}${pic(a0, 0, 'vt-main')}${pic(a2, 2, 'vt-side vt-r')}</div>
         <div class="vt-title">${esc(a0.title)}</div>
         <div class="vt-date">${a0.seenAt === null ? 'новый · ' : ''}${day ? `получен ${day}` : ''}</div>

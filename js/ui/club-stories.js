@@ -100,6 +100,21 @@ async function runAction(action) {
     if (a === 'circle') { const m = await import('./circle.js'); return m.openCircleSheet(); }
 }
 
+// шторка-заготовка для действий без своей читалки: выезжает за пальцем, затем открывается настоящая шторка
+function peekSheet(s) {
+    const el = document.createElement('div');
+    el.className = 'csv-peek';
+    el.innerHTML = `<div class="csv-peek-sheet"><i class="csv-peek-grab"></i><b>${esc(s.button?.label || '')}</b><span class="csv-peek-dots"><i></i><i></i><i></i></span></div>`;
+    document.body.appendChild(el);
+    const sh = el.firstElementChild;
+    const H = () => sh.getBoundingClientRect().height;
+    return {
+        set(p) { sh.style.transform = `translateY(${((1 - p) * H()).toFixed(1)}px)`; el.style.background = `rgba(5,8,12,${(.5 * p).toFixed(3)})`; },
+        commit() { sh.style.transition = 'transform .28s cubic-bezier(.2,.9,.3,1)'; sh.style.transform = 'translateY(0)'; setTimeout(() => { el.classList.add('is-out'); setTimeout(() => el.remove(), 300); }, 420); },
+        cancel() { sh.style.transition = 'transform .22s ease'; sh.style.transform = `translateY(${H()}px)`; el.style.transition = 'background .22s'; el.style.background = 'rgba(5,8,12,0)'; setTimeout(() => el.remove(), 240); },
+    };
+}
+
 // просмотр; preview: true – из админки, без отметок о просмотре
 export function openStories(list, start = 0, onClose = null, { preview = false } = {}) {
     if (!list.length) return;
@@ -129,14 +144,23 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             <div class="csv-text"><span class="csv-tag csv-t-${esc(s.type)}"><i></i>${esc(TAG[s.type] || 'клуб')}</span><h2>${esc(s.title)}</h2>${s.text ? `<p>${esc(s.text)}</p>` : ''}
                 ${s.button ? `<button type="button" class="csv-btn">${esc(s.button.label)}</button>` : ''}</div>`;
         elapsed = 0; t0 = performance.now();
+        // картинку – посередине между шапкой и текстом
+        requestAnimationFrame(() => {
+            const stg = body.querySelector('.csv-stage'), hd = body.querySelector('.csv-head'), tx = body.querySelector('.csv-text');
+            if (!stg || !hd || !tx) return;
+            const a = hd.getBoundingClientRect().bottom + 14, b = tx.getBoundingClientRect().top - 14;
+            if (b - a > 120) { stg.style.top = a + 'px'; stg.style.height = (b - a) + 'px'; }
+        });
+        if (String(s.button?.action || '').startsWith('mm:')) import('./mm-reader.js').then(m => m.ensureMmNotes()).catch(() => {});
         if (!preview) {
             markSeen(s.id);
             if (!s.seen) { s.seen = true; meCall('story_view', { id: s.id }).catch(() => {}); }
             log('сторис: открыл', state.userCard?.status !== 'active', state.user, { id: s.id, type: s.type });
         }
     };
-    const close = () => {
+    const close = (instant = false) => {
         cancelAnimationFrame(raf);
+        if (instant) { ov.remove(); onClose?.(); return; }
         ov.classList.add('is-out');
         ov.style.pointerEvents = 'none';
         document.body.style.overflow = '';
@@ -166,22 +190,63 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     ov.addEventListener('pointerdown', e => {
         if (e.target.closest('.csv-btn, .csv-x')) return;
         sx = e.clientX; sy = e.clientY; st = Date.now(); held = false;
+        try { ov.setPointerCapture(e.pointerId); } catch (err) {}
         holdTimer = setTimeout(() => { held = true; pause(true); }, 220);
     });
+    // свайп вверх: снизу за пальцем выезжает шторка действия (у саммари – сама читалка)
+    let drag = null, dragTried = false;
+    let dragGen = 0;
+    const startDrag = async () => {
+        dragTried = true;
+        const gen = ++dragGen;
+        const s = list[i], a = String(s.button?.action || '');
+        let d = null;
+        if (a.startsWith('mm:') && !preview) {
+            const m = await import('./mm-reader.js');
+            d = m.dragMmReader(a.slice(3));
+            if (d) d.kind = 'mm';
+        }
+        d = d || peekSheet(s);
+        // палец уже отпустили, пока грузилось, – убираем
+        if (gen !== dragGen || !dragTried) { d.cancel(); return; }
+        drag = d;
+    };
     ov.addEventListener('pointermove', e => {
         const dy = e.clientY - sy;
-        if (st && dy < 0 && list[i].button) body.style.transform = `translateY(${Math.max(dy, -120) * .25}px)`;
+        if (st && dy < -12 && list[i].button) {
+            clearTimeout(holdTimer);
+            if (!dragTried) { pause(true); startDrag(); }
+            const p = Math.min(1, -dy / (window.innerHeight * .55));
+            drag?.set(p);
+            body.style.transform = `scale(${1 - p * .06})`;
+            body.style.filter = `brightness(${1 - p * .35})`;
+        }
         else if (st && dy > 0) body.style.transform = `translateY(${dy * .6}px) scale(${1 - Math.min(dy, 300) / 2000})`;
     });
     ov.addEventListener('pointerup', e => {
         clearTimeout(holdTimer);
         if (!st) return;
         const dy = e.clientY - sy, dx = e.clientX - sx;
-        st = 0; body.style.transform = '';
+        st = 0;
+        if (dragTried) {
+            const d = drag; drag = null; dragTried = false; dragGen++;
+            body.style.transition = 'transform .25s ease, filter .25s ease';
+            if (dy < -80 && d) {
+                haptic();
+                const s = list[i];
+                if (!preview) log('сторис: свайп вверх', state.userCard?.status !== 'active', state.user, { id: s.id, action: s.button?.action });
+                d.commit();
+                if (d.kind === 'mm') { setTimeout(() => close(true), 330); }
+                else { setTimeout(() => { close(true); if (!preview) runAction(s.button?.action); }, 300); }
+            } else {
+                d?.cancel(); body.style.transform = ''; body.style.filter = ''; pause(false);
+            }
+            setTimeout(() => { body.style.transition = ''; }, 260);
+            return;
+        }
+        body.style.transform = '';
         if (held) { pause(false); return; }
         if (dy > 90) return close();
-        // свайп вверх – то же, что кнопка внизу («потяни вверх»)
-        if (dy < -70 && list[i].button) { ov.querySelector('.csv-btn')?.click(); return; }
         if (Math.abs(dx) > 50) { haptic(); return go(dx < 0 ? 1 : -1); }
         if (Math.abs(dx) + Math.abs(dy) > 12) return;
         haptic();

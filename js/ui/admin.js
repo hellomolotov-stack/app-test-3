@@ -545,7 +545,7 @@ async function saveHomepageSection(section, value) {
 // список: сверху черновики (автоматические – новый владелец карты, саммари, значки за хайк), ниже опубликованные
 let storiesAdm = null, storyDraft = null, storiesBusy = false;
 const ST_TYPES = [['member', '🎉 новый член клуба'], ['app', '✨ новое в приложении'], ['event', '📅 событие'], ['summary', '🧠 саммари'], ['badges', '🏅 значки'], ['custom', '✍️ свой']];
-const ST_ACTIONS = [['', 'без кнопки'], ['hike', 'записаться на хайк'], ['card', 'карта интеллигента'], ['badges', 'мои значки'], ['calendar', 'календарь'], ['circle', 'твои связи'], ['url', 'ссылка…']];
+const ST_ACTIONS = [['', 'без кнопки'], ['hike', 'записаться на хайк'], ['card', 'карта интеллигента'], ['badges', 'твои значки'], ['calendar', 'календарь'], ['circle', 'твои связи'], ['url', 'ссылка…']];
 async function storiesCall(action, story = null) {
     const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
         body: JSON.stringify({ action, story, initData: tg?.initData || '' }) });

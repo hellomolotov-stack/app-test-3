@@ -121,11 +121,23 @@ function ensureCss() {
 }
 
 let overlay = null;
-export async function openMmReader(id) {
-    if (overlay) return;
+export async function openMmReader(id, { drag = false } = {}) {
+    if (overlay) return null;
     ensureCss();
     const list = await ensureMmNotes();
-    if (!list.length) return;
+    if (!list.length) return null;
+    return buildReader(list, id, drag);
+}
+
+// для сторис: читалка выезжает за пальцем (свайп вверх). Заметки должны быть уже загружены (ensureMmNotes).
+// Возвращает { set(p 0..1), commit(), cancel() } или null.
+export function dragMmReader(id) {
+    if (overlay || !state.mmNotes?.length) return null;
+    ensureCss();
+    return buildReader(state.mmNotes, id, true);
+}
+
+function buildReader(list, id, drag) {
     let idx = Math.max(0, list.findIndex(n => n.id === id));
     let view = 'read';
     overlay = document.createElement('div');
@@ -135,7 +147,16 @@ export async function openMmReader(id) {
         <div class="mmr-scroll"></div></div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => overlay.classList.add('is-on'));
+    const me = overlay, sheetEl = overlay.querySelector('.mmr-sheet');
+    if (!drag) requestAnimationFrame(() => overlay.classList.add('is-on'));
+    else {
+        me.classList.add('mmr-drag');
+        me.style.zIndex = '3600'; // поверх сторис
+        me.style.pointerEvents = 'none'; // палец ведёт сторис, пока шторка выезжает
+        sheetEl.style.transition = 'none';
+        sheetEl.style.opacity = '1';
+        sheetEl.style.transform = 'translateY(100%)';
+    }
     const scroll = overlay.querySelector('.mmr-scroll');
     const draw = () => {
         const cur = list[idx];
@@ -171,6 +192,28 @@ export async function openMmReader(id) {
         }
         if (e.target === overlay || e.target.closest('.mmr-x')) { haptic(); closeMmReader(); }
     });
+    if (!drag) return null;
+    const H = () => sheetEl.getBoundingClientRect().height + 20;
+    return {
+        set(p) {
+            p = Math.max(0, Math.min(1, p));
+            sheetEl.style.transform = `translateY(${((1 - p) * H()).toFixed(1)}px)`;
+            me.style.background = `rgba(5,8,12,${(.62 * p).toFixed(3)})`;
+        },
+        commit() {
+            sheetEl.style.transition = 'transform .32s cubic-bezier(.2,.9,.3,1)';
+            me.style.transition = 'background .32s ease';
+            requestAnimationFrame(() => { sheetEl.style.transform = 'translateY(0)'; me.style.background = ''; me.classList.add('is-on'); });
+            setTimeout(() => { sheetEl.style.transition = ''; sheetEl.style.transform = ''; sheetEl.style.opacity = ''; me.classList.remove('mmr-drag'); me.style.transition = ''; me.style.zIndex = ''; }, 360);
+            me.style.pointerEvents = '';
+        },
+        cancel() {
+            sheetEl.style.transition = 'transform .25s ease';
+            me.style.transition = 'background .25s ease';
+            sheetEl.style.transform = `translateY(${H()}px)`; me.style.background = 'rgba(5,8,12,0)';
+            setTimeout(() => { if (overlay === me) overlay = null; me.remove(); document.body.style.overflow = ''; }, 260);
+        },
+    };
 }
 
 export function closeMmReader() {
