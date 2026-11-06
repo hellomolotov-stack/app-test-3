@@ -193,7 +193,7 @@ function mountCover(h) {
 }
 
 // ---------- сборка ----------
-export function rdHomeTopHtml({ stories = true, teaser = false } = {}) {
+export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, hero = true, between = '' } = {}) {
     const user = state.user;
     const now = new Date();
     const owner = state.userCard.status === 'active';
@@ -206,17 +206,20 @@ export function rdHomeTopHtml({ stories = true, teaser = false } = {}) {
                 <span class="rd-date">${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span>
                 <span class="rd-hello">привет, ${esc(user?.first_name || 'друг')}</span>
             </div>
-            <button type="button" class="rd-mini-card" id="rdMiniCard" aria-label="${owner ? 'моя карта интеллигента' : 'карта интеллигента'}">
+            ${mini ? '' : '<!--'}<button type="button" class="rd-mini-card" id="rdMiniCard" aria-label="${owner ? 'моя карта интеллигента' : 'карта интеллигента'}">
                 <img src="${esc(cardImg)}" alt="">
                 <span>${owner ? Number(state.userCard.hikes || 0) : '?'}</span>
-            </button>
+            </button>${mini ? '' : '-->'}
         </div>
         ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : '<div id="clubStoriesHost"></div>'}
-        ${ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
+        ${between}
+        ${!hero ? '' : ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
 }
 
 // классический дизайн v2: только шапка с мини-картой и ближайший хайк (без «свежего» и свечения)
 export function v2HomeTopHtml() { return rdHomeTopHtml({ stories: false, teaser: true }); }
+// гость в v2: шапка без мини-карты, сторис, большая карта-стирашка (between), под ней ближайший хайк
+export function v2GuestTopHtml(cardHtml) { return rdHomeTopHtml({ stories: false, teaser: true, mini: false, between: cardHtml }); }
 
 // хайка с названием пока нет – компактная плашка «готовим хайк» с тумблером.
 // Тумблер – постоянная подписка (localStorage hikeAlertsOn): пока включён, человек подписан на открытие записи

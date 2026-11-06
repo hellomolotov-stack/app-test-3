@@ -6,7 +6,7 @@ import { state } from './state.js';
 // 05.11: новый дизайн из облачной сессии выключен – Макс вернулся к классическому (с правками v2 ниже)
 const RD_USER_IDS = new Set([]);
 // v2 – классический дизайн с правками (карта в углу, ближайший хайк, фото только в шапке, единые скругления)
-const V2_USER_IDS = new Set(['163665735']); // @maxmolotov
+const V2_USER_IDS = new Set(['163665735', '7845375334']); // @maxmolotov, @hellointelligent (тест версии для гостей)
 export function isV2() { return V2_USER_IDS.has(currentUserId()); }
 
 function currentUserId() {

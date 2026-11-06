@@ -7524,3 +7524,6 @@ html.v2 #myAchievements .mya-wait { margin: 12px 0 0; }
 .csv-peek-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.5); animation: csvDot 1s ease-in-out infinite; }
 .csv-peek-dots i:nth-child(2) { animation-delay: .15s; } .csv-peek-dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes csvDot { 50% { opacity: .2; transform: translateY(-3px); } }
+
+/* классика v2, гость: большая карта-стирашка под сторис – холодное серебристое свечение (у владельцев – голубое) */
+html.v2 #cardBlock { box-shadow: 0 12px 70px -16px rgba(180,190,210,.3); }

@@ -25,7 +25,7 @@ import { mountAdminEntry } from './admin-entry.js';
 import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
 import { isRedesign, applyRedesignFlag, isV2 } from '../redesign.js';
-import { rdHomeTopHtml, wireRdHomeTop, v2HomeTopHtml } from './rd-home.js';
+import { rdHomeTopHtml, wireRdHomeTop, v2HomeTopHtml, v2GuestTopHtml } from './rd-home.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -570,7 +570,8 @@ function renderGuestHome() {
     clearTimeout(_ctaTimer);
     cleanupProfileOverlays();
     const firstName = state.user?.first_name || 'друг';
-    subtitle().textContent = greeting(firstName);
+    const v2 = isV2();
+    subtitle().textContent = v2 ? '' : greeting(firstName);
     subtitle().classList.add('subtitle-guest');
     showBottomNav(true);
     const main = mainDiv();
@@ -605,8 +606,7 @@ function renderGuestHome() {
     `;
 
     main.innerHTML = `
-        ${askBarHtml()}
-        ${cardHtml}
+        ${v2 ? v2GuestTopHtml(cardHtml) : askBarHtml() + cardHtml}
         <div id="userBookingsContainer"></div>
         <div id="circleContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
@@ -637,7 +637,7 @@ function renderGuestHome() {
     `;
 
     wireSafetyBanner();
-    wireAskBar();
+    if (v2) wireRdHomeTop(); else wireAskBar();
     fitMastermindScroll();
     const cardBtn = document.getElementById('cardBadgeBtn');
     cardBtn?.addEventListener('click', () => {
