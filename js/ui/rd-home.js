@@ -125,7 +125,8 @@ function heroHtml(ev) {
     const h = ev.hike;
     const kind = eventKind(h);
     const tags = (Array.isArray(h.tags) ? h.tags : []).slice(0, 4);
-    const img = /^https?:\/\/|^\//.test(String(h.image || '')) ? h.image : '';
+    // обложка – наше фото с этого маршрута (assets/teaser), не схема трека; маршрута нет в фото – любой пейзаж клуба
+    const img = `assets/teaser/${heroPhotoFor(h.title)}.webp`;
     return `
         <div class="rd-hero is-${kind}" id="rdHero" data-index="${ev.index}">
             <div class="rd-hero-cover" id="rdHeroCover">
@@ -229,13 +230,21 @@ const MON3 = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'ию�
 function alertsOn() { try { return localStorage.getItem(ALERTS_KEY) === '1'; } catch (e) { return false; } }
 // пейзажи с хайков клуба без людей (assets/teaser, отобраны из «Хайкинг интеллигенция фото»); при каждом заходе – новое
 const TEASER_PHOTOS = [
-    ['ayudag-1', 'на Аю-Даг'],
+    ['ayudag-1', 'на Аю-Даг'], ['ayudag-2', 'на Аю-Даг'], ['ayudag-3', 'на Аю-Даг'],
     ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => [`demerdzhi-${n}`, 'на Демерджи']),
     ['eklizi-1', 'на Эклизи-Бурун'], ['eklizi-3', 'на Эклизи-Бурун'], ['eklizi-5', 'на Эклизи-Бурун'],
     ['kant-1', 'на Кант'],
     ...[1, 2, 3, 4].map(n => [`krestovaya-${n}`, 'на Крестовую гору']),
     ['tsarskaya-1', 'по Царской тропе'], ['tsarskaya-2', 'по Царской тропе'], ['tsarskaya-4', 'по Царской тропе'],
 ];
+const ROUTE_KEYS = [['ayudag', /аю.?даг/i], ['demerdzhi', /демерд/i], ['eklizi', /эклизи|чатыр/i], ['kant', /кант/i], ['krestovaya', /крестов/i], ['tsarskaya', /царск/i]];
+const heroPhotos = {};
+function heroPhotoFor(title) {
+    if (heroPhotos[title]) return heroPhotos[title];
+    const key = (ROUTE_KEYS.find(([, re]) => re.test(String(title || ''))) || [])[0];
+    const pool = TEASER_PHOTOS.map(([f]) => f).filter(f => !key || f.startsWith(key + '-'));
+    return (heroPhotos[title] = pool[Math.floor(Math.random() * pool.length)]);
+}
 let teaserPhoto = null; // одна картинка на заход – перерисовки главной её не меняют
 function pickTeaserPhoto() {
     if (teaserPhoto) return teaserPhoto;
@@ -310,5 +319,4 @@ export function wireRdHomeTop() {
     document.getElementById('rdHeroCta')?.addEventListener('click', open);
     document.getElementById('rdHeroCover')?.addEventListener('click', open);
     fetchGoingFromServer([ev.hike.date]).then(([list]) => fillGoing(ev, list)).catch(() => fillGoing(ev, []));
-    mountCover(ev.hike);
 }

@@ -7599,3 +7599,9 @@ html.v2 #cardBlock { box-shadow: 0 12px 70px -16px rgba(180,190,210,.3); }
 .ev-av { display: flex; flex: none; }
 .ev-bell { flex: none; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; font-size: 15px; }
 .ev-bell.is-on { background: rgba(217,253,25,.18); color: #D9FD19; font-weight: 800; }
+
+/* без прыжков при загрузке: место под сторис держим заранее (если в прошлый раз они были), «кто идёт» – фиксированной высоты */
+html.v2 #clubStoriesHost.is-reserved { min-height: 104px; }
+html.v2 .rd-going { min-height: 64px; }
+html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
+@keyframes rdFade { from { opacity: 0; } }

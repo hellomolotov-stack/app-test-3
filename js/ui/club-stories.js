@@ -48,11 +48,15 @@ function rowHtml() {
 // вставить ленту в host; пока данных нет (или их нет вовсе) – остаётся то, что там было
 export async function mountClubStories(host) {
     if (!host) return;
+    // место под ленту держим, если в прошлый раз сторис были – иначе главная прыгает, когда они подгружаются
+    let had = false; try { had = localStorage.getItem('cstHad') === '1'; } catch (e) {}
+    if (had) host.classList.add('is-reserved');
     try {
         const r = await meCall('stories', {}, 8000);
         stories = (r && r.stories) || [];
-    } catch (e) { return; }
-    if (!stories.length || !host.isConnected) return;
+    } catch (e) { host.classList.remove('is-reserved'); return; }
+    try { localStorage.setItem('cstHad', stories.length ? '1' : '0'); } catch (e) {}
+    if (!stories.length || !host.isConnected) { host.classList.remove('is-reserved'); return; }
     host.innerHTML = rowHtml();
     host.classList.add('cst-host');
     mountClicks(host);
