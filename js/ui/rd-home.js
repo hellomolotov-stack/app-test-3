@@ -239,7 +239,7 @@ const TEASER_PHOTOS = [
 ];
 const ROUTE_KEYS = [['ayudag', /аю.?даг/i], ['demerdzhi', /демерд/i], ['eklizi', /эклизи|чатыр/i], ['kant', /кант/i], ['krestovaya', /крестов/i], ['tsarskaya', /царск/i]];
 const heroPhotos = {};
-function heroPhotoFor(title) {
+export function heroPhotoFor(title) {
     if (heroPhotos[title]) return heroPhotos[title];
     const key = (ROUTE_KEYS.find(([, re]) => re.test(String(title || ''))) || [])[0];
     const pool = TEASER_PHOTOS.map(([f]) => f).filter(f => !key || f.startsWith(key + '-'));
