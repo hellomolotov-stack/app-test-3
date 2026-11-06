@@ -965,8 +965,8 @@ function renderRdHome() {
 
 // классика v2 (пока только @maxmolotov): календарь «полоса дней» (day-strip.js) вместо месячного
 function renderCalendarOrStrip(el) {
-    if (isV2()) import('./day-strip.js').then(m => m.renderDayStrip(el)).catch(e => { console.error(e); renderCalendar(el); });
-    else renderCalendar(el);
+    // развилка «витрина» (Макс) / «события» (остальные v2) / обычный календарь – вся в renderCalendar (calendar.js)
+    renderCalendar(el);
 }
 
 export function renderHome() {
