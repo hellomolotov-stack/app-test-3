@@ -7631,3 +7631,24 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-dots { display: flex; justify-content: center; gap: 5px; margin-top: 4px; }
 .cf-dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2); transition: width .2s, background .2s; }
 .cf-dots i.is-on { width: 18px; background: var(--yellow); }
+
+/* витрина: шкала сезона, аватарки */
+.cf-scale-wrap { margin: 6px 20px 0; }
+.cf-scale { position: relative; height: 28px; touch-action: none; cursor: pointer; }
+.cf-line { position: absolute; left: 0; right: 0; top: 13px; height: 2px; border-radius: 1px; background: rgba(255,255,255,.12); }
+.cf-tick { position: absolute; top: 9px; width: 4px; height: 10px; margin-left: -2px; border-radius: 2px; background: var(--yellow); transition: transform .15s; }
+.cf-tick.is-past { background: rgba(255,255,255,.35); }
+.cf-tick.is-city { background: #4FB0F0; }
+.cf-tick.is-soon { background: rgba(217,253,25,.4); }
+.cf-tick.is-on { transform: scaleY(1.5); }
+.cf-thumb { position: absolute; top: 4px; width: 20px; height: 20px; margin-left: -10px; border-radius: 10px; border: 2px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,.5); transition: left .18s ease; pointer-events: none; }
+.cf-mlabs { position: relative; height: 16px; }
+.cf-mlab { position: absolute; transform: translateX(-30%); font-size: 11px; color: rgba(255,255,255,.45); white-space: nowrap; }
+.cf-count { display: flex; justify-content: space-between; margin-top: 4px; font-size: 11px; color: rgba(255,255,255,.4); }
+.cf-going { display: flex; align-items: center; gap: 6px; font-size: 12px; color: rgba(255,255,255,.8); min-height: 0; }
+.cf-going:not(:empty) { margin-top: 4px; }
+.cf-avs { display: flex; }
+.cf-avs i { position: relative; overflow: hidden; width: 22px; height: 22px; border-radius: 11px; margin-left: -7px; border: 1.5px solid rgba(10,12,16,.9); display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 10px; font-weight: 700; }
+.cf-avs i:first-child { margin-left: 0; }
+.cf-avs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.cf-head .cf-months { display: none; }
