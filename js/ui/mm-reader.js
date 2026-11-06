@@ -25,10 +25,12 @@ export const mmNoteForDate = date => mmNotes().find(n => n.date === String(date 
 function inline(t) {
     return esc(t).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[([^\]\n]{1,40})\]/g, '<span class="mmr-nm">$1</span>');
 }
+const AV = [['#f6b26b', '#e06666'], ['#6fa8dc', '#3d85c6'], ['#93c47d', '#38761d'], ['#c27ba0', '#741b47'], ['#ffd966', '#bf9000'], ['#8e7cc3', '#351c75']];
 function render(md) {
     const lines = String(md || '').replace(/&nbsp;/g, '').split('\n');
-    let html = '', list = [], quote = [], prev = '';
+    let html = '', list = [], quote = [], prev = '', sec = '', card = false, nAv = 0;
     const closeList = () => { while (list.length) html += list.pop(); };
+    const closeCard = () => { closeList(); if (card) { html += '</div>'; card = false; } };
     const flushQuote = () => { if (quote.length) { html += `<div class="mmr-info">${quote.map(q => `<div>${inline(q)}</div>`).join('')}</div>`; quote = []; } };
     for (const raw of lines) {
         const line = raw.replace(/\s+$/, '');
@@ -37,26 +39,45 @@ function render(md) {
         if (!line.trim()) { closeList(); continue; }
         let m;
         if ((m = line.match(/^(#{1,4})\s+(.*)$/))) {
-            closeList();
-            const lvl = m[1].length, txt = m[2];
-            if (/^информация о встрече$/i.test(txt.trim())) continue;
-            if (lvl === 1) { prev = 'h1'; continue; } // заголовок заметки уже в шапке читалки
-            html += lvl === 2 ? `<h3 class="mmr-sec">${inline(txt)}</h3>` : `<h4 class="mmr-h3">${inline(txt)}</h4>`;
-            prev = lvl === 2 ? 'h2' : 'h3';
+            const lvl = m[1].length, txt = m[2].trim();
+            if (/^информация о встрече$/i.test(txt)) continue;
+            if (lvl === 1) { closeCard(); prev = 'h1'; continue; } // заголовок заметки уже в шапке читалки
+            if (lvl === 2) { closeCard(); sec = txt.toLowerCase(); html += `<h3 class="mmr-sec">${inline(txt)}</h3>`; prev = 'h2'; continue; }
+            // «### Имя · о чём» в разделе «взгляды» – карточка участника
+            const pm = txt.match(/^([^·]{1,40}?)\s*·\s*(.+)$/);
+            if (/^взгляды/.test(sec) && pm) {
+                closeCard(); card = true;
+                const g = AV[nAv++ % AV.length];
+                html += `<div class="mmr-card"><div class="mmr-pn"><span class="mmr-av" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${esc(pm[1].trim()[0] || '')}</span><span><b>${esc(pm[1].trim())}</b><i>${esc(pm[2])}</i></span></div>`;
+                prev = 'card'; continue;
+            }
+            closeCard(); html += `<h4 class="mmr-h3">${inline(txt)}</h4>`; prev = 'h3';
             continue;
         }
-        // строка целиком жирным: сразу после заголовка ответа – имя участника, иначе – главный совет
+        // «**взгляд Жени:** я бы…» – позиция человека от первого лица
+        if ((m = line.trim().match(/^\*\*(взгляд[^*]*?:?)\*\*\s*(.+)$/i))) {
+            closeList(); html += `<p class="mmr-view"><em>${esc(m[1].replace(/:?$/, ':'))}</em> ${inline(m[2])}</p>`; prev = 'view'; continue;
+        }
+        // строка целиком жирным: сразу после заголовка ответа – имя участника, иначе – главный совет (старый шаблон)
         if ((m = line.trim().match(/^\*\*(.+)\*\*$/))) {
             closeList();
             html += prev === 'h3' ? `<div class="mmr-who">${esc(m[1])}</div>` : `<p class="mmr-take">${inline(m[1])}</p>`;
             prev = prev === 'h3' ? 'who' : 'take';
             continue;
         }
-        if (/^«.*»$/.test(line.trim()) && prev !== 'p') {
-            closeList(); html += `<p class="mmr-q">${inline(line.trim())}</p>`; prev = 'q';
-            continue;
+        if (/^«.*»[.!?…]?$/.test(line.trim())) {
+            closeList();
+            const t = inline(line.trim());
+            if (card) html += `<p class="mmr-cq">${t}</p>`;
+            else if (/замолчали/.test(sec) || prev === 'q') html += `<p class="mmr-q">${t}</p>`;
+            else if (prev !== 'p' || /^(запрос|с чем ушл)/.test(sec)) html += `<p class="mmr-voice">${t}</p>`;
+            else html += `<p class="mmr-p">${t}</p>`;
+            prev = 'q'; continue;
         }
         if ((m = line.match(/^(\s*)[-*]\s+(\[( |x)\]\s+)?(.*)$/))) {
+            // «- **мысль** – пояснение» в «что прозвучало» – плашка с мыслью
+            const tm = !m[1] && !m[2] && /прозвучало/.test(sec) && m[4].match(/^\*\*(.+?)\*\*\s*[–—-]?\s*(.*)$/);
+            if (tm) { closeList(); html += `<div class="mmr-th"><b>${esc(tm[1])}</b>${inline(tm[2])}</div>`; prev = 'th'; continue; }
             const depth = Math.floor(m[1].length / 2) + 1;
             while (list.length < depth) { html += '<ul class="mmr-ul">'; list.push('</ul>'); }
             while (list.length > depth) html += list.pop();
@@ -66,9 +87,10 @@ function render(md) {
         }
         closeList();
         if (prev === 'h1' && !html) { prev = 'meta'; continue; } // строка «место, дата» под заголовком – тоже в шапке
+        if (/^вопрос себе/.test(sec)) { html += `<p class="mmr-ask">${inline(line)}</p>`; prev = 'ask'; continue; }
         html += `<p class="mmr-p">${inline(line)}</p>`; prev = 'p';
     }
-    closeList(); flushQuote();
+    closeCard(); flushQuote();
     return html;
 }
 
@@ -95,6 +117,18 @@ const STYLE = `
 .mmr-h3 { margin: 24px 0 4px; font-size: 18px; line-height: 1.3; font-weight: 800; color: #fff; }
 .mmr-who { display: inline-block; margin: 4px 0 6px; padding: 3px 10px; border-radius: 10px; background: rgba(217,253,25,.13); color: var(--yellow); font-size: 12.5px; font-weight: 800; }
 .mmr-take { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.06); border-left: 3px solid var(--yellow); font-size: 15.5px; line-height: 1.5; font-weight: 700; color: #fff; }
+.mmr-card { margin: 0 0 14px; padding: 16px 16px 4px; border-radius: 20px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07); }
+.mmr-pn { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.mmr-av { flex: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #fff; }
+.mmr-pn b { display: block; font-size: 15px; }
+.mmr-pn i { display: block; margin-top: 1px; font-style: normal; font-size: 12px; color: rgba(255,255,255,.5); }
+.mmr-cq { margin: 4px 0 12px; padding-left: 12px; border-left: 2px solid var(--yellow); font-size: 16px; line-height: 1.5; font-weight: 600; color: #fff; }
+.mmr-view { margin: 2px 0 12px; font-size: 15.5px; line-height: 1.55; color: rgba(255,255,255,.9); }
+.mmr-view em { font-style: normal; font-weight: 800; color: var(--yellow); }
+.mmr-voice { margin: 6px 0 14px; padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.05); font-size: 17px; line-height: 1.5; font-style: italic; color: #fff; }
+.mmr-th { margin: 0 0 10px; padding: 13px 15px; border-radius: 16px; background: rgba(217,253,25,.07); font-size: 15.5px; line-height: 1.5; color: rgba(255,255,255,.9); }
+.mmr-th b { display: block; margin-bottom: 3px; font-size: 13px; color: var(--yellow); }
+.mmr-ask { margin: 4px 0 12px; padding: 18px; border-radius: 20px; background: linear-gradient(135deg, rgba(217,253,25,.16), rgba(217,253,25,.04)); font-size: 18px; line-height: 1.45; font-weight: 700; color: #fff; }
 .mmr-q { margin: 0 0 12px; padding-left: 14px; border-left: 2px solid rgba(255,255,255,.25); font-size: 17px; line-height: 1.55; font-style: italic; color: #fff; }
 .mmr-info { margin: 0 0 16px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.06); font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.75); }
 .mmr-info b { color: #fff; font-weight: 700; }
