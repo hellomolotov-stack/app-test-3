@@ -46,20 +46,31 @@ function rowHtml() {
 }
 
 // вставить ленту в host; пока данных нет (или их нет вовсе) – остаётся то, что там было
+// без мерцания: главная перерисовывается 2–3 раза подряд – ленту рисуем сразу из памяти (или из прошлого запуска),
+// а свежий список подтягиваем один раз и тихо обновляем, только если он изменился
+let storiesRequest = null;
+function paint(host) {
+    host.classList.add('cst-host');
+    host.innerHTML = rowHtml();
+    mountClicks(host);
+}
 export async function mountClubStories(host) {
     if (!host) return;
-    // место под ленту держим, если в прошлый раз сторис были – иначе главная прыгает, когда они подгружаются
-    let had = false; try { had = localStorage.getItem('cstHad') === '1'; } catch (e) {}
-    if (had) host.classList.add('is-reserved');
+    if (!stories || !stories.length) {
+        try { const saved = JSON.parse(localStorage.getItem('cstCache') || '[]'); if (Array.isArray(saved) && saved.length) stories = saved; } catch (e) {}
+    }
+    if (stories && stories.length) paint(host);
+    let fresh;
     try {
-        const r = await meCall('stories', {}, 8000);
-        stories = (r && r.stories) || [];
-    } catch (e) { host.classList.remove('is-reserved'); return; }
-    try { localStorage.setItem('cstHad', stories.length ? '1' : '0'); } catch (e) {}
-    if (!stories.length || !host.isConnected) { host.classList.remove('is-reserved'); return; }
-    host.innerHTML = rowHtml();
-    host.classList.add('cst-host');
-    mountClicks(host);
+        const r = await (storiesRequest ||= meCall('stories', {}, 8000));
+        fresh = (r && r.stories) || [];
+    } catch (e) { storiesRequest = null; return; }
+    const changed = JSON.stringify(fresh) !== JSON.stringify(stories || []);
+    stories = fresh;
+    try { localStorage.setItem('cstCache', JSON.stringify(fresh)); } catch (e) {}
+    if (!host.isConnected) return;
+    if (!fresh.length) { host.classList.remove('cst-host'); host.innerHTML = ''; return; }
+    if (changed || !host.querySelector('[data-cst]')) paint(host);
 }
 function mountClicks(host) {
     host.querySelectorAll('[data-cst]').forEach(b => b.addEventListener('click', () => {
