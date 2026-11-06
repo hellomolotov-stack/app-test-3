@@ -170,6 +170,25 @@ module.exports = async (req, res) => {
         user = verifyInitData(String(body.initData || ''), token);
         if (!user?.id) return res.status(401).json({ error: 'открой админку внутри Telegram' });
         if (!isAdminUser(user)) return res.status(403).json({ error: 'только для администраторов' });
+        // обложка прошедшего хайка: JPEG (base64) из админки, до ~700 КБ; data: null – убрать
+        if (body.action === 'hike_photo') {
+            const date = String(body.date || '');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'плохая дата' });
+            const data = body.data == null ? null : String(body.data).replace(/^data:image\/jpeg;base64,/, '');
+            if (data !== null && (!/^[A-Za-z0-9+/=]+$/.test(data) || data.length > 950000)) return res.status(400).json({ error: 'фото слишком большое или не JPEG' });
+            try {
+                const t = await getAccessToken();
+                const v = Date.now();
+                const put = (path, val) => fetch(`${DB}/${path}.json`, { method: val === null ? 'DELETE' : 'PUT', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: val === null ? undefined : JSON.stringify(val), signal: AbortSignal.timeout(15000) });
+                const r1 = await put(`hikePhotos/${date}`, data === null ? null : { data, v, by: String(user.id) });
+                const r2 = await put(`hikePhotoIndex/${date}`, data === null ? null : v);
+                if (!r1.ok || !r2.ok) throw new Error('write failed');
+                return res.status(200).json({ ok: true, v: data === null ? null : v });
+            } catch (e) {
+                console.error('hike_photo:', e.message);
+                return res.status(502).json({ error: 'не удалось сохранить фото' });
+            }
+        }
         // сторис клуба (lib/club-stories.js): список с автоматическими черновиками и сохранение
         if (body.action === 'stories' || body.action === 'story_save') {
             try {

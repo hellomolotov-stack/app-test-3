@@ -26,6 +26,13 @@ module.exports = async (req, res) => {
             const o = r.ok ? await r.json() : null;
             if (o?.hasValue) { out.mastermindSummaries = normalizeMasterminds(o.value); out.mastermindAdmin = true; }
         } catch (e) { console.error('boot masterminds:', e.message); }
+        // какие прошедшие хайки с обложкой: { 'YYYY-MM-DD': версия } (картинка – /api/hikes?photo=…)
+        try {
+            const { getAccessToken } = require('./club-content');
+            const token = await getAccessToken();
+            const r = await fetch(`${DB}/hikePhotoIndex.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });
+            out.hikePhotos = (r.ok ? await r.json() : null) || {};
+        } catch (e) { console.error('boot hikePhotos:', e.message); }
         res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.status(200).send(JSON.stringify(out));

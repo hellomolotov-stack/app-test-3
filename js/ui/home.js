@@ -797,7 +797,7 @@ function renderGuestHome() {
     renderUserBookings(document.getElementById('userBookingsContainer'));
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
-    renderCalendar(document.getElementById('calendarContainer'));
+    renderCalendarOrStrip(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
     const goBtn = document.querySelector('.booking-go-btn');
@@ -901,7 +901,7 @@ function renderOwnerHome() {
     renderUserBookings(document.getElementById('userBookingsContainer'));
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
-    renderCalendar(document.getElementById('calendarContainer'));
+    renderCalendarOrStrip(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
     const goBtn = document.querySelector('.booking-go-btn');
@@ -958,9 +958,15 @@ function renderRdHome() {
     });
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
-    renderCalendar(document.getElementById('calendarContainer'));
+    renderCalendarOrStrip(document.getElementById('calendarContainer'));
     initWeatherBlock();
     setupBottomNav();
+}
+
+// классика v2 (пока только @maxmolotov): календарь «полоса дней» (day-strip.js) вместо месячного
+function renderCalendarOrStrip(el) {
+    if (isV2()) import('./day-strip.js').then(m => m.renderDayStrip(el)).catch(e => { console.error(e); renderCalendar(el); });
+    else renderCalendar(el);
 }
 
 export function renderHome() {

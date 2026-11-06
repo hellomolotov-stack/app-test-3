@@ -632,6 +632,62 @@ function renderStoriesAdmin(body) {
     body.querySelector('#admStForm').addEventListener('submit', e => { e.preventDefault(); saveStory('publish'); });
 }
 
+// ---------- обложка хайка (api/club-content action hike_photo → hikePhotos/<дата>, раздаёт /api/hikes?photo=) ----------
+const hikePhotoV = {}; // дата → версия (после загрузки в этой сессии), null – убрали
+function hikePhotoVersion(date) {
+    if (date in hikePhotoV) return hikePhotoV[date];
+    return state.hikePhotos?.[date] || null;
+}
+function hikePhotoHtml(date) {
+    const v = hikePhotoVersion(date);
+    return `${v ? `<img class="adm-hphoto-img" src="/api/hikes?photo=${date}&v=${v}" alt="">` : '<div class="adm-hphoto-empty">фото пока нет</div>'}
+        <div class="adm-row2"><label class="adm-ghost adm-hphoto-pick">${v ? 'заменить фото' : '📷 добавить фото'}<input type="file" accept="image/*" hidden></label>${v ? '<button type="button" class="adm-ghost" data-hphoto-del>убрать</button>' : ''}</div>`;
+}
+// фото уменьшаем на телефоне: длинная сторона 1400 px, JPEG ~0.82 – обычно 200–400 КБ
+function shrinkPhoto(file) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            const k = Math.min(1, 1400 / Math.max(img.naturalWidth, img.naturalHeight));
+            const c = document.createElement('canvas');
+            c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            URL.revokeObjectURL(url);
+            let q = .82, out = c.toDataURL('image/jpeg', q);
+            while (out.length > 900000 && q > .5) { q -= .08; out = c.toDataURL('image/jpeg', q); }
+            resolve(out);
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('не удалось прочитать фото')); };
+        img.src = url;
+    });
+}
+async function saveHikePhoto(date, data) {
+    const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(30000),
+        body: JSON.stringify({ action: 'hike_photo', date, data, initData: tg?.initData || '' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'не удалось сохранить фото');
+    hikePhotoV[date] = j.v;
+    state.hikePhotos = { ...(state.hikePhotos || {}) };
+    if (j.v) state.hikePhotos[date] = j.v; else delete state.hikePhotos[date];
+}
+function wireHikePhoto(box, date) {
+    if (!box) return;
+    const rewire = () => { box.innerHTML = hikePhotoHtml(date); wireHikePhoto(box, date); };
+    box.querySelector('input[type=file]')?.addEventListener('change', async e => {
+        const f = e.target.files?.[0]; if (!f) return;
+        box.querySelector('.adm-hphoto-pick').firstChild.textContent = 'загружаю…';
+        try { await saveHikePhoto(date, await shrinkPhoto(f)); toast('фото на обложке'); haptic(); }
+        catch (err) { toast(err.message, true); }
+        rewire();
+    });
+    box.querySelector('[data-hphoto-del]')?.addEventListener('click', async () => {
+        if (!await confirmAsync('Убрать фото с обложки?')) return;
+        try { await saveHikePhoto(date, null); toast('фото убрано'); } catch (err) { toast(err.message, true); }
+        rewire();
+    });
+}
+
 // ---------- список хайков ----------
 function renderHikeList(body) {
     const today = todayStr();
@@ -876,6 +932,10 @@ function renderEditor(body) {
             <div class="adm-chips">${CITY_EMOJI.map(e => `<button class="adm-chip adm-emo${(d.emoji || '🥂') === e ? ' is-on' : ''}" data-city-emoji="${e}">${e}</button>`).join('')}</div>
             <div class="adm-hint">фоновая картинка события – «загрузить картинку» выше</div>` : ''}
 
+        ${d.original ? `<div class="adm-label">фото на обложку</div>
+            <div class="adm-hphoto" id="admHikePhoto">${hikePhotoHtml(d.original)}</div>
+            <div class="adm-hint">одно фото с хайка – станет обложкой дня в календаре. сохраняется сразу, без кнопки «сохранить»</div>` : ''}
+
         <button class="btn btn-yellow adm-primary adm-save" id="admSave">сохранить</button>
         <div class="adm-error" id="admSaveError" hidden></div>
         ${d.original && d.original <= todayStr() && !d.city && !d.book_club ? '<button class="adm-ghost adm-ach-grant" id="admAchGrant">🏅 выдать ачивку участникам</button>' : ''}
@@ -883,6 +943,7 @@ function renderEditor(body) {
             <button class="adm-delete" id="admDelete">🗑 удалить событие полностью</button>` : ''}`;
 
     body.querySelector('.adm-back').addEventListener('click', () => { haptic(); view = { tab: 'hikes' }; render(); });
+    if (d.original) wireHikePhoto(body.querySelector('#admHikePhoto'), d.original);
     body.querySelectorAll('[data-k]').forEach(inp => {
         const k = inp.dataset.k;
         // iOS для даты шлёт только change, поэтому слушаем оба события

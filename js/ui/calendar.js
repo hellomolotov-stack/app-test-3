@@ -53,6 +53,8 @@ function startSpinner(btn) {
 }
 
 export function renderCalendar(container) {
+    // классика v2 (пока только @maxmolotov) – календарь «полоса дней» (day-strip.js)
+    if (container && isV2()) { import('./day-strip.js').then(m => m.renderDayStrip(container)).catch(e => console.error(e)); return; }
     if (isEventsFeedUser()) return renderEventsFeed(container);
     const year = currentCalendarYear,
         month = currentCalendarMonth;

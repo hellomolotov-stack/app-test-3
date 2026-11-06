@@ -802,6 +802,8 @@ async function loadAppData() {
         // новичков без кэша. Применяем, только если Firebase ещё не ответил: он свежее и всё равно
         // придёт следом. Разбор – тот же parseNode, что и для ответов Firebase.
         let firebaseCommonApplied = false;
+        // обложки прошедших хайков (календарь «полоса дней», админка) – только из /api/boot
+        window.__bootData?.then(raw => { if (raw?.hikePhotos) state.hikePhotos = { ...raw.hikePhotos, ...(state.hikePhotos || {}) }; }).catch(() => {});
         window.__bootData?.then(raw => {
             if (!raw || firebaseCommonApplied) return;
             try {
