@@ -70,7 +70,7 @@ function render(md) {
             const t = inline(line.trim());
             if (card) html += `<p class="mmr-cq">${t}</p>`;
             else if (/замолчали/.test(sec) || prev === 'q') html += `<p class="mmr-q">${t}</p>`;
-            else if (prev !== 'p' || /^(запрос|с чем ушл)/.test(sec)) html += `<p class="mmr-voice">${t}</p>`;
+            else if (prev !== 'p' || /^(запрос|с чем уш)/.test(sec)) html += `<p class="mmr-voice">${t}</p>`;
             else html += `<p class="mmr-p">${t}</p>`;
             prev = 'q'; continue;
         }
