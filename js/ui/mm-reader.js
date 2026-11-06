@@ -101,7 +101,8 @@ const STYLE = `
   border-radius: 34px; background: rgba(18,26,36,.8); backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%); border: 1px solid rgba(255,255,255,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 -8px 40px rgba(0,0,0,.28); color: #fff;
   transform: translateY(40px); opacity: 0; transition: transform .38s cubic-bezier(.2,.9,.3,1.08), opacity .25s ease; }
 .mmr-overlay.is-on .mmr-sheet { transform: none; opacity: 1; }
-.mmr-top { flex: none; display: flex; align-items: center; gap: 6px; padding: 14px 14px 10px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
+.mmr-grab { margin-bottom: -6px; }
+.mmr-top { flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 14px 10px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
 .mmr-top .k { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; font-style: italic; color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mmr-top .k span { font-style: normal; font-weight: 600; color: rgba(255,255,255,.55); }
 .mmr-ib { flex: none; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.09); color: #fff; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
@@ -177,6 +178,7 @@ function buildReader(list, id, drag) {
     overlay = document.createElement('div');
     overlay.className = 'mmr-overlay';
     overlay.innerHTML = `<div class="mmr-sheet" role="dialog" aria-label="саммари мастермайнда">
+        <div class="cs-grab mmr-grab" aria-hidden="true"></div>
         <div class="mmr-top"><div class="k"></div><button type="button" class="mmr-ib" data-v="all" aria-label="все саммари">☰</button><button type="button" class="mmr-ib" data-go="1" aria-label="раньше">‹</button><span class="mmr-cnt"></span><button type="button" class="mmr-ib" data-go="-1" aria-label="позже">›</button><button type="button" class="mmr-ib mmr-x" aria-label="закрыть">✕</button></div>
         <div class="mmr-scroll"></div></div>`;
     document.body.appendChild(overlay);
