@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Хайкинг бокс – клуб «Интеллигенция»
  * Description: Заказы из приложения клуба: получение на хайке, скидка по карте интеллигента (10% до 15 000 ₽ в месяц, сверх 5%).
- * Version: 0.5.0
+ * Version: 0.5.1
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * License: GPL-2.0-or-later
@@ -51,6 +51,8 @@ final class HI_Club_Checkout {
         HI_Club_Stock_Policy::boot();
         add_action('admin_menu', array(__CLASS__, 'admin_menu'));
         add_action('wp_footer', array(__CLASS__, 'catalog_script'), 99);
+        add_action('woocommerce_before_cart', array(__CLASS__, 'back_link'), 5);
+        add_action('woocommerce_before_checkout_form', array(__CLASS__, 'back_link'), 5);
         add_filter('the_content', array(__CLASS__, 'local_frontend'), 99);
         // Сводка заказов «на хайк» в бот клуба: оплачен / отменён (ключ магазина тот же, что для скидки).
         if (strlen((string) get_option(self::LOYALTY_KEY, '')) >= 32) {
@@ -78,6 +80,9 @@ final class HI_Club_Checkout {
         add_action('woocommerce_cart_calculate_fees', array(__CLASS__, 'filter_fees'), 40);
         add_action('woocommerce_after_checkout_validation', array(__CLASS__, 'validate'), 30, 2);
         add_action('woocommerce_checkout_create_order', array(__CLASS__, 'stamp_order'), 30, 2);
+        // Скидка по карте – в суммы позиций заказа (как купон), а не отдельной отрицательной строкой: плагин оплаты СБП
+        // вычитает такие строки из последних товаров и доводит их до 1 копейки, ЮKassa отклоняет чек.
+        add_action('woocommerce_checkout_create_order', array(__CLASS__, 'fold_card_fee_into_lines'), 90, 2);
         add_action('woocommerce_checkout_billing', array(__CLASS__, 'render'), 6);
         add_action('wp_enqueue_scripts', array(__CLASS__, 'enqueue'));
         add_filter('woocommerce_checkout_cart_item_quantity', array(__CLASS__, 'checkout_quantity'), 40, 3);
@@ -282,13 +287,15 @@ final class HI_Club_Checkout {
             throw new Exception('Укажи сегодняшнюю или будущую дату хайка.');
         }
         $card = self::scalar($data, 'card');
+        $prev = self::context();
+        if (!preg_match('/^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', $card)) $card = $prev && !empty($prev['card']) ? $prev['card'] : self::catalog_card();
         $context = array(
             'source' => 'intelligentsia', 'pilot' => true, 'expires' => time() + 7200,
             'way' => $way, 'date' => $date,
             // Подписанный ID карты из приложения; подлинность и активность проверяет сервер клуба.
             'card' => preg_match('/^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', $card) ? $card : '',
             // подписанный Telegram ID покупателя: клуб напишет ему о заказе (подпись проверяет сервер клуба)
-            'tg' => preg_match('/^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', self::scalar($data, 'tg')) ? self::scalar($data, 'tg') : '',
+            'tg' => preg_match('/^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/D', self::scalar($data, 'tg')) ? self::scalar($data, 'tg') : ($prev['tg'] ?? ''),
             'route' => mb_substr(sanitize_text_field(self::scalar($data, 'route')), 0, 120),
         );
         $session->set(self::SESSION, $context);
@@ -623,6 +630,50 @@ final class HI_Club_Checkout {
         }
     }
 
+    // Раскладывает строку «Скидка по карте интеллигента» по товарам пропорционально (целыми копейками) и убирает саму строку.
+    // Итог заказа не меняется. Если в заказе есть налоги – оставляем как есть (чтобы не нарушить расчёт налога).
+    public static function fold_card_fee_into_lines($order, $data = array()) {
+        if (!$order || !method_exists($order, 'get_items')) return;
+        $fee_ids = array(); $discount_cents = 0;
+        foreach ($order->get_items('fee') as $id => $fee) {
+            if (method_exists($fee, 'get_name') && $fee->get_name() === self::CARD_FEE && (float) $fee->get_total() < 0) { $fee_ids[] = $id; $discount_cents += (int) round(-((float) $fee->get_total()) * 100); }
+        }
+        if (!$fee_ids || $discount_cents <= 0) return;
+        $lines = array(); $gross_cents = 0;
+        foreach ($order->get_items('line_item') as $id => $item) {
+            if (!method_exists($item, 'get_total_tax') || (float) $item->get_total_tax() > 0) return; // налоги – не трогаем
+            $cents = (int) round((float) $item->get_total() * 100);
+            if ($cents <= 0) continue;
+            $lines[$id] = array($item, $cents, max(1, (int) round((float) $item->get_quantity())));
+            $gross_cents += $cents;
+        }
+        if (!$lines || $gross_cents <= $discount_cents) return;
+        // пропорциональные доли, остаток копеек – по очереди крупнейшим позициям
+        $shares = array(); $left = $discount_cents;
+        foreach ($lines as $id => $l) { $shares[$id] = (int) floor($discount_cents * $l[1] / $gross_cents); $left -= $shares[$id]; }
+        uasort($lines, function ($a, $b) { return $b[1] <=> $a[1]; });
+        foreach (array_keys($lines) as $id) { if ($left <= 0) break; $shares[$id]++; $left--; }
+        foreach ($lines as $id => $l) {
+            $new = $l[1] - $shares[$id];
+            if ($new < $l[2]) return; // слишком мало на единицу – не меняем, оставляем отдельной строкой
+        }
+        foreach ($lines as $id => $l) $l[0]->set_total(round(($l[1] - $shares[$id]) / 100, 2));
+        foreach ($fee_ids as $id) $order->remove_item($id);
+        if (method_exists($order, 'add_order_note')) $order->add_order_note('Скидка по карте интеллигента ' . number_format($discount_cents / 100, 2, ',', ' ') . ' ₽ распределена по позициям заказа.');
+    }
+
+    // «← вернуться к боксу»: ссылка на конструктор из корзины и оформления (только покупателям из приложения с клубным контекстом).
+    // Конструктор при ?back=1 сам очищает корзину и восстанавливает выбор – бокс не удвоится.
+    public static function back_link() {
+        $context = self::context();
+        if (!$context || !function_exists('home_url')) return;
+        $args = array('back' => '1', 'utm_source' => 'intelligentsia');
+        if (!empty($context['date'])) $args['hike'] = $context['date'];
+        if (!empty($context['route'])) $args['route'] = $context['route'];
+        $url = home_url('/hiking-intelligence/') . '?' . http_build_query($args);
+        echo '<p class="hi-club-back" style="margin:0 0 14px"><a href="' . esc_url($url) . '" style="display:inline-block;padding:8px 14px;border-radius:12px;background:rgba(0,0,0,.06);color:inherit;font-size:14px;font-weight:600;text-decoration:none">← вернуться к боксу и изменить состав</a></p>';
+    }
+
     // Обычный заказ из каталога с картой из приложения: только метки для журнала скидок; остальное как у любого заказа магазина.
     public static function stamp_catalog_order($order) {
         if (!self::card_active() || !WC()->cart) return;
@@ -670,8 +721,8 @@ final class HI_Club_Checkout {
 
     public static function enqueue() {
         if (!function_exists('is_checkout') || !is_checkout() || is_order_received_page() || !self::context()) return;
-        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.5.0', true);
-        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.5.0');
+        wp_enqueue_script('hi-club-checkout', plugins_url('checkout.js', __FILE__), array('jquery'), '0.5.1', true);
+        wp_enqueue_style('hi-club-checkout', plugins_url('checkout.css', __FILE__), array(), '0.5.1');
     }
 
     // Explicit support view: read existing session/cache only; never request a quote here.

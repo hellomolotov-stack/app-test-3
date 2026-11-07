@@ -167,4 +167,30 @@ ob_start(); HI_Club_Checkout::catalog_script(); $js = ob_get_clean();
 check('Footer script reads #card= only and posts kind=catalog', strpos($js, 'kind:\'catalog\'') !== false && strpos($js, 'hi-root') !== false);
 catalog_case(false, null); ob_start(); HI_Club_Checkout::catalog_script(); check('Footer script silent when loyalty is off', ob_get_clean() === '');
 
+// ---- скидка по карте уходит в суммы позиций (а не отрицательной строкой): чек ЮKassa без нулевых позиций ----
+$o = new WC_Order();
+$o->fakeItems = array('line_item' => array(11 => new FakeLine('батончик', 118.0), 12 => new FakeLine('вафли', 98.0, 2), 13 => new FakeLine('вода', 50.0)),
+                      'fee' => array(21 => new FakeLine(HI_Club_Checkout::CARD_FEE, -26.6)));
+HI_Club_Checkout::fold_card_fee_into_lines($o);
+$sum = 0; foreach ($o->fakeItems['line_item'] as $l) $sum += $l->get_total();
+check('Card fee is folded into lines, fee row removed', $o->removed === array(21) && empty($o->fakeItems['fee']));
+check('Order total unchanged after folding (266 - 26.6)', abs($sum - 239.4) < 0.001);
+$min = 1e9; foreach ($o->fakeItems['line_item'] as $l) $min = min($min, $l->get_total() / $l->get_quantity()); 
+check('No line is crushed: every unit price stays reasonable', $min > 20);
+$o2 = new WC_Order(); $tl = new FakeLine('товар', 100.0); $tl->tax = 5.0;
+$o2->fakeItems = array('line_item' => array(1 => $tl), 'fee' => array(2 => new FakeLine(HI_Club_Checkout::CARD_FEE, -10.0)));
+HI_Club_Checkout::fold_card_fee_into_lines($o2);
+check('Orders with tax are left unchanged', $o2->removed === array());
+$o3 = new WC_Order(); $o3->fakeItems = array('line_item' => array(1 => new FakeLine('товар', 100.0)), 'fee' => array(2 => new FakeLine('Скидка за самовывоз', -3.0)));
+HI_Club_Checkout::fold_card_fee_into_lines($o3);
+check('Other negative fees are not touched', $o3->removed === array());
+
+// ---- возврат в конструктор из корзины и сохранение карты при повторной отправке контекста ----
+loyalty_case(true, $CARD, 'hike');
+ob_start(); HI_Club_Checkout::back_link(); $back = ob_get_clean();
+check('Back link leads to the builder with back=1, date and route', strpos($back, '/hiking-intelligence/?back=1') !== false && strpos($back, 'hike=') !== false && strpos($back, '%D0%90%D0%B9-%D0%9F%D0%B5%D1%82%D1%80%D0%B8') !== false);
+call_user_func($GLOBALS['store_callback'], array('source' => 'intelligentsia', 'pilot' => '1', 'way' => 'hike', 'date' => date('Y-m-d', time() + 7 * 86400), 'route' => 'Ай-Петри'));
+check('Re-submitting the box without #card keeps the card', HI_Club_Checkout::context()['card'] === $CARD);
+catalog_case(true, null); ob_start(); HI_Club_Checkout::back_link(); check('No back link for ordinary shoppers', ob_get_clean() === '');
+
 echo json_encode(array('engine' => PHP_VERSION, 'checks' => $checks), JSON_UNESCAPED_UNICODE);

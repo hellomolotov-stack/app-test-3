@@ -19,7 +19,8 @@
   // слоты боксов: [название, подпись, [id товаров: первый – по умолчанию]]; цены и наличие – из каталога в реальном времени
   var BOXES = {
     light: { name: 'лёгкий бокс', slots: [
-      ['⚡ восстановить силы', 'на подъём', [4607, 14965, 1868, 4654, 2172, 3012, 4899, 4642, 2222, 4741, 1812, 1590, 2320, 2734, 2735, 2736, 2838, 2945, 3118, 3186, 3187, 3544, 3545, 4089, 4234, 4268, 4376, 5005, 5100, 5104, 13874, 14261, 14262, 14643, 14711, 14809]],
+      ['⚡ восстановить силы', 'на подъём', [1868, 4654, 2172, 3012]],
+      ['🥪 перекус на вершине', 'батончики, коктейли, йогурты', [14965, 4607, 4899, 4642, 2222, 4741, 1812, 1590, 2320, 2734, 2735, 2736, 2838, 2945, 3118, 3186, 3187, 3544, 3545, 4089, 4234, 4268, 4376, 5005, 5100, 5104, 13874, 14261, 14262, 14643, 14711, 14809]],
       ['🥨 солёный перекус', 'держит водно-солевой баланс', [3139, 4060, 2862, 3140, 4196, 2514, 3688, 2038, 2313, 2315, 1871, 2039, 3142, 4095, 4097, 4098, 4099, 4758, 4866, 4916, 2171, 11303, 2069]],
       ['🧇 хрустящее к чаю', 'к термосу на вершине', [2932, 3049, 3894, 4855, 2301, 2690, 2904, 2906, 3112, 3893, 14265, 14266, 14267, 14268, 14930, 14931]],
       ['🍪 сладкое без сахара', 'награда за подъём', [1602, 14205, 14206, 14207, 4320, 4897, 3356, 1860, 1973, 1975, 1563, 1972, 1634, 1974, 2831, 2872, 2871, 4064, 14639, 14642, 14911, 1671, 1801, 1647, 2182, 5015, 2183, 14967, 1893, 3342, 4270, 2312, 3985, 3263, 4051, 2707, 4747, 1930, 4820]],
@@ -27,7 +28,7 @@
     ]},
     full: { name: 'сытный бокс', warn: true, slots: [
       ['🥪 обед на вершине', 'сытно и легко', [11683, 11678, 11681, 11720, 14279]],
-      ['⚡ восстановить силы', 'после подъёма', [2466, 2272, 11299, 1868, 4654, 1590, 1812, 2222, 2320, 2734, 2735, 2736, 2838, 2945, 3118, 3186, 3187, 3544, 3545, 4089, 4234, 4268, 4376, 4607, 4642, 4741, 4899, 5005, 5100, 5104, 13874, 14261, 14262, 14643, 14711, 14809, 14965]],
+            ['⚡ восстановить силы', 'после подъёма', [1868, 4654]],
       ['🧇 хрустящее к чаю', 'к термосу на вершине', [14266, 14265, 2906, 3049, 2932, 2301, 2690, 2904, 3112, 3893, 3894, 4855, 14267, 14268, 14930, 14931]],
       ['🍪 сладкое без сахара', 'награда за подъём', [1602, 14205, 14206, 14207, 4320, 4897, 3356, 1860, 1973, 1975, 1563, 1972, 1634, 1974, 2831, 2872, 2871, 4064, 14639, 14642, 14911, 1671, 1801, 1647, 2182, 5015, 2183, 14967, 1893, 3342, 4270, 2312, 3985, 3263, 4051, 2707, 4747, 1930, 4820]],
       ['🥨 солёный перекус', 'держит водно-солевой баланс', [2315, 3139, 4060, 2862, 3140, 4196, 2514, 3688, 2038, 2313, 1871, 2039, 3142, 4095, 4097, 4098, 4099, 4758, 4866, 4916, 2171, 11303, 2069]],
@@ -72,6 +73,10 @@
   var fromClubApp = qs.get('utm_source') === 'intelligentsia';
   $('hi-pitch').hidden = fromClubApp;
   var cur = qs.get('box') === 'light' ? 'light' : 'full';
+  // возврат из корзины (?back=1): корзину очищаем и восстанавливаем собранный бокс из того, что запомнили при оформлении
+  var backMode = qs.get('back') === '1', backSnap = null;
+  if (backMode) { try { backSnap = JSON.parse(sessionStorage.getItem('hiBoxSnapshot') || 'null'); } catch (e) {} if (backSnap && (backSnap.box === 'light' || backSnap.box === 'full')) cur = backSnap.box; }
+  function saveBoxSnapshot() { try { sessionStorage.setItem('hiBoxSnapshot', JSON.stringify({ box: cur, picks: sel[cur], extra: extra, at: Date.now() })); } catch (e) {} }
   // из приложения клуба: ?hike=ГГГГ-ММ-ДД&route=Ай-Петри&box=light|full&custom=1&card=1
   if (qs.get('hike')) $('hi-date').value = qs.get('hike');
   var route = (qs.get('route') || '').trim().slice(0, 60);
@@ -162,8 +167,11 @@
   // HI_INVENTORY_END
   // Category IDs read from the public store taxonomy on 2026-10-20.
   // Old BOXES lists are preferences only; they no longer restrict the assortment.
-  var GROUP_CATS = { energy: [184, 225, 227], salty: [187, 219], crisp: [175], sweet: [174, 185, 188], water: [231, 226], lunch: [178] };
-  var SLOT_GROUPS = { light: ['energy', 'salty', 'crisp', 'sweet', 'water'], full: ['lunch', 'energy', 'crisp', 'sweet', 'salty', 'water'] };
+  var GROUP_CATS = { energy: [225], snack: [184, 227, 186], salty: [187, 219], crisp: [175], sweet: [174, 185, 188], water: [231, 226], lunch: [178] };
+  // «перекус на вершине» (батончики, коктейли, йогурты) – в лёгком отдельная категория без сэндвичей и роллов; в сытном они идут после обеда
+  var SLOT_GROUPS = { light: ['energy', 'snack', 'salty', 'crisp', 'sweet', 'water'], full: [['lunch', 'snack'], 'energy', 'crisp', 'sweet', 'salty', 'water'] };
+  function inGroup(spec, group) { return Array.isArray(spec) ? spec.indexOf(group) >= 0 : spec === group; }
+  function slotRank(p, spec) { var g = Array.isArray(spec) ? groupFor(p) : spec; return (Array.isArray(spec) ? spec.indexOf(g) * 10 : 0) + assortmentRank(p, g); }
   var preferred = {}, catalogIds = [], catalogPage = 0, catalogHasMore = false;
   var rowLimits = {};
   var cartNonce = '', catalogRevision = 0, catalogRunning = false, catalogPaused = false, pendingDefaults = {};
@@ -208,20 +216,23 @@
     var n = productName(p);
     // Fruit crisps and sweet rice cakes are desserts even when tagged as chips.
     if (categoryHas(p, GROUP_CATS.salty) && /ябло[кч]|груш|банан|ягод|фрукт|карамел|шоколад|медов|кориц/.test(n)) return 'sweet';
-    var priority = ['lunch', 'salty', 'crisp', 'sweet', 'water', 'energy'];
+    var priority = ['lunch', 'snack', 'salty', 'crisp', 'sweet', 'water', 'energy'];
     return priority.filter(function (group) { return categoryHas(p, GROUP_CATS[group]); })[0];
   }
   function assortmentRank(p, group) {
     var n = productName(p);
     if (group === 'energy') {
-      // Keep product types together, including energy-labelled gels and shots.
-      if (/батон|chikabar|chika.?bar|protein.?bar/.test(n)) return 0;
-      if (/гель|гели|\bgel\b/.test(n)) return 1;
-      if (/шот|\bshots?\b/.test(n)) return 3;
-      if (/коктейл|шейк|shake|напиток.*(?:протеин|белков)|(?:протеин|белков).*напиток/.test(n)) return 5;
-      if (/изотон|isotonic/.test(n)) return 4;
-      if (/энергет|энерджи|energy/.test(n)) return 2;
-      return 6;
+      // быстрая энергия: гели, энергетики и карнитин, шоты, изотоники
+      if (/гель|гели|\bgel\b/.test(n)) return 0;
+      if (/энергет|энерджи|energy|карнитин|carnitin/.test(n)) return 1;
+      if (/шот|\bshots?\b/.test(n)) return 2;
+      if (/изотон|isotonic/.test(n)) return 3;
+      return 4;
+    }
+    if (group === 'snack') {
+      if (/йогурт|творож|yogurt/.test(n)) return 2;
+      if (/коктейл|шейк|shake|напиток.*(?:протеин|белков)|(?:протеин|белков).*напиток/.test(n)) return 1;
+      return 0; // батончики
     }
     if (group === 'sweet') {
       if (/протеин|белков|protein|bombbar|бомббар|chikalab|чика|шоки|шокки|shock|rex\s*crispy|рекс/.test(n) || categoryHas(p, [188])) return 0;
@@ -243,8 +254,8 @@
       BOXES[box].slots.forEach(function (slot, i) {
         var cats = GROUP_CATS[SLOT_GROUPS[box][i]];
         slot[2] = catalogIds.filter(function (id) {
-          return groupFor(P[id]) === SLOT_GROUPS[box][i];
-        }).sort(function (a, b) { return assortmentRank(P[a], SLOT_GROUPS[box][i]) - assortmentRank(P[b], SLOT_GROUPS[box][i]); });
+          return inGroup(SLOT_GROUPS[box][i], groupFor(P[id]));
+        }).sort(function (a, b) { return slotRank(P[a], SLOT_GROUPS[box][i]) - slotRank(P[b], SLOT_GROUPS[box][i]); });
         slot[2].forEach(function (id) { INBOX[id] = 1; });
       });
     });
@@ -394,6 +405,14 @@
     inventoryBusy = true; syncControls(); stockNotice('проверяем состав бокса и наличие в магазине…');
     var initial = !selectionInitialized;
     return readStore('/wp-json/wc/store/v1/cart').then(function (cart) {
+      // пришли «назад» из корзины: убираем прежние позиции, иначе оформление добавит бокс второй раз
+      if (backMode && cart && cart.items && cart.items.length) {
+        backMode = 'cleared';
+        return fetch('/wp-json/wc/store/v1/cart/items', { method: 'DELETE', credentials: 'include', headers: { 'Nonce': cartNonce } })
+          .then(function (r) { if (!r.ok) throw new Error('cart clear failed'); return readStore('/wp-json/wc/store/v1/cart'); });
+      }
+      return cart;
+    }).then(function (cart) {
       cartState = Inventory.cart(cart); catalogIds = []; catalogPage = 0; catalogHasMore = true;
       var seed = [14965, 1868, 2932, 2862, 15026];
       Object.keys(preferred).forEach(function (box) { preferred[box].forEach(function (ids) { seed = seed.concat(ids.slice(0, 2)); }); });
@@ -425,6 +444,15 @@
           return chosen;
         });
       });
+      if (backSnap && backSnap.picks) {
+        // возвращаем выбор из запомненного бокса: только то, что всё ещё есть в наличии
+        sel[cur] = BOXES[cur].slots.map(function (slot, i) {
+          return (backSnap.picks[i] || []).filter(function (pair) { return avail([pair[0]]).length; }).map(function (pair) { return [pair[0], Math.max(1, Math.min(9, pair[1] | 0))]; });
+        });
+        pendingDefaults[cur] = BOXES[cur].slots.map(function () { return 0; });
+        Object.keys(backSnap.extra || {}).forEach(function (id) { if (backSnap.extra[id] && avail([+id]).length) extra[id] = true; });
+        backSnap = null;
+      }
       return [];
     }).then(function (changes) {
       inventoryReady = true; selectionInitialized = true; lastStockCheck = Date.now(); render();
@@ -485,7 +513,7 @@
   function orderedSlotProducts(list, selectedIds, group) {
     var ordered = selectedIds.filter(function (id) { return list.indexOf(id) >= 0; }).concat(list.filter(function (id) { return selectedIds.indexOf(id) < 0; }));
     // Stable type sort preserves selected-first order within each type only.
-    if (group === 'energy') ordered.sort(function (a, b) { return assortmentRank(P[a], group) - assortmentRank(P[b], group); });
+    if (group === 'energy' || group === 'snack' || Array.isArray(group)) ordered.sort(function (a, b) { return slotRank(P[a], group) - slotRank(P[b], group); });
     return ordered;
   }
   function render(pop, scrollTo) {
@@ -746,6 +774,7 @@
     if (!items.length) { inventoryBusy = false; catalogPaused = false; syncControls(); continueCatalog(); return; }
     if (wayNow === 'hike' && $('hi-date').value && !hikeOpen()) { inventoryBusy = false; catalogPaused = false; syncControls(); continueCatalog(); msg.textContent = hikeClosedText(); $('hi-date-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
     if (wayNow === 'hike' && !$('hi-date').value) { inventoryBusy = false; catalogPaused = false; syncControls(); continueCatalog(); msg.textContent = 'укажи дату хайка – соберём бокс к этому дню'; $('hi-date').focus(); $('hi-date-row').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    saveBoxSnapshot();
     var note = wayNow === 'hike' ? hikeNote() : '';
     // строка для комментария: в буфер обмена (сразу, пока действует нажатие) и в cookie – для будущей вставки кодом на сайте
     document.cookie = 'hi_note=' + encodeURIComponent(note) + ';path=/;max-age=' + (note ? 7200 : 0);

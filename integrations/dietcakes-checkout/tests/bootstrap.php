@@ -80,6 +80,12 @@ class LocalShippingItem {
     function get_instance_id() { return 8; }
     function set_method_title($value) { $this->title = $value; }
 }
+class FakeLine {
+    public $name; public $total; public $qty; public $tax = 0.0;
+    function __construct($name, $total, $qty = 1) { $this->name = $name; $this->total = $total; $this->qty = $qty; }
+    function get_name() { return $this->name; } function get_total() { return $this->total; } function set_total($v) { $this->total = $v; }
+    function get_total_tax() { return $this->tax; } function get_quantity() { return $this->qty; }
+}
 class WC_Order {
     public $meta = array();
     public $shipping;
@@ -87,7 +93,9 @@ class WC_Order {
     function delete_meta_data($key) { unset($this->meta[$key]); }
     function update_meta_data($key, $value) { $this->meta[$key] = $value; }
     function get_meta($key) { return $this->meta[$key] ?? ''; }
-    function get_items($type) { return array($this->shipping); }
+    public $fakeItems = null; public $removed = array();
+    function get_items($type) { return $this->fakeItems !== null ? ($this->fakeItems[$type] ?? array()) : array($this->shipping); }
+    function remove_item($id) { $this->removed[] = $id; foreach ($this->fakeItems as $t => $list) unset($this->fakeItems[$t][$id]); }
     public $id = 501; public $notes = array(); public $saved = 0;
     function get_id() { return $this->id; }
     function add_order_note($n) { $this->notes[] = $n; }
@@ -108,6 +116,8 @@ function is_wp_error($v) { return $v instanceof WP_Error; }
 function wp_remote_retrieve_body($r) { return is_array($r) ? json_encode($r['body']) : ''; }
 function wp_remote_retrieve_response_code($r) { return is_array($r) ? $r['code'] : 0; }
 function wp_json_encode($v) { return json_encode($v); }
+function home_url($p = '') { return 'https://dietcakes.ru' . $p; }
+function esc_url($u) { return htmlspecialchars((string) $u, ENT_QUOTES, 'UTF-8'); }
 function plugins_url($p, $f) { return 'https://dietcakes.ru/wp-content/plugins/hi-club-checkout/' . $p; }
 function WC() { return $GLOBALS['wc']; }
 $GLOBALS['wc'] = (object) array('session' => new LocalSession(), 'cart' => new LocalCart());
