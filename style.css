@@ -7728,3 +7728,23 @@ html.v2 .mmc { padding: 16px; cursor: pointer; box-shadow: 0 12px 70px -16px rgb
 .mmc-avs i:first-child { margin-left: 0; }
 .mmc-avs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .mmc-read { flex: none; height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+
+/* классика v2: «твои связи» – живая сеть */
+#circleContainer.lv-card { padding: 0 !important; overflow: hidden; }
+.lv-wrap { position: relative; height: 320px; cursor: pointer; }
+.lv-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lv-hdr { position: absolute; z-index: 2; left: 16px; right: 16px; top: 16px; display: flex; justify-content: space-between; align-items: baseline; }
+.lv-hdr h2 { margin: 0; font-size: 17px; font-weight: 700; color: #fff; }
+.lv-hdr span { font-size: 14px; font-weight: 600; color: var(--yellow); }
+.lv-ft { position: absolute; left: 0; right: 0; top: 0; height: 64px; z-index: 1; pointer-events: none; background: linear-gradient(rgba(20,23,28,.95), rgba(20,23,28,0)); }
+.lv-fb { position: absolute; left: 0; right: 0; bottom: 0; height: 120px; z-index: 1; pointer-events: none; background: linear-gradient(rgba(20,23,28,0), rgba(20,23,28,.97) 72%); }
+.lv-stats { position: absolute; z-index: 2; left: 16px; right: 16px; bottom: 16px; display: flex; gap: 24px; align-items: flex-end; }
+.lv-stats b { display: block; font-size: 28px; font-weight: 800; line-height: 1; letter-spacing: -.02em; color: #fff; font-variant-numeric: tabular-nums; }
+.lv-stats .is-c b { color: #3CC8BE; }
+.lv-stats span { font-size: 12px; color: rgba(255,255,255,.55); }
+.lv-n { animation: lvFloat 8s ease-in-out infinite alternate; transform-box: fill-box; }
+@keyframes lvFloat { 0% { transform: translate(0, 0); } 50% { transform: translate(2.5px, -3px); } 100% { transform: translate(-2px, 2px); } }
+.lv-me { animation: lvPulse 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes lvPulse { 50% { transform: scale(1.18); opacity: .7; } }
+@media (prefers-reduced-motion: reduce) { .lv-n, .lv-me { animation: none; } }
+html.v2 #circleContainer.lv-card .cc-lock { margin: 0 16px 16px; width: calc(100% - 32px); }

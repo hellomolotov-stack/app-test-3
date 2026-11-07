@@ -182,7 +182,42 @@ function avStyle(p, i) {
     return p.photo ? `background-image:url('${esc(p.photo)}')` : `background:linear-gradient(135deg,${GRADS[i % 6][0]},${GRADS[i % 6][1]})`;
 }
 
+// классика v2 (07.11): «живая сеть» – монохром: ты в центре, близкие – бирюзовые узлы с линиями к тебе,
+// остальные знакомства – мелкие точки с тонкими нитями; внизу две цифры. Узлы медленно «дышат».
+const hash = (s, k = 0) => { let h = 2166136261 ^ k; for (const c of String(s)) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return ((h >>> 0) % 10000) / 10000; };
+function liveNetHtml(d) {
+    const W = 360, H = 300, cx = W / 2, cy = 150;
+    const ppl = (d.people || []).filter(p => !p.club);
+    const close = ppl.slice().sort((a, b) => (b.n || 0) - (a.n || 0)).slice(0, Math.min(14, Math.max(0, d.strong || 0)));
+    const closeIds = new Set(close.map(p => p.id));
+    const rest = ppl.filter(p => !closeIds.has(p.id)).slice(0, 70);
+    const maxN = Math.max(1, ...close.map(p => p.n || 1));
+    const pos = new Map();
+    close.forEach((p, i) => { const a = (i / Math.max(1, close.length)) * 6.283 + hash(p.id) * .6, r = 46 + (1 - (p.n || 1) / maxN) * 50 + hash(p.id, 2) * 10; pos.set(p.id, [cx + Math.cos(a) * r * 1.2, cy + Math.sin(a) * r * .95, 1]); });
+    rest.forEach(p => { const a = hash(p.id, 3) * 6.283, r = 104 + hash(p.id, 4) * 62; pos.set(p.id, [cx + Math.cos(a) * r * 1.25, cy + Math.sin(a) * r * .88, 0]); });
+    const T = '60,200,190';
+    let lines = '', dots = '';
+    let nl = 0;
+    (d.links || []).forEach(([a, b]) => { const A = pos.get(a), B = pos.get(b); if (!A || !B || nl > 150) return; nl++; lines += `<line x1="${A[0].toFixed(1)}" y1="${A[1].toFixed(1)}" x2="${B[0].toFixed(1)}" y2="${B[1].toFixed(1)}" stroke="rgba(255,255,255,${A[2] && B[2] ? .18 : .055})" stroke-width="1"/>`; });
+    close.forEach(p => { const [x, y] = pos.get(p.id); lines += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="rgba(${T},.55)" stroke-width="1.4"/>`; });
+    pos.forEach(([x, y, c], id) => {
+        const dur = (6 + hash(id, 5) * 6).toFixed(1), del = (-hash(id, 6) * 8).toFixed(1);
+        dots += c ? `<g class="lv-n" style="animation-duration:${dur}s;animation-delay:${del}s"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(11 + hash(id, 7) * 3).toFixed(1)}" fill="rgba(${T},.12)"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(5 + hash(id, 7) * 3).toFixed(1)}" fill="rgba(${T},.95)"/></g>`
+            : `<g class="lv-n" style="animation-duration:${dur}s;animation-delay:${del}s"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(2.2 + hash(id, 8) * 1.6).toFixed(1)}" fill="rgba(255,255,255,.42)"/></g>`;
+    });
+    const me = `<circle class="lv-me" cx="${cx}" cy="${cy}" r="26" fill="rgba(217,253,25,.12)"/><circle cx="${cx}" cy="${cy}" r="9" fill="#D9FD19"/>`;
+    const total = d.locked ? d.open : d.total;
+    return `<div class="lv-wrap" data-cc-open>
+        <div class="lv-hdr"><h2>твои связи</h2><span>открыть ›</span></div>
+        <svg class="lv-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid slice">${lines}${dots}${me}</svg>
+        <div class="lv-ft"></div><div class="lv-fb"></div>
+        <div class="lv-stats"><div class="is-c"><b>${d.strong || close.length}</b><span>${plural(d.strong || close.length, 'близкая связь', 'близкие связи', 'близких связей')}</span></div>
+            <div><b>${total}</b><span>${plural(total, 'знакомство', 'знакомства', 'знакомств')} в клубе</span></div></div>
+    </div>${d.locked ? lockHtml(d) : ''}`;
+}
+
 function blockHtml(d) {
+    if (document.documentElement.classList.contains('v2')) return liveNetHtml(d);
     const n = d.total, nx = d.next;
     return `
         <div class="cc-hdr"><h2>твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
@@ -205,7 +240,7 @@ async function openCard(source) {
 export async function mountCircle(container) {
     if (!container || !circleEnabled()) return;
     ensureCss();
-    container.className = 'card-container cc-card';
+    container.className = 'card-container cc-card' + (document.documentElement.classList.contains('v2') ? ' lv-card' : '');
     container.innerHTML = '<div class="cc-hdr"><h2>твои связи</h2></div><div class="cc-load">собираю твои связи…</div>';
     try {
         // один запрос на запуск: главная перерисовывается 2–3 раза подряд, и каждый раз уходил новый запрос
