@@ -46,7 +46,10 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
         const cal = document.getElementById('calendarContainer');
         if (!cal) return null;
         const maxY = Math.max(0, document.documentElement.scrollHeight - innerHeight);
-        return Math.min(maxY, Math.max(0, cal.getBoundingClientRect().top + scrollY - topOffset()));
+        const r = cal.getBoundingClientRect();
+        // блок встаёт ровно посередине видимой области (но не уходит под шапку, если он выше экрана)
+        const mid = r.top + scrollY - (innerHeight - r.height) / 2;
+        return Math.min(maxY, Math.max(0, Math.min(mid, r.top + scrollY - topOffset())));
     }
     function target(date = nextHikeLinkDate()) {
         const cal = document.getElementById('calendarContainer');
@@ -77,7 +80,7 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
             // к концу анимации из-за времени, проведённого за заставкой или вне экрана.
             if (previousFrame !== null) elapsed += Math.min(40, now - previousFrame);
             previousFrame = now;
-            const progress = reduced ? 1 : Math.min(1, elapsed / 1200);
+            const progress = reduced ? 1 : Math.min(1, elapsed / 1700);
             const ease = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
             window.scrollTo({ top: from + (y - from) * ease, behavior: 'instant' });
             if (progress < 1) frame = requestAnimationFrame(step);
@@ -92,8 +95,13 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
             inputEvents.forEach(type => window.addEventListener(type, stop, { capture: true, passive: true }));
         }
         if (!started) window.scrollTo({ top: 0, behavior: 'instant' });
-        if (!ready() || document.visibilityState === 'hidden') return;
         const date = nextHikeLinkDate(), el = target(date);
+        if (el && !started && el.matches('.cf-card') && el !== centered) {
+            const track = el.parentElement;
+            track.scrollTo({ left: el.offsetLeft - (track.clientWidth - el.offsetWidth) / 2, behavior: 'instant' });
+            centered = el;
+        }
+        if (!ready() || document.visibilityState === 'hidden') return;
         if (!el) return;
         if (date !== lastDate) {
             flashed?.classList.remove('calendar-link-flash');
@@ -108,7 +116,7 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
         if (el.matches('.cf-card')) horizontalReady = Math.abs(el.parentElement.scrollLeft - el.offsetLeft + (el.parentElement.clientWidth - el.offsetWidth) / 2) < 1;
         const y = destination();
         if (lastY === null || Math.abs(y - lastY) > 1) { lastY = y; stableAt = performance.now(); }
-        if ((!started || finished && Math.abs(scrollY - y) > 2) && horizontalReady && performance.now() - stableAt >= 600) {
+        if ((!started || finished && Math.abs(scrollY - y) > 2) && horizontalReady && performance.now() - stableAt >= 350) {
             finished = false; started = performance.now(); glide();
         }
         if (horizontalReady) flash();

@@ -80,6 +80,8 @@ let loaderInterval = null, loaderMessageTimer = null;
 // Минимум показа заставки. Было 3 с всегда: главная готова за 0,6 с, а человек ждал ещё 2,5 с на каждом
 // запуске. Теперь: первый запуск – 1,5 с (одна сцена заставки целиком), повторный (данные в кэше) – 0,6 с.
 const LOADER_MIN_MS = (() => {
+    // по ссылке из поста (startapp) заставка всегда показывается целиком – дальше плавный доскролл
+    try { if (new URLSearchParams(location.search).get('startapp') || window.Telegram?.WebApp?.initDataUnsafe?.start_param) return 1600; } catch (e) {}
     try { return localStorage.getItem('hikingAppCache') ? 600 : 1500; } catch (e) { return 1500; }
 })();
 
