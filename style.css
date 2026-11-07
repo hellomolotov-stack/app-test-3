@@ -7953,3 +7953,11 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 /* лаймовый слайдер записи */
 body:has(.bottom-sheet.sheet-a) .floating-sheet-buttons .swipe-track { background: rgba(217,253,25,.13) !important; border: 1px solid rgba(217,253,25,.4) !important; border-radius: 999px !important; }
 body:has(.bottom-sheet.sheet-a) .floating-sheet-buttons .swipe-thumb { background: var(--yellow) !important; color: #141800 !important; box-shadow: 0 6px 18px rgba(217,253,25,.35) !important; }
+/* рассылка «от себя» */
+.adm-self-list{display:flex;flex-direction:column;gap:10px;margin:8px 0 12px}
+.adm-self-sum{font-size:13px;color:var(--text-secondary,rgba(255,255,255,.6))}
+.adm-self-row{border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:12px;background:rgba(255,255,255,.03)}
+.adm-self-row.is-done{opacity:.55}
+.adm-self-head{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
+.adm-self-head small{font-size:12px;color:rgba(255,255,255,.5)}
+.adm-self-text{font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);max-height:96px;overflow:hidden;-webkit-mask:linear-gradient(#000 70%,transparent);mask:linear-gradient(#000 70%,transparent);margin-bottom:8px}

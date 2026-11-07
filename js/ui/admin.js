@@ -1917,7 +1917,7 @@ function bcRecipients() {
 // ---------- черновики рассылки ----------
 // Храним в облаке Telegram (CloudStorage: привязано к аккаунту админа, видно с любого устройства),
 // если его нет – в памяти устройства. Текст – отдельным ключом: у облака лимит 4096 символов на значение.
-const DRAFT_FIELDS = ['segment', 'extra', 'add', 'hikeDate', 'waitDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText', 'when', 'sendAt'];
+const DRAFT_FIELDS = ['via', 'tpl', 'segment', 'extra', 'add', 'hikeDate', 'waitDate', 'excl', 'off', 'kind', 'btnType', 'section', 'btnHike', 'url', 'btnText', 'when', 'sendAt'];
 const cloud = {
     ok: () => !!(tg?.CloudStorage && tg.isVersionAtLeast?.('6.9')),
     get: keys => new Promise(res => {
@@ -2100,6 +2100,9 @@ function renderBroadcast(body) {
             <div class="adm-tip-text">${esc(fillTemplate(tip.text))}</div>
             <div class="adm-tip-meta">кнопка: «${esc(tip.btn.text)}»</div>
             <button class="adm-link" id="admTipApply">${bc.tipApplied === bc.segment ? 'вставить шаблон заново' : 'вставить шаблон'}</button></div>` : ''}
+        <div class="adm-label">шаблоны</div>
+        <div class="adm-chips"><button class="adm-chip${bc.tpl === 'circle' ? ' is-on' : ''}" data-bc-tpl="circle">💳 билеты в счёт карты</button></div>
+        ${bc.tpl === 'circle' ? `<div class="adm-hint">[цена] – личная цена карты за вычетом его билетов, [билеты] и [сумма] – сколько оплатил. ${nc?.people ? `цены знаем для ${nc.people.length} чел.` : 'загружаю цены…'} от бота такое сообщение откроет человеку спеццену</div>` : ''}
         <label class="adm-field"><span>текст</span><textarea id="admBcText" rows="7" placeholder="привет, [имя]! …">${esc(bc.text)}</textarea></label>
         <div class="adm-hint">[имя] заменится именем. можно &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;a href="…"&gt;ссылка&lt;/a&gt;</div>
 
@@ -2123,8 +2126,12 @@ function renderBroadcast(body) {
         </div>
 
         `,
-        acts: `<div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
-        <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`,
+        acts: `${bc.mode !== 'flow' ? `<div class="adm-label">от кого</div>
+        <div class="adm-chips"><button class="adm-chip${bc.via !== 'self' ? ' is-on' : ''}" data-via="bot">🤖 от бота</button><button class="adm-chip${bc.via === 'self' ? ' is-on' : ''}" data-via="self">✍️ от себя</button></div>` : ''}
+        ${bc.via === 'self' && bc.mode !== 'flow' ? `<div class="adm-hint">пишешь сам со своего аккаунта: у каждого человека свой готовый текст – «скопировать», затем «открыть чат» и вставить. исключённые выше сюда не попадают</div>
+        <div id="admSelfList" class="adm-self-list"></div>
+        <div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admSelfReset">сбросить отметки</button></div>` : `<div class="adm-row2"><button class="adm-ghost" id="admBcDraft">сохранить черновик</button><button class="adm-ghost" id="admBcTest">отправить себе</button></div>
+        <button class="btn btn-yellow adm-primary" id="admBcSend">отправить</button>`}`,
     };
     if (isRedesign()) {
         // новый дизайн: три шага – кому, что, когда; история и черновики внизу
@@ -2153,7 +2160,7 @@ function renderBroadcast(body) {
     }
 
     mountAchievementNotify(body.querySelector('#admAchNotify'));
-    const update = () => { renderPreview(); updateSendLabel(); };
+    const update = () => { renderPreview(); updateSendLabel(); renderSelfList(); };
     body.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => {
         haptic();
         bc.mode = b.dataset.mode;
@@ -2219,7 +2226,7 @@ function renderBroadcast(body) {
     });
     body.querySelector('#admBcUrl')?.addEventListener('input', e => { bc.url = e.target.value; update(); });
     body.querySelector('#admBcBtnText')?.addEventListener('input', e => { bc.btnText = e.target.value; update(); });
-    body.querySelector('#admBcTest').addEventListener('click', () => sendBroadcast(true));
+    body.querySelector('#admBcTest')?.addEventListener('click', () => sendBroadcast(true));
     body.querySelectorAll('[data-when]').forEach(b => b.addEventListener('click', () => {
         haptic();
         bc.when = b.dataset.when;
@@ -2240,7 +2247,24 @@ function renderBroadcast(body) {
     renderStatsBox(body.querySelector('#admStats'));
     const draftsBox = body.querySelector('#admDrafts');
     if (drafts) renderDraftsBox(draftsBox); else loadDrafts().then(() => { if (draftsBox.isConnected) renderDraftsBox(draftsBox); });
-    body.querySelector('#admBcSend').addEventListener('click', () => sendBroadcast(false));
+    body.querySelector('#admBcSend')?.addEventListener('click', () => sendBroadcast(false));
+    body.querySelectorAll('[data-bc-tpl]').forEach(b => b.addEventListener('click', async () => {
+        haptic();
+        if (bc.text.trim() && bc.tpl !== 'circle' && !(await confirmAsync('Заменить текст сообщения шаблоном?'))) return;
+        bc.tpl = 'circle';
+        bc.text = circleText();
+        bc.btnType = 'none';
+        render();
+        if (!nc?.people) loadNewcomers().then(() => { if (root && view.tab === 'broadcast') render(); });
+    }));
+    body.querySelectorAll('[data-via]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        bc.via = b.dataset.via;
+        if (bc.via === 'self' && /\[(цена|билеты|сумма)\]/i.test(bc.text) && !nc?.people) loadNewcomers().then(() => { if (root && view.tab === 'broadcast') render(); });
+        render();
+    }));
+    body.querySelector('#admSelfReset')?.addEventListener('click', () => { haptic(); bc.selfDone = {}; renderSelfList(); });
+    renderSelfList();
     update();
     if (audience) updateAudienceViews(true); else refreshAudience();
 }
@@ -2358,6 +2382,7 @@ function updateAudienceViews(withList) {
     renderUnreach();
     const rdCount = root.querySelector('#rdBcCount');
     if (rdCount) rdCount.textContent = String(r.final.length);
+    renderSelfList();
     const sum = root.querySelector('#admSum');
     if (sum) sum.innerHTML = `получат <b>${r.final.length}</b>${r.manual.length ? ` · вручную −${r.manual.length}` : ''}${r.bySeg.length ? ` · сегментами −${r.bySeg.length}` : ''}${r.byPref.length ? ` · по их настройкам −${r.byPref.length}` : ''}`;
     const pn = root.querySelector('#admPeopleN');
@@ -2401,6 +2426,62 @@ function buttonPayload() {
     if (bc.btnType === 'chat') return { type: 'url', url: CHAT_URL, text };
     const startapp = bc.section === 'hike' ? (bc.btnHike ? 'hike_' + bc.btnHike : '') : bc.section;
     return { type: 'app', startapp, text };
+}
+
+// личный текст для человека: имя + цена карты за вычетом его билетов (из «продажи карты»)
+function ncById(id) { return (nc?.people || []).find(x => String(x.id) === String(id)); }
+function bcPersonText(id) {
+    const pp = audience?.people?.[id] || {};
+    const p = ncById(id) || {};
+    const name = String(p.name || pp.n || 'друг').split(' ')[0];
+    const price = p.circle_price || (nc?.people ? 7500 : 0);
+    let t = bc.text.trim().replace(/\[имя\]/gi, name);
+    if (nc?.people) t = t.replace(/\[билеты\]/gi, ncTickets(p.tickets_count || 0)).replace(/\[сумма\]/gi, ncRub(p.tickets_sum || 0)).replace(/\[цена\]/gi, ncRub(price));
+    // в личке теги не работают – убираем разметку
+    return t.replace(/<a href="([^"]*)">([^<]*)<\/a>/g, '$2 ($1)').replace(/<\/?(b|i|u|s|code)>/g, '');
+}
+function renderSelfList() {
+    const el = root?.querySelector('#admSelfList');
+    if (!el || bc.via !== 'self') return;
+    if (!audience) { el.innerHTML = '<div class="adm-muted">считаю получателей…</div>'; return; }
+    if (!bc.text.trim()) { el.innerHTML = '<div class="adm-muted">сначала напиши текст или выбери шаблон</div>'; return; }
+    const ids = bcRecipients().final;
+    if (!ids.length) { el.innerHTML = '<div class="adm-muted">никого не выбрано</div>'; return; }
+    bc.selfDone = bc.selfDone || {};
+    const done = ids.filter(id => bc.selfDone[id]).length;
+    const people = audience.people || {};
+    el.innerHTML = `<div class="adm-self-sum">написал <b>${done}</b> из ${ids.length}</div>` + ids.slice(0, 200).map(id => {
+        const pp = people[id] || {};
+        const p = ncById(id);
+        const sub = [pp.u ? '@' + pp.u : 'нет username', p && p.tickets_count ? `${ncTickets(p.tickets_count)} → ${ncRub(p.circle_price)}` : ''].filter(Boolean).join(' · ');
+        return `<div class="adm-self-row${bc.selfDone[id] ? ' is-done' : ''}" data-self="${esc(id)}">
+            <div class="adm-self-head"><b>${bc.selfDone[id] ? '✓ ' : ''}${esc(pp.n || p?.name || id)}</b><small>${esc(sub)}</small></div>
+            <div class="adm-self-text">${esc(bcPersonText(id)).replace(/\n/g, '<br>')}</div>
+            <div class="adm-row2"><button class="adm-ghost" data-self-copy>скопировать</button><button class="adm-ghost" data-self-open${pp.u ? '' : ' disabled'}>${pp.u ? 'открыть чат' : 'найди вручную'}</button></div>
+        </div>`;
+    }).join('');
+    el.querySelectorAll('[data-self]').forEach(row => {
+        const id = row.dataset.self;
+        row.querySelector('[data-self-copy]').addEventListener('click', async e => {
+            haptic();
+            const text = bcPersonText(id);
+            let ok = false;
+            try { await navigator.clipboard.writeText(text); ok = true; } catch (err) {
+                const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select();
+                try { ok = document.execCommand('copy'); } catch (e2) {} ta.remove();
+            }
+            e.target.textContent = ok ? 'скопировано ✓' : 'не вышло';
+        });
+        row.querySelector('[data-self-open]').addEventListener('click', () => {
+            const u = (audience.people || {})[id]?.u;
+            if (!u) return;
+            haptic();
+            bc.selfDone[id] = true;
+            const url = 'https://t.me/' + encodeURIComponent(u);
+            if (tg?.openTelegramLink) tg.openTelegramLink(url); else window.open(url, '_blank');
+            setTimeout(renderSelfList, 300);
+        });
+    });
 }
 
 function renderPreview() {
@@ -2461,6 +2542,7 @@ async function sendFlowBroadcast(test) {
 
 async function sendBroadcast(test) {
     if (bc.mode === 'flow') return sendFlowBroadcast(test);
+    if (!test && /\[цена\]/i.test(bc.text)) return sendCircleBroadcast();
     if (!bc.text.trim()) return toast('напишите текст', true);
     const btn = buttonPayload();
     if (btn && btn.type === 'url' && !/^https:\/\//.test(btn.url)) return toast('ссылка должна начинаться с https://', true);
@@ -2509,6 +2591,36 @@ async function sendBroadcast(test) {
             render();
             return;
         }
+    } catch (err) {
+        toast(err.message, true);
+    }
+    el.disabled = false;
+    el.textContent = label;
+}
+
+// шаблон с [цена] от бота: каждому – его цена, и у него открывается спеццена на карту
+async function sendCircleBroadcast() {
+    const r = audience ? bcRecipients() : null;
+    if (!r) return toast('ещё считаю получателей', true);
+    if (!r.final.length) return toast('некому отправлять', true);
+    if (bc.when === 'later') return toast('с личной ценой – только «сейчас»', true);
+    if (!(await confirmAsync(`Бот напишет ${r.final.length} чел. с личной ценой карты и откроет им спеццену. Отменить будет нельзя.`))) return;
+    const el = root.querySelector('#admBcSend');
+    const label = el.textContent;
+    el.disabled = true;
+    el.textContent = 'отправляю… не закрывайте';
+    const people = audience.people || {};
+    const names = {};
+    r.final.forEach(id => { names[id] = ncById(id)?.name || people[id]?.n || ''; });
+    try {
+        const res = await adminCall('adminInviteCircle', { user_ids: JSON.stringify(r.final), names: JSON.stringify(names), text: bc.text.trim() });
+        haptic();
+        toast(`доставлено ${res.sent || 0} из ${r.final.length}${res.skipped ? ` · ${res.skipped} не пускают бота – напиши им «от себя»` : ''}`);
+        audience = null;
+        bc = { ...newBroadcast(), count: null };
+        nc = null;
+        render();
+        return;
     } catch (err) {
         toast(err.message, true);
     }
