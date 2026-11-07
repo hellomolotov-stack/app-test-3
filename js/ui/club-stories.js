@@ -42,7 +42,7 @@ function rowHtml() {
     return `<div class="cst-row">${list.map(s => {
         const fresh = !(s.seen || seen.has(s.id));
         return `<button type="button" class="cst${fresh ? ' is-new' : ''}" data-cst="${esc(s.id)}"><span class="cst-ring">${thumb(s)}${fresh ? '<span class="cst-nb">NEW</span>' : ''}</span><span class="cst-lab">${esc(label(s))}</span></button>`;
-    }).join('')}</div>`;
+    }).join('')}<button type="button" class="cst cst-arch" data-cst-arch><span class="cst-ring"><span class="cst-pic cst-emoji" style="background:rgba(255,255,255,.06)">🗂</span></span><span class="cst-lab">архив</span></button></div>`;
 }
 
 // вставить ленту в host; пока данных нет (или их нет вовсе) – остаётся то, что там было
@@ -73,6 +73,7 @@ export async function mountClubStories(host) {
     if (changed || !host.querySelector('[data-cst]')) paint(host);
 }
 function mountClicks(host) {
+    host.querySelector('[data-cst-arch]')?.addEventListener('click', () => { haptic(); openArchive(); });
     host.querySelectorAll('[data-cst]').forEach(b => b.addEventListener('click', () => {
         const list = [...host.querySelectorAll('[data-cst]')].map(x => stories.find(s => s.id === x.dataset.cst)).filter(Boolean);
         openStories(list, list.findIndex(s => s.id === b.dataset.cst), () => { host.innerHTML = rowHtml(); mountClicks(host); });
@@ -281,4 +282,32 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     });
     show();
     raf = requestAnimationFrame(tick);
+}
+
+// ---------- архив сторис: шторка со всеми опубликованными, как «все значки» ----------
+let archive = null;
+async function openArchive() {
+    log('сторис: архив', state.userCard?.status !== 'active', state.user);
+    const ov = document.createElement('div');
+    ov.className = 'sa-overlay';
+    ov.innerHTML = `<div class="sa-sheet" role="dialog" aria-label="архив сторис"><div class="cs-grab" aria-hidden="true"></div>
+        <div class="sa-top"><b>архив сторис</b><button type="button" class="sa-x" aria-label="закрыть">✕</button></div>
+        <div class="sa-scroll"><div class="sa-wait">загружаю…</div></div></div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('is-on'));
+    const close = () => { ov.classList.remove('is-on'); setTimeout(() => ov.remove(), 280); };
+    ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('.sa-x')) { haptic(); close(); } });
+    try { if (!archive) archive = ((await meCall('stories', { all: 1 }, 10000)) || {}).stories || []; } catch (e) { archive = null; }
+    const box = ov.querySelector('.sa-scroll');
+    const list = archive || [];
+    if (!list.length) { box.innerHTML = '<div class="sa-wait">пока пусто</div>'; return; }
+    const M = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    const day = ts => { const d = new Date(Number(ts) || Date.now()); return `${d.getDate()} ${M[d.getMonth()]}`; };
+    const cover = s => {
+        if (s.image && s.type !== 'app') return `<span class="sa-pic" style="background-image:url('${esc(imgUrl(s.image))}')${s.type === 'badges' ? ';background-size:70%;background-repeat:no-repeat;background-color:#16222e' : ''}"></span>`;
+        if (s.type === 'summary') return `<span class="sa-pic sa-emo" style="background:${BG.summary}"><img src="assets/plaud-v2.webp" alt=""></span>`;
+        return `<span class="sa-pic sa-emo" style="background:${BG[s.type] || BG.custom}"><i>${EMOJI[s.type] || '⛰️'}</i></span>`;
+    };
+    box.innerHTML = `<div class="sa-grid">${list.map((s, i) => `<button type="button" class="sa-it" data-sa="${i}">${cover(s)}<span class="sa-t">${esc(label(s))}</span><span class="sa-d">${day(s.date)}</span></button>`).join('')}</div>`;
+    box.querySelectorAll('[data-sa]').forEach(b => b.addEventListener('click', () => { haptic(); openStories(list, Number(b.dataset.sa)); }));
 }

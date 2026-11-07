@@ -171,7 +171,7 @@ module.exports = async (req, res) => {
         try {
             const token = await getAccessToken();
             if (body.action === 'story_view') { await markView(token, String(body.id || ''), String(user.id)); return res.status(200).json({ ok: true }); }
-            return res.status(200).json({ stories: await storiesFor(token, String(user.id)) });
+            return res.status(200).json({ stories: await storiesFor(token, String(user.id), { all: !!body.all }) });
         } catch (e) {
             console.error('me stories:', e.message);
             return res.status(502).json({ error: 'db unavailable' });

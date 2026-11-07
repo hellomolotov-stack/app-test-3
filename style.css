@@ -7838,3 +7838,22 @@ html.v2 #circleContainer.lv-card { background: #14171C !important; }
 .vt-fresh .vt-title { color: #fff; }
 .vt-fresh .vt-date { color: #F2C14E; font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { .vt-rays, .vt-conf i, .vt-fresh .vt-main::after { animation: none; } .vt-conf { display: none; } }
+
+/* архив сторис – шторка как «все значки» */
+.sa-overlay { position: fixed; inset: 0; z-index: 2400; display: flex; align-items: flex-end; justify-content: center; background: rgba(5,8,12,0); transition: background .28s; }
+.sa-overlay.is-on { background: rgba(5,8,12,.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.sa-sheet { position: relative; width: 100%; max-width: 600px; height: 90vh; height: 90dvh; display: flex; flex-direction: column; border-radius: 28px 28px 0 0; background: #12151b; border: 1px solid rgba(255,255,255,.1); border-bottom: 0; transform: translateY(100%); transition: transform .32s cubic-bezier(.2,.9,.25,1); color: #fff; }
+.sa-overlay.is-on .sa-sheet { transform: none; }
+.sa-top { display: flex; justify-content: space-between; align-items: center; padding: 4px 16px 12px 20px; }
+.sa-top b { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.sa-x { width: 40px; height: 40px; border: 0; border-radius: 20px; background: rgba(255,255,255,.08); color: #fff; font-size: 16px; cursor: pointer; }
+.sa-scroll { flex: 1; overflow-y: auto; padding: 4px 16px calc(24px + env(safe-area-inset-bottom, 0px)); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.sa-wait { padding: 40px 0; text-align: center; font-size: 14px; color: rgba(255,255,255,.5); }
+.sa-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.sa-it { display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.sa-pic { position: relative; display: block; aspect-ratio: 9 / 14; border-radius: 16px; overflow: hidden; background: #1a1f25 center/cover no-repeat; }
+.sa-emo { display: flex; align-items: center; justify-content: center; }
+.sa-emo i { font-style: normal; font-size: 40px; }
+.sa-emo img { width: 46%; }
+.sa-t { font-size: 12.5px; font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.sa-d { font-size: 11px; color: rgba(255,255,255,.45); margin-top: -3px; }
