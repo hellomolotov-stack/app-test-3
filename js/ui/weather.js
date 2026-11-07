@@ -3,6 +3,8 @@ import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { fetchWithTimeout } from '../net.js';
+import { isV2 } from '../redesign.js';
+import { isUpcomingHike } from '../hike-timing.js';
 
 const CITIES = [
     {
@@ -482,8 +484,40 @@ async function loadAndRender(containerId) {
     }
 }
 
+// классика v2 (07.11): компактная таблица на неделю – две строки «город» и «горы», день ближайшего хайка подсвечен
+const WD2 = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+function hikeDay() {
+    const h = (state.hikesWithTitle || []).find(x => x && x.cancelled !== true && !(x.city === true || x.city === 'yes') && isUpcomingHike(x));
+    return h ? h.date : '';
+}
+function wt2Html(city, data) {
+    const hd = hikeDay();
+    const days = (data?.coast?.time || []).slice(0, 7);
+    if (!days.length) return '<div class="wt2-skel">загружаю прогноз…</div>';
+    const today = days[0];
+    const head = days.map(d => { const w = new Date(d + 'T12:00:00').getDay(); return `<span class="wt2-d${d === hd ? ' is-hk' : ''}">${d === today ? 'сег' : WD2[w]}</span>`; }).join('');
+    const row = z => days.map((d, i) => `<span class="wt2-t${d === hd ? ' is-hk' : ''}"><i>${wmoEmoji(z.weathercode[i])}</i>${Math.round(z.temperature_2m_max[i])}°</span>`).join('');
+    return `<div class="wt2-grid"><span></span>${head}
+        <button type="button" class="wt2-lab" id="weatherCityBtn"><b>город</b>${city.name} ›</button>${row(data.coast)}
+        <span class="wt2-lab"><b>горы</b>${city.mountain.label}</span>${row(data.mountain)}</div>
+        ${hd ? '<div class="wt2-note">лаймом – день ближайшего хайка</div>' : ''}`;
+}
+async function loadWt2() {
+    const root = document.getElementById('weatherBlock');
+    const box = root?.querySelector('.wt2-body');
+    if (!box) return;
+    const city = getCity();
+    try { box.innerHTML = wt2Html(city, await fetchWeather(city)); }
+    catch (e) { box.innerHTML = '<div class="wt2-skel">не удалось загрузить прогноз</div>'; }
+    box.querySelector('#weatherCityBtn')?.addEventListener('click', () => {
+        haptic(); log('выбор города погоды', false, state.user);
+        showCityPicker(name => { saveCity(name); localStorage.removeItem(CACHE_KEY); loadWt2(); });
+    });
+}
+
 export function renderWeatherBlock() {
     const city = getCity();
+    if (isV2()) return `<div class="card-container wt2" id="weatherBlock"><div class="wt2-h"><b>погода на неделю</b></div><div class="wt2-body"><div class="wt2-skel">загружаю прогноз…</div></div></div>`;
     return `
     <div class="card-container" id="weatherBlock">
         <div class="weather-header">
@@ -499,6 +533,7 @@ export function renderWeatherBlock() {
 
 export function initWeatherBlock() {
     if (!document.getElementById('weatherBlock')) return;
+    if (document.querySelector('#weatherBlock.wt2')) { loadWt2(); return; }
 
     const root = document.getElementById('weatherBlock');
     loadAndRender('weatherBlock');
