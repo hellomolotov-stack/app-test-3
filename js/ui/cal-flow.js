@@ -44,7 +44,7 @@ function cardHtml(h, i) {
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
     const tag = past ? '<span class="cf-tag is-past">было ✓</span>'
         : teaser ? '<span class="cf-tag is-soon">готовим</span>'
-        : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">хайк</span>';
+        : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">запись открыта</span>';
     const on = teaser && isWaitlisted(h.date);
     const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
     const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
@@ -54,7 +54,7 @@ function cardHtml(h, i) {
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
-    const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : 'подробнее и запись';
+    const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : 'детали и запись';
     return `<button type="button" class="${cls}" data-i="${i}">${bg}
         ${tag}<span class="cf-in"><small>${when}</small><b>${esc(h.title)}</b><span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
 }
@@ -79,7 +79,7 @@ export function renderCalFlow(container) {
     let start = list.findIndex(h => h.date >= t); if (start < 0) start = list.length - 1;
     container.className = 'card-container cf-wrap';
     container.innerHTML = `
-        <div class="cf-head"><b>события</b><span>${list.filter(h => h.date >= t).length} впереди</span></div>
+        <div class="cf-head"><b>календарь</b><span>${list.filter(h => h.date >= t).length} впереди</span></div>
         <div class="cf-track">${list.map(cardHtml).join('')}</div>
         ${wheelHtml(list)}`;
     const track = container.querySelector('.cf-track');
