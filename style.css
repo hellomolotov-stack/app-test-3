@@ -7964,3 +7964,9 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
     background: linear-gradient(rgba(217, 253, 25, .15), rgba(217, 253, 25, .15)), rgba(18, 22, 12, .88) !important;
     border: 1px solid rgba(217, 253, 25, .45) !important;
 }
+/* потяни вниз – обновить главную */
+.ptr { position: fixed; left: 50%; top: 8px; z-index: 2500; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center;
+    background: #1a1e25; border: 1px solid #2a2f37; color: rgba(255,255,255,.55); box-shadow: 0 6px 20px rgba(0,0,0,.45); transform: translate(-50%, -50px); opacity: 0; pointer-events: none; }
+.ptr.is-ready, .ptr.is-spin { color: var(--yellow); }
+.ptr.is-spin svg { animation: ptrSpin .8s linear infinite; }
+@keyframes ptrSpin { to { transform: rotate(360deg); } }

@@ -957,6 +957,7 @@ async function loadAppData() {
         if (tg) {
             tg.expand();
             if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+            import('./ui/pull-refresh.js').then(m => m.initPullRefresh()).catch(() => {});
         }
 
         // финальный рендер с актуальными данными — пропускаем, если диплинк увёл на другую страницу
