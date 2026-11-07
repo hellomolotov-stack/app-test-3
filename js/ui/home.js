@@ -494,6 +494,19 @@ function renderUpdatesBlock() {
     `;
 }
 
+// классика v2: «клуб в цифрах» одной фразой, цифры выделены лаймом; ниже чипы с фактами
+const CLUB_START = '2025-05-25'; // первый хайк клуба
+function metricsStoryHtml() {
+    const m = state.metrics || {};
+    const s = new Date(CLUB_START + 'T12:00:00'), now = new Date();
+    const months = Math.max(1, (now.getFullYear() - s.getFullYear()) * 12 + now.getMonth() - s.getMonth());
+    const span = months >= 15 && months <= 20 ? 'за полтора года' : months >= 21 && months <= 27 ? 'за два года' : months >= 12 ? 'за год с лишним' : `за ${months} мес.`;
+    const perMonth = Math.max(1, Math.round((Number(m.hikes) || 0) / months));
+    const v = k => `<em data-metric="${k}">${m[k] ?? ''}</em>`;
+    return `<div class="mst-text">${span} мы прошли ${v('kilometers')}&nbsp;км на ${v('hikes')}&nbsp;хайках, побывали в ${v('locations')}&nbsp;местах Крыма и познакомили людей друг с другом ${v('meetings')}&nbsp;раз</div>
+        <div class="mst-chips"><span>🥾 <b>${perMonth}</b> ${perMonth % 10 === 1 && perMonth % 100 !== 11 ? 'хайк' : perMonth % 10 >= 2 && perMonth % 10 <= 4 && (perMonth % 100 < 12 || perMonth % 100 > 14) ? 'хайка' : 'хайков'} в месяц</span><span>🏔 выше всего – <b>1527 м</b></span><span>📅 с мая 2025</span></div>`;
+}
+
 window.addEventListener('club:content-updated', () => {
     if (!mainDiv()?.querySelector('.metrics-header')) return;
     updateMetricsUI();
@@ -670,16 +683,17 @@ function renderGuestHome() {
         ${renderWeatherBlock()}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
                 <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
                 <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
-            </div>
+            </div>`}
         </div>
         ${renderTestimonialsBlock()}
         ${isV2() ? '' : renderUpdatesBlock()}
-        ${renderSafetyBanner()}
+        ${isV2() ? '' : renderSafetyBanner()}
         ${renderMakerCredit()}
     `;
 
@@ -898,15 +912,16 @@ function renderOwnerHome() {
         ` : ''}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
                 <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
                 <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
-            </div>
+            </div>`}
         </div>
         ${isV2() ? '' : renderUpdatesBlock()}
-        ${renderSafetyBanner()}
+        ${isV2() ? '' : renderSafetyBanner()}
         ${renderMakerCredit()}
     `;
 
@@ -981,15 +996,16 @@ function renderRdHome() {
         ${renderWeatherBlock()}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
                 <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
                 <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
-            </div>
+            </div>`}
         </div>
         ${isV2() ? '' : renderUpdatesBlock()}
-        ${renderSafetyBanner()}
+        ${isV2() ? '' : renderSafetyBanner()}
         ${renderMakerCredit()}
     `;
     wireRdHomeTop();
