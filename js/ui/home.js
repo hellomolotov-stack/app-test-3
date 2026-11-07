@@ -264,11 +264,55 @@ function refreshMastermindBlock() {
         const c = document.getElementById('mastermindSummariesContainer');
         if (!c) return;
         c.innerHTML = renderMastermindSummaries();
+        wireMmCover(c);
         c.querySelectorAll('.guest-read-btn').forEach(btn => btn.addEventListener('click', handleGuestRead));
         try { fitMastermindScroll(); } catch (e) {}
     });
 }
+// классика v2: «обложка выпуска» – последний мастермайнд из читалки (заметки Plaud): тема, дата, место, три тезиса
+function mmTheses(body) {
+    const out = [];
+    for (const raw of String(body || '').split('\n')) {
+        const m = raw.match(/^\s*(?:[-*•]|\d+\.)\s+(.+)/);
+        if (!m) continue;
+        const t = m[1].replace(/\*\*/g, '').replace(/\[(.+?)\]/g, '$1').replace(/^\[[ x]\]\s*/, '').replace(/\s+/g, ' ').trim();
+        const head = t.split(/\s[–—-]\s/)[0];
+        const t2 = head.length >= 10 ? head : t;
+        if (t2.length < 10) continue;
+        out.push(t2.length > 110 ? t2.slice(0, 108).replace(/\s+\S*$/, '') + '…' : t2);
+        if (out.length === 3) break;
+    }
+    return out;
+}
+function mmCoverHtml() {
+    const n = mmNotes()[0];
+    if (!n) return '';
+    const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    const d = new Date(n.date + 'T12:00:00');
+    const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const th = mmTheses(n.body);
+    return `<div class="card-container mmc" data-mmc="${esc(n.id)}">
+        <div class="mmc-cover"><div class="mmc-art"><img src="assets/plaud.webp" alt=""></div>
+            <div class="mmc-meta"><span class="mmc-k">последний мастермайнд</span><b>${esc(n.title)}</b><span class="mmc-when">${d.getDate()} ${months[d.getMonth()]}${n.place ? ` · ${esc(n.place)}` : ''}</span></div></div>
+        ${th.length ? `<div class="mmc-th">${th.map((t, i) => `<div class="${n.locked && i === th.length - 1 && i > 0 ? 'is-blur' : ''}">${esc(t)}</div>`).join('')}</div>` : ''}
+        <div class="mmc-foot"><span class="mmc-avs" data-mmc-avs="${esc(n.date)}"></span><button type="button" class="mmc-read" data-mmc-read>читать саммари ›</button></div>
+    </div>`;
+}
+function wireMmCover(root) {
+    const box = root?.querySelector?.('.mmc');
+    if (!box) return;
+    const open = () => { haptic(); log('мастермайнд: обложка на главной', state.userCard.status !== 'active', state.user); import('./mm-reader.js').then(m => m.openMmReader(box.dataset.mmc)); };
+    box.addEventListener('click', open);
+    const av = box.querySelector('[data-mmc-avs]');
+    if (av) import('./calendar.js').then(m => m.fetchGoingFromServer([av.dataset.mmcAvs])).then(([lst]) => {
+        const ppl = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId).slice(0, 5);
+        const G = ['#e06666', '#3d85c6', '#38761d', '#741b47', '#bf9000'];
+        av.innerHTML = ppl.map((p, i) => `<i style="background:${G[i % 5]}">${p.photoUrl ? `<img src="${String(p.photoUrl).replace(/"/g, '')}" alt="" onerror="this.remove()">` : String(p.name || '?').trim()[0] || '?'}</i>`).join('');
+    }).catch(() => {});
+}
+
 function renderMastermindSummaries() {
+    if (isV2() && mmNotes().length) return mmCoverHtml();
     // саммари из листа + те, что добавлены к хайкам в админке (summary_link), без повторов по ссылке
     const listed = state.mastermindSummaries || [];
     const links = new Set(listed.map(s => String(s.link || '').trim()));

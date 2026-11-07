@@ -7708,3 +7708,23 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-card.is-on .cf-sw { background: var(--yellow); }
 .cf-card.is-on .cf-sw::after { transform: translateX(16px); background: #141800; }
 .cf-card.is-on .cf-tlab { color: var(--yellow); font-weight: 700; }
+
+/* классика v2: мастермайнд – обложка выпуска */
+html.v2 .mmc { padding: 16px; cursor: pointer; box-shadow: 0 12px 70px -16px rgba(185,162,255,.4); }
+.mmc-cover { display: flex; gap: 12px; align-items: center; }
+.mmc-art { flex: none; width: 76px; height: 76px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 40%, rgba(185,162,255,.35), rgba(20,23,28,0) 70%), #1b1f27; }
+.mmc-art img { width: 62px; }
+.mmc-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.mmc-k { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #B9A2FF; }
+.mmc-meta b { font-size: 17px; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mmc-when { font-size: 13px; color: rgba(255,255,255,.55); }
+.mmc-th { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.mmc-th div { position: relative; padding-left: 14px; font-size: 13.5px; line-height: 1.38; color: rgba(255,255,255,.85); }
+.mmc-th div::before { content: ''; position: absolute; left: 0; top: 7px; width: 5px; height: 5px; border-radius: 3px; background: #B9A2FF; }
+.mmc-th .is-blur { filter: blur(4px); opacity: .6; }
+.mmc-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.07); }
+.mmc-avs { display: flex; min-height: 26px; }
+.mmc-avs i { position: relative; overflow: hidden; width: 26px; height: 26px; border-radius: 13px; margin-left: -8px; border: 2px solid #14171C; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; font-weight: 700; color: #fff; }
+.mmc-avs i:first-child { margin-left: 0; }
+.mmc-avs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mmc-read { flex: none; height: 38px; padding: 0 16px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
