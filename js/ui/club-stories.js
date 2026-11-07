@@ -82,7 +82,7 @@ function mountClicks(host) {
 
 function visual(s) {
     const img = imgUrl(s.image);
-    if (s.type === 'member' && img) return `<div class="csv-stage"><img class="csv-cardimg" src="${esc(img)}" alt=""></div>`;
+    if (s.type === 'member' && img) return `<div class="csv-stage"><div class="csv-card-halo"></div><img class="csv-cardimg" src="${esc(img)}" alt=""></div>`;
     if (s.type === 'badges' && img) return `<div class="csv-stage"><div class="csv-halo"></div><img class="csv-badge" src="${esc(img)}" alt=""></div>`;
     if (s.type === 'app' && img) return `<div class="csv-stage"><div class="csv-phone"><img src="${esc(img)}" alt=""></div></div>`;
     if (s.type === 'summary') return `<div class="csv-stage"><div class="csv-plaud-halo"></div><img class="csv-plaud" src="assets/plaud-v2.webp" alt=""></div>`;

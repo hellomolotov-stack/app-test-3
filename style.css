@@ -7857,3 +7857,7 @@ html.v2 #circleContainer.lv-card { background: #14171C !important; }
 .sa-emo img { width: 46%; }
 .sa-t { font-size: 12.5px; font-weight: 600; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .sa-d { font-size: 11px; color: rgba(255,255,255,.45); margin-top: -3px; }
+
+/* сторис «новый член клуба»: карта на голубом свечении (как плод на сиреневом) */
+.csv-card-halo { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(90,170,255,.42), rgba(90,170,255,0) 65%); }
+.csv-cardimg { position: relative; }
