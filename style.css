@@ -7907,3 +7907,32 @@ html.v2 #circleContainer.card-container { box-shadow: 0 12px 70px -16px rgba(60,
 html.v2 #myAchievements.card-container { box-shadow: 0 12px 70px -16px rgba(232,180,70,.38); }
 html.v2 #myAchievements.card-container.vt-fresh { box-shadow: 0 12px 80px -12px rgba(242,193,78,.5); background: radial-gradient(120% 70% at 50% 28%, rgba(242,193,78,.2), rgba(20,23,28,0) 62%), #14171C; }
 html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,210,.3); }
+
+/* шторка хайка «вариант А» (только @maxmolotov): фото-обложка, факты, кто идёт, лаймовый слайдер */
+.bottom-sheet.sheet-a { background: #12151b !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; border-color: rgba(255,255,255,.1); }
+.sheet-a .bottom-sheet-content-wrapper { padding-top: 0 !important; }
+.sha-hero { position: relative; height: 260px; margin: -14px -16px 0; background: #1a1f25 center/cover no-repeat; }
+.sha-hero::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(18,21,27,.15) 30%, #12151b 98%); }
+.sha-pill { position: absolute; z-index: 1; left: 16px; top: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; background: rgba(10,12,16,.72); font-size: 13px; font-weight: 700; color: #fff; }
+.sha-pill i { width: 7px; height: 7px; border-radius: 4px; background: var(--yellow); }
+.sha-ttl { position: absolute; z-index: 1; left: 16px; right: 16px; bottom: 10px; }
+.sha-ttl b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; color: #fff; }
+.sha-facts { display: flex; gap: 8px; margin: 10px 0 0; }
+.sha-facts span { flex: 1; padding: 10px 8px; border-radius: 14px; background: rgba(255,255,255,.05); text-align: center; font-size: 11.5px; color: rgba(255,255,255,.55); }
+.sha-facts b { display: block; margin-bottom: 2px; font-size: 16px; color: #fff; }
+.sha-going { display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.05); min-height: 56px; }
+.sha-going:empty { display: none; }
+.sha-avs { display: flex; flex: none; }
+.sha-avs i { position: relative; overflow: hidden; width: 30px; height: 30px; border-radius: 15px; margin-left: -9px; border: 2px solid #1a1e25; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 12px; font-weight: 800; color: #fff; }
+.sha-avs i:first-child { margin-left: 0; }
+.sha-avs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.sha-gt { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.3; color: #fff; }
+.sha-gt small { display: block; font-size: 12px; color: rgba(255,255,255,.55); }
+.sha-n { flex: none; font-size: 15px; font-weight: 800; color: var(--yellow); }
+/* в варианте А дата и название – на обложке; в шапке остаются только стрелки */
+.sheet-a .bottom-sheet-header-left { visibility: hidden; height: 0; }
+.sheet-a .bottom-sheet-header-block { margin-top: 6px; }
+.sheet-a .bottom-sheet-header { min-height: 0; }
+/* лаймовый слайдер записи */
+body:has(.bottom-sheet.sheet-a) .floating-sheet-buttons .swipe-track { background: rgba(217,253,25,.13) !important; border: 1px solid rgba(217,253,25,.4) !important; border-radius: 999px !important; }
+body:has(.bottom-sheet.sheet-a) .floating-sheet-buttons .swipe-thumb { background: var(--yellow) !important; color: #141800 !important; box-shadow: 0 6px 18px rgba(217,253,25,.35) !important; }

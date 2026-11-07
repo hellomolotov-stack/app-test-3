@@ -2258,7 +2258,24 @@ export function showBottomSheet(index) {
         // блок «твой +1» для владельца карты, записанного на хайк (заполняет fillPlus1Slot)
         let inviteButtonHtml = `<div class="plus1-slot" id="plus1Slot"></div>`;
 
+        // шторка «вариант А» (07.11, пока только @maxmolotov): фото-обложка с датой и названием, факты плитками, кто идёт
+        const sheetA = String(state.user?.id || '') === '163665735' && !isPlaceholder;
+        document.getElementById('hikeBottomSheet')?.classList.toggle('sheet-a', sheetA);
+        const trackKm = (() => {
+            const c = hikeTrack?.coords; if (!Array.isArray(c) || c.length < 2) return 0;
+            const ll = p => (p[0] > p[1] ? [p[0], p[1]] : [p[1], p[0]]); let m = 0;
+            for (let k = 1; k < c.length; k++) { const [a1, o1] = ll(c[k - 1]), [a2, o2] = ll(c[k]); const R = 6371, dA = (a2 - a1) * Math.PI / 180, dO = (o2 - o1) * Math.PI / 180;
+                const q = Math.sin(dA / 2) ** 2 + Math.cos(a1 * Math.PI / 180) * Math.cos(a2 * Math.PI / 180) * Math.sin(dO / 2) ** 2; m += 2 * R * Math.asin(Math.sqrt(q)); }
+            return Math.round(m * 10) / 10;
+        })();
+        const sheetAHero = sheetA ? `
+            <div class="sha-hero" id="shaHero"><span class="sha-pill"><i></i>${formattedDate}${hike.start_time ? ` · ${hike.start_time}` : ''}</span>
+                <div class="sha-ttl"><b>${hike.title}</b></div></div>
+            <div class="sha-facts">${trackKm ? `<span><b>${String(trackKm).replace('.', ',')} км</b>маршрут</span>` : ''}${hike.start_time ? `<span><b>${hike.start_time}</b>сбор</span>` : ''}${!isCity && !isBookClub ? `<span><b>${capacityFor(hike)}</b>мест</span>` : ''}</div>
+            <div class="sha-going" id="shaGoing"></div>` : '';
+
         contentWrapper.innerHTML = `
+            ${sheetAHero}
             <div class="bottom-sheet-header-block">
                 <div class="bottom-sheet-header">
                     <div class="bottom-sheet-header-left">
@@ -2278,6 +2295,19 @@ export function showBottomSheet(index) {
             ${shareButtonHtml}
             ${!isPlaceholder && !hike.cancelled && new Date(hike.date) >= new Date().setHours(0, 0, 0, 0) ? `<button class="hike-ask-row" id="hikeAskBtn">есть вопрос про ${isCity || isBookClub ? 'это событие' : 'этот хайк'}? <b>спросить ›</b></button>` : ''}
         `;
+
+        if (sheetA) {
+            import('./rd-home.js').then(m => { const el = contentWrapper.querySelector('#shaHero'); if (el) el.style.backgroundImage = `url('assets/teaser/${m.heroPhotoFor(hike.title)}.webp')`; }).catch(() => {});
+            const gEl = contentWrapper.querySelector('#shaGoing');
+            if (gEl) fetchGoingFromServer([hike.date]).then(([list]) => {
+                const ppl = (Array.isArray(list) ? list : []).filter(p => p && p.userId); const n = ppl.length, cap = capacityFor(hike);
+                const G = ['#e06666', '#3d85c6', '#38761d', '#741b47', '#bf9000'];
+                const fn = x => String(x || '').trim().split(/\s+/)[0] || '';
+                gEl.innerHTML = n ? `<span class="sha-avs">${ppl.slice(0, 4).map((p, k) => `<i style="background:${G[k % 5]}">${p.photoUrl ? `<img src="${String(p.photoUrl).replace(/"/g, '')}" alt="" onerror="this.remove()">` : (fn(p.name)[0] || '?').toUpperCase()}</i>`).join('')}</span>
+                    <span class="sha-gt"><b>${ppl.slice(0, 2).map(p => fn(p.name)).join(', ')}${n > 2 ? ` +${n - 2}` : ''}</b><small>${isPast ? 'были на хайке' : Math.max(0, cap - n) ? `осталось ${Math.max(0, cap - n)} мест` : 'мест нет'}</small></span>${!isCity && !isBookClub ? `<span class="sha-n">${n}/${cap}</span>` : ''}`
+                    : `<span class="sha-gt"><b>запись открыта</b><small>будь первым</small></span>`;
+            }).catch(() => {});
+        }
 
         // новый дизайн: цвет шторки по типу события и сетка «кто идёт» с именами
         if (isRedesign()) {
