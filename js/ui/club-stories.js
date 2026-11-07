@@ -30,6 +30,8 @@ const imgUrl = u => (u && u.startsWith('/') ? u : u && !/^https?:/.test(u) ? '/'
 // в кружке – картинка (карта, значок) или эмодзи типа
 function thumb(s) {
     if (s.type === 'summary') return `<span class="cst-pic cst-plaud"><img src="assets/plaud-v2.webp" alt=""></span>`;
+    if (s.type === 'member' && s.image) return `<span class="cst-pic cst-cardthumb"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
+    if (s.image && s.visual === 'plain') return `<span class="cst-pic cst-plainthumb" style="background:${BG[s.type] || BG.custom}"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
     if (s.image && s.type !== 'app') return `<span class="cst-pic" style="background-image:url('${esc(imgUrl(s.image))}')${s.type === 'badges' ? ';background-size:82%;background-color:#16222e' : ''}"></span>`;
     return `<span class="cst-pic cst-emoji" style="background:${BG[s.type] || BG.custom}">${EMOJI[s.type] || '⛰️'}</span>`;
 }
@@ -42,7 +44,7 @@ function rowHtml() {
     return `<div class="cst-row">${list.map(s => {
         const fresh = !(s.seen || seen.has(s.id));
         return `<button type="button" class="cst${fresh ? ' is-new' : ''}" data-cst="${esc(s.id)}"><span class="cst-ring">${thumb(s)}${fresh ? '<span class="cst-nb">NEW</span>' : ''}</span><span class="cst-lab">${esc(label(s))}</span></button>`;
-    }).join('')}<button type="button" class="cst cst-arch" data-cst-arch><span class="cst-ring"><span class="cst-pic cst-emoji" style="background:rgba(255,255,255,.06)">🗂</span></span><span class="cst-lab">архив</span></button></div>`;
+    }).join('')}</div>`;
 }
 
 // вставить ленту в host; пока данных нет (или их нет вовсе) – остаётся то, что там было
@@ -84,6 +86,7 @@ function visual(s) {
     const img = imgUrl(s.image);
     if (s.type === 'member' && img) return `<div class="csv-stage"><div class="csv-card-halo"></div><img class="csv-cardimg" src="${esc(img)}" alt=""></div>`;
     if (s.type === 'badges' && img) return `<div class="csv-stage"><div class="csv-halo"></div><img class="csv-badge" src="${esc(img)}" alt=""></div>`;
+    if (s.visual === 'plain' && img) return `<div class="csv-stage"><div class="csv-halo"></div><img class="csv-badge csv-wide" src="${esc(img)}" alt=""></div>`;
     if (s.type === 'app' && img) return `<div class="csv-stage"><div class="csv-phone"><img src="${esc(img)}" alt=""></div></div>`;
     if (s.type === 'summary') return `<div class="csv-stage"><div class="csv-plaud-halo"></div><img class="csv-plaud" src="assets/plaud-v2.webp" alt=""></div>`;
     if (img) return `<div class="csv-cover" style="background-image:url('${esc(img)}')"></div>`;

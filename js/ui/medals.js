@@ -52,7 +52,7 @@ export async function mountMyAchievements() {
                 return `<button type="button" class="mya-it is-next" data-mya-all aria-label="${esc(st.title)}"><span class="mya-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy">` : '<b>?</b>'}</span><span class="mya-name">${esc(st.short)}</span></button>`; }).join('')}
             <button type="button" class="mya-it is-all" data-mya-all aria-label="все значки"><span class="mya-pic"><b>${items.length > shelf.length ? `+${items.length - shelf.length}` : '›'}</b></span><span class="mya-name">все значки</span></button></div>
             ${goalsHtml(owned)}
-            ${waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
+            ${false && waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
                 <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
         // классика v2 (html.v2): «витрина» – последний значок крупно, два предыдущих по бокам, ниже следующая цель
         if (document.documentElement.classList.contains('v2') && items.length) {
@@ -198,6 +198,5 @@ function vitrineHtml(items, shelf, owned, waiting) {
         <div class="vt-title">${esc(a0.title)}</div>
         <div class="vt-date">${a0.seenAt === null ? 'новый · ' : ''}${day ? `получен ${day}` : ''}</div>
         ${goal}
-        ${waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
-            <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
+        `;
 }

@@ -7861,3 +7861,9 @@ html.v2 #circleContainer.lv-card { background: #14171C !important; }
 /* сторис «новый член клуба»: карта на голубом свечении (как плод на сиреневом) */
 .csv-card-halo { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(90,170,255,.42), rgba(90,170,255,0) 65%); }
 .csv-cardimg { position: relative; }
+
+/* кружки сторис: карта на голубом свечении, картинка-композиция на фоне типа */
+.cst-cardthumb { background: radial-gradient(circle, rgba(90,170,255,.55), rgba(13,29,42,1) 72%) !important; }
+.cst-cardthumb img { width: 64%; border-radius: 4px; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(0,0,0,.5); }
+.cst-plainthumb img { width: 82%; }
+.csv-badge.csv-wide { width: 86%; max-width: 360px; }
