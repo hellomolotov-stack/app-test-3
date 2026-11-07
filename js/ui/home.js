@@ -653,10 +653,10 @@ function renderGuestHome() {
     `;
 
     main.innerHTML = `
-        ${v2 ? v2GuestTopHtml(cardHtml) : askBarHtml() + cardHtml}
-        <div id="userBookingsContainer"></div>
+        ${v2 ? v2GuestTopHtml(cardHtml) + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div>' : askBarHtml() + cardHtml}
+        ${v2 && nextEventBooked() ? '' : '<div id="userBookingsContainer"></div>'}
         <div id="circleContainer"></div>
-        <div class="card-container" id="calendarContainer"></div>
+        ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
         ${!isLumenPilotUser(state.user) ? `
         <div class="card-container">
             <h2 class="section-title">для новичков</h2>

@@ -55,7 +55,7 @@ function startSpinner(btn) {
 export function renderCalendar(container) {
     // классика v2 (пока только @maxmolotov) – календарь «полоса дней» (day-strip.js)
     // витрина с перспективой (вариант Б, 06.11) – пока только @maxmolotov; остальным v2 – «события» (day-strip.js)
-    if (container && isV2() && String(state.user?.id || '') === '163665735') { import('./cal-flow.js').then(m => m.renderCalFlow(container)).catch(e => console.error(e)); return; }
+    if (container && isV2()) { import('./cal-flow.js').then(m => m.renderCalFlow(container)).catch(e => console.error(e)); return; }
     if (container && isV2()) { import('./day-strip.js').then(m => m.renderDayStrip(container)).catch(e => console.error(e)); return; }
     if (isEventsFeedUser()) return renderEventsFeed(container);
     const year = currentCalendarYear,
