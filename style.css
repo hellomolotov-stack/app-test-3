@@ -7755,3 +7755,5 @@ html.v2 #circleContainer.lv-card .cc-lock { margin: 0 16px 16px; width: calc(100
 /* классика v2: карточка хайка на главной – мягкое свечение без лаймового контура */
 html.v2 .rd-hero { border-color: transparent; }
 html.v2 .rd-hero:has(.rd-ok) { cursor: pointer; }
+
+.cf-tag.is-booked { background: var(--yellow); color: #141800; }

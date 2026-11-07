@@ -41,9 +41,12 @@ function photo(h) {
 }
 function cardHtml(h, i) {
     const t = today(), past = h.date < t, teaser = isTeaser(h), d = dt(h.date);
+    const wi = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
+    const booked = !past && !teaser && wi >= 0 && state.hikeBookingStatus?.[wi] === true;
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
     const tag = past ? '<span class="cf-tag is-past">было ✓</span>'
         : teaser ? '<span class="cf-tag is-soon">готовим</span>'
+        : booked ? '<span class="cf-tag is-booked">✓ ты записан</span>'
         : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">запись открыта</span>';
     const on = teaser && isWaitlisted(h.date);
     const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
@@ -54,7 +57,7 @@ function cardHtml(h, i) {
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
-    const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : 'детали и запись';
+    const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
     return `<button type="button" class="${cls}" data-i="${i}">${bg}
         ${tag}<span class="cf-in"><small>${when}</small><b>${esc(h.title)}</b><span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
 }
