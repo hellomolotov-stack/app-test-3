@@ -109,7 +109,7 @@ const STYLE = `
 .mmr-ib.on { background: #B9A2FF; color: #1a1033; }
 .mmr-ib:disabled { opacity: .3; cursor: default; }
 .mmr-cnt { flex: none; min-width: 34px; text-align: center; font-size: 12px; color: rgba(255,255,255,.5); }
-.mmr-dock { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; height: 60px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+.mmr-dock { touch-action: none; position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; height: 60px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
   border-radius: 999px; background: rgba(28,32,40,.94); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 14px 34px rgba(0,0,0,.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .mmr-ib.mmr-nav { width: 44px; height: 44px; font-size: 19px; }
 .mmr-ib.mmr-x { width: 40px; height: 40px; font-size: 16px; }
@@ -118,7 +118,7 @@ const STYLE = `
 .mmr-mid small { font-size: 11.5px; color: rgba(255,255,255,.45); white-space: nowrap; }
 .mmr-all { flex: none; height: 44px; margin-left: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .mmr-all.on { background: #B9A2FF; color: #1a1033; }
-.mmr-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 100px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.mmr-scroll { touch-action: pan-y; flex: 1; overflow-y: auto; padding: 18px 24px 100px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .mmr-head { display: flex; gap: 14px; align-items: center; }
 .mmr-head img { flex: none; width: 52px; height: 52px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
 .mmr-title { margin: 0 0 6px; font-size: 23px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; }
@@ -224,6 +224,32 @@ function buildReader(list, id, drag) {
         scroll.scrollTop = 0;
     };
     draw();
+    // свайп вбок по читалке (и по панели снизу) – соседний выпуск; текст едет за пальцем
+    const go = step => { const j = idx + step; if (view !== 'read' || j < 0 || j >= list.length) return false; haptic(); idx = j; draw(); return true; };
+    let sw = null;
+    sheetEl.addEventListener('touchstart', e => { if (e.touches.length !== 1) { sw = null; return; } const t = e.touches[0]; sw = { x: t.clientX, y: t.clientY, on: false, dx: 0 }; }, { passive: true });
+    sheetEl.addEventListener('touchmove', e => {
+        if (!sw) return;
+        const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+        if (!sw.on) {
+            if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
+            if (Math.abs(dx) < 10) return;
+            sw.on = true;
+        }
+        if (e.cancelable) e.preventDefault();
+        sw.dx = dx;
+        scroll.style.transition = 'none';
+        scroll.style.transform = `translateX(${dx * .35}px)`;
+        scroll.style.opacity = String(1 - Math.min(.5, Math.abs(dx) / 500));
+    }, { passive: false });
+    const swEnd = () => {
+        if (!sw) return;
+        const { on, dx } = sw; sw = null;
+        scroll.style.transition = 'transform .22s ease, opacity .22s ease';
+        scroll.style.transform = ''; scroll.style.opacity = '';
+        if (on && Math.abs(dx) > 60) go(dx < 0 ? -1 : 1);
+    };
+    sheetEl.addEventListener('touchend', swEnd); sheetEl.addEventListener('touchcancel', swEnd);
     overlay.addEventListener('click', async e => {
         const t = e.target.closest('[data-v]');
         if (t) { haptic(); view = view === 'all' ? 'read' : 'all'; draw(); return; }
