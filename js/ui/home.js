@@ -269,20 +269,19 @@ function refreshMastermindBlock() {
         try { fitMastermindScroll(); } catch (e) {}
     });
 }
-// классика v2: «обложка выпуска» – последний мастермайнд из читалки (заметки Plaud): тема, дата, место, три тезиса
-function mmTheses(body) {
-    const out = [];
-    for (const raw of String(body || '').split('\n')) {
-        const m = raw.match(/^\s*(?:[-*•]|\d+\.)\s+(.+)/);
-        if (!m) continue;
-        const t = m[1].replace(/\*\*/g, '').replace(/\[(.+?)\]/g, '$1').replace(/^\[[ x]\]\s*/, '').replace(/\s+/g, ' ').trim();
-        const head = t.split(/\s[–—-]\s/)[0];
-        const t2 = head.length >= 10 ? head : t;
-        if (t2.length < 10) continue;
-        out.push(t2.length > 110 ? t2.slice(0, 108).replace(/\s+\S*$/, '') + '…' : t2);
-        if (out.length === 3) break;
+// классика v2: «обложка выпуска» – последний мастермайнд из читалки (заметки Plaud):
+// тема, дата и место, коротко – с каким запросом пришёл человек, кто был, «читать»
+function mmRequest(body) {
+    const lines = String(body || '').split('\n');
+    let i = lines.findIndex(l => /^#{2,3}\s*запрос/i.test(l.trim()));
+    const from = i >= 0 ? i + 1 : lines.findIndex(l => l.trim() && !/^#/.test(l.trim()) && !/^хайк,|^\d/.test(l.trim()));
+    for (let k = Math.max(0, from); k < lines.length; k++) {
+        const t = lines[k].trim();
+        if (!t) continue;
+        if (/^#/.test(t)) break;
+        return t.replace(/\*\*/g, '').replace(/\[(.+?)\]/g, '$1').replace(/^>\s?/, '');
     }
-    return out;
+    return '';
 }
 function mmCoverHtml() {
     const n = mmNotes()[0];
@@ -290,12 +289,14 @@ function mmCoverHtml() {
     const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
     const d = new Date(n.date + 'T12:00:00');
     const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
-    const th = mmTheses(n.body);
+    const req = mmRequest(n.body);
     return `<div class="card-container mmc" data-mmc="${esc(n.id)}">
-        <div class="mmc-cover"><div class="mmc-art"><img src="assets/plaud.webp" alt=""></div>
-            <div class="mmc-meta"><span class="mmc-k">последний мастермайнд</span><b>${esc(n.title)}</b><span class="mmc-when">${d.getDate()} ${months[d.getMonth()]}${n.place ? ` · ${esc(n.place)}` : ''}</span></div></div>
-        ${th.length ? `<div class="mmc-th">${th.map((t, i) => `<div class="${n.locked && i === th.length - 1 && i > 0 ? 'is-blur' : ''}">${esc(t)}</div>`).join('')}</div>` : ''}
-        <div class="mmc-foot"><span class="mmc-avs" data-mmc-avs="${esc(n.date)}"></span><button type="button" class="mmc-read" data-mmc-read>читать саммари ›</button></div>
+        <div class="mmc-top">
+            <div class="mmc-art"><img src="assets/plaud.webp" alt=""></div>
+            <div class="mmc-meta"><span class="mmc-k">мастермайнд · ${d.getDate()} ${months[d.getMonth()]}</span><b>${esc(n.title)}</b>${n.place ? `<span class="mmc-when">${esc(n.place)}</span>` : ''}</div>
+        </div>
+        ${req ? `<p class="mmc-q">${esc(req)}</p>` : ''}
+        <div class="mmc-foot"><span class="mmc-avs" data-mmc-avs="${esc(n.date)}"></span><button type="button" class="mmc-read" data-mmc-read>читать саммари</button></div>
     </div>`;
 }
 function wireMmCover(root) {
@@ -305,9 +306,10 @@ function wireMmCover(root) {
     box.addEventListener('click', open);
     const av = box.querySelector('[data-mmc-avs]');
     if (av) import('./calendar.js').then(m => m.fetchGoingFromServer([av.dataset.mmcAvs])).then(([lst]) => {
-        const ppl = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId).slice(0, 5);
+        const ppl = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId).slice(0, 4);
         const G = ['#e06666', '#3d85c6', '#38761d', '#741b47', '#bf9000'];
-        av.innerHTML = ppl.map((p, i) => `<i style="background:${G[i % 5]}">${p.photoUrl ? `<img src="${String(p.photoUrl).replace(/"/g, '')}" alt="" onerror="this.remove()">` : String(p.name || '?').trim()[0] || '?'}</i>`).join('');
+        const all = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId).length;
+        av.innerHTML = ppl.map((p, i) => `<i style="background:${G[i % 5]}">${p.photoUrl ? `<img src="${String(p.photoUrl).replace(/"/g, '')}" alt="" onerror="this.remove()">` : String(p.name || '?').trim()[0] || '?'}</i>`).join('') + (all ? `<span class="mmc-n">${all} ${all % 10 === 1 && all % 100 !== 11 ? 'участник' : (all % 10 >= 2 && all % 10 <= 4 && (all % 100 < 10 || all % 100 >= 20)) ? 'участника' : 'участников'}</span>` : '');
     }).catch(() => {});
 }
 
