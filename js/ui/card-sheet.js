@@ -1,6 +1,8 @@
 // js/ui/card-sheet.js – шторка «карта интеллигента»: карта крутится в 3D, что внутри,
 // партнёры, клуб в цифрах и выбор карты. Открывается кнопкой «узнать» на главной.
 import { rememberCardPayment } from './payment-return.js';
+import { cardScratchHtml, mountCardScratch } from './card-scratch.js';
+import { isV2 } from '../redesign.js';
 import { requireAdmission } from './admission.js';
 import { isAdmissionPilot } from '../admission.js';
 import { state } from '../state.js';
@@ -96,6 +98,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 </div>` : '';
     const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `оформить навсегда · ${rub(price)}` : `взять на сезон · ${rub(price)}`;
 
+    // гость в новом интерфейсе: карта в слайдере под защитным покрытием – его можно стереть пальцем
+    const scratch = !gift && state.userCard?.status !== 'active' && isV2();
     const overlay = document.createElement('div');
     overlay.className = `cs-overlay${cityEvent ? ' is-city' : ''}`;
     overlay.innerHTML = `
@@ -104,7 +108,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             <div class="cs-scroll">
                 ${cityHtml}
                 <div class="cs-hero${ev ? ' is-under-city' : ''}">
-                    <div class="cs-stage"><div class="cs-card"><img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции"></div></div>
+                    <div class="cs-stage"><div class="cs-card${scratch ? ' cs-scratch' : ''}">${scratch ? cardScratchHtml() : `<img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции">`}</div></div>
                     <h2>${gift ? 'подари новый опыт' : ev ? 'карта интеллигента' : 'интеллигентное окружение'}</h2>
                     <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
                     <p>${gift ? 'подари другу то, что есть у тебя: все хайки сезона, закрытые события и людей, с которыми хочется идти дальше' : 'карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше'}</p>
@@ -165,6 +169,9 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
     wireTilt(overlay.querySelector('.cs-stage'), overlay.querySelector('.cs-card'));
+    if (scratch) requestAnimationFrame(() => mountCardScratch(overlay.querySelector('.cs-card'), {
+        onEnough: () => window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'card_scratched' } })),
+    }));
 
     const act = (type, d = {}) => window.dispatchEvent(new CustomEvent('club:act', { detail: { type, ...d } }));
     const openedAt = Date.now();

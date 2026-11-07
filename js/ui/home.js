@@ -627,7 +627,8 @@ function renderGuestHome() {
     );
     const nextHike = nextHikeIdx >= 0 ? state.hikesWithTitle[nextHikeIdx] : null;
 
-    const cardHtml = `
+    // v2: большого блока с картой нет – в углу шапки мини-карта с глитчем, она открывает слайдер покупки
+    const cardHtml = v2 ? '' : `
         <div class="card-container" id="cardBlock">
             ${cardScratchHtml()}
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes || 0}</span></div>
@@ -689,7 +690,7 @@ function renderGuestHome() {
     cardBtn?.addEventListener('click', () => {
         openCardSheet({ source: 'кнопка «узнать»', hikeDate: nextHike?.date, hikeTitle: nextHike?.title });
     });
-    mountCardScratch(document.getElementById('cardBlock'), {
+    if (!v2) mountCardScratch(document.getElementById('cardBlock'), {
         onOpen: () => openCardSheet({ source: 'касание карты', hikeDate: nextHike?.date, hikeTitle: nextHike?.title }),
         onEnough: () => {
             cardBtn?.classList.add('is-pulse');

@@ -27,10 +27,10 @@ export function mountCardScratch(root, { onOpen, onEnough } = {}) {
     let w = 0, h = 0, dpr = 1, ready = false, enough = false, touched = false;
 
     const size = () => {
-        const r = box.getBoundingClientRect();
-        if (!r.width) return false;
+        // размер без учёта 3D-наклона (в слайдере карта качается), поэтому offset*, а не getBoundingClientRect
+        if (!box.offsetWidth) return false;
         dpr = Math.min(2, window.devicePixelRatio || 1);
-        w = r.width; h = r.height;
+        w = box.offsetWidth; h = box.offsetHeight;
         canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.globalCompositeOperation = 'source-over';
@@ -67,7 +67,8 @@ export function mountCardScratch(root, { onOpen, onEnough } = {}) {
     };
 
     let last = null, moved = 0, checkTimer = null;
-    const pos = e => { const r = canvas.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    // offsetX/Y – координаты внутри самой карты, даже когда она наклонена
+    const pos = e => (e.target === canvas && Number.isFinite(e.offsetX) ? [e.offsetX, e.offsetY] : (r => [e.clientX - r.left, e.clientY - r.top])(canvas.getBoundingClientRect()));
     canvas.addEventListener('pointerdown', e => { last = pos(e); moved = 0; });
     // страховка для вебвью, где touch-action игнорируется
     canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
