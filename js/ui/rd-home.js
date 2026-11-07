@@ -231,7 +231,7 @@ export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, her
             ${mini ? '' : '<!--'}<button type="button" class="rd-mini-card${owner ? '' : ' is-guest'}" id="rdMiniCard" aria-label="${owner ? 'моя карта интеллигента' : 'карта интеллигента'}">
                 ${owner ? `<img src="${esc(cardImg)}" alt="">
                 <span>${Number(state.userCard.hikes || 0)}</span>`
-                : `<span class="rd-mc"><img src="${esc(cardImg)}" alt=""><i class="g1" style="background-image:url('${esc(cardImg)}')"></i><i class="g2" style="background-image:url('${esc(cardImg)}')"></i><i class="g3"></i></span>`}
+                : `<span class="rd-mc"><img class="mc-grey" src="assets/card-grey.png" alt=""><i class="mb" style="background-image:url('assets/card-front.jpg')"></i><i class="g1" style="background-image:url('assets/card-front.jpg')"></i><i class="g2" style="background-image:url('assets/card-front.jpg')"></i><i class="g3"></i></span><span class="rd-q">?</span>`}
             </button>${mini ? '' : '-->'}
         </div>
         ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : '<div id="clubStoriesHost"></div>'}
