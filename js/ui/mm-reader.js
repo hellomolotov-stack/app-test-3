@@ -109,7 +109,16 @@ const STYLE = `
 .mmr-ib.on { background: var(--yellow); color: #1d2200; }
 .mmr-ib:disabled { opacity: .3; cursor: default; }
 .mmr-cnt { flex: none; min-width: 34px; text-align: center; font-size: 12px; color: rgba(255,255,255,.5); }
-.mmr-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 30px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.mmr-dock { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; height: 60px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+  border-radius: 999px; background: rgba(28,32,40,.94); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 14px 34px rgba(0,0,0,.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+.mmr-ib.mmr-nav { width: 44px; height: 44px; font-size: 19px; }
+.mmr-ib.mmr-x { width: 40px; height: 40px; font-size: 16px; }
+.mmr-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.2; padding: 0 14px; }
+.mmr-dock .mmr-cnt { font-size: 14px; font-weight: 700; color: #fff; min-width: 0; white-space: nowrap; }
+.mmr-mid small { font-size: 11.5px; color: rgba(255,255,255,.45); white-space: nowrap; }
+.mmr-all { flex: none; height: 44px; margin-left: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.mmr-all.on { background: var(--yellow); color: #1d2200; }
+.mmr-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 100px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .mmr-head { display: flex; gap: 14px; align-items: center; }
 .mmr-head img { flex: none; width: 52px; height: 52px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
 .mmr-title { margin: 0 0 6px; font-size: 23px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; }
@@ -179,8 +188,9 @@ function buildReader(list, id, drag) {
     overlay.className = 'mmr-overlay';
     overlay.innerHTML = `<div class="mmr-sheet" role="dialog" aria-label="саммари мастермайнда">
         <div class="cs-grab mmr-grab" aria-hidden="true"></div>
-        <div class="mmr-top"><div class="k"></div><button type="button" class="mmr-ib" data-v="all" aria-label="все саммари">☰</button><button type="button" class="mmr-ib" data-go="1" aria-label="раньше">‹</button><span class="mmr-cnt"></span><button type="button" class="mmr-ib" data-go="-1" aria-label="позже">›</button><button type="button" class="mmr-ib mmr-x" aria-label="закрыть">✕</button></div>
-        <div class="mmr-scroll"></div></div>`;
+        <div class="mmr-top"><div class="k"></div><button type="button" class="mmr-ib mmr-x" aria-label="закрыть">✕</button></div>
+        <div class="mmr-scroll"></div>
+        <div class="mmr-dock"><button type="button" class="mmr-ib mmr-nav" data-go="1" aria-label="раньше">‹</button><div class="mmr-mid"><span class="mmr-cnt"></span><small>листай свайпом</small></div><button type="button" class="mmr-ib mmr-nav" data-go="-1" aria-label="позже">›</button><button type="button" class="mmr-all" data-v="all" aria-label="все саммари">☰ все</button></div></div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     const me = overlay, sheetEl = overlay.querySelector('.mmr-sheet');
@@ -197,7 +207,7 @@ function buildReader(list, id, drag) {
     const draw = () => {
         const cur = list[idx];
         overlay.querySelector('.mmr-top .k').innerHTML = `${esc(dayLabel(cur.date))}${cur.place ? ` <span>· ${esc(cur.place)}</span>` : ''}`;
-        overlay.querySelector('.mmr-cnt').textContent = `${list.length - idx} / ${list.length}`;
+        overlay.querySelector('.mmr-cnt').textContent = `выпуск ${list.length - idx} из ${list.length}`;
         overlay.querySelector('[data-v]').classList.toggle('on', view === 'all');
         overlay.querySelector('[data-go="1"]').disabled = idx >= list.length - 1;
         overlay.querySelector('[data-go="-1"]').disabled = idx <= 0;
