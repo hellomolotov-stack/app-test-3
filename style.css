@@ -7821,3 +7821,20 @@ html.v2 .wt2 { padding: 16px; box-shadow: 0 12px 70px -16px rgba(127,196,240,.26
 .wt2-skel { padding: 18px 0; text-align: center; font-size: 13px; color: rgba(255,255,255,.45); }
 /* «твои связи» в классике v2: одна серая подложка под сетью и плашкой «обрети больше связей» – без видимой границы фейда */
 html.v2 #circleContainer.lv-card { background: #14171C !important; }
+
+/* витрина значков: свежий (непросмотренный) значок – золотые лучи, блик, конфетти */
+#myAchievements.vt-fresh { position: relative; overflow: hidden; background: radial-gradient(120% 70% at 50% 28%, rgba(242,193,78,.2), rgba(20,23,28,0) 62%), #14171C; box-shadow: 0 12px 80px -12px rgba(242,193,78,.5); }
+#myAchievements.vt-fresh > * { position: relative; z-index: 1; }
+.vt-rays { position: absolute !important; z-index: 0 !important; left: 50%; top: 120px; width: 560px; height: 560px; margin: -280px 0 0 -280px; pointer-events: none;
+  background: repeating-conic-gradient(rgba(242,193,78,.11) 0 7deg, transparent 7deg 20deg);
+  -webkit-mask: radial-gradient(circle, #000 6%, transparent 42%); mask: radial-gradient(circle, #000 6%, transparent 42%); animation: vtSpin 26s linear infinite; }
+@keyframes vtSpin { to { transform: rotate(360deg); } }
+.vt-conf { position: absolute !important; z-index: 2 !important; inset: 0; pointer-events: none; overflow: hidden; }
+.vt-conf i { position: absolute; top: -12px; width: 6px; height: 10px; border-radius: 2px; opacity: 0; animation: vtFall 3.4s ease-in infinite; }
+@keyframes vtFall { 0% { transform: translateY(0) rotate(0); opacity: 0; } 10% { opacity: 1; } 100% { transform: translateY(260px) rotate(540deg); opacity: 0; } }
+.vt-fresh .vt-main::after { content: ''; position: absolute; inset: 6% 10%; border-radius: 50%; pointer-events: none;
+  background: linear-gradient(115deg, transparent 38%, rgba(255,255,255,.6) 50%, transparent 62%); background-size: 260% 100%; mix-blend-mode: overlay; animation: vtShine 2.8s ease-in-out infinite; }
+@keyframes vtShine { 0% { background-position: 130% 0; } 60%, 100% { background-position: -130% 0; } }
+.vt-fresh .vt-title { color: #fff; }
+.vt-fresh .vt-date { color: #F2C14E; font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .vt-rays, .vt-conf i, .vt-fresh .vt-main::after { animation: none; } .vt-conf { display: none; } }

@@ -55,7 +55,10 @@ export async function mountMyAchievements() {
             ${waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
                 <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
         // классика v2 (html.v2): «витрина» – последний значок крупно, два предыдущих по бокам, ниже следующая цель
-        if (document.documentElement.classList.contains('v2') && items.length) host.innerHTML = vitrineHtml(items, shelf, owned, waiting);
+        if (document.documentElement.classList.contains('v2') && items.length) {
+            host.innerHTML = vitrineHtml(items, shelf, owned, waiting);
+            host.classList.toggle('vt-fresh', shelf[0]?.seenAt === null);
+        }
         host.hidden = false;
         wireMedalStrip(host, shelf, sortByValue([...items]));
         host.querySelectorAll('[data-mya-all]').forEach(b => b.addEventListener('click', () => { haptic(); openAchievementsCollection(items); }));
@@ -190,6 +193,7 @@ function vitrineHtml(items, shelf, owned, waiting) {
         if (g) { const art = medalForTitle(g.title); goal = `<button type="button" class="vt-goal" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<div><b>следующий – ${esc(g.title)}</b><small class="vt-sub">${esc(g.sub)}</small></div><small>›</small></button>`; }
     }
     return `<div class="vt-head"><b>твои значки<small>${items.length} из ${total}</small></b><button type="button" class="vt-all" data-mya-all>все ›</button></div>
+        ${a0.seenAt === null ? `<span class="vt-rays" aria-hidden="true"></span><span class="vt-conf" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 7) * .35}s;background:${['#D9FD19', '#F2C14E', '#7FC4F0', '#FF8FB8', '#fff'][i % 5]}"></i>`).join('')}</span>` : ''}
         <div class="vt-stage">${pic(a1, 1, 'vt-side vt-l')}${pic(a0, 0, 'vt-main')}${pic(a2, 2, 'vt-side vt-r')}</div>
         <div class="vt-title">${esc(a0.title)}</div>
         <div class="vt-date">${a0.seenAt === null ? 'новый · ' : ''}${day ? `получен ${day}` : ''}</div>
