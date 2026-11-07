@@ -7867,3 +7867,23 @@ html.v2 #circleContainer.lv-card { background: #14171C !important; }
 .cst-cardthumb img { width: 64%; border-radius: 4px; transform: rotate(-10deg); box-shadow: 0 4px 10px rgba(0,0,0,.5); }
 .cst-plainthumb img { width: 82%; }
 .csv-badge.csv-wide { width: 86%; max-width: 360px; }
+
+/* классика v2: «клуб в цифрах» – цветные плитки (хайки лайм, локации голубой, км золото, знакомства сиреневый) */
+html.v2 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px; }
+html.v2 .metric-item { position: relative; display: flex; flex-direction: column-reverse; justify-content: flex-end; min-height: 96px; padding: 14px; border-radius: 20px; overflow: hidden; background: rgba(255,255,255,.05); border: 0; text-align: left; }
+html.v2 .metric-item .metric-value { font-size: 30px; font-weight: 800; letter-spacing: -.03em; line-height: 1; color: #fff; }
+html.v2 .metric-item .metric-label { margin-top: 6px; font-size: 12.5px; color: rgba(255,255,255,.75); text-transform: none; }
+html.v2 .metric-item::after { position: absolute; right: 10px; bottom: 6px; font-size: 32px; line-height: 1; }
+html.v2 .metric-item:nth-child(1) { background: linear-gradient(140deg, rgba(217,253,25,.22), rgba(217,253,25,.04)); }
+html.v2 .metric-item:nth-child(1)::after { content: '🥾'; }
+html.v2 .metric-item:nth-child(2) { background: linear-gradient(140deg, rgba(79,176,240,.25), rgba(79,176,240,.04)); }
+html.v2 .metric-item:nth-child(2)::after { content: '📍'; }
+html.v2 .metric-item:nth-child(3) { background: linear-gradient(140deg, rgba(242,193,78,.25), rgba(242,193,78,.04)); }
+html.v2 .metric-item:nth-child(3)::after { content: '⛰️'; }
+html.v2 .metric-item:nth-child(4) { background: linear-gradient(140deg, rgba(185,162,255,.25), rgba(185,162,255,.04)); }
+html.v2 .metric-item:nth-child(4)::after { content: '🤝'; }
+html.v2 .metrics-header { padding: 0 16px; margin-bottom: 14px; }
+html.v2 .metrics-title { font-size: 17px; }
+html.v2 .metric-item .metric-value { font-style: normal; text-align: left; align-self: flex-start; }
+html.v2 .metric-item .metric-label { align-self: flex-start; }
+html.v2 .metrics-link { color: var(--yellow); }
