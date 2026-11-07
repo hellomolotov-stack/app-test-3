@@ -7893,3 +7893,17 @@ html.v2 .metrics-link { color: var(--yellow); }
 .mst-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px; margin-top: 16px; }
 .mst-chips span { padding: 7px 11px; border-radius: 999px; background: rgba(255,255,255,.07); font-size: 12.5px; color: rgba(255,255,255,.8); }
 .mst-chips b { color: #fff; }
+
+/* классика v2: все блоки – плотный тёмный фон с тонкой серой окантовкой, без «стекла» */
+html.v2 .card-container { background: #14171C; border: 1px solid #22262D; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: none; }
+/* заголовок «клуба в цифрах» – как у остальных блоков: 16 от края, 17px */
+html.v2 .metrics-header { margin: 0 0 14px; padding: 0 16px; }
+html.v2 .metrics-title { margin: 0; font-size: 17px; font-weight: 700; }
+html.v2 .metrics-link { font-size: 14px; font-weight: 600; }
+/* ореолы главных блоков поверх общего правила выше */
+html.v2 .card-container.mmc { box-shadow: 0 12px 70px -16px rgba(185,162,255,.36); }
+html.v2 .card-container.wt2 { box-shadow: 0 12px 70px -16px rgba(127,196,240,.26); }
+html.v2 #circleContainer.card-container { box-shadow: 0 12px 70px -16px rgba(60,200,190,.34); }
+html.v2 #myAchievements.card-container { box-shadow: 0 12px 70px -16px rgba(232,180,70,.38); }
+html.v2 #myAchievements.card-container.vt-fresh { box-shadow: 0 12px 80px -12px rgba(242,193,78,.5); background: radial-gradient(120% 70% at 50% 28%, rgba(242,193,78,.2), rgba(20,23,28,0) 62%), #14171C; }
+html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,210,.3); }

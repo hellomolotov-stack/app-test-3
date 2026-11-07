@@ -118,6 +118,16 @@ const STYLE = `
 .mmr-mid small { font-size: 11.5px; color: rgba(255,255,255,.45); white-space: nowrap; }
 .mmr-all { flex: none; height: 46px; margin-left: 6px; padding: 0 22px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .mmr-all.on { background: #B9A2FF; color: #1a1033; }
+.mmr-people { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: -2px 0 22px; }
+.mmr-people:empty { display: none; }
+.mmr-avs { display: flex; flex: none; }
+.mmr-avs i { position: relative; overflow: hidden; width: 34px; height: 34px; border-radius: 17px; margin-left: -10px; border: 2.5px solid #12151b; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 13px; font-weight: 800; color: #fff; }
+.mmr-avs i:first-child { margin-left: 0; }
+.mmr-avs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.mmr-avs .mmr-more { background: rgba(185,162,255,.22); color: #CBBBFF; font-size: 11px; }
+.mmr-ptxt { min-width: 0; font-size: 13.5px; line-height: 1.3; color: rgba(255,255,255,.75); }
+.mmr-ptxt b { color: #fff; font-weight: 700; }
+.mmr-ptxt small { margin-left: 6px; font-size: 12.5px; color: #B9A2FF; }
 .mmr-scroll { touch-action: pan-y; flex: 1; overflow-y: auto; padding: 18px 24px 100px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .mmr-head { display: flex; gap: 14px; align-items: center; }
 .mmr-head img { flex: none; width: 52px; height: 52px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
@@ -219,11 +229,23 @@ function buildReader(list, id, drag) {
         } else {
             const n = list[idx];
             log(`саммари: читает ${n.date} ${n.title}`, n.locked, state.user);
-            scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud-v2.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2><div class="mmr-sub">саммари мастермайнда</div></div></div>`
+            scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud-v2.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2><div class="mmr-sub">саммари мастермайнда</div></div></div><div class="mmr-people" data-mmp="${esc(n.date)}"></div>`
                 + render(n.body)
                 + (n.locked ? `<div class="mmr-lock"><p>целиком саммари мастермайндов читают владельцы карты интеллигента</p><button type="button" class="mmr-btn" data-card>открыть с картой</button></div>` : '');
         }
         scroll.scrollTop = 0;
+        // кто был на этой встрече – аватарки под заголовком
+        const pp = scroll.querySelector('[data-mmp]');
+        if (pp) import('./calendar.js').then(m => m.fetchGoingFromServer([pp.dataset.mmp])).then(([lst]) => {
+            const ppl = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId);
+            if (!ppl.length || !pp.isConnected) return;
+            const G = [['#f6b26b', '#e06666'], ['#6fa8dc', '#3d85c6'], ['#93c47d', '#38761d'], ['#c27ba0', '#741b47'], ['#ffd966', '#bf9000']];
+            const first = n => String(n || '').trim().split(/\s+/)[0] || '';
+            const shown = ppl.slice(0, 9);
+            const k = ppl.length;
+            pp.innerHTML = `<span class="mmr-avs">${shown.map((p, i) => `<i style="background:linear-gradient(135deg,${G[i % 5][0]},${G[i % 5][1]})">${p.photoUrl ? `<img src="${esc(p.photoUrl)}" alt="" onerror="this.remove()">` : esc((first(p.name)[0] || '?').toUpperCase())}</i>`).join('')}${k > shown.length ? `<i class="mmr-more">+${k - shown.length}</i>` : ''}</span>
+                <span class="mmr-ptxt"><b>${shown.slice(0, 3).map(p => esc(first(p.name))).join(', ')}</b>${k > 3 ? ` и ещё ${k - 3}` : ''}<small>${k} ${k % 10 === 1 && k % 100 !== 11 ? 'участник' : k % 10 >= 2 && k % 10 <= 4 && (k % 100 < 12 || k % 100 > 14) ? 'участника' : 'участников'} встречи</small></span>`;
+        }).catch(() => {});
     };
     draw();
     // свайп вбок по читалке (и по панели снизу) – соседний выпуск; текст едет за пальцем
