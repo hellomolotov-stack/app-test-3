@@ -63,6 +63,22 @@ test('hike_order: store key required, notifies organizer with totals; cron summa
  await h({method:'GET',headers:{authorization:'Bearer wrong'}},res); assert.equal(res.code,401);
  api.deps.now=()=>Date.parse('2026-10-24T14:05:00Z');
 });
+test('hike_order: оплаченный заказ с Telegram сразу выдаёт значок «хайкинг бокс», сбой выдачи не ломает заказ',async()=>{
+ const sk='c'.repeat(40), granted=[], db={}, key='k'.repeat(40);
+ const api=setup({DC_LOYALTY_MODE:'live',DC_STORE_KEY:sk,DC_ONLINE_ENABLED:'1',DC_CARD_SIGNING_KEY:key});
+ api.deps.notify=async()=>{};
+ api.deps.hikeOrders={async save(o){(db[o.date] ||= {})[o.number]=o;return db[o.date]},async read(d){return db[d]||{}}};
+ api.deps.grantBoxBadge=async(uid,name)=>{granted.push([uid,name]);};
+ const ref=require('crypto').createHmac('sha256',key).update('tg1_555').digest('base64url').slice(0,28);
+ const order=(n,extra={})=>({number:String(n),status:'paid',date:'2026-11-08',route:'Ай-Петри',name:'Дмитрий',phone:'+7',items:[],total:120000,card_discount:0,ready_food:false,tg:'tg1_555_'+ref,...extra});
+ const r=b=>api.request({actor:'0',...b,mode:'live'},{'x-dc-store-key':sk});
+ assert.equal((await r({action:'hike_order',order:order(201)})).code,200);
+ assert.deepEqual(granted,[['555','Дмитрий']]);
+ await r({action:'hike_order',order:order(202,{status:'cancelled'})}); assert.equal(granted.length,1);
+ await r({action:'hike_order',order:order(203,{tg:''})}); assert.equal(granted.length,1);
+ api.deps.grantBoxBadge=async()=>{throw new Error('boom')};
+ assert.equal((await r({action:'hike_order',order:order(204)})).code,200);
+});
 test('shop staff: owner invites, employee joins via code, becomes cashier; others cannot manage',async()=>{
  const api=setup({DC_LOYALTY_MODE:'live',DC_OWNER_IDS:'163665735'}); const db={members:{},invites:{}};
  api.deps.staff={async members(){return db.members},async add(u,n){db.members[u]={name:n}},async remove(u){delete db.members[u]},

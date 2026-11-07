@@ -174,6 +174,8 @@ function createHandler(deps) {
                 if (prev && prev.request) order.request = prev.request;
                 if (order.status === 'cancelled' && order.tg) await deps.message(order.tg, `Заказ хайкинг бокса №${esc(order.number)} отменён. Деньги вернутся тем же способом, которым ты платил(а).`);
                 const all = await deps.hikeOrders.save(order);
+                // первый оплаченный бокс человека – сразу значок «хайкинг бокс» (с картой и без); сбой выдачи не должен ломать заказ
+                if (order.status === 'paid' && order.tg && deps.grantBoxBadge) { try { await deps.grantBoxBadge(order.tg, order.name); } catch (e) { console.error('box badge:', e.message); } }
                 const { paid, sum } = hikeTotals(all);
                 const head = order.status === 'paid'
                     ? `🆕 <b>${order.fulfillment === 'hike' ? 'Бокс на хайк ' + dayLabel(order.date) : 'Хайкинг бокс'}</b> · заказ №${esc(order.number)} оплачен`
@@ -260,6 +262,7 @@ module.exports = createHandler({
             return (await r.json()) || {};
         }
     },
+    async grantBoxBadge(uid, name) { return require('../lib/box-badge').grantBoxBadge(uid, name); },
     async message(uid, text, buttons) {
         const token = process.env.TELEGRAM_BOT_TOKEN; if (!token || !/^\d{1,16}$/.test(String(uid))) return;
         await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
