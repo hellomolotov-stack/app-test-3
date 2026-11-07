@@ -1283,7 +1283,19 @@ export function parseGpx(text) {
 const OFFER_TEXT_DEFAULT = '[имя], спасибо, что ходишь с нами на хайки 🤍\n\nследующие 3 дня бессрочная карта интеллигента для тебя стоит 5 500 ₽ вместо 7 500 – один раз и навсегда:\n\n• все хайки без билетов и оплат\n• запись, даже когда мест уже нет\n• закрытые события клуба и привилегии у партнёров\n\nподробности и оформление – по кнопке ниже';
 // приглашение в близкий круг: админ сам выбирает людей, бот пишет им это сообщение, в приложении – тёплая плашка.
 // Цена = 7 500 − все оплаченные билеты (не дороже 5 500 и не дешевле 1 500), считает сервер.
-const CIRCLE_TEXT = '[имя], мы рады знакомству с тобой и хотим видеть тебя в нашем близком кругу 🤍\n\nпоэтому засчитываем все твои билеты в карту интеллигента: [билеты] на [сумма] уже учтены, и бессрочная карта для тебя стоит [цена] вместо 7 500 ₽.\n\nнам хочется, чтобы хайки с нами были для тебя свободными, без билетов, а клуб стал твоей компанией';
+const CIRCLE_TEXT = 'мы рады знакомству с тобой, [имя]!\n\nхотим, чтобы для тебя были открыты все хайки без билетов и события в гостях у членов клуба. вот как мы недавно собирались на пирог к нам. считаем, искренние отношения не должны быть коммерческими. поэтому мы подумали и решили учесть все твои уже купленные билеты в стоимость карты интеллигента. для тебя бессрочная карта теперь стоит [цена], вместо 7 500 ₽. у нашего решения нет сроков, это не акция. просто с тобой классно и мы хотим видеть тебя в нашем близком кругу\n\n[ближайший хайк]';
+// строка про ближайший хайк: «кстати, уже завтра идём на Аю-Даг, будем очень рады тебя видеть!»
+function circleHikeLine() {
+    const h = nearestTitledHike();
+    if (!h) return '';
+    const days = Math.round((new Date(h.date + 'T12:00:00') - new Date(todayStr() + 'T12:00:00')) / 86400000);
+    const d = new Date(h.date + 'T12:00:00');
+    const when = days <= 0 ? 'уже сегодня' : days === 1 ? 'уже завтра' : days < 7 ? `в ${['воскресенье', 'понедельник', 'вторник', 'среду', 'четверг', 'пятницу', 'субботу'][d.getDay()]}` : `${d.getDate()} ${RU_MONTHS_GEN[d.getMonth()]}`;
+    const what = h.title.trim().replace(/^хайк\s+/i, '');
+    return `кстати, ${when} идём ${what}, будем очень рады тебя видеть!`;
+}
+const circleText = () => CIRCLE_TEXT.replace('[ближайший хайк]', circleHikeLine()).replace(/\n\n$/, '');
+
 let nc = null;
 const RD_NC_GRADS = [['#6FA8DC', '#2E5C8A'], ['#C7B8E6', '#6B5A9A'], ['#F38CC6', '#8A3A68'], ['#93C47D', '#3E6B2E'], ['#F6B26B', '#8A5A26'], ['#8FCBF0', '#2F6A8F']];
 function ncTickets(n) {
@@ -1293,7 +1305,7 @@ function ncTickets(n) {
 function ncRub(n) { return `${Math.round(n).toLocaleString('ru-RU')} ₽`; }
 function circleMessage(p) {
     const name = String(p?.name || 'друг').split(' ')[0];
-    return CIRCLE_TEXT.replace(/\[имя\]/gi, name).replace(/\[билеты\]/gi, ncTickets(p.tickets_count || 0))
+    return circleText().replace(/\[имя\]/gi, name).replace(/\[билеты\]/gi, ncTickets(p.tickets_count || 0))
         .replace(/\[сумма\]/gi, ncRub(p.tickets_sum || 0)).replace(/\[цена\]/gi, ncRub(p.circle_price || 0));
 }
 function ncAgo(ts) {
@@ -1436,7 +1448,7 @@ async function inviteCircle(p) {
     });
     if (!ok) return;
     try {
-        const res = await adminCall('adminInviteCircle', { user_ids: JSON.stringify([p.id]), names: JSON.stringify({ [p.id]: p.name || '' }), text: CIRCLE_TEXT });
+        const res = await adminCall('adminInviteCircle', { user_ids: JSON.stringify([p.id]), names: JSON.stringify({ [p.id]: p.name || '' }), text: circleText() });
         toast(res.sent ? 'приглашение отправлено 🤝' : 'приглашение открыто, но бот не смог написать');
         await loadNewcomers(true);
     } catch (e) {
