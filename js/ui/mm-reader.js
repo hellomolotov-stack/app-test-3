@@ -97,7 +97,7 @@ function render(md) {
 const STYLE = `
 .mmr-overlay { position: fixed; inset: 0; z-index: 2300; display: flex; align-items: flex-end; justify-content: center; background: rgba(5,8,12,0); transition: background .3s ease; }
 .mmr-overlay.is-on { background: rgba(5,8,12,.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.mmr-sheet { position: relative; width: 100%; max-width: 600px; height: 90vh; height: 90dvh; margin-bottom: 0; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+.mmr-sheet { position: relative; width: 100%; max-width: 600px; height: 90vh; height: 90dvh; max-height: calc(100dvh - var(--tg-safe-area-inset-top, 0px) - var(--tg-content-safe-area-inset-top, 0px) - 16px); margin-bottom: 0; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
   border-radius: 34px; background: rgba(18,26,36,.8); backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%); border: 1px solid rgba(255,255,255,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 -8px 40px rgba(0,0,0,.28); color: #fff;
   transform: translateY(40px); opacity: 0; transition: transform .38s cubic-bezier(.2,.9,.3,1.08), opacity .25s ease; }
 .mmr-overlay.is-on .mmr-sheet { transform: none; opacity: 1; }
@@ -195,6 +195,8 @@ function buildReader(list, id, drag) {
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     const me = overlay, sheetEl = overlay.querySelector('.mmr-sheet');
+    // не вплотную к кнопкам Telegram сверху (полноэкранный режим): отступ = системная + верхняя панель Telegram + 16
+    { const tw = window.Telegram?.WebApp; const inset = (tw?.safeAreaInset?.top || 0) + (tw?.contentSafeAreaInset?.top || 0); sheetEl.style.maxHeight = `calc(100dvh - ${inset + 16}px)`; }
     if (!drag) requestAnimationFrame(() => overlay.classList.add('is-on'));
     else {
         me.classList.add('mmr-drag');

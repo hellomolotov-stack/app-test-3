@@ -9,7 +9,7 @@ import { haptic, openLink } from '../utils.js';
 const SEEN_KEY = 'clubStoriesSeen';
 const DURATION = 7000;
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая summary мастермайнда', app: 'обновление', event: 'событие', custom: 'клуб' };
+const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая саммари', app: 'обновление', event: 'событие', custom: 'клуб' };
 const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', app: '💫', event: '📅', custom: '⛰️' };
 const BG = {
     member: 'radial-gradient(100% 60% at 50% 32%,#1d3a55,#0a1018 72%)',
@@ -225,7 +225,8 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             d = m.dragMmReader(a.slice(3));
             if (d) d.kind = 'mm';
         }
-        d = d || peekSheet(s);
+        // без промежуточной шторки: значки, хайк, карта – сразу своё действие после свайпа
+        d = d || { kind: 'direct', set() {}, commit() {}, cancel() {} };
         // палец уже отпустили, пока грузилось, – убираем
         if (gen !== dragGen || !dragTried) { d.cancel(); return; }
         drag = d;
@@ -256,7 +257,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
                 if (!preview) log('сторис: свайп вверх', state.userCard?.status !== 'active', state.user, { id: s.id, action: s.button?.action });
                 d.commit();
                 if (d.kind === 'mm') { setTimeout(() => close(true), 330); }
-                else { setTimeout(() => { close(true); if (!preview) runAction(s.button?.action); }, 300); }
+                else { close(true); if (!preview) setTimeout(() => runAction(s.button?.action), 60); }
             } else {
                 d?.cancel(); body.style.transform = ''; body.style.filter = ''; pause(false);
             }
