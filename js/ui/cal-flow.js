@@ -76,7 +76,12 @@ export function renderCalFlow(container) {
     const list = events();
     if (!list.length) { container.innerHTML = ''; return; }
     const t = today();
-    let start = list.findIndex(h => h.date >= t); if (start < 0) start = list.length - 1;
+    // в центр – событие ПОСЛЕ того, что уже стоит наверху главной (ближайший хайк или плашка «готовим»)
+    const topDate = ((state.hikesList || []).filter(h => h && h.date >= t && !yes(h.cancelled) && !yes(h.book_club) && !(yes(h.city) && !isTeaser(h)) && !/🌧/.test(h.emoji || ''))
+        .sort((a, b) => a.date.localeCompare(b.date))[0] || {}).date || '';
+    let start = list.findIndex(h => (topDate ? h.date > topDate : h.date >= t));
+    if (start < 0) start = list.findIndex(h => h.date >= t);
+    if (start < 0) start = list.length - 1;
     container.className = 'card-container cf-wrap';
     container.innerHTML = `
         <div class="cf-head"><b>календарь</b><span>${list.filter(h => h.date >= t).length} впереди</span></div>

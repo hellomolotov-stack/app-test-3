@@ -823,7 +823,7 @@ function renderOwnerHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
-        ${v2 ? v2HomeTopHtml() + '<div id="rdMedalsAnchor"></div>' : askBarHtml()}
+        ${v2 ? v2HomeTopHtml() + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div>' : askBarHtml()}
         ${v2 ? '' : `<div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
@@ -837,7 +837,7 @@ function renderOwnerHome() {
         </div>`}
         ${v2 && nextEventBooked() ? '' : '<div id="userBookingsContainer"></div>'}
         <div id="circleContainer"></div>
-        <div class="card-container" id="calendarContainer"></div>
+        ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
         ${!isLumenPilotUser(state.user) ? `
