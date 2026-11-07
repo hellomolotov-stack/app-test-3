@@ -4,18 +4,19 @@
 import { state } from '../state.js';
 import { meCall } from '../net.js';
 import { log } from '../api.js';
-import { haptic, openLink } from '../utils.js';
+import { haptic, openLink, openLetterLink } from '../utils.js';
 import { openCardSheet } from './card-sheet.js';
 
 const SEEN_KEY = 'clubStoriesSeen';
 const DURATION = 7000;
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая саммари', app: 'обновление', event: 'событие', custom: 'клуб' };
-const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', app: '💫', event: '📅', custom: '⛰️' };
+const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая саммари', letter: 'Новое письмо', app: 'обновление', event: 'событие', custom: 'клуб' };
+const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', letter: '✉️', app: '💫', event: '📅', custom: '⛰️' };
 const BG = {
     member: 'radial-gradient(100% 60% at 50% 32%,#1d3a55,#0a1018 72%)',
     badges: 'radial-gradient(100% 60% at 50% 32%,#3a3110,#0a1018 72%)',
     summary: 'radial-gradient(110% 70% at 30% 20%,#3a2a55,#120e1c 75%)',
+    letter: 'radial-gradient(110% 70% at 50% 30%,#51432e,#151310 75%)',
     app: 'radial-gradient(100% 60% at 50% 30%,#123a4a,#0a1018 72%)',
     event: 'radial-gradient(100% 60% at 50% 30%,#4a2412,#0a1018 72%)',
     custom: 'radial-gradient(100% 60% at 50% 30%,#1e2b0e,#0a1018 72%)',
@@ -29,25 +30,32 @@ function markSeen(id) {
 const isSeen = s => s.seen || seenSet().has(s.id);
 const imgUrl = u => (u && u.startsWith('/') ? u : u && !/^https?:/.test(u) ? '/' + u : u);
 const actionButton = story => story.type === 'member'
-    ? { label: state.userCard?.status === 'active' ? 'подарить карту' : 'узнать о карте', action: state.userCard?.status === 'active' ? 'gift' : 'card' }
+    ? { label: state.userCard?.status === 'active' ? 'подарить карту другу' : 'узнать о карте', action: state.userCard?.status === 'active' ? 'gift' : 'card' }
     : story.button;
 // в кружке – картинка (карта, значок) или эмодзи типа
 function thumb(s) {
     if (s.type === 'summary') return `<span class="cst-pic cst-plaud"><img src="assets/plaud-v2.webp" alt=""></span>`;
+    if (s.type === 'letter') return '<span class="cst-pic cst-letter"><span>✉️</span></span>';
     if (s.type === 'member' && s.image) return `<span class="cst-pic cst-cardthumb"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
     if (s.image && s.visual === 'plain') return `<span class="cst-pic cst-plainthumb" style="background:${BG[s.type] || BG.custom}"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
     if (s.image && s.type !== 'app') return `<span class="cst-pic" style="background-image:url('${esc(imgUrl(s.image))}')${s.type === 'badges' ? ';background-size:82%;background-color:#16222e' : ''}"></span>`;
     return `<span class="cst-pic cst-emoji" style="background:${BG[s.type] || BG.custom}">${EMOJI[s.type] || '⛰️'}</span>`;
 }
-const label = s => { const t = String(s.title || '').replace(/\s[–—-]\s.*$/, '').replace(/^новые значки · /, ''); return t.length > 24 ? t.slice(0, 23) + '…' : t; };
+const label = s => { if (s.type === 'letter') return 'Новое письмо Макса'; const t = String(s.title || '').replace(/\s[–—-]\s.*$/, '').replace(/^новые значки · /, ''); return t.length > 24 ? t.slice(0, 23) + '…' : t; };
 
 function rowHtml() {
     const seen = seenSet();
     // непросмотренные – первыми
     const list = [...stories].sort((a, b) => (isSeen(a) ? 1 : 0) - (isSeen(b) ? 1 : 0));
+    const letter = list.find(s => s.type === 'letter');
+    const launch = list.find(s => s.id === 'st_launch');
+    if (letter && launch) {
+        list.splice(list.indexOf(letter), 1);
+        list.splice(list.indexOf(launch), 0, letter);
+    }
     return `<div class="cst-row">${list.map(s => {
         const fresh = !(s.seen || seen.has(s.id));
-        return `<button type="button" class="cst${fresh ? ' is-new' : ''}" data-cst="${esc(s.id)}"><span class="cst-ring">${thumb(s)}${fresh ? '<span class="cst-nb">NEW</span>' : ''}</span><span class="cst-lab">${esc(label(s))}</span></button>`;
+        return `<button type="button" class="cst${s.type === 'letter' ? ' cst-is-letter' : ''}${fresh ? ' is-new' : ''}" data-cst="${esc(s.id)}"><span class="cst-ring">${thumb(s)}${fresh ? '<span class="cst-nb">NEW</span>' : ''}</span><span class="cst-lab">${esc(label(s))}</span></button>`;
     }).join('')}</div>`;
 }
 
@@ -93,6 +101,7 @@ function visual(s) {
     if (s.visual === 'plain' && img) return `<div class="csv-stage"><div class="csv-halo"></div><img class="csv-badge csv-wide" src="${esc(img)}" alt=""></div>`;
     if (s.type === 'app' && img) return `<div class="csv-stage"><div class="csv-phone"><img src="${esc(img)}" alt=""></div></div>`;
     if (s.type === 'summary') return `<div class="csv-stage"><div class="csv-plaud-halo"></div><img class="csv-plaud" src="assets/plaud-v2.webp" alt=""></div>`;
+    if (s.type === 'letter') return '<div class="csv-stage"><div class="csv-letter-halo"></div><span class="csv-envelope" aria-hidden="true">✉️</span></div>';
     if (img) return `<div class="csv-cover" style="background-image:url('${esc(img)}')"></div>`;
     return `<div class="csv-stage"><div class="csv-big">${EMOJI[s.type] || '⛰️'}</div></div>`;
 }
@@ -104,8 +113,9 @@ function ago(ts) {
     return d === 1 ? 'вчера' : `${d} дн`;
 }
 
-async function runAction(action) {
+async function runAction(action, title = '') {
     const a = String(action || '');
+    if (a.startsWith('letter:https://t.me/')) return openLetterLink(a.slice(7), title, state.userCard?.status !== 'active');
     if (a.startsWith('url:')) return openLink(a.slice(4), 'сторис', state.userCard?.status !== 'active');
     if (a.startsWith('mm:')) { const m = await import('./mm-reader.js'); return m.openMmReader(a.slice(3)); }
     if (a === 'gift') return openCardSheet({ source: 'сторис', gift: true });
@@ -174,7 +184,11 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             const stg = body.querySelector('.csv-stage'), hd = body.querySelector('.csv-head'), tx = body.querySelector('.csv-text');
             if (!stg || !hd || !tx) return;
             const a = hd.getBoundingClientRect().bottom + 14, b = tx.getBoundingClientRect().top - 14;
-            if (b - a > 120) { stg.style.top = a + 'px'; stg.style.height = (b - a) + 'px'; }
+            if (b > a) {
+                stg.style.top = a + 'px'; stg.style.height = (b - a) + 'px';
+                const envelope = stg.querySelector('.csv-envelope');
+                if (envelope) envelope.style.fontSize = Math.min(112, (b - a) * .65) + 'px';
+            }
         });
         if (String(button?.action || '').startsWith('mm:')) import('./mm-reader.js').then(m => m.ensureMmNotes()).catch(() => {});
         if (!preview) {
@@ -185,7 +199,11 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     };
     const close = (instant = false) => {
         cancelAnimationFrame(raf);
-        if (instant) { ov.remove(); onClose?.(); return; }
+        if (instant) {
+            ov.remove();
+            if (!document.querySelector('.mmr-overlay, .cs-overlay')) document.body.style.overflow = '';
+            onClose?.(); return;
+        }
         ov.classList.add('is-out');
         ov.style.pointerEvents = 'none';
         document.body.style.overflow = '';
@@ -264,7 +282,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
                 if (!preview) log('сторис: свайп вверх', state.userCard?.status !== 'active', state.user, { id: s.id, action });
                 d.commit();
                 if (d.kind === 'mm') { setTimeout(() => close(true), 330); }
-                else { close(true); if (!preview) setTimeout(() => runAction(action), 60); }
+                else { close(true); if (!preview) setTimeout(() => runAction(action, s.title), 60); }
             } else {
                 d?.cancel(); body.style.transform = ''; body.style.filter = ''; pause(false);
             }
@@ -289,7 +307,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             const action = actionButton(s)?.action;
             if (!preview) log('сторис: кнопка', state.userCard?.status !== 'active', state.user, { id: s.id, action });
             close();
-            if (!preview) setTimeout(() => runAction(action), 260);
+            if (!preview) setTimeout(() => runAction(action, s.title), 260);
         }
     });
     show();

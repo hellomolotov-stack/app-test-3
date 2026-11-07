@@ -544,7 +544,7 @@ async function saveHomepageSection(section, value) {
 // ---------- сторис клуба (lib/club-stories.js, js/ui/club-stories.js) ----------
 // список: сверху черновики (автоматические – новый владелец карты, саммари, значки за хайк), ниже опубликованные
 let storiesAdm = null, storyDraft = null, storiesBusy = false;
-const ST_TYPES = [['member', '🎉 новый член клуба'], ['app', '✨ новое в приложении'], ['event', '📅 событие'], ['summary', '🧠 саммари'], ['badges', '🏅 значки'], ['custom', '✍️ свой']];
+const ST_TYPES = [['member', '🎉 новый член клуба'], ['app', '✨ новое в приложении'], ['event', '📅 событие'], ['summary', '🧠 саммари'], ['letter', '✉️ письмо Макса'], ['badges', '🏅 значки'], ['custom', '✍️ свой']];
 const ST_ACTIONS = [['', 'без кнопки'], ['hike', 'записаться на хайк'], ['card', 'карта интеллигента'], ['badges', 'твои значки'], ['calendar', 'календарь'], ['circle', 'твои связи'], ['url', 'ссылка…']];
 async function storiesCall(action, story = null) {
     const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
@@ -599,7 +599,7 @@ function renderStoriesAdmin(body) {
             <label class="adm-field"><span>заголовок</span><input id="admStTitle" maxlength="120" value="${esc(d.title)}" placeholder="коротко и крупно" required></label>
             <label class="adm-field"><span>текст</span><textarea id="admStText" rows="4" maxlength="600">${esc(d.text)}</textarea></label>
             <label class="adm-field"><span>картинка – ссылка https:// (для «нового члена клуба» – карта, для «значков» – значок, для «нового в приложении» – скриншот). можно пусто</span><input id="admStImage" value="${esc(d.image)}" placeholder="https://…"></label>
-            <label class="adm-field"><span>кнопка</span><select id="admStAction">${(d.action.startsWith('mm:') ? [[d.action, 'читать саммари'], ...ST_ACTIONS] : ST_ACTIONS).map(([k, l]) => `<option value="${esc(k)}"${d.action === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+            <label class="adm-field"><span>кнопка</span><select id="admStAction">${(d.action.startsWith('mm:') || d.action.startsWith('letter:') ? [[d.action, d.action.startsWith('letter:') ? 'читать письмо Макса' : 'читать саммари'], ...ST_ACTIONS] : ST_ACTIONS).map(([k, l]) => `<option value="${esc(k)}"${d.action === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
             ${d.action === 'url' ? `<label class="adm-field"><span>ссылка для кнопки</span><input id="admStUrl" value="${esc(d.url)}" placeholder="https://…"></label>` : ''}
             ${d.action ? `<label class="adm-field"><span>текст кнопки</span><input id="admStLabel" maxlength="40" value="${esc(d.label)}" placeholder="${esc(ST_ACTIONS.find(x => x[0] === d.action)?.[1] || 'подробнее')}"></label>` : ''}
             <label class="adm-field"><span>сколько дней в ленте</span><input id="admStDays" type="number" min="1" max="60" value="${esc(d.days)}"></label>

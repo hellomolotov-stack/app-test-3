@@ -7512,7 +7512,13 @@ html.v2 #myAchievements .mya-wait { margin: 12px 0 0; }
 
 .cst-plaud { background: radial-gradient(circle at 50% 55%, rgba(190,155,255,1) 0%, rgba(150,110,245,.75) 28%, rgba(90,60,180,.3) 48%, rgba(13,17,24,0) 66%), #0d1118 !important; overflow: hidden; }
 .cst-plaud img { width: 30%; transform: rotate(-16deg); filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
+.cst-letter { background: radial-gradient(circle at 50% 55%, #efd6ab 0%, rgba(202,166,109,.75) 27%, rgba(130,103,65,.25) 49%, transparent 70%), #151310; }
+.cst-letter span { font-size: 28px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.4)); transform: rotate(-12deg); }
+.cst-is-letter .cst-lab { width: 88px; flex: none; }
 .csv-plaud-halo { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(160,130,240,.4), rgba(160,130,240,0) 65%); }
+.csv-letter-halo { position: absolute; width: min(360px, 100%); aspect-ratio: 1; background: radial-gradient(circle, rgba(239,214,171,.5), rgba(202,166,109,.16) 42%, transparent 70%); }
+.csv-envelope { position: relative; font-size: 112px; line-height: 1; filter: drop-shadow(0 20px 32px rgba(0,0,0,.5)); animation: csvPlaud 4s ease-in-out infinite; }
+.csv-t-letter { background: #efd6ab; color: #352a1c; }
 .csv-plaud { position: relative; width: 34%; max-width: 150px; border-radius: 16px; filter: drop-shadow(0 24px 40px rgba(0,0,0,.6)); animation: csvPlaud 4s ease-in-out infinite; }
 @keyframes csvPlaud { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(-5deg) translateY(-10px); } }
 

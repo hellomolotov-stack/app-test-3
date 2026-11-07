@@ -5,6 +5,8 @@ const { build } = require('esbuild');
 const { chromium } = require('./_playwright.cjs');
 
 const root = path.resolve(__dirname, '..');
+const letter = { id: 'letter', type: 'letter', title: 'письмо с хайка · Демерджи', text: 'Интеллигенты, это был тридцать четвёртый хайк. С нами ходили: тот, кто тушил лес над Ялтой и его «я не понимаю этот ваш хайкинг, почему не поход?», с последующем наглядным пониманием различий: спасибо идущему вдалеке и успешно…', date: Date.now(), button: { label: 'читать письмо Макса', action: 'letter:https://t.me/yaltahikingchat/6014' } };
+const feed = [{ id: 'st_launch', type: 'app', title: 'в клубе появились сторис', date: Date.now() }, letter];
 const people = [
     { userId: '7845375334', name: 'Интеллигентная поддержка' },
     { userId: '1', name: 'Аня' }, { userId: '2', name: 'Борис' }, { userId: '3', name: 'Вера' },
@@ -18,7 +20,7 @@ const people = [
         import {initFirebase} from './js/firebase.js';
         import {renderHome} from './js/ui/home.js';
         import {openMmReader} from './js/ui/mm-reader.js';
-        import {openStories} from './js/ui/club-stories.js';
+        import {openStories,mountClubStories} from './js/ui/club-stories.js';
         import {initSheetDrag} from './js/ui/sheet-drag.js';
         const people=${JSON.stringify(people)};
         window.firebase={initializeApp(){},database:()=>({ref:p=>({once:async()=>({val:()=>p.startsWith('hikeParticipants/')?people:null}),on:(e,cb)=>cb({val:()=>null}),off(){}})})};
@@ -28,6 +30,8 @@ const people = [
         state.hikesList=[];state.hikesWithTitle=[];state.hikesData={};
         state.mmNotes=[{id:'note',date:'2026-10-25',place:'Ат-Баш',title:'Как вернуть интерес к жизни',body:'## Запрос\\nХочу найти время для важного\\n\\n## Что прозвучало\\nНачать с малого',locked:true}];
         window.v2Test={
+            letter(){openStories([${JSON.stringify(letter)}]);},
+            async row(){const wrapper=document.createElement('section');wrapper.style.padding='16px';const host=document.createElement('div');wrapper.append(host);document.body.append(wrapper);localStorage.setItem('clubStoriesSeen',JSON.stringify(['letter']));await mountClubStories(host);},
             home(member){state.userCard={status:member?'active':'inactive',cardUrl:'assets/card-front.jpg',hikes:7};renderHome();},
             reader(){state.userCard={status:'inactive'};return openMmReader('note');},
             story(member,summary=false){state.userCard={status:member?'active':'inactive'};openStories([{id:'test',type:summary?'summary':'member',title:'Новый владелец карты',image:'assets/card-front.jpg',date:Date.now(),button:{label:'записаться на хайк',action:summary?'mm:note':'hike'}}]);}
@@ -35,8 +39,8 @@ const people = [
     ` } });
     const browser = await chromium.launch({ channel: 'chrome', headless: true });
     const errors = [];
-    async function pageFor(width = 390) {
-        const page = await browser.newPage({ viewport: { width, height: 844 }, hasTouch: true });
+    async function pageFor(width = 390, height = 844) {
+        const page = await browser.newPage({ viewport: { width, height }, hasTouch: true });
         page.on('pageerror', e => errors.push(e.message));
         await page.route('**/*', route => {
             const u = new URL(route.request().url());
@@ -46,11 +50,11 @@ const people = [
                 const f = path.join(root, u.pathname);
                 if (fs.existsSync(f)) return route.fulfill({ path: f });
             }
-            return route.fulfill({ json: { status: 'ok', going: {}, stories: [], collections: {}, people: [], links: [], stats: {} } });
+            return route.fulfill({ json: { status: 'ok', going: {}, stories: feed, collections: {}, people: [], links: [], stats: {} } });
         });
         await page.goto('https://v2-test.local');
         await page.addStyleTag({ content: fs.readFileSync(path.join(root, 'style.css'), 'utf8') });
-        await page.addScriptTag({ content: 'window.Telegram={WebApp:{initData:"",initDataUnsafe:{},HapticFeedback:{impactOccurred(){},selectionChanged(){}},BackButton:{hide(){},show(){},onClick(){},offClick(){}}}};window.toggleShareButton=()=>{};' });
+        await page.addScriptTag({ content: 'window.Telegram={WebApp:{initData:"test-signature",initDataUnsafe:{},openTelegramLink(url){window.openedLetter=url;},HapticFeedback:{impactOccurred(){},selectionChanged(){}},BackButton:{hide(){},show(){},onClick(){},offClick(){}}}};window.toggleShareButton=()=>{};' });
         await page.addScriptTag({ content: outputFiles[0].text });
         return page;
     }
@@ -97,12 +101,41 @@ const people = [
         for (const member of [false, true]) for (const action of ['swipe', 'button']) {
             const page = await pageFor();
             await page.evaluate(member => v2Test.story(member), member);
-            assert.equal(await page.locator('.csv-btn').textContent(), member ? 'подарить карту' : 'узнать о карте');
+            assert.equal(await page.locator('.csv-btn').textContent(), member ? 'подарить карту другу' : 'узнать о карте');
             if (process.env.V2_SCREENSHOTS && action === 'swipe') await page.screenshot({ path: path.join(process.env.V2_SCREENSHOTS, `story-${member ? 'member' : 'guest'}.png`) });
             if (action === 'swipe') await swipeUp(page); else await page.locator('.csv-btn').tap();
             await page.locator('.cs-overlay.is-on').waitFor();
             assert.match(await page.locator('.cs-hero h2').textContent(), member ? /подари новый опыт/ : /интеллигентное окружение/);
             assert.equal(await page.locator('.csv-overlay').count(), 0);
+            await page.close();
+        }
+        for (const width of [320, 390, 600]) {
+            const page = await pageFor(width, width === 320 ? 568 : 844);
+            await page.evaluate(() => v2Test.row());
+            assert.deepEqual(await page.locator('[data-cst]').evaluateAll(nodes => nodes.map(n => n.dataset.cst)), ['letter', 'st_launch']);
+            assert.equal(await page.locator('[data-cst="letter"] .cst-lab').textContent(), 'Новое письмо Макса');
+            assert.equal(await page.locator('[data-cst="letter"] .cst-lab').evaluate(el => el.scrollHeight <= el.clientHeight + 1), true, 'Letter label is not truncated');
+            assert.equal(await page.locator('[data-cst="letter"] .cst-letter').count(), 1);
+            if (process.env.V2_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.V2_SCREENSHOTS, `letter-row-${width}.png`) });
+            await page.locator('[data-cst="letter"]').tap();
+            await page.waitForTimeout(300);
+            assert.equal(await page.locator('.csv-tag').textContent(), 'Новое письмо');
+            assert.equal(await page.locator('.csv-text h2').textContent(), letter.title);
+            assert.equal(await page.locator('.csv-text p').textContent(), letter.text);
+            const geometry = await page.evaluate(() => {
+                const stage = document.querySelector('.csv-stage').getBoundingClientRect();
+                const icon = document.querySelector('.csv-envelope').getBoundingClientRect();
+                const text = document.querySelector('.csv-text').getBoundingClientRect();
+                return { centered: Math.abs((stage.left + stage.right) / 2 - (icon.left + icon.right) / 2) < 1, clear: icon.bottom < text.top, visible: text.bottom <= innerHeight };
+            });
+            assert.deepEqual(geometry, { centered: true, clear: true, visible: true });
+            if (process.env.V2_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.V2_SCREENSHOTS, `letter-story-${width}.png`) });
+            if (width === 390) await page.locator('.csv-btn').tap(); else await swipeUp(page);
+            await page.locator('.tg-leave-letter').waitFor();
+            assert.equal(await page.locator('.csv-overlay').count(), 0);
+            assert.equal(await page.evaluate(() => document.body.style.overflow), '');
+            await page.locator('.tg-leave-letter [data-act="go"]').tap();
+            assert.equal(await page.evaluate(() => window.openedLetter), 'https://t.me/yaltahikingchat/6014');
             await page.close();
         }
         const page = await pageFor();
@@ -117,6 +150,6 @@ const people = [
         assert.equal(await page.evaluate(() => document.body.style.overflow), 'hidden');
         await page.close();
         assert.deepEqual(errors, []);
-        console.log('V2 metrics, summary participants, card overlays and member-story actions: PASS');
+        console.log('V2 metrics, summaries, member actions and letter stories: PASS');
     } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });
