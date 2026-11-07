@@ -120,7 +120,7 @@ const STYLE = `
 .mmr-mid small { font-size: 11.5px; color: rgba(255,255,255,.45); white-space: nowrap; }
 .mmr-all { flex: none; height: 46px; margin-left: 6px; padding: 0 22px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .mmr-all.on { background: #B9A2FF; color: #1a1033; }
-.mmr-people { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: -2px 0 22px; }
+.mmr-people { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin: 20px 0 24px; }
 .mmr-people:empty { display: none; }
 .mmr-avs { display: flex; flex: none; }
 .mmr-avs i { position: relative; overflow: hidden; width: 34px; height: 34px; border-radius: 17px; margin-left: -10px; border: 2.5px solid #12151b; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 13px; font-weight: 800; color: #fff; }

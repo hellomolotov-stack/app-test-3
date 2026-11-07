@@ -10,16 +10,16 @@ import { openCardSheet } from './card-sheet.js';
 const SEEN_KEY = 'clubStoriesSeen';
 const DURATION = 7000;
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая саммари', letter: 'Новое письмо', app: 'обновление', event: 'событие', custom: 'клуб' };
+const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая саммари', letter: 'новое письмо', app: 'обновление', event: 'событие', custom: 'клуб' };
 const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', letter: '✉️', app: '💫', event: '📅', custom: '⛰️' };
 const BG = {
-    member: 'radial-gradient(100% 60% at 50% 32%,#1d3a55,#0a1018 72%)',
-    badges: 'radial-gradient(100% 60% at 50% 32%,#3a3110,#0a1018 72%)',
-    summary: 'radial-gradient(110% 70% at 30% 20%,#3a2a55,#120e1c 75%)',
-    letter: 'radial-gradient(110% 70% at 50% 30%,#51432e,#151310 75%)',
-    app: 'radial-gradient(100% 60% at 50% 30%,#123a4a,#0a1018 72%)',
-    event: 'radial-gradient(100% 60% at 50% 30%,#4a2412,#0a1018 72%)',
-    custom: 'radial-gradient(100% 60% at 50% 30%,#1e2b0e,#0a1018 72%)',
+    member: 'radial-gradient(ellipse 130% 90% at 50% 28%,#1d3a55 0%,#132639 42%,#0a1018 100%)',
+    badges: 'radial-gradient(ellipse 130% 90% at 50% 28%,#3a3110 0%,#232317 42%,#0a1018 100%)',
+    summary: 'radial-gradient(ellipse 130% 90% at 50% 28%,#3a2a55 0%,#281f3b 42%,#120e1c 100%)',
+    letter: 'radial-gradient(ellipse 130% 90% at 50% 28%,#51432e 0%,#332c22 42%,#151310 100%)',
+    app: 'radial-gradient(ellipse 130% 90% at 50% 28%,#123a4a 0%,#102733 42%,#0a1018 100%)',
+    event: 'radial-gradient(ellipse 130% 90% at 50% 28%,#4a2412 0%,#2e1d16 42%,#0a1018 100%)',
+    custom: 'radial-gradient(ellipse 130% 90% at 50% 28%,#1e2b0e 0%,#172018 42%,#0a1018 100%)',
 };
 
 let stories = [];
@@ -41,7 +41,7 @@ function thumb(s) {
     if (s.image && s.type !== 'app') return `<span class="cst-pic" style="background-image:url('${esc(imgUrl(s.image))}')${s.type === 'badges' ? ';background-size:82%;background-color:#16222e' : ''}"></span>`;
     return `<span class="cst-pic cst-emoji" style="background:${BG[s.type] || BG.custom}">${EMOJI[s.type] || '⛰️'}</span>`;
 }
-const label = s => { if (s.type === 'letter') return 'Новое письмо Макса'; const t = String(s.title || '').replace(/\s[–—-]\s.*$/, '').replace(/^новые значки · /, ''); return t.length > 24 ? t.slice(0, 23) + '…' : t; };
+const label = s => { if (s.type === 'letter') return 'новое письмо Макса'; const t = String(s.title || '').replace(/\s[–—-]\s.*$/, '').replace(/^новые значки · /, ''); return t.length > 24 ? t.slice(0, 23) + '…' : t; };
 
 function rowHtml() {
     const seen = seenSet();

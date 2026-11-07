@@ -30,6 +30,10 @@ const people = [
         state.hikesList=[];state.hikesWithTitle=[];state.hikesData={};
         state.mmNotes=[{id:'note',date:'2026-10-25',place:'Ат-Баш',title:'Как вернуть интерес к жизни',body:'## Запрос\\nХочу найти время для важного\\n\\n## Что прозвучало\\nНачать с малого',locked:true}];
         window.v2Test={
+            visualStory(type){
+                const image=type==='member'?'assets/card-front.jpg':type==='badges'?'assets/achievements/badges/route-at-bash-v2.png':type==='app'?'assets/stories/launch-fan.webp':'';
+                openStories([{id:'visual-'+type,type,title:'новое в клубе',text:'встречаемся, знакомимся и идём дальше вместе',image,visual:type==='app'?'plain':'',date:Date.now()}],0,null,{preview:true});
+            },
             letter(){openStories([${JSON.stringify(letter)}]);},
             async row(){const wrapper=document.createElement('section');wrapper.style.padding='16px';const host=document.createElement('div');wrapper.append(host);document.body.append(wrapper);localStorage.setItem('clubStoriesSeen',JSON.stringify(['letter']));await mountClubStories(host);},
             home(member){state.userCard={status:member?'active':'inactive',cardUrl:'assets/card-front.jpg',hikes:7};renderHome();},
@@ -81,6 +85,14 @@ const people = [
             assert.equal(await page.locator('.mmr-head .mmr-sub').count(), 0);
             assert.equal(await page.locator('.mmr-top .k').textContent(), '25 октября · саммари мастермайнда');
             assert.equal(await page.locator('.mmr-avs i').count(), 6);
+            for (const redesign of [false, true]) {
+                const gap = await page.evaluate(rd => {
+                    document.documentElement.classList.toggle('rd', rd);
+                    return document.querySelector('.mmr-people').getBoundingClientRect().top - document.querySelector('.mmr-head').getBoundingClientRect().bottom;
+                }, redesign);
+                assert.ok(gap >= 19 && gap <= 21, `${width}px: summary participant gap is ${gap}px`);
+            }
+            await page.evaluate(() => document.documentElement.classList.remove('rd'));
             await page.locator('.mmr-overlay').evaluate(el => el.style.zIndex = '3600');
             for (let attempt = 0; attempt < 3; attempt++) {
                 await page.locator('.mmr-btn[data-card]').tap();
@@ -113,13 +125,13 @@ const people = [
             const page = await pageFor(width, width === 320 ? 568 : 844);
             await page.evaluate(() => v2Test.row());
             assert.deepEqual(await page.locator('[data-cst]').evaluateAll(nodes => nodes.map(n => n.dataset.cst)), ['letter', 'st_launch']);
-            assert.equal(await page.locator('[data-cst="letter"] .cst-lab').textContent(), 'Новое письмо Макса');
+            assert.equal(await page.locator('[data-cst="letter"] .cst-lab').textContent(), 'новое письмо Макса');
             assert.equal(await page.locator('[data-cst="letter"] .cst-lab').evaluate(el => el.scrollHeight <= el.clientHeight + 1), true, 'Letter label is not truncated');
             assert.equal(await page.locator('[data-cst="letter"] .cst-letter').count(), 1);
             if (process.env.V2_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.V2_SCREENSHOTS, `letter-row-${width}.png`) });
             await page.locator('[data-cst="letter"]').tap();
             await page.waitForTimeout(300);
-            assert.equal(await page.locator('.csv-tag').textContent(), 'Новое письмо');
+            assert.equal(await page.locator('.csv-tag').textContent(), 'новое письмо');
             assert.equal(await page.locator('.csv-text h2').textContent(), letter.title);
             assert.equal(await page.locator('.csv-text p').textContent(), letter.text);
             const geometry = await page.evaluate(() => {
@@ -136,6 +148,21 @@ const people = [
             assert.equal(await page.evaluate(() => document.body.style.overflow), '');
             await page.locator('.tg-leave-letter [data-act="go"]').tap();
             assert.equal(await page.evaluate(() => window.openedLetter), 'https://t.me/yaltahikingchat/6014');
+            await page.close();
+        }
+        for (const type of ['member', 'badges', 'summary', 'app', 'event', 'custom']) {
+            const page = await pageFor();
+            await page.evaluate(type => v2Test.visualStory(type), type);
+            await page.waitForTimeout(300);
+            const effect = await page.evaluate(() => {
+                const body = document.querySelector('.csv-body');
+                const grain = getComputedStyle(body, '::after');
+                const halo = body.querySelector('.csv-halo, .csv-card-halo, .csv-plaud-halo');
+                return { grain: grain.backgroundImage.includes('grain.svg') && grain.pointerEvents === 'none', blur: halo ? getComputedStyle(halo).filter : null };
+            });
+            assert.equal(effect.grain, true, `${type}: anti-banding texture is present`);
+            if (effect.blur) assert.equal(effect.blur, 'blur(28px)', `${type}: uses shared soft glow`);
+            if (process.env.V2_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.V2_SCREENSHOTS, `visual-${type}.png`) });
             await page.close();
         }
         const page = await pageFor();

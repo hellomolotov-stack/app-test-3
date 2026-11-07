@@ -7337,7 +7337,7 @@ html.rd .mmr-ib { width: 38px; height: 38px; background: #1A1F25; border: 1px so
 html.rd .mmr-ib.on { background: #F5F5F7; color: #0B0D10; border-color: #F5F5F7; }
 html.rd .mmr-cnt { color: #8A9097; font-weight: 700; }
 html.rd .mmr-scroll { padding: 20px 20px 40px; }
-html.rd .mmr-head { gap: 14px; margin-bottom: 18px; }
+html.rd .mmr-head { gap: 14px; margin-bottom: 0; }
 html.rd .mmr-head img { width: 56px; height: 56px; }
 html.rd .mmr-title { font-size: 26px; line-height: 1.12; letter-spacing: -.03em; }
 html.rd .mmr-sub { color: #C7B8E6; font-weight: 700; }
@@ -7431,6 +7431,7 @@ html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 .csv-bars i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.3); overflow: hidden; }
 .csv-bars b { display: block; height: 100%; width: 0; background: #fff; }
 .csv-body { position: absolute; inset: 0; transition: none; overflow: hidden; border-radius: 0; }
+.csv-body::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: url('assets/stories/grain.svg') repeat; opacity: .07; mix-blend-mode: soft-light; }
 .csv-bg { position: absolute; inset: 0; }
 .csv-cover { position: absolute; inset: 0; background: center/cover no-repeat; }
 .csv-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,0) 22%, rgba(0,0,0,0) 42%, rgba(0,0,0,.9) 78%); pointer-events: none; }
@@ -7441,8 +7442,8 @@ html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 .csv-stage { position: absolute; left: 0; right: 0; top: 13%; height: 46%; display: flex; align-items: center; justify-content: center; }
 .csv-cardimg { width: 76%; max-width: 320px; border-radius: 18px; animation: csvCard 6s ease-in-out infinite; box-shadow: 0 30px 60px rgba(0,0,0,.6), 0 0 70px rgba(127,180,220,.18); }
 @keyframes csvCard { 0%,100% { transform: perspective(900px) rotateX(8deg) rotateY(-12deg) rotate(-4deg); } 50% { transform: perspective(900px) rotateX(4deg) rotateY(10deg) rotate(-2deg); } }
-.csv-halo { position: absolute; width: 320px; height: 320px; border-radius: 50%; background: radial-gradient(circle, rgba(255,214,77,.35), rgba(255,214,77,0) 65%); animation: csvSpin 9s linear infinite; }
-@keyframes csvSpin { to { transform: rotate(360deg); } }
+.csv-halo, .csv-card-halo, .csv-plaud-halo, .csv-letter-halo { position: absolute; width: min(520px, 130vw); aspect-ratio: 1; pointer-events: none; background: radial-gradient(ellipse at center, rgba(var(--csv-glow), .32) 0%, rgba(var(--csv-glow), .20) 24%, rgba(var(--csv-glow), .08) 48%, rgba(var(--csv-glow), 0) 82%); filter: blur(28px); }
+.csv-halo { --csv-glow: 255, 214, 77; }
 .csv-badge { position: relative; width: 62%; max-width: 260px; filter: drop-shadow(0 20px 40px rgba(0,0,0,.6)); animation: csvFloat 4s ease-in-out infinite; }
 @keyframes csvFloat { 50% { transform: translateY(-10px); } }
 .csv-phone { width: 52%; max-width: 220px; aspect-ratio: 9 / 19; border-radius: 30px; background: #000; padding: 6px; box-shadow: 0 0 0 2px #333, 0 30px 60px rgba(0,0,0,.6); }
@@ -7510,13 +7511,13 @@ html.v2 #myAchievements { padding: 16px; }
 .vt-bar u { display: block; height: 100%; border-radius: 3px; background: #E8B446; }
 html.v2 #myAchievements .mya-wait { margin: 12px 0 0; }
 
-.cst-plaud { background: radial-gradient(circle at 50% 55%, rgba(190,155,255,1) 0%, rgba(150,110,245,.75) 28%, rgba(90,60,180,.3) 48%, rgba(13,17,24,0) 66%), #0d1118 !important; overflow: hidden; }
+.cst-plaud { background: radial-gradient(ellipse at 50% 55%, rgba(190,155,255,.8) 0%, rgba(150,110,245,.45) 35%, rgba(90,60,180,.14) 62%, rgba(90,60,180,0) 95%), #0d1118 !important; overflow: hidden; }
 .cst-plaud img { width: 30%; transform: rotate(-16deg); filter: drop-shadow(0 4px 6px rgba(0,0,0,.6)); }
-.cst-letter { background: radial-gradient(circle at 50% 55%, #efd6ab 0%, rgba(202,166,109,.75) 27%, rgba(130,103,65,.25) 49%, transparent 70%), #151310; }
+.cst-letter { background: radial-gradient(ellipse at 50% 55%, rgba(239,214,171,.8) 0%, rgba(202,166,109,.45) 35%, rgba(130,103,65,.14) 62%, rgba(130,103,65,0) 95%), #151310; }
 .cst-letter span { font-size: 28px; filter: drop-shadow(0 4px 6px rgba(0,0,0,.4)); transform: rotate(-12deg); }
 .cst-is-letter .cst-lab { width: 88px; flex: none; }
-.csv-plaud-halo { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(160,130,240,.4), rgba(160,130,240,0) 65%); }
-.csv-letter-halo { position: absolute; width: min(360px, 100%); aspect-ratio: 1; background: radial-gradient(circle, rgba(239,214,171,.5), rgba(202,166,109,.16) 42%, transparent 70%); }
+.csv-plaud-halo { --csv-glow: 160, 130, 240; }
+.csv-letter-halo { --csv-glow: 239, 214, 171; }
 .csv-envelope { position: relative; font-size: 112px; line-height: 1; filter: drop-shadow(0 20px 32px rgba(0,0,0,.5)); animation: csvPlaud 4s ease-in-out infinite; }
 .csv-t-letter { background: #efd6ab; color: #352a1c; }
 .csv-plaud { position: relative; width: 34%; max-width: 150px; border-radius: 16px; filter: drop-shadow(0 24px 40px rgba(0,0,0,.6)); animation: csvPlaud 4s ease-in-out infinite; }
@@ -7866,7 +7867,7 @@ html.v2 #circleContainer.lv-card { background: #14171C !important; }
 .sa-d { font-size: 11px; color: rgba(255,255,255,.45); margin-top: -3px; }
 
 /* сторис «новый член клуба»: карта на голубом свечении (как плод на сиреневом) */
-.csv-card-halo { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, rgba(90,170,255,.42), rgba(90,170,255,0) 65%); }
+.csv-card-halo { --csv-glow: 90, 170, 255; }
 .csv-cardimg { position: relative; }
 
 /* кружки сторис: карта на голубом свечении, картинка-композиция на фоне типа */

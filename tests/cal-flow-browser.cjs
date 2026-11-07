@@ -65,7 +65,7 @@ const hikes = [
                     return Math.abs(day.left + day.width / 2 - lens.left - lens.width / 2);
                 });
                 assert.ok(alignment < 0.75, `${width}px: selected date is off by ${alignment}px`);
-                if (i < 3) assert.equal(await card.locator('.cf-tag').textContent(), i === 2 ? 'Событие завершено' : 'Хайк завершён');
+                if (i < 3) assert.equal(await card.locator('.cf-tag').textContent(), i === 2 ? 'событие завершено' : 'хайк завершён');
                 if (process.env.CALENDAR_SCREENSHOTS && i < 2) await page.screenshot({ path: path.join(process.env.CALENDAR_SCREENSHOTS, `title-${width}-${i}.png`) });
             }
             const layout = await page.locator('.app').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));

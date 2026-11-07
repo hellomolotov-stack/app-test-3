@@ -44,7 +44,7 @@ function cardHtml(h, i) {
     const wi = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
     const booked = !past && !teaser && wi >= 0 && state.hikeBookingStatus?.[wi] === true;
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
-    const tag = past ? `<span class="cf-tag is-past">${isCity(h) ? 'Событие завершено' : 'Хайк завершён'}</span>`
+    const tag = past ? `<span class="cf-tag is-past">${isCity(h) ? 'событие завершено' : 'хайк завершён'}</span>`
         : teaser ? '<span class="cf-tag is-soon">готовим</span>'
         : booked ? '<span class="cf-tag is-booked">✓ ты записан</span>'
         : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">запись открыта</span>';
