@@ -32,8 +32,8 @@ function eventKind(h) {
 function whenLabel(h) {
     const d = dayDiff(h.date);
     const t = h.start_time ? ` · ${h.start_time}` : '';
-    if (d === 0) return `сегодня${t}`;
-    if (d === 1) return `завтра${t}`;
+    if (d === 0) return h.start_time ? `сегодня в ${h.start_time}` : 'сегодня';
+    if (d === 1) return h.start_time ? `завтра в ${h.start_time}` : 'завтра';
     if (d > 1 && d < 7) return `через ${d} ${plural(d, 'день', 'дня', 'дней')}${t}`;
     const dt = new Date(h.date + 'T12:00:00');
     return `${WD_SHORT[dt.getDay()]}, ${dt.getDate()} ${MONTHS[dt.getMonth()]}${t}`;
@@ -135,7 +135,7 @@ function heroHtml(ev) {
             <div class="rd-hero-cover" id="rdHeroCover">
                 ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}
                 <span class="rd-hero-when"><i></i>${esc(whenLabel(h))}</span>
-                ${booked && isV2() ? '<span class="rd-ok">✓ ты идёшь</span>' : ''}
+                ${booked && isV2() ? '<span class="rd-ok">✓ ты записан</span>' : ''}
             </div>
             <div class="rd-hero-body">
                 <span class="rd-hero-title">${esc(h.title)}</span>

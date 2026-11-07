@@ -7757,3 +7757,6 @@ html.v2 .rd-hero { border-color: transparent; }
 html.v2 .rd-hero:has(.rd-ok) { cursor: pointer; }
 
 .cf-tag.is-booked { background: var(--yellow); color: #141800; }
+
+/* витрина: без transition на карточках – трансформ считается каждый кадр при листании, transition давал дрожь */
+.cf-card { transition: none !important; will-change: transform; backface-visibility: hidden; }

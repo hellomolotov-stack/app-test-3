@@ -175,7 +175,7 @@ function grantDay(a) {
 }
 function vitrineHtml(items, shelf, owned, waiting) {
     const [a0, a1, a2] = shelf;
-    const pic = (a, i, cls) => a ? `<button type="button" class="vt-it ${cls}" data-medal="${i}" aria-label="${esc(a.title)}">${i === 0 && a.seenAt === null ? '<span class="vt-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy"></button>` : '<span class="vt-it vt-empty"></span>';
+    const pic = (a, i, cls) => a ? `<button type="button" class="vt-it ${cls}" data-mya-all aria-label="${esc(a.title)}">${i === 0 && a.seenAt === null ? '<span class="vt-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy"></button>` : '<span class="vt-it vt-empty"></span>';
     const day = grantDay(a0);
     const total = ACHIEVEMENT_CATALOG.length;
     // следующая цель: значок за число хайков с прогрессом, иначе первая из ближайших целей
