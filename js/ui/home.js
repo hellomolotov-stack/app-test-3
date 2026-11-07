@@ -657,7 +657,7 @@ function renderGuestHome() {
         ${v2 && nextEventBooked() ? '' : '<div id="userBookingsContainer"></div>'}
         <div id="circleContainer"></div>
         ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
-        ${!isLumenPilotUser(state.user) ? `
+        ${/* блок «для новичков» убран у всех (07.11) */ false ? `
         <div class="card-container">
             <h2 class="section-title">для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
@@ -887,7 +887,7 @@ function renderOwnerHome() {
         ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
         ${renderWeatherBlock()}
-        ${!isLumenPilotUser(state.user) ? `
+        ${/* блок «для новичков» убран у всех (07.11) */ false ? `
         <div class="card-container">
             <h2 class="section-title">для новичков</h2>
             <div class="btn-newcomer" id="newcomerBtn">
