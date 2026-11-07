@@ -9,8 +9,8 @@ import { haptic, openLink } from '../utils.js';
 const SEEN_KEY = 'clubStoriesSeen';
 const DURATION = 7000;
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая summary мастермайнда', app: 'новое в приложении', event: 'событие', custom: 'клуб' };
-const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', app: '✨', event: '📅', custom: '⛰️' };
+const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая summary мастермайнда', app: 'обновление', event: 'событие', custom: 'клуб' };
+const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', app: '💫', event: '📅', custom: '⛰️' };
 const BG = {
     member: 'radial-gradient(100% 60% at 50% 32%,#1d3a55,#0a1018 72%)',
     badges: 'radial-gradient(100% 60% at 50% 32%,#3a3110,#0a1018 72%)',

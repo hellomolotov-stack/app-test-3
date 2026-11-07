@@ -678,7 +678,7 @@ function renderGuestHome() {
             </div>
         </div>
         ${renderTestimonialsBlock()}
-        ${renderUpdatesBlock()}
+        ${isV2() ? '' : renderUpdatesBlock()}
         ${renderSafetyBanner()}
         ${renderMakerCredit()}
     `;
@@ -905,7 +905,7 @@ function renderOwnerHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
-        ${renderUpdatesBlock()}
+        ${isV2() ? '' : renderUpdatesBlock()}
         ${renderSafetyBanner()}
         ${renderMakerCredit()}
     `;
@@ -988,7 +988,7 @@ function renderRdHome() {
                 <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>
         </div>
-        ${renderUpdatesBlock()}
+        ${isV2() ? '' : renderUpdatesBlock()}
         ${renderSafetyBanner()}
         ${renderMakerCredit()}
     `;

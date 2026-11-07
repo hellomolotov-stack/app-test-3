@@ -7455,7 +7455,7 @@ html.v2 .rd-cta { height: 48px; border-radius: 999px; font-size: 16px; }
 .csv-t-member { background: #D9FD19; color: #111; }
 .csv-t-badges { background: #F28C28; color: #fff; }
 .csv-t-summary { background: #7B5CC4; color: #fff; }
-.csv-t-app { background: #2F8FC4; color: #fff; }
+.csv-t-app { background: var(--yellow); color: #141800; }
 .csv-t-event { background: #E0603A; color: #fff; }
 .csv-text h2 { margin: 12px 0 0; font-size: 30px; line-height: 1.08; font-weight: 800; color: #fff; }
 .csv-text p { margin-top: 10px; font-size: 15.5px; line-height: 1.45; color: rgba(255,255,255,.82); display: -webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
