@@ -102,6 +102,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     const scratch = !gift && state.userCard?.status !== 'active' && isV2();
     const overlay = document.createElement('div');
     overlay.className = `cs-overlay${cityEvent ? ' is-city' : ''}`;
+    const reader = document.querySelector('.mmr-overlay');
+    if (reader) overlay.style.zIndex = String(Math.max(2100, Number(getComputedStyle(reader).zIndex) || 0) + 10);
     overlay.innerHTML = `
         <div class="cs-sheet">
             <div class="cs-grab"></div>
@@ -181,8 +183,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         clearInterval(offerTimer);
         act('card_sheet_close', { bought, ms: Date.now() - openedAt });
         overlay.classList.remove('is-on');
-        // под шторкой мог остаться открытый раздел значков – тогда прокрутку страницы не возвращаем
-        if (!document.querySelector('.acol-overlay')) document.body.style.overflow = '';
+        // Под покупкой может оставаться коллекция или читалка: фон не разблокируем.
+        if (!document.querySelector('.acol-overlay, .mmr-overlay')) document.body.style.overflow = '';
         setTimeout(() => overlay.remove(), 300);
     };
     overlay.addEventListener('click', e => { if (e.target === overlay) close(); });

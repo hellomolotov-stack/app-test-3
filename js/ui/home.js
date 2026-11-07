@@ -21,6 +21,7 @@ import { setLumenContext } from './lumen.js';
 import { isLumenPilotUser } from '../lumen/config.js';
 import { mountCircle } from './circle.js';
 import { ensureMmNotes, mmNotes, mmNoteForDate } from './mm-reader.js';
+import { summaryParticipants } from '../mm-participants.js';
 import { mountAdminEntry } from './admin-entry.js';
 import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
@@ -306,9 +307,10 @@ function wireMmCover(root) {
     box.addEventListener('click', open);
     const av = box.querySelector('[data-mmc-avs]');
     if (av) import('./calendar.js').then(m => m.fetchGoingFromServer([av.dataset.mmcAvs])).then(([lst]) => {
-        const ppl = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId).slice(0, 4);
+        const participants = summaryParticipants(lst);
+        const ppl = participants.slice(0, 4);
         const G = ['#e06666', '#3d85c6', '#38761d', '#741b47', '#bf9000'];
-        const all = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId).length;
+        const all = participants.length;
         av.innerHTML = ppl.map((p, i) => `<i style="background:${G[i % 5]}">${p.photoUrl ? `<img src="${String(p.photoUrl).replace(/"/g, '')}" alt="" onerror="this.remove()">` : String(p.name || '?').trim()[0] || '?'}</i>`).join('') + (all ? `<span class="mmc-n">${all} ${all % 10 === 1 && all % 100 !== 11 ? 'участник' : (all % 10 >= 2 && all % 10 <= 4 && (all % 100 < 10 || all % 100 >= 20)) ? 'участника' : 'участников'}</span>` : '');
     }).catch(() => {});
 }
@@ -501,10 +503,9 @@ function metricsStoryHtml() {
     const s = new Date(CLUB_START + 'T12:00:00'), now = new Date();
     const months = Math.max(1, (now.getFullYear() - s.getFullYear()) * 12 + now.getMonth() - s.getMonth());
     const span = months >= 15 && months <= 20 ? 'за полтора года' : months >= 21 && months <= 27 ? 'за два года' : months >= 12 ? 'за год с лишним' : `за ${months} мес.`;
-    const perMonth = Math.max(1, Math.round((Number(m.hikes) || 0) / months));
     const v = k => `<em data-metric="${k}">${m[k] ?? ''}</em>`;
     return `<div class="mst-text">${span} мы прошли ${v('kilometers')}&nbsp;км на ${v('hikes')}&nbsp;хайках, побывали в ${v('locations')}&nbsp;местах Крыма и познакомили людей друг с другом ${v('meetings')}&nbsp;раз</div>
-        <div class="mst-chips"><span>🥾 <b>${perMonth}</b> ${perMonth % 10 === 1 && perMonth % 100 !== 11 ? 'хайк' : perMonth % 10 >= 2 && perMonth % 10 <= 4 && (perMonth % 100 < 12 || perMonth % 100 > 14) ? 'хайка' : 'хайков'} в месяц</span><span>🏔 выше всего – <b>1527 м</b></span><span>📅 с мая 2025</span></div>`;
+        <div class="mst-chips"><span>🪪 <b>20+</b> владельцев карты</span><span>🏔 выше всего – <b>1527 м</b></span><span>📅 с мая 2025</span></div>`;
 }
 
 window.addEventListener('club:content-updated', () => {

@@ -5,6 +5,7 @@ import { state } from '../state.js';
 import { meCall } from '../net.js';
 import { log } from '../api.js';
 import { haptic, openLink } from '../utils.js';
+import { openCardSheet } from './card-sheet.js';
 
 const SEEN_KEY = 'clubStoriesSeen';
 const DURATION = 7000;
@@ -27,6 +28,9 @@ function markSeen(id) {
 }
 const isSeen = s => s.seen || seenSet().has(s.id);
 const imgUrl = u => (u && u.startsWith('/') ? u : u && !/^https?:/.test(u) ? '/' + u : u);
+const actionButton = story => story.type === 'member'
+    ? { label: state.userCard?.status === 'active' ? 'подарить карту' : 'узнать о карте', action: state.userCard?.status === 'active' ? 'gift' : 'card' }
+    : story.button;
 // в кружке – картинка (карта, значок) или эмодзи типа
 function thumb(s) {
     if (s.type === 'summary') return `<span class="cst-pic cst-plaud"><img src="assets/plaud-v2.webp" alt=""></span>`;
@@ -104,9 +108,10 @@ async function runAction(action) {
     const a = String(action || '');
     if (a.startsWith('url:')) return openLink(a.slice(4), 'сторис', state.userCard?.status !== 'active');
     if (a.startsWith('mm:')) { const m = await import('./mm-reader.js'); return m.openMmReader(a.slice(3)); }
+    if (a === 'gift') return openCardSheet({ source: 'сторис', gift: true });
     if (a === 'card') {
         if (state.userCard?.status === 'active') { const m = await import('./privileges.js'); return m.renderPriv(); }
-        const m = await import('./card-sheet.js'); return m.openCardSheet({ source: 'сторис' });
+        return openCardSheet({ source: 'сторис' });
     }
     if (a === 'hike') {
         const today = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
@@ -154,6 +159,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
 
     const show = () => {
         const s = list[i];
+        const button = actionButton(s);
         bars.forEach((b, k) => { b.style.width = k < i ? '100%' : '0%'; });
         body.innerHTML = `
             <div class="csv-bg" style="background:${BG[s.type] || BG.custom}"></div>
@@ -161,7 +167,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             <div class="csv-shade"></div>
             <div class="csv-head"><span class="csv-av"></span><b>интеллигенция</b><span>· ${ago(s.date)}</span><button type="button" class="csv-x" aria-label="закрыть">✕</button></div>
             <div class="csv-text"><span class="csv-tag csv-t-${esc(s.type)}"><i></i>${esc(TAG[s.type] || 'клуб')}</span><h2>${esc(s.title)}</h2>${s.text ? `<p>${esc(s.text)}</p>` : ''}
-                ${s.button ? `<button type="button" class="csv-btn">${esc(s.button.label)}</button>` : ''}</div>`;
+                ${button ? `<button type="button" class="csv-btn">${esc(button.label)}</button>` : ''}</div>`;
         elapsed = 0; t0 = performance.now();
         // картинку – посередине между шапкой и текстом
         requestAnimationFrame(() => {
@@ -170,7 +176,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             const a = hd.getBoundingClientRect().bottom + 14, b = tx.getBoundingClientRect().top - 14;
             if (b - a > 120) { stg.style.top = a + 'px'; stg.style.height = (b - a) + 'px'; }
         });
-        if (String(s.button?.action || '').startsWith('mm:')) import('./mm-reader.js').then(m => m.ensureMmNotes()).catch(() => {});
+        if (String(button?.action || '').startsWith('mm:')) import('./mm-reader.js').then(m => m.ensureMmNotes()).catch(() => {});
         if (!preview) {
             markSeen(s.id);
             if (!s.seen) { s.seen = true; meCall('story_view', { id: s.id }).catch(() => {}); }
@@ -218,7 +224,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     const startDrag = async () => {
         dragTried = true;
         const gen = ++dragGen;
-        const s = list[i], a = String(s.button?.action || '');
+        const s = list[i], a = String(actionButton(s)?.action || '');
         let d = null;
         if (a.startsWith('mm:') && !preview) {
             const m = await import('./mm-reader.js');
@@ -233,7 +239,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
     };
     ov.addEventListener('pointermove', e => {
         const dy = e.clientY - sy;
-        if (st && dy < -12 && list[i].button) {
+        if (st && dy < -12 && actionButton(list[i])) {
             clearTimeout(holdTimer);
             if (!dragTried) { pause(true); startDrag(); }
             const p = Math.min(1, -dy / (window.innerHeight * .55));
@@ -254,10 +260,11 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             if (dy < -80 && d) {
                 haptic();
                 const s = list[i];
-                if (!preview) log('сторис: свайп вверх', state.userCard?.status !== 'active', state.user, { id: s.id, action: s.button?.action });
+                const action = actionButton(s)?.action;
+                if (!preview) log('сторис: свайп вверх', state.userCard?.status !== 'active', state.user, { id: s.id, action });
                 d.commit();
                 if (d.kind === 'mm') { setTimeout(() => close(true), 330); }
-                else { close(true); if (!preview) setTimeout(() => runAction(s.button?.action), 60); }
+                else { close(true); if (!preview) setTimeout(() => runAction(action), 60); }
             } else {
                 d?.cancel(); body.style.transform = ''; body.style.filter = ''; pause(false);
             }
@@ -279,9 +286,10 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
         if (b) {
             haptic();
             const s = list[i];
-            if (!preview) log('сторис: кнопка', state.userCard?.status !== 'active', state.user, { id: s.id, action: s.button?.action });
+            const action = actionButton(s)?.action;
+            if (!preview) log('сторис: кнопка', state.userCard?.status !== 'active', state.user, { id: s.id, action });
             close();
-            if (!preview) setTimeout(() => runAction(s.button?.action), 260);
+            if (!preview) setTimeout(() => runAction(action), 260);
         }
     });
     show();

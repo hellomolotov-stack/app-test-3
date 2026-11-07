@@ -3,6 +3,8 @@
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
+import { summaryParticipants } from '../mm-participants.js';
+import { openCardSheet } from './card-sheet.js';
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -103,7 +105,7 @@ const STYLE = `
 .mmr-overlay.is-on .mmr-sheet { transform: none; opacity: 1; }
 .mmr-grab { margin-bottom: -6px; }
 .mmr-top { flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 14px 10px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
-.mmr-top .k { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; font-style: italic; color: #B9A2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mmr-top .k { flex: 1; min-width: 0; font-size: 13px; line-height: 1.35; font-weight: 800; font-style: italic; color: #B9A2FF; }
 .mmr-top .k span { font-style: normal; font-weight: 600; color: rgba(255,255,255,.55); }
 .mmr-ib { flex: none; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.09); color: #fff; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 .mmr-ib.on { background: #B9A2FF; color: #1a1033; }
@@ -127,12 +129,10 @@ const STYLE = `
 .mmr-avs .mmr-more { background: rgba(185,162,255,.22); color: #CBBBFF; font-size: 11px; }
 .mmr-ptxt { min-width: 0; font-size: 13.5px; line-height: 1.3; color: rgba(255,255,255,.75); }
 .mmr-ptxt b { color: #fff; font-weight: 700; }
-.mmr-ptxt small { margin-left: 6px; font-size: 12.5px; color: #B9A2FF; }
 .mmr-scroll { touch-action: pan-y; flex: 1; overflow-y: auto; padding: 18px 24px 100px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .mmr-head { display: flex; gap: 14px; align-items: center; }
 .mmr-head img { flex: none; width: 52px; height: 52px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
 .mmr-title { margin: 0 0 6px; font-size: 23px; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; }
-.mmr-sub { margin-bottom: 4px; font-size: 13px; color: rgba(255,255,255,.55); }
 .mmr-sec { margin: 26px 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.5); }
 .mmr-h3 { margin: 24px 0 4px; font-size: 18px; line-height: 1.3; font-weight: 800; color: #fff; }
 .mmr-who { display: inline-block; margin: 4px 0 6px; padding: 3px 10px; border-radius: 10px; background: rgba(185,162,255,.13); color: #B9A2FF; font-size: 12.5px; font-weight: 800; }
@@ -207,7 +207,7 @@ function buildReader(list, id, drag) {
     const me = overlay, sheetEl = overlay.querySelector('.mmr-sheet');
     // не вплотную к кнопкам Telegram сверху (полноэкранный режим): отступ = системная + верхняя панель Telegram + 16
     { const tw = window.Telegram?.WebApp; const inset = (tw?.safeAreaInset?.top || 0) + (tw?.contentSafeAreaInset?.top || 0); sheetEl.style.maxHeight = `calc(100dvh - ${inset + 16}px)`; }
-    if (!drag) requestAnimationFrame(() => overlay.classList.add('is-on'));
+    if (!drag) requestAnimationFrame(() => { if (overlay === me) me.classList.add('is-on'); });
     else {
         me.classList.add('mmr-drag');
         me.style.zIndex = '3600'; // поверх сторис
@@ -219,7 +219,7 @@ function buildReader(list, id, drag) {
     const scroll = overlay.querySelector('.mmr-scroll');
     const draw = () => {
         const cur = list[idx];
-        overlay.querySelector('.mmr-top .k').innerHTML = `${esc(dayLabel(cur.date))}${cur.place ? ` <span>· ${esc(cur.place)}</span>` : ''}`;
+        overlay.querySelector('.mmr-top .k').innerHTML = `${esc(dayLabel(cur.date))} <span>· саммари мастермайнда</span>`;
         overlay.querySelector('.mmr-cnt').textContent = `выпуск ${list.length - idx} из ${list.length}`;
         overlay.querySelector('[data-v]').classList.toggle('on', view === 'all');
         overlay.querySelector('[data-go="1"]').disabled = idx >= list.length - 1;
@@ -229,7 +229,7 @@ function buildReader(list, id, drag) {
         } else {
             const n = list[idx];
             log(`саммари: читает ${n.date} ${n.title}`, n.locked, state.user);
-            scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud-v2.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2><div class="mmr-sub">саммари мастермайнда</div></div></div><div class="mmr-people" data-mmp="${esc(n.date)}"></div>`
+            scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud-v2.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2></div></div><div class="mmr-people" data-mmp="${esc(n.date)}"></div>`
                 + render(n.body)
                 + (n.locked ? `<div class="mmr-lock"><p>целиком саммари мастермайндов читают владельцы карты интеллигента</p><button type="button" class="mmr-btn" data-card>открыть с картой</button></div>` : '');
         }
@@ -237,14 +237,14 @@ function buildReader(list, id, drag) {
         // кто был на этой встрече – аватарки под заголовком
         const pp = scroll.querySelector('[data-mmp]');
         if (pp) import('./calendar.js').then(m => m.fetchGoingFromServer([pp.dataset.mmp])).then(([lst]) => {
-            const ppl = (Array.isArray(lst) ? lst : []).filter(p => p && p.userId);
+            const ppl = summaryParticipants(lst);
             if (!ppl.length || !pp.isConnected) return;
             const G = [['#f6b26b', '#e06666'], ['#6fa8dc', '#3d85c6'], ['#93c47d', '#38761d'], ['#c27ba0', '#741b47'], ['#ffd966', '#bf9000']];
             const first = n => String(n || '').trim().split(/\s+/)[0] || '';
             const shown = ppl.slice(0, 9);
             const k = ppl.length;
             pp.innerHTML = `<span class="mmr-avs">${shown.map((p, i) => `<i style="background:linear-gradient(135deg,${G[i % 5][0]},${G[i % 5][1]})">${p.photoUrl ? `<img src="${esc(p.photoUrl)}" alt="" onerror="this.remove()">` : esc((first(p.name)[0] || '?').toUpperCase())}</i>`).join('')}${k > shown.length ? `<i class="mmr-more">+${k - shown.length}</i>` : ''}</span>
-                <span class="mmr-ptxt"><b>${shown.slice(0, 3).map(p => esc(first(p.name))).join(', ')}</b>${k > 3 ? ` и ещё ${k - 3}` : ''}<small>${k} ${k % 10 === 1 && k % 100 !== 11 ? 'участник' : k % 10 >= 2 && k % 10 <= 4 && (k % 100 < 12 || k % 100 > 14) ? 'участника' : 'участников'} встречи</small></span>`;
+                <span class="mmr-ptxt"><b>${shown.slice(0, 3).map(p => esc(first(p.name))).join(', ')}</b>${k > 3 ? ` и ещё ${k - 3}` : ''}</span>`;
         }).catch(() => {});
     };
     draw();
@@ -306,9 +306,8 @@ function buildReader(list, id, drag) {
         const it = e.target.closest('[data-i]');
         if (it) { haptic(); idx = +it.dataset.i; view = 'read'; draw(); return; }
         if (e.target.closest('[data-card]')) {
-            haptic(); closeMmReader();
-            const { openCardSheet } = await import('./card-sheet.js');
-            setTimeout(() => openCardSheet({ source: 'саммари мастермайнда' }), 320);
+            e.preventDefault(); e.stopPropagation(); haptic();
+            openCardSheet({ source: 'саммари мастермайнда' });
             return;
         }
         if (e.target === overlay || e.target.closest('.mmr-x')) { haptic(); closeMmReader(); }

@@ -7613,7 +7613,7 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-months { display: flex; gap: 12px; font-size: 13px; }
 .cf-months i { font-style: normal; color: rgba(255,255,255,.4); cursor: pointer; }
 .cf-months i.is-on { color: #fff; font-weight: 700; }
-.cf-track { display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 0 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.cf-track { position: relative; display: flex; gap: 0; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 0 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
 .cf-track::-webkit-scrollbar { display: none; }
 .cf-track::before, .cf-track::after { content: ''; flex: none; width: calc(50% - 105px); }
 .cf-card { position: relative; flex: none; width: 210px; height: 290px; margin: 0 -14px; scroll-snap-align: center; border: 0; padding: 0; border-radius: 22px; overflow: hidden;
@@ -7669,7 +7669,7 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-head { margin: 0 16px 4px; }
 .cf-head span { font-size: 13px; color: rgba(255,255,255,.45); }
 .cf-track { padding: 8px 0 12px; }
-.cf-track::before, .cf-track::after { width: calc(50% - 100px); }
+.cf-track::before, .cf-track::after { width: calc(50% - 100px + 13px); }
 .cf-card { width: 200px; height: 276px; margin: 0 -13px; background: #141a20; isolation: isolate; clip-path: inset(0 round 22px); -webkit-mask-image: -webkit-radial-gradient(white, black); }
 .cf-bg { position: absolute; inset: 0; z-index: -1; background: center/cover no-repeat; transition: filter .3s; }
 .cf-card.is-past .cf-bg { filter: grayscale(1) contrast(1.06) brightness(.92); }

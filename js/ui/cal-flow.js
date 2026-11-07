@@ -94,6 +94,10 @@ export function renderCalFlow(container) {
         <div class="cf-track">${list.map(cardHtml).join('')}</div>
         ${wheelHtml(list)}`;
     const track = container.querySelector('.cf-track');
+    let interacted = false;
+    const markInteracted = () => { interacted = true; };
+    container.addEventListener('pointerdown', markInteracted, { once: true, passive: true });
+    container.addEventListener('wheel', markInteracted, { once: true, passive: true });
     const cards = [...track.children];
     const wl = container.querySelector('.cf-wl');
     const days = [...wl.children];
@@ -126,9 +130,10 @@ export function renderCalFlow(container) {
         center(start, false); update();
         let hinted = false; try { hinted = localStorage.getItem('cfHinted2') === '1'; } catch (e) {}
         if (!hinted) setTimeout(() => {
+            if (interacted || !container.isConnected) return;
             try { localStorage.setItem('cfHinted2', '1'); } catch (e) {}
             track.scrollBy({ left: 80, behavior: 'smooth' });
-            setTimeout(() => center(start, true), 520);
+            setTimeout(() => { if (!interacted && container.isConnected) center(start, true); }, 520);
         }, 900);
     });
 

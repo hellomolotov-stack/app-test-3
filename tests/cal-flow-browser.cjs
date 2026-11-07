@@ -42,6 +42,7 @@ const hikes = [
             return route.fulfill({ json: [] });
         });
         await page.goto('https://calendar-test.local');
+        await page.evaluate(() => localStorage.setItem('cfHinted2', '1'));
         await page.clock.install({ time: new Date('2026-11-07T15:00:00Z') });
         await page.addStyleTag({ content: fs.readFileSync(path.join(root, 'style.css'), 'utf8') });
         await page.addScriptTag({ content: outputFiles[0].text });
@@ -58,11 +59,29 @@ const hikes = [
                 assert.equal((await title.textContent()).replace(/\u00ad/g, ''), hikes[i].title);
                 const box = await title.evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
                 assert.ok(box.scroll <= box.width, `${width}px: ${hikes[i].title} overflows`);
+                const alignment = await page.locator('.cf-wheel').evaluate(el => {
+                    const day = el.querySelector('.cf-d.is-on').getBoundingClientRect();
+                    const lens = el.querySelector('.cf-lens').getBoundingClientRect();
+                    return Math.abs(day.left + day.width / 2 - lens.left - lens.width / 2);
+                });
+                assert.ok(alignment < 0.75, `${width}px: selected date is off by ${alignment}px`);
                 if (i < 3) assert.equal(await card.locator('.cf-tag').textContent(), i === 2 ? 'Событие завершено' : 'Хайк завершён');
                 if (process.env.CALENDAR_SCREENSHOTS && i < 2) await page.screenshot({ path: path.join(process.env.CALENDAR_SCREENSHOTS, `title-${width}-${i}.png`) });
             }
             const layout = await page.locator('.app').evaluate(el => ({ width: el.clientWidth, scroll: el.scrollWidth }));
             assert.ok(layout.scroll <= layout.width);
+            const wheel = await page.locator('.cf-wheel').boundingBox();
+            await page.mouse.move(wheel.x + wheel.width / 2, wheel.y + 22);
+            await page.mouse.down();
+            await page.mouse.move(wheel.x + wheel.width / 2 + 65, wheel.y + 22, { steps: 8 });
+            await page.mouse.up();
+            await page.waitForTimeout(500);
+            const afterDrag = await page.locator('.cf-wheel').evaluate(el => {
+                const day = el.querySelector('.cf-d.is-on').getBoundingClientRect();
+                const lens = el.querySelector('.cf-lens').getBoundingClientRect();
+                return Math.abs(day.left + day.width / 2 - lens.left - lens.width / 2);
+            });
+            assert.ok(afterDrag < 0.75, `${width}px: date did not snap after wheel drag (${afterDrag}px)`);
         }
         assert.deepEqual(errors, []);
         console.log('Calendar titles and completed labels: PASS (320/390/600px)');
