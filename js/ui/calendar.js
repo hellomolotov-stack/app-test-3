@@ -2972,7 +2972,9 @@ function updateFloatingSheetButtons() {
     container.classList.remove('has-plates');
 
     // Бокс предлагаем только на ближайшем актуальном хайке с открытой записью.
-    if (!isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && hikingBoxEnabled(hike.date)) {
+    // записан – бокс живёт в карточке записи на главной, в шторке хайка его не показываем
+    const bookedHere = state.hikeBookingStatus?.[curSheetIndex()] === true;
+    if (!bookedHere && !isCancelled && !isPlaceholder && !isCity && !isBookClub && !isClosedRegistration && hikingBoxEnabled(hike.date)) {
         mountHikingBoxPlate(container, hike, isGuest);
     }
 

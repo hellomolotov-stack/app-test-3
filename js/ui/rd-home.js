@@ -157,15 +157,9 @@ function ticketHtml(ev) {
     const h = ev.hike;
     const city = yes(h.city) || yes(h.book_club);
     const owner = state.userCard?.status === 'active';
-    const acts = [
-        !city ? `<button type="button" class="rd-act" data-act="story"><span>📸</span>в сторис</button>` : '',
-        owner && !city ? `<button type="button" class="rd-act" data-act="plus1"><span>🤝</span>взять +1</button>` : '',
-        `<button type="button" class="rd-act" data-act="details"><span>📍</span>детали</button>`,
-    ].filter(Boolean);
     const more = otherBookings(ev)[0];
     const md = more ? new Date(more.h.date + 'T12:00:00') : null;
-    return `<div class="rd-acts" style="grid-template-columns:repeat(${acts.length},1fr)">${acts.join('')}</div>
-        ${!city && hikingBoxEnabled(h.date) ? `<div class="rd-box" data-box-date="${h.date}">${hikingBoxRowHtml('', h.date)}</div>` : ''}
+    return `${!city && hikingBoxEnabled(h.date) ? `<div class="rd-box" data-box-date="${h.date}">${hikingBoxRowHtml('', h.date)}</div>` : ''}
         ${more ? `<button type="button" class="rd-more" data-more="${more.i}"><span>ещё запись</span><b>${md.getDate()} ${MONTHS[md.getMonth()]} · ${esc(more.h.title)} ›</b></button>` : ''}`;
 }
 
@@ -344,14 +338,12 @@ export function wireRdHomeTop() {
     if (!ev) return;
     const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
     document.getElementById('rdHeroCta')?.addEventListener('click', open);
-    document.querySelectorAll('#rdHero .rd-act').forEach(b => b.addEventListener('click', () => {
-        haptic();
-        const a = b.dataset.act;
-        log(`билет на главной: ${a}`, !owner, state.user, { date: ev.hike.date });
-        if (a === 'story') import('./story.js').then(m => m.openStoryShare(ev.hike.date, 'билет на главной'));
-        else if (a === 'plus1') { showBottomSheet(ev.index); setTimeout(() => document.querySelector('[data-plus1], .plus1-block, #plus1Block')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 600); }
-        else showBottomSheet(ev.index);
-    }));
+    // записан: вся карточка открывает шторку хайка (кроме строки бокса и «ещё запись»)
+    const heroEl = document.getElementById('rdHero');
+    if (heroEl && heroEl.querySelector('.rd-ok')) heroEl.addEventListener('click', e => {
+        if (e.target.closest('.rd-box, .rd-more')) return;
+        open();
+    });
     const boxEl = document.querySelector('#rdHero .rd-box');
     if (boxEl) bindHikingBoxRow(boxEl.querySelector('.hb-row'), boxEl.dataset.boxDate, 'билет на главной');
     document.querySelector('#rdHero .rd-more')?.addEventListener('click', e => { haptic(); showBottomSheet(Number(e.currentTarget.dataset.more)); });
