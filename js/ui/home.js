@@ -835,7 +835,7 @@ function renderOwnerHome() {
             </div>
             <button type="button" class="gift-text-link" id="giftCardBtn">подарить карту другу ›</button>
         </div>`}
-        <div id="userBookingsContainer"></div>
+        ${v2 && nextEventBooked() ? '' : '<div id="userBookingsContainer"></div>'}
         <div id="circleContainer"></div>
         <div class="card-container" id="calendarContainer"></div>
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
@@ -967,6 +967,13 @@ function renderRdHome() {
 function renderCalendarOrStrip(el) {
     // развилка «витрина» (Макс) / «события» (остальные v2) / обычный календарь – вся в renderCalendar (calendar.js)
     renderCalendar(el);
+}
+
+// классика v2: если человек записан на ближайшее событие, «мои записи» живут в билете блока хайка (rd-home.js)
+function nextEventBooked() {
+    // тот же выбор, что nextEvent() в rd-home.js
+    const i = (state.hikesWithTitle || []).findIndex(h => h.cancelled !== true && h.cancelled !== 'yes' && h.book_club !== true && h.book_club !== 'yes' && isUpcomingHike(h));
+    return i >= 0 && state.hikeBookingStatus?.[i] === true;
 }
 
 export function renderHome() {

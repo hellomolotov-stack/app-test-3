@@ -7652,3 +7652,12 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-avs i:first-child { margin-left: 0; }
 .cf-avs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .cf-head .cf-months { display: none; }
+
+/* классика v2: билет в блоке хайка */
+.rd-ok { position: absolute; z-index: 1; right: 14px; top: 14px; padding: 7px 12px; border-radius: 999px; background: var(--yellow); color: #141800; font-size: 13px; font-weight: 800; }
+.rd-acts { display: grid; gap: 8px; }
+.rd-act { border: 0; border-radius: 16px; background: rgba(255,255,255,.06); padding: 10px 6px; color: rgba(255,255,255,.85); font: inherit; font-size: 12px; cursor: pointer; }
+.rd-act span { display: block; font-size: 18px; margin-bottom: 3px; }
+.rd-box .hb-row { margin: 0; }
+.rd-more { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 0 0; border: 0; border-top: 1px solid rgba(255,255,255,.07); background: none; color: rgba(255,255,255,.6); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+.rd-more b { color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

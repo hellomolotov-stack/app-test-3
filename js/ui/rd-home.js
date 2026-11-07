@@ -7,6 +7,8 @@ import { log } from '../api.js';
 import { isUpcomingHike, moscowDateKey } from '../hike-timing.js';
 import { capacityFor, isPostponed, fetchGoingFromServer, showBottomSheet, snapshotHikeMap, nextTeaser, isWaitlisted, toggleTeaserNotify } from './calendar.js';
 import { renderPriv } from './privileges.js';
+import { isV2 } from '../redesign.js';
+import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { openCardSheet } from './card-sheet.js';
 import { setRdGlow } from '../redesign.js';
 
@@ -127,19 +129,44 @@ function heroHtml(ev) {
     const tags = (Array.isArray(h.tags) ? h.tags : []).slice(0, 4);
     // обложка – наше фото с этого маршрута (assets/teaser), не схема трека; маршрута нет в фото – любой пейзаж клуба
     const img = `assets/teaser/${heroPhotoFor(h.title)}.webp`;
+    const booked = state.hikeBookingStatus?.[ev.index] === true;
     return `
         <div class="rd-hero is-${kind}" id="rdHero" data-index="${ev.index}">
             <div class="rd-hero-cover" id="rdHeroCover">
                 ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}
                 <span class="rd-hero-when"><i></i>${esc(whenLabel(h))}</span>
+                ${booked && isV2() ? '<span class="rd-ok">✓ ты идёшь</span>' : ''}
             </div>
             <div class="rd-hero-body">
                 <span class="rd-hero-title">${esc(h.title)}</span>
                 ${tags.length ? `<div class="rd-tags">${tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
                 <div class="rd-going" id="rdGoing"><span class="rd-going-wait">смотрю, кто идёт…</span></div>
-                <button type="button" class="rd-cta" id="rdHeroCta">${state.hikeBookingStatus[ev.index] === true ? 'ты идёшь · детали' : 'подробнее и запись'}</button>
+                ${booked && isV2() ? ticketHtml(ev) : `<button type="button" class="rd-cta" id="rdHeroCta">${booked ? 'ты идёшь · детали' : 'подробнее и запись'}</button>`}
             </div>
         </div>`;
+}
+
+// записан (классика v2): блок хайка = билет – действия из «моих записей», бокс к хайку, «ещё запись»
+function otherBookings(ev) {
+    const t = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+    return (state.hikesWithTitle || []).map((h, i) => ({ h, i }))
+        .filter(({ h, i }) => i !== ev.index && state.hikeBookingStatus?.[i] === true && h.date >= t && !yes(h.cancelled))
+        .sort((a, b) => a.h.date.localeCompare(b.h.date));
+}
+function ticketHtml(ev) {
+    const h = ev.hike;
+    const city = yes(h.city) || yes(h.book_club);
+    const owner = state.userCard?.status === 'active';
+    const acts = [
+        !city ? `<button type="button" class="rd-act" data-act="story"><span>📸</span>в сторис</button>` : '',
+        owner && !city ? `<button type="button" class="rd-act" data-act="plus1"><span>🤝</span>взять +1</button>` : '',
+        `<button type="button" class="rd-act" data-act="details"><span>📍</span>детали</button>`,
+    ].filter(Boolean);
+    const more = otherBookings(ev)[0];
+    const md = more ? new Date(more.h.date + 'T12:00:00') : null;
+    return `<div class="rd-acts" style="grid-template-columns:repeat(${acts.length},1fr)">${acts.join('')}</div>
+        ${!city && hikingBoxEnabled(h.date) ? `<div class="rd-box" data-box-date="${h.date}">${hikingBoxRowHtml('', h.date)}</div>` : ''}
+        ${more ? `<button type="button" class="rd-more" data-more="${more.i}"><span>ещё запись</span><b>${md.getDate()} ${MONTHS[md.getMonth()]} · ${esc(more.h.title)} ›</b></button>` : ''}`;
 }
 
 function avatarHtml(p, i) {
@@ -317,6 +344,17 @@ export function wireRdHomeTop() {
     if (!ev) return;
     const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
     document.getElementById('rdHeroCta')?.addEventListener('click', open);
+    document.querySelectorAll('#rdHero .rd-act').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        const a = b.dataset.act;
+        log(`билет на главной: ${a}`, !owner, state.user, { date: ev.hike.date });
+        if (a === 'story') import('./story.js').then(m => m.openStoryShare(ev.hike.date, 'билет на главной'));
+        else if (a === 'plus1') { showBottomSheet(ev.index); setTimeout(() => document.querySelector('[data-plus1], .plus1-block, #plus1Block')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 600); }
+        else showBottomSheet(ev.index);
+    }));
+    const boxEl = document.querySelector('#rdHero .rd-box');
+    if (boxEl) bindHikingBoxRow(boxEl.querySelector('.hb-row'), boxEl.dataset.boxDate, 'билет на главной');
+    document.querySelector('#rdHero .rd-more')?.addEventListener('click', e => { haptic(); showBottomSheet(Number(e.currentTarget.dataset.more)); });
     document.getElementById('rdHeroCover')?.addEventListener('click', open);
     fetchGoingFromServer([ev.hike.date]).then(([list]) => fillGoing(ev, list)).catch(() => fillGoing(ev, []));
 }
