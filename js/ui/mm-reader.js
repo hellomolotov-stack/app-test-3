@@ -97,7 +97,7 @@ function render(md) {
 const STYLE = `
 .mmr-overlay { position: fixed; inset: 0; z-index: 2300; display: flex; align-items: flex-end; justify-content: center; background: rgba(5,8,12,0); transition: background .3s ease; }
 .mmr-overlay.is-on { background: rgba(5,8,12,.62); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.mmr-sheet { position: relative; width: calc(100% - 20px); max-width: 560px; height: 68vh; height: 68dvh; margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
+.mmr-sheet { position: relative; width: 100%; max-width: 600px; height: 90vh; height: 90dvh; margin-bottom: 0; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; display: flex; flex-direction: column; overflow: hidden; box-sizing: border-box;
   border-radius: 34px; background: rgba(18,26,36,.8); backdrop-filter: blur(36px) saturate(180%); -webkit-backdrop-filter: blur(36px) saturate(180%); border: 1px solid rgba(255,255,255,.2); box-shadow: inset 0 1px 0 rgba(255,255,255,.18), 0 -8px 40px rgba(0,0,0,.28); color: #fff;
   transform: translateY(40px); opacity: 0; transition: transform .38s cubic-bezier(.2,.9,.3,1.08), opacity .25s ease; }
 .mmr-overlay.is-on .mmr-sheet { transform: none; opacity: 1; }
@@ -109,14 +109,14 @@ const STYLE = `
 .mmr-ib.on { background: #B9A2FF; color: #1a1033; }
 .mmr-ib:disabled { opacity: .3; cursor: default; }
 .mmr-cnt { flex: none; min-width: 34px; text-align: center; font-size: 12px; color: rgba(255,255,255,.5); }
-.mmr-dock { touch-action: none; position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; height: 60px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+.mmr-dock { touch-action: none; position: absolute; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 3; height: 60px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
   border-radius: 999px; background: rgba(28,32,40,.94); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 14px 34px rgba(0,0,0,.55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .mmr-ib.mmr-nav { width: 44px; height: 44px; font-size: 19px; }
 .mmr-ib.mmr-x { width: 40px; height: 40px; font-size: 16px; }
-.mmr-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.2; padding: 0 14px; }
+.mmr-mid { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.2; padding: 0 4px; }
 .mmr-dock .mmr-cnt { font-size: 14px; font-weight: 700; color: #fff; min-width: 0; white-space: nowrap; }
 .mmr-mid small { font-size: 11.5px; color: rgba(255,255,255,.45); white-space: nowrap; }
-.mmr-all { flex: none; height: 44px; margin-left: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+.mmr-all { flex: none; height: 46px; margin-left: 6px; padding: 0 22px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .mmr-all.on { background: #B9A2FF; color: #1a1033; }
 .mmr-scroll { touch-action: pan-y; flex: 1; overflow-y: auto; padding: 18px 24px 100px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .mmr-head { display: flex; gap: 14px; align-items: center; }
@@ -225,7 +225,31 @@ function buildReader(list, id, drag) {
     };
     draw();
     // свайп вбок по читалке (и по панели снизу) – соседний выпуск; текст едет за пальцем
-    const go = step => { const j = idx + step; if (view !== 'read' || j < 0 || j >= list.length) return false; haptic(); idx = j; draw(); return true; };
+    // переход как перелистывание страницы: текущая заворачивается вокруг края, новая раскрывается с другой стороны
+    let flipping = false;
+    const go = step => {
+        const j = idx + step;
+        if (view !== 'read' || j < 0 || j >= list.length || flipping) return false;
+        haptic(); flipping = true;
+        const out = step < 0 ? 'left' : 'right';           // вперёд (свайп влево) – уходит влево
+        scroll.style.transformOrigin = out === 'left' ? '0% 50%' : '100% 50%';
+        scroll.style.transition = 'transform .24s cubic-bezier(.5,0,.75,0), opacity .24s';
+        scroll.style.transform = `perspective(1400px) rotateY(${out === 'left' ? 75 : -75}deg)`;
+        scroll.style.opacity = '0';
+        setTimeout(() => {
+            idx = j; draw();
+            scroll.style.transition = 'none';
+            scroll.style.transformOrigin = out === 'left' ? '100% 50%' : '0% 50%';
+            scroll.style.transform = `perspective(1400px) rotateY(${out === 'left' ? -75 : 75}deg)`;
+            scroll.style.opacity = '0';
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                scroll.style.transition = 'transform .32s cubic-bezier(.2,.8,.25,1), opacity .32s';
+                scroll.style.transform = ''; scroll.style.opacity = '';
+                setTimeout(() => { flipping = false; scroll.style.transformOrigin = ''; }, 340);
+            }));
+        }, 240);
+        return true;
+    };
     let sw = null;
     sheetEl.addEventListener('touchstart', e => { if (e.touches.length !== 1) { sw = null; return; } const t = e.touches[0]; sw = { x: t.clientX, y: t.clientY, on: false, dx: 0 }; }, { passive: true });
     sheetEl.addEventListener('touchmove', e => {
@@ -245,16 +269,16 @@ function buildReader(list, id, drag) {
     const swEnd = () => {
         if (!sw) return;
         const { on, dx } = sw; sw = null;
+        if (on && Math.abs(dx) > 60 && go(dx < 0 ? -1 : 1)) return;
         scroll.style.transition = 'transform .22s ease, opacity .22s ease';
         scroll.style.transform = ''; scroll.style.opacity = '';
-        if (on && Math.abs(dx) > 60) go(dx < 0 ? -1 : 1);
     };
     sheetEl.addEventListener('touchend', swEnd); sheetEl.addEventListener('touchcancel', swEnd);
     overlay.addEventListener('click', async e => {
         const t = e.target.closest('[data-v]');
         if (t) { haptic(); view = view === 'all' ? 'read' : 'all'; draw(); return; }
         const g = e.target.closest('[data-go]');
-        if (g) { const j = idx + +g.dataset.go; if (j >= 0 && j < list.length) { haptic(); idx = j; view = 'read'; draw(); } return; }
+        if (g) { if (view !== 'read') { const j = idx + +g.dataset.go; if (j >= 0 && j < list.length) { haptic(); idx = j; view = 'read'; draw(); } } else go(+g.dataset.go); return; }
         const it = e.target.closest('[data-i]');
         if (it) { haptic(); idx = +it.dataset.i; view = 'read'; draw(); return; }
         if (e.target.closest('[data-card]')) {

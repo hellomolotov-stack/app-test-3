@@ -5388,7 +5388,8 @@ button.rt-row:active { background: rgba(255, 255, 255, .11); }
 .bottom-sheet-handle::before, .bottom-sheet-handle::after,
 .cs-grab::before, .cs-grab::after {
     content: ''; position: absolute; top: 50%; width: 22px; height: 5px; margin-top: -2.5px; border-radius: 3px;
-    background: rgba(255, 255, 255, calc(.3 + var(--pull, 0) * .4));
+    /* сплошной цвет, а не полупрозрачный: половинки ручки накладываются посередине, и прозрачность давала яркую точку */
+    background: color-mix(in srgb, #fff calc(30% + var(--pull, 0) * 40%), #1c2027);
     transition: transform .14s ease-out, background-color .14s ease-out;
 }
 .bottom-sheet-handle::before, .cs-grab::before {
