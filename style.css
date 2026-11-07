@@ -7628,6 +7628,7 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-in { position: absolute; z-index: 1; left: 14px; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 3px; }
 .cf-in small { font-size: 12px; color: rgba(255,255,255,.75); }
 .cf-in b { font-size: 20px; font-weight: 800; letter-spacing: -.02em; line-height: 1.08; }
+.cf-in .cf-title { letter-spacing: 0; line-height: 1.16; hyphens: auto; overflow-wrap: anywhere; }
 .cf-in em { font-style: normal; font-size: 12px; color: rgba(255,255,255,.65); margin-top: 2px; }
 .cf-dots { display: flex; justify-content: center; gap: 5px; margin-top: 4px; }
 .cf-dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.2); transition: width .2s, background .2s; }

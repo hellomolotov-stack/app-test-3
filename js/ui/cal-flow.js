@@ -44,7 +44,7 @@ function cardHtml(h, i) {
     const wi = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
     const booked = !past && !teaser && wi >= 0 && state.hikeBookingStatus?.[wi] === true;
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
-    const tag = past ? '<span class="cf-tag is-past">было ✓</span>'
+    const tag = past ? `<span class="cf-tag is-past">${isCity(h) ? 'Событие завершено' : 'Хайк завершён'}</span>`
         : teaser ? '<span class="cf-tag is-soon">готовим</span>'
         : booked ? '<span class="cf-tag is-booked">✓ ты записан</span>'
         : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">запись открыта</span>';
@@ -58,8 +58,11 @@ function cardHtml(h, i) {
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
     const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
+    const title = esc(h.title)
+        .replace(/(Массан)(дров)(ской)/gi, '$1&shy;$2&shy;$3')
+        .replace(/(Черно)(реченск)/gi, '$1&shy;$2');
     return `<button type="button" class="${cls}" data-i="${i}">${bg}
-        ${tag}<span class="cf-in"><small>${when}</small><b>${esc(h.title)}</b><span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
+        ${tag}<span class="cf-in"><small>${when}</small><b class="cf-title" lang="ru">${title}</b><span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
 }
 function wheelHtml(list) {
     const t = today();
