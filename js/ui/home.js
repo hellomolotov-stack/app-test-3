@@ -292,7 +292,7 @@ function mmCoverHtml() {
     const req = mmRequest(n.body);
     return `<div class="card-container mmc" data-mmc="${esc(n.id)}">
         <div class="mmc-top">
-            <div class="mmc-art"><img src="assets/plaud.webp" alt=""></div>
+            <div class="mmc-art"><img src="assets/plaud-v2.webp" alt=""></div>
             <div class="mmc-meta"><span class="mmc-k">мастермайнд · ${d.getDate()} ${months[d.getMonth()]}</span><b>${esc(n.title)}</b>${n.place ? `<span class="mmc-when">${esc(n.place)}</span>` : ''}</div>
         </div>
         ${req ? `<p class="mmc-q">${esc(req)}</p>` : ''}

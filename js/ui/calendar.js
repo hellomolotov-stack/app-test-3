@@ -3227,7 +3227,7 @@ function updateFloatingSheetButtons() {
             sumRow.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
             const sumNote = (state.mmNotes || []).find(n => n.date === hike.date);
             sumRow.innerHTML = `<button type="button" class="letter-plate summary-plate"${sumNote ? ` data-mm-note="${sumNote.id}"` : ''}>
-                <img class="summary-plate-img" src="assets/plaud.webp" alt="">
+                <img class="summary-plate-img" src="assets/plaud-v2.webp" alt="">
                 <span class="letter-plate-text"><b>саммари мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
                 <span class="letter-plate-go">${state.userCard.status === 'active' ? '›' : '🔒'}</span></button>`;
             sumRow.querySelector('.summary-plate').addEventListener('click', e => {

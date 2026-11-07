@@ -206,7 +206,7 @@ function buildReader(list, id, drag) {
         } else {
             const n = list[idx];
             log(`саммари: читает ${n.date} ${n.title}`, n.locked, state.user);
-            scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2><div class="mmr-sub">саммари мастермайнда</div></div></div>`
+            scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud-v2.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2><div class="mmr-sub">саммари мастермайнда</div></div></div>`
                 + render(n.body)
                 + (n.locked ? `<div class="mmr-lock"><p>целиком саммари мастермайндов читают владельцы карты интеллигента</p><button type="button" class="mmr-btn" data-card>открыть с картой</button></div>` : '');
         }
