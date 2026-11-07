@@ -22,12 +22,16 @@ const isTeaser = h => !(h.title && h.title.trim());
 const isCity = h => yes(h.city) || yes(h.book_club) || (isTeaser(h) && /🏄/.test(h.emoji || ''));
 const tick = () => { try { window.Telegram?.WebApp?.HapticFeedback?.selectionChanged(); } catch (e) {} };
 
+// все события: из приложения (с марта 2026) + хайки до приложения (assets/past-hikes.json – только даты и названия)
+let preApp = null;
 function events() {
-    const t = today(), from = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10);
-    return (state.hikesList || [])
+    const t = today();
+    const app = (state.hikesList || [])
         .filter(h => h && /^\d{4}-\d{2}-\d{2}$/.test(h.date) && !yes(h.cancelled))
-        .filter(h => (h.date < t ? h.date >= from && !isTeaser(h) : true))
-        .sort((a, b) => a.date.localeCompare(b.date));
+        .filter(h => (h.date < t ? !isTeaser(h) : true));
+    const have = new Set(app.map(h => h.date));
+    const old = (preApp || []).filter(h => !have.has(h.date)).map(h => ({ ...h, preApp: true }));
+    return [...old, ...app].sort((a, b) => a.date.localeCompare(b.date));
 }
 function photo(h) {
     const v = state.hikePhotos?.[h.date];
@@ -37,16 +41,22 @@ function photo(h) {
 }
 function cardHtml(h, i) {
     const t = today(), past = h.date < t, teaser = isTeaser(h), d = dt(h.date);
-    const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${h.time ? ` · ${esc(h.time)}` : ''}`;
+    const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
     const tag = past ? '<span class="cf-tag is-past">было ✓</span>'
         : teaser ? '<span class="cf-tag is-soon">готовим</span>'
         : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">хайк</span>';
-    const title = teaser ? (isCity(h) ? 'вечер в городе' : '') : h.title;
-    const sub = teaser ? (isWaitlisted(h.date) ? '✓ сообщим об открытии' : 'нажми – сообщим об открытии') : past ? 'смотреть отчёт' : 'подробнее и запись';
-    const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}`;
+    const on = teaser && isWaitlisted(h.date);
+    const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
     const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
-    return `<button type="button" class="${cls}" data-i="${i}">${bg}${teaser ? '<span class="cf-q">?</span>' : ''}
-        ${tag}<span class="cf-in"><small>${when}</small>${title ? `<b>${esc(title)}</b>` : ''}<span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
+    if (teaser) {
+        // будущий без маршрута: «?», колокольчик, строка с тумблером; подписан – карточка «загорается» лаймом
+        return `<button type="button" class="${cls}" data-i="${i}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
+            <span class="cf-in cf-in-t"><small>${when}</small></span>
+            <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
+    }
+    const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : 'подробнее и запись';
+    return `<button type="button" class="${cls}" data-i="${i}">${bg}
+        ${tag}<span class="cf-in"><small>${when}</small><b>${esc(h.title)}</b><span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
 }
 function wheelHtml(list) {
     const t = today();
@@ -56,6 +66,13 @@ function wheelHtml(list) {
 }
 
 export function renderCalFlow(container) {
+    if (preApp === null) {
+        preApp = [];
+        fetch('assets/past-hikes.json').then(r => (r.ok ? r.json() : [])).then(j => {
+            preApp = Array.isArray(j) ? j : [];
+            if (preApp.length && container.isConnected) renderCalFlow(container);
+        }).catch(() => {});
+    }
     const list = events();
     if (!list.length) { container.innerHTML = ''; return; }
     const t = today();
@@ -131,10 +148,14 @@ export function renderCalFlow(container) {
         haptic();
         log('календарь-витрина: карточка', state.userCard?.status !== 'active', state.user, { date: h.date });
         if (isTeaser(h)) {
+            const want = !c.classList.contains('is-on');
+            const paint = v => { c.classList.toggle('is-on', v); const l = c.querySelector('.cf-tlab'); if (l) l.textContent = v ? 'сообщим об открытии' : 'сообщить об открытии'; };
+            paint(want);
             const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
-            const em = c.querySelector('em'); if (em) em.textContent = on ? '✓ сообщим об открытии' : 'нажми – сообщим об открытии';
+            if (on !== want) paint(on);
             return;
         }
+        if (h.preApp) return;
         const idx = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
         if (idx >= 0) showBottomSheet(idx);
     }));
