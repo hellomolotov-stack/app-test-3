@@ -7,7 +7,8 @@ import { state } from './state.js';
 const RD_USER_IDS = new Set([]);
 // v2 – классический дизайн с правками (карта в углу, ближайший хайк, фото только в шапке, единые скругления)
 const V2_USER_IDS = new Set(['163665735', '7845375334']); // @maxmolotov, @hellointelligent (тест версии для гостей)
-export function isV2() { return V2_USER_IDS.has(currentUserId()); }
+// 07.11.2026: новая главная (v2) раскатана на всех пользователей; V2_USER_IDS оставлен для истории
+export function isV2() { return true; }
 
 function currentUserId() {
     return String(state.user?.id || window.Telegram?.WebApp?.initDataUnsafe?.user?.id || '');
