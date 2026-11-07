@@ -41,12 +41,12 @@ function cardHtml(h, i) {
     const tag = past ? '<span class="cf-tag is-past">было ✓</span>'
         : teaser ? '<span class="cf-tag is-soon">готовим</span>'
         : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">хайк</span>';
-    const title = teaser ? (isCity(h) ? 'вечер в городе' : 'маршрут – сюрприз') : h.title;
+    const title = teaser ? (isCity(h) ? 'вечер в городе' : '') : h.title;
     const sub = teaser ? (isWaitlisted(h.date) ? '✓ сообщим об открытии' : 'нажми – сообщим об открытии') : past ? 'смотреть отчёт' : 'подробнее и запись';
     const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}`;
     const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
     return `<button type="button" class="${cls}" data-i="${i}">${bg}${teaser ? '<span class="cf-q">?</span>' : ''}
-        ${tag}<span class="cf-in"><small>${when}</small><b>${esc(title)}</b><span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
+        ${tag}<span class="cf-in"><small>${when}</small>${title ? `<b>${esc(title)}</b>` : ''}<span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
 }
 function wheelHtml(list) {
     const t = today();
