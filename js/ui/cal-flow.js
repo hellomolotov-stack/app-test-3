@@ -110,7 +110,7 @@ export function renderCalFlow(container) {
     const posNow = () => (track.scrollLeft + track.clientWidth / 2 - (cards[0].offsetLeft + cards[0].offsetWidth / 2)) / step();
     let cur = -1;
     const update = () => {
-        const pos = Math.max(0, Math.min(list.length - 1, posNow()));
+        const raw = posNow(), pos = Number.isFinite(raw) ? Math.max(0, Math.min(list.length - 1, raw)) : Math.max(0, cur);
         cards.forEach((c, i) => {
             const k = Math.max(-1.6, Math.min(1.6, i - pos)), a = Math.min(1, Math.abs(k));
             c.style.transform = `perspective(900px) rotateY(${-k * 26}deg) scale(${1 - a * .14})`;
@@ -123,6 +123,7 @@ export function renderCalFlow(container) {
             if (cur !== -1) tick();
             cur = best;
             days.forEach((d, i) => d.classList.toggle('is-on', i === best));
+            if (!list[best]) return;
             const m = dt(list[best].date), mi = m.getMonth();
             mP.textContent = MON3[(mi + 11) % 12]; mC.textContent = MONN[mi]; mN.textContent = MON3[(mi + 1) % 12];
         }
