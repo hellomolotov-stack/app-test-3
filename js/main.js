@@ -26,6 +26,7 @@ import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js'
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/chat-entry.js';
 import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
+import { focusNextUnopenedHike } from './ui/next-hike-link.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -469,6 +470,14 @@ function handleDeepLink(startParam) {
         case 'calendar':
             scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;
+        case 'next_hike':
+            // Ссылка для поста: https://t.me/yaltahiking_bot?startapp=next_hike
+            window.scrollTo({ top: 0, behavior: 'instant' });
+            focusNextUnopenedHike({
+                gate: import('./ui/achievements-popup.js').then(m => m.afterNewAchievements()),
+                ready: loaderGone, topOffset: getCurrentTopOffset,
+            });
+            break;
         case 'hike_map':
         case 'routes':
             // блока «карта хайков» на главной больше нет – ведём к календарю с картой ближайшего хайка
@@ -673,13 +682,14 @@ async function loadAppData() {
         // и приглашение Firebase не нужен: хватает списка хайков с нашего сервера и статуса из /api/me –
         // их не ждём дольше 4 с. Остальным ссылкам (чат, карта маршрутов) нужна база – ждём Firebase SDK.
         // Раньше все ссылки ждали SDK с серверов Google: на плохой сети – до ~12 с.
-        const EARLY_LINK = /^(paid|giftpaid_|gift_|card_|pass_|inv_|buy_card$|card_offer$|nudge_|hike_(?!map))/;
+        // next_hike нужен только календарь: ни SDK, ни статус карты для прокрутки не требуются.
+        const EARLY_LINK = /^(paid|giftpaid_|gift_|card_|pass_|inv_|buy_card$|card_offer$|nudge_|next_hike$|hike_(?!map))/;
         let firebaseReady = false;
         let statusKnown = false;
         const linkStartedAt = Date.now();
         const ensureDeepLink = () => {
             if (deepLinkHandled || !startParam || !firstRenderDone) return;
-            const early = EARLY_LINK.test(startParam) && (statusKnown || Date.now() - linkStartedAt > 4000);
+            const early = startParam === 'next_hike' || (EARLY_LINK.test(startParam) && (statusKnown || Date.now() - linkStartedAt > 4000));
             if (!firebaseReady && !early) return;
             deepLinkHandled = true;
             handleDeepLink(startParam);

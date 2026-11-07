@@ -8,6 +8,7 @@ import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { showBottomSheet, isWaitlisted, toggleTeaserNotify, fetchGoingFromServer } from './calendar.js';
 import { heroPhotoFor } from './rd-home.js';
+import { nextHikeLinkActive, nextHikeLinkDate } from './next-hike-link.js';
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const MON3 = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -53,7 +54,7 @@ function cardHtml(h, i) {
     const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
     if (teaser) {
         // будущий без маршрута: «?», колокольчик, строка с тумблером; подписан – карточка «загорается» лаймом
-        return `<button type="button" class="${cls}" data-i="${i}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
+        return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
@@ -61,7 +62,7 @@ function cardHtml(h, i) {
     const title = esc(h.title)
         .replace(/(Массан)(дров)(ской)/gi, '$1&shy;$2&shy;$3')
         .replace(/(Черно)(реченск)/gi, '$1&shy;$2');
-    return `<button type="button" class="${cls}" data-i="${i}">${bg}
+    return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}">${bg}
         ${tag}<span class="cf-in"><small>${when}</small><b class="cf-title" lang="ru">${title}</b><span class="cf-going" data-going="${h.date}"></span><em>${sub}</em></span></button>`;
 }
 function wheelHtml(list) {
@@ -88,6 +89,9 @@ export function renderCalFlow(container) {
     let start = list.findIndex(h => (topDate ? h.date > topDate : h.date >= t));
     if (start < 0) start = list.findIndex(h => h.date >= t);
     if (start < 0) start = list.length - 1;
+    const linkedDate = nextHikeLinkDate();
+    const linked = list.findIndex(h => h.date === linkedDate);
+    if (linked >= 0) start = linked;
     container.className = 'card-container cf-wrap';
     container.innerHTML = `
         <div class="cf-head"><b>календарь</b><span>${list.filter(h => h.date >= t).length} впереди</span></div>
@@ -130,10 +134,10 @@ export function renderCalFlow(container) {
         center(start, false); update();
         let hinted = false; try { hinted = localStorage.getItem('cfHinted2') === '1'; } catch (e) {}
         if (!hinted) setTimeout(() => {
-            if (interacted || !container.isConnected) return;
+            if (interacted || !container.isConnected || nextHikeLinkActive()) return;
             try { localStorage.setItem('cfHinted2', '1'); } catch (e) {}
             track.scrollBy({ left: 80, behavior: 'smooth' });
-            setTimeout(() => { if (!interacted && container.isConnected) center(start, true); }, 520);
+            setTimeout(() => { if (!interacted && container.isConnected && !nextHikeLinkActive()) center(start, true); }, 520);
         }, 900);
     });
 

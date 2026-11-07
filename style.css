@@ -7712,6 +7712,15 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-sw { flex: none; position: relative; width: 40px; height: 24px; border-radius: 12px; background: rgba(255,255,255,.2); transition: background .2s; }
 .cf-sw::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 9px; background: #fff; transition: transform .2s, background .2s; }
 .cf-card.is-on::before { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: 22px; pointer-events: none; box-shadow: inset 0 0 0 2px var(--yellow), inset 0 0 36px rgba(217,253,25,.35); }
+.cf-card.calendar-link-flash::before { content: ''; position: absolute; inset: 0; z-index: 4; border-radius: inherit; pointer-events: none; animation: calendarLinkFlash 2.8s ease-in-out both; animation-delay: var(--calendar-link-delay, 0ms); }
+.cf-wrap.calendar-link-flash { animation: calendarLinkFlash 2.8s ease-in-out both; }
+@keyframes calendarLinkFlash {
+    0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0), inset 0 0 36px rgba(255,255,255,0); background: rgba(255,255,255,0); }
+    30%, 55% { box-shadow: inset 0 0 0 2px rgba(255,255,255,.85), inset 0 0 36px rgba(255,255,255,.16); background: rgba(255,255,255,.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .calendar-link-flash, .cf-card.calendar-link-flash::before { animation: none; box-shadow: inset 0 0 0 2px rgba(255,255,255,.65); }
+}
 .cf-card.is-on .cf-q { color: var(--yellow); }
 .cf-card.is-on .cf-bell { background: var(--yellow); filter: none; box-shadow: none; }
 .cf-card.is-on .cf-sw { background: var(--yellow); }
