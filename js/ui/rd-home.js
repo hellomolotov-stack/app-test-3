@@ -141,7 +141,7 @@ function heroHtml(ev) {
                 <span class="rd-hero-title">${esc(h.title)}</span>
                 ${tags.length ? `<div class="rd-tags">${tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
                 <div class="rd-going" id="rdGoing"><span class="rd-going-wait">смотрю, кто идёт…</span></div>
-                ${booked && isV2() ? ticketHtml(ev) : `<button type="button" class="rd-cta" id="rdHeroCta">${booked ? 'ты идёшь · детали' : 'подробнее и запись'}</button>`}
+                ${booked && isV2() ? ticketHtml(ev) : `<button type="button" class="rd-cta" id="rdHeroCta">${booked ? 'ты идёшь · детали' : 'детали и запись'}</button>`}
             </div>
         </div>`;
 }

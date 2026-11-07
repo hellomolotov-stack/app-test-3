@@ -7762,21 +7762,21 @@ html.v2 .rd-hero:has(.rd-ok) { cursor: pointer; }
 .cf-card { transition: none !important; will-change: transform; backface-visibility: hidden; }
 
 /* ==================== гость в v2: мини-карта с глитчем, карта-стирашка в слайдере ==================== */
-/* карта в углу закрыта серым покрытием; каждые 2 с вспышка: проступает голубая карта и её «рвёт».
-   Вспышки трёх видов, цикл 6 с (A: горизонтальные полосы, B: вертикальные сдвиги и блоки, C: пульс с инверсией) */
-.rd-mini-card.is-guest .rd-mc { position: absolute; right: 4px; top: 6px; bottom: auto; display: block; min-width: 0; height: auto; padding: 0; border: 0; background: none; width: 66px; aspect-ratio: 1000 / 604; transform: rotate(-8deg); border-radius: 6px; box-shadow: 0 6px 22px rgba(90,180,255,.28), 0 0 0 1px rgba(255,255,255,.16); animation: mc-jit 6s steps(1, end) infinite; }
+/* карта в углу закрыта серым покрытием; каждые 3 с вспышка: проступает голубая карта и её «рвёт».
+   Вспышки трёх видов, цикл 9 с, вспышка каждые 3 с (A: горизонтальные полосы, B: вертикальные сдвиги и блоки, C: пульс с инверсией) */
+.rd-mini-card.is-guest .rd-mc { position: absolute; right: 4px; top: 6px; bottom: auto; display: block; min-width: 0; height: auto; padding: 0; border: 0; background: none; width: 66px; aspect-ratio: 1000 / 604; transform: rotate(-8deg); border-radius: 6px; box-shadow: 0 6px 22px rgba(90,180,255,.28), 0 0 0 1px rgba(255,255,255,.16); animation: mc-jit 9s steps(1, end) infinite; }
 .rd-mini-card.is-guest .rd-mc img { position: static; display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 6px; transform: none; box-shadow: none; }
 .rd-mc i { position: absolute; inset: 0; border-radius: 6px; background: center/cover no-repeat; opacity: 0; pointer-events: none; }
-.rd-mc .mb { animation: mc-b 6s steps(1, end) infinite; }
-.rd-mc .g1 { filter: hue-rotate(150deg) saturate(3) contrast(1.2); mix-blend-mode: screen; animation: mc-g1 6s steps(1, end) infinite; }
-.rd-mc .g2 { filter: hue-rotate(-70deg) saturate(3) contrast(1.2); mix-blend-mode: screen; animation: mc-g2 6s steps(1, end) infinite; }
+.rd-mc .mb { animation: mc-b 9s steps(1, end) infinite; }
+.rd-mc .g1 { filter: hue-rotate(150deg) saturate(3) contrast(1.2); mix-blend-mode: screen; animation: mc-g1 9s steps(1, end) infinite; }
+.rd-mc .g2 { filter: hue-rotate(-70deg) saturate(3) contrast(1.2); mix-blend-mode: screen; animation: mc-g2 9s steps(1, end) infinite; }
 .rd-mc .g3 { background:
     linear-gradient(90deg, #fff 0 22%, transparent 22%) 0 18% / 100% 9% no-repeat,
     linear-gradient(90deg, transparent 55%, #D9FD19 55% 82%, transparent 82%) 0 52% / 100% 8% no-repeat,
     linear-gradient(90deg, transparent 30%, #5BB4E5 30% 46%, transparent 46%) 0 78% / 100% 10% no-repeat;
-    mix-blend-mode: overlay; animation: mc-g3 6s steps(1, end) infinite; }
+    mix-blend-mode: overlay; animation: mc-g3 9s steps(1, end) infinite; }
 .rd-mini-card .rd-q { font-weight: 900; font-size: 13px; }
-/* голубая карта: мигает в начале каждой вспышки (1,6 / 3,6 / 5,6 с) */
+/* голубая карта: мигает в начале каждой вспышки (2,4 / 5,4 / 8,4 с) */
 @keyframes mc-b { 0%, 26.5% { opacity: 0; } 26.7% { opacity: 1; } 29% { opacity: 0; } 29.8% { opacity: 1; } 33.3% { opacity: 0; }
     60% { opacity: 1; } 61.5% { opacity: 0; } 62.2% { opacity: 1; } 64.5% { opacity: 0; } 65% { opacity: 1; } 66.8%, 93% { opacity: 0; }
     93.3% { opacity: 1; } 94.5% { opacity: 0; } 95% { opacity: 1; } 96.5% { opacity: 0; } 97% { opacity: 1; } 99.5%, 100% { opacity: 0; } }
@@ -7819,3 +7819,5 @@ html.v2 .wt2 { padding: 16px; box-shadow: 0 12px 70px -16px rgba(127,196,240,.26
 .wt2-t.is-hk { background: rgba(217,253,25,.1); box-shadow: inset 0 0 0 1px rgba(217,253,25,.3); }
 .wt2-note { margin-top: 12px; font-size: 12px; color: rgba(255,255,255,.45); }
 .wt2-skel { padding: 18px 0; text-align: center; font-size: 13px; color: rgba(255,255,255,.45); }
+/* «твои связи» в классике v2: одна серая подложка под сетью и плашкой «обрети больше связей» – без видимой границы фейда */
+html.v2 #circleContainer.lv-card { background: #14171C !important; }
