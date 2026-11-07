@@ -7951,8 +7951,6 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 .sheet-a .bottom-sheet-header-block { margin-top: 6px; }
 .sheet-a .bottom-sheet-header { min-height: 0; }
 /* лаймовый слайдер записи */
-body:has(.bottom-sheet.sheet-a) .floating-sheet-buttons .swipe-track { background: rgba(217,253,25,.13) !important; border: 1px solid rgba(217,253,25,.4) !important; border-radius: 999px !important; }
-body:has(.bottom-sheet.sheet-a) .floating-sheet-buttons .swipe-thumb { background: var(--yellow) !important; color: #141800 !important; box-shadow: 0 6px 18px rgba(217,253,25,.35) !important; }
 /* рассылка «от себя» */
 .adm-self-list{display:flex;flex-direction:column;gap:10px;margin:8px 0 12px}
 .adm-self-sum{font-size:13px;color:var(--text-secondary,rgba(255,255,255,.6))}
@@ -7961,3 +7959,8 @@ body:has(.bottom-sheet.sheet-a) .floating-sheet-buttons .swipe-thumb { backgroun
 .adm-self-head{display:flex;flex-direction:column;gap:2px;margin-bottom:8px}
 .adm-self-head small{font-size:12px;color:rgba(255,255,255,.5)}
 .adm-self-text{font-size:13px;line-height:1.45;color:rgba(255,255,255,.82);max-height:96px;overflow:hidden;-webkit-mask:linear-gradient(#000 70%,transparent);mask:linear-gradient(#000 70%,transparent);margin-bottom:8px}
+/* слайдер записи на хайк – жёлтая заливка (07.11, для всех) */
+.floating-sheet-buttons .swipe-track.is-lime {
+    background: linear-gradient(rgba(217, 253, 25, .15), rgba(217, 253, 25, .15)), rgba(18, 22, 12, .88) !important;
+    border: 1px solid rgba(217, 253, 25, .45) !important;
+}

@@ -2259,7 +2259,7 @@ export function showBottomSheet(index) {
         let inviteButtonHtml = `<div class="plus1-slot" id="plus1Slot"></div>`;
 
         // шторка «вариант А» (07.11, пока только @maxmolotov): фото-обложка с датой и названием, факты плитками, кто идёт
-        const sheetA = String(state.user?.id || '') === '163665735' && !isPlaceholder;
+        const sheetA = false; // вариант А выключен 07.11 – у всех прежняя шторка, лаймовый слайдер записи – для всех хайков (style.css)
         document.getElementById('hikeBottomSheet')?.classList.toggle('sheet-a', sheetA);
         const trackKm = (() => {
             const c = hikeTrack?.coords; if (!Array.isArray(c) || c.length < 2) return 0;
@@ -2622,8 +2622,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     const trackWidth = Math.min(400, Math.max(280, 
         (isBooked ? ctx.measureText(hintTextBooked).width : ctx.measureText(hintTextUnbooked).width) + currentThumbWidth + 64));
 
+    // хайк (лаймовый акцент) – жёлтая заливка дорожки слайдера
+    const lime = accentColor === 'var(--yellow)';
     const track = document.createElement('div');
-    track.className = 'swipe-track';
+    track.className = 'swipe-track' + (lime ? ' is-lime' : '');
     track.style.cssText = `
         width: ${trackWidth}px;
         margin: 0 auto;
@@ -2631,10 +2633,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         box-sizing: border-box;
         height: 56px;
         border-radius: 40px;
-        background: rgba(73, 138, 176, 0.15);
+        background: ${lime ? 'rgba(217,253,25,0.13)' : 'rgba(73, 138, 176, 0.15)'};
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255,255,255,0.2);
+        border: 1px solid ${lime ? 'rgba(217,253,25,0.4)' : 'rgba(255,255,255,0.2)'};
         position: relative;
         overflow: hidden;
         user-select: none;
