@@ -369,7 +369,7 @@ function renderMastermindSummaries() {
             innerHtml += `
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
                     <div style="flex: 1; margin-right: 16px;">
-                        <span style="color: var(--yellow); font-weight: 900; font-style: italic;">${formattedDate}</span>
+                        <span style="color: #B9A2FF; font-weight: 900; font-style: italic; white-space: nowrap;">${formattedDate}</span>
                         <span style="color: #ffffff; margin-left: 8px;">${item.title || 'Без названия'}</span>
                     </div>
                     ${readBtn}

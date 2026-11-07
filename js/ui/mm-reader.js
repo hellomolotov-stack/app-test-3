@@ -103,10 +103,10 @@ const STYLE = `
 .mmr-overlay.is-on .mmr-sheet { transform: none; opacity: 1; }
 .mmr-grab { margin-bottom: -6px; }
 .mmr-top { flex: none; display: flex; align-items: center; gap: 6px; padding: 4px 14px 10px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
-.mmr-top .k { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; font-style: italic; color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mmr-top .k { flex: 1; min-width: 0; font-size: 13px; font-weight: 800; font-style: italic; color: #B9A2FF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mmr-top .k span { font-style: normal; font-weight: 600; color: rgba(255,255,255,.55); }
 .mmr-ib { flex: none; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; background: rgba(255,255,255,.09); color: #fff; font: inherit; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-.mmr-ib.on { background: var(--yellow); color: #1d2200; }
+.mmr-ib.on { background: #B9A2FF; color: #1a1033; }
 .mmr-ib:disabled { opacity: .3; cursor: default; }
 .mmr-cnt { flex: none; min-width: 34px; text-align: center; font-size: 12px; color: rgba(255,255,255,.5); }
 .mmr-dock { position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 3; height: 60px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
@@ -117,7 +117,7 @@ const STYLE = `
 .mmr-dock .mmr-cnt { font-size: 14px; font-weight: 700; color: #fff; min-width: 0; white-space: nowrap; }
 .mmr-mid small { font-size: 11.5px; color: rgba(255,255,255,.45); white-space: nowrap; }
 .mmr-all { flex: none; height: 44px; margin-left: 8px; padding: 0 16px; border: 0; border-radius: 999px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 14px; font-weight: 800; cursor: pointer; white-space: nowrap; }
-.mmr-all.on { background: var(--yellow); color: #1d2200; }
+.mmr-all.on { background: #B9A2FF; color: #1a1033; }
 .mmr-scroll { flex: 1; overflow-y: auto; padding: 18px 24px 100px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
 .mmr-head { display: flex; gap: 14px; align-items: center; }
 .mmr-head img { flex: none; width: 52px; height: 52px; object-fit: contain; transform: rotate(-8deg); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
@@ -125,37 +125,38 @@ const STYLE = `
 .mmr-sub { margin-bottom: 4px; font-size: 13px; color: rgba(255,255,255,.55); }
 .mmr-sec { margin: 26px 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; color: rgba(255,255,255,.5); }
 .mmr-h3 { margin: 24px 0 4px; font-size: 18px; line-height: 1.3; font-weight: 800; color: #fff; }
-.mmr-who { display: inline-block; margin: 4px 0 6px; padding: 3px 10px; border-radius: 10px; background: rgba(217,253,25,.13); color: var(--yellow); font-size: 12.5px; font-weight: 800; }
-.mmr-take { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.06); border-left: 3px solid var(--yellow); font-size: 15.5px; line-height: 1.5; font-weight: 700; color: #fff; }
+.mmr-who { display: inline-block; margin: 4px 0 6px; padding: 3px 10px; border-radius: 10px; background: rgba(185,162,255,.13); color: #B9A2FF; font-size: 12.5px; font-weight: 800; }
+.mmr-take { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.06); border-left: 3px solid #B9A2FF; font-size: 15.5px; line-height: 1.5; font-weight: 700; color: #fff; }
 .mmr-card { margin: 0 0 14px; padding: 16px 16px 4px; border-radius: 20px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.07); }
 .mmr-pn { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .mmr-av { flex: none; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; color: #fff; }
 .mmr-pn b { display: block; font-size: 15px; }
 .mmr-pn i { display: block; margin-top: 1px; font-style: normal; font-size: 12px; color: rgba(255,255,255,.5); }
-.mmr-cq { margin: 4px 0 12px; padding-left: 12px; border-left: 2px solid var(--yellow); font-size: 16px; line-height: 1.5; font-weight: 600; color: #fff; }
+.mmr-cq { margin: 4px 0 12px; padding-left: 12px; border-left: 2px solid #B9A2FF; font-size: 16px; line-height: 1.5; font-weight: 600; color: #fff; }
 .mmr-view { margin: 2px 0 12px; font-size: 15.5px; line-height: 1.55; color: rgba(255,255,255,.9); }
-.mmr-view em { font-style: normal; font-weight: 800; color: var(--yellow); }
+.mmr-view em { font-style: normal; font-weight: 800; color: #B9A2FF; }
 .mmr-voice { margin: 6px 0 14px; padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.05); font-size: 17px; line-height: 1.5; font-style: italic; color: #fff; }
-.mmr-th { margin: 0 0 10px; padding: 13px 15px; border-radius: 16px; background: rgba(217,253,25,.07); font-size: 15.5px; line-height: 1.5; color: rgba(255,255,255,.9); }
-.mmr-th b { display: block; margin-bottom: 3px; font-size: 13px; color: var(--yellow); }
-.mmr-ask { margin: 4px 0 12px; padding: 18px; border-radius: 20px; background: linear-gradient(135deg, rgba(217,253,25,.16), rgba(217,253,25,.04)); font-size: 18px; line-height: 1.45; font-weight: 700; color: #fff; }
+.mmr-th { margin: 0 0 10px; padding: 13px 15px; border-radius: 16px; background: rgba(185,162,255,.07); font-size: 15.5px; line-height: 1.5; color: rgba(255,255,255,.9); }
+.mmr-th b { display: block; margin-bottom: 3px; font-size: 13px; color: #B9A2FF; }
+.mmr-ask { margin: 4px 0 12px; padding: 18px; border-radius: 20px; background: linear-gradient(135deg, rgba(185,162,255,.16), rgba(185,162,255,.04)); font-size: 18px; line-height: 1.45; font-weight: 700; color: #fff; }
 .mmr-q { margin: 0 0 12px; padding-left: 14px; border-left: 2px solid rgba(255,255,255,.25); font-size: 17px; line-height: 1.55; font-style: italic; color: #fff; }
 .mmr-info { margin: 0 0 16px; padding: 12px 14px; border-radius: 16px; background: rgba(255,255,255,.06); font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.75); }
 .mmr-info b { color: #fff; font-weight: 700; }
 .mmr-p { margin: 0 0 12px; font-size: 16px; line-height: 1.65; color: rgba(255,255,255,.88); }
 .mmr-ul { margin: 4px 0 8px; padding-left: 18px; }
 .mmr-ul li { margin: 6px 0; font-size: 16px; line-height: 1.6; color: rgba(255,255,255,.86); }
-.mmr-ul li::marker { color: rgba(217,253,25,.7); }
+.mmr-ul li::marker { color: rgba(185,162,255,.7); }
 .mmr-ul .mmr-ul li { font-size: 14px; color: rgba(255,255,255,.75); }
 .mmr-todo { list-style: none; position: relative; margin-left: -18px !important; padding-left: 28px; }
-.mmr-todo::before { content: ''; position: absolute; left: 2px; top: 4px; width: 15px; height: 15px; border-radius: 5px; border: 1.6px solid rgba(217,253,25,.7); }
+.mmr-todo::before { content: ''; position: absolute; left: 2px; top: 4px; width: 15px; height: 15px; border-radius: 5px; border: 1.6px solid rgba(185,162,255,.7); }
 .mmr-nm { font-weight: 700; color: #fff; }
 .mmr-lock { position: relative; margin-top: -90px; padding-top: 90px; background: linear-gradient(180deg, rgba(18,26,36,0), rgba(18,26,36,.98) 85px); text-align: center; }
 .mmr-lock p { margin: 0 0 12px; font-size: 14px; line-height: 1.45; color: rgba(255,255,255,.8); }
-.mmr-btn { display: block; width: 100%; height: 50px; border: 0; border-radius: 16px; background: var(--yellow); color: #1d2200; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
-.mmr-item { display: flex; gap: 12px; align-items: center; width: 100%; margin: 0 0 8px; padding: 12px 14px; border: 0; border-radius: 16px; background: rgba(255,255,255,.06); color: #fff; font: inherit; text-align: left; cursor: pointer; }
-.mmr-item.on { background: rgba(217,253,25,.12); box-shadow: inset 0 0 0 1.5px rgba(217,253,25,.45); }
-.mmr-item .d { flex: none; width: 62px; font-size: 13px; font-weight: 900; font-style: italic; color: var(--yellow); }
+.mmr-btn { display: block; width: 100%; height: 50px; border: 0; border-radius: 16px; background: #B9A2FF; color: #1a1033; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.mmr-item { display: flex; gap: 14px; align-items: center; width: 100%; margin: 0 0 10px; padding: 12px 14px; border: 0; border-radius: 16px; background: rgba(255,255,255,.06); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.mmr-item.on { background: rgba(185,162,255,.12); box-shadow: inset 0 0 0 1.5px rgba(185,162,255,.45); }
+.mmr-item .d { flex: none; width: 56px; padding: 6px 8px; border-radius: 12px; background: rgba(185,162,255,.12); text-align: center; line-height: 1.1; font-size: 12px; font-weight: 800; color: #B9A2FF; white-space: nowrap; }
+.mmr-item .d b { display: block; font-size: 18px; font-weight: 800; }
 .mmr-item .t { flex: 1; font-size: 14.5px; line-height: 1.35; }
 .mmr-item .t small { display: block; font-size: 12px; color: rgba(255,255,255,.5); margin-top: 2px; }
 `;
@@ -212,7 +213,7 @@ function buildReader(list, id, drag) {
         overlay.querySelector('[data-go="1"]').disabled = idx >= list.length - 1;
         overlay.querySelector('[data-go="-1"]').disabled = idx <= 0;
         if (view === 'all') {
-            scroll.innerHTML = '<h2 class="mmr-title" style="margin-bottom:14px">все саммари</h2>' + list.map((n, i) => `<button type="button" class="mmr-item${i === idx ? ' on' : ''}" data-i="${i}"><span class="d">${esc(dayLabel(n.date))}</span><span class="t">${esc(n.title)}${n.place ? `<small>${esc(n.place)}</small>` : ''}</span></button>`).join('');
+            scroll.innerHTML = '<h2 class="mmr-title" style="margin-bottom:14px">все саммари</h2>' + list.map((n, i) => `<button type="button" class="mmr-item${i === idx ? ' on' : ''}" data-i="${i}"><span class="d">${(() => { const [, m, dd] = String(n.date).split('-').map(Number); return `<b>${dd}</b>${['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][m - 1]}`; })()}</span><span class="t">${esc(n.title)}${n.place ? `<small>${esc(n.place)}</small>` : ''}</span></button>`).join('');
         } else {
             const n = list[idx];
             log(`саммари: читает ${n.date} ${n.title}`, n.locked, state.user);
