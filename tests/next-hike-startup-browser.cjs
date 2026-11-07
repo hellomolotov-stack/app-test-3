@@ -18,6 +18,9 @@ const hikes = {
             const errors = [], writes = [];
             page.on('pageerror', e => errors.push(e.message));
             await page.addInitScript(({ hikes }) => {
+                window.scrollFrames = [];
+                const sample = () => { window.scrollFrames.push(scrollY); requestAnimationFrame(sample); };
+                requestAnimationFrame(sample);
                 const user = { id: 123, first_name: 'Аня', allows_write_to_pm: true };
                 window.Telegram = { WebApp: { initData: 'test-only', initDataUnsafe: { user, start_param: 'next_hike' }, platform: 'tdesktop',
                     expand() {}, onEvent() {}, offEvent() {}, disableVerticalSwipes() {},
@@ -48,6 +51,10 @@ const hikes = {
             const position = await card.evaluate(el => ({ top: document.getElementById('calendarContainer').getBoundingClientRect().top, bottom: el.getBoundingClientRect().bottom }));
             assert.ok(Math.abs(position.top - 60) < 2, `Actual startup scroll top: ${position.top}`);
             assert.ok(position.bottom < 800);
+            const frames = await page.evaluate(() => window.scrollFrames);
+            const end = frames[frames.length - 1];
+            assert.ok(frames.filter(y => y > 30 && y < end - 30).length >= 12, 'Startup shows intermediate animation frames');
+            assert.ok(Math.max(...frames.slice(1).map((y, i) => Math.abs(y - frames[i]))) < 100, 'No one-frame jump during startup');
             assert.match(await card.textContent(), /сообщить\s+об\s+открытии/);
             assert.deepEqual(writes, [], 'Opening actual app must not set the bell automatically');
             assert.deepEqual(errors, [], 'Actual startup has no uncaught errors');

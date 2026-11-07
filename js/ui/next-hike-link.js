@@ -21,6 +21,11 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const inputEvents = ['pointerdown', 'touchstart', 'wheel', 'keydown'];
     const session = { stop };
+    const root = document.documentElement;
+    const previousAnchor = root.style.overflowAnchor, previousBehavior = root.style.scrollBehavior;
+    const previousRestoration = history.scrollRestoration;
+    root.style.overflowAnchor = 'none'; root.style.scrollBehavior = 'auto';
+    history.scrollRestoration = 'manual';
     active = session;
     const interval = setInterval(tick, 80);
     Promise.resolve(gate).catch(() => null).then(result => {
@@ -34,6 +39,8 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
         inputEvents.forEach(type => window.removeEventListener(type, stop, true));
         document.querySelectorAll('.calendar-link-flash').forEach(el => el.classList.remove('calendar-link-flash'));
         if (active === session) active = null;
+        root.style.overflowAnchor = previousAnchor; root.style.scrollBehavior = previousBehavior;
+        history.scrollRestoration = previousRestoration;
     }
     function destination() {
         const cal = document.getElementById('calendarContainer');
@@ -60,12 +67,17 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
         }
     }
     function glide() {
-        const from = scrollY, began = performance.now();
+        const from = scrollY;
+        let elapsed = 0, previousFrame = null;
         const step = now => {
             if (active !== session) return;
             const y = destination();
             if (y === null) { frame = requestAnimationFrame(step); return; }
-            const progress = reduced ? 1 : Math.min(1, (now - began) / 1050);
+            // WebView может приостановить кадры при открытии из Telegram. Не перескакиваем
+            // к концу анимации из-за времени, проведённого за заставкой или вне экрана.
+            if (previousFrame !== null) elapsed += Math.min(40, now - previousFrame);
+            previousFrame = now;
+            const progress = reduced ? 1 : Math.min(1, elapsed / 1200);
             const ease = progress < .5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
             window.scrollTo({ top: from + (y - from) * ease, behavior: 'instant' });
             if (progress < 1) frame = requestAnimationFrame(step);
@@ -74,11 +86,13 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
         frame = requestAnimationFrame(step);
     }
     function tick() {
-        if (active !== session || !allowed || !ready()) return;
+        if (active !== session || !allowed) return;
         if (!listening) {
             listening = true;
             inputEvents.forEach(type => window.addEventListener(type, stop, { capture: true, passive: true }));
         }
+        if (!started) window.scrollTo({ top: 0, behavior: 'instant' });
+        if (!ready() || document.visibilityState === 'hidden') return;
         const date = nextHikeLinkDate(), el = target(date);
         if (!el) return;
         if (date !== lastDate) {
@@ -94,7 +108,7 @@ export function focusNextUnopenedHike({ gate = Promise.resolve(), ready = () => 
         if (el.matches('.cf-card')) horizontalReady = Math.abs(el.parentElement.scrollLeft - el.offsetLeft + (el.parentElement.clientWidth - el.offsetWidth) / 2) < 1;
         const y = destination();
         if (lastY === null || Math.abs(y - lastY) > 1) { lastY = y; stableAt = performance.now(); }
-        if ((!started || finished && Math.abs(scrollY - y) > 2) && horizontalReady && performance.now() - stableAt >= 240) {
+        if ((!started || finished && Math.abs(scrollY - y) > 2) && horizontalReady && performance.now() - stableAt >= 600) {
             finished = false; started = performance.now(); glide();
         }
         if (horizontalReady) flash();

@@ -475,7 +475,10 @@ function handleDeepLink(startParam) {
             window.scrollTo({ top: 0, behavior: 'instant' });
             focusNextUnopenedHike({
                 gate: import('./ui/achievements-popup.js').then(m => m.afterNewAchievements()),
-                ready: loaderGone, topOffset: getCurrentTopOffset,
+                ready: () => {
+                    const loader = document.getElementById('initial-loader');
+                    return loaderGone() && (!loader || getComputedStyle(loader).display === 'none' || Number(getComputedStyle(loader).opacity) < .05);
+                }, topOffset: getCurrentTopOffset,
             });
             break;
         case 'hike_map':
