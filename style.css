@@ -7661,3 +7661,34 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .rd-box .hb-row { margin: 0; }
 .rd-more { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 0 0; border: 0; border-top: 1px solid rgba(255,255,255,.07); background: none; color: rgba(255,255,255,.6); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
 .rd-more b { color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* витрина v2 (07.11): фото – отдельным слоем (ч/б для прошедших, размытие для «готовим»), колёсико дат */
+.cf-wrap { padding: 16px 0 12px !important; }
+.cf-head { margin: 0 16px 4px; }
+.cf-head span { font-size: 13px; color: rgba(255,255,255,.45); }
+.cf-track { padding: 8px 0 12px; }
+.cf-track::before, .cf-track::after { width: calc(50% - 100px); }
+.cf-card { width: 200px; height: 276px; margin: 0 -13px; background: #141a20; isolation: isolate; }
+.cf-bg { position: absolute; inset: 0; z-index: -1; background: center/cover no-repeat; transition: filter .3s; }
+.cf-card.is-past .cf-bg { filter: grayscale(1) contrast(1.06) brightness(.92); }
+.cf-card.is-teaser .cf-bg { inset: -24px; filter: blur(16px) brightness(.5) saturate(.55); }
+.cf-card.is-past .cf-in em { color: rgba(255,255,255,.5); }
+.cf-q { position: absolute; z-index: 1; left: 0; right: 0; top: 30%; text-align: center; font-size: 76px; font-weight: 800; line-height: 1; color: rgba(255,255,255,.92); text-shadow: 0 8px 28px rgba(0,0,0,.55); }
+.cf-card::after { z-index: 0; }
+.cf-tag, .cf-in, .cf-q { z-index: 2; }
+.cf-wheel { position: relative; height: 50px; margin: 2px 0 0; overflow: hidden; touch-action: none; cursor: grab;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent); mask-image: linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent); }
+.cf-wheel::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 6px; pointer-events: none;
+  background: repeating-linear-gradient(90deg, rgba(255,255,255,.16) 0 1px, transparent 1px 11.5px); }
+.cf-lens { position: absolute; left: 50%; top: 3px; width: 44px; height: 40px; margin-left: -22px; border-radius: 13px; background: var(--yellow); box-shadow: 0 6px 18px rgba(217,253,25,.25); }
+.cf-wl { position: absolute; left: 50%; top: 0; display: flex; will-change: transform; }
+.cf-d { position: relative; flex: none; width: 46px; height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; transition: color .15s; }
+.cf-d small { font-size: 10px; color: rgba(255,255,255,.45); margin-bottom: 3px; }
+.cf-d b { font-size: 16px; font-weight: 700; color: rgba(255,255,255,.8); font-variant-numeric: tabular-nums; }
+.cf-d.is-past b { color: rgba(255,255,255,.35); }
+.cf-d.is-past small { color: rgba(255,255,255,.28); }
+.cf-d.is-city::after { content: ''; position: absolute; bottom: 4px; width: 4px; height: 4px; border-radius: 2px; background: #4FB0F0; }
+.cf-d.is-on b, .cf-d.is-on small { color: #141800; }
+.cf-d.is-on::after { background: #141800; }
+.cf-mon { display: flex; justify-content: center; align-items: baseline; gap: 10px; margin-top: 6px; font-size: 12px; color: rgba(255,255,255,.35); }
+.cf-mon b { font-size: 13px; color: #fff; font-weight: 700; }
