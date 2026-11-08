@@ -30,6 +30,11 @@ const people = [
         state.hikesList=[];state.hikesWithTitle=[];state.hikesData={};
         state.mmNotes=[{id:'note',date:'2026-10-25',place:'Ат-Баш',title:'Как вернуть интерес к жизни',body:'## Запрос\\nХочу найти время для важного\\n\\n## Что прозвучало\\nНачать с малого',locked:true}];
         window.v2Test={
+            bookedHome(member){
+                state.hikesList=[{date:'2026-11-08',title:'хайк на Аю-Даг',start_time:'11:00'},{date:'2026-11-15',title:'хайк на Кант',start_time:'11:00'}];
+                state.hikesWithTitle=state.hikesList;state.hikesData=Object.fromEntries(state.hikesList.map(h=>[h.date,h]));state.hikeBookingStatus={0:true,1:true};
+                state.userCard={status:member?'active':'inactive',cardUrl:'assets/card-front.jpg',hikes:7};renderHome();
+            },
             visualStory(type){
                 const image=type==='member'?'assets/card-front.jpg':type==='badges'?'assets/achievements/badges/route-at-bash-v2.png':type==='app'?'assets/stories/launch-fan.webp':'';
                 openStories([{id:'visual-'+type,type,title:'новое в клубе',text:'встречаемся, знакомимся и идём дальше вместе',image,visual:type==='app'?'plain':'',date:Date.now()}],0,null,{preview:true});
@@ -108,6 +113,14 @@ const people = [
                 assert.equal(await page.evaluate(() => document.body.style.overflow), 'hidden');
             }
             if (process.env.V2_SCREENSHOTS) await page.screenshot({ path: path.join(process.env.V2_SCREENSHOTS, `reader-${width}.png`) });
+            await page.close();
+        }
+        for (const width of [320, 390, 600]) for (const member of [false, true]) {
+            const page = await pageFor(width);
+            await page.clock.setFixedTime(new Date('2026-11-08T17:00:00Z'));
+            await page.evaluate(member => v2Test.bookedHome(member), member);
+            assert.equal(await page.locator('#userBookingsContainer,#userBookingsCard').count(), 0, 'My bookings block is removed for all users');
+            await page.locator('.cf-card[data-date="2026-11-15"] .is-booked').waitFor();
             await page.close();
         }
         for (const member of [false, true]) for (const action of ['swipe', 'button']) {

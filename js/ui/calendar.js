@@ -17,7 +17,6 @@ import {
     loadUserRegistrations
 } from '../firebase.js';
 import { renderHome } from './home.js';
-import { renderUserBookings } from './home.js';
 import { renderProfiles } from './profiles.js';
 import { renderNewcomerPage, renderGift, renderPassPage, renderGuestPrivileges } from './privileges.js';
 import { renderSuggestEvent } from './suggest-event.js';
@@ -2935,7 +2934,6 @@ function setBookingFlag(hikeDate, booked, guest = false) {
 }
 function refreshAfterBooking() {
     updateFloatingSheetButtons();
-    renderUserBookings(document.getElementById('userBookingsContainer'));
     const cal = document.getElementById('calendarContainer');
     if (cal) renderCalendar(cal);
 }
@@ -4585,7 +4583,6 @@ async function verifyTicketPaymentReturn(hikeDate) {
             if (overlay.dataset.hikeDate === hikeDate) overlay.remove();
         });
         updateFloatingSheetButtons();
-        renderUserBookings(document.getElementById('userBookingsContainer'));
         const cal = document.getElementById('calendarContainer');
         if (cal) renderCalendar(cal);
         log('оплата билета подтверждена сервером', true, state.user, { hike_date: hikeDate });
@@ -4642,7 +4639,6 @@ async function registerByInvite(hikeDate, hikeTitle, onClose) {
     if (idx >= 0) { state.hikeBookingStatus[idx] = true; saveBookingStatusToLocal(); }
     document.getElementById('inviteSheetBanner')?.remove();
     updateFloatingSheetButtons();
-    renderUserBookings(document.getElementById('userBookingsContainer'));
     showRegistrationSuccess(hikeDate, hikeTitle);
 }
 

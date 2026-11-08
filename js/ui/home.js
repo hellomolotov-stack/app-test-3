@@ -4,7 +4,7 @@ import { isAdmissionPilot } from '../admission.js';
 import { haptic, openLink, parseLinks, formatDateForDisplay, mainDiv, subtitle, tg, showConfetti, scrollToElement } from '../utils.js';
 import { state, saveBookingStatusToLocal } from '../state.js';
 import { isUpcomingHike } from '../hike-timing.js';
-import { log, updateRegistrationInSheet, inviteApi } from '../api.js';
+import { log, updateRegistrationInSheet } from '../api.js';
 import { getDatabase, addParticipant, removeParticipant, setUserRegistrationStatus, loadPopups, loadAllProfiles } from '../firebase.js';
 import { showBottomNav, setupBottomNav, setUserInteracted, showBack, hideBack, cleanupProfileOverlays } from './common.js';
 import { renderCalendar, showBottomSheet, showGuestBookingPopup, showHikePickerSheet, getAvailableCardsCount, renderRoutesMap } from './calendar.js';
@@ -14,7 +14,6 @@ import { renderProfiles } from './profiles.js';
 import { renderWeatherBlock, initWeatherBlock } from './weather.js';
 import { openCardSheet } from './card-sheet.js';
 import { cardQrEnabled, openCardQr } from './card-qr.js';
-import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { cardScratchHtml, mountCardScratch } from './card-scratch.js';
 import { openOnboardingChat } from './chat-entry.js';
 import { setLumenContext } from './lumen.js';
@@ -108,154 +107,6 @@ function updateMetricsUI() {
     if (meetingsEl) meetingsEl.textContent = state.metrics.meetings;
 }
 
-const MON_SHORT = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
-const WD_SHORT = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
-
-export function renderUserBookings(container) {
-    if (!container) return;
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const bookings = [];
-    state.hikesWithTitle.forEach((hike, index) => {
-        if (state.hikeBookingStatus[index]) {
-            const hikeDate = new Date(hike.date);
-            if (hikeDate >= today) bookings.push({ ...hike, index });
-        }
-    });
-
-    // нет записей – блока нет совсем (и у гостей, и у владельцев карты)
-    if (bookings.length === 0) {
-        container.innerHTML = '';
-        container.style.display = 'none';
-        return;
-    }
-
-    container.style.display = 'block';
-    const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-    let html = `
-        <div class="card-container" id="userBookingsCard">
-            <h2 class="section-title">мои записи</h2>
-    `;
-    bookings.forEach(booking => {
-        const isWoman = booking.woman === 'yes';
-        const isCity = booking.city === true || booking.city === 'yes';
-        const isBookClub = booking.book_club === true;
-        const accentColor = isBookClub ? '#FFF1B2' : (isCity ? '#41B5ED' : (isWoman ? '#FB5EB0' : 'var(--yellow)'));
-        const dateParts = booking.date.split('-');
-        const day = parseInt(dateParts[2], 10);
-        const month = parseInt(dateParts[1], 10) - 1;
-        const formattedDate = `${day} ${monthNames[month]}`;
-        let title = booking.title;
-        const prefixes = ['тропа на ', 'тропа ', 'маршрут ', 'хайк на ', 'хайк ', 'гора ', 'ущелье ', 'путь на ', 'восхождение на '];
-        let cleanedTitle = title;
-        for (let prefix of prefixes) {
-            if (cleanedTitle.toLowerCase().startsWith(prefix)) {
-                cleanedTitle = cleanedTitle.substring(prefix.length);
-                break;
-            }
-        }
-        if (cleanedTitle.toLowerCase().startsWith('на ')) cleanedTitle = cleanedTitle.substring(3);
-        cleanedTitle = cleanedTitle.charAt(0).toUpperCase() + cleanedTitle.slice(1);
-        
-        let eventType, displayTitle;
-        if (isBookClub) {
-            displayTitle = booking.title;
-        } else if (isCity) {
-            eventType = 'событие';
-            const lowerTitle = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
-            displayTitle = `${eventType} ${lowerTitle}`;
-        } else {
-            const lowerTitle = cleanedTitle.charAt(0).toLowerCase() + cleanedTitle.slice(1);
-            const startsWithPrep = /^(в |на |по |к |до |за |из |со? )/.test(lowerTitle);
-            eventType = startsWithPrep ? 'хайк' : 'хайк на';
-            displayTitle = `${eventType} ${lowerTitle}`;
-        }
-        
-        // Для city-событий кнопка голубая с белым текстом
-        let buttonColor, buttonTextColor;
-        if (isCity) {
-            buttonColor = '#41B5ED';
-            buttonTextColor = '#ffffff';
-        } else {
-            buttonColor = accentColor;
-            buttonTextColor = '#000000';
-        }
-        
-        // билет: сверху дата, название и «детали»; под отрывной линией – +1 и сторис
-        const canPlus1 = state.userCard?.status === 'active' && !isCity && !isBookClub && booking.cancelled !== true;
-        const canStory = !isCity && !isBookClub && booking.cancelled !== true;
-        const dObj = new Date(booking.date + 'T12:00:00');
-        const when = [`${day} ${MON_SHORT[month]}`, WD_SHORT[dObj.getDay()], booking.start_time].filter(Boolean).join(' · ');
-        const cells = [
-            canPlus1 ? `<div class="bk-cell bk-plus1" data-plus1-date="${booking.date}"><button type="button" class="bk-plus1-btn" data-date="${booking.date}">🤝 взять +1</button></div>` : '',
-            canStory ? `<button type="button" class="bk-cell bk-story-btn${canPlus1 ? '' : ' is-wide'}" data-story-date="${booking.date}">${canPlus1 ? 'в сторис ↗' : '📸 поделиться в сторис ↗'}</button>` : ''
-        ].join('');
-        html += `
-            <div class="bk-ticket">
-                <div class="bk-top">
-                    <div class="bk-info">
-                        <div class="bk-when" style="color: ${accentColor};">${when}</div>
-                        <div class="bk-title">${displayTitle}</div>
-                    </div>
-                    <button class="btn btn-yellow booking-detail-btn" data-index="${booking.index}" data-date="${booking.date || state.hikesWithTitle[booking.index]?.date || ''}" style="width: auto; margin: 0; padding: 8px 16px; flex-shrink: 0; background: ${buttonColor}; color: ${buttonTextColor};">детали</button>
-                </div>
-                ${cells ? `<div class="bk-stub">${cells}</div>` : ''}
-                ${canStory && hikingBoxEnabled(booking.date) ? `<div class="bk-box" data-box-date="${booking.date}">${hikingBoxRowHtml('', booking.date)}</div>` : ''}
-            </div>
-        `;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-
-    container.querySelectorAll('.bk-box').forEach(el => bindHikingBoxRow(el.querySelector('.hb-row'), el.dataset.boxDate, 'мои записи'));
-    container.querySelectorAll('.bk-story-btn').forEach(btn => btn.addEventListener('click', () => {
-        import('./story.js').then(m => m.openStoryShare(btn.dataset.storyDate, 'мои записи'));
-    }));
-    container.querySelectorAll('.booking-detail-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            haptic();
-            log('детали бронирования из главной', false, state.user);
-            const byDate = btn.dataset.date ? state.hikesWithTitle.findIndex(h => h.date === btn.dataset.date) : -1;
-            showBottomSheet(byDate !== -1 ? byDate : parseInt(btn.dataset.index, 10));
-        });
-    });
-
-    // «взять +1»: открываем хайк и прокручиваем к блоку «твой +1»
-    container.querySelectorAll('.bk-plus1-btn').forEach(btn => btn.addEventListener('click', () => {
-        haptic();
-        log('+1: кнопка из моих записей', false, state.user, { hike_date: btn.dataset.date });
-        const idx = state.hikesWithTitle.findIndex(h => h.date === btn.dataset.date);
-        if (idx < 0) return;
-        showBottomSheet(idx);
-        let tries = 0;
-        const seek = () => {
-            const box = document.querySelector('#plus1Slot .plus1-box');
-            if (!box) { if (++tries < 40) setTimeout(seek, 100); return; }
-            setTimeout(() => {
-                box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                box.classList.add('is-flash');
-                setTimeout(() => box.classList.remove('is-flash'), 1600);
-            }, 350);
-        };
-        seek();
-    }));
-    refreshPlus1Buttons(container);
-}
-
-// показываем «взять +1» только там, где друг ещё не записан (спрашиваем сервер, ответ кэшируем на сессию)
-let plus1Used = null;
-async function refreshPlus1Buttons(container) {
-    const rows = container.querySelectorAll('[data-plus1-date]');
-    if (!rows.length) return;
-    if (!plus1Used) {
-        try { plus1Used = (await inviteApi('inviteMine')).used || {}; }
-        catch (e) { plus1Used = {}; }
-    }
-    rows.forEach(r => {
-        const friend = plus1Used[r.dataset.plus1Date];
-        if (friend) r.innerHTML = `<span>🤝 твой +1: <b>${String(friend).replace(/</g, '&lt;')}</b></span>`;
-    });
-}
 
 const mskDayOf = d => { const s = String(d || ''); const t = new Date(s); return s.includes('T') && !isNaN(t) ? t.toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' }) : s.slice(0, 10); };
 // когда заметки Plaud загрузились – перерисовываем блок саммари (кнопки «читать» открывают читалку)
@@ -668,7 +519,6 @@ function renderGuestHome() {
 
     main.innerHTML = `
         ${v2 ? v2GuestTopHtml(cardHtml) + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div>' : askBarHtml() + cardHtml}
-        ${v2 && nextEventBooked() ? '' : '<div id="userBookingsContainer"></div>'}
         <div id="circleContainer"></div>
         ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
         ${/* блок «для новичков» убран у всех (07.11) */ false ? `
@@ -856,7 +706,6 @@ function renderGuestHome() {
         btn.addEventListener('click', handleGuestRead);
     });
 
-    renderUserBookings(document.getElementById('userBookingsContainer'));
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
     renderCalendarOrStrip(document.getElementById('calendarContainer'));
@@ -897,7 +746,6 @@ function renderOwnerHome() {
             </div>
             <button type="button" class="gift-text-link" id="giftCardBtn">подарить карту другу ›</button>
         </div>`}
-        ${v2 && nextEventBooked() ? '' : '<div id="userBookingsContainer"></div>'}
         <div id="circleContainer"></div>
         ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
@@ -961,7 +809,6 @@ function renderOwnerHome() {
     });
 
 
-    renderUserBookings(document.getElementById('userBookingsContainer'));
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
     renderCalendarOrStrip(document.getElementById('calendarContainer'));
@@ -1031,13 +878,6 @@ function renderRdHome() {
 function renderCalendarOrStrip(el) {
     // развилка «витрина» (Макс) / «события» (остальные v2) / обычный календарь – вся в renderCalendar (calendar.js)
     renderCalendar(el);
-}
-
-// классика v2: если человек записан на ближайшее событие, «мои записи» живут в билете блока хайка (rd-home.js)
-function nextEventBooked() {
-    // тот же выбор, что nextEvent() в rd-home.js
-    const i = (state.hikesWithTitle || []).findIndex(h => h.cancelled !== true && h.cancelled !== 'yes' && h.book_club !== true && h.book_club !== 'yes' && isUpcomingHike(h));
-    return i >= 0 && state.hikeBookingStatus?.[i] === true;
 }
 
 export function renderHome() {

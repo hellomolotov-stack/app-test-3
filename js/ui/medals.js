@@ -162,7 +162,7 @@ function runStep(action) {
         else document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
     }
-    const target = kind === 'story' && document.querySelector('.bk-story-btn') ? document.getElementById('userBookingsCard') : document.getElementById('calendarContainer');
+    const target = document.getElementById('calendarContainer');
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 

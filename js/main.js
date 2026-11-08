@@ -195,7 +195,7 @@ function setupBottomNav() {
         // плитки разделов: прокрутка к блоку главной (свёрнутый блок раскрываем)
         const JUMP_TARGETS = {
             calendar: () => document.getElementById('calendarContainer'),
-            bookings: () => document.getElementById('userBookingsCard'),
+            bookings: () => document.getElementById('calendarContainer'),
             weather: () => document.getElementById('weatherBlock'),
             mastermind: () => document.getElementById('mastermindSummariesCard'),
             metrics: () => document.querySelector('.metrics-header')?.closest('.card-container'),
@@ -511,7 +511,7 @@ function handleDeepLink(startParam) {
             setTimeout(() => openOnboardingChat('support'), 600);
             break;
         case 'bookings':
-            scrollToWhenReady(() => document.getElementById('userBookingsCard') || (state.hikesWithTitle?.length ? document.getElementById('calendarContainer') : null));
+            scrollToWhenReady(() => document.getElementById('calendarContainer'));
             break;
         case 'newcomer':
             scrollToWhenReady(() => document.querySelector('.btn-newcomer')?.closest('.card-container'));
