@@ -4,6 +4,7 @@
 // (#calendarContainer в #mainContent) и когда не открыта шторка/оверлей.
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
+import { refreshClubMetrics } from '../club-content.js';
 
 const MAX = 110, TRIGGER = 72;
 let el = null, startY = 0, pull = 0, active = false, busy = false;
@@ -45,6 +46,7 @@ function reset() {
 }
 
 async function refreshHome() {
+    await refreshClubMetrics().catch(e => console.warn('metrics refresh:', e.message));
     const tg = window.Telegram?.WebApp;
     try {
         if (tg?.initData) {

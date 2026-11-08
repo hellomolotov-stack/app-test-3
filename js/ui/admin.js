@@ -427,7 +427,7 @@ function renderHomepage(body) {
     body.innerHTML = `
         <div class="adm-label">клуб в цифрах</div>
         <form id="admMetricsForm">
-            <div class="adm-metrics-fields">${fields.map(([key, label]) => `<label class="adm-field"><span>${label}</span><input name="${key}" data-metric-key="${key}" type="number" min="0" max="1000000000" step="${key === 'kilometers' ? 'any' : '1'}" inputmode="${key === 'kilometers' ? 'decimal' : 'numeric'}" value="${esc(homepage.metrics[key])}" required></label>`).join('')}</div>
+            <div class="adm-metrics-fields">${fields.map(([key, label]) => `<label class="adm-field"><span>${label}</span><input name="${key}" data-metric-key="${key}" type="number" min="0" max="1000000000" step="${key === 'kilometers' ? 'any' : '1'}" inputmode="${key === 'kilometers' ? 'decimal' : 'numeric'}" value="${esc(homepage.metrics[key])}"${homepage.metricsMode === 'automatic' && key !== 'locations' ? ' readonly' : ''} required></label>`).join('')}</div>
             <button type="submit" class="btn btn-yellow adm-primary">сохранить цифры</button>
         </form>
         <div class="adm-label">обновления</div>
@@ -1153,6 +1153,7 @@ async function saveHike() {
         const local = { ...base, ...fields, track: d.trackChanged ? d.track : base.track };
         if (d.original && d.original !== d.date) delete state.hikesData[d.original];
         state.hikesData[d.date] = local;
+        window.dispatchEvent(new Event('club:metrics-refresh'));
         toast(res.postponed ? `сохранено ✓ · о переносе написали: ${res.postponed}` : res.notified ? `сохранено ✓ · уведомили о записи: ${res.notified}` : 'сохранено ✓');
         view = { tab: 'hikes' };
         render();

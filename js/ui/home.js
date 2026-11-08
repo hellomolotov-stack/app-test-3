@@ -106,6 +106,7 @@ function updateMetricsUI() {
     if (kilometersEl) kilometersEl.textContent = state.metrics.kilometers;
     if (meetingsEl) meetingsEl.textContent = state.metrics.meetings;
 }
+window.addEventListener('club:metrics-updated', updateMetricsUI);
 
 
 const mskDayOf = d => { const s = String(d || ''); const t = new Date(s); return s.includes('T') && !isNaN(t) ? t.toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' }) : s.slice(0, 10); };

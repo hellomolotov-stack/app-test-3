@@ -27,6 +27,7 @@ import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/chat-entry.js';
 import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
 import { focusNextUnopenedHike } from './ui/next-hike-link.js';
+import { startClubMetricsRefresh } from './club-content.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -1035,6 +1036,7 @@ function startApp() {
     initSheetDrag();
     initTypograph(); // без висящих предлогов во всех текстах
     loadAppData();
+    startClubMetricsRefresh();
 }
 const startWhenTelegramReady = () => Promise.resolve(window.__telegramReady).then(startApp);
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startWhenTelegramReady, { once: true });
