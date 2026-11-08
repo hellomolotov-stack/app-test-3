@@ -30,9 +30,9 @@ function inline(t) {
 const AV = [['#f6b26b', '#e06666'], ['#6fa8dc', '#3d85c6'], ['#93c47d', '#38761d'], ['#c27ba0', '#741b47'], ['#ffd966', '#bf9000'], ['#8e7cc3', '#351c75']];
 function render(md) {
     const lines = String(md || '').replace(/&nbsp;/g, '').split('\n');
-    let html = '', list = [], quote = [], prev = '', sec = '', card = false, nAv = 0;
+    let html = '', list = [], quote = [], prev = '', sec = '', card = false, speaker = '', nAv = 0;
     const closeList = () => { while (list.length) html += list.pop(); };
-    const closeCard = () => { closeList(); if (card) { html += '</div>'; card = false; } };
+    const closeCard = () => { closeList(); if (card) { html += '</div>'; card = false; speaker = ''; } };
     const flushQuote = () => { if (quote.length) { html += `<div class="mmr-info">${quote.map(q => `<div>${inline(q)}</div>`).join('')}</div>`; quote = []; } };
     for (const raw of lines) {
         const line = raw.replace(/\s+$/, '');
@@ -49,6 +49,7 @@ function render(md) {
             const pm = txt.match(/^([^·]{1,40}?)\s*·\s*(.+)$/);
             if (/^взгляды/.test(sec) && pm) {
                 closeCard(); card = true;
+                speaker = pm[1].trim();
                 const g = AV[nAv++ % AV.length];
                 html += `<div class="mmr-card"><div class="mmr-pn"><span class="mmr-av" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${esc(pm[1].trim()[0] || '')}</span><span><b>${esc(pm[1].trim())}</b><i>${esc(pm[2])}</i></span></div>`;
                 prev = 'card'; continue;
@@ -59,6 +60,15 @@ function render(md) {
         // «**взгляд Жени:** я бы…» – позиция человека от первого лица
         if ((m = line.trim().match(/^\*\*(взгляд[^*]*?:?)\*\*\s*(.+)$/i))) {
             closeList(); html += `<p class="mmr-view"><em>${esc(m[1].replace(/:?$/, ':'))}</em> ${inline(m[2])}</p>`; prev = 'view'; continue;
+        }
+        if (card && (line.startsWith(speaker + ':') || /^взгляд\s+[^:]{1,40}:/.test(line))) {
+            const colon = line.indexOf(':');
+            closeList(); html += `<p class="mmr-view"><em>${esc(line.slice(0, colon + 1))}</em> ${inline(line.slice(colon + 1).trim())}</p>`;
+            prev = 'view'; continue;
+        }
+        if (card && speaker !== 'Макс' && /^Макс (подытожил|выделил|отметил|связал|признал)(?:\s|[,:—–-]|$)/u.test(line)) {
+            closeList(); html += `<div class="mmr-moderator"><span>Макс · комментарий</span><p>${inline(line)}</p></div>`;
+            prev = 'moderator'; continue;
         }
         // строка целиком жирным: сразу после заголовка ответа – имя участника, иначе – главный совет (старый шаблон)
         if ((m = line.trim().match(/^\*\*(.+)\*\*$/))) {
@@ -145,6 +155,9 @@ const STYLE = `
 .mmr-cq { margin: 4px 0 12px; padding-left: 12px; border-left: 2px solid #B9A2FF; font-size: 16px; line-height: 1.5; font-weight: 600; color: #fff; }
 .mmr-view { margin: 2px 0 12px; font-size: 15.5px; line-height: 1.55; color: rgba(255,255,255,.9); }
 .mmr-view em { font-style: normal; font-weight: 800; color: #B9A2FF; }
+.mmr-moderator { margin: 20px 0 14px; padding: 0 0 0 12px; border-left: 2px solid rgba(185,162,255,.35); }
+.mmr-moderator > span { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: #CBBBFF; }
+.mmr-moderator p { margin: 0; font-size: 14.5px; line-height: 1.6; color: rgba(255,255,255,.75); overflow-wrap: anywhere; }
 .mmr-voice { margin: 6px 0 14px; padding: 14px 16px; border-radius: 16px; background: rgba(255,255,255,.05); font-size: 17px; line-height: 1.5; font-style: italic; color: #fff; }
 .mmr-th { margin: 0 0 10px; padding: 13px 15px; border-radius: 16px; background: rgba(185,162,255,.07); font-size: 15.5px; line-height: 1.5; color: rgba(255,255,255,.9); }
 .mmr-th b { display: block; margin-bottom: 3px; font-size: 13px; color: #B9A2FF; }
