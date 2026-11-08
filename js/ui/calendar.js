@@ -271,6 +271,7 @@ function setFeedWaitlist(date, on) {
     const w = feedWaitlist();
     if (on) w[date] = true; else delete w[date];
     try { localStorage.setItem(FEED_WAITLIST_KEY, JSON.stringify(w)); } catch (e) {}
+    window.dispatchEvent(new CustomEvent('club:waitlist-updated', { detail: { date, on } }));
 }
 
 // 🌧️ в эмоджи события = дата перенесена (из-за погоды): дождик и честная подпись вместо «готовим»
@@ -724,7 +725,14 @@ function saveFeedMapSnapWhenReady(map, key) {
 }
 
 // «Сообщить, когда откроется запись»: нужно разрешение боту писать, затем подписка на сервере.
-async function feedToggleNotify(date, container, { silentOff = false } = {}) {
+const waitlistPending = new Map();
+function feedToggleNotify(date, container, options = {}) {
+    if (waitlistPending.has(date)) return waitlistPending.get(date);
+    const request = changeFeedNotify(date, container, options).finally(() => waitlistPending.delete(date));
+    waitlistPending.set(date, request);
+    return request;
+}
+async function changeFeedNotify(date, container, { silentOff = false } = {}) {
     haptic();
     const on = !feedWaitlist()[date];
     if (!on && !silentOff && !(await feedConfirm('Больше не сообщать об открытии записи?'))) return;

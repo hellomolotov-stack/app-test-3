@@ -250,6 +250,15 @@ export function v2GuestTopHtml(cardHtml = '') { return rdHomeTopHtml({ stories: 
 const ALERTS_KEY = 'hikeAlertsOn';
 const MON3 = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
 function alertsOn() { try { return localStorage.getItem(ALERTS_KEY) === '1'; } catch (e) { return false; } }
+window.addEventListener('club:waitlist-updated', ({ detail }) => {
+    const button = document.getElementById('v2TeaserBtn');
+    if (!button || button.dataset.date !== detail.date) return;
+    button.classList.toggle('is-on', detail.on);
+    button.setAttribute('aria-checked', String(detail.on));
+    const subtitle = document.getElementById('v2TgSub');
+    if (subtitle) subtitle.textContent = detail.on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи';
+    try { localStorage.setItem(ALERTS_KEY, detail.on ? '1' : '0'); } catch (e) {}
+});
 // пейзажи с хайков клуба без людей (assets/teaser, отобраны из «Хайкинг интеллигенция фото»); при каждом заходе – новое
 const TEASER_PHOTOS = [
     ['ayudag-1', 'на Аю-Даг'], ['ayudag-2', 'на Аю-Даг'], ['ayudag-3', 'на Аю-Даг'],
@@ -320,6 +329,8 @@ export function wireRdHomeTop() {
         // тумблер включён, а на эту дату ещё не подписан (новая заглушка) – подписываем тихо
         if (alertsOn() && !isWaitlisted(date)) toggleTeaserNotify(date).catch(() => {});
         tb.addEventListener('click', async () => {
+            if (tb.disabled) return;
+            tb.disabled = true;
             haptic();
             const want = !tb.classList.contains('is-on');
             tb.classList.toggle('is-on', want); tb.setAttribute('aria-checked', want);
@@ -334,6 +345,7 @@ export function wireRdHomeTop() {
                     try { localStorage.setItem(ALERTS_KEY, now ? '1' : '0'); } catch (e) {}
                 }
             }
+            tb.disabled = false;
         });
     }
     if (!ev) return;

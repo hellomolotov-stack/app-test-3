@@ -22,6 +22,17 @@ const dt = d => new Date(d + 'T12:00:00');
 const isTeaser = h => !(h.title && h.title.trim());
 const isCity = h => yes(h.city) || yes(h.book_club) || (isTeaser(h) && /🏄/.test(h.emoji || ''));
 const tick = () => { try { window.Telegram?.WebApp?.HapticFeedback?.selectionChanged(); } catch (e) {} };
+function paintNotify(card, on) {
+    card.classList.toggle('is-on', on);
+    card.setAttribute('aria-pressed', String(on));
+    const label = card.querySelector('.cf-tlab');
+    if (label) label.textContent = on ? 'сообщим об открытии' : 'сообщить об открытии';
+}
+window.addEventListener('club:waitlist-updated', ({ detail }) => {
+    document.querySelectorAll('.cf-card.is-teaser[data-date]').forEach(card => {
+        if (card.dataset.date === detail.date) paintNotify(card, detail.on);
+    });
+});
 
 // все события: из приложения (с марта 2026) + хайки до приложения (assets/past-hikes.json – только даты и названия)
 let preApp = null;
@@ -54,7 +65,7 @@ function cardHtml(h, i) {
     const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
     if (teaser) {
         // будущий без маршрута: «?», колокольчик, строка с тумблером; подписан – карточка «загорается» лаймом
-        return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
+        return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
@@ -169,11 +180,10 @@ export function renderCalFlow(container) {
         haptic();
         log('календарь-витрина: карточка', state.userCard?.status !== 'active', state.user, { date: h.date });
         if (isTeaser(h)) {
-            const want = !c.classList.contains('is-on');
-            const paint = v => { c.classList.toggle('is-on', v); const l = c.querySelector('.cf-tlab'); if (l) l.textContent = v ? 'сообщим об открытии' : 'сообщить об открытии'; };
-            paint(want);
+            c.disabled = true;
             const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
-            if (on !== want) paint(on);
+            paintNotify(c, on);
+            c.disabled = false;
             return;
         }
         if (h.preApp) return;
