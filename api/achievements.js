@@ -302,6 +302,39 @@ function createHandler(deps = {}) {
                 const result = await claimAuto(await accessToken(), user);
                 return res.status(200).json(result);
             }
+            if (body.action === 'story_context') {
+                if (String(user.id) !== '163665735') throw fail(403, 'макет пока на тестировании');
+                if (!UUID.test(String(body.id || ''))) throw fail(400, 'неверный значок');
+                const token = await accessToken();
+                const record = (await read(`clubAchievements/${body.id}`, token)).value;
+                const grant = record?.grants?.[String(user.id)];
+                if (!isPublished(record) || !grant?.issuedAt) throw fail(404, 'значок не найден');
+                const day = date(grant.date);
+                const [hike, roster, absent, attendance, skips, history] = await Promise.all([
+                    read(`hikes/${day}`, token), read(`hikeParticipants/${day}`, token), read(`noShows/${day}`, token),
+                    read(`hikeAttendance/${day}`, token), read(`hikeBadges/${day}/skip`, token),
+                    read(`hikeVisitsBefore/${day}`, token),
+                ]);
+                const historical = Object.fromEntries(Object.entries(history.value?.people || {}).map(([id,p]) => [id, { name: typeof p === 'string' ? p : p.name }]));
+                const people = Object.entries({ ...historical, ...roster.value }).filter(([id]) => id !== String(user.id) && id !== '7845375334'
+                    && !absent.value?.[id] && attendance.value?.[id] !== false && !skips.value?.[id]).slice(0, 8);
+                const portraits = await Promise.all(people.map(async ([id, p]) => {
+                    let image = '';
+                    // Только сохранённые Telegram userpic, без произвольных URL и редиректов.
+                    if (/^https:\/\/t\.me\/i\/userpic\/\d{1,4}\/[a-zA-Z0-9_.-]+$/.test(p.photoUrl || '')) {
+                        try {
+                            const r = await fetcher(p.photoUrl, { redirect: 'error', signal: AbortSignal.timeout(3500) });
+                            const type = (r.headers.get('content-type') || '').split(';')[0];
+                            if (r.ok && ['image/jpeg', 'image/png', 'image/webp'].includes(type)) {
+                                const bytes = Buffer.from(await r.arrayBuffer());
+                                if (bytes.length <= 320000) image = `data:${type};base64,${bytes.toString('base64')}`;
+                            }
+                        } catch { /* инициалы вместо недоступного фото */ }
+                    }
+                    return { userId: id, name: String(p.name || '').slice(0, 64), image };
+                }));
+                return res.status(200).json({ date: day, title: String(hike.value?.title || record.title).slice(0, 160), people: portraits });
+            }
             // с кем вместе получена ачивка: имена – владельцам карты и админам, остальным – только число
             if (body.action === 'holders') {
                 if (typeof body.id !== 'string' || !UUID.test(body.id)) throw fail(400, 'неверный номер ачивки');

@@ -308,6 +308,13 @@ function wrap(ctx, text, maxWidth) {
 
 // сторис 1080×1920: одна медаль крупно с названием и описанием или сетка из нескольких
 export async function drawAchievementsStory(list) {
+    if (String(state.user?.id) === '163665735' && list.length === 1) {
+        const [module, collections, context] = await Promise.all([
+            import('./achievement-story-pilot.js'), loadAchievementCollections([String(state.user.id)]),
+            achievementRequest('story_context', { id: list[0].id }),
+        ]);
+        return module.drawPilotAchievementStory(list[0], collections[String(state.user.id)] || list, context);
+    }
     const W = 1080, H = 1920;
     const c = document.createElement('canvas'); c.width = W; c.height = H;
     const ctx = c.getContext('2d');
