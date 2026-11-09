@@ -206,6 +206,36 @@ module.exports = async (req, res) => {
         }
     }
 
+    // экономия по карте у «Жить здорово» (блок в привилегиях): журнал скидок (касса и сайт) + заказы хайкинг боксов.
+    // Суммы в копейках. Заказ бокса, уже подтверждённый в журнале (ссылка wc<номер>), второй раз не считаем
+    if (body && body.action === 'food_savings') {
+        try {
+            const token = await getAccessToken();
+            const uid = String(user.id);
+            const [card, orders] = await Promise.all([
+                read(`dietcakesLoyalty/cards/${uid}`, token).catch(() => null),
+                read('dcHikeOrders', token).catch(() => null),
+            ]);
+            let saved = 0;
+            const refs = new Set();
+            for (const m of Object.values(card?.months || {})) for (const op of Object.values(m?.operations || {})) {
+                if (!op || op.state !== 'confirmed' || !op.quote) continue;
+                const d = Number(op.quote.discount) || 0, g = Number(op.gross) || 0, back = Number(op.refundedGross) || 0;
+                saved += (g ? d * Math.max(0, 1 - back / g) : d) / 100;
+                if (op.reference) refs.add(String(op.reference));
+            }
+            for (const day of Object.values(orders || {})) for (const [num, o] of Object.entries(day || {})) {
+                if (!o || o.status !== 'paid' || String(o.tg) !== uid || o.request === 'cancel') continue;
+                if (refs.has('wc' + num) || refs.has(String(num))) continue;
+                saved += (Number(o.card_discount) || 0) / 100; // копейки
+            }
+            return res.status(200).json({ saved: Math.round(saved) });
+        } catch (e) {
+            console.error('me food_savings:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
+
     // «твои связи»: люди с общих хайков и связи между ними (lib/circle.js)
     if (body && body.action === 'circle') {
         try {

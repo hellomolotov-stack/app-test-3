@@ -1,26 +1,27 @@
-// «еда домой»: блок в разделе «привилегии» – поиск и категории магазина «Жить здорово» (−10% по карте интеллигента).
-// Пока включён только для @maxmolotov. Нажатия ведут в каталог магазина; всё логируется (и уходит в бота).
+// «продукты домой, на хайкинг и в зал»: блок в «привилегиях» – магазин «Жить здорово» (−10% по карте интеллигента).
+// Всем владельцам карты (09.11): шапка, поиск, разделы сайта, счётчик экономии по карте. Нажатия логируются.
 import { haptic, openLink } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
 import { fetchWithTimeout } from '../net.js';
 
-const FOOD_HOME_IDS = ['163665735']; // @maxmolotov
 const SHOP = 'https://dietcakes.ru/';
-// категории магазина (адреса – по каталогу dietcakes; открываются как ?product_cat=<slug>)
+// разделы магазина (адреса с сайта, 09.11.2026)
 const TILES = [
+    ['🍬', 'без сахара', 'proteinovye-bez-sahara', 1],
+    ['💊', 'БАДы', 'bady-i-dobavki', 1],
     ['🍱', 'готовая еда', 'gotovaya-eda'],
-    ['🥩', 'мясо и колбасы', 'myasnaya-produkcia'],
-    ['🧀', 'сыры', 'siri'],
-    ['❄️', 'заморозка', 'morozhenoe-i-zamorozka'],
     ['🍫', 'перекусы', 'poleznyj-perekus'],
     ['🥤', 'напитки', 'napitki'],
+    ['❄️', 'заморозка', 'morozhenoe-i-zamorozka'],
+    ['🌱', 'растительное', 'rastitelnye-produkty'],
+    ['🌾', 'без глютена', 'bez-glyutena'],
 ];
 
+// блок «продукты домой, на хайкинг и в зал» – всем владельцам карты (09.11)
 export function foodHomeEnabled() {
-    return FOOD_HOME_IDS.includes(String(state.user?.id || ''));
+    return state.userCard?.status === 'active';
 }
-
 // подписанный ID карты – для следующего шага (скидка в обычной корзине); пока только прикладываем к ссылке
 let cardToken = '';
 function prefetchCardToken() {
@@ -32,36 +33,66 @@ function prefetchCardToken() {
         .catch(() => {});
 }
 
-function shopLink(params) {
+function shopLink(path, params = {}) {
     const q = new URLSearchParams({ ...params, utm_source: 'intelligentsia', utm_medium: 'app', utm_campaign: 'food_home' });
-    return `${SHOP}?${q}${cardToken ? '#card=' + cardToken : ''}`;
+    return `${SHOP}${path}?${q}${cardToken ? '#card=' + cardToken : ''}`;
+}
+
+const rub = n => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
+// шкала экономии без подписей: ступени 1 000 / 3 000 / 5 000 / 10 000 …, дошёл – новый круг
+const STEPS = [1000, 3000, 5000, 10000, 20000, 50000];
+function stepFill(sum) {
+    let prev = 0;
+    for (const s of STEPS) { if (sum < s) return (sum - prev) / (s - prev); prev = s; }
+    return 1;
 }
 
 export function foodHomeHtml() {
     if (!foodHomeEnabled()) return '';
-    return `<div class="fh-block">
-        <div class="fh-head"><b>🏠 еда домой</b><span class="fh-chip">−10% по карте</span></div>
-        <div class="fh-sub">заказывай продукты «Жить здорово» с доставкой по Ялте – скидка по карте интеллигента</div>
-        <form class="fh-search" id="fhSearch"><input type="search" id="fhQuery" placeholder="найти продукт" enterkeyhint="search" autocomplete="off" aria-label="найти продукт"><button type="submit" aria-label="найти">›</button></form>
-        <div class="fh-tiles">${TILES.map(([e, t, slug]) => `<button type="button" class="fh-tile" data-cat="${slug}" data-name="${t}"><span>${e}</span>${t}</button>`).join('')}</div>
-        <div class="fh-foot">доставка от 2 000 ₽ бесплатно · партнёр клуба «Жить здорово»</div>
+    return `<div class="fh2" id="fhBlock">
+        <div class="fh2-head">
+            <span class="fh2-tag">🛒 «Жить здорово» × клуб</span><span class="fh2-pct">−10%</span>
+            <h3>продукты домой, на хайкинг и в зал</h3>
+            <p>полезная еда, перекусы и БАДы со скидкой по карте</p>
+            <span class="fh2-pile" aria-hidden="true"><img src="assets/food/now.svg" class="p1" alt=""><img src="assets/food/exponenta.svg" class="p2" alt=""><img src="assets/food/bombbar.png" class="p3" alt=""></span>
+        </div>
+        <div class="fh2-in">
+            <form class="fh2-search" id="fhSearch"><input type="search" id="fhQuery" placeholder="найди: творог, протеин, хлеб…" enterkeyhint="search" autocomplete="off" aria-label="найти продукт"><button type="submit" aria-label="найти">›</button></form>
+            <div class="fh2-tiles">${TILES.map(([e, t, slug, hl]) => `<button type="button" class="fh2-tile${hl ? ' hl' : ''}" data-cat="${slug}" data-name="${t}"><i>${e}</i>${t}</button>`).join('')}</div>
+            <div class="fh2-sav" id="fhSav" hidden><div class="fh2-sh"><span>сэкономил с картой</span><b id="fhSum">0 ₽</b></div><small>за твои заказы продуктов и хайкинг боксов</small><div class="fh2-bar"><u id="fhBar"></u></div></div>
+            <button type="button" class="fh2-go" id="fhGo">открыть магазин</button>
+        </div>
     </div>`;
 }
 
 export function bindFoodHome(root = document) {
-    const block = root.querySelector('.fh-block');
+    const block = root.querySelector('#fhBlock');
     if (!block) return;
     prefetchCardToken();
     log('еда домой: показал блок', false, state.user);
-    block.querySelectorAll('.fh-tile').forEach(btn => btn.addEventListener('click', () => {
+    block.querySelectorAll('.fh2-tile').forEach(btn => btn.addEventListener('click', () => {
         haptic();
-        openLink(shopLink({ product_cat: btn.dataset.cat, post_type: 'product' }), `еда домой: категория «${btn.dataset.name}»`, false);
+        openLink(shopLink(`product-category/${btn.dataset.cat}/`), `еда домой: категория «${btn.dataset.name}»`, false);
     }));
     block.querySelector('#fhSearch')?.addEventListener('submit', e => {
         e.preventDefault();
         const text = block.querySelector('#fhQuery').value.trim().slice(0, 60);
         if (!text) return;
         haptic();
-        openLink(shopLink({ s: text, post_type: 'product' }), `еда домой: поиск «${text}»`, false);
+        openLink(shopLink('', { s: text, post_type: 'product' }), `еда домой: поиск «${text}»`, false);
     });
+    block.querySelector('#fhGo')?.addEventListener('click', () => { haptic(); openLink(shopLink(''), 'еда домой: открыть магазин', false); });
+    // экономия по карте – с сервера (журнал кассы + заказы хайкинг боксов)
+    fetchWithTimeout('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'food_savings', initData: window.Telegram?.WebApp?.initData || '' }) })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+            const sum = Number(d?.saved) || 0;
+            const box = block.querySelector('#fhSav');
+            if (!box || !block.isConnected) return;
+            box.hidden = false;
+            block.querySelector('#fhSum').textContent = rub(sum);
+            const bar = block.querySelector('#fhBar');
+            requestAnimationFrame(() => requestAnimationFrame(() => { bar.style.width = `${Math.max(4, Math.round(stepFill(sum) * 100))}%`; }));
+        }).catch(() => {});
 }

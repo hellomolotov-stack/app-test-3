@@ -549,9 +549,9 @@ function renderPrivWallet(esc) {
                 <div><b>покажи на кассе</b><span>QR карты – скидка засчитается сама</span></div>
                 ${cardQrEnabled() ? '<button type="button" class="pv-qr" id="pvQr">QR</button>' : ''}
             </div>
-            ${foodHomeHtml()}
             <div class="pv-sec">в клубе</div>
             <div class="pv-club">${club.map((c, i) => { const isNew = /^новое:/i.test(c.title); const t = String(c.title).replace(/^новое:\s*/i, ''); return `<button type="button" class="pv-cl" data-cl="${i}"><i>${pvClubIcon(t + ' ' + c.description)}</i>${isNew ? '<em>новое</em>' : ''}<b>${esc(t)}</b></button>`; }).join('')}</div>
+            ${foodHomeHtml()}
             <div class="pv-sec">партнёры · ${city.length}</div>
             <div class="pv-chips">${cats.map(([k, l]) => `<button type="button" class="${k === cur ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('')}</div>
             <div class="pv-list" id="pvList">${rows()}</div>
