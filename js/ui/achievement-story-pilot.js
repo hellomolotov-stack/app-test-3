@@ -22,16 +22,20 @@ export async function drawPilotAchievementStory(award, collection, context) {
     const ctx = canvas.getContext('2d');
     const unique = [...new Map([award, ...collection].map(a => [a.id, a])).values()];
     const miniatures = unique.slice(0, 6), people = (context.people || []).slice(0, 8);
-    const [sky, logo, medal, minis, portraits] = await Promise.all([
-        image('/assets/stories/badge-sky-v1.jpg'), image('/assets/stories/badge-logo-v1.png'), image(award.medal.imageUrl),
+    const [logo, medal, minis, portraits] = await Promise.all([
+        image('/assets/stories/badge-logo-v1.png'), image(award.medal.imageUrl),
         Promise.all(miniatures.map(a => image(a.medal.imageUrl).catch(() => null))),
         Promise.all(people.map(p => p.image ? image(p.image).catch(() => null) : null)),
     ]);
-    ctx.fillStyle = '#519ABF'; ctx.fillRect(0, 0, 1080, 1920);
-    const scale = Math.max(1080 / sky.width, 1920 / sky.height), w = sky.width * scale, h = sky.height * scale;
-    ctx.save(); ctx.filter = 'blur(6px)'; ctx.drawImage(sky, (1080-w)/2, (1920-h)/2, w, h); ctx.restore();
-    ctx.fillStyle = 'rgba(13,71,101,.15)'; ctx.fillRect(0, 0, 1080, 1920);
-    ctx.drawImage(logo, 280.8, 172.8, 518.4, 518.4 * logo.height / logo.width);
+    const background = ctx.createLinearGradient(0, 0, 0, 1920);
+    background.addColorStop(0, '#12161B'); background.addColorStop(1, '#0A0B09');
+    ctx.fillStyle = background; ctx.fillRect(0, 0, 1080, 1920);
+    const glow = ctx.createRadialGradient(540, 1050, 0, 540, 1050, 900);
+    glow.addColorStop(0, 'rgba(242,210,78,.12)');
+    glow.addColorStop(.42, 'rgba(242,210,78,.055)');
+    glow.addColorStop(1, 'rgba(242,210,78,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, 1080, 1920);
+    ctx.drawImage(logo, 306.72, 172.8, 466.56, 466.56 * logo.height / logo.width);
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     text(ctx, 'новый значок', 470.4, 102, 800);
     const label = 'в коллекцию ', count = '+' + unique.length;

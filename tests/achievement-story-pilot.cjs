@@ -21,8 +21,9 @@ const fixture={id:'118f668a-5578-4f83-b07a-9143995d28d5',title:'хайк на А
  });
  await p.goto('https://story-test.local');await p.addScriptTag({content:'window.Telegram={WebApp:{initData:"fixture",isVersionAtLeast:()=>true,shareToStory:url=>window.shared=url}}'});await p.addScriptTag({content:outputFiles[0].text});
  assert.ok(await p.evaluate(()=>renderStory(163665735))>100000);assert.equal(contexts,1);await p.locator('canvas').screenshot({path:'/private/tmp/pilot-story-max.png'});
- const maxPixel=await p.locator('canvas').evaluate(c=>[...c.getContext('2d').getImageData(20,1500,1,1).data]);assert.ok(maxPixel[2]>maxPixel[0],'Blue sky background');
- await p.evaluate(()=>renderStory(999));assert.equal(contexts,2,'Every authenticated account gets the branded story');const otherPixel=await p.locator('canvas').evaluate(c=>[...c.getContext('2d').getImageData(20,1500,1,1).data]);assert.ok(otherPixel[2]>otherPixel[0],'Blue sky for other accounts');assert.deepEqual(errors,[]);
+ const maxPixel=await p.locator('canvas').evaluate(c=>[...c.getContext('2d').getImageData(20,1500,1,1).data]);assert.ok(maxPixel.slice(0,3).every(v=>v<40),'Dark background');
+ const glow=await p.locator('canvas').evaluate(c=>{const x=c.getContext('2d');return {center:[...x.getImageData(540,800,1,1).data],edge:[...x.getImageData(20,800,1,1).data]}});assert.ok(glow.center[0]>glow.edge[0]&&glow.center[0]>glow.center[2],'Soft warm yellow glow');
+ await p.evaluate(()=>renderStory(999));assert.equal(contexts,2,'Every authenticated account gets the branded story');const otherPixel=await p.locator('canvas').evaluate(c=>[...c.getContext('2d').getImageData(20,1500,1,1).data]);assert.ok(otherPixel.slice(0,3).every(v=>v<40),'Dark background for other accounts');assert.deepEqual(errors,[]);
  await p.addStyleTag({path:path.join(root,'style.css')});await p.evaluate(()=>testShare());await p.locator('[data-share-one]').click();await p.waitForFunction(()=>window.shared==='https://story-test.local/story/test.jpg');assert.equal(await p.locator('[data-share-one]').getAttribute('data-busy'),null);
  console.log('Branded story: all accounts, collection count, companions, exportable canvas and button/upload/Telegram handoff: PASS');
  }finally{await b.close();}
