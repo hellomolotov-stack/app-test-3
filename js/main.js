@@ -201,6 +201,7 @@ function setupBottomNav() {
             mastermind: () => document.getElementById('mastermindSummariesCard'),
             metrics: () => document.querySelector('.metrics-header')?.closest('.card-container'),
             updates: () => document.querySelector('.updates-container'),
+            circle: () => document.querySelector('.lv-net')?.closest('.card-container') || document.getElementById('circleBlock'),
         };
         const closeMenu = () => { popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); };
         popup.querySelectorAll('[data-jump]').forEach(tile => {
@@ -225,9 +226,36 @@ function setupBottomNav() {
             tile.hidden = onHome && !JUMP_TARGETS[tile.dataset.jump]?.();
         });
         popup._refreshTiles = refreshTiles;
+        // шапка меню (вариант А, 09.11): твоя карта – тап открывает привилегии (без карты – шторку карты)
+        const refreshMe = () => {
+            const owner = state.userCard.status === 'active';
+            const img = document.getElementById('nsMeImg'), name = document.getElementById('nsMeName'), sub = document.getElementById('nsMeSub');
+            if (!img) return;
+            img.src = owner && state.userCard.cardUrl ? state.userCard.cardUrl : 'assets/card-front.jpg';
+            img.classList.toggle('is-grey', !owner);
+            name.textContent = String(state.user?.first_name || 'привет').split(' ')[0];
+            sub.textContent = owner ? `карта интеллигента · ${Number(state.userCard.hikes || 0)} ${(n => { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? 'хайк' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'хайка' : 'хайков'; })(Number(state.userCard.hikes || 0))}` : 'узнать о карте интеллигента';
+        };
+        popup._refreshMe = refreshMe;
+        document.getElementById('nsMe')?.addEventListener('click', () => {
+            haptic(); setUserInteracted(); closeMenu(); window.toggleShareButton(false);
+            log('меню: моя карта', state.userCard.status !== 'active', state.user);
+            if (state.userCard.status === 'active') import('./ui/privileges.js').then(m => m.renderPriv());
+            else import('./ui/card-sheet.js').then(m => m.openCardSheet({ source: 'меню' }));
+        });
+        popup.querySelectorAll('[data-act]').forEach(tile => tile.addEventListener('click', () => {
+            haptic(); setUserInteracted(); closeMenu(); window.toggleShareButton(false);
+            log('меню: ' + tile.textContent.trim(), state.userCard.status !== 'active', state.user);
+            if (tile.dataset.act === 'badges') {
+                // «все значки» – та же коллекция, что открывается из блока значков на главной
+                if (!document.getElementById('cardBlock')) { cleanupProfileOverlays(); setManualNav('home'); renderHome(); updateActiveNav(); }
+                let n = 0; const t = setInterval(() => { const b = document.querySelector('[data-mya-all]'); if (b || ++n > 40) { clearInterval(t); b?.click(); } }, 150);
+            }
+            if (tile.dataset.act === 'summary') import('./ui/mm-reader.js').then(m => m.openMmReader()).catch(() => {});
+        }));
         popup.addEventListener('click', (e) => { if (e.target === popup) closeMenu(); });
     }
-    navMoreNew.addEventListener('click', () => popup._refreshTiles?.());
+    navMoreNew.addEventListener('click', () => { popup._refreshTiles?.(); popup._refreshMe?.(); });
 
     document.addEventListener('click', (e) => {
         if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {

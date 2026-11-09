@@ -69,8 +69,8 @@
         html:not(.app-ready) body > :not(#initial-loader) { visibility: hidden !important; }
     </style>
     <!-- стили не держат первый кадр: их закрывает заставка, а она уходит, только когда стили уже применены -->
-    <link rel="preload" href="style.css?v=202611091850fh" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
-    <noscript><link rel="stylesheet" href="style.css?v=202611091850fh"></noscript>
+    <link rel="preload" href="style.css?v=202611092342mn" as="style" onload="this.onload=null;this.rel='stylesheet';window.__cssReady=true">
+    <noscript><link rel="stylesheet" href="style.css?v=202611092342mn"></noscript>
     <!-- modulepreload:start – все модули качаются параллельно, а не цепочкой импортов (важно на медленном интернете) -->
     <link rel="modulepreload" href="js/config.js">
     <link rel="modulepreload" href="js/api.js">
@@ -200,14 +200,15 @@
     <div class="nav-popup nav-sheet" id="navPopup">
         <div class="ns-panel">
             <div class="ns-grab"></div>
-            <div class="ns-title">перейти к разделу</div>
+            <button type="button" class="ns-me" id="nsMe"><img id="nsMeImg" src="assets/card-front.jpg" alt=""><span><b id="nsMeName">карта интеллигента</b><small id="nsMeSub"></small></span><i>›</i></button>
             <div class="ns-grid">
-                <button type="button" class="ns-tile" data-jump="calendar"><span>🗓️</span>календарь</button>
                 <button type="button" class="ns-tile" data-jump="bookings"><span>🎟️</span>мои записи</button>
+                <button type="button" class="ns-tile" data-jump="calendar"><span>🗓️</span>календарь</button>
+                <button type="button" class="ns-tile" data-act="summary"><span>🧠</span>саммари</button>
                 <button type="button" class="ns-tile" data-jump="weather"><span>☁️</span>погода</button>
-                <button type="button" class="ns-tile" data-jump="mastermind"><span>🧠</span>мастер&shy;майнд</button>
-                <button type="button" class="ns-tile" data-jump="metrics"><span>🌍</span>клуб в цифрах</button>
-                <button type="button" class="ns-tile" data-jump="updates"><span>📨</span>обновления</button>
+                <button type="button" class="ns-tile" data-act="badges"><span>🎖️</span>значки</button>
+                <button type="button" class="ns-tile" data-jump="circle"><span>🤝</span>связи</button>
+                <button type="button" class="ns-tile" data-jump="metrics"><span>🌍</span>в цифрах</button>
                 <a href="#" class="ns-tile" id="popupNewcomer"><span>🫖</span>новичкам</a>
             </div>
             <div class="ns-title">клуб</div>
@@ -223,6 +224,6 @@
         </div>
     </div>
 
-    <script type="module" src="js/main.js?v=202611072049ct"></script>
+    <script type="module" src="js/main.js?v=202611092342mn"></script>
 </body>
 </html>

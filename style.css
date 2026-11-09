@@ -8074,3 +8074,20 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 @keyframes fh2Shine { 0% { transform: translateX(-100%); } 45%, 100% { transform: translateX(100%); } }
 .fh2-go { display: block; width: 100%; height: 46px; margin-top: 11px; border: 0; border-radius: 23px; background: linear-gradient(180deg, #e8ff4a, #c9ec00); color: #141800; font: inherit; font-size: 14.5px; font-weight: 800; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 4px 12px rgba(0,0,0,.3); }
 @media (prefers-reduced-motion: reduce) { .fh2-bar u::after { animation: none; } }
+/* ==================== меню: шторка «А» (09.11) ==================== */
+.ns-panel { background: #12151b !important; border-top: 1px solid #22262D; }
+.ns-me { display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 12px; padding: 12px; border: 0; border-radius: 20px; background: linear-gradient(135deg, rgba(217,253,25,.14), rgba(217,253,25,.02)); box-shadow: inset 0 0 0 1px rgba(217,253,25,.3); color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.ns-me img { flex: none; width: 58px; border-radius: 7px; transform: rotate(-6deg); box-shadow: 0 6px 14px rgba(0,0,0,.45); }
+.ns-me img.is-grey { filter: grayscale(1) brightness(.7); }
+.ns-me span { flex: 1; min-width: 0; }
+.ns-me b { display: block; font-size: 16px; }
+.ns-me small { display: block; font-size: 12.5px; color: rgba(255,255,255,.6); }
+.ns-me i { font-style: normal; font-size: 20px; color: var(--yellow); }
+.ns-grid { gap: 8px; margin-bottom: 4px; }
+.ns-tile { border: 0 !important; border-radius: 16px !important; background: rgba(255,255,255,.05) !important; font-size: 11px !important; color: rgba(255,255,255,.85) !important; }
+.ns-title { margin: 14px 2px 6px !important; font-size: 11.5px !important; font-weight: 800 !important; letter-spacing: .06em; text-transform: uppercase; color: rgba(255,255,255,.4) !important; }
+.ns-list { display: block !important; border-radius: 18px; background: rgba(255,255,255,.04); padding: 0 12px; }
+.ns-list .popup-item { display: flex !important; align-items: center; padding: 12px 0 !important; border: 0 !important; border-bottom: 1px solid rgba(255,255,255,.06) !important; border-radius: 0 !important; background: none !important; font-size: 14.5px !important; color: #fff !important; text-align: left !important; }
+.ns-list .popup-item::after { content: '›'; margin-left: auto; color: rgba(255,255,255,.35); font-size: 18px; }
+.ns-list .popup-item:last-child { border-bottom: 0 !important; }
+.ns-list .popup-item-safety { color: #ff8a80 !important; background: none !important; }
