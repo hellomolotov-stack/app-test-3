@@ -155,6 +155,22 @@ module.exports = async (req, res) => {
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'метод не поддерживается' });
     let body = req.body || {};
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'неверный запрос' }); } }
+    // пробный HTML-виджет Telegram (Bot API 10.4) – только Максу, по тому же секрету, что и саммари
+    if (req.method === 'POST' && body.action === 'widgetTest') {
+        const secret = process.env.SUMMARY_SECRET || '';
+        const got = String(req.headers['x-summary-secret'] || '');
+        if (!secret || got.length !== secret.length || !require('crypto').timingSafeEqual(Buffer.from(got), Buffer.from(secret))) return res.status(401).json({ error: 'unauthorized' });
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+        if (!token) return res.status(500).json({ error: 'no bot token' });
+        const html = String(body.html || '').slice(0, 32768);
+        const r = await fetch(`https://api.telegram.org/bot${token}/sendWidget`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ chat_id: 163665735, html, public_data: String(body.public_data || '').slice(0, 1024), caption: String(body.caption || '').slice(0, 1024), height: body.height || undefined }),
+            signal: AbortSignal.timeout(10000),
+        }).then(x => x.json()).catch(e => ({ ok: false, description: e.message }));
+        return res.status(200).json({ ok: r.ok, description: r.description || '', message_id: r.result?.message_id });
+    }
+
     // публикация саммари мастермайндов воскресной задачей (Plaud → сюда); ключ – переменная SUMMARY_SECRET в Vercel
     if (req.method === 'POST' && body.action === 'publishNotes') {
         const secret = process.env.SUMMARY_SECRET || '';
