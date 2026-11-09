@@ -46,7 +46,6 @@ async function openShop(path, params, action) {
         for (let i = 0; i < 25 && !cardToken; i++) await new Promise(r => setTimeout(r, 100));
     }
     openLink(shopLink(path, params), action, false);
-}${path}?${q}${cardToken ? '#card=' + cardToken : ''}`;
 }
 
 const rub = n => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
