@@ -8095,3 +8095,6 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 html.menu-lock, html.menu-lock body { overflow: hidden !important; overscroll-behavior: none; }
 .nav-popup.nav-sheet { overscroll-behavior: contain; touch-action: none; }
 .nav-popup.nav-sheet .ns-panel { overscroll-behavior: contain; touch-action: none; }
+/* иконки нижнего меню «дуотон» (10.11): у активного раздела – мягкая лаймовая заливка внутри */
+.nv-ico .f { fill: none; transition: fill-opacity .2s ease; }
+.nav-item.active .nv-ico .f { fill: currentColor; fill-opacity: .28; }
