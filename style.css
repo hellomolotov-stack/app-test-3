@@ -3220,6 +3220,15 @@ body::before {
     margin-bottom: 0;
 }
 .profile-avatar-wrap [hidden] { display: none; }
+.profile-card > .profile-avatar-wrap {
+    width: calc(100% + 24px);
+    margin: -12px -12px 12px;
+    border-radius: 27px 27px 0 0;
+}
+.profile-card > .profile-avatar-wrap .profile-avatar,
+.profile-card > .profile-avatar-wrap .profile-avatar-placeholder {
+    border-radius: 0;
+}
 
 .profile-name-status {
     display: flex;
