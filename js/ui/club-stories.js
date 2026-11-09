@@ -62,7 +62,9 @@ function rowHtml() {
 // вставить ленту в host; пока данных нет (или их нет вовсе) – остаётся то, что там было
 // без мерцания: главная перерисовывается 2–3 раза подряд – ленту рисуем сразу из памяти (или из прошлого запуска),
 // а свежий список подтягиваем один раз и тихо обновляем, только если он изменился
-let storiesRequest = null;
+let storiesRequest = null, storiesAt = 0;
+// pull-to-refresh и повторный показ главной через пару минут – лента перезапрашивается
+export function resetClubStories() { storiesRequest = null; }
 function paint(host) {
     host.classList.add('cst-host');
     host.innerHTML = rowHtml();
@@ -76,6 +78,8 @@ export async function mountClubStories(host) {
     if (stories && stories.length) paint(host);
     let fresh;
     try {
+        if (storiesRequest && Date.now() - storiesAt > 120000) storiesRequest = null;
+        if (!storiesRequest) storiesAt = Date.now();
         const r = await (storiesRequest ||= meCall('stories', {}, 8000));
         fresh = (r && r.stories) || [];
     } catch (e) { storiesRequest = null; return; }

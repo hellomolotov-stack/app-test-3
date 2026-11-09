@@ -60,6 +60,7 @@ async function refreshHome() {
         }
     } catch (e) { console.warn('pull refresh', e); }
     try { localStorage.removeItem('cstCache'); } catch (e) {}
+    try { (await import('./club-stories.js')).resetClubStories(); } catch (e) {}
     const { renderHome } = await import('./home.js');
     renderHome();
 }
