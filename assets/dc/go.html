@@ -1,0 +1,18 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Жить здорово</title>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0A0C10;color:#F3D9B1;font:600 15px -apple-system,system-ui,sans-serif}</style></head>
+<body>открываем магазин со скидкой по карте…
+<script>
+// Переходник из приложения клуба в магазин «Жить здорово»: Telegram при открытии ссылки может отбросить #…,
+// поэтому карта приходит сюда параметром и добавляется к адресу магазина уже в браузере (#card – его читает плагин на сайте).
+(function () {
+  var q = new URLSearchParams(location.search);
+  var path = String(q.get('p') || '');
+  if (!/^[a-z0-9\/_-]{0,200}$/i.test(path) || path.indexOf('..') >= 0) path = '';
+  var keep = new URLSearchParams();
+  ['s', 'post_type', 'utm_source', 'utm_medium', 'utm_campaign'].forEach(function (k) { var v = q.get(k); if (v) keep.set(k, v.slice(0, 80)); });
+  var card = String(q.get('c') || '');
+  var url = 'https://dietcakes.ru/' + path + (keep.toString() ? '?' + keep : '') + (/^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(card) ? '#card=' + card : '');
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  location.replace(url);
+})();
+</script></body></html>

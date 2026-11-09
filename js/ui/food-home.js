@@ -34,8 +34,19 @@ function prefetchCardToken() {
 }
 
 function shopLink(path, params = {}) {
-    const q = new URLSearchParams({ ...params, utm_source: 'intelligentsia', utm_medium: 'app', utm_campaign: 'food_home' });
-    return `${SHOP}${path}?${q}${cardToken ? '#card=' + cardToken : ''}`;
+    // через наш переходник: Telegram может отбросить #card у внешней ссылки (09.11)
+    const q = new URLSearchParams({ p: path, ...params, utm_source: 'intelligentsia', utm_medium: 'app', utm_campaign: 'food_home' });
+    if (cardToken) q.set('c', cardToken);
+    return `https://app-test-3-delta.vercel.app/assets/dc/go.html?${q}`;
+}
+// открыть магазин: если номер карты ещё не пришёл – подождать его (до 2,5 с), чтобы скидка не потерялась
+async function openShop(path, params, action) {
+    if (!cardToken && state.userCard?.status === 'active') {
+        prefetchCardToken();
+        for (let i = 0; i < 25 && !cardToken; i++) await new Promise(r => setTimeout(r, 100));
+    }
+    openLink(shopLink(path, params), action, false);
+}${path}?${q}${cardToken ? '#card=' + cardToken : ''}`;
 }
 
 const rub = n => `${Math.round(n).toLocaleString('ru-RU')} ₽`;
@@ -71,16 +82,16 @@ export function bindFoodHome(root = document) {
     log('еда домой: показал блок', false, state.user);
     block.querySelectorAll('.fh2-tile').forEach(btn => btn.addEventListener('click', () => {
         haptic();
-        openLink(shopLink(`product-category/${btn.dataset.cat}/`), `еда домой: категория «${btn.dataset.name}»`, false);
+        openShop(`product-category/${btn.dataset.cat}/`, {}, `еда домой: категория «${btn.dataset.name}»`);
     }));
     block.querySelector('#fhSearch')?.addEventListener('submit', e => {
         e.preventDefault();
         const text = block.querySelector('#fhQuery').value.trim().slice(0, 60);
         if (!text) return;
         haptic();
-        openLink(shopLink('', { s: text, post_type: 'product' }), `еда домой: поиск «${text}»`, false);
+        openShop('', { s: text, post_type: 'product' }, `еда домой: поиск «${text}»`);
     });
-    block.querySelector('#fhGo')?.addEventListener('click', () => { haptic(); openLink(shopLink(''), 'еда домой: открыть магазин', false); });
+    block.querySelector('#fhGo')?.addEventListener('click', () => { haptic(); openShop('', {}, 'еда домой: открыть магазин'); });
     // экономия по карте – с сервера (журнал кассы + заказы хайкинг боксов)
     fetchWithTimeout('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'food_savings', initData: window.Telegram?.WebApp?.initData || '' }) })
