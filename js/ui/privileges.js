@@ -210,6 +210,8 @@ export function renderPriv() {
             <h2 class="rd-section-title">что открывает карта</h2>
         </div>` : '';
 
+    // классика v2 (09.11): «кошелёк» – карта с QR для кассы, лента клубных привилегий, партнёры с фильтром
+    if (!rd) { renderPrivWallet(esc); return; }
     mainDiv().innerHTML = `${rdHero}
         <div class="card-container">
             ${foodHomeHtml()}
@@ -501,4 +503,95 @@ function addFloatingCardButton() {
     });
 
     document.body.appendChild(btn);
+}
+
+// ---------- привилегии «кошелёк + витрина» (вариант А+Б, 09.11) ----------
+const PV_CATS = [['all', 'все'], ['food', '☕ еда'], ['gear', '🥾 снаряжение'], ['care', '💅 уход'], ['fun', '🐎 отдых'], ['online', '🌐 онлайн']];
+function pvParse(item) {
+    const title = String(item.title || '').trim();
+    const words = title.split(/\s+/);
+    const k = words.findIndex(w => /^[A-ZА-ЯЁ]/.test(w));
+    const name = k > 0 ? words.slice(k).join(' ') : title;
+    const kind = k > 0 ? words.slice(0, k).join(' ') : '';
+    const desc = String(item.description || '');
+    const pct = (desc.match(/[-−–]?\s?(\d{1,2})\s?%/) || [])[1];
+    const code = (desc.match(/промокоду?\s+([A-Z0-9_-]{3,})/i) || [])[1] || '';
+    const link = String(item.button_link || '');
+    const md = link.match(/^\[([^\]]+)\]\((https?:[^)]+)\)$/);
+    const addr = md ? md[1].replace(/^(г\.|п\.\s?г\.\s?т\.)\s*/i, '').replace(/^Ялта,\s*/i, '').replace(/ул\.\s*/i, '') : '';
+    const url = md ? md[2] : (/^https?:/.test(link) ? link : '');
+    const t = (title + ' ' + desc).toLowerCase();
+    const cat = !md && url ? 'online' : /коф|кафе|ресторан|пекар|еда/.test(t) ? 'food' : /обув|экипир|одежд|снаряж/.test(t) ? 'gear' : /маникюр|барбер|салон|спа/.test(t) ? 'care' : 'fun';
+    const icon = /обув/.test(t) ? '🥾' : /экипир/.test(t) ? '🦎' : /одежд/.test(t) ? '🧥' : /кафе/.test(t) ? '🎧' : /коф/.test(t) ? '☕' : /конн/.test(t) ? '🐎' : /маникюр/.test(t) ? '💅' : /барбер/.test(t) ? '💈' : '🏷️';
+    const note = desc.replace(/[-−–]?\s?\d{1,2}\s?%\s*/, '').replace(/по карте интеллигента/i, '').trim();
+    return { name, kind, pct, code, addr, url, cat, icon, note, online: cat === 'online' };
+}
+function pvClubIcon(t) {
+    t = t.toLowerCase();
+    return /\+1|друг/.test(t) ? '🤝' : /мест/.test(t) ? '🎟️' : /профил/.test(t) ? '🫆' : /саммари|конспект/.test(t) ? '📝' : /мастермайнд/.test(t) ? '🧠' : /интернет|трёх букв|vpn/.test(t) ? '🛡️' : /хайк/.test(t) ? '🥾' : '✨';
+}
+function renderPrivWallet(esc) {
+    const club = (state.privileges.club || []).slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
+    const city = (state.privileges.city || []).slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99)).map(it => ({ it, p: pvParse(it) }));
+    const cats = PV_CATS.filter(([k]) => k === 'all' || city.some(x => x.p.cat === k));
+    let cur = 'all';
+    const rows = () => city.filter(x => cur === 'all' || x.p.cat === cur).map(({ p }, i) => `
+        <button type="button" class="pv-it" data-pv="${city.findIndex(x => x.p === p)}">
+            <span class="pv-ic">${p.icon}</span>
+            <span class="pv-tx"><b>${esc(p.name)}</b><small>${esc([p.kind, p.online ? 'онлайн' : p.addr ? p.addr + ' ›' : ''].filter(Boolean).join(' · '))}</small>${p.note && !p.code ? `<small class="pv-note">${esc(p.note)}</small>` : ''}</span>
+            ${p.code ? `<span class="pv-code" data-code="${esc(p.code)}">${esc(p.code)}</span>` : ''}
+            ${p.pct ? `<span class="pv-pct">−${p.pct}%</span>` : ''}
+        </button>`).join('');
+    mainDiv().innerHTML = `
+        <div class="pv">
+            <div class="pv-wallet">
+                <img src="${esc(state.userCard.cardUrl || 'assets/card-front.jpg')}" alt="">
+                <div><b>покажи на кассе</b><span>QR карты – скидка засчитается сама</span></div>
+                ${cardQrEnabled() ? '<button type="button" class="pv-qr" id="pvQr">QR</button>' : ''}
+            </div>
+            ${foodHomeHtml()}
+            <div class="pv-sec">в клубе</div>
+            <div class="pv-club">${club.map((c, i) => { const isNew = /^новое:/i.test(c.title); const t = String(c.title).replace(/^новое:\s*/i, ''); return `<button type="button" class="pv-cl" data-cl="${i}"><i>${pvClubIcon(t + ' ' + c.description)}</i>${isNew ? '<em>новое</em>' : ''}<b>${esc(t)}</b></button>`; }).join('')}</div>
+            <div class="pv-sec">партнёры · ${city.length}</div>
+            <div class="pv-chips">${cats.map(([k, l]) => `<button type="button" class="${k === cur ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('')}</div>
+            <div class="pv-list" id="pvList">${rows()}</div>
+            <button type="button" class="pv-gift" id="pvGift"><span><b>подарить карту другу</b><small>он увидит, от кого подарок</small></span><i>›</i></button>
+        </div>`;
+    bindFoodHome(mainDiv());
+    const root = mainDiv();
+    root.querySelector('#pvQr')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('привилегии: QR', false, state.user); openCardQr(); });
+    root.querySelector('#pvGift')?.addEventListener('click', () => { haptic(); openCardSheet({ source: 'привилегии', gift: true }); });
+    const bindList = () => root.querySelectorAll('[data-pv]').forEach(b => b.addEventListener('click', e => {
+        const { it, p } = city[Number(b.dataset.pv)];
+        const codeEl = e.target.closest('[data-code]');
+        if (codeEl) {
+            haptic();
+            navigator.clipboard?.writeText(p.code).catch(() => {});
+            codeEl.textContent = 'скопировано ✓';
+            setTimeout(() => { codeEl.textContent = p.code; }, 1600);
+            log(`привилегии: промокод ${p.name}`, false, state.user);
+            return;
+        }
+        if (p.url) openLink(p.url, `привилегии: ${p.name}`, false);
+    }));
+    bindList();
+    root.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => {
+        haptic(); cur = b.dataset.cat;
+        root.querySelectorAll('[data-cat]').forEach(x => x.classList.toggle('on', x === b));
+        root.querySelector('#pvList').innerHTML = rows(); bindList();
+    }));
+    root.querySelectorAll('[data-cl]').forEach(b => b.addEventListener('click', () => {
+        haptic();
+        const c = club[Number(b.dataset.cl)];
+        const t = String(c.title).replace(/^новое:\s*/i, '');
+        log(`привилегии: ${t}`, false, state.user);
+        const ov = document.createElement('div');
+        ov.className = 'pv-ov';
+        ov.innerHTML = `<div class="pv-sheet"><span class="pv-grab"></span><i>${pvClubIcon(t + ' ' + c.description)}</i><b>${esc(t)}</b><p>${parseLinks(String(c.description || ''), false).replace(/\n/g, '<br>')}</p>${c.button_text && c.button_link ? `<button type="button" class="btn btn-yellow" id="pvClBtn">${esc(c.button_text)}</button>` : ''}<button type="button" class="pv-close">закрыть</button></div>`;
+        document.body.appendChild(ov);
+        requestAnimationFrame(() => ov.classList.add('on'));
+        const close = () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); };
+        ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('.pv-close')) close(); });
+        ov.querySelector('#pvClBtn')?.addEventListener('click', () => { close(); openLink(c.button_link, `привилегии: ${c.button_text}`, false); });
+    }));
 }
