@@ -70,7 +70,7 @@ export function openAchievementsCollection(items = []) {
     const restForStack = sortByValue(items.filter(a => a !== latest));
     const featHtml = latest ? `<div class="bdg-card bdg-feat">
         <h3>последний значок</h3>
-        <button type="button" class="bdg-feat-pic" data-open="${esc(latest.id)}">${img(latest, '', 'md')}</button>
+        <button type="button" class="bdg-feat-pic" data-open="${esc(latest.id)}">${img(latest, '', 'md')}${routeRepeatMark(latest)}</button>
         <div class="bdg-t">${esc(latest.title)}</div><div class="bdg-d">${esc([isWaiting(latest) ? 'ждёт активации' : ddmmyyyy(latest.grant?.date), rarityLabel(latest.rarity)].filter(Boolean).join(' · '))}</div>
         ${items.length > 1 ? `<button type="button" class="bdg-foot" data-open-all>${stackHtml(restForStack)}<span class="bdg-more">и ещё ${items.length - 1}<b>показать все</b></span></button>` : ''}
     </div>` : '';
@@ -87,7 +87,7 @@ export function openAchievementsCollection(items = []) {
             ${arts.length > 1 ? `<span class="bdg-foot"><span class="bdg-stack">${arts.slice(1, 5).map(m => gray(m)).join('')}</span><span class="bdg-more">0 из ${c.total}<b>все</b></span></span>` : ''}</button>`;
         }
         return `<button type="button" class="bdg-cat" data-cat="${c.key}"><h4>${esc(c.title)}</h4>
-            <span class="bdg-cat-pic">${img(top)}</span><span class="bdg-t">${esc(top.title)}</span><span class="bdg-d">${isWaiting(top) ? 'ждёт активации' : esc(ddmmyyyy(top.grant?.date))}</span>
+            <span class="bdg-cat-pic">${img(top)}${routeRepeatMark(top)}</span><span class="bdg-t">${esc(top.title)}</span><span class="bdg-d">${isWaiting(top) ? 'ждёт активации' : esc(ddmmyyyy(top.grant?.date))}</span>
             <span class="bdg-foot">${stackHtml(others)}<span class="bdg-more">${c.earned.length} из ${c.total}<b>все</b></span></span></button>`;
     };
 

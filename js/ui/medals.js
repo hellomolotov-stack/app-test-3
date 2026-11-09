@@ -48,7 +48,7 @@ export async function mountMyAchievements() {
             ${items.length ? '' : '<p class="mya-sub">собирай значки за хайки, маршруты и моменты на тропе</p>'}
             <div class="mya-shelf">${shelf.map((a, i) => { const w = isWaiting(a) ? metalOf(a) : '';
                 return `<button type="button" class="mya-it${w ? ` is-wait is-${w}` : ''}" data-medal="${i}" aria-label="${esc(a.title)}">
-                <span class="mya-pic">${a.seenAt === null ? '<span class="mya-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy">${routeRepeatMark(a)}${w ? '<b class="wait-lock">🔒</b>' : ''}</span><span class="mya-name">${esc(a.title)}</span></button>`; }).join('')}
+                <span class="mya-pic">${routeRepeatMark(a) || (a.seenAt === null ? '<span class="mya-new">new</span>' : '')}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy">${w ? '<b class="wait-lock">🔒</b>' : ''}</span><span class="mya-name">${esc(a.title)}</span></button>`; }).join('')}
             ${nextSteps.map(st => { const art = medalForTitle(st.title);
                 return `<button type="button" class="mya-it is-next" data-mya-all aria-label="${esc(st.title)}"><span class="mya-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy">` : '<b>?</b>'}</span><span class="mya-name">${esc(st.short)}</span></button>`; }).join('')}
             <button type="button" class="mya-it is-all" data-mya-all aria-label="все значки"><span class="mya-pic"><b>${items.length > shelf.length ? `+${items.length - shelf.length}` : '›'}</b></span><span class="mya-name">все значки</span></button></div>
@@ -179,7 +179,7 @@ function grantDay(a) {
 }
 function vitrineHtml(items, shelf, owned, waiting) {
     const [a0, a1, a2] = shelf;
-    const pic = (a, i, cls) => a ? `<button type="button" class="vt-it ${cls}" data-mya-all aria-label="${esc(a.title)}">${i === 0 && a.seenAt === null ? '<span class="vt-new">new</span>' : ''}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy">${routeRepeatMark(a)}</button>` : '<span class="vt-it vt-empty"></span>';
+    const pic = (a, i, cls) => a ? `<button type="button" class="vt-it ${cls}" data-mya-all aria-label="${esc(a.title)}">${routeRepeatMark(a) || (i === 0 && a.seenAt === null ? '<span class="vt-new">new</span>' : '')}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy"></button>` : '<span class="vt-it vt-empty"></span>';
     const day = grantDay(a0);
     const total = ACHIEVEMENT_CATALOG.length;
     // следующая цель: значок за число хайков с прогрессом, иначе первая из ближайших целей
