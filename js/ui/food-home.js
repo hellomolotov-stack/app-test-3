@@ -54,7 +54,7 @@ export function foodHomeHtml() {
             <span class="fh2-tag">🛒 «Жить здорово» × клуб</span><span class="fh2-pct">−10%</span>
             <h3>продукты домой, на хайкинг и в зал</h3>
             <p>полезная еда, перекусы и БАДы со скидкой по карте</p>
-            <span class="fh2-pile" aria-hidden="true"><img src="assets/food/now.svg" class="p1" alt=""><img src="assets/food/exponenta.svg" class="p2" alt=""><img src="assets/food/bombbar.png" class="p3" alt=""></span>
+            <span class="fh2-pile" aria-hidden="true"><img src="assets/food/now.png" class="p1" alt=""><img src="assets/food/exponenta.png" class="p2" alt=""><img src="assets/food/bombbar.png" class="p3" alt=""></span>
         </div>
         <div class="fh2-in">
             <form class="fh2-search" id="fhSearch"><input type="search" id="fhQuery" placeholder="найди: творог, протеин, хлеб…" enterkeyhint="search" autocomplete="off" aria-label="найти продукт"><button type="submit" aria-label="найти">›</button></form>
