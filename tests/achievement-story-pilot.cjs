@@ -22,8 +22,8 @@ const fixture={id:'118f668a-5578-4f83-b07a-9143995d28d5',title:'хайк на А
  await p.goto('https://story-test.local');await p.addScriptTag({content:'window.Telegram={WebApp:{initData:"fixture",isVersionAtLeast:()=>true,shareToStory:url=>window.shared=url}}'});await p.addScriptTag({content:outputFiles[0].text});
  assert.ok(await p.evaluate(()=>renderStory(163665735))>100000);assert.equal(contexts,1);await p.locator('canvas').screenshot({path:'/private/tmp/pilot-story-max.png'});
  const maxPixel=await p.locator('canvas').evaluate(c=>[...c.getContext('2d').getImageData(20,1500,1,1).data]);assert.ok(maxPixel[2]>maxPixel[0],'Blue sky background');
- await p.evaluate(()=>renderStory(999));assert.equal(contexts,1,'Other accounts never request pilot context');const oldPixel=await p.locator('canvas').evaluate(c=>[...c.getContext('2d').getImageData(20,1500,1,1).data]);assert.ok(oldPixel[0]<60&&oldPixel[2]<60,'Legacy renderer for other accounts');assert.deepEqual(errors,[]);
+ await p.evaluate(()=>renderStory(999));assert.equal(contexts,2,'Every authenticated account gets the branded story');const otherPixel=await p.locator('canvas').evaluate(c=>[...c.getContext('2d').getImageData(20,1500,1,1).data]);assert.ok(otherPixel[2]>otherPixel[0],'Blue sky for other accounts');assert.deepEqual(errors,[]);
  await p.addStyleTag({path:path.join(root,'style.css')});await p.evaluate(()=>testShare());await p.locator('[data-share-one]').click();await p.waitForFunction(()=>window.shared==='https://story-test.local/story/test.jpg');assert.equal(await p.locator('[data-share-one]').getAttribute('data-busy'),null);
- console.log('Story pilot: Max-only renderer, collection count, companions, exportable canvas, button/upload/Telegram handoff and unchanged other accounts: PASS');
+ console.log('Branded story: all accounts, collection count, companions, exportable canvas and button/upload/Telegram handoff: PASS');
  }finally{await b.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});

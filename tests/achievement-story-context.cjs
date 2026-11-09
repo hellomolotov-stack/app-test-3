@@ -17,8 +17,9 @@ const handler=createHandler({getAccessToken:async()=> 'fixture',fetch:async(url)
 function signed(uid){const p=new URLSearchParams({user:JSON.stringify({id:uid}),auth_date:String(Math.floor(Date.now()/1000))});const secret=crypto.createHmac('sha256','WebAppData').update(process.env.TELEGRAM_BOT_TOKEN).digest();p.set('hash',crypto.createHmac('sha256',secret).update([...p].map(([k,v])=>`${k}=${v}`).sort().join('\n')).digest('hex'));return p.toString();}
 async function call(uid,award=id){let status,body;await handler({method:'POST',body:{action:'story_context',id:award,initData:signed(uid)}},{setHeader(){},status(n){status=n;return this;},json(v){body=v;return this;}});return{status,body};}
 (async()=>{
- assert.equal((await call(999)).status,403);assert.equal(requested.length,0);
+ assert.equal((await call(999)).status,404,'Only owned awards can provide story context');
  const r=await call(163665735);assert.equal(r.status,200);assert.deepEqual(r.body.people.map(p=>p.userId),['1','3']);assert.ok(r.body.people[0].image.startsWith('data:image/jpeg;'));assert.equal(r.body.people[1].image,'');assert.ok(!requested.some(u=>u.includes('private.example')));
+ data[`clubAchievements/${id}`].grants['999']={date:'2026-11-08',issuedAt:1};assert.equal((await call(999)).status,200,'Other owners can share their own award');
  delete data[`clubAchievements/${id}`].grants['163665735'];assert.equal((await call(163665735)).status,404);
- console.log('Story context: Max-only, own-grant authorization, absent/self/service exclusions, trusted image source and safe initials fallback: PASS');
+ console.log('Story context: own-grant authorization for every account, absent/self/service exclusions, trusted image source and initials fallback: PASS');
 })().catch(e=>{console.error(e);process.exitCode=1});

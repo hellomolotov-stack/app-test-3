@@ -31,7 +31,7 @@ export async function drawPilotAchievementStory(award, collection, context) {
     const scale = Math.max(1080 / sky.width, 1920 / sky.height), w = sky.width * scale, h = sky.height * scale;
     ctx.save(); ctx.filter = 'blur(6px)'; ctx.drawImage(sky, (1080-w)/2, (1920-h)/2, w, h); ctx.restore();
     ctx.fillStyle = 'rgba(13,71,101,.15)'; ctx.fillRect(0, 0, 1080, 1920);
-    ctx.drawImage(logo, 280.8, 211.2, 518.4, 518.4 * logo.height / logo.width);
+    ctx.drawImage(logo, 280.8, 172.8, 518.4, 518.4 * logo.height / logo.width);
     ctx.textAlign = 'center'; ctx.textBaseline = 'top';
     text(ctx, 'новый значок', 470.4, 102, 800);
     const label = 'в коллекцию ', count = '+' + unique.length;
@@ -39,9 +39,9 @@ export async function drawPilotAchievementStory(award, collection, context) {
     ctx.font = `800 48px ${FONT}`; const cw = ctx.measureText(count).width;
     ctx.textAlign = 'left'; ctx.fillStyle = '#fff'; ctx.font = `400 48px ${FONT}`; ctx.fillText(label, 540-(lw+cw)/2, 604.8);
     ctx.fillStyle = '#D9FD19'; ctx.font = `800 48px ${FONT}`; ctx.fillText(count, 540-(lw+cw)/2+lw, 604.8);
-    const more = unique.length - minis.length, cells = minis.length + (more > 0 ? 1 : 0), start = (1080-(cells*99+(cells-1)*15))/2;
-    minis.forEach((img, i) => { if (img) ctx.drawImage(img, start+i*114, 681.6, 99, 99); });
-    if (more > 0) { const x=start+minis.length*114; circle(ctx,x,689,84,'rgba(255,255,255,.2)');ctx.textAlign='center';ctx.font=`700 28px ${FONT}`;ctx.fillStyle='#fff';ctx.fillText('+'+more,x+42,716); }
+    const more = unique.length - minis.length, cells = minis.length + (more > 0 ? 1 : 0), step=75, start = (1080-(99+(cells-1)*step))/2;
+    minis.forEach((img, i) => { if (img) ctx.drawImage(img, start+i*step, 681.6, 99, 99); });
+    if (more > 0) { const x=start+minis.length*step; circle(ctx,x,689,84,'rgba(255,255,255,.2)');ctx.textAlign='center';ctx.font=`700 28px ${FONT}`;ctx.fillStyle='#fff';ctx.fillText('+'+more,x+42,716); }
     ctx.save(); ctx.shadowColor='rgba(26,72,94,.26)';ctx.shadowBlur=45;ctx.shadowOffsetY=39;
     ctx.drawImage(medal,280.8,864,518.4,518.4); ctx.restore();
     if (award.kind === 'route' && award.grant?.count > 1) {
@@ -51,10 +51,10 @@ export async function drawPilotAchievementStory(award, collection, context) {
     }
     if (people.length) {
         ctx.font=`400 36px ${FONT}`;const labelWidth=ctx.measureText('вместе с').width, facesWidth=87+(people.length-1)*72;
-        const x=(1080-labelWidth-33-facesWidth)/2, y=1478.4;
+        const gap=15, x=(1080-labelWidth-gap-facesWidth)/2, y=1478.4;
         ctx.textAlign='left';ctx.fillStyle='#fff';ctx.fillText('вместе с',x,y+25);
         people.forEach((p,i)=>{
-            const fx=x+labelWidth+33+i*72;circle(ctx,fx,y,87,'#73ADC9');ctx.save();ctx.beginPath();ctx.arc(fx+43.5,y+43.5,37.5,0,Math.PI*2);ctx.clip();
+            const fx=x+labelWidth+gap+i*72;circle(ctx,fx,y,87,'#73ADC9');ctx.save();ctx.beginPath();ctx.arc(fx+43.5,y+43.5,37.5,0,Math.PI*2);ctx.clip();
             const photo=portraits[i];
             if(photo){const s=Math.max(75/photo.width,75/photo.height);ctx.drawImage(photo,fx+43.5-photo.width*s/2,y+43.5-photo.height*s/2,photo.width*s,photo.height*s);}
             else{ctx.fillStyle=i%2?'#757D5D':'#326980';ctx.fillRect(fx+6,y+6,75,75);ctx.textAlign='center';ctx.font=`700 29px ${FONT}`;ctx.fillStyle='#fff';ctx.fillText(String(p.name||'?').trim().split(/\s+/).map(v=>v[0]).slice(0,2).join('').toUpperCase(),fx+43.5,y+26);}

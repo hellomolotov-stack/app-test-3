@@ -5,6 +5,7 @@ const { verifyInitData, isAdminUser } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
 const { routeDates, addRouteDate, grantSeenAt } = require('../lib/route-grants');
+const { storyAvatar } = require('../lib/story-avatars');
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -303,7 +304,6 @@ function createHandler(deps = {}) {
                 return res.status(200).json(result);
             }
             if (body.action === 'story_context') {
-                if (String(user.id) !== '163665735') throw fail(403, 'макет пока на тестировании');
                 if (!UUID.test(String(body.id || ''))) throw fail(400, 'неверный значок');
                 const token = await accessToken();
                 const record = (await read(`clubAchievements/${body.id}`, token)).value;
@@ -319,18 +319,7 @@ function createHandler(deps = {}) {
                 const people = Object.entries({ ...historical, ...roster.value }).filter(([id]) => id !== String(user.id) && id !== '7845375334'
                     && !absent.value?.[id] && attendance.value?.[id] !== false && !skips.value?.[id]).slice(0, 8);
                 const portraits = await Promise.all(people.map(async ([id, p]) => {
-                    let image = '';
-                    // Только сохранённые Telegram userpic, без произвольных URL и редиректов.
-                    if (/^https:\/\/t\.me\/i\/userpic\/\d{1,4}\/[a-zA-Z0-9_.-]+$/.test(p.photoUrl || '')) {
-                        try {
-                            const r = await fetcher(p.photoUrl, { redirect: 'error', signal: AbortSignal.timeout(3500) });
-                            const type = (r.headers.get('content-type') || '').split(';')[0];
-                            if (r.ok && ['image/jpeg', 'image/png', 'image/webp'].includes(type)) {
-                                const bytes = Buffer.from(await r.arrayBuffer());
-                                if (bytes.length <= 320000) image = `data:${type};base64,${bytes.toString('base64')}`;
-                            }
-                        } catch { /* инициалы вместо недоступного фото */ }
-                    }
+                    const image = await storyAvatar(id, p.photoUrl, botToken, fetcher);
                     return { userId: id, name: String(p.name || '').slice(0, 64), image };
                 }));
                 return res.status(200).json({ date: day, title: String(hike.value?.title || record.title).slice(0, 160), people: portraits });
