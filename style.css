@@ -7979,3 +7979,8 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 .ptr.is-ready, .ptr.is-spin { color: var(--yellow); }
 .ptr.is-spin svg { animation: ptrSpin .8s linear infinite; }
 @keyframes ptrSpin { to { transform: rotate(360deg); } }
+/* витрина «твои значки»: боковые значки на четверть заходят под центральный (09.11) */
+.vt-main { margin: 0; z-index: 2; }
+.vt-side, .vt-empty { position: relative; z-index: 1; }
+.vt-l { margin-right: -23px; }
+.vt-r { margin-left: -23px; }

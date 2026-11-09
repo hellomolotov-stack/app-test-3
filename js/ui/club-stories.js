@@ -10,7 +10,7 @@ import { openCardSheet } from './card-sheet.js';
 const SEEN_KEY = 'clubStoriesSeen';
 const DURATION = 7000;
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новая саммари', letter: 'новое письмо', app: 'обновление', event: 'событие', custom: 'клуб' };
+const TAG = { member: 'новый член клуба', badges: 'новые значки', summary: 'новое саммари', letter: 'новое письмо', app: 'обновление', event: 'событие', custom: 'клуб' };
 const EMOJI = { member: '🎉', badges: '🏅', summary: '🧠', letter: '✉️', app: '💫', event: '📅', custom: '⛰️' };
 const BG = {
     member: 'radial-gradient(ellipse 130% 90% at 50% 28%,#1d3a55 0%,#132639 42%,#0a1018 100%)',
