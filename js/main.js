@@ -255,7 +255,7 @@ function setupBottomNav() {
         }));
         popup.addEventListener('click', (e) => { if (e.target === popup) closeMenu(); });
     }
-    navMoreNew.addEventListener('click', () => { popup._refreshTiles?.(); popup._refreshMe?.(); });
+    navMoreNew.addEventListener('click', () => { popup._refreshTiles?.(); popup._refreshMe?.(); const pn = popup.querySelector('.ns-panel'); if (pn) { pn.style.transform = ''; pn.style.transition = ''; pn.querySelector('.ns-grab')?.style.setProperty('--pull', '0'); } });
 
     document.addEventListener('click', (e) => {
         if (popup.classList.contains('show') && !navMoreNew.contains(e.target) && !popup.contains(e.target)) {
