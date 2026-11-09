@@ -163,8 +163,61 @@ function runStep(action) {
         else document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
     }
+    if (kind === 'profile') {
+        // раздел «интеллигенты» → кнопка создания/редактирования своей анкеты
+        document.getElementById('navProfiles')?.click();
+        let n = 0;
+        const t = setInterval(() => {
+            const btn = document.getElementById('profileActionBtn') || document.getElementById('editProfileBtn');
+            if (btn || ++n > 40) { clearInterval(t); btn?.click(); }
+        }, 150);
+        return;
+    }
+    if (kind === 'card') { import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значки: следующий' })).catch(() => {}); return; }
+    if (kind === 'story') {
+        const today = new Date().toISOString().slice(0, 10);
+        const past = (state.hikesWithTitle || []).filter(h => h.date < today && isTrailHike(h)).pop();
+        if (past) { import('./story.js').then(m => m.openStoryShare(past.date, 'значки')).catch(() => {}); return; }
+    }
     const target = document.getElementById('calendarContainer');
     target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// «следующий значок» под витриной (вариант Г, 09.11): одна строка – маленький значок, название, ссылка-действие.
+// С картой: анкета → маршрут ближайшего хайка → N хайков (если 1–2 осталось) → мастермайнд → +1 → сторис.
+// Без карты: маршрут ближайшего хайка / первый хайк → сторис → карта (остальные значки – с ней).
+function nextGoal(owned) {
+    const member = state.userCard?.status === 'active';
+    const ownedTitles = new Set([...owned].map(normT));
+    const has = (id, title) => owned.has(id) || (title && ownedTitles.has(normT(title)));
+    const today = new Date().toISOString().slice(0, 10);
+    const progress = achievementMeta().progress;
+    const hikes = (state.hikesWithTitle || []).map((h, index) => ({ ...h, index })).filter(h => h.date >= today && isTrailHike(h));
+    const out = [];
+    const routeGoal = () => {
+        for (const h of hikes.slice(0, 4)) {
+            const title = routeBadgeForHike(h.title);
+            if (!title || has(catalogByTitle(title)?.id || title, title)) continue;
+            const booked = !!state.hikeBookingStatus?.[h.index];
+            return { title, link: booked ? 'ты записан ›' : 'записаться ›', action: `hike:${h.index}` };
+        }
+        return null;
+    };
+    if (member) {
+        if (!has('profile')) out.push({ title: 'показал себя клубу', link: 'заполнить ›', action: 'profile' });
+        const r = routeGoal(); if (r) out.push(r);
+        const next = progress?.member && HIKE_GOALS.find(([min, t]) => min > progress.hikes && !owned.has(catalogByTitle(t)?.id));
+        if (next && next[0] - progress.hikes <= 2) out.push({ title: next[1], link: `ещё ${next[0] - progress.hikes} ›`, action: 'hike' });
+        if (!has('mastermind-request')) out.push({ title: 'запрос на мастермайнде', link: 'на хайк ›', action: 'hike' });
+        if (!has('plus-one')) out.push({ title: 'привёл своего +1', link: 'позвать ›', action: 'hike' });
+        if (!has('story')) out.push({ title: 'показал горы в сторис', link: 'поделиться ›', action: 'story' });
+    } else {
+        if (!(progress?.hikes > 0) && !has('first-hike')) out.push({ title: 'первый хайк с интеллигенцией', link: 'записаться ›', action: 'hike' });
+        const r = routeGoal(); if (r) out.push(r);
+        if (!has('story')) out.push({ title: 'показал горы в сторис', link: 'поделиться ›', action: 'story' });
+        out.push({ title: 'владелец карты интеллигента', link: 'о карте ›', action: 'card' });
+    }
+    return out[0] || null;
 }
 
 export function openMedal(achievement) {
@@ -185,13 +238,10 @@ function vitrineHtml(items, shelf, owned, waiting) {
     // следующая цель: значок за число хайков с прогрессом, иначе первая из ближайших целей
     const progress = achievementMeta().progress;
     let goal = '';
-    const next = progress?.member && HIKE_GOALS.find(([min, t]) => min > progress.hikes && !owned.has(catalogByTitle(t)?.id));
-    if (next) {
-        const art = medalForTitle(next[1]);
-        goal = `<button type="button" class="vt-goal" data-mya-step="hike">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<div><b>следующий – ${esc(next[1])}</b><span class="vt-bar"><u style="width:${Math.round(100 * progress.hikes / next[0])}%"></u></span></div><small>${progress.hikes}/${next[0]}</small></button>`;
-    } else {
-        const g = nearestGoals(owned)[0];
-        if (g) { const art = medalForTitle(g.title); goal = `<button type="button" class="vt-goal" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<div><b>следующий – ${esc(g.title)}</b><small class="vt-sub">${esc(g.sub)}</small></div><small>›</small></button>`; }
+    const g = nextGoal(owned);
+    if (g) {
+        const art = medalForTitle(g.title);
+        goal = `<button type="button" class="vt-line" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<span>следующий: <b>${esc(g.title)}</b></span><em>${esc(g.link)}</em></button>`;
     }
     return `<div class="vt-head"><b>твои значки<small>${items.length} из ${total}</small></b><button type="button" class="vt-all" data-mya-all>все ›</button></div>
         ${a0.seenAt === null ? `<span class="vt-rays" aria-hidden="true"></span><span class="vt-conf" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 7) * .35}s;background:${['#D9FD19', '#F2C14E', '#7FC4F0', '#FF8FB8', '#fff'][i % 5]}"></i>`).join('')}</span>` : ''}
