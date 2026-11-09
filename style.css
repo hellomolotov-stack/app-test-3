@@ -8091,3 +8091,7 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 .ns-list .popup-item::after { content: '›'; margin-left: auto; color: rgba(255,255,255,.35); font-size: 18px; }
 .ns-list .popup-item:last-child { border-bottom: 0 !important; }
 .ns-list .popup-item-safety { color: #ff8a80 !important; background: none !important; }
+/* меню открыто – страница под ним не прокручивается (09.11) */
+html.menu-lock, html.menu-lock body { overflow: hidden !important; overscroll-behavior: none; }
+.nav-popup.nav-sheet { overscroll-behavior: contain; touch-action: none; }
+.nav-popup.nav-sheet .ns-panel { overscroll-behavior: contain; touch-action: none; }

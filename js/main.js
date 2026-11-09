@@ -237,6 +237,12 @@ function setupBottomNav() {
             sub.textContent = owner ? `карта интеллигента · ${Number(state.userCard.hikes || 0)} ${(n => { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? 'хайк' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'хайка' : 'хайков'; })(Number(state.userCard.hikes || 0))}` : 'узнать о карте интеллигента';
         };
         popup._refreshMe = refreshMe;
+        // пока меню открыто – страница под ним не листается (класс show ставят и снимают в разных местах – следим за ним)
+        new MutationObserver(() => {
+            const on = popup.classList.contains('show');
+            document.documentElement.classList.toggle('menu-lock', on);
+        }).observe(popup, { attributes: true, attributeFilter: ['class'] });
+        popup.addEventListener('touchmove', e => { if (!e.target.closest('.ns-panel')) e.preventDefault(); }, { passive: false });
         document.getElementById('nsMe')?.addEventListener('click', () => {
             haptic(); setUserInteracted(); closeMenu(); window.toggleShareButton(false);
             log('меню: моя карта', state.userCard.status !== 'active', state.user);
