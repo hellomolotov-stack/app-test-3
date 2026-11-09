@@ -8044,11 +8044,11 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 /* ==================== «продукты домой, на хайкинг и в зал» – бронза как у хайкинг бокса (09.11) ==================== */
 .fh2 { position: relative; margin-top: 20px; border-radius: 24px; overflow: hidden; background: linear-gradient(rgba(214,170,110,.13), rgba(214,170,110,.05)), #15181d; box-shadow: inset 0 0 0 1px rgba(214,170,110,.45), 0 12px 50px -14px rgba(214,170,110,.45); }
 .fh2::before { content: ''; position: absolute; right: -60px; top: -70px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(214,170,110,.38), transparent 65%); pointer-events: none; }
-.fh2-head { position: relative; padding: 16px 16px 8px; min-height: 128px; }
+.fh2-head { position: relative; padding: 16px 16px 8px; }
 .fh2-tag { display: inline-flex; padding: 4px 10px; border-radius: 999px; background: rgba(214,170,110,.18); color: #F3D9B1; font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .fh2-pct { position: absolute; right: 14px; top: 14px; padding: 5px 10px; border-radius: 12px; background: #F3D9B1; color: #2a1d00; font-weight: 900; font-size: 14px; }
-.fh2-head h3 { position: relative; z-index: 1; margin: 10px 0 0; max-width: 56%; font-size: 20px; line-height: 1.12; font-weight: 800; letter-spacing: -.02em; color: #fff; }
-.fh2-head p { position: relative; z-index: 1; margin: 5px 0 0; max-width: 58%; font-size: 12px; line-height: 1.35; color: rgba(255,255,255,.62); }
+.fh2-head h3 { position: relative; z-index: 1; margin: 10px 0 0; max-width: 80%; font-size: 20px; line-height: 1.12; font-weight: 800; letter-spacing: -.02em; color: #fff; }
+.fh2-head p { position: relative; z-index: 1; margin: 5px 0 0; max-width: 80%; font-size: 12px; line-height: 1.35; color: rgba(255,255,255,.62); }
 .fh2-pile { position: absolute; right: 12px; top: 48px; width: 118px; height: 96px; }
 .fh2-pile img { position: absolute; filter: drop-shadow(0 8px 12px rgba(0,0,0,.5)); }
 .fh2-pile .p1 { left: 0; top: 6px; height: 70px; transform: rotate(-10deg); }
