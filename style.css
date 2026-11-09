@@ -7999,3 +7999,4 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
 .vt-line span { flex: 1; min-width: 0; line-height: 1.3; }
 .vt-line b { color: #fff; font-weight: 600; }
 .vt-line em { flex: none; font-style: normal; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+.vt-goal + .vt-line { margin-top: 10px; }

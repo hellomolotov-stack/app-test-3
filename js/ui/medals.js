@@ -207,7 +207,6 @@ function nextGoal(owned) {
         if (!has('profile')) out.push({ title: 'показал себя клубу', link: 'заполнить ›', action: 'profile' });
         const r = routeGoal(); if (r) out.push(r);
         const next = progress?.member && HIKE_GOALS.find(([min, t]) => min > progress.hikes && !owned.has(catalogByTitle(t)?.id));
-        if (next && next[0] - progress.hikes <= 2) out.push({ title: next[1], link: `ещё ${next[0] - progress.hikes} ›`, action: 'hike' });
         if (!has('mastermind-request')) out.push({ title: 'запрос на мастермайнде', link: 'на хайк ›', action: 'hike' });
         if (!has('plus-one')) out.push({ title: 'привёл своего +1', link: 'позвать ›', action: 'hike' });
         if (!has('story')) out.push({ title: 'показал горы в сторис', link: 'поделиться ›', action: 'story' });
@@ -238,10 +237,16 @@ function vitrineHtml(items, shelf, owned, waiting) {
     // следующая цель: значок за число хайков с прогрессом, иначе первая из ближайших целей
     const progress = achievementMeta().progress;
     let goal = '';
+    // полоска прогресса до значка за число хайков (5, 10, 20…) – мотивирует, остаётся отдельной строкой
+    const nextCount = progress?.member && HIKE_GOALS.find(([min, t]) => min > progress.hikes && !owned.has(catalogByTitle(t)?.id));
+    if (nextCount) {
+        const art = medalForTitle(nextCount[1]);
+        goal += `<button type="button" class="vt-goal" data-mya-step="hike">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<div><b>следующий – ${esc(nextCount[1])}</b><span class="vt-bar"><u style="width:${Math.round(100 * progress.hikes / nextCount[0])}%"></u></span></div><small>${progress.hikes}/${nextCount[0]}</small></button>`;
+    }
     const g = nextGoal(owned);
     if (g) {
         const art = medalForTitle(g.title);
-        goal = `<button type="button" class="vt-line" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<span>следующий: <b>${esc(g.title)}</b></span><em>${esc(g.link)}</em></button>`;
+        goal += `<button type="button" class="vt-line" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<span>следующий: <b>${esc(g.title)}</b></span><em>${esc(g.link)}</em></button>`;
     }
     return `<div class="vt-head"><b>твои значки<small>${items.length} из ${total}</small></b><button type="button" class="vt-all" data-mya-all>все ›</button></div>
         ${a0.seenAt === null ? `<span class="vt-rays" aria-hidden="true"></span><span class="vt-conf" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 7) * .35}s;background:${['#D9FD19', '#F2C14E', '#7FC4F0', '#FF8FB8', '#fff'][i % 5]}"></i>`).join('')}</span>` : ''}
