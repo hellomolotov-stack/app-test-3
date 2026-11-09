@@ -5,6 +5,10 @@ import { catalogByTitle, tierOf } from './achievements-catalog.js';
 // три уровня: базовая – серебро, легендарная – золото, эпическая (в базе – mythical) – фиолетовый металл
 // Значки открыты всем с 27.10.2026. Скрыть снова – вернуть проверку по id в achievementsVisible().
 export const achievementsVisible = () => true;
+export function routeRepeatMark(a) {
+    const count = a.kind === 'route' ? Number(a.grant?.count) || 1 : 1;
+    return count > 1 ? `<b class="route-repeat" aria-label="пройдено ${count} раз">×${count}</b>` : '';
+}
 
 export const ACHIEVEMENT_RARITIES = [
     ['common', 'базовый'], ['legendary', 'легендарный'], ['mythical', 'эпический'],

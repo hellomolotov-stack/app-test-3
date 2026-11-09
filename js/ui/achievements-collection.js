@@ -10,6 +10,7 @@ import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { ACHIEVEMENT_CATALOG, ACHIEVEMENT_CATEGORIES, EXTRA_CATEGORY, categoryOf, catalogByTitle } from '../achievements-catalog.js';
 import { medalForTitle, medalSrc } from '../achievements-medals.js';
+import { routeRepeatMark } from '../achievements.js';
 import { openAchievementsPopup } from './achievements-popup.js';
 import { rarityShare, rarityLabel, achievementMeta, sortByValue, isWaiting, metalOf, isCardOnly } from '../achievements.js';
 
@@ -149,7 +150,7 @@ export function openAchievementsCollection(items = []) {
         const earned = sortByValue([...c.earned]);
         catView.innerHTML = `<button type="button" class="bdg-back" data-back>‹ значки</button>
             <div class="acol-sub">${c.key === 'routes' ? 'пройдено' : 'получено'} <b>${c.earned.length} из ${c.total}</b></div>
-            <div class="bdg-g3">${earned.map(a => `<button type="button" class="bdg-it" data-open="${esc(a.id)}">${img(a)}<span>${esc(a.title)}</span>${dateOrWait(a)}</button>`).join('')}
+            <div class="bdg-g3">${earned.map(a => `<button type="button" class="bdg-it" data-open="${esc(a.id)}">${img(a)}${routeRepeatMark(a)}<span>${esc(a.title)}</span>${dateOrWait(a)}</button>`).join('')}
             ${c.missing.map(m => { const art = medalForTitle(m.title), only = !member && isCardOnly(m.id);
                 return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}"><span class="wait-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}${only ? '<b class="card-only">с картой</b>' : ''}</span><span>${esc(m.title)}</span>${only ? '<em class="is-card">только с картой</em>' : ''}</button>`; }).join('')}</div>
             ${member ? '' : cardCta()}`;

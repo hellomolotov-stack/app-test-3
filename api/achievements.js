@@ -4,6 +4,7 @@ const { noShows } = require('../lib/no-shows');
 const { verifyInitData, isAdminUser } = require('./tg-auth');
 const { getAccessToken } = require('./club-content');
 const { hikeCount } = require('../lib/hike-count');
+const { routeDates, addRouteDate, grantSeenAt } = require('../lib/route-grants');
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -91,7 +92,8 @@ function grantsFor(record, recipients, userId, now) {
     return Object.fromEntries(Object.entries(recipients).map(([id, p]) => {
         // Only previously published grants can retain an issue date. Legacy drafts cannot.
         const previous = isPublished(record) ? record.grants?.[id] || (record.schemaVersion !== 2 ? record.recipients?.[id] : null) : null;
-        return [id, { ...p, issuedAt: previous?.issuedAt || now, issuedBy: previous?.issuedBy || String(userId) }];
+        if (record.kind === 'route' && previous) return [id, addRouteDate(previous, p, p.date, now, String(userId))];
+        return [id, { ...previous, ...p, issuedAt: previous?.issuedAt || now, issuedBy: previous?.issuedBy || String(userId) }];
     }));
 }
 
@@ -415,10 +417,11 @@ function createHandler(deps = {}) {
                         const grant = record.grants?.[id];
                         if (!grant?.issuedAt) continue;
                         collections[id].push({ id: record.id, title: record.title, description: record.description || '', rarity: record.rarity, kind: record.kind,
-                            ...(own ? { seenAt: Number(seen.value?.[record.id]) || null, holders: Object.values(record.grants || {}).filter(g => g?.issuedAt
+                            ...(own ? { seenAt: grantSeenAt(grant, seen.value?.[record.id]), holders: Object.values(record.grants || {}).filter(g => g?.issuedAt
                                 && (titleKey(record.title) !== 'добро пожаловать' || !club || club.has(String(g.userId)))).length } : {}),
                             medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
-                            grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt } });
+                            grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt,
+                                ...(record.kind === 'route' ? { dates: routeDates(grant), count: routeDates(grant).length } : {}) } });
                     }
                 }
                 Object.values(collections).forEach(items => items.sort((a, b) => b.grant.issuedAt - a.grant.issuedAt));
