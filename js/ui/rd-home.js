@@ -235,7 +235,6 @@ export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, her
             </button>${mini ? '' : '-->'}
         </div>
         ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : '<div id="clubStoriesHost"></div>'}
-        <div id="surveyHost"></div>
         ${between}
         ${!hero ? '' : ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
 }

@@ -12,6 +12,14 @@ let data = null;      // { segment, banner, questions, answers }
 let loadedAt = 0;
 let shown = false;
 
+// ссылка t.me/…?startapp=survey_B открывает превью опроса сегмента B (только для тестовых людей, сервер проверяет)
+const previewSegment = () => { try { const p = window.Telegram?.WebApp?.initDataUnsafe?.start_param || new URLSearchParams(location.search).get('startapp') || ''; return (/^survey_([A-F])$/.exec(p) || [])[1] || ''; } catch (e) { return ''; } };
+const ICONS = {
+    'найти друзей в Ялте': '🤝', 'познакомиться с интересными людьми': '👥', 'поговорить о важном, а не о погоде и работе': '💬',
+    'выбраться в горы, которые давно хотелось увидеть': '⛰️', 'провести выходные не в одиночестве': '🌤️', 'побыть в тишине и очистить голову': '🤫',
+    'попробовать что-то новое': '✨', 'сменить круг общения': '🔄', 'познакомиться с кем-то для отношений': '💛', 'узнать, что за клуб такой': '🔎',
+    'другое': '✍️', 'да': '👍', 'только пересказом': '🗣️', 'нет': '🙅', 'да, напишите мне в телеграм': '📨', 'может быть позже': '⏳',
+};
 const shuffle = list => { const a = list.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const bannerHtml = b => `
     <div class="card-container sv-banner" id="svBanner">
@@ -29,7 +37,7 @@ export async function mountSurveyBanner(host) {
     if (!host || !window.Telegram?.WebApp?.initData) return;
     try {
         if (!data || Date.now() - loadedAt > 60000) {
-            const r = await meCall('survey', {}, 8000);
+            const r = await meCall('survey', { preview: previewSegment() }, 8000);
             data = r?.survey || null; loadedAt = Date.now();
         }
     } catch (e) { return; }
@@ -65,8 +73,7 @@ function openSurvey(host) {
     el.innerHTML = `<div class="sv-sheet">
         <div class="cs-grab sv-grab"></div>
         <button type="button" class="hb-close sv-close" aria-label="закрыть">✕</button>
-        <div class="sv-prog"><i></i></div>
-        <div class="sv-count"></div>
+        <div class="sv-rw"><img src="assets/survey-badge.webp" alt=""><div class="sv-rw-t"><small></small><div class="sv-dots"></div></div></div>
         <div class="sv-body"></div>
         <div class="sv-bar"><button type="button" class="sv-skip">пропустить</button><button type="button" class="btn btn-yellow sv-next">дальше</button></div>
     </div>`;
@@ -120,14 +127,18 @@ function openSurvey(host) {
                 if (/^другое: /.test(v)) { cur.sel.push(OTHER); cur.other = v.slice(8); } else cur.sel.push(v);
             });
         }
-        el.querySelector('.sv-prog i').style.width = `${Math.round(idx / qs.length * 100)}%`;
-        el.querySelector('.sv-count').textContent = `${idx + 1} из ${qs.length}`;
-        next.textContent = idx === qs.length - 1 ? 'готово' : 'дальше';
-        let inner = `<h2 class="sv-q">${esc(q.title)}</h2>${q.type === 'multi' ? '<div class="sv-hint">можно выбрать несколько</div>' : q.note ? `<div class="sv-hint">${esc(q.note)}</div>` : '<div class="sv-hint"></div>'}`;
+        const left = qs.length - idx;
+        el.querySelector('.sv-rw small').textContent = `до значка · ${left} ${left === 1 ? 'вопрос' : left >= 2 && left <= 4 ? 'вопроса' : 'вопросов'}`;
+        el.querySelector('.sv-dots').innerHTML = qs.map((_, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('');
+        next.textContent = idx === qs.length - 1 ? (q.type === 'text' ? 'отправить' : 'готово') : (q.type === 'text' ? 'отправить' : 'дальше');
+        const hint = q.type === 'multi' ? 'можно выбрать несколько' : q.note || '';
+        let inner = `<div class="sv-msg"><span class="sv-av">и</span><div class="sv-bub">${esc(q.title)}</div></div><div class="sv-hint">${esc(hint)}</div>`;
         if (q.type === 'text') {
             inner += `<textarea class="sv-text" rows="7" maxlength="2000" placeholder="напиши своими словами"></textarea>`;
         } else {
-            inner += `<div class="sv-opts">${optionsOf(q).map(o => `<button type="button" class="sv-opt${q.type === 'multi' ? ' is-multi' : ''}${cur.sel.includes(o) ? ' is-on' : ''}" data-o="${esc(o)}"><i></i><span>${esc(o)}</span></button>`).join('')}</div>
+            const list = optionsOf(q);
+            const wide = list.some(o => o.length > 52);
+            inner += `<div class="sv-tiles${wide ? ' is-wide' : ''}">${list.map(o => `<button type="button" class="sv-tile${cur.sel.includes(o) ? ' is-on' : ''}" data-o="${esc(o)}">${ICONS[o] ? `<em>${ICONS[o]}</em>` : ''}<span>${esc(o)}</span></button>`).join('')}</div>
                 <input class="sv-other" type="text" maxlength="200" placeholder="что именно" ${cur.sel.includes(OTHER) ? '' : 'hidden'} value="${esc(cur.other)}">`;
         }
         body.innerHTML = inner;
@@ -139,10 +150,10 @@ function openSurvey(host) {
         } else {
             const other = body.querySelector('.sv-other');
             other.addEventListener('input', () => { cur.other = other.value; sync(); });
-            body.querySelectorAll('.sv-opt').forEach(b => b.addEventListener('click', () => {
+            body.querySelectorAll('.sv-tile').forEach(b => b.addEventListener('click', () => {
                 haptic();
                 const o = b.dataset.o;
-                if (q.type === 'single') { cur.sel = [o]; body.querySelectorAll('.sv-opt').forEach(x => x.classList.toggle('is-on', x === b)); }
+                if (q.type === 'single') { cur.sel = [o]; body.querySelectorAll('.sv-tile').forEach(x => x.classList.toggle('is-on', x === b)); }
                 else { cur.sel = cur.sel.includes(o) ? cur.sel.filter(x => x !== o) : [...cur.sel, o]; b.classList.toggle('is-on'); }
                 other.hidden = !cur.sel.includes(OTHER);
                 if (!other.hidden) other.focus({ preventScroll: true });
@@ -167,8 +178,7 @@ function openSurvey(host) {
     skipBtn.addEventListener('click', () => { haptic(); go(true); });
 
     async function finish() {
-        el.querySelector('.sv-prog i').style.width = '100%';
-        el.querySelector('.sv-count').textContent = '';
+        el.querySelector('.sv-rw').style.display = 'none';
         el.querySelector('.sv-bar').style.display = 'none';
         body.innerHTML = `<div class="sv-done"><img class="sv-done-img" src="assets/survey-badge.webp" alt=""><h2>спасибо</h2><p>мы читаем всё сами</p><div class="sv-gift">легендарный значок «поделился взглядом» подарим и добавим в твои значки</div><button type="button" class="btn btn-yellow sv-fin">закрыть</button></div>`;
         body.querySelector('.sv-fin').addEventListener('click', () => { haptic(); data = null; close(); });

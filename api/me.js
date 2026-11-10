@@ -184,7 +184,7 @@ module.exports = async (req, res) => {
         try {
             const token = await getAccessToken();
             const uid = String(user.id), a = body.action;
-            if (a === 'survey') return res.status(200).json({ survey: await survey.surveyFor(uid, token) });
+            if (a === 'survey') return res.status(200).json({ survey: await survey.surveyFor(uid, token, String(body.preview || '').toUpperCase().slice(0, 1)) });
             if (a === 'survey_answer') return res.status(200).json(await survey.saveAnswer(uid, token, String(body.segment || ''), String(body.q || ''), body.a, !!body.skip));
             if (a === 'survey_state') { await survey.setState(uid, token, String(body.op || ''), String(body.segment || '')); return res.status(200).json({ ok: true }); }
             if (a === 'survey_finish') {

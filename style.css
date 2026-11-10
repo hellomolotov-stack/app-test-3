@@ -8125,43 +8125,6 @@ html.v2 .sv-banner { position: relative; overflow: hidden; padding: 16px; margin
 .sv-ghost { flex: none; height: 46px; padding: 0 12px; border: 0; background: none; color: rgba(255, 255, 255, .6); font: inherit; font-size: 14px; cursor: pointer; }
 .sv-ghost:active { color: #fff; }
 
-.sv-overlay { position: fixed; inset: 0; z-index: 2150; background: rgba(0, 0, 0, 0); transition: background .3s ease; }
-.sv-overlay.is-on { background: rgba(0, 0, 0, .6); }
-.sv-sheet { position: fixed; left: 0; right: 0; bottom: 0; top: calc(var(--sv-top, 40px)); width: 100%; max-width: 600px; margin: 0 auto; box-sizing: border-box;
-    display: flex; flex-direction: column; overflow: hidden; border-radius: 28px 28px 0 0; border: 1px solid #22262D; border-bottom: 0;
-    background: radial-gradient(120% 50% at 100% 0%, rgba(255, 176, 64, .1), transparent 70%), #101318;
-    transform: translateY(100%); transition: transform .4s cubic-bezier(.2, .9, .25, 1); }
-.sv-overlay.is-on .sv-sheet { transform: none; }
-.sv-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .1); color: #fff; font-size: 16px; cursor: pointer; }
-.sv-prog { flex: none; height: 4px; margin: 6px 64px 0 18px; border-radius: 2px; background: rgba(255, 255, 255, .1); overflow: hidden; }
-.sv-prog i { display: block; height: 100%; width: 0; border-radius: 2px; background: #D9FD19; transition: width .35s ease; }
-.sv-count { flex: none; margin: 8px 18px 0; min-height: 16px; font-size: 12px; font-weight: 700; letter-spacing: .04em; color: rgba(255, 255, 255, .45); }
-.sv-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 14px 18px calc(env(safe-area-inset-bottom, 0px) + 120px); -webkit-overflow-scrolling: touch; transition: opacity .16s ease, transform .16s ease; }
-.sv-body.is-leave { opacity: 0; transform: translateX(-14px); }
-.sv-q { margin: 0; font-size: 24px; font-weight: 800; line-height: 1.22; letter-spacing: -.02em; color: #fff; }
-.sv-hint { min-height: 18px; margin: 8px 0 16px; font-size: 13px; color: rgba(255, 255, 255, .5); }
-.sv-opts { display: flex; flex-direction: column; gap: 8px; }
-.sv-opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid #22262D; background: rgba(255, 255, 255, .04); color: #fff; font: inherit; font-size: 15px; line-height: 1.35; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
-.sv-opt i { flex: none; width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .3); box-sizing: border-box; transition: all .15s; }
-.sv-opt.is-multi i { border-radius: 6px; }
-.sv-opt.is-on { border-color: #D9FD19; background: rgba(217, 253, 25, .08); }
-.sv-opt.is-on i { border-color: #D9FD19; background: #D9FD19 radial-gradient(circle, #101318 32%, transparent 36%); }
-.sv-opt.is-multi.is-on i { background: #D9FD19; box-shadow: inset 0 0 0 4px #D9FD19, inset 0 0 0 20px #D9FD19; }
-.sv-other, .sv-text { width: 100%; box-sizing: border-box; margin-top: 10px; padding: 14px 16px; border-radius: 16px; border: 1px solid #22262D; background: rgba(255, 255, 255, .05); color: #fff; font: inherit; font-size: 16px; line-height: 1.45; outline: none; resize: none; }
-.sv-text { margin-top: 0; min-height: 190px; }
-.sv-other:focus, .sv-text:focus { border-color: rgba(217, 253, 25, .6); }
-.sv-other[hidden] { display: none; }
-.sv-bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 14px 18px calc(env(safe-area-inset-bottom, 0px) + 16px); background: linear-gradient(180deg, rgba(16, 19, 24, 0), #101318 34%); }
-.sv-skip { flex: none; height: 52px; padding: 0 14px; border: 0; background: none; color: rgba(255, 255, 255, .6); font: inherit; font-size: 15px; cursor: pointer; }
-.sv-bar .sv-next { flex: 1; height: 52px; margin: 0; padding: 0 16px; border-radius: 12px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
-.sv-next:disabled { opacity: .4; }
-.sv-done { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 48px; }
-.sv-done-badge { width: 110px; height: 110px; margin-bottom: 22px; }
-.sv-done-badge b { font-size: 46px; }
-.sv-done h2 { margin: 0; font-size: 30px; font-weight: 800; color: #fff; }
-.sv-done p { margin: 8px 0 0; font-size: 16px; color: rgba(255, 255, 255, .7); }
-.sv-gift { margin: 26px 0 28px; padding: 14px 18px; max-width: 320px; border-radius: 16px; border: 1px solid rgba(255, 176, 64, .35); background: rgba(255, 176, 64, .08); font-size: 14px; line-height: 1.45; color: #ffd08a; }
-.sv-done .sv-fin { width: 100%; max-width: 320px; height: 52px; margin: 0; border-radius: 12px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
 /* баннер опроса – вариант В: значок по центру сверху, большая кнопка, «позже» и «отказаться» под ней */
 html.v2 .sv-banner { padding: 22px 16px 10px; text-align: center; background: radial-gradient(80% 70% at 50% 0%, rgba(255, 176, 64, .26), transparent 70%), #14171C; }
 .sv-banner .sv-b-top { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -8171,3 +8134,45 @@ html.v2 .sv-banner { padding: 22px 16px 10px; text-align: center; background: ra
 .sv-banner .sv-b-btns .sv-go { flex: none; width: 100%; }
 .sv-b-sub { display: flex; justify-content: center; gap: 18px; }
 .sv-done-img { display: block; width: 220px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .55)) drop-shadow(0 0 34px rgba(255, 176, 64, .45)); }
+
+/* шторка опроса: крупные карточки + диалог + значок-награда (акцент – наш лайм) */
+.sv-overlay { position: fixed; inset: 0; z-index: 2150; background: rgba(0, 0, 0, 0); transition: background .3s ease; }
+.sv-overlay.is-on { background: rgba(0, 0, 0, .6); }
+.sv-sheet { position: fixed; left: 0; right: 0; bottom: 0; top: var(--sv-top, 40px); width: 100%; max-width: 600px; margin: 0 auto; box-sizing: border-box;
+    display: flex; flex-direction: column; overflow: hidden; border-radius: 28px 28px 0 0; border: 1px solid #22262D; border-bottom: 0;
+    background: radial-gradient(120% 45% at 100% 0%, rgba(217, 253, 25, .08), transparent 70%), #101318;
+    transform: translateY(100%); transition: transform .4s cubic-bezier(.2, .9, .25, 1); }
+.sv-overlay.is-on .sv-sheet { transform: none; }
+.sv-close { position: absolute; top: 14px; right: 14px; z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .1); color: #fff; font-size: 16px; cursor: pointer; }
+.sv-rw { flex: none; display: flex; align-items: center; gap: 10px; margin: 6px 64px 0 18px; }
+.sv-rw img { flex: none; width: 46px; height: 46px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .5)); }
+.sv-rw-t { flex: 1; min-width: 0; }
+.sv-rw small { display: block; font-size: 11px; font-weight: 800; letter-spacing: .06em; color: #D9FD19; }
+.sv-dots { display: flex; gap: 4px; margin-top: 6px; }
+.sv-dots i { flex: 1; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .12); transition: background .3s; }
+.sv-dots i.on { background: #D9FD19; }
+.sv-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding: 4px 18px calc(env(safe-area-inset-bottom, 0px) + 124px); -webkit-overflow-scrolling: touch; transition: opacity .16s ease, transform .16s ease; }
+.sv-body.is-leave { opacity: 0; transform: translateX(-14px); }
+.sv-msg { display: flex; align-items: flex-end; gap: 9px; margin-top: 20px; }
+.sv-av { flex: none; width: 30px; height: 30px; border-radius: 50%; background: #D9FD19; color: #101318; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+.sv-bub { padding: 13px 15px; border-radius: 20px 20px 20px 6px; background: #1b1f26; font-size: 19px; line-height: 1.28; font-weight: 700; letter-spacing: -.01em; color: #fff; }
+.sv-hint { min-height: 17px; margin: 8px 0 14px 39px; font-size: 13px; color: rgba(255, 255, 255, .5); }
+.sv-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.sv-tiles.is-wide { grid-template-columns: 1fr; }
+.sv-tile { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; min-height: 92px; padding: 13px; border-radius: 18px; border: 1.5px solid #252a32; background: #171b21; color: #fff; font: inherit; font-size: 14px; line-height: 1.28; text-align: left; cursor: pointer; transition: border-color .15s, background .15s; }
+.sv-tiles.is-wide .sv-tile { flex-direction: row; align-items: center; justify-content: flex-start; min-height: 0; padding: 14px 15px; font-size: 15px; gap: 12px; }
+.sv-tile em { font-style: normal; font-size: 22px; line-height: 1; }
+.sv-tile.is-on { border-color: #D9FD19; background: rgba(217, 253, 25, .1); }
+.sv-other, .sv-text { width: 100%; box-sizing: border-box; margin-top: 10px; padding: 14px 16px; border-radius: 20px 20px 6px 20px; border: 1.5px solid #252a32; background: #171b21; color: #fff; font: inherit; font-size: 16px; line-height: 1.45; outline: none; resize: none; }
+.sv-text { margin-top: 0; min-height: 190px; }
+.sv-other:focus, .sv-text:focus { border-color: #D9FD19; background: rgba(217, 253, 25, .06); }
+.sv-other[hidden] { display: none; }
+.sv-bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: center; gap: 10px; padding: 14px 18px calc(env(safe-area-inset-bottom, 0px) + 16px); background: linear-gradient(180deg, rgba(16, 19, 24, 0), #101318 38%); }
+.sv-skip { flex: none; height: 52px; padding: 0 14px; border: 0; background: none; color: rgba(255, 255, 255, .6); font: inherit; font-size: 15px; cursor: pointer; }
+.sv-bar .sv-next { flex: 1; height: 52px; margin: 0; padding: 0 16px; border-radius: 12px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.sv-next:disabled { opacity: .4; }
+.sv-done { display: flex; flex-direction: column; align-items: center; text-align: center; padding-top: 40px; }
+.sv-done h2 { margin: 0; font-size: 30px; font-weight: 800; color: #fff; }
+.sv-done p { margin: 8px 0 0; font-size: 16px; color: rgba(255, 255, 255, .7); }
+.sv-gift { margin: 24px 0 26px; padding: 14px 18px; max-width: 320px; border-radius: 16px; border: 1px solid rgba(217, 253, 25, .3); background: rgba(217, 253, 25, .07); font-size: 14px; line-height: 1.45; color: #e6ff6b; }
+.sv-done .sv-fin { width: 100%; max-width: 320px; height: 52px; margin: 0; border-radius: 12px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
