@@ -9,6 +9,7 @@ const { hikeCount } = require('../lib/hike-count');
 const { circleFor } = require('../lib/circle');
 const { notesFor } = require('../lib/mm-notes');
 const { storiesFor, markView } = require('../lib/club-stories');
+const survey = require('../lib/survey');
 // «твои связи»: владельцам карты – все связи, без карты – 5 самых близких; этим – всё (тест)
 const CIRCLE_USERS = new Set(['maxmolotov']);
 
@@ -175,6 +176,27 @@ module.exports = async (req, res) => {
         } catch (e) {
             console.error('me stories:', e.message);
             return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
+
+    // опросы JTBD (lib/survey.js): баннер и вопросы, ответы по одному, «позже / отказаться / готово»
+    if (body && /^survey/.test(String(body.action || ''))) {
+        try {
+            const token = await getAccessToken();
+            const uid = String(user.id), a = body.action;
+            if (a === 'survey') return res.status(200).json({ survey: await survey.surveyFor(uid, token) });
+            if (a === 'survey_answer') return res.status(200).json(await survey.saveAnswer(uid, token, String(body.segment || ''), String(body.q || ''), body.a, !!body.skip));
+            if (a === 'survey_state') { await survey.setState(uid, token, String(body.op || ''), String(body.segment || '')); return res.status(200).json({ ok: true }); }
+            if (a === 'survey_finish') {
+                await survey.setState(uid, token, 'done', String(body.segment || ''));
+                const member = await read(`members/${uid}`, token).catch(() => null);
+                const badge = await survey.grantBadge(uid, String(member?.user_name || user.first_name || uid), token).catch(e => { console.error('survey badge:', e.message); return { granted: false }; });
+                return res.status(200).json({ ok: true, badge: !!badge.granted });
+            }
+            return res.status(400).json({ error: 'bad action' });
+        } catch (e) {
+            console.error('me survey:', e.message);
+            return res.status(e.message === 'forbidden' ? 403 : 502).json({ error: e.message === 'forbidden' ? 'forbidden' : 'db unavailable' });
         }
     }
 
