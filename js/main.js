@@ -986,7 +986,7 @@ async function loadAppData() {
         // Лист guests хранит только текст действия, поэтому источник и медленную загрузку
         // пишем отдельными событиями – они попадут в ежечасный отчёт.
         const src = tg?.initDataUnsafe?.start_param || '';
-        if (src) log(`пришёл по ссылке: ${src.replace(/^(hike|card|paid)_.*/, '$1_<дата>')}`, isGuestNow, state.user);
+        if (src) log(`пришёл по ссылке: ${src.replace(/^(hike|card|paid)_.*/, '$1_(дата)')}`, isGuestNow, state.user);
         saveCachedState();
 
         if (tg) {

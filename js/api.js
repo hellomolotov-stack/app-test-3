@@ -15,6 +15,8 @@ export function log(action, isGuest = false, user, meta = {}) {
     logSeq++;
     // Google Таблица считает текст с «+ = - @» в начале формулой и пишет #ERROR!
     // («+1: взял ссылку»). Апостроф в начале – признак текста, в ячейке его не видно.
+    // отчёты в бота уходят как HTML: «<» и «&» в тексте ломают всё сообщение (Telegram его отклоняет) – заменяем
+    action = String(action ?? '').replace(/</g, '‹').replace(/>/g, '›').replace(/&/g, '+');
     const safeAction = /^[=+\-@]/.test(action) ? `'${action}` : action;
     const finalAction = isGuest ? `${safeAction}_guest` : safeAction;
     const params = new URLSearchParams({
