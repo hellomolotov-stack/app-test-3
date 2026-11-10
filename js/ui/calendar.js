@@ -2606,6 +2606,9 @@ export function closeBottomSheet() {
 
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
+// строка под «сдвинь, чтобы записаться» у владельца карты: каждый раз немного по-разному, чтобы карта радовала
+const OWNER_SLIDER_LINES = ['для своих вход свободный ✨', 'твоя карта уже всё оплатила', 'место для своих – просто сдвинь', 'с картой – просто идёшь'];
+
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     if (!isTouchDevice()) return null;
 
@@ -2617,6 +2620,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     const hintTextBooked = 'сдвинь для отмены ‹';
     const hintTextUnbooked = '› сдвинь, чтобы записаться';
+    // вторая строка в дорожке (10.11): гостю – цена билета до свайпа, владельцу карты – тёплое «карта работает»
+    const trailHike = !isBookClub && !isCity && accentColor === 'var(--yellow)';
+    const ticketRub = `${Number(state.popupConfig?.ticketPrice || 1200).toLocaleString('ru-RU').replace(/\s/g, '\u00a0')}\u00a0₽`;
+    const subUnbooked = !trailHike ? '' : isGuest ? `билет · <b>${ticketRub}</b>` : OWNER_SLIDER_LINES[Math.floor(Math.random() * OWNER_SLIDER_LINES.length)];
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -2727,8 +2734,9 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.left = availableLeft + 'px';
             hint.style.right = 'auto';
             hint.style.width = hintWidth + 'px';
-            hint.style.justifyContent = 'flex-end';
-            hint.textContent = hintTextUnbooked;
+            hint.style.justifyContent = subUnbooked ? 'center' : 'flex-end';
+            if (subUnbooked) hint.innerHTML = `<span class="sw-two"><span>${hintTextUnbooked}</span><small class="${isGuest ? 'is-price' : 'is-card'}">${subUnbooked}</small></span>`;
+            else hint.textContent = hintTextUnbooked;
         } else {
             const availableRight = thumbLeftPos - GAP_BETWEEN;
             const availableLeft = EDGE_PADDING;
@@ -3082,6 +3090,13 @@ function updateFloatingSheetButtons() {
             const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
             if (swipeControl) {
                 container.appendChild(swipeControl);
+                if (!isBooked && isGuest && hike.book_club !== true && !(hike.city === true || hike.city === 'yes') && accentColor === 'var(--yellow)') {
+                    const n = document.createElement('button');
+                    n.type = 'button'; n.className = 'sw-card-note';
+                    n.innerHTML = 'с картой – <b>все хайки без билетов ›</b>';
+                    n.addEventListener('click', () => { haptic(); log('слайдер: с картой без билетов', true, state.user); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'слайдер записи' })); });
+                    container.appendChild(n);
+                }
                 container.style.pointerEvents = 'auto';
                 return;
             }
@@ -3320,6 +3335,13 @@ function updateFloatingSheetButtons() {
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
     if (swipeControl) {
         container.appendChild(swipeControl);
+        if (!isBooked && isGuest && hike.book_club !== true && !(hike.city === true || hike.city === 'yes') && accentColor === 'var(--yellow)') {
+            const n = document.createElement('button');
+            n.type = 'button'; n.className = 'sw-card-note';
+            n.innerHTML = 'с картой – <b>все хайки без билетов ›</b>';
+            n.addEventListener('click', () => { haptic(); log('слайдер: с картой без билетов', true, state.user); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'слайдер записи' })); });
+            container.appendChild(n);
+        }
         container.style.pointerEvents = 'auto';
         return;
     }

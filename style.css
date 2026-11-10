@@ -8098,3 +8098,12 @@ html.menu-lock, html.menu-lock body { overflow: hidden !important; overscroll-be
 /* иконки нижнего меню «дуотон» (10.11): у активного раздела – мягкая лаймовая заливка внутри */
 .nv-ico .f { fill: none; transition: fill-opacity .2s ease; }
 .nav-item.active .nv-ico .f { fill: currentColor; fill-opacity: .28; }
+/* слайдер записи: вторая строка (цена гостю / «карта работает» владельцу) и ссылка про карту (10.11) */
+.swipe-hint .sw-two { display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.15; padding: 0 6px; min-width: 0; }
+.swipe-hint .sw-two > span { font-size: 13.5px; color: rgba(255,255,255,.8); overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.swipe-hint .sw-two small { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.swipe-hint .sw-two small.is-price { color: rgba(255,255,255,.58); }
+.swipe-hint .sw-two small.is-price b { color: #fff; font-weight: 800; }
+.swipe-hint .sw-two small.is-card { color: var(--yellow); text-shadow: 0 0 10px rgba(217,253,25,.35); }
+.sw-card-note { flex-basis: 100%; display: block; margin: 8px auto 0; padding: 4px 12px; border: 0; background: none; color: rgba(255,255,255,.55); font: inherit; font-size: 12.5px; text-align: center; pointer-events: auto; cursor: pointer; }
+.sw-card-note b { color: var(--yellow); font-weight: 700; }
