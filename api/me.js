@@ -12,6 +12,8 @@ const { storiesFor, markView } = require('../lib/club-stories');
 const survey = require('../lib/survey');
 // «твои связи»: владельцам карты – все связи, без карты – 5 самых близких; этим – всё (тест)
 const CIRCLE_USERS = new Set(['maxmolotov']);
+// саммари мастермайндов целиком – и без карты (по нику Telegram, пока не знаем числовой id)
+const NOTES_FULL_USERNAMES = new Set(['tatyanamolotova']);
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 
@@ -160,7 +162,8 @@ module.exports = async (req, res) => {
         try {
             const token = await getAccessToken();
             const member = await read(`members/${user.id}`, token).catch(() => null);
-            return res.status(200).json({ notes: await notesFor(token, !!member?.user_id) });
+            const full = !!member?.user_id || NOTES_FULL_USERNAMES.has(String(user.username || '').toLowerCase());
+            return res.status(200).json({ notes: await notesFor(token, full) });
         } catch (e) {
             console.error('me notes:', e.message);
             return res.status(502).json({ error: 'db unavailable' });
