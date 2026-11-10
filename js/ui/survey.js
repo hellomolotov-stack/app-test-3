@@ -167,12 +167,12 @@ function openSurvey(host) {
         const q = qs[idx];
         const v = skip ? null : valueOf(q);
         answers[q.id] = skip ? { skip: true } : { a: v };
-        meCall('survey_answer', { segment, q: q.id, a: v, skip: !!skip }, 8000).catch(() => {});
+        const saved = meCall('survey_answer', { segment, q: q.id, a: v, skip: !!skip }, 8000).catch(() => {});
         log(`опрос: ${q.id} ${skip ? 'пропуск' : 'ответ'}`, false, state.user, { segment });
         if (idx < qs.length - 1) {
             body.classList.add('is-leave');
             setTimeout(() => { body.classList.remove('is-leave'); idx++; paint(); }, 160);
-        } else finish();
+        } else saved.then(finish);
     }
     next.addEventListener('click', () => { haptic(); go(false); });
     skipBtn.addEventListener('click', () => { haptic(); go(true); });

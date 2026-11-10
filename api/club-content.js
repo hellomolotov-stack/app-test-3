@@ -218,6 +218,11 @@ module.exports = async (req, res) => {
                 return res.status(400).json({ error: e.message });
             }
         }
+        // опросы: все ответы для вкладки «📋 опросы»
+        if (body.action === 'surveys') {
+            try { return res.status(200).json(await require('../lib/survey').adminReport(await getAccessToken())); }
+            catch (e) { console.error('surveys admin:', e.message); return res.status(502).json({ error: e.message }); }
+        }
         if (!['metrics', 'updates', 'masterminds'].includes(body.section) || !isValidRevision(body.revision)) {
             return res.status(400).json({ error: 'обнови данные редактора' });
         }
