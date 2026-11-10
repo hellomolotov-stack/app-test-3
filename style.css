@@ -8162,3 +8162,12 @@ html.v2 .sv-banner { position: relative; overflow: hidden; padding: 16px; margin
 .sv-done p { margin: 8px 0 0; font-size: 16px; color: rgba(255, 255, 255, .7); }
 .sv-gift { margin: 26px 0 28px; padding: 14px 18px; max-width: 320px; border-radius: 16px; border: 1px solid rgba(255, 176, 64, .35); background: rgba(255, 176, 64, .08); font-size: 14px; line-height: 1.45; color: #ffd08a; }
 .sv-done .sv-fin { width: 100%; max-width: 320px; height: 52px; margin: 0; border-radius: 12px; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+/* баннер опроса – вариант В: значок по центру сверху, большая кнопка, «позже» и «отказаться» под ней */
+html.v2 .sv-banner { padding: 22px 16px 10px; text-align: center; background: radial-gradient(80% 70% at 50% 0%, rgba(255, 176, 64, .26), transparent 70%), #14171C; }
+.sv-banner .sv-b-top { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.sv-banner .sv-badge-img { display: block; width: 150px; height: 150px; margin: -26px 0 -14px; object-fit: contain; filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .55)) drop-shadow(0 0 34px rgba(255, 176, 64, .5)); }
+.sv-banner .sv-b-txt { align-items: center; }
+.sv-banner .sv-b-btns { flex-direction: column; align-items: stretch; gap: 0; margin-top: 14px; }
+.sv-banner .sv-b-btns .sv-go { flex: none; width: 100%; }
+.sv-b-sub { display: flex; justify-content: center; gap: 18px; }
+.sv-done-img { display: block; width: 220px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .55)) drop-shadow(0 0 34px rgba(255, 176, 64, .45)); }

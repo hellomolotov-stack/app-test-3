@@ -16,13 +16,12 @@ const shuffle = list => { const a = list.slice(); for (let i = a.length - 1; i >
 const bannerHtml = b => `
     <div class="card-container sv-banner" id="svBanner">
         <div class="sv-b-top">
-            <span class="sv-b-badge" aria-hidden="true"><i></i><b>✦</b></span>
+            <img class="sv-badge-img" src="assets/survey-badge.webp" alt="">
             <div class="sv-b-txt"><small>опрос · 2–3 минуты</small><b>${esc(b.title)}</b><span>${esc(b.text)}</span></div>
         </div>
         <div class="sv-b-btns">
             <button type="button" class="btn btn-yellow sv-go" data-sv="go">${b.resume ? 'продолжить' : 'пройти'}</button>
-            <button type="button" class="sv-ghost" data-sv="later">позже</button>
-            <button type="button" class="sv-ghost" data-sv="declined">отказаться</button>
+            <div class="sv-b-sub"><button type="button" class="sv-ghost" data-sv="later">позже</button><button type="button" class="sv-ghost" data-sv="declined">отказаться</button></div>
         </div>
     </div>`;
 
@@ -171,7 +170,7 @@ function openSurvey(host) {
         el.querySelector('.sv-prog i').style.width = '100%';
         el.querySelector('.sv-count').textContent = '';
         el.querySelector('.sv-bar').style.display = 'none';
-        body.innerHTML = `<div class="sv-done"><div class="sv-done-badge"><i></i><b>✦</b></div><h2>спасибо</h2><p>мы читаем всё сами</p><div class="sv-gift">подарим легендарный значок – он появится среди твоих значков</div><button type="button" class="btn btn-yellow sv-fin">закрыть</button></div>`;
+        body.innerHTML = `<div class="sv-done"><img class="sv-done-img" src="assets/survey-badge.webp" alt=""><h2>спасибо</h2><p>мы читаем всё сами</p><div class="sv-gift">легендарный значок «поделился взглядом» подарим и добавим в твои значки</div><button type="button" class="btn btn-yellow sv-fin">закрыть</button></div>`;
         body.querySelector('.sv-fin').addEventListener('click', () => { haptic(); data = null; close(); });
         log('опрос: пройден', false, state.user, { segment });
         try { await meCall('survey_finish', { segment }, 10000); } catch (e) { /* состояние на сервере сохранится при следующем заходе */ }
