@@ -4,7 +4,8 @@
 import { state } from '../state.js';
 import { meCall } from '../net.js';
 import { log } from '../api.js';
-import { haptic } from '../utils.js';
+import { haptic, showConfetti } from '../utils.js';
+import { rarityLabel } from '../achievements.js';
 
 const esc = t => String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const OTHER = 'другое';
@@ -178,14 +179,35 @@ function openSurvey(host) {
     skipBtn.addEventListener('click', () => { haptic(); go(true); });
 
     async function finish() {
-        el.querySelector('.sv-rw').style.display = 'none';
-        el.querySelector('.sv-bar').style.display = 'none';
-        body.innerHTML = `<div class="sv-done"><img class="sv-done-img" src="assets/survey-badge.webp" alt=""><h2>спасибо</h2><p>мы читаем всё сами</p><div class="sv-gift">легендарный значок «поделился взглядом» подарим и добавим в твои значки</div><button type="button" class="btn btn-yellow sv-fin">закрыть</button></div>`;
-        body.querySelector('.sv-fin').addEventListener('click', () => { haptic(); data = null; close(); });
+        // сначала сохраняем конец опроса: значок выдаётся на сервере сразу, как только он засчитан
+        meCall('survey_finish', { segment }, 10000).catch(() => { /* состояние дойдёт при следующем заходе */ });
         log('опрос: пройден', false, state.user, { segment });
-        try { await meCall('survey_finish', { segment }, 10000); } catch (e) { /* состояние на сервере сохранится при следующем заходе */ }
         data = null;
+        showBadgeReward(() => close());
     }
 
     paint();
+}
+
+// финальный экран: «спасибо!» и значок в свечении с конфетти – как окно «новый значок» (стили .ach-*)
+function showBadgeReward(onClose) {
+    document.querySelector('.sv-reward')?.remove();
+    const el = document.createElement('div');
+    el.className = 'ach-overlay sv-reward';
+    el.innerHTML = `<div class="ach-sheet sv-reward-sheet" role="dialog" aria-modal="true" aria-label="значок за опрос">
+        <button type="button" class="ach-close" aria-label="закрыть">✕</button>
+        <h2 class="ach-title">спасибо!</h2>
+        <div class="sv-r-stage"><img src="assets/survey-badge.webp" alt="значок «поделился взглядом»"></div>
+        <span class="ach-rar is-legendary">${esc(rarityLabel('legendary') || 'легендарный')}</span>
+        <p class="sv-r-cap">значок «поделился взглядом» уже твой</p>
+        <button type="button" class="btn btn-yellow ach-btn">закрыть</button>
+    </div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('is-on'));
+    setTimeout(() => el.isConnected && showConfetti({ into: el }), 250);
+    try { window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success'); } catch (e) {}
+    let gone = false;
+    const done = () => { if (gone) return; gone = true; el.classList.remove('is-on'); setTimeout(() => el.remove(), 300); onClose && onClose(); };
+    el.querySelector('.ach-close').addEventListener('click', done);
+    el.querySelector('.ach-btn').addEventListener('click', () => { haptic(); done(); });
 }
