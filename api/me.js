@@ -189,7 +189,7 @@ module.exports = async (req, res) => {
             if (a === 'survey_state') { await survey.setState(uid, token, String(body.op || ''), String(body.segment || '')); return res.status(200).json({ ok: true }); }
             if (a === 'survey_finish') {
                 await survey.setState(uid, token, 'done', String(body.segment || ''));
-                if (survey.TEST_USERS.has(uid)) await survey.archiveTestRun(uid, token, String(body.segment || '')).catch(e => console.error('survey archive:', e.message));
+                await survey.archiveRun(uid, token, String(body.segment || '')).catch(e => console.error('survey archive:', e.message));
                 const member = await read(`members/${uid}`, token).catch(() => null);
                 const badge = await survey.grantBadge(uid, String(member?.user_name || user.first_name || uid), token).catch(e => { console.error('survey badge:', e.message); return { granted: false }; });
                 return res.status(200).json({ ok: true, badge: !!badge.granted });

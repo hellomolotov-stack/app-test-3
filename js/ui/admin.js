@@ -635,7 +635,7 @@ function renderStoriesAdmin(body) {
 
 // ---------- опросы (lib/survey.js → api/club-content action surveys) ----------
 // ответы по сегментам: по людям и по вопросам, тестовые (🧪) можно скрыть; выгрузка json и csv (csv открывается в Google Таблицах)
-let svAdm = null, svSeg = 'D', svMode = 'people', svTests = true, svOpen = null;
+let svAdm = null, svSeg = 'D', svMode = 'people', svTests = false, svOpen = null; // тестовые по умолчанию скрыты, чтобы не мешать статистике
 function loadSurveysAdm() {
     storiesCall('surveys').then(d => { svAdm = d; }).catch(e => { svAdm = { error: e.message }; })
         .finally(() => { if (root && view.tab === 'surveys') render(); });
@@ -666,40 +666,48 @@ function renderSurveysAdmin(body) {
     if (!svAdm) { body.innerHTML = '<div class="adm-muted" style="padding:12px 2px">загружаю ответы…</div>'; loadSurveysAdm(); return; }
     if (svAdm.error) { body.innerHTML = `<div class="adm-empty">не загрузилось: ${esc(svAdm.error)}</div><button class="btn btn-yellow adm-primary" id="admSvRetry">повторить</button>`; body.querySelector('#admSvRetry').addEventListener('click', () => { svAdm = null; render(); }); return; }
     const segs = svAdm.segments, g = segs[svSeg] || segs.D;
-    const people = g.people.filter(p => svTests || !p.test);
-    const chips = Object.entries(segs).map(([k, v]) => { const n = v.people.filter(p => svTests || !p.test).length;
-        return `<button class="adm-tab${k === svSeg ? ' is-on' : ''}" data-sv-seg="${k}">${k} · ${n}</button>`; }).join('');
+    const vis = list => list.filter(p => svTests || !p.test);
+    const people = vis(g.people);
+    const doneN = people.filter(p => p.done).length;
     const tests = Object.values(segs).reduce((n, v) => n + v.people.filter(p => p.test).length, 0);
+    const chips = Object.entries(segs).map(([k, v]) => `<button type="button" class="svadm-chip${k === svSeg ? ' is-on' : ''}" data-sv-seg="${k}"><b>${k}</b><span>${vis(v.people).length}</span></button>`).join('');
+    const who = p => esc(p.name || (p.username ? '@' + p.username : p.id));
     let content;
     if (svMode === 'people') {
-        content = people.length ? people.map((p, i) => {
+        content = people.length ? people.map(p => {
             const key = `${p.id}:${p.run}`, open = svOpen === key;
-            return `<div class="adm-content-updates" style="margin-bottom:8px"><button type="button" class="adm-item" data-sv-open="${key}" style="width:100%;text-align:left;display:block">
-                <b>${p.test ? '🧪 ' : ''}${esc(p.name || p.username || p.id)}${p.username ? ` <span class="adm-muted">@${esc(p.username)}</span>` : ''}</b>
-                <div class="adm-muted">${p.done ? '✅ прошёл до конца' : 'не дошёл до конца'} · отвечено ${p.answered} из ${g.questions.length}${p.skipped ? `, пропущено ${p.skipped}` : ''} · ${svWhen(p.last)}${p.run ? ' · прогон ' + svWhen(p.run) : ''}</div></button>
-                ${open ? g.questions.map(q => { const a = p.answers[q.id]; return a ? `<div style="padding:8px 2px;border-top:1px solid rgba(255,255,255,.07)"><div class="adm-muted">${esc(q.id)} · ${esc(q.title)}</div><div>${esc(svAns(a))}</div></div>` : ''; }).join('') : ''}
-                ${open && svAdm.consent?.[p.id] ? `<div class="adm-muted" style="padding-top:6px">цитировать: ${esc(svAdm.consent[p.id].quote || '–')} · разговор: ${esc(svAdm.consent[p.id].talk || '–')}</div>` : ''}</div>`; }).join('')
-            : '<div class="adm-empty">пока никто не отвечал в этом сегменте</div>';
+            return `<div class="svadm-card${open ? ' is-open' : ''}">
+                <button type="button" class="svadm-head" data-sv-open="${key}">
+                    <span class="svadm-name">${p.test ? '<i class="svadm-test">тест</i>' : ''}${who(p)}</span>
+                    <span class="svadm-state${p.done ? ' is-done' : ''}">${p.done ? 'прошёл' : 'в процессе'}</span>
+                    <span class="svadm-meta">отвечено ${p.answered} из ${g.questions.length}${p.skipped ? ` · пропущено ${p.skipped}` : ''} · ${svWhen(p.run || p.last)}</span>
+                </button>
+                ${open ? `<div class="svadm-ans">${g.questions.map(q => { const a = p.answers[q.id]; return a ? `<div class="svadm-qa"><small>${esc(q.id)} · ${esc(q.title)}</small><div class="${a.skip ? 'is-skip' : ''}">${esc(svAns(a))}</div></div>` : ''; }).join('')}
+                    ${svAdm.consent?.[p.id] ? `<div class="svadm-consent">цитировать: <b>${esc(svAdm.consent[p.id].quote || '–')}</b> · разговор: <b>${esc(svAdm.consent[p.id].talk || '–')}</b></div>` : ''}</div>` : ''}
+            </div>`; }).join('') : '<div class="adm-empty">пока никто не отвечал в этом сегменте</div>';
     } else {
         content = g.questions.map(q => {
             const vals = people.map(p => p.answers[q.id]).filter(a => a && !a.skip);
-            if (q.type === 'text') return `<div class="adm-content-updates" style="margin-bottom:8px"><div class="adm-item"><b>${esc(q.id)} · ${esc(q.title)}</b>
-                ${vals.length ? vals.map(a => `<div style="padding:6px 0;border-top:1px solid rgba(255,255,255,.07)">${esc(svAns(a))}</div>`).join('') : '<div class="adm-muted">ответов нет</div>'}</div></div>`;
+            if (q.type === 'text') return `<div class="svadm-card"><div class="svadm-qh"><b>${esc(q.id)}</b><span>${esc(q.title)}</span></div>
+                ${vals.length ? vals.map(a => `<div class="svadm-text">${esc(svAns(a))}</div>`).join('') : '<div class="svadm-none">ответов нет</div>'}</div>`;
             const cnt = {};
             vals.forEach(a => (Array.isArray(a.a) ? a.a : [a.a]).forEach(o => { const k = /^другое: /.test(o) ? 'другое' : o; cnt[k] = (cnt[k] || 0) + 1; }));
             const rows = Object.entries(cnt).sort((x, y) => y[1] - x[1]);
-            return `<div class="adm-content-updates" style="margin-bottom:8px"><div class="adm-item"><b>${esc(q.id)} · ${esc(q.title)}</b><div class="adm-muted">ответили ${vals.length}</div>
-                ${rows.map(([o, n]) => `<div style="padding:5px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span>${esc(o)}</span><b>${n}</b></div><div style="height:4px;border-radius:2px;background:rgba(255,255,255,.1)"><i style="display:block;height:100%;width:${Math.round(n / vals.length * 100)}%;border-radius:2px;background:#D9FD19"></i></div></div>`).join('')}</div></div>`;
+            return `<div class="svadm-card"><div class="svadm-qh"><b>${esc(q.id)}</b><span>${esc(q.title)}</span></div><div class="svadm-none">ответили: ${vals.length}</div>
+                ${rows.map(([o, n]) => `<div class="svadm-bar"><div class="svadm-bar-t"><span>${esc(o)}</span><b>${n}</b></div><i><u style="width:${Math.round(n / vals.length * 100)}%"></u></i></div>`).join('')}</div>`;
         }).join('');
     }
     body.innerHTML = `
-        <div class="adm-tabs" style="margin-bottom:10px">${chips}</div>
-        <div class="adm-muted" style="margin:0 2px 10px">${esc(g.title)} · пока сегмент определяется только у тестовых людей</div>
-        <div class="adm-tabs" style="margin-bottom:10px"><button class="adm-tab${svMode === 'people' ? ' is-on' : ''}" data-sv-mode="people">по людям</button><button class="adm-tab${svMode === 'q' ? ' is-on' : ''}" data-sv-mode="q">по вопросам</button>
-            <button class="adm-tab${svTests ? ' is-on' : ''}" id="admSvTests">🧪 тестовые${tests ? ' · ' + tests : ''}</button></div>
-        ${content}
-        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-yellow-outline" id="admSvCsv" style="flex:1">скачать csv (для Таблиц)</button><button class="btn btn-yellow-outline" id="admSvJson" style="flex:1">скачать json</button></div>
-        <button class="adm-muted" id="admSvRefresh" style="margin:12px 2px 0;background:none;border:0;color:inherit;text-decoration:underline">обновить</button>`;
+        <div class="svadm-chips">${chips}</div>
+        <div class="svadm-title">${esc(g.title)}</div>
+        <div class="svadm-sum"><span><b>${people.length}</b> прохождений</span><span><b>${doneN}</b> до конца</span><span><b>${people.length - doneN}</b> в процессе</span></div>
+        <div class="svadm-ctl">
+            <div class="svadm-seg"><button type="button" class="${svMode === 'people' ? 'is-on' : ''}" data-sv-mode="people">по людям</button><button type="button" class="${svMode === 'q' ? 'is-on' : ''}" data-sv-mode="q">по вопросам</button></div>
+            <button type="button" class="svadm-tog${svTests ? ' is-on' : ''}" id="admSvTests">тестовые${tests ? ` · ${tests}` : ''}</button>
+        </div>
+        <div class="svadm-list">${content}</div>
+        <div class="svadm-dl"><button type="button" class="btn btn-yellow-outline" id="admSvCsv">csv для Таблиц</button><button type="button" class="btn btn-yellow-outline" id="admSvJson">json</button></div>
+        <button type="button" class="svadm-refresh" id="admSvRefresh">обновить</button>`;
     body.querySelectorAll('[data-sv-seg]').forEach(b => b.addEventListener('click', () => { svSeg = b.dataset.svSeg; svOpen = null; render(); }));
     body.querySelectorAll('[data-sv-mode]').forEach(b => b.addEventListener('click', () => { svMode = b.dataset.svMode; render(); }));
     body.querySelectorAll('[data-sv-open]').forEach(b => b.addEventListener('click', () => { svOpen = svOpen === b.dataset.svOpen ? null : b.dataset.svOpen; render(); }));

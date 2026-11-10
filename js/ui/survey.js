@@ -67,7 +67,8 @@ function openSurvey(host) {
     const orders = {}; // порядок вариантов фиксируем на время прохождения
     // с какого вопроса продолжить: первый без ответа
     let idx = qs.findIndex(q => !answers[q.id]);
-    if (idx < 0) idx = 0;
+    const allDone = idx < 0; // все ответы уже есть, а «готово» не дошло до сервера – просто довершаем
+    if (allDone) idx = qs.length - 1;
 
     const el = document.createElement('div');
     el.className = 'sv-overlay';
@@ -186,7 +187,7 @@ function openSurvey(host) {
         showBadgeReward(() => close());
     }
 
-    paint();
+    if (allDone) finish(); else paint();
 }
 
 // финальный экран: «спасибо!» и значок в свечении с конфетти – как окно «новый значок» (стили .ach-*)
