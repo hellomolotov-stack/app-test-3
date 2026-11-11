@@ -46,6 +46,7 @@ export async function mountSurveyBanner(host) {
     if (!data) { host.innerHTML = ''; return; }
     host.innerHTML = bannerHtml(data.banner);
     if (!shown) { shown = true; log('опрос: баннер показан', false, state.user, { segment: data.segment }); }
+    scheduleNudge();
     host.querySelector('[data-sv="go"]').addEventListener('click', () => { haptic(); log('опрос: открыл', false, state.user, { segment: data.segment }); openSurvey(host); });
     host.querySelectorAll('.sv-ghost').forEach(b => b.addEventListener('click', async () => {
         haptic();
@@ -211,4 +212,96 @@ function showBadgeReward(onClose) {
     const done = () => { if (gone) return; gone = true; el.classList.remove('is-on'); setTimeout(() => el.remove(), 300); onClose && onClose(); };
     el.querySelector('.ach-close').addEventListener('click', done);
     el.querySelector('.ach-btn').addEventListener('click', () => { haptic(); done(); });
+}
+
+// ---------- всплывашка снизу: «ответишь на пару вопросов за значок?» ----------
+// Не накладывается на другие окна: ждёт, пока экран чистый, потом ещё пару секунд, и только тогда выезжает.
+// Не чаще раза за заход и не больше 3 раз человеку; «позже» прячет на сутки, крестик – насовсем (баннер на главной остаётся).
+const BUSY = '.ach-overlay, .acol-overlay, .admission-overlay, .bottom-sheet-overlay.active, .city-ticket-overlay, .cq-overlay, .csv-overlay, .cw-overlay, .hb-overlay, .inv-overlay, .mmr-overlay, .modal-overlay, .profile-blur-overlay, .rd-story-overlay, .sa-overlay, .sv-overlay, .reg-ticket-overlay, .zp-overlay, .cs-overlay, .bot-chat-overlay, .bottom-sheet.visible';
+const FIRST_DELAY = 7000, QUIET_MS = 2500, MAX_SHOWS = 3;
+let nudgeTimer = 0, nudgeEl = null, nudgeShown = false, nudgeDone = false;
+const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const busyNow = () => !!document.querySelector(BUSY);
+const appReady = () => { const l = document.getElementById('initial-loader'); return document.documentElement.classList.contains('app-ready') && (!l || l.style.display === 'none' || getComputedStyle(l).display === 'none'); };
+
+function scheduleNudge() {
+    if (nudgeTimer || nudgeDone || !data) return;
+    const test = !!data.test; // у тестовых аккаунтов без ограничений по числу показов
+    if (!test && (Number(ls.get('svNudgeN')) >= MAX_SHOWS || Number(ls.get('svNudgeUntil')) > Date.now())) return;
+    const started = Date.now();
+    let quietSince = Date.now();
+    nudgeTimer = setInterval(() => {
+        const host = document.getElementById('surveyHost');
+        const banner = host && host.querySelector('#svBanner');
+        const busy = busyNow();
+        if (busy) quietSince = Date.now();
+        if (!banner || !data || document.visibilityState === 'hidden') { // ушли с главной – ждём возврата, но не вечно
+            if (nudgeEl) hideNudge(true);
+            if (Date.now() - started > 5 * 60000) stopNudge();
+            quietSince = Date.now();
+            return;
+        }
+        if (nudgeEl) { if (busy) hideNudge(true); return; } // поверх вылезло другое окно – убираем, вернёмся после паузы
+        if (!appReady() || busy || Date.now() - started < FIRST_DELAY || Date.now() - quietSince < QUIET_MS) return;
+        showNudge(banner, test);
+    }, 400);
+}
+function stopNudge() { clearInterval(nudgeTimer); nudgeTimer = 0; }
+
+function hideNudge(keepWaiting) {
+    const el = nudgeEl; nudgeEl = null;
+    if (el) { el.classList.remove('is-on'); setTimeout(() => el.remove(), 350); }
+    if (!keepWaiting) stopNudge();
+}
+
+function showNudge(banner, test) {
+    if (!nudgeShown) { // счётчик показов – один раз за заход
+        nudgeShown = true;
+        if (!test) ls.set('svNudgeN', String((Number(ls.get('svNudgeN')) || 0) + 1));
+        log('опрос: всплывашка показана', false, state.user, { segment: data.segment });
+    }
+    const el = document.createElement('div');
+    el.className = 'sv-nudge';
+    el.innerHTML = `<button type="button" class="sv-nx" aria-label="закрыть">✕</button>
+        <img class="sv-n-img" src="assets/survey-badge.webp" alt="">
+        <div class="sv-n-t">${esc(data.banner.title)}</div>
+        <div class="sv-n-s">ответишь на пару вопросов? подарим легендарный значок</div>
+        <div class="sv-n-b"><button type="button" class="btn btn-yellow sv-n-yes">да, отвечу</button><button type="button" class="sv-n-later">позже</button></div>`;
+    document.body.appendChild(el);
+    nudgeEl = el;
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-on')));
+    el.querySelector('.sv-n-yes').addEventListener('click', () => {
+        haptic(); log('опрос: всплывашка – да', false, state.user, { segment: data.segment });
+        nudgeDone = true; hideNudge(false);
+        glideToBanner();
+    });
+    el.querySelector('.sv-n-later').addEventListener('click', () => {
+        haptic(); log('опрос: всплывашка – позже', false, state.user, { segment: data.segment });
+        ls.set('svNudgeUntil', String(Date.now() + 24 * 3600000)); nudgeDone = true; hideNudge(false);
+    });
+    el.querySelector('.sv-nx').addEventListener('click', () => {
+        haptic(); log('опрос: всплывашка – закрыл', false, state.user, { segment: data.segment });
+        ls.set('svNudgeN', '99'); nudgeDone = true; hideNudge(false);
+    });
+}
+
+// плавный доскролл: баннер встаёт посередине экрана, на секунды подсвечивается кольцом; любое касание прерывает
+function glideToBanner() {
+    const banner = document.getElementById('svBanner');
+    if (!banner) return;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const from = scrollY, t0 = performance.now();
+    let stop = false;
+    const cancel = () => { stop = true; };
+    ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach(t => window.addEventListener(t, cancel, { once: true, capture: true, passive: true }));
+    const target = () => { const r = banner.getBoundingClientRect(); return Math.max(0, Math.min(document.documentElement.scrollHeight - innerHeight, r.top + scrollY - (innerHeight - r.height) / 2)); };
+    const step = now => {
+        if (stop) return;
+        const p = reduced ? 1 : Math.min(1, (now - t0) / 1100);
+        const e = p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2;
+        window.scrollTo({ top: from + (target() - from) * e, behavior: 'instant' });
+        if (p < 1) requestAnimationFrame(step);
+        else { banner.classList.add('sv-flash'); setTimeout(() => banner.classList.remove('sv-flash'), 3200); }
+    };
+    requestAnimationFrame(step);
 }
