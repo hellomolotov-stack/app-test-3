@@ -2753,7 +2753,7 @@ function renderActivity(body) {
         const now = Date.now();
         const people = new Set(act.events.map(e => e.uid));
         const online = new Set(act.events.filter(e => now - e.t < 5 * 60000).map(e => e.uid));
-        const pinUids = new Set(act.events.filter(e => /^пришёл по ссылке: pin/.test(e.a || '')).map(e => e.uid));
+        const pinUids = new Set(act.events.filter(e => /^(📌 пришёл из закрепа|пришёл по ссылке: pin)/.test(e.a || '')).map(e => e.uid));
         body.querySelector('#actStats').innerHTML = `<div><b>${act.day === today ? online.size : '–'}</b>сейчас</div><div><b>${people.size}</b>людей</div><div><b>${act.events.length}</b>действий</div><div><b>${pinUids.size}</b>из закрепа</div>`;
         const q = act.q.trim().toLowerCase();
         let list = act.events;
