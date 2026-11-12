@@ -217,7 +217,7 @@ function showBadgeReward(onClose) {
 // ---------- всплывашка снизу: «ответишь на пару вопросов за значок?» ----------
 // Не накладывается на другие окна: ждёт, пока экран чистый, потом ещё пару секунд, и только тогда выезжает.
 // Не чаще раза за заход и не больше 3 раз человеку; «позже» прячет на сутки, крестик – насовсем (баннер на главной остаётся).
-const BUSY = '.ach-overlay, .acol-overlay, .admission-overlay, .bottom-sheet-overlay.active, .city-ticket-overlay, .cq-overlay, .csv-overlay, .cw-overlay, .hb-overlay, .inv-overlay, .mmr-overlay, .modal-overlay, .profile-blur-overlay, .rd-story-overlay, .sa-overlay, .sv-overlay, .reg-ticket-overlay, .zp-overlay, .cs-overlay, .bot-chat-overlay, .bottom-sheet.visible';
+const BUSY = '.ai-island.visible, .ach-overlay, .acol-overlay, .admission-overlay, .bottom-sheet-overlay.active, .city-ticket-overlay, .cq-overlay, .csv-overlay, .cw-overlay, .hb-overlay, .inv-overlay, .mmr-overlay, .modal-overlay, .profile-blur-overlay, .rd-story-overlay, .sa-overlay, .sv-overlay, .reg-ticket-overlay, .zp-overlay, .cs-overlay, .bot-chat-overlay, .bottom-sheet.visible';
 const FIRST_DELAY = 7000, QUIET_MS = 2500, MAX_SHOWS = 3;
 let nudgeTimer = 0, nudgeEl = null, nudgeShown = false, nudgeDone = false;
 const ls = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };

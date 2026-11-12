@@ -85,7 +85,8 @@ function canReact(key) {
 }
 
 // шторки и чат поверх – не перебиваем, ждём ещё
-const busy = () => !!document.querySelector('.bottom-sheet-overlay, .cs-overlay, .modal.show, .popup-overlay.visible');
+// и опрос (всплывашка снизу и его шторка), и любые другие окна: один слой за раз, чтобы не было наложения
+const busy = () => !!document.querySelector('.bottom-sheet-overlay, .cs-overlay, .modal.show, .popup-overlay.visible, .sv-nudge, .sv-overlay, .ach-overlay, .acol-overlay, .admission-overlay, .city-ticket-overlay, .cq-overlay, .csv-overlay, .cw-overlay, .hb-overlay, .inv-overlay, .mmr-overlay, .modal-overlay, .profile-blur-overlay, .rd-story-overlay, .sa-overlay, .reg-ticket-overlay, .zp-overlay, .bot-chat-overlay');
 
 function schedule(key) {
     if (!canReact(key)) return;
