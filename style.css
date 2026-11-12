@@ -8128,12 +8128,12 @@ html.v2 .sv-banner { position: relative; overflow: hidden; padding: 16px; margin
 /* баннер опроса – вариант В: значок по центру сверху, большая кнопка, «позже» и «отказаться» под ней */
 html.v2 .sv-banner { padding: 22px 16px 10px; text-align: center; background: radial-gradient(80% 70% at 50% 0%, rgba(255, 176, 64, .26), transparent 70%), #14171C; }
 .sv-banner .sv-b-top { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.sv-banner .sv-badge-img { display: block; width: 150px; height: 150px; margin: -26px 0 -14px; object-fit: contain; filter: drop-shadow(0 12px 20px rgba(0, 0, 0, .55)) drop-shadow(0 0 34px rgba(255, 176, 64, .5)); }
+.sv-banner .sv-badge-img { display: block; width: 150px; height: 150px; margin: -26px 0 -14px; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .45)); background: radial-gradient(closest-side, rgba(255, 176, 64, .42), rgba(255, 176, 64, .14) 60%, transparent 100%); }
 .sv-banner .sv-b-txt { align-items: center; }
 .sv-banner .sv-b-btns { flex-direction: column; align-items: stretch; gap: 0; margin-top: 14px; }
 .sv-banner .sv-b-btns .sv-go { flex: none; width: 100%; }
 .sv-b-sub { display: flex; justify-content: center; gap: 18px; }
-.sv-done-img { display: block; width: 220px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 12px 22px rgba(0, 0, 0, .55)) drop-shadow(0 0 34px rgba(255, 176, 64, .45)); }
+.sv-done-img { display: block; width: 220px; height: auto; margin-bottom: 18px; filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .45)); background: radial-gradient(closest-side, rgba(255, 176, 64, .42), rgba(255, 176, 64, .14) 60%, transparent 100%); }
 
 /* шторка опроса: крупные карточки + диалог + значок-награда (акцент – наш лайм) */
 .sv-overlay { position: fixed; inset: 0; z-index: 2150; background: rgba(0, 0, 0, 0); transition: background .3s ease; }
@@ -8187,7 +8187,7 @@ html.v2 .sv-banner { padding: 22px 16px 10px; text-align: center; background: ra
 .sv-r-stage::after { content: ''; position: absolute; width: 420px; height: 420px; left: 50%; top: 50%; margin: -210px 0 0 -210px; border-radius: 50%; opacity: .5;
     background: conic-gradient(from 0deg, transparent 0 8%, rgba(255, 226, 150, .28) 10% 12%, transparent 14% 25%, rgba(255, 226, 150, .28) 27% 29%, transparent 31% 50%, rgba(255, 226, 150, .28) 52% 54%, transparent 56% 75%, rgba(255, 226, 150, .28) 77% 79%, transparent 81%);
     -webkit-mask: radial-gradient(closest-side, transparent 25%, #000 50%, transparent 100%); mask: radial-gradient(closest-side, transparent 25%, #000 50%, transparent 100%); animation: sv-spin 18s linear infinite; pointer-events: none; }
-.sv-r-stage img { position: relative; z-index: 1; width: 250px; height: 250px; object-fit: contain; filter: drop-shadow(0 14px 26px rgba(0, 0, 0, .6)) drop-shadow(0 0 30px rgba(255, 176, 64, .55)); animation: sv-float 3.4s ease-in-out infinite; }
+.sv-r-stage img { position: relative; z-index: 1; width: 250px; height: 250px; object-fit: contain; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .5)); background: radial-gradient(closest-side, rgba(255, 176, 64, .42), rgba(255, 176, 64, .14) 60%, transparent 100%); animation: sv-float 3.4s ease-in-out infinite; }
 .sv-reward-sheet .ach-rar { margin-top: 2px; }
 .sv-r-cap { margin: 8px 24px 18px; font-size: 16.5px; line-height: 1.4; color: rgba(255, 255, 255, .85); text-wrap: balance; }
 @keyframes sv-pulse { 50% { transform: scale(1.08); opacity: .85; } }
