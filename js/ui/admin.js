@@ -213,7 +213,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['activity', '📡 активность'], ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -233,6 +233,7 @@ function render() {
     else if (view.tab === 'analytics') { if (isRedesign()) renderRdAnalytics(body); else renderAnalytics(body, adminCall); }
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'flows') renderFlows(body);
+    else if (view.tab === 'activity') renderActivity(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);
     else if (view.tab === 'plus1') renderPlus1(body);
     else if (view.tab === 'pass') renderPass(body);
@@ -2721,4 +2722,67 @@ function confirmAsync(text) {
         }
         resolve(window.confirm(text));
     });
+}
+
+// ---------- «активность»: действия людей в приложении почти в реальном времени (12.11) ----------
+// Источник – activity/<день> в Firebase (пишет /api/me action events), читаем через /api/me action activity раз в 5 с.
+let act = null; // { day, events, last, timer, q, guests, uid }
+function actMsk(t) { return new Date(t + 3 * 3600000).toISOString().slice(11, 19); }
+async function actFetch(day, since) {
+    const r = await fetch('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'activity', initData: window.Telegram?.WebApp?.initData || '', day, since }) });
+    if (!r.ok) throw new Error(r.status === 403 ? 'нет доступа' : 'сервер не ответил');
+    return r.json();
+}
+function renderActivity(body) {
+    const today = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() + 3 * 3600000 - 86400000).toISOString().slice(0, 10);
+    if (!act || (act.day !== today && act.day !== yesterday)) act = { day: today, events: [], last: '', q: '', guests: false, uid: '' };
+    clearTimeout(act.timer);
+    body.innerHTML = `
+        <div class="act-top">
+            <div class="adm-chips"><button class="adm-chip${act.day === today ? ' is-on' : ''}" data-actday="${today}">сегодня</button><button class="adm-chip${act.day === yesterday ? ' is-on' : ''}" data-actday="${yesterday}">вчера</button><button class="adm-chip${act.guests ? ' is-on' : ''}" id="actGuests">только гости</button></div>
+            <div class="act-stats" id="actStats"></div>
+            <input class="act-q" id="actQ" placeholder="поиск: имя, ник или действие" value="${esc(act.q)}">
+            <div id="actWho"></div>
+        </div>
+        <div class="act-list" id="actList"><div class="adm-muted">загружаю…</div></div>`;
+    const paint = () => {
+        if (!body.isConnected) return;
+        const now = Date.now();
+        const people = new Set(act.events.map(e => e.uid));
+        const online = new Set(act.events.filter(e => now - e.t < 5 * 60000).map(e => e.uid));
+        body.querySelector('#actStats').innerHTML = `<div><b>${act.day === today ? online.size : '–'}</b>сейчас</div><div><b>${people.size}</b>людей</div><div><b>${act.events.length}</b>действий</div>`;
+        const q = act.q.trim().toLowerCase();
+        let list = act.events;
+        if (act.uid) list = list.filter(e => e.uid === act.uid);
+        if (act.guests) list = list.filter(e => e.g);
+        if (q) list = list.filter(e => `${e.n} ${e.u} ${e.a}`.toLowerCase().includes(q));
+        const who = act.uid ? act.events.find(e => e.uid === act.uid) : null;
+        body.querySelector('#actWho').innerHTML = who ? `<button class="act-who" id="actWhoX">👤 ${esc(who.n || who.u || who.uid)} · ${list.length} действий <b>✕</b></button>` : '';
+        body.querySelector('#actWhoX')?.addEventListener('click', () => { haptic(); act.uid = ''; paint(); });
+        const shown = list.slice(-300).reverse();
+        body.querySelector('#actList').innerHTML = shown.length ? shown.map(e => `
+            <div class="act-row${now - e.t < 60000 ? ' is-fresh' : ''}">
+                <span class="act-t">${actMsk(e.t).slice(0, act.day === today ? 8 : 5)}</span>
+                <span class="act-m"><button class="act-n" data-uid="${esc(e.uid)}">${esc(e.n || e.u || e.uid)}${e.g ? ' <i>гость</i>' : ''}</button><span class="act-a">${esc(e.a)}</span></span>
+            </div>`).join('') : '<div class="adm-muted" style="padding:12px 2px">пока пусто – события появляются, как только люди что-то делают в приложении</div>';
+        body.querySelectorAll('[data-uid]').forEach(b => b.addEventListener('click', () => { haptic(); act.uid = b.dataset.uid; paint(); }));
+    };
+    const tick = async () => {
+        if (!body.isConnected || view.tab !== 'activity') return;
+        try {
+            const d = await actFetch(act.day, act.last);
+            if (d.events?.length) { act.events = act.events.concat(d.events).slice(-4000); act.last = d.events[d.events.length - 1].k; }
+            paint();
+        } catch (e) {
+            const l = body.querySelector('#actList'); if (l && !act.events.length) l.innerHTML = `<div class="adm-error-inline">${esc(e.message)}</div>`;
+        }
+        if (act.day === today) act.timer = setTimeout(tick, 5000);
+    };
+    body.querySelectorAll('[data-actday]').forEach(b => b.addEventListener('click', () => { haptic(); clearTimeout(act.timer); act = { ...act, day: b.dataset.actday, events: [], last: '', uid: '' }; renderActivity(body); }));
+    body.querySelector('#actGuests').addEventListener('click', () => { haptic(); act.guests = !act.guests; body.querySelector('#actGuests').classList.toggle('is-on', act.guests); paint(); });
+    body.querySelector('#actQ').addEventListener('input', e => { act.q = e.target.value; paint(); });
+    if (act.events.length) paint();
+    tick();
 }

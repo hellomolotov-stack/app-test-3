@@ -10,6 +10,30 @@ import { timeoutSignal } from './net.js';
 // Счётчик явных логов: общий логгер кликов (ui/click-log.js) не дублирует уже залогированное нажатие.
 export let logSeq = 0;
 
+// журнал для админки «активность» (12.11): копим действия и шлём пачкой раз в 4 с и при сворачивании приложения
+const evBuf = [];
+let evTimer = 0;
+function flushEvents() {
+    evTimer = 0;
+    const initData = window.Telegram?.WebApp?.initData || '';
+    if (!evBuf.length || !initData) return;
+    const events = evBuf.splice(0, 60);
+    try {
+        fetch('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, keepalive: true,
+            body: JSON.stringify({ action: 'events', initData, events }) }).catch(() => {});
+    } catch (e) { /* журнал не должен мешать приложению */ }
+    if (evBuf.length) evTimer = setTimeout(flushEvents, 1000);
+}
+function queueEvent(a, g) {
+    if (evBuf.length > 300) return;
+    evBuf.push({ t: Date.now(), a: String(a).slice(0, 160), g: g ? 1 : 0 });
+    if (!evTimer) evTimer = setTimeout(flushEvents, 4000);
+}
+try {
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushEvents(); });
+    window.addEventListener('pagehide', flushEvents);
+} catch (e) {}
+
 export function log(action, isGuest = false, user, meta = {}) {
     if (!user?.id) return;
     logSeq++;
@@ -19,6 +43,7 @@ export function log(action, isGuest = false, user, meta = {}) {
     action = String(action ?? '').replace(/</g, '‹').replace(/>/g, '›').replace(/&/g, '+');
     const safeAction = /^[=+\-@]/.test(action) ? `'${action}` : action;
     const finalAction = isGuest ? `${safeAction}_guest` : safeAction;
+    try { queueEvent(action, isGuest); } catch (e) {}
     const params = new URLSearchParams({
         user_id: user.id,
         username: user.username || '',

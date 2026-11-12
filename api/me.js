@@ -170,6 +170,59 @@ module.exports = async (req, res) => {
         }
     }
 
+    // журнал действий для админки «активность» (12.11): приложение шлёт пачки событий, сервер пишет activity/<день>/<ключ>
+    if (body && body.action === 'events') {
+        try {
+            const list = Array.isArray(body.events) ? body.events.slice(0, 60) : [];
+            if (!list.length) return res.status(200).json({ ok: true, n: 0 });
+            const token = await getAccessToken();
+            const now = Date.now();
+            const patch = {};
+            list.forEach((e, i) => {
+                const t = Math.min(now, Math.max(now - 3600000, Number(e?.t) || now));
+                const day = new Date(t + 3 * 3600000).toISOString().slice(0, 10);
+                const key = `${t.toString(36)}${i.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+                patch[`${day}/${key}`] = {
+                    t, uid: String(user.id), n: String([user.first_name, user.last_name].filter(Boolean).join(' ')).slice(0, 60),
+                    u: String(user.username || '').slice(0, 40), a: String(e?.a || '').slice(0, 160), g: e?.g ? 1 : 0,
+                };
+            });
+            const r = await fetch(`${DB}/activity.json`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(patch), signal: AbortSignal.timeout(6000) });
+            // раз в сутки на экземпляр – чистим дни старше 45
+            if (!global.__actPruned || now - global.__actPruned > 86400000) {
+                global.__actPruned = now;
+                fetch(`${DB}/activity.json?shallow=true`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) })
+                    .then(x => x.json()).then(days => {
+                        const cut = new Date(now - 45 * 86400000).toISOString().slice(0, 10);
+                        const old = Object.keys(days || {}).filter(d => d < cut);
+                        if (old.length) return fetch(`${DB}/activity.json`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(Object.fromEntries(old.map(d => [d, null]))) });
+                    }).catch(() => {});
+            }
+            return res.status(200).json({ ok: r.ok, n: list.length });
+        } catch (e) {
+            console.error('me events:', e.message);
+            return res.status(200).json({ ok: false });
+        }
+    }
+    // лента «активность» для админки: только организаторы; since – отдавать события новее этой метки
+    if (body && body.action === 'activity') {
+        if (!['163665735', '7845375334'].includes(String(user.id))) return res.status(403).json({ error: 'forbidden' });
+        try {
+            const token = await getAccessToken();
+            const day = /^\d{4}-\d{2}-\d{2}$/.test(String(body.day || '')) ? body.day : new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+            // ключи событий начинаются с времени в base36 (одинаковой длины) – сортировка по ключу = по времени, индекс не нужен
+            const since = /^[0-9a-z]{6,20}$/.test(String(body.since || '')) ? String(body.since) : '';
+            const q = since ? `orderBy="$key"&startAt="${since}"` : `orderBy="$key"&limitToLast=400`;
+            const r = await fetch(`${DB}/activity/${day}.json?${q}`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) });
+            const data = r.ok ? (await r.json()) || {} : {};
+            const events = Object.entries(data).filter(([k, v]) => v && k !== since).map(([k, v]) => ({ ...v, k })).sort((a, b) => (a.k < b.k ? -1 : 1));
+            return res.status(200).json({ day, events, ok: r.ok, err: r.ok ? '' : r.status });
+        } catch (e) {
+            console.error('me activity:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
+
     // сторис клуба на главной (lib/club-stories.js)
     if (body && (body.action === 'stories' || body.action === 'story_view')) {
         try {
