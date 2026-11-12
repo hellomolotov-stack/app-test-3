@@ -8274,3 +8274,4 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .act-n { display: inline; padding: 0; border: 0; background: none; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .act-n i { font-style: normal; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.6); margin-left: 4px; }
 .act-a { display: block; color: rgba(255,255,255,.72); word-break: break-word; }
+.pb-row{display:grid;grid-template-columns:1fr 1.4fr auto;gap:6px;margin-bottom:6px}.pb-row .act-q{margin:0;min-width:0}

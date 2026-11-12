@@ -213,7 +213,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['activity', '📡 активность'], ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['activity', '📡 активность'], ['postbtn', '🔘 кнопки поста'], ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -234,6 +234,7 @@ function render() {
     else if (view.tab === 'broadcast') renderBroadcast(body);
     else if (view.tab === 'flows') renderFlows(body);
     else if (view.tab === 'activity') renderActivity(body);
+    else if (view.tab === 'postbtn') renderPostButtons(body);
     else if (view.tab === 'newcomers') renderNewcomers(body);
     else if (view.tab === 'plus1') renderPlus1(body);
     else if (view.tab === 'pass') renderPass(body);
@@ -2785,4 +2786,51 @@ function renderActivity(body) {
     body.querySelector('#actQ').addEventListener('input', e => { act.q = e.target.value; paint(); });
     if (act.events.length) paint();
     tick();
+}
+
+// «🔘 кнопки поста»: меняет кнопки под уже опубликованным постом канала через бота (/api/me action post_button).
+// Текст поста правится в самом Telegram – кнопки при этом сохраняются.
+let pb = { link: 'https://t.me/yaltahiking/211', rows: [[{ text: 'карта интеллигента', url: 'https://t.me/yaltahiking/197' }]] };
+async function pbCall(payload) {
+    const r = await fetch('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'post_button', initData: window.Telegram?.WebApp?.initData || '', ...payload }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || (r.status === 403 ? 'нет доступа' : 'сервер не ответил'));
+    return j;
+}
+function renderPostButtons(body) {
+    const rowHtml = (b, i) => `<div class="pb-row" data-i="${i}">
+        <input class="act-q pb-t" placeholder="текст кнопки" value="${esc(b.text)}">
+        <input class="act-q pb-u" placeholder="https://…" value="${esc(b.url)}">
+        <button class="adm-chip pb-del" title="убрать">✕</button></div>`;
+    body.innerHTML = `
+        <div class="adm-muted" style="margin:4px 0 10px">Текст поста меняй прямо в Telegram (⋯ → изменить) – кнопки останутся. Здесь – кнопки: текст и ссылка. Каждая кнопка – отдельной строкой.</div>
+        <input class="act-q" id="pbLink" placeholder="ссылка на пост: https://t.me/канал/123" value="${esc(pb.link)}">
+        <div id="pbRows" style="margin-top:10px">${pb.rows.map((r, i) => rowHtml(r[0], i)).join('')}</div>
+        <div class="adm-chips" style="margin-top:8px"><button class="adm-chip" id="pbAdd">+ кнопка</button><button class="adm-chip" id="pbLoad">загрузить сохранённые</button></div>
+        <button class="adm-ghost" id="pbSave" style="margin-top:12px;width:100%">сохранить в посте</button>
+        <div class="adm-muted" id="pbMsg" style="margin-top:8px"></div>`;
+    const read = () => {
+        pb.link = body.querySelector('#pbLink').value.trim();
+        pb.rows = [...body.querySelectorAll('.pb-row')].map(r => [{ text: r.querySelector('.pb-t').value.trim(), url: r.querySelector('.pb-u').value.trim() }]);
+    };
+    const msg = t => { body.querySelector('#pbMsg').textContent = t; };
+    body.querySelector('#pbAdd').addEventListener('click', () => { haptic(); read(); pb.rows.push([{ text: '', url: '' }]); renderPostButtons(body); });
+    body.querySelectorAll('.pb-del').forEach(b => b.addEventListener('click', () => { haptic(); read(); pb.rows.splice(Number(b.parentElement.dataset.i), 1); renderPostButtons(body); }));
+    body.querySelector('#pbLoad').addEventListener('click', async () => {
+        haptic(); read(); msg('загружаю…');
+        try { const j = await pbCall({ op: 'load', link: pb.link }); if (j.saved?.rows?.length) { pb.rows = j.saved.rows.map(r => [r[0]]); renderPostButtons(body); msg('загружено'); } else msg('для этого поста ещё ничего не сохраняли'); }
+        catch (e) { msg('ошибка: ' + e.message); }
+    });
+    body.querySelector('#pbSave').addEventListener('click', async () => {
+        haptic(); read();
+        const bad = pb.rows.find(r => !r[0].text || !/^(https?:\/\/|tg:\/\/)/.test(r[0].url));
+        if (bad) return msg('у каждой кнопки нужен текст и ссылка с https://');
+        msg('сохраняю…');
+        try {
+            const j = await pbCall({ op: 'save', link: pb.link, rows: pb.rows });
+            if (j.ok) { msg(j.same ? '✓ в посте уже такие кнопки' : '✓ кнопки в посте обновлены'); tg?.HapticFeedback?.notificationOccurred?.('success'); }
+            else msg(/can't be edited|not enough rights|message to edit not found/i.test(j.error) ? 'бот не может изменить этот пост – его выкладывал не наш бот или бот не админ канала' : 'Telegram: ' + j.error);
+        } catch (e) { msg('ошибка: ' + e.message); }
+    });
 }

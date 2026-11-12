@@ -223,6 +223,38 @@ module.exports = async (req, res) => {
         }
     }
 
+    // кнопки под постом канала: правка через бота (менять кнопку может только бот, который выложил пост)
+    if (body && body.action === 'post_button') {
+        if (!['163665735', '7845375334'].includes(String(user.id))) return res.status(403).json({ error: 'forbidden' });
+        const m = String(body.link || '').trim().match(/t\.me\/([A-Za-z0-9_]{4,})\/(\d+)/);
+        if (!m) return res.status(400).json({ error: 'нужна ссылка вида t.me/канал/123' });
+        const key = `${m[1]}_${m[2]}`;
+        try {
+            const token = await getAccessToken();
+            if (body.op === 'load') {
+                const r = await fetch(`${DB}/channelPosts/${key}.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });
+                return res.status(200).json({ saved: r.ok ? await r.json() : null });
+            }
+            const rows = (Array.isArray(body.rows) ? body.rows : []).slice(0, 8).map(row => (Array.isArray(row) ? row : []).slice(0, 4)
+                .map(b => ({ text: String(b && b.text || '').trim().slice(0, 64), url: String(b && b.url || '').trim() }))
+                .filter(b => b.text && /^(https?:\/\/|tg:\/\/)/.test(b.url))).filter(row => row.length);
+            const tgr = await fetch(`https://api.telegram.org/bot${botToken}/editMessageReplyMarkup`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
+                body: JSON.stringify({ chat_id: '@' + m[1], message_id: Number(m[2]), reply_markup: { inline_keyboard: rows } })
+            });
+            const tj = await tgr.json().catch(() => ({}));
+            const same = !tj.ok && /not modified/i.test(tj.description || '');
+            if (tj.ok || same) {
+                await fetch(`${DB}/channelPosts/${key}.json`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rows, at: Date.now(), by: String(user.id) }), signal: AbortSignal.timeout(6000) }).catch(() => {});
+            }
+            return res.status(200).json({ ok: tj.ok || same, same, error: tj.ok || same ? '' : (tj.description || 'telegram error') });
+        } catch (e) {
+            console.error('me post_button:', e.message);
+            return res.status(502).json({ error: 'сервер не ответил' });
+        }
+    }
+
     // сторис клуба на главной (lib/club-stories.js)
     if (body && (body.action === 'stories' || body.action === 'story_view')) {
         try {
