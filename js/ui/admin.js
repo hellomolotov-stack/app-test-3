@@ -2742,7 +2742,7 @@ function renderActivity(body) {
     clearTimeout(act.timer);
     body.innerHTML = `
         <div class="act-top">
-            <div class="adm-chips"><button class="adm-chip${act.day === today ? ' is-on' : ''}" data-actday="${today}">сегодня</button><button class="adm-chip${act.day === yesterday ? ' is-on' : ''}" data-actday="${yesterday}">вчера</button><button class="adm-chip${act.guests ? ' is-on' : ''}" id="actGuests">только гости</button></div>
+            <div class="adm-chips"><button class="adm-chip${act.day === today ? ' is-on' : ''}" data-actday="${today}">сегодня</button><button class="adm-chip${act.day === yesterday ? ' is-on' : ''}" data-actday="${yesterday}">вчера</button><button class="adm-chip${act.guests ? ' is-on' : ''}" id="actGuests">только гости</button><button class="adm-chip${act.pin ? ' is-on' : ''}" id="actPin">📌 из закрепа</button></div>
             <div class="act-stats" id="actStats"></div>
             <input class="act-q" id="actQ" placeholder="поиск: имя, ник или действие" value="${esc(act.q)}">
             <div id="actWho"></div>
@@ -2753,11 +2753,13 @@ function renderActivity(body) {
         const now = Date.now();
         const people = new Set(act.events.map(e => e.uid));
         const online = new Set(act.events.filter(e => now - e.t < 5 * 60000).map(e => e.uid));
-        body.querySelector('#actStats').innerHTML = `<div><b>${act.day === today ? online.size : '–'}</b>сейчас</div><div><b>${people.size}</b>людей</div><div><b>${act.events.length}</b>действий</div>`;
+        const pinUids = new Set(act.events.filter(e => /^пришёл по ссылке: pin/.test(e.a || '')).map(e => e.uid));
+        body.querySelector('#actStats').innerHTML = `<div><b>${act.day === today ? online.size : '–'}</b>сейчас</div><div><b>${people.size}</b>людей</div><div><b>${act.events.length}</b>действий</div><div><b>${pinUids.size}</b>из закрепа</div>`;
         const q = act.q.trim().toLowerCase();
         let list = act.events;
         if (act.uid) list = list.filter(e => e.uid === act.uid);
         if (act.guests) list = list.filter(e => e.g);
+        if (act.pin) list = list.filter(e => pinUids.has(e.uid));
         if (q) list = list.filter(e => `${e.n} ${e.u} ${e.a}`.toLowerCase().includes(q));
         const who = act.uid ? act.events.find(e => e.uid === act.uid) : null;
         body.querySelector('#actWho').innerHTML = who ? `<button class="act-who" id="actWhoX">👤 ${esc(who.n || who.u || who.uid)} · ${list.length} действий <b>✕</b></button>` : '';
@@ -2781,6 +2783,7 @@ function renderActivity(body) {
         }
         if (act.day === today) act.timer = setTimeout(tick, 5000);
     };
+    body.querySelector('#actPin')?.addEventListener('click', () => { haptic(); act.pin = !act.pin; renderActivity(body); });
     body.querySelectorAll('[data-actday]').forEach(b => b.addEventListener('click', () => { haptic(); clearTimeout(act.timer); act = { ...act, day: b.dataset.actday, events: [], last: '', uid: '' }; renderActivity(body); }));
     body.querySelector('#actGuests').addEventListener('click', () => { haptic(); act.guests = !act.guests; body.querySelector('#actGuests').classList.toggle('is-on', act.guests); paint(); });
     body.querySelector('#actQ').addEventListener('input', e => { act.q = e.target.value; paint(); });

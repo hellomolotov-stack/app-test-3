@@ -8247,7 +8247,7 @@ html.v2 .sv-banner { padding: 22px 16px 10px; text-align: center; background: ra
     background: radial-gradient(90% 80% at 50% 0%, rgba(255, 176, 64, .25), transparent 70%), rgba(22, 26, 32, .97);
     transform: translateY(40px); opacity: 0; pointer-events: none; transition: transform .5s cubic-bezier(.2, .9, .25, 1), opacity .3s ease; }
 .sv-nudge.is-on { transform: none; opacity: 1; pointer-events: auto; }
-.sv-n-img { position: absolute; left: 50%; top: -52px; width: 128px; height: 128px; margin-left: -64px; object-fit: contain; pointer-events: none; filter: drop-shadow(0 10px 16px rgba(0, 0, 0, .55)) drop-shadow(0 0 28px rgba(255, 176, 64, .5)); }
+.sv-n-img { position: absolute; left: 50%; top: -52px; width: 128px; height: 128px; margin-left: -64px; object-fit: contain; pointer-events: none; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .45)); background: radial-gradient(closest-side, rgba(255, 176, 64, .42), rgba(255, 176, 64, .14) 60%, transparent 100%); }
 .sv-nx { position: absolute; right: 10px; top: 10px; width: 30px; height: 30px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .1); color: #ccc; font-size: 13px; cursor: pointer; }
 .sv-n-t { margin-top: 12px; font-size: 17px; font-weight: 800; line-height: 1.25; color: #fff; }
 .sv-n-s { margin: 4px 6px 12px; font-size: 13.5px; line-height: 1.35; color: rgba(255, 255, 255, .65); }
