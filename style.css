@@ -8286,3 +8286,6 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 }
 .floating-sheet-buttons:has(.swipe-track) .swipe-track { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
 .floating-sheet-buttons:has(.swipe-track) .sw-card-note { margin: 2px auto 0; padding: 8px 12px 4px; width: 88%; border-top: 1px solid rgba(255, 255, 255, .1); border-radius: 0; }
+/* плашка хайкинг бокса – отдельно над панелью слайдера, со своим плотным фоном */
+.floating-sheet-buttons:has(.swipe-track) .box-plate-row { position: absolute; left: 0; right: 0; bottom: 100%; margin-bottom: 8px; }
+.floating-sheet-buttons:has(.swipe-track) .box-plate-row .letter-plate { background: #24201a !important; -webkit-backdrop-filter: blur(18px) saturate(150%); backdrop-filter: blur(18px) saturate(150%); box-shadow: 0 8px 26px rgba(0, 0, 0, .45); }
