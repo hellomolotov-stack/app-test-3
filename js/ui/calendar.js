@@ -2606,9 +2606,6 @@ export function closeBottomSheet() {
 
 const isTouchDevice = () => 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-// строка под «сдвинь, чтобы записаться» у владельца карты: каждый раз немного по-разному, чтобы карта радовала
-const OWNER_SLIDER_LINES = ['для своих вход свободный ✨', 'твоя карта уже всё оплатила', 'место для своих – просто сдвинь', 'с картой – просто идёшь'];
-
 function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
     if (!isTouchDevice()) return null;
 
@@ -2620,10 +2617,10 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
 
     const hintTextBooked = 'сдвинь для отмены ‹';
     const hintTextUnbooked = '› сдвинь, чтобы записаться';
-    // вторая строка в дорожке (10.11): гостю – цена билета до свайпа, владельцу карты – тёплое «карта работает»
+    // вторая строка в дорожке (10.11): гостю – цена билета до свайпа, у владельца карты строки нет
     const trailHike = !isBookClub && !isCity && accentColor === 'var(--yellow)';
     const ticketRub = `${Number(state.popupConfig?.ticketPrice || 1200).toLocaleString('ru-RU').replace(/\s/g, '\u00a0')}\u00a0₽`;
-    const subUnbooked = !trailHike ? '' : isGuest ? `билет · <b>${ticketRub}</b>` : OWNER_SLIDER_LINES[Math.floor(Math.random() * OWNER_SLIDER_LINES.length)];
+    const subUnbooked = !trailHike ? '' : isGuest ? `билет · <b>${ticketRub}</b>` : ''; // у владельца карты второй строки нет – только «сдвинь, чтобы записаться»
 
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
