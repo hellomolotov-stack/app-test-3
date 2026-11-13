@@ -8275,3 +8275,14 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .act-n i { font-style: normal; font-size: 10.5px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.6); margin-left: 4px; }
 .act-a { display: block; color: rgba(255,255,255,.72); word-break: break-word; }
 .pb-row{display:grid;grid-template-columns:1fr 1.4fr auto;gap:6px;margin-bottom:6px}.pb-row .act-q{margin:0;min-width:0}
+
+/* слайдер записи, плашка бокса и подпись про карту – одна стеклянная панель (13.11): текст шторки под ней не просвечивает */
+.floating-sheet-buttons:has(.swipe-track) {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); left: 10px; right: 10px; width: auto; box-sizing: border-box;
+    padding: 10px; gap: 8px; border-radius: 34px; border: 1px solid rgba(255, 255, 255, .14);
+    background: rgba(20, 26, 34, .88); box-shadow: 0 -6px 30px rgba(0, 0, 0, .45);
+    -webkit-backdrop-filter: blur(22px) saturate(160%); backdrop-filter: blur(22px) saturate(160%);
+    pointer-events: auto;
+}
+.floating-sheet-buttons:has(.swipe-track) .swipe-track { -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+.floating-sheet-buttons:has(.swipe-track) .sw-card-note { margin: 2px auto 0; padding: 8px 12px 4px; width: 88%; border-top: 1px solid rgba(255, 255, 255, .1); border-radius: 0; }
