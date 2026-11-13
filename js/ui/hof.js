@@ -49,7 +49,7 @@ function paintBlock(el) {
     <div class="card-container hof-card">
         <div class="hof-tag">тренажёр дыхания по методу Хофа</div>
         <div class="hof-title">дыши как ледяной человек</div>
-        <div class="hof-text">3 раунда глубокого дыхания и задержки. 11 минут – и голова ясная, тело бодрое, а холод не так страшен</div>
+        <div class="hof-text">11 минут дыхания запускают выброс адреналина и снижают воспаление – это показало исследование в журнале PNAS. у Вима Хофа десятки мировых рекордов: почти 2 часа во льду, Килиманджаро в одних шортах</div>
         <div class="hof-video" id="hofVideo">
             <img src="assets/hof/cover.jpg" alt="" loading="lazy">
             <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф · 45 с</span>
