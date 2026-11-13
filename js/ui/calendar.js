@@ -2833,7 +2833,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
                 if (isHikeCity) {
                     showCityGuestPopup(hike.date, hike.title, resetSwipe);
                 } else {
-                    showHikeRegisterChoicePopup(hike.date, hike.title, resetSwipe);
+                    showHikeRegisterChoicePopup(hike.date, hike.title, resetSwipe, true); // свайп слайдера – сразу к оплате билета
                 }
                 return;
             }
@@ -4669,7 +4669,7 @@ async function registerByInvite(hikeDate, hikeTitle, onClose) {
     showRegistrationSuccess(hikeDate, hikeTitle);
 }
 
-async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
+async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose, direct = false) {
     const hike = state.hikesWithTitle.find(h => h.date === hikeDate);
     if (hike && hikeTiming(hike).isClosed) { onClose?.(); refreshBottomSheetIfOpen(); return; }
     // по приглашению +1 анкета не нужна – за человека ручается тот, кто его позвал
@@ -4694,6 +4694,8 @@ async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose) {
             }
         }
     }
+    // по свайпу слайдера окно «билет или карта» пропускаем: сразу к оплате билета (про карту есть подпись под слайдером)
+    if (direct) { startTicketPurchase(hikeDate, hikeTitle, 'свайп слайдера: купить билет'); return; }
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
