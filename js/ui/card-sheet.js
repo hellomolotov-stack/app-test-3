@@ -96,7 +96,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     <p>так за столом остаются те, с кем хочется говорить дольше, чем длится вечер. карта интеллигента – твой вход на такие встречи и на все хайки сезона</p>
                     <div class="cs-city-ev"><i>${escT(ev.emoji || '🏙️')}</i><div><b>${escT(ev.title)}</b><small>${Number(ev.capacity) > 0 ? `${Number(ev.capacity)} мест · ` : ''}запишем сразу после оплаты</small></div></div>
                 </div>` : '';
-    const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `оформить навсегда · ${rub(price)}` : `взять на сезон · ${rub(price)}`;
+    const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `оформить навсегда · ${rub(price)}` : `оформить на год · ${rub(price)}`;
 
     // гость в новом интерфейсе: карта в слайдере под защитным покрытием – его можно стереть пальцем
     const scratch = !gift && state.userCard?.status !== 'active' && isV2();
@@ -113,13 +113,13 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     <div class="cs-stage"><div class="cs-card${scratch ? ' cs-scratch' : ''}">${scratch ? cardScratchHtml() : `<img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции">`}</div></div>
                     <h2>${gift ? 'подари новый опыт' : ev ? 'карта интеллигента' : 'интеллигентное окружение'}</h2>
                     <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
-                    <p>${gift ? 'подари другу то, что есть у тебя: все хайки сезона, закрытые события и людей, с которыми хочется идти дальше' : 'карта интеллигента – это все хайки сезона, закрытые события и люди, с которыми хочется идти дальше'}</p>
+                    <p>${gift ? 'подари другу то, что есть у тебя: все хайки клуба, закрытые события и людей, с которыми хочется идти дальше' : 'карта интеллигента – это все хайки клуба, закрытые события и люди, с которыми хочется идти дальше'}</p>
                     ${membersHtml()}
                 </div>
 
                 ${ev ? '' : '<div class="cs-why">🌱 клуб растёт вместе с владельцами карты. всё новое, от маршрутов до этого приложения, появляется благодаря их поддержке</div>'}
                 <div class="cs-sec">что внутри</div>
-                <div class="cs-ben"><div class="cs-e">🥾</div><div><b>все хайки сезона</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
+                <div class="cs-ben"><div class="cs-e">🥾</div><div><b>все хайки клуба</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
                 <div class="cs-ben"><div class="cs-e">🎟️</div><div><b>запись даже когда мест нет</b><span>набор закрыт для всех, но не для владельцев карты – место для тебя найдётся</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🤝</div><div><b>свой +1 на хайк</b><span>бери с собой друга, если он ещё ни разу не был с нами</span></div></div>
                 <div class="cs-ben"><div class="cs-e">🍕</div><div><b>события в городе</b><span>приглашаем на домашнюю пиццу в гости, устраиваем пикники, собираемся в заведениях</span></div></div>
@@ -148,16 +148,16 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                         <span>один раз – и клуб твой без продлений</span>
                     </button>
                     <button type="button" class="cs-plan" data-plan="season">
-                        <small>на сезон</small>
+                        <small>на год</small>
                         <b>${rub(season)}</b>
-                        <span>действует начиная с текущего сезона плюс следующий</span>
+                        <span>действует год с момента оплаты</span>
                     </button>
                 </div>
                 ${gift ? '' : '<button type="button" class="cs-support" id="csSupport">оплачивал билет и не успел сходить? напиши нам – зачтём его в стоимость карты</button>'}
             </div>
             <div class="cs-bar">
                 <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить бессрочную · ${rub(permanent)}` : buyLabel(permanent, true)}</button>
-                ${gift ? '' : `<button type="button" class="btn cs-buy cs-buy-season" id="csBuySeason">взять на сезон · ${rub(season)}</button>`}
+                ${gift ? '' : `<button type="button" class="btn cs-buy cs-buy-season" id="csBuySeason">оформить на год · ${rub(season)}</button>`}
                 ${ev ? '<div class="cs-city-note">после оплаты ты сразу в списке гостей</div>' : ''}
                 ${isReturning || gift || !allowTicket || cityEvent ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
                 ${SPLIT_NOTE}
@@ -202,7 +202,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         selectedPrice = plan === 'permanent' ? permanent : season;
         overlay.querySelectorAll('.cs-plan').forEach(b => b.classList.toggle('is-on', b === btn));
         // у покупки для себя две постоянные кнопки (навсегда и сезон) – выбор карточки только подсвечивает
-        if (gift) buyBtn.textContent = `подарить ${plan === 'permanent' ? 'бессрочную' : 'сезонную'} · ${rub(selectedPrice)}`;
+        if (gift) buyBtn.textContent = `подарить ${plan === 'permanent' ? 'бессрочную' : 'годовую'} · ${rub(selectedPrice)}`;
         else { plan = 'permanent'; selectedPrice = permanent; }
     }));
 

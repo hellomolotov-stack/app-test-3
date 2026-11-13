@@ -8,7 +8,7 @@ import { haptic, showConfetti } from '../utils.js';
 const DONE_KEY = 'card_welcome_done';
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const PERKS = [
-    ['🥾', 'все хайки сезона', 'без билетов и оплат – просто записываешься'],
+    ['🥾', 'все хайки клуба', 'без билетов и оплат – просто записываешься'],
     ['🎟️', 'запись даже когда мест нет', 'набор закрыт для всех, но не для тебя – место найдётся'],
     ['🤝', 'свой +1 на хайк', 'бери с собой друга, если он ещё ни разу не был с нами'],
     ['🍕', 'события в городе', 'домашняя пицца в гостях, пикники, встречи в заведениях'],
@@ -34,7 +34,7 @@ export function showCardWelcome({ name = '', cardUrl = '', plan = 'permanent', h
             <h1>${name ? esc(name) + ', карта твоя' : 'карта твоя'} 🎉</h1>
             <div class="cw-sub">теперь ты член хайкинг-клуба интеллигенции. вот что у тебя есть с этой минуты</div>
             ${cardUrl ? `<div class="cw-stage"><div class="cw-card"><img src="${esc(cardUrl)}" alt="карта интеллигента"></div></div>` : ''}
-            <div class="cw-meta"><span>${plan === 'season' ? 'на сезон' : 'бессрочная'}</span>${hikes > 0 ? `<span>пройдено: <b>${hikes}</b> ${hikesWord(hikes)}</span>` : ''}</div>
+            <div class="cw-meta"><span>${plan === 'season' ? 'на год' : 'бессрочная'}</span>${hikes > 0 ? `<span>пройдено: <b>${hikes}</b> ${hikesWord(hikes)}</span>` : ''}</div>
             <div class="cs-sec">твои привилегии</div>
             ${PERKS.map(([e, t, d]) => `<div class="cs-ben"><div class="cs-e">${e}</div><div><b>${t}</b><span>${d}</span></div></div>`).join('')}
             <div style="height:96px"></div>

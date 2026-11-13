@@ -3660,16 +3660,16 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
 
                 <div class="booking-card-option">
                     <div class="booking-card-name">бессрочная – ${config.permanentCardPrice || 7500} ₽</div>
-                                        <div class="booking-card-desc">оплатил один раз – доступ к клубу всегда, без продлений и подписок. выгоднее сезонной уже на второй год – привилегии остаются навсегда. все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
+                                        <div class="booking-card-desc">оплатил один раз – доступ к клубу всегда, без продлений и подписок. выгоднее годовой уже на второй год – привилегии остаются навсегда. все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">оформить навсегда</button>
                     <div class="booking-card-ticket-note">если ты оплачивал билет, но так и не успел сходить по нему – можешь приобрести карту с учётом ранее оплаченного билета. для этого напиши нам в поддержку и пришли чек билета – отправим тебе специальную ссылку для оформления карты</div>
                     <button class="btn btn-outline booking-card-support-btn" id="cardTicketSupportBtn" style="width: 100%; margin: 10px 0 0;">написать в поддержку</button>
                 </div>
 
                 <div class="booking-card-option" style="margin-top: 12px;">
-                    <div class="booking-card-name">сезонная – ${config.seasonCardPrice} ₽</div>
-                    <div class="booking-card-desc">действует начиная с текущего сезона плюс следующий</div>
-                    <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">взять на сезон</button>
+                    <div class="booking-card-name">на год – ${config.seasonCardPrice} ₽</div>
+                    <div class="booking-card-desc">действует год с момента оплаты</div>
+                    <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">оформить на год</button>
                 </div>
 
                 <div class="booking-popup-reassurance">🔒 оформление через Robokassa займёт минуту – карта появится в приложении сразу после оплаты. платёж защищён</div>
