@@ -8,6 +8,7 @@ import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { showBottomSheet, isWaitlisted, toggleTeaserNotify, fetchGoingFromServer } from './calendar.js';
 import { heroPhotoFor } from './rd-home.js';
+import { isUpcomingHike, hikeTiming } from '../hike-timing.js';
 import { nextHikeLinkActive, nextHikeLinkDate } from './next-hike-link.js';
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -100,6 +101,13 @@ export function renderCalFlow(container) {
     let start = list.findIndex(h => (topDate ? h.date > topDate : h.date >= t));
     if (start < 0) start = list.findIndex(h => h.date >= t);
     if (start < 0) start = list.length - 1;
+    // запись на ближайший хайк открыта, а человек на него не записан – в центре календаря именно он, а не следующее событие
+    const ni = (state.hikesWithTitle || []).findIndex(h => h && !yes(h.cancelled) && !yes(h.book_club) && isUpcomingHike(h));
+    const nh = ni >= 0 ? state.hikesWithTitle[ni] : null;
+    if (nh && state.hikeBookingStatus?.[ni] !== true && !hikeTiming(nh).isClosed) {
+        const at = list.findIndex(h => h.date === nh.date);
+        if (at >= 0) start = at;
+    }
     const linkedDate = nextHikeLinkDate();
     const linked = list.findIndex(h => h.date === linkedDate);
     if (linked >= 0) start = linked;
