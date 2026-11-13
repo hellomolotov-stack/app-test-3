@@ -34,7 +34,8 @@ function statLine() {
 }
 
 export function mountHof() {
-    const anchor = document.getElementById('circleContainer');
+    // под мастермайндом (13.11); если блока саммари нет – под «твоими связями»
+    const anchor = document.getElementById('mastermindSummariesContainer') || document.getElementById('circleContainer');
     if (!anchor) return;
     let el = document.getElementById('hofBlock');
     if (!el) { el = document.createElement('div'); el.id = 'hofBlock'; anchor.insertAdjacentElement('afterend', el); }
