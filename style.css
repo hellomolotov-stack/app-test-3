@@ -8357,3 +8357,5 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .hof-p-warn { text-align: center; font-size: 12px; line-height: 1.4; color: #ffb39a; margin-top: 10px; padding: 0 10px; }
 /* широкая картинка сторис (коллаж) – тени уже в картинке; drop-shadow на iPhone обрезался квадратом */
 .csv-badge.csv-wide { filter: none; }
+/* сторис: картинки стоят на месте, без покачивания (просьба 13.11) */
+.csv-cardimg, .csv-badge, .csv-big, .csv-envelope, .csv-plaud, .csv-phone { animation: none !important; }
