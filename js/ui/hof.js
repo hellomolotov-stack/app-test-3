@@ -54,7 +54,7 @@ function paintBlock(el) {
         <div class="hof-text">3 раунда глубокого дыхания и задержки. 11 минут – и голова ясная, тело бодрое, а холод не так страшен</div>
         <div class="hof-video" id="hofVideo">
             <img src="https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">
-            <span class="hof-play"></span><span class="hof-vcap">Вим Хоф показывает технику</span>
+            <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф</span>
         </div>
         <button class="hof-btn" id="hofStart">начать дыхание</button>
         <div class="hof-stat">${esc(statLine())}</div>
@@ -77,9 +77,9 @@ function openPrep() {
             <div class="hof-step"><i>1</i>30 глубоких вдохов: полный вдох животом и грудью, выдох – свободно, без усилия</div>
             <div class="hof-step"><i>2</i>после последнего выдоха не дыши – столько, сколько комфортно</div>
             <div class="hof-step"><i>3</i>глубокий вдох и задержка на 15 секунд</div>
-            <div class="hof-rounds">3 раунда · ≈11 минут · ведёт голос Вима</div>
+            <div class="hof-rounds">3 раунда · ≈11 минут · с голосовой инструкцией</div>
             <div class="hof-warn">⚠️ только сидя или лёжа. никогда в воде, в душе и за рулём. если закружилась голова – просто дыши как обычно</div>
-            <button class="hof-btn" id="hofGo">поехали · голос Вима</button>
+            <button class="hof-btn" id="hofGo">поехали</button>
         </div>`;
     document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('is-in'));
@@ -106,7 +106,7 @@ function openSession() {
                 <div class="hof-core" id="hofCore"></div>
                 <div class="hof-num"><b id="hofBig"></b><small id="hofSmall"></small></div>
             </div>
-            <div class="hof-phase" id="hofPhase">слушай Вима</div>
+            <div class="hof-phase" id="hofPhase">слушай инструкцию</div>
             <div class="hof-hist" id="hofHist"></div>
         </div>
         <div class="hof-ctrl">
@@ -165,7 +165,7 @@ function openSession() {
             core.style.transform = `scale(${(0.8 + 0.04 * Math.sin(t * 1.4)).toFixed(3)})`;
             $('hofBig').textContent = '';
             $('hofSmall').textContent = '';
-            $('hofPhase').textContent = p.kind === 'end' ? 'отличная работа' : (p.label || 'слушай Вима');
+            $('hofPhase').textContent = p.kind === 'end' ? 'отличная работа' : (p.label || 'слушай инструкцию');
         }
         if (!finished) raf = requestAnimationFrame(paint);
     };
