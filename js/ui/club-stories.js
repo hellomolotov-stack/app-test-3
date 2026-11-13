@@ -136,6 +136,7 @@ async function runAction(action, title = '') {
     if (a === 'badges') return (document.getElementById('myAchievements') || document.getElementById('rdMedalsAnchor'))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     if (a === 'calendar') return document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth' });
     if (a === 'circle') { const m = await import('./circle.js'); return m.openCircleSheet(); }
+    if (a === 'hof') return document.getElementById('hofBlock')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // шторка-заготовка для действий без своей читалки: выезжает за пальцем, затем открывается настоящая шторка
@@ -180,7 +181,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             ${visual(s)}
             <div class="csv-shade"></div>
             <div class="csv-head"><span class="csv-av"></span><b>интеллигенция</b><span>· ${ago(s.date)}</span><button type="button" class="csv-x" aria-label="закрыть">✕</button></div>
-            <div class="csv-text"><span class="csv-tag csv-t-${esc(s.type)}"><i></i>${esc(TAG[s.type] || 'клуб')}</span><h2>${esc(s.title)}</h2>${s.text ? `<p>${esc(s.text)}</p>` : ''}
+            <div class="csv-text"><span class="csv-tag csv-t-${esc(s.type)}"><i></i>${esc(s.tag || TAG[s.type] || 'клуб')}</span><h2>${esc(s.title)}</h2>${s.text ? `<p>${esc(s.text)}</p>` : ''}
                 ${button ? `<button type="button" class="csv-btn">${esc(button.label)}</button>` : ''}</div>`;
         elapsed = 0; t0 = performance.now();
         // картинку – посередине между шапкой и текстом

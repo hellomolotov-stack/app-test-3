@@ -1,13 +1,12 @@
 // js/ui/hof.js – блок «дыхание по Виму Хофу» на главной (под «твоими связями»).
 // Блок – вариант А (голубой, видео в карточке), подготовка – экран А, дыхание – экран Б (кольца, таймер задержки).
 // Голос – дорожка из видео-руководства (assets/hof/voice.m4a), фазы на экране идут по разметке TIMELINE (секунды дорожки).
-// Сессии пишутся в Firebase hof/<uid> через /api/me action hof. Пока только @maxmolotov.
+// Сессии пишутся в Firebase hof/<uid> через /api/me action hof. Открыт всем с 13.11.2026.
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { TIMELINE } from './hof-timeline.js';
 
-const TEST_IDS = ['163665735'];
 let sessions = null;
 
 const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -35,7 +34,6 @@ function statLine() {
 }
 
 export function mountHof() {
-    if (!TEST_IDS.includes(String(state.user?.id || ''))) return;
     const anchor = document.getElementById('circleContainer');
     if (!anchor) return;
     let el = document.getElementById('hofBlock');
