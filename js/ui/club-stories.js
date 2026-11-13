@@ -37,6 +37,7 @@ function thumb(s) {
     if (s.type === 'summary') return `<span class="cst-pic cst-plaud"><img src="assets/plaud-v2.webp" alt=""></span>`;
     if (s.type === 'letter') return '<span class="cst-pic cst-letter"><span>✉️</span></span>';
     if (s.type === 'member' && s.image) return `<span class="cst-pic cst-cardthumb"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
+    if (s.thumb) return `<span class="cst-pic cst-plainthumb" style="background:${BG[s.type] || BG.custom}"><img src="${esc(imgUrl(s.thumb))}" alt=""></span>`;
     if (s.image && s.visual === 'plain') return `<span class="cst-pic cst-plainthumb" style="background:${BG[s.type] || BG.custom}"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
     if (s.image && s.type !== 'app') return `<span class="cst-pic" style="background-image:url('${esc(imgUrl(s.image))}')${s.type === 'badges' ? ';background-size:82%;background-color:#16222e' : ''}"></span>`;
     return `<span class="cst-pic cst-emoji" style="background:${BG[s.type] || BG.custom}">${EMOJI[s.type] || '⛰️'}</span>`;

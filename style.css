@@ -8355,3 +8355,5 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 @keyframes hofPulse { 0%,100% { transform: scale(.82); } 50% { transform: scale(1.05); } }
 .hof-prep .hof-btn { margin-top: 20px; }
 .hof-p-warn { text-align: center; font-size: 12px; line-height: 1.4; color: #ffb39a; margin-top: 10px; padding: 0 10px; }
+/* широкая картинка сторис (коллаж) – тени уже в картинке; drop-shadow на iPhone обрезался квадратом */
+.csv-badge.csv-wide { filter: none; }
