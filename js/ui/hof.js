@@ -105,13 +105,17 @@ function openPrep() {
     ov.innerHTML = `
         <div class="hof-top"><span>перед стартом</span><button class="hof-x" aria-label="закрыть">✕</button></div>
         <div class="hof-prep-body">
-            <div class="hof-title">как это работает</div>
-            <div class="hof-step"><i>1</i>30 глубоких вдохов: полный вдох животом и грудью, выдох – свободно, без усилия</div>
-            <div class="hof-step"><i>2</i>после последнего выдоха не дыши – столько, сколько комфортно</div>
-            <div class="hof-step"><i>3</i>глубокий вдох и задержка на 15 секунд</div>
-            <div class="hof-rounds">3 раунда · ≈11 минут · с голосовой инструкцией</div>
-            <div class="hof-warn">⚠️ только сидя или лёжа. никогда в воде, в душе и за рулём. если закружилась голова – просто дыши как обычно</div>
-            <button class="hof-btn" id="hofGo">поехали</button>
+            <div class="hof-title hof-p-title">один раунд –<br>три фазы</div>
+            <div class="hof-p-sub">повторим 3 раза. голос подскажет каждый шаг</div>
+            <div class="hof-p-bar"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+            <div class="hof-p-legend"><span class="b1">≈2 мин</span><span class="b2">30 с – 1,5 мин</span><span class="b3">15 с</span></div>
+            <div class="hof-p-cards">
+                <div class="hof-p-card is-main"><div class="ic ic-ring"></div><div><b>30 глубоких вдохов</b><span>полный вдох животом и грудью, выдох – свободно, без усилия</span></div></div>
+                <div class="hof-p-card"><div class="ic ic-timer">1:30</div><div><b>задержка на выдохе</b><span>не дыши, сколько комфортно – таймер считает</span></div></div>
+                <div class="hof-p-card"><div class="ic ic-15">15</div><div><b>вдох и держим 15 с</b><span>восстановление – и следующий раунд</span></div></div>
+            </div>
+            <button class="hof-btn" id="hofGo">поехали · 11 минут</button>
+            <div class="hof-p-warn">сидя или лёжа · не в воде и не за рулём. закружилась голова – просто дыши как обычно</div>
         </div>`;
     document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('is-in'));
