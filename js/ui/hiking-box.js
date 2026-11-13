@@ -133,6 +133,8 @@ const boxThumbHtml = (small = false) => `<img class="hb-box-thumb${small ? ' is-
 
 // ---- тексты плашки по месту ----
 const routeOf = hike => String(hike?.title || '').replace(/^(хайк|маршрут|тропа)\s+/i, '').replace(/^на\s+/i, '').trim();
+// «на Ат-Баш» / «по Байдарской тропе»: у названий вида «хайк по …» предлог уже есть, второй «на» не нужен
+const toRoute = route => /^по\s/i.test(route) ? `хайк ${route}` : `на ${route}`;
 const ddmm = date => /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? `${date.slice(8, 10)}.${date.slice(5, 7)}` : '';
 // «для Макса»: имя в родительном падеже (как на странице магазина); если имя не распознано – без имени
 function forWhom(name) {
@@ -176,13 +178,13 @@ function rowTexts(ctx, hike, order) {
             : [`✓ бокс заказан на ${when}`, `№${order.number} · ${tail}`];
     }
     if (ctx === 'ticket') return ['ты в списке! добавь к хайку бокс', member ? 'по твоей карте −10% на бокс' : 'получишь его на старте'];
-    return ['возьми хайкинг бокс', route ? `ты идёшь на ${route} – привезём на старт` : 'привезём прямо на старт хайка'];
+    return ['возьми хайкинг бокс', route ? `ты идёшь ${toRoute(route)} – привезём на старт` : 'привезём прямо на старт хайка'];
 }
 
 // приписка от руки справа под словом «бокс»: «для Валерии» (без имени – «хайк на Ат-Баш · 25.10»)
 function noteHtml(hike) {
     const who = forWhom(state.user?.first_name), route = routeOf(hike), when = ddmm(hike?.date);
-    const text = who ? `для ${who}` : [route ? `хайк на ${route}` : '', when].filter(Boolean).join(' · ');
+    const text = who ? `для ${who}` : [route ? (/^по\s/i.test(route) ? `хайк ${route}` : `хайк на ${route}`) : '', when].filter(Boolean).join(' · ');
     return text ? `<div class="hb-note">${text}</div>` : '';
 }
 
