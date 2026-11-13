@@ -112,6 +112,7 @@ window.addEventListener('club:metrics-updated', updateMetricsUI);
 const mskDayOf = d => { const s = String(d || ''); const t = new Date(s); return s.includes('T') && !isNaN(t) ? t.toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' }) : s.slice(0, 10); };
 // когда заметки Plaud загрузились – перерисовываем блок саммари (кнопки «читать» открывают читалку)
 function refreshMastermindBlock() {
+    wireMmCover(document.getElementById('mastermindSummariesContainer'));
     ensureMmNotes().then(list => {
         if (!list.length) return;
         const c = document.getElementById('mastermindSummariesContainer');
@@ -136,14 +137,14 @@ function mmRequest(body) {
     }
     return '';
 }
-function mmCoverHtml() {
-    const n = mmNotes()[0];
+function mmCoverHtml(fallback) {
+    const n = fallback || mmNotes()[0];
     if (!n) return '';
     const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
     const d = new Date(n.date + 'T12:00:00');
     const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
     const req = mmRequest(n.body);
-    return `<div class="card-container mmc" data-mmc="${esc(n.id)}">
+    return `<div class="card-container mmc" data-mmc="${esc(n.id || '')}" data-mmc-link="${esc(n.link || '')}">
         <div class="mmc-top">
             <div class="mmc-art"><img src="assets/plaud-v2.webp" alt=""></div>
             <div class="mmc-meta"><span class="mmc-k">мастермайнд · ${d.getDate()} ${months[d.getMonth()]}</span><b>${esc(n.title)}</b>${n.place ? `<span class="mmc-when">${esc(n.place)}</span>` : ''}</div>
@@ -154,8 +155,20 @@ function mmCoverHtml() {
 }
 function wireMmCover(root) {
     const box = root?.querySelector?.('.mmc');
-    if (!box) return;
-    const open = () => { haptic(); log('мастермайнд: обложка на главной', state.userCard.status !== 'active', state.user); import('./mm-reader.js').then(m => m.openMmReader(box.dataset.mmc)); };
+    if (!box || box.dataset.wired) return;
+    box.dataset.wired = '1';
+    const open = () => {
+        haptic(); log('мастермайнд: обложка на главной', state.userCard.status !== 'active', state.user);
+        // заметки Plaud ещё не загрузились (или открыто вне Telegram) – обложка собрана из списка саммари
+        if (!box.dataset.mmc) {
+            const note = mmNoteForDate(box.querySelector('[data-mmc-avs]')?.dataset.mmcAvs);
+            if (note) return import('./mm-reader.js').then(m => m.openMmReader(note.id));
+            if (state.userCard.status !== 'active') return handleGuestRead({ preventDefault() {} });
+            if (box.dataset.mmcLink) return openLink(box.dataset.mmcLink, 'саммари мастермайнда', false);
+            return;
+        }
+        import('./mm-reader.js').then(m => m.openMmReader(box.dataset.mmc));
+    };
     box.addEventListener('click', open);
     const av = box.querySelector('[data-mmc-avs]');
     if (av) import('./calendar.js').then(m => m.fetchGoingFromServer([av.dataset.mmcAvs])).then(([lst]) => {
@@ -180,6 +193,8 @@ function renderMastermindSummaries() {
     const known = new Set([...listed, ...fromHikes].map(s => mskDayOf(s.date)));
     const fromNotes = mmNotes().filter(n => !known.has(n.date)).map(n => ({ date: n.date, title: n.title, link: '' }));
     const summaries = [...listed, ...fromHikes, ...fromNotes].sort((a, b) => mskDayOf(b.date).localeCompare(mskDayOf(a.date)));
+    // классика v2: всегда обложка – пока заметки Plaud не пришли, собираем её из последнего саммари в списке
+    if (isV2() && summaries.length) { const f = summaries[0]; return mmCoverHtml({ id: '', date: mskDayOf(f.date), title: f.title || 'мастермайнд', place: '', body: '', link: f.link || '' }); }
     const isGuest = state.userCard.status !== 'active';
     const currentYear = new Date().getFullYear();
     const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -372,7 +387,7 @@ window.addEventListener('club:content-updated', () => {
     } else if (current) current.remove();
     else if (next) mainDiv().querySelector('.maker-credit')?.before(next);
     const mm = document.getElementById('mastermindSummariesContainer');
-    if (mm) mm.innerHTML = renderMastermindSummaries();
+    if (mm) { mm.innerHTML = renderMastermindSummaries(); wireMmCover(mm); }
 });
 
 function handleGuestRead(e) {
