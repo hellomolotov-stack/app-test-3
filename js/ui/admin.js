@@ -867,6 +867,7 @@ function applyTemplate(routeId) {
     d.emoji = '';
     d.start_time = v.start_time || d.start_time || '12:00';
     d.tags = Array.isArray(v.tags) ? v.tags.join(', ') : String(v.tags || '');
+    d.feature_tags = Array.isArray(v.feature_tags) ? v.feature_tags.join(', ') : String(v.feature_tags || '');
     d.image = v.image || '';
     d.features = v.features || '';
     d.access = v.access || '';
@@ -938,6 +939,7 @@ function openEditor(date) {
         emoji: h.emoji || '',
         start_time: h.start_time || '',
         tags: tagsText(h),
+        feature_tags: Array.isArray(h.feature_tags) ? h.feature_tags.join(', ') : String(h.feature_tags || ''),
         image: h.image || '',
         features: h.features || '',
         access: h.access || '',
@@ -959,7 +961,7 @@ function openEditor(date) {
         routeMode: h.track ? 'gpx' : ((h.route_id || findCatalogRoute(h)) ? 'catalog' : 'none'),
         templateNote: ''
     } : {
-        original: '', date: '', title: '', emoji: '', start_time: '12:00', tags: '', image: '',
+        original: '', date: '', title: '', emoji: '', start_time: '12:00', tags: '', feature_tags: '', image: '',
         features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '', summary_link: '', summary_title: '', capacity: '',
         cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null,
         route_id: '', routeMode: 'none', templateNote: ''
@@ -1004,6 +1006,7 @@ function renderEditor(body) {
         <div class="adm-hint">до трёх эмоджи – получится картинка, как у прошлых событий: эмоджи в ряд на прозрачном фоне</div>
         ${field('image', 'картинка (ссылка)', 'placeholder="https://i.postimg.cc/…"')}
         ${d.image ? `<img class="adm-img" src="${esc(d.image)}" alt="">` : ''}
+        ${field('feature_tags', '🟡 жёлтые плашки в «особенностях» (через запятую)', 'placeholder="мастермайнд, дыхание по Хофу, саммари"')}
         ${area('features', 'о маршруте', 5)}
         ${area('access', 'как добраться', 4)}
         ${area('details', 'детали', 3)}
@@ -1216,6 +1219,7 @@ async function saveHike() {
         emoji: (!d.title.trim() || d.city || /🌧/.test(d.emoji || '')) ? (d.emoji || '') : '',
         start_time: d.start_time.trim(),
         tags: d.tags.split(',').map(t => t.trim()).filter(Boolean),
+        feature_tags: (d.feature_tags || '').split(',').map(t => t.trim()).filter(Boolean),
         image: d.image.trim(),
         features: d.features,
         access: d.access,

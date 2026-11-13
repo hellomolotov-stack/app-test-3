@@ -2068,8 +2068,8 @@ export function showBottomSheet(index) {
         }
 
         let sectionsHtml = '';
-        if (hike.features && hike.features.trim() !== '') {
-            let processedText = parseLinks(hike.features, isGuest);
+        if ((hike.features && hike.features.trim() !== '') || (hike.feature_tags && hike.feature_tags.length)) {
+            let processedText = parseLinks(hike.features || '', isGuest);
             processedText = processedText.replace(/\n/g, '<br>');
             let featureTagsHtml = '';
             if (hike.feature_tags && hike.feature_tags.length > 0) {
