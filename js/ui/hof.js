@@ -8,8 +8,6 @@ import { log } from '../api.js';
 import { TIMELINE } from './hof-timeline.js';
 
 const TEST_IDS = ['163665735'];
-const VIDEO_ID = 'VaMjhwFE1Zw';
-const VIDEO_START = 84;
 let sessions = null;
 
 const esc = v => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -53,18 +51,37 @@ function paintBlock(el) {
         <div class="hof-title">дыши как ледяной человек</div>
         <div class="hof-text">3 раунда глубокого дыхания и задержки. 11 минут – и голова ясная, тело бодрое, а холод не так страшен</div>
         <div class="hof-video" id="hofVideo">
-            <img src="https://i.ytimg.com/vi/${VIDEO_ID}/hqdefault.jpg" alt="" loading="lazy" onerror="this.remove()">
-            <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф</span>
+            <img src="assets/hof/cover.jpg" alt="" loading="lazy">
+            <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф · 45 с</span>
         </div>
         <button class="hof-btn" id="hofStart">начать дыхание</button>
         <div class="hof-stat">${esc(statLine())}</div>
     </div>`;
-    el.querySelector('#hofVideo').addEventListener('click', e => {
-        haptic(); lg('хоф: видео');
-        const v = e.currentTarget;
-        v.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${VIDEO_ID}?start=${VIDEO_START}&autoplay=1&playsinline=1&rel=0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
-    }, { once: true });
+    el.querySelector('#hofVideo').addEventListener('click', () => { haptic(); lg('хоф: видео'); playFullscreen(); });
     el.querySelector('#hofStart').addEventListener('click', () => { haptic(); lg('хоф: открыл подготовку'); openPrep(); });
+}
+
+// видео «кто такой Вим Хоф» (assets/hof/wim.mp4) – сразу на весь экран, с русскими субтитрами
+function playFullscreen() {
+    const ov = document.createElement('div');
+    ov.className = 'hof-ov hof-vid-ov is-in';
+    ov.innerHTML = `<video src="assets/hof/wim.mp4" poster="assets/hof/cover.jpg" controls playsinline preload="auto" crossorigin="anonymous">
+            <track kind="subtitles" srclang="ru" label="русские" src="assets/hof/wim.ru.vtt" default>
+        </video><button class="hof-x hof-vid-x" aria-label="закрыть">✕</button>`;
+    document.body.appendChild(ov);
+    const v = ov.querySelector('video');
+    try { v.textTracks[0].mode = 'showing'; } catch (e) {}
+    const close = () => { try { v.pause(); } catch (e) {} ov.remove(); };
+    ov.querySelector('.hof-vid-x').addEventListener('click', () => { haptic(); close(); });
+    v.addEventListener('ended', () => { try { document.fullscreenElement && document.exitFullscreen(); } catch (e) {} close(); });
+    // iPhone: системный плеер на весь экран (субтитры default показывает сам); выход из него – закрываем
+    v.addEventListener('webkitendfullscreen', close);
+    v.play().catch(() => {});
+    try {
+        if (v.requestFullscreen) v.requestFullscreen().catch(() => {});
+        else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+    } catch (e) {}
+    document.addEventListener('fullscreenchange', function f() { if (!document.fullscreenElement) { document.removeEventListener('fullscreenchange', f); close(); } });
 }
 
 function openPrep() {
