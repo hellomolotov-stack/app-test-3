@@ -47,7 +47,7 @@ export function mountHof() {
 function paintBlock(el) {
     el.innerHTML = `
     <div class="card-container hof-card">
-        <div class="hof-tag">дыхание · метод Вима Хофа</div>
+        <div class="hof-tag">тренажёр дыхания по методу Хофа</div>
         <div class="hof-title">дыши как ледяной человек</div>
         <div class="hof-text">3 раунда глубокого дыхания и задержки. 11 минут – и голова ясная, тело бодрое, а холод не так страшен</div>
         <div class="hof-video" id="hofVideo">
@@ -76,6 +76,21 @@ function playFullscreen() {
     v.addEventListener('ended', () => { try { document.fullscreenElement && document.exitFullscreen(); } catch (e) {} close(); });
     // iPhone: системный плеер на весь экран (субтитры default показывает сам); выход из него – закрываем
     v.addEventListener('webkitendfullscreen', close);
+    // закрытие свайпом вниз: видео едет за пальцем, фон бледнеет; отпустил ниже 110px – закрываем
+    let y0 = null, dy = 0;
+    ov.addEventListener('touchstart', e => { if (e.touches.length === 1) { y0 = e.touches[0].clientY; dy = 0; v.style.transition = 'none'; } }, { passive: true });
+    ov.addEventListener('touchmove', e => {
+        if (y0 === null) return;
+        dy = Math.max(0, e.touches[0].clientY - y0);
+        v.style.transform = `translateY(${dy}px) scale(${1 - Math.min(dy, 400) / 2000})`;
+        ov.style.background = `rgba(0,0,0,${Math.max(0.3, 1 - dy / 400)})`;
+    }, { passive: true });
+    ov.addEventListener('touchend', () => {
+        if (y0 === null) return;
+        y0 = null;
+        if (dy > 110) { haptic(); close(); return; }
+        v.style.transition = 'transform .25s'; v.style.transform = ''; ov.style.background = '';
+    });
     v.play().catch(() => {});
     try {
         if (v.requestFullscreen) v.requestFullscreen().catch(() => {});
