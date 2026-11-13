@@ -181,9 +181,9 @@ function setupBottomNav() {
         popup.dataset.wired = '1';
         popupChat.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahikingchat', 'чат клуба', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
         popupChannel.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); openLink('https://t.me/yaltahiking', 'канал клуба', state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
-        popupGift.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('меню: подарить карту', state.userCard.status !== 'active', state.user); import('./ui/card-sheet.js').then(m => m.openCardSheet({ source: 'меню', gift: true })); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+        popupGift?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); log('меню: подарить карту', state.userCard.status !== 'active', state.user); import('./ui/card-sheet.js').then(m => m.openCardSheet({ source: 'меню', gift: true })); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
         popupNewcomer.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderNewcomerPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(true); });
-        popupPass.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
+        popupPass?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); renderPassPage(state.userCard.status !== 'active'); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
         popupZapovednik?.addEventListener('click', (e) => { e.preventDefault(); haptic(); setUserInteracted(); import('./ui/zapovednik.js').then(m => m.openZapovednikGuide('меню')); popup.classList.remove('show'); window.isMenuActive = false; updateActiveNav(); window.toggleShareButton(false); });
         const popupSafety = document.getElementById('popupSafety');
         if (popupSafety) {
@@ -233,7 +233,7 @@ function setupBottomNav() {
             if (!img) return;
             img.src = owner && state.userCard.cardUrl ? state.userCard.cardUrl : 'assets/card-front.jpg';
             img.classList.toggle('is-grey', !owner);
-            name.textContent = String(state.user?.first_name || 'привет').split(' ')[0];
+            name.textContent = owner ? String(state.user?.first_name || 'привет').split(' ')[0] : 'клубная карта';
             sub.textContent = owner ? `карта интеллигента · ${Number(state.userCard.hikes || 0)} ${(n => { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? 'хайк' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'хайка' : 'хайков'; })(Number(state.userCard.hikes || 0))}` : 'узнать о карте интеллигента';
         };
         popup._refreshMe = refreshMe;

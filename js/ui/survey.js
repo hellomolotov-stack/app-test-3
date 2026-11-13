@@ -230,6 +230,7 @@ const busyNow = () => !!document.querySelector(BUSY);
 const appReady = () => { const l = document.getElementById('initial-loader'); return document.documentElement.classList.contains('app-ready') && (!l || l.style.display === 'none' || getComputedStyle(l).display === 'none'); };
 
 function scheduleNudge() {
+    return; // всплывашка снизу отключена (13.11): опрос живёт только блоком на главной
     if (nudgeTimer || nudgeDone || !data) return;
     const test = !!data.test; // у тестовых аккаунтов без ограничений по числу показов
     if (!test && (Number(ls.get('svNudgeN')) >= MAX_SHOWS || Number(ls.get('svNudgeUntil')) > Date.now())) return;
