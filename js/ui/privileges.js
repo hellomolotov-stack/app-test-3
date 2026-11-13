@@ -89,7 +89,7 @@ export function renderGuestPrivileges() {
         state.guestPrivileges.club.forEach(item => {
             let titleHtml = item.title;
             if (item.title.startsWith('новое:')) {
-                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
+                titleHtml = item.title.substring(6).trim();
             }
             clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
@@ -103,7 +103,7 @@ export function renderGuestPrivileges() {
 
     let cityHtml = '';
     if (state.guestPrivileges.city && state.guestPrivileges.city.length) {
-        state.guestPrivileges.city.forEach(item => {
+        state.guestPrivileges.city.filter(noDeepBlack).forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
                 cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
@@ -150,7 +150,7 @@ export function renderPriv() {
     window.isPrivPage = true;
     window.isMenuActive = false;
     resetNavActive();
-    subtitle().textContent = `🤘🏻твои привилегии, ${state.user?.first_name || 'друг'}`;
+    subtitle().textContent = `твои привилегии, ${state.user?.first_name || 'друг'}`;
     showBack(renderHome);
     showBottomNav(true);
     setupBottomNav();
@@ -161,7 +161,7 @@ export function renderPriv() {
         state.privileges.club.forEach(item => {
             let titleHtml = item.title;
             if (item.title.startsWith('новое:')) {
-                titleHtml = `<span style="color: var(--yellow);">новое:</span> ${item.title.substring(6)}`;
+                titleHtml = item.title.substring(6).trim();
             }
             clubHtml += `<div class="partner-item"><strong>${titleHtml}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
@@ -175,7 +175,7 @@ export function renderPriv() {
 
     let cityHtml = '';
     if (state.privileges.city && state.privileges.city.length) {
-        state.privileges.city.forEach(item => {
+        state.privileges.city.filter(noDeepBlack).forEach(item => {
             cityHtml += `<div class="partner-item"><strong>${item.title}</strong><p>${item.description}</p>`;
             if (item.button_text && item.button_link) {
                 cityHtml += `<a href="#" data-url="${item.button_link}" data-guest="false" class="dynamic-link btn btn-yellow" style="margin-top:12px;">${item.button_text}</a>`;
@@ -530,9 +530,10 @@ function pvClubIcon(t) {
     t = t.toLowerCase();
     return /\+1|друг/.test(t) ? '🤝' : /мест/.test(t) ? '🎟️' : /профил/.test(t) ? '🫆' : /саммари|конспект/.test(t) ? '📝' : /мастермайнд/.test(t) ? '🧠' : /интернет|трёх букв|vpn/.test(t) ? '🛡️' : /хайк/.test(t) ? '🥾' : '✨';
 }
+const noDeepBlack = it => !/deep\s*black/i.test(`${it?.title || ''} ${it?.description || ''}`); // временно скрыт (13.11)
 function renderPrivWallet(esc) {
     const club = (state.privileges.club || []).slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99));
-    const city = (state.privileges.city || []).slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99)).map(it => ({ it, p: pvParse(it) }));
+    const city = (state.privileges.city || []).filter(noDeepBlack).slice().sort((a, b) => (a.order ?? 99) - (b.order ?? 99)).map(it => ({ it, p: pvParse(it) }));
     const cats = PV_CATS.filter(([k]) => k === 'all' || city.some(x => x.p.cat === k));
     let cur = 'all';
     const rows = () => city.filter(x => cur === 'all' || x.p.cat === cur).map(({ p }, i) => `
@@ -550,7 +551,7 @@ function renderPrivWallet(esc) {
                 ${cardQrEnabled() ? '<button type="button" class="pv-qr" id="pvQr">QR</button>' : ''}
             </div>
             <div class="pv-sec">в клубе</div>
-            <div class="pv-club">${club.map((c, i) => { const isNew = /^новое:/i.test(c.title); const t = String(c.title).replace(/^новое:\s*/i, ''); return `<button type="button" class="pv-cl" data-cl="${i}"><i>${pvClubIcon(t + ' ' + c.description)}</i>${isNew ? '<em>новое</em>' : ''}<b>${esc(t)}</b></button>`; }).join('')}</div>
+            <div class="pv-club">${club.map((c, i) => { const isNew = /^новое:/i.test(c.title); const t = String(c.title).replace(/^новое:\s*/i, ''); return `<button type="button" class="pv-cl" data-cl="${i}"><i>${pvClubIcon(t + ' ' + c.description)}</i><b>${esc(t)}</b></button>`; }).join('')}</div>
             ${foodHomeHtml()}
             <div class="pv-sec">партнёры · ${city.length}</div>
             <div class="pv-chips">${cats.map(([k, l]) => `<button type="button" class="${k === cur ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('')}</div>

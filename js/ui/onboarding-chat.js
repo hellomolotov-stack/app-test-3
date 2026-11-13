@@ -122,7 +122,7 @@ function memberPerksText() {
 }
 
 function memberPartnersText() {
-    const city = (state.privileges?.city || []).filter(p => p.title);
+    const city = (state.privileges?.city || []).filter(p => p.title && !/deep\s*black/i.test(p.title));
     if (city.length === 0) return null;
     const lines = city.map(p => {
         let block = `🤝 <span style="color:#fff;font-weight:600">${p.title}</span>`;

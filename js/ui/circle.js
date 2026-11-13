@@ -80,6 +80,9 @@ const STYLE = `
 .cs2-car { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 2px; scroll-snap-type: x mandatory; scrollbar-width: none; }
 .cs2-car::-webkit-scrollbar { display: none; }
 .cs2-pc { flex: none; width: 124px; padding: 12px 10px; border-radius: 18px; background: rgba(0,0,0,.28); text-align: center; border: 0; color: #fff; font: inherit; cursor: pointer; scroll-snap-align: start; }
+.cs2-pc.org { cursor: default; box-shadow: inset 0 0 0 1.5px rgba(185,162,255,.45); }
+.cs2-pc.org .cs2-av { box-shadow: 0 0 0 2px #B9A2FF; }
+.cs2-pc.org span { color: #B9A2FF; }
 .cs2-pc.on { background: rgba(217,253,25,.12); box-shadow: inset 0 0 0 1.5px rgba(217,253,25,.5); }
 .cs2-av { width: 44px; height: 44px; margin: 0 auto; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: #fff; background-size: cover; background-position: center; }
 .cs2-pc b { display: block; font-size: 13.5px; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -126,6 +129,28 @@ function layout(people, W, H, cx, cy, sx = 1, sy = 1) {
     });
 }
 
+
+// организаторы (Макс, Неля) – закреплены в левом верхнем углу паутины, сиреневая обводка, пунктир к «ты».
+// В рейтинг близости и связи между людьми не входят (сервер отдаёт их отдельно – d.orgs).
+function orgsSvg(d, cx, cy, uid, big) {
+    const list = (d.orgs || []).slice(0, 2);
+    if (!list.length) return '';
+    const r = big ? 13 : 11, gap = big ? 40 : 34, x0 = big ? 22 : 20, y0 = big ? 22 : 18;
+    let out = '';
+    list.forEach((p, i) => {
+        const x = x0 + i * gap, y = y0;
+        out += `<path d="M${x} ${y} Q${((x + cx) / 2).toFixed(1)} ${(y + 6).toFixed(1)} ${cx} ${cy}" fill="none" stroke="#B9A2FF" stroke-opacity=".35" stroke-width=".9" stroke-dasharray="3 4"/>`;
+    });
+    list.forEach((p, i) => {
+        const x = x0 + i * gap, y = y0;
+        out += `<g data-id="${esc(p.id)}">`;
+        if (p.photo) out += `<clipPath id="${uid}o${i}"><circle cx="${x}" cy="${y}" r="${r}"/></clipPath><circle cx="${x}" cy="${y}" r="${r}" fill="#6B5A9A"/><image href="${esc(p.photo)}" x="${x - r}" y="${y - r}" width="${r * 2}" height="${r * 2}" clip-path="url(#${uid}o${i})" preserveAspectRatio="xMidYMid slice"/>`;
+        else out += `<circle cx="${x}" cy="${y}" r="${r}" fill="#6B5A9A"/><text x="${x}" y="${(y + r * .33).toFixed(1)}" text-anchor="middle" font-size="${(r * .85).toFixed(1)}" font-weight="800" fill="#fff">${esc(initials(p.name))}</text>`;
+        out += `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#B9A2FF" stroke-width="1.8"/>`
+            + `<text x="${x}" y="${y + r + 10}" text-anchor="middle" font-size="${big ? 9 : 8}" font-weight="700" fill="#B9A2FF">${esc(short(p.name))}</text></g>`;
+    });
+    return `<g class="cs-orgs">${out}</g>`;
+}
 function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
     const pts = layout(d.people, W, H, cx, cy, sx, sy);
     const at = new Map(pts.map(p => [p.id, p]));
@@ -169,6 +194,7 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
         }
         out += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="none" stroke="${ring}" stroke-width="${strong ? 1.8 : 1}"/></g>`;
     });
+    out += orgsSvg(d, cx, cy, uid, big);
     const mr = big ? 20 : 15;
     const myPhoto = state.user?.photo_url;
     out += `<circle cx="${cx}" cy="${cy}" r="${mr * 1.9}" fill="url(#${uid}gl)"/>`;
@@ -290,7 +316,7 @@ function sheetNet(d) {
         + (me ? `<clipPath id="csbme"><circle cx="${SCX}" cy="${SCY}" r="${mr}"/></clipPath><image href="${esc(me)}" x="${SCX - mr}" y="${SCY - mr}" width="${mr * 2}" height="${mr * 2}" clip-path="url(#csbme)" preserveAspectRatio="xMidYMid slice"/>`
             : `<circle cx="${SCX}" cy="${SCY}" r="${mr}" fill="#fff"/><text x="${SCX}" y="${SCY + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#121a23">ты</text>`)
         + `<circle cx="${SCX}" cy="${SCY}" r="${mr}" fill="none" stroke="#D9FD19" stroke-width="2.5"/>`;
-    return { pts, maxN, svg: `<svg viewBox="0 0 ${SW} ${SH}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><g class="cs2-lines"></g><g class="cs2-nodes">${nodes}</g><g class="cs2-me">${meHtml}</g></svg>` };
+    return { pts, maxN, svg: `<svg viewBox="0 0 ${SW} ${SH}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><g class="cs2-lines"></g><g class="cs2-nodes">${nodes}</g>${orgsSvg(d, SCX, SCY, 'cso', true)}<g class="cs2-me">${meHtml}</g></svg>` };
 }
 function sheetLines(net, d, mode, sel, L = null) {
     const at = new Map(net.pts.map(p => [p.id, p]));
@@ -419,6 +445,7 @@ export function openCircleSheet() {
     let mode = 'near', sel = null;
     const hiddenN = d.people.filter(p => p.hidden && p.known).length;
     const cardsFor = list => list.filter(p => !p.hidden).map((p, i) => `<button type="button" class="cs2-pc" data-pid="${esc(p.id)}"><div class="cs2-av" style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</div><b>${esc(short(p.name))}</b><span>${p.n} ${plural(p.n, 'общий хайк', 'общих хайка', 'общих хайков')}</span></button>`).join('')
+        + (d.orgs || []).map(p => `<div class="cs2-pc org"><div class="cs2-av" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : 'background:linear-gradient(135deg,#C7B8E6,#6B5A9A)'}">${p.photo ? '' : esc(initials(p.name))}</div><b>${esc(short(p.name))}</b><span>организатор · ${p.n} ${plural(p.n, 'хайк', 'хайка', 'хайков')}</span></div>`).join('')
         + (hiddenN ? `<button type="button" class="cs2-pc q" data-cs2-card><div class="cs2-av">?</div><b>ещё ${hiddenN}</b><span>${plural(hiddenN, 'знакомый', 'знакомых', 'знакомых')} – с картой</span></button>` : '');
     const cards = cardsFor(d.people.slice(0, near));
     const stack = nx ? [...nx.known.slice(0, 2).map((p, i) => `<i style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</i>`), nx.freshCount ? `<i class="new">+${nx.freshCount}</i>` : ''].join('') : '';

@@ -24,7 +24,7 @@ const rub = n => `${Number(n).toLocaleString('ru-RU')} ₽`;
 
 function partnersHtml() {
     // «на утро : на вечер» пока прячем – по ней непонятно, что за скидка
-    const list = (state.guestPrivileges?.city || state.privileges?.city || []).filter(p => p && p.title && !/на утро/i.test(p.title));
+    const list = (state.guestPrivileges?.city || state.privileges?.city || []).filter(p => p && p.title && !/на утро|deep\s*black/i.test(p.title));
     if (!list.length) return '';
     // «-10% по карте интеллигента» → «−10%», «+1000 бонусов …» → «+1000 бонусов»
     const perk = d => {
