@@ -534,7 +534,7 @@ function renderGuestHome() {
     `;
 
     main.innerHTML = `
-        ${v2 ? v2GuestTopHtml(cardHtml) + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div><div id="surveyHost"></div>' : askBarHtml() + cardHtml}
+        ${v2 ? v2GuestTopHtml(cardHtml) + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div>' : askBarHtml() + cardHtml}
         <div id="circleContainer"></div>
         ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
         ${/* блок «для новичков» убран у всех (07.11) */ false ? `
@@ -546,7 +546,7 @@ function renderGuestHome() {
             </div>
         </div>
         ` : ''}
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span class="ml-long">смотреть </span>отчёты ›</a></div>
@@ -751,7 +751,7 @@ function renderOwnerHome() {
     showBottomNav(true);
     const main = mainDiv();
     main.innerHTML = `
-        ${v2 ? v2HomeTopHtml() + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div><div id="surveyHost"></div>' : askBarHtml()}
+        ${v2 ? v2HomeTopHtml() + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div>' : askBarHtml()}
         ${v2 ? '' : `<div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
             <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
@@ -765,7 +765,7 @@ function renderOwnerHome() {
         </div>`}
         <div id="circleContainer"></div>
         ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         ${/* блок «для новичков» убран у всех (07.11) */ false ? `
         <div class="card-container">
@@ -856,9 +856,9 @@ function renderRdHome() {
     main.innerHTML = `
         ${rdHomeTopHtml()}
         <div id="circleContainer"></div>
-        <div id="rdMedalsAnchor"></div><div id="surveyHost"></div>
+        <div id="rdMedalsAnchor"></div>
         <div class="card-container" id="calendarContainer"></div>
-        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div>
+        <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
             <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span class="ml-long">смотреть </span>отчёты ›</a></div>

@@ -181,11 +181,16 @@ function openSurvey(host) {
     skipBtn.addEventListener('click', () => { haptic(); go(true); });
 
     async function finish() {
-        // сначала сохраняем конец опроса: значок выдаётся на сервере сразу, как только он засчитан
-        meCall('survey_finish', { segment }, 10000).catch(() => { /* состояние дойдёт при следующем заходе */ });
+        // значок выдаётся на сервере сразу, как только опрос засчитан; баннер и блок значков обновляем после ответа сервера
+        const saved = meCall('survey_finish', { segment }, 10000).catch(() => null);
         log('опрос: пройден', false, state.user, { segment });
         data = null;
-        showBadgeReward(() => close());
+        showBadgeReward(async () => {
+            await Promise.race([saved, new Promise(r => setTimeout(r, 3000))]);
+            data = null; loadedAt = 0;
+            close();
+            try { document.getElementById('myAchievements')?.remove(); (await import('./medals.js')).mountMyAchievements(); } catch (e) {}
+        });
     }
 
     if (allDone) finish(); else paint();
