@@ -709,6 +709,7 @@ function renderGuestHome() {
 
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
+    import('./hof.js').then(m => m.mountHof()).catch(() => {});
     renderCalendarOrStrip(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
@@ -812,6 +813,7 @@ function renderOwnerHome() {
 
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
+    import('./hof.js').then(m => m.mountHof()).catch(() => {});
     renderCalendarOrStrip(document.getElementById('calendarContainer'));
     initWeatherBlock();
 
@@ -870,6 +872,7 @@ function renderRdHome() {
     });
     refreshMastermindBlock();
     mountCircle(document.getElementById('circleContainer'));
+    import('./hof.js').then(m => m.mountHof()).catch(() => {});
     renderCalendarOrStrip(document.getElementById('calendarContainer'));
     initWeatherBlock();
     setupBottomNav();

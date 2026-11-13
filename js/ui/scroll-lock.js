@@ -5,7 +5,7 @@ const OPEN = [
     '.bottom-sheet-overlay', '.modal-overlay', '.inv-overlay', '.zp-overlay', '.sv-overlay', '.sa-overlay',
     '.reg-ticket-overlay', '.rd-story-overlay', '.pv-ov', '.mmr-overlay', '.hb-overlay', '.cw-overlay', '.csv-overlay',
     '.cs2-overlay', '.cq-overlay', '.city-ticket-overlay', '.admission-overlay', '.acol-overlay', '.ach-overlay',
-    '.cs-overlay', '.nav-popup.show', '.adm',
+    '.cs-overlay', '.nav-popup.show', '.adm', '.hof-ov',
 ].join(',');
 
 let locked = false, savedY = 0, raf = 0;

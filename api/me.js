@@ -204,6 +204,24 @@ module.exports = async (req, res) => {
             return res.status(200).json({ ok: false });
         }
     }
+    // дыхание по Виму Хофу: hof/<uid>/<ключ-время> = { t, rounds, holds:[сек], done }
+    if (body && body.action === 'hof') {
+        try {
+            const token = await getAccessToken();
+            const uid = String(user.id);
+            if (body.op === 'save') {
+                const holds = (Array.isArray(body.holds) ? body.holds : []).slice(0, 8).map(x => Math.max(0, Math.min(900, Math.round(Number(x) || 0))));
+                const rec = { t: Date.now(), rounds: Math.max(0, Math.min(8, Number(body.rounds) || holds.length)), holds, done: !!body.done };
+                await fetch(`${DB}/hof/${uid}/${rec.t.toString(36)}.json`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(rec), signal: AbortSignal.timeout(6000) });
+            }
+            const r = await fetch(`${DB}/hof/${uid}.json?orderBy="$key"&limitToLast=400`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });
+            const data = r.ok ? (await r.json()) || {} : {};
+            return res.status(200).json({ sessions: Object.values(data).sort((a, b) => a.t - b.t) });
+        } catch (e) {
+            console.error('me hof:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
     // лента «активность» для админки: только организаторы; since – отдавать события новее этой метки
     if (body && body.action === 'activity') {
         if (!['163665735', '7845375334'].includes(String(user.id))) return res.status(403).json({ error: 'forbidden' });
