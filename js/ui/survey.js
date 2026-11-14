@@ -35,6 +35,8 @@ const bannerHtml = b => `
     </div>`;
 
 export async function mountSurveyBanner(host) {
+    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
+    if (host) host.innerHTML = ''; return;
     if (!host || !window.Telegram?.WebApp?.initData) return;
     try {
         if (!data || Date.now() - loadedAt > 60000) {

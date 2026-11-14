@@ -86,6 +86,8 @@ const TEXTS = {
 // Показывает карточку с вопросом, если человеку ещё нельзя писать. reason: home | booking
 export async function maybeAskNotifications(reason = 'home', delay = 0) {
     await pingAppUser();
+    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
+    return;
     if (delay) await new Promise(r => setTimeout(r, delay));
     if (!shouldAsk(reason)) return;
     if (document.querySelector('.modal-overlay, .bottom-sheet-overlay.active, .bot-chat-overlay')) return;
@@ -126,6 +128,8 @@ export async function maybeAskNotifications(reason = 'home', delay = 0) {
 // сразу после загрузки (delay мс после экрана загрузки) на главной, только если боту ещё нельзя писать; те же лимиты (раз в неделю, максимум 3).
 export async function maybeShowHomeBanner(delay = 1200) {
     await pingAppUser();
+    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
+    return;
     await new Promise(r => setTimeout(r, delay));
     // ждём, пока уйдёт экран загрузки
     for (let i = 0; i < 20 && !document.documentElement.classList.contains('app-ready'); i++) await new Promise(r => setTimeout(r, 500));

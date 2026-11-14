@@ -58,6 +58,8 @@ function markSeen() {
 
 // при запуске: владельцу карты, которому экран ещё не показывали, – спросить сервер
 export async function maybeShowCardWelcome() {
+    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
+    return;
     try {
         if (state.userCard?.status !== 'active') return;
         try { if (localStorage.getItem(DONE_KEY)) return; } catch (e) {}

@@ -113,6 +113,8 @@ function cancelPending(key) {
 }
 
 function onAct(e) {
+    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
+    return;
     const { type, ...d } = e.detail || {};
     switch (type) {
         case 'card_scratched': schedule('scratched_idle'); break;

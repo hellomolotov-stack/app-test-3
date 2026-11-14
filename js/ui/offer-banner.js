@@ -40,6 +40,8 @@ export function removeOfferBanner() {
 
 // offer – { price, full_price, expires_at, title, text } (из /api/me); без него спрашиваем сервер сами.
 export async function mountOfferBanner(offer) {
+    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
+    return;
     if (closedThisLaunch || state.userCard?.status === 'active') return;
     if (!offer) {
         const r = await getCardOffer();

@@ -37,6 +37,8 @@ export async function maybeShowNewAchievements({ fromLink = false } = {}) {
     if (!userId || shown || !achievementsVisible()) return gateOpen();
     try {
         await Promise.race([claimAchievements(), new Promise(r => setTimeout(r, 4000))]);
+        // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
+        if (!fromLink) return gateOpen(); // значки выдаются, но окно само не всплывает
         const items = (await loadAchievementCollections([userId]))[userId] || [];
         if (String(state.user?.id || '') !== userId || shown) return gateOpen();
         const fresh = items.filter(i => !i.seenAt);
