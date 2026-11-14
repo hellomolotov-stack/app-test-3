@@ -7697,7 +7697,7 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .cf-track::before, .cf-track::after { width: calc(50% - 100px + 13px); }
 .cf-card { width: 200px; height: 276px; margin: 0 -13px; background: #141a20; isolation: isolate; clip-path: inset(0 round 22px); -webkit-mask-image: -webkit-radial-gradient(white, black); }
 .cf-bg { position: absolute; inset: 0; z-index: -1; background: center/cover no-repeat; transition: filter .3s; }
-.cf-card.is-past .cf-bg { filter: grayscale(1) contrast(1.06) brightness(.92); }
+.cf-card.is-past .cf-bg, .cf-card.is-moved .cf-bg { filter: grayscale(1) contrast(1.06) brightness(.92); }
 .cf-card.is-teaser .cf-bg { inset: -24px; filter: blur(16px) brightness(.5) saturate(.55); }
 .cf-card.is-past .cf-in em { color: rgba(255,255,255,.5); }
 .cf-q { position: absolute; z-index: 1; left: 0; right: 0; top: 30%; text-align: center; font-size: 76px; font-weight: 800; line-height: 1; color: rgba(255,255,255,.92); text-shadow: 0 8px 28px rgba(0,0,0,.55); }

@@ -182,6 +182,11 @@ function fillGoing(ev, list) {
     const h = ev.hike;
     const me = String(state.user?.id || '');
     const people = (Array.isArray(list) ? list : []).filter(p => p && p.userId);
+    // записан сам, а список ещё старый (кэш сервера, только что записался) – «будь первым» не показываем
+    const booked = state.hikeBookingStatus?.[ev.index] === true || state._userRegs?.[h.date] === true;
+    if (booked && me && !people.some(p => String(p.userId) === me)) {
+        people.unshift({ userId: me, name: [state.user?.first_name, state.user?.last_name].filter(Boolean).join(' '), photoUrl: state.user?.photo_url || '', timestamp: Date.now() });
+    }
     const cap = capacityFor(h);
     const n = people.length;
     const left = Math.max(0, cap - n);
@@ -363,5 +368,9 @@ export function wireRdHomeTop() {
     if (boxEl) bindHikingBoxRow(boxEl.querySelector('.hb-row'), boxEl.dataset.boxDate, 'билет на главной');
     document.querySelector('#rdHero .rd-more')?.addEventListener('click', e => { haptic(); showBottomSheet(Number(e.currentTarget.dataset.more)); });
     document.getElementById('rdHeroCover')?.addEventListener('click', open);
-    fetchGoingFromServer([ev.hike.date]).then(([list]) => fillGoing(ev, list)).catch(() => fillGoing(ev, []));
+    // список «кто идёт» – мимо кэша сервера: после записи или переноса хайка кэш минуту показывал пустоту
+    const d = ev.hike.date;
+    fetchGoingFromServer([d], true)
+        .then(g => (g && Array.isArray(g[d]) ? g[d] : fetchGoingFromServer([d]).then(([list]) => list)))
+        .then(list => fillGoing(ev, list)).catch(() => fillGoing(ev, []));
 }

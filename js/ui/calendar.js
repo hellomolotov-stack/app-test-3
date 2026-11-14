@@ -1272,7 +1272,10 @@ function withSpur(track, cfg) {
 
 function getHikeTrack(hike) {
     let track = getHikeTrackRaw(hike);
-    const spurCfg = track && (HIKE_TRACK_SPURS[hike.date] || HIKE_TRACK_SPURS[hike.route_id]);
+    // своя запись по дате/маршруту; иначе – любая, чья развилка и вершина лежат на треке
+    // (админка у хайка со своим GPX стирает route_id, а перенос даты не должен терять пунктир)
+    let spurCfg = track && (HIKE_TRACK_SPURS[hike.date] || HIKE_TRACK_SPURS[hike.route_id]);
+    if (track && !spurCfg) spurCfg = Object.values(HIKE_TRACK_SPURS).find(cfg => withSpur(track, cfg) !== track);
     if (spurCfg) track = { ...withSpur(track, spurCfg), ...(spurCfg.exaggeration ? { exaggeration: spurCfg.exaggeration } : {}), ...(spurCfg.demMaxzoom ? { demMaxzoom: spurCfg.demMaxzoom } : {}), ...(spurCfg.flatPeak ? { flatPeak: spurCfg.flatPeak } : {}) };
     const route = track && findCatalogRoute(hike);
     const exaggeration = (route && ROUTE_TERRAIN_EXAGGERATION[route.id]) || track?.exaggeration;

@@ -189,11 +189,12 @@ export function renderCalFlow(container) {
     wheel.addEventListener('pointerup', wEnd); wheel.addEventListener('pointercancel', wEnd);
 
     cards.forEach((c, i) => c.addEventListener('click', async () => {
+        // «хайк перенесён» не открывается – листаем календарь к следующей карточке
+        if (c.classList.contains('is-moved')) { haptic(); center(Math.min(list.length - 1, i + 1), true); return; }
         if (i !== cur) { haptic(); center(i, true); return; }
         const h = list[i];
         haptic();
         log('календарь-витрина: карточка', state.userCard?.status !== 'active', state.user, { date: h.date });
-        if (isTeaser(h) && /🌧/.test(h.emoji || '')) return;
         if (isTeaser(h)) {
             c.disabled = true;
             const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
