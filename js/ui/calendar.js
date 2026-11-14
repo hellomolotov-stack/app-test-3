@@ -1,4 +1,5 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
+import { ensureSmoothDem, smoothDemTiles } from './smooth-dem.js';
 import { requireAdmission } from './admission.js';
 import { hikeTiming, isUpcomingHike, moscowDateKey } from '../hike-timing.js';
 import { trackFunnel } from '../analytics.js';
@@ -1251,7 +1252,7 @@ export function hikeTrackPoints(hike) {
 // branch – развилка, peak – вершина (точки ищутся в треке ближайшими, так правка переживёт перезагрузку GPX).
 // exaggeration – слабее рельеф, demMaxzoom – высоты погрубее: при 1.8 и детальных высотах вершина выглядит остриём.
 const HIKE_TRACK_SPURS = {
-    '2026-11-15': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12 } // Байдарская яйла
+    '2026-11-15': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12, flatPeak: { center: [44.40596, 33.7377], radius: 1000, inner: 420, blur: 140, plateau: 630 } } // Байдарская яйла
 };
 
 function withSpur(track, cfg) {
@@ -1272,7 +1273,7 @@ function withSpur(track, cfg) {
 function getHikeTrack(hike) {
     let track = getHikeTrackRaw(hike);
     const spurCfg = track && HIKE_TRACK_SPURS[hike.date];
-    if (spurCfg) track = { ...withSpur(track, spurCfg), ...(spurCfg.exaggeration ? { exaggeration: spurCfg.exaggeration } : {}), ...(spurCfg.demMaxzoom ? { demMaxzoom: spurCfg.demMaxzoom } : {}) };
+    if (spurCfg) track = { ...withSpur(track, spurCfg), ...(spurCfg.exaggeration ? { exaggeration: spurCfg.exaggeration } : {}), ...(spurCfg.demMaxzoom ? { demMaxzoom: spurCfg.demMaxzoom } : {}), ...(spurCfg.flatPeak ? { flatPeak: spurCfg.flatPeak } : {}) };
     const route = track && findCatalogRoute(hike);
     const exaggeration = (route && ROUTE_TERRAIN_EXAGGERATION[route.id]) || track?.exaggeration;
     const orbitArc = route && ROUTE_ORBIT_ARC[route.id];
@@ -1835,10 +1836,12 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
     if (!standalone) currentHikeMap = map;
     const reveal = hideUntilReady(map);
 
+    // плоская вершина: тайлы высот сглаживаются вокруг неё (smooth-dem.js)
+    const smoothTiles = track.flatPeak && ensureSmoothDem(maplibregl) ? smoothDemTiles(track.flatPeak) : null;
     map.on('load', () => {
         map.addSource('dem', {
             type: 'raster-dem',
-            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            tiles: smoothTiles || ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
             tileSize: 256, encoding: 'terrarium', maxzoom: track.demMaxzoom || 15
         });
         map.setTerrain({ source: 'dem', exaggeration: track.exaggeration || 1.8 });
