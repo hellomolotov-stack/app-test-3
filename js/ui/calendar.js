@@ -1252,7 +1252,7 @@ export function hikeTrackPoints(hike) {
 // branch – развилка, peak – вершина (точки ищутся в треке ближайшими, так правка переживёт перезагрузку GPX).
 // exaggeration – слабее рельеф, demMaxzoom – высоты погрубее: при 1.8 и детальных высотах вершина выглядит остриём.
 const HIKE_TRACK_SPURS = {
-    'baydarskaya-yayla': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12, flatPeak: { center: [44.40596, 33.7377], radius: 1000, inner: 420, blur: 110, peak: 681, base: 520 } } // Ильяс-Кая 681 м – округлый купол // Байдарская яйла
+    'baydarskaya-yayla': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], top: [44.40595, 33.73919], exaggeration: 1.1, demMaxzoom: 12, flatPeak: { center: [44.40596, 33.7377], radius: 1000, inner: 420, blur: 110, peak: 681, base: 520 } } // Ильяс-Кая 681 м – округлый купол // Байдарская яйла
 };
 
 function withSpur(track, cfg) {
@@ -1263,11 +1263,14 @@ function withSpur(track, cfg) {
         for (let k = from; k < to; k++) { const d = _hvKm(C[k][0], C[k][1], p[0], p[1]); if (d < bd) { bd = d; bi = k; } }
         return bd < 0.08 ? bi : -1;
     };
-    const a = near(cfg.peak);
+    let a = near(cfg.peak);
+    if (a < 0 && cfg.top) a = near(cfg.top);
     const i = a > 0 ? near(cfg.branch, 0, a) : -1;
     const j = a > 0 ? near(cfg.branch, a + 1) : -1;
     if (i < 0 || j < 0) return track;
-    return { ...track, coords: C.slice(0, i + 1).concat(C.slice(j)), spurs: [C.slice(i, a + 1)] };
+    // top – макушка сглаженного купола: заход рисуем прямо от развилки к ней, по гребню, а не по сырому GPX
+    const spur = cfg.top ? Array.from({ length: 13 }, (_, k) => [C[i][0] + (cfg.top[0] - C[i][0]) * k / 12, C[i][1] + (cfg.top[1] - C[i][1]) * k / 12]) : C.slice(i, a + 1);
+    return { ...track, coords: C.slice(0, i + 1).concat(C.slice(j)), spurs: [spur] };
 }
 
 function getHikeTrack(hike) {
