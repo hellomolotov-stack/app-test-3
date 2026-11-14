@@ -46,7 +46,7 @@ export function mountHof() {
 function paintBlock(el) {
     el.innerHTML = `
     <div class="card-container hof-card">
-        <div class="hof-tag">тренажёр дыхания</div>
+        <div class="hof-tag">техника, которую мы делаем на хайках</div>
         <div class="hof-title">метод Вима Хофа</div>
         <div class="hof-text">11 минут дыхания – и тело просыпается, как после холодного душа, а стресс уходит. Исследование нидерландских учёных в журнале PNAS показало: практика запускает выброс адреналина и гасит воспаление. С этим методом Вим Хоф поставил десятки мировых рекордов – почти два часа просидел во льду и поднялся на Килиманджаро в одних шортах.</div>
         <div class="hof-video" id="hofVideo">
