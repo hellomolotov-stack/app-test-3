@@ -96,7 +96,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                     <p>так за столом остаются те, с кем хочется говорить дольше, чем длится вечер. карта интеллигента – твой вход на такие встречи и на все хайки сезона</p>
                     <div class="cs-city-ev"><i>${escT(ev.emoji || '🏙️')}</i><div><b>${escT(ev.title)}</b><small>${Number(ev.capacity) > 0 ? `${Number(ev.capacity)} мест · ` : ''}запишем сразу после оплаты</small></div></div>
                 </div>` : '';
-    const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `оформить навсегда · ${rub(price)}` : `оформить на год · ${rub(price)}`;
+    const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `купить навсегда · ${rub(price)}` : `купить на год · ${rub(price)}`;
 
     // гость в новом интерфейсе: карта в слайдере под защитным покрытием – его можно стереть пальцем
     const scratch = !gift && state.userCard?.status !== 'active' && isV2();
@@ -157,7 +157,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             </div>
             <div class="cs-bar">
                 <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить бессрочную · ${rub(permanent)}` : buyLabel(permanent, true)}</button>
-                ${gift ? '' : `<button type="button" class="btn cs-buy cs-buy-season" id="csBuySeason">оформить на год · ${rub(season)}</button>`}
+                ${gift ? '' : `<button type="button" class="btn cs-buy cs-buy-season" id="csBuySeason">купить на год · ${rub(season)}</button>`}
                 ${ev ? '<div class="cs-city-note">после оплаты ты сразу в списке гостей</div>' : ''}
                 ${isReturning || gift || !allowTicket || cityEvent ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
                 ${SPLIT_NOTE}
@@ -275,7 +275,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 overlay.querySelector('.cs-note')?.remove();
                 plan = 'offer';
                 selectedPrice = price;
-                buyBtn.textContent = `оформить за ${rub(price)}`;
+                buyBtn.textContent = `купить за ${rub(price)}`;
                 seasonBtn?.remove();
                 return;
             }
@@ -292,7 +292,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             overlay.querySelector('.cs-note')?.remove();
             plan = 'offer';
             selectedPrice = price;
-            buyBtn.textContent = `оформить за ${rub(price)}`;
+            buyBtn.textContent = `купить за ${rub(price)}`;
             seasonBtn?.remove();
             offerTimer = setInterval(() => {
                 const l = left();

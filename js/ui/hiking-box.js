@@ -284,7 +284,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             </div>
             <div class="hb-pop" hidden></div>
             <div class="hb-bar">
-                <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b>скидка 10%</b> с картой интеллигента</span><em>оформить ›</em></button>
+                <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b>скидка 10%</b> с картой интеллигента</span><em>купить ›</em></button>
                 <button type="button" class="btn btn-yellow hb-buy hb-buy-full hb-custom">Настроить свой бокс</button>
             </div>
         </div>`;
