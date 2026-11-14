@@ -64,6 +64,12 @@ function cardHtml(h, i) {
     const on = teaser && isWaitlisted(h.date);
     const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
     const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
+    if (teaser && /🌧/.test(h.emoji || '')) {
+        // заглушка «хайк перенесён»: стрелка вместо «?», без колокольчика и подписки
+        return `<button type="button" class="cf-card is-moved" data-i="${i}" data-date="${h.date}">${bg}<span class="cf-q">→</span><span class="cf-tag is-soon">перенесён</span>
+            <span class="cf-in cf-in-t"><small>${when}</small></span>
+            <span class="cf-tbar"><span class="cf-tlab">хайк перенесён</span></span></button>`;
+    }
     if (teaser) {
         // будущий без маршрута: «?», колокольчик, строка с тумблером; подписан – карточка «загорается» лаймом
         return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
@@ -187,6 +193,7 @@ export function renderCalFlow(container) {
         const h = list[i];
         haptic();
         log('календарь-витрина: карточка', state.userCard?.status !== 'active', state.user, { date: h.date });
+        if (isTeaser(h) && /🌧/.test(h.emoji || '')) return;
         if (isTeaser(h)) {
             c.disabled = true;
             const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
