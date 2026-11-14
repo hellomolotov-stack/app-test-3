@@ -764,6 +764,7 @@ function feedConfirm(text) {
     });
 }
 
+const FEED_MONTHS_PREP = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне', 'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
 const FEED_WD_ACC = ['в воскресенье', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу'];
 
 // Подтверждение подписки: стеклянная карточка сверху, как пуш. Сама уходит через 4 с, есть «отменить».
@@ -779,7 +780,7 @@ function feedNotifyToast(date, container) {
     el.style.top = (inset ? inset + 8 : 12) + 'px';
     el.innerHTML = `
         <div class="ef-push-ic">🔔</div>
-        <div class="ef-push-text"><b>сообщим об открытии</b><span>запись на ${what} ${FEED_WD_ACC[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]} · напишем в бота</span></div>
+        <div class="ef-push-text"><b>сообщим об открытии</b><span>${hike ? `запись на ${what} ${FEED_WD_ACC[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}` : `запись на хайки в ${FEED_MONTHS_PREP[d.getMonth()]}`} · напишем в бота</span></div>
         <button type="button" class="ef-push-undo" data-log-label="лист ожидания: отменить из уведомления">отменить</button>
         <div class="ef-push-bar"></div>`;
     document.body.appendChild(el);

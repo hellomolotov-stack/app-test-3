@@ -8360,3 +8360,9 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .csv-badge.csv-wide { filter: none; }
 /* сторис: картинки стоят на месте, без покачивания (просьба 13.11) */
 .csv-cardimg, .csv-badge, .csv-big, .csv-envelope, .csv-plaud, .csv-phone { animation: none !important; }
+/* 14.11: «следующий месяц в тумане» в конце календаря – холодная размытая картинка, снежинка */
+.cf-card.is-next .cf-bg { inset: -24px; filter: blur(14px) brightness(.62) saturate(.15) hue-rotate(180deg); }
+.cf-card.is-next::after { background: linear-gradient(rgba(150,180,210,.18), rgba(8,10,14,.9)); }
+.cf-card.is-next .cf-q { font-size: 64px; top: 26%; }
+.cf-card.is-next .cf-in-t b { font-size: 18px; }
+.cf-d.is-next b { font-size: 15px; }

@@ -44,7 +44,14 @@ function events() {
         .filter(h => (h.date < t ? !isTeaser(h) : true));
     const have = new Set(app.map(h => h.date));
     const old = (preApp || []).filter(h => !have.has(h.date)).map(h => ({ ...h, preApp: true }));
-    return [...old, ...app].sort((a, b) => a.date.localeCompare(b.date));
+    const all = [...old, ...app].sort((a, b) => a.date.localeCompare(b.date));
+    // в конце ленты – «следующий месяц в тумане»: подписка = лист ожидания на YYYY-MM-01 (Apps Script сообщит при первом хайке месяца)
+    const last = all[all.length - 1];
+    if (last && last.date >= t) {
+        const d = dt(last.date), n = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+        all.push({ date: `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-01`, nextMonth: true });
+    }
+    return all;
 }
 function photo(h) {
     const v = state.hikePhotos?.[h.date];
@@ -63,6 +70,13 @@ function cardHtml(h, i) {
         : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">запись открыта</span>';
     const on = teaser && isWaitlisted(h.date);
     const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
+    if (h.nextMonth) {
+        // заглушка в конце ленты: размытая зима, снежинка, «сообщить об открытии» на весь месяц
+        const m = d.getMonth(), winter = m === 11 || m <= 1;
+        return `<button type="button" class="${cls} is-next" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}"><span class="cf-bg" style="background-image:url('assets/teaser/demerdzhi-3.webp')"></span><span class="cf-q">${winter ? '❄' : '?'}</span><span class="cf-tag is-soon">готовим</span>
+            <span class="cf-in cf-in-t"><small>${MONN[m]}</small><b class="cf-title">${winter ? 'зимние хайки' : 'новые маршруты'}</b></span>
+            <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
+    }
     const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
     if (teaser && /🌧/.test(h.emoji || '')) {
         // заглушка «хайк перенесён»: стрелка вместо «?», без колокольчика и подписки
@@ -86,6 +100,7 @@ function cardHtml(h, i) {
 function wheelHtml(list) {
     const t = today();
     return `<div class="cf-wheel" aria-hidden="true"><span class="cf-lens"></span><div class="cf-wl">${list.map((h, i) => { const d = dt(h.date);
+        if (h.nextMonth) return `<span class="cf-d is-next" data-w="${i}"><small>${MON3[d.getMonth()]}</small><b>❄</b></span>`;
         return `<span class="cf-d${h.date < t ? ' is-past' : ''}${isCity(h) ? ' is-city' : ''}" data-w="${i}"><small>${WD[d.getDay()]}</small><b>${d.getDate()}</b></span>`; }).join('')}</div></div>
         <div class="cf-mon"><span data-mp></span><b data-mc></b><span data-mn></span></div>`;
 }
@@ -104,9 +119,9 @@ export function renderCalFlow(container) {
     // в центр – событие ПОСЛЕ того, что уже стоит наверху главной (ближайший хайк или плашка «готовим»)
     const topDate = ((state.hikesList || []).filter(h => h && h.date >= t && !yes(h.cancelled) && !yes(h.book_club) && !(yes(h.city) && !isTeaser(h)) && !/🌧/.test(h.emoji || ''))
         .sort((a, b) => a.date.localeCompare(b.date))[0] || {}).date || '';
-    let start = list.findIndex(h => (topDate ? h.date > topDate : h.date >= t));
-    if (start < 0) start = list.findIndex(h => h.date >= t);
-    if (start < 0) start = list.length - 1;
+    let start = list.findIndex(h => !h.nextMonth && (topDate ? h.date > topDate : h.date >= t));
+    if (start < 0) start = list.findIndex(h => !h.nextMonth && h.date >= t);
+    if (start < 0) start = list.findLastIndex(h => !h.nextMonth);
     // запись на ближайший хайк открыта, а человек на него не записан – в центре календаря именно он, а не следующее событие
     const ni = (state.hikesWithTitle || []).findIndex(h => h && !yes(h.cancelled) && !yes(h.book_club) && isUpcomingHike(h));
     const nh = ni >= 0 ? state.hikesWithTitle[ni] : null;
@@ -119,7 +134,7 @@ export function renderCalFlow(container) {
     if (linked >= 0) start = linked;
     container.className = 'card-container cf-wrap';
     container.innerHTML = `
-        <div class="cf-head"><b>календарь</b><span>${list.filter(h => h.date >= t).length} впереди</span></div>
+        <div class="cf-head"><b>календарь</b><span>${list.filter(h => h.date >= t && !h.nextMonth).length} впереди</span></div>
         <div class="cf-track">${list.map(cardHtml).join('')}</div>
         ${wheelHtml(list)}`;
     const track = container.querySelector('.cf-track');
@@ -206,7 +221,7 @@ export function renderCalFlow(container) {
         const idx = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
         if (idx >= 0) showBottomSheet(idx);
     }));
-    const dates = list.filter(h => h.date >= t && !isTeaser(h)).map(h => h.date).slice(0, 8);
+    const dates = list.filter(h => h.date >= t && !isTeaser(h) && !h.nextMonth).map(h => h.date).slice(0, 8);
     if (dates.length) fetchGoingFromServer(dates).then(lists => dates.forEach((d, k) => fillGoing(container, d, lists[k]))).catch(() => {});
 }
 
