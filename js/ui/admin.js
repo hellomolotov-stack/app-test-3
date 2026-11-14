@@ -880,6 +880,40 @@ function applyTemplate(routeId) {
         : `подставлено: ${t.source}${t.from ? ' от ' + dateLabel(t.from) : ''}. после сохранения эти поля станут шаблоном маршрута`;
 }
 
+// Новый хайк «как прошлый»: тексты, теги, трек, картинка и т.д. копируются с выбранного хайка (дата, ссылки на отчёт/письмо/саммари и отмена – нет).
+// Нужно для маршрутов, которых нет в каталоге: хайк с собственным GPX можно повторить без повторной загрузки трека.
+function cloneChoices() {
+    const seen = new Set();
+    return allHikes().filter(h => h.title && String(h.title).trim() && !isYes(h.city) && !isYes(h.book_club)).reverse()
+        .filter(h => { const k = String(h.title).trim().toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+}
+
+function cloneFromHike(date) {
+    const h = (state.hikesData || {})[date];
+    if (!h) return;
+    const d = draft;
+    d.title = h.title || '';
+    d.emoji = '';
+    d.start_time = h.start_time || d.start_time || '12:00';
+    d.tags = tagsText(h);
+    d.feature_tags = Array.isArray(h.feature_tags) ? h.feature_tags.join(', ') : String(h.feature_tags || '');
+    d.image = h.image || '';
+    d.features = h.features || '';
+    d.access = h.access || '';
+    d.details = h.details || '';
+    d.location_link = h.location_link || '';
+    d.capacity = h.capacity ? String(h.capacity) : '';
+    d.woman = isYes(h.woman);
+    d.city = false;
+    d.track = h.track || null;
+    d.trackChanged = !!h.track;
+    d.trackStats = h.track ? { km: h.track.km, gain: h.track.gain, points: h.track.coords.length } : null;
+    d.route_id = h.track ? '' : (h.route_id || findCatalogRoute(h)?.id || '');
+    d.routeMode = h.track ? 'gpx' : (d.route_id ? 'catalog' : 'none');
+    d.templateNote = `скопировано с хайка «${h.title}» от ${dateLabel(date)} – проверьте дату и тексты`;
+    render();
+}
+
 async function onRouteChange(value) {
     const d = draft;
     if (value === '__gpx') {
@@ -979,6 +1013,10 @@ function renderEditor(body) {
     body.innerHTML = `
         <button class="adm-back">‹ все хайки</button>
         <div class="adm-h1">${d.original ? esc(d.title || 'заглушка ' + dateLabel(d.original)) : 'новый хайк'}</div>
+        ${!d.original ? `<label class="adm-field"><span>или скопировать прошлый хайк целиком</span><select id="admClone">
+            <option value="">— выберите хайк —</option>
+            ${cloneChoices().map(h => `<option value="${esc(h.date)}">${esc(h.title)} · ${esc(dateLabel(h.date))}</option>`).join('')}
+        </select></label>` : ''}
         <label class="adm-field"><span>маршрут</span><select id="admRoute">
             <option value="">— выберите маршрут —</option>
             ${catalogRoutes().map(r => `<option value="${esc(r.id)}" ${d.routeMode === 'catalog' && String(d.route_id) === String(r.id) ? 'selected' : ''}>${esc(r.title)}</option>`).join('')}
@@ -1063,6 +1101,7 @@ function renderEditor(body) {
     // новая ачивка за этот хайк: участники уже отмечены (кто был, иначе – кто записан)
     body.querySelector('#admAchGrant')?.addEventListener('click', () => { haptic(); view = { tab: 'achievements', achHike: d.original }; render(); });
     body.querySelector('#admRoute').addEventListener('change', e => onRouteChange(e.target.value));
+    body.querySelector('#admClone')?.addEventListener('change', e => e.target.value && cloneFromHike(e.target.value));
     body.querySelector('#admGpx')?.addEventListener('change', e => onGpxFile(e.target.files && e.target.files[0]));
     body.querySelector('#admTrackRemove')?.addEventListener('click', () => {
         haptic();
