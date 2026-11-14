@@ -500,7 +500,7 @@ function wt2Html(city, data) {
     return `<div class="wt2-grid"><span></span>${head}
         <button type="button" class="wt2-lab" id="weatherCityBtn"><b>город</b>${city.name} ›</button>${row(data.coast)}
         <span class="wt2-lab"><b>горы</b>${city.mountain.label}</span>${row(data.mountain)}</div>
-        ${hd ? '<div class="wt2-note">лаймом – день ближайшего хайка</div>' : ''}`;
+`;
 }
 async function loadWt2() {
     const root = document.getElementById('weatherBlock');
