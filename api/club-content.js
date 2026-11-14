@@ -206,6 +206,27 @@ module.exports = async (req, res) => {
                 return res.status(502).json({ error: 'не удалось сохранить фото' });
             }
         }
+        // «когда откроется запись» (js/booking-opens.js): booking_opens/<дата> = ISO по Москве; at: null – запись открыта сразу
+        if (body.action === 'booking_opens') {
+            const date = String(body.date || ''), original = String(body.original || '');
+            const at = body.at == null || body.at === '' ? null : String(body.at);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || (original && !/^\d{4}-\d{2}-\d{2}$/.test(original))) return res.status(400).json({ error: 'плохая дата' });
+            if (at !== null && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+03:00$/.test(at)) return res.status(400).json({ error: 'плохое время открытия' });
+            try {
+                const t = await getAccessToken();
+                const put = (path, val) => fetch(`${DB}/${path}.json`, { method: val === null ? 'DELETE' : 'PUT', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: val === null ? undefined : JSON.stringify(val), signal: AbortSignal.timeout(15000) });
+                const prev = await (await fetch(`${DB}/booking_opens/${date}.json`, { headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) })).json().catch(() => null);
+                const rs = [await put(`booking_opens/${date}`, at)];
+                if (original && original !== date) rs.push(await put(`booking_opens/${original}`, null));
+                // время поменяли – рассылку «открыли запись» можно отправить заново в новую минуту
+                if (prev !== at) rs.push(await put(`booking_open_sent/${date}`, null));
+                if (rs.some(r => !r.ok)) throw new Error('write failed');
+                return res.status(200).json({ ok: true, at });
+            } catch (e) {
+                console.error('booking_opens:', e.message);
+                return res.status(502).json({ error: 'не удалось сохранить время открытия записи' });
+            }
+        }
         // сторис клуба (lib/club-stories.js): список с автоматическими черновиками и сохранение
         if (body.action === 'stories' || body.action === 'story_save') {
             try {

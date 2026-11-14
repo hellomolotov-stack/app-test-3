@@ -8370,11 +8370,8 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .rd-opens { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 11px 14px; border-radius: 14px; background: rgba(255,255,255,.06); }
 .rd-opens span { font-size: 13px; color: rgba(255,255,255,.7); }
 .rd-opens b { font-size: 14px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
-.rd-remind { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; height: 48px; margin-top: 10px; border: 0; border-radius: 16px; background: rgba(255,255,255,.08);
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.rd-remind.is-on { color: var(--yellow); }
-.rd-remind.is-on .cf-sw { background: var(--yellow); }
-.rd-remind.is-on .cf-sw::after { transform: translateX(16px); background: #141800; }
+.rd-remind { width: 100%; margin-top: 10px; }
+.rd-remind.is-on { background: rgba(255,255,255,.08); color: var(--yellow); box-shadow: inset 0 0 0 1px rgba(217,253,25,.45); }
 .rd-hero.is-announce .rd-hero-cover { cursor: default; }
 .cf-card.is-announce .cf-tag { background: var(--yellow); color: #141800; }
 .cf-card.is-announce .cf-in-t b { font-size: 16px; }

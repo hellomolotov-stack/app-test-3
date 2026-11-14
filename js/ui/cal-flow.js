@@ -10,7 +10,7 @@ import { showBottomSheet, isWaitlisted, toggleTeaserNotify, fetchGoingFromServer
 import { heroPhotoFor } from './rd-home.js';
 import { isUpcomingHike, hikeTiming } from '../hike-timing.js';
 import { nextHikeLinkActive, nextHikeLinkDate } from './next-hike-link.js';
-import { bookingNotOpen, opensLabel } from '../booking-opens.js';
+import { bookingNotOpen } from '../booking-opens.js';
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const MON3 = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -94,9 +94,9 @@ function cardHtml(h, i) {
     if (!past && bookingNotOpen(h.date)) {
         // анонс без записи: фото и название видны, сверху «с 17 ноября», внизу «напомнить»; детали не открываются
         const on2 = isWaitlisted(h.date);
-        return `<button type="button" class="cf-card is-announce${on2 ? ' is-on' : ''}" data-i="${i}" data-date="${h.date}" data-lon="напомним" data-loff="напомнить" aria-pressed="${on2}">${bg}
-            <span class="cf-tag">${esc(opensLabel(h.date, { short: true }))}</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
-            <span class="cf-tbar"><span class="cf-tlab">${on2 ? 'напомним' : 'напомнить'}</span><i class="cf-sw"></i></span></button>`;
+        return `<button type="button" class="cf-card is-announce${on2 ? ' is-on' : ''}" data-i="${i}" data-date="${h.date}" aria-pressed="${on2}">${bg}
+            <span class="cf-tag">готовим</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
+            <span class="cf-tbar"><span class="cf-tlab">${on2 ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
     const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
     const title = esc(h.title)

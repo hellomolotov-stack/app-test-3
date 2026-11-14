@@ -2,6 +2,7 @@ import { mountAchievementNotify } from './achievements-notify.js';
 // js/ui/admin.js – админка клуба: хайки (создание, правка, GPX-трек, участники) и рассылки.
 // Кнопку видят только ADMIN_USERNAMES, но это лишь удобство: каждое действие сервер
 // (Apps Script, handleAdmin) проверяет по подписи Telegram initData.
+import { setBookingOpens } from '../booking-opens.js';
 import { state } from '../state.js';
 import { haptic, tg } from '../utils.js';
 import { REGISTRATION_API_URL } from '../config.js';
@@ -719,6 +720,22 @@ function renderSurveysAdmin(body) {
     body.querySelector('#admSvRefresh').addEventListener('click', () => { svAdm = null; render(); });
 }
 
+// ---------- «когда откроется запись» (api/club-content action booking_opens → booking_opens/<дата>, см. js/booking-opens.js) ----------
+function opensInput(date) {
+    const t = Date.parse(state.bookingOpens?.[date] || '');
+    return Number.isFinite(t) ? new Date(t + 3 * 3600000).toISOString().slice(0, 16) : '';
+}
+async function saveBookingOpens(date, at, original) {
+    const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
+        body: JSON.stringify({ action: 'booking_opens', date, at, original: original || '', initData: tg?.initData || '' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'не удалось сохранить время открытия записи');
+    const map = { ...(state.bookingOpens || {}) };
+    if (original && original !== date) delete map[original];
+    if (at) map[date] = at; else delete map[date];
+    setBookingOpens(map);
+}
+
 // ---------- обложка хайка (api/club-content action hike_photo → hikePhotos/<дата>, раздаёт /api/hikes?photo=) ----------
 const hikePhotoV = {}; // дата → версия (после загрузки в этой сессии), null – убрали
 function hikePhotoVersion(date) {
@@ -972,6 +989,7 @@ function openEditor(date) {
         title: h.title || '',
         emoji: h.emoji || '',
         start_time: h.start_time || '',
+        booking_opens: opensInput(date),
         tags: tagsText(h),
         feature_tags: Array.isArray(h.feature_tags) ? h.feature_tags.join(', ') : String(h.feature_tags || ''),
         image: h.image || '',
@@ -995,7 +1013,7 @@ function openEditor(date) {
         routeMode: h.track ? 'gpx' : ((h.route_id || findCatalogRoute(h)) ? 'catalog' : 'none'),
         templateNote: ''
     } : {
-        original: '', date: '', title: '', emoji: '', start_time: '12:00', tags: '', feature_tags: '', image: '',
+        original: '', date: '', title: '', emoji: '', start_time: '12:00', booking_opens: '', tags: '', feature_tags: '', image: '',
         features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '', summary_link: '', summary_title: '', capacity: '',
         cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null,
         route_id: '', routeMode: 'none', templateNote: ''
@@ -1029,6 +1047,8 @@ function renderEditor(body) {
         <div class="adm-hint">без названия событие показывается заглушкой. «🌧️ дата перенесена» работает и для хайка с названием – запись закрывается, в ленте дождик:</div>
         <div class="adm-chips">${PLACEHOLDER_EMOJI.map(([e, l]) => `<button class="adm-chip${d.emoji === e ? ' is-on' : ''}" data-emoji="${e}">${l}</button>`).join('')}</div>
         ${field('start_time', 'время старта', 'placeholder="12:00" inputmode="numeric"')}
+        ${field('booking_opens', 'когда откроется запись', 'type="datetime-local"')}
+        <div class="adm-hint">пусто – запись открыта сразу. до этого времени название и дата видны, а детали закрыты и вместо записи кнопка «напомнить». в эту минуту запись откроется сама и подписавшимся придёт сообщение в бота. время – московское</div>
         ${field('capacity', 'мест (пусто – 10)', 'placeholder="10" inputmode="numeric"')}
         ${field('tags', 'теги через запятую', 'placeholder="умеренно, 10 км, 4-5 часов, без пропуска"')}
 
@@ -1249,6 +1269,9 @@ async function saveHike() {
     if (d.date !== d.original && clash && clash.title && String(clash.title).trim()) {
         return showSaveError(`на ${dateLabel(d.date)} уже есть «${clash.title}» – откройте его из списка или выберите другую дату`);
     }
+    const opensAt = d.booking_opens ? `${d.booking_opens.slice(0, 16)}:00+03:00` : null;
+    if (opensAt && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+03:00$/.test(opensAt)) return showSaveError('время открытия записи – дата и время');
+    if (opensAt && opensAt.slice(0, 10) > d.date) return showSaveError('запись должна открыться до дня хайка');
     const btn = root.querySelector('#admSave');
     btn.disabled = true;
     btn.textContent = 'сохраняю…';
@@ -1276,6 +1299,9 @@ async function saveHike() {
     fields.route_id = d.routeMode === 'catalog' ? String(d.route_id) : '';
     if (d.trackChanged) fields.track = d.routeMode === 'catalog' ? null : d.track;
     try {
+        // время открытия – до сохранения хайка: Apps Script при первом названии смотрит на него и не пишет «открыли запись» раньше срока
+        const prevOpens = (d.original && state.bookingOpens?.[d.original]) || null;
+        if (opensAt !== prevOpens || (d.original && d.original !== d.date && prevOpens)) await saveBookingOpens(d.date, opensAt, d.original);
         const res = await adminCall('adminSaveHike', { date: d.date, original_date: d.original, fields: JSON.stringify(fields) });
         // Firebase-подписка обновит хайки сама; подставляем локально, чтобы список сразу был свежим
         if (fields.route_id && templates) templates[fields.route_id] = { ...fields, from_date: d.date };

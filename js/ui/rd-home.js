@@ -123,6 +123,7 @@ function openStory(s) {
 }
 
 // ---------- карточка ближайшего события ----------
+const REMIND_OFF = 'напомнить об открытии записи', REMIND_ON = '✓ напомним в бота';
 function heroHtml(ev) {
     if (!ev) return '';
     const h = ev.hike;
@@ -135,7 +136,7 @@ function heroHtml(ev) {
             <div class="rd-hero-body">
                 <span class="rd-hero-title">${esc(h.title)}</span>
                 <div class="rd-opens"><span>запись откроется</span><b>${esc(opensLabel(h.date))}</b></div>
-                <button type="button" class="rd-remind${on ? ' is-on' : ''}" id="rdRemind" aria-pressed="${on}"><span>${on ? 'напомним в бота' : 'напомнить'}</span><i class="cf-sw"></i></button>
+                <button type="button" class="rd-cta rd-remind${on ? ' is-on' : ''}" id="rdRemind" aria-pressed="${on}"><span>${on ? REMIND_ON : REMIND_OFF}</span></button>
             </div>
         </div>`;
     }
@@ -372,7 +373,7 @@ export function wireRdHomeTop() {
     if (!ev) return;
     const remind = document.getElementById('rdRemind');
     if (remind) {
-        const paint = on => { remind.classList.toggle('is-on', on); remind.setAttribute('aria-pressed', String(on)); remind.querySelector('span').textContent = on ? 'напомним в бота' : 'напомнить'; };
+        const paint = on => { remind.classList.toggle('is-on', on); remind.setAttribute('aria-pressed', String(on)); remind.querySelector('span').textContent = on ? REMIND_ON : REMIND_OFF; };
         remind.addEventListener('click', async () => {
             if (remind.disabled) return;
             remind.disabled = true;
