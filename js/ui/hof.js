@@ -138,6 +138,7 @@ function openSession() {
         <div class="hof-center">
             <div class="hof-rings">
                 <div class="r r1"></div><div class="r r2"></div>
+                <svg class="hof-arc" viewBox="0 0 270 270" aria-hidden="true"><circle class="trk" cx="135" cy="135" r="124"/><circle class="bar" id="hofArc" cx="135" cy="135" r="124" pathLength="1000"/></svg>
                 <div class="hof-core" id="hofCore"></div>
                 <div class="hof-num"><b id="hofBig"></b><small id="hofSmall"></small></div>
             </div>
@@ -186,8 +187,17 @@ function openSession() {
             $('hofSmall').textContent = `из ${p.count}`;
             $('hofPhase').textContent = inhale ? 'вдох' : 'выдох';
         } else if (p.kind === 'hold') {
-            core.style.transform = 'scale(0.62)';
-            $('hofBig').textContent = mmss(holdStart === null ? 0 : (performance.now() - holdWall) / 1000);
+            core.style.transform = 'scale(0.86)';
+            const held = holdStart === null ? 0 : (performance.now() - holdWall) / 1000;
+            // шкала между кольцами: полный круг – минута, следующая минута идёт поверх другим цветом
+            const lap = Math.floor(held / 60), arc = $('hofArc');
+            arc.style.strokeDashoffset = String(1000 - Math.round((held % 60) / 60 * 1000));
+            if (arc.dataset.lap !== String(lap)) {
+                arc.dataset.lap = String(lap);
+                ov.querySelector('.hof-arc').dataset.lap = String(Math.min(lap, 3));
+                if (lap > 0) { try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch (e) {} }
+            }
+            $('hofBig').textContent = mmss(held);
             $('hofSmall').textContent = 'задержка';
             $('hofPhase').textContent = audio.paused ? 'на паузе – держи, сколько хочется' : 'выдохни и не дыши';
         } else if (p.kind === 'recover') {

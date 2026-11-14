@@ -8319,7 +8319,7 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .hof-rings .r { position: absolute; border-radius: 50%; border: 2px solid rgba(143,227,255,.16); }
 .hof-rings .r1 { inset: 0; } .hof-rings .r2 { inset: 22px; border-color: rgba(143,227,255,.3); }
 .hof-core { position: absolute; inset: 44px; border-radius: 50%; background: rgba(143,227,255,.13); border: 3px solid #8fe3ff; box-shadow: 0 0 50px rgba(143,227,255,.35); transform: scale(.8); will-change: transform; }
-.hof-run[data-phase="hold"] .hof-core { border-color: rgba(143,227,255,.6); box-shadow: 0 0 30px rgba(143,227,255,.18); transition: transform .8s; }
+.hof-run[data-phase="hold"] .hof-core { background: rgba(143,227,255,.2); border-color: rgba(143,227,255,.75); box-shadow: 0 0 34px rgba(143,227,255,.25); transition: transform .8s; }
 .hof-run[data-phase="recover"] .hof-core { transition: transform 1.2s; }
 .hof-num { position: relative; text-align: center; }
 .hof-num b { display: block; font-size: 52px; font-weight: 800; letter-spacing: -1px; line-height: 1; }
@@ -8381,3 +8381,15 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .rd-ann-note { display: block; margin-top: 8px; font-size: 14px; line-height: 1.4; color: rgba(255,255,255,.68); }
 .rd-ann-hint { display: block; margin-top: 8px; text-align: center; font-size: 12px; color: rgba(255,255,255,.45); }
 .cf-card.is-announce .cf-tlab { font-weight: 700; }
+
+/* 15.11: круг ярче в задержке и после неё; шкала задержки между кольцами (минута = полный круг) */
+.hof-run[data-phase="recover"] .hof-core { background: rgba(143,227,255,.2); }
+.hof-arc { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); opacity: 0; transition: opacity .5s; pointer-events: none; }
+.hof-run[data-phase="hold"] .hof-arc { opacity: 1; }
+.hof-arc circle { fill: none; stroke-width: 18; }
+.hof-arc .trk { stroke: transparent; }
+.hof-arc .bar { stroke: #8fe3ff; stroke-linecap: round; stroke-dasharray: 1000; stroke-dashoffset: 1000; filter: drop-shadow(0 0 6px rgba(143,227,255,.55)); }
+.hof-arc[data-lap="1"] .trk { stroke: rgba(143,227,255,.55); } .hof-arc[data-lap="1"] .bar { stroke: #dff7ff; }
+.hof-arc[data-lap="2"] .trk { stroke: rgba(223,247,255,.6); } .hof-arc[data-lap="2"] .bar { stroke: #8fe3ff; }
+.hof-arc[data-lap="3"] .trk { stroke: rgba(143,227,255,.6); } .hof-arc[data-lap="3"] .bar { stroke: #dff7ff; }
+.hof-num b { font-size: 48px; }
