@@ -11,6 +11,7 @@ import { isV2 } from '../redesign.js';
 import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { openCardSheet } from './card-sheet.js';
 import { setRdGlow } from '../redesign.js';
+import { bookingNotOpen, opensLabel } from '../booking-opens.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -125,6 +126,19 @@ function openStory(s) {
 function heroHtml(ev) {
     if (!ev) return '';
     const h = ev.hike;
+    if (bookingNotOpen(h.date)) {
+        // анонс без записи: фото, дата, название и время открытия записи; детали не открываются
+        const on = isWaitlisted(h.date);
+        return `
+        <div class="rd-hero is-${eventKind(h)} is-announce" id="rdHero" data-index="${ev.index}">
+            <div class="rd-hero-cover"><img src="assets/teaser/${heroPhotoFor(h.title)}.webp" alt="" loading="lazy"><span class="rd-hero-when"><i></i>${esc(whenLabel(h))}</span></div>
+            <div class="rd-hero-body">
+                <span class="rd-hero-title">${esc(h.title)}</span>
+                <div class="rd-opens"><span>запись откроется</span><b>${esc(opensLabel(h.date))}</b></div>
+                <button type="button" class="rd-remind${on ? ' is-on' : ''}" id="rdRemind" aria-pressed="${on}"><span>${on ? 'напомним в бота' : 'напомнить'}</span><i class="cf-sw"></i></button>
+            </div>
+        </div>`;
+    }
     const kind = eventKind(h);
     const tags = (Array.isArray(h.tags) ? h.tags : []).slice(0, 4);
     // обложка – наше фото с этого маршрута (assets/teaser), не схема трека; маршрута нет в фото – любой пейзаж клуба
@@ -356,6 +370,19 @@ export function wireRdHomeTop() {
         });
     }
     if (!ev) return;
+    const remind = document.getElementById('rdRemind');
+    if (remind) {
+        const paint = on => { remind.classList.toggle('is-on', on); remind.setAttribute('aria-pressed', String(on)); remind.querySelector('span').textContent = on ? 'напомним в бота' : 'напомнить'; };
+        remind.addEventListener('click', async () => {
+            if (remind.disabled) return;
+            remind.disabled = true;
+            log('rd: анонс – напомнить', !owner, state.user, { date: ev.hike.date });
+            paint(await toggleTeaserNotify(ev.hike.date).catch(() => isWaitlisted(ev.hike.date)));
+            remind.disabled = false;
+        });
+        window.addEventListener('club:waitlist-updated', ({ detail }) => { if (detail.date === ev.hike.date && remind.isConnected) paint(detail.on); });
+        return;
+    }
     const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
     document.getElementById('rdHeroCta')?.addEventListener('click', open);
     // записан: вся карточка открывает шторку хайка (кроме строки бокса и «ещё запись»)

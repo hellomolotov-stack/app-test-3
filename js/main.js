@@ -852,6 +852,22 @@ async function loadAppData() {
         let firebaseCommonApplied = false;
         // обложки прошедших хайков (календарь «полоса дней», админка) – только из /api/boot
         window.__bootData?.then(raw => { if (raw?.hikePhotos) state.hikePhotos = { ...raw.hikePhotos, ...(state.hikePhotos || {}) }; }).catch(() => {});
+        // «анонс без записи» (js/booking-opens.js): время открытия записи – только из /api/boot
+        window.__bootData?.then(async raw => {
+            if (!raw || !raw.bookingOpens) return;
+            const bo = await import('./booking-opens.js');
+            const before = JSON.stringify(state.bookingOpens || {});
+            bo.setBookingOpens(raw.bookingOpens);
+            const rerender = () => { if (document.getElementById('rdHero') || document.querySelector('.cf-wrap')) import('./ui/home.js').then(m => m.renderHome()).catch(() => {}); };
+            if (JSON.stringify(state.bookingOpens) !== before) rerender();
+            Object.keys(state.bookingOpens).forEach(d => {
+                const at = bo.bookingOpensAt(d), left = at - Date.now();
+                // время пришло – просим сервер разослать «открыли запись» (повтор безопасен)
+                if (at && left <= 0 && left > -3 * 86400000) fetch(`/api/hikes?open=${d}`).catch(() => {});
+                // открытие сегодня, пока приложение открыто – в эту минуту карточка сама становится обычной
+                else if (at && left > 0 && left < 12 * 3600000) setTimeout(() => { rerender(); fetch(`/api/hikes?open=${d}`).catch(() => {}); }, left + 1500);
+            });
+        }).catch(() => {});
         window.__bootData?.then(raw => {
             if (!raw || firebaseCommonApplied) return;
             try {

@@ -116,6 +116,10 @@
     {
       "path": "/api/achievements?cron=hike-badges",
       "schedule": "0 15 * * *"
+    },
+    {
+      "path": "/api/hikes?cron=booking-open",
+      "schedule": "0 16 * * *"
     }
   ]
 }

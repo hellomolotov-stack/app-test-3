@@ -1,4 +1,5 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
+import { bookingNotOpen, opensLabel } from '../booking-opens.js';
 import { ensureSmoothDem, smoothDemTiles } from './smooth-dem.js';
 import { requireAdmission } from './admission.js';
 import { hikeTiming, isUpcomingHike, moscowDateKey } from '../hike-timing.js';
@@ -1999,6 +2000,12 @@ export function getTotalCardsCount() {
 
 export function showBottomSheet(index) {
     if (!state.hikesWithTitle.length || !state.hikesWithTitle[index]) return;
+    // анонс без записи (js/booking-opens.js): детали откроются вместе с записью
+    if (bookingNotOpen(state.hikesWithTitle[index].date)) {
+        const d = state.hikesWithTitle[index].date;
+        feedToast(`запись откроется ${opensLabel(d)} – ${isWaitlisted(d) ? 'напомним в бота' : 'включи «напомнить» на карточке'}`);
+        return;
+    }
     scheduleHikeClock();
 
     sheetLastOpenedAt = Date.now();

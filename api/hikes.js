@@ -23,8 +23,70 @@ async function sendPhoto(req, res, date) {
     }
 }
 
+// «анонс без записи»: в минуту booking_opens/<дата> пишем подписчикам hike_waitlist/<дата> «открыли запись».
+// Зовут: Vercel Cron (?cron=booking-open) и само приложение, открытое после этого времени (?open=<дата>).
+// Повторный вызов ничего не шлёт: замок booking_open_sent/<дата> ставится условной записью (ETag).
+const WDF = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+const MG = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+const escH = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+async function openBooking(date, token) {
+    const get = async path => { const r = await fetch(`${DB}/${path}.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) }); if (!r.ok) throw new Error(path + ' ' + r.status); return r.json(); };
+    const at = Date.parse(await get(`booking_opens/${date}`) || '');
+    if (!Number.isFinite(at)) return { date, skipped: 'нет времени открытия' };
+    if (Date.now() < at) return { date, skipped: 'ещё рано' };
+    if (Date.now() - at > 3 * 86400000) return { date, skipped: 'давно открыта' };
+    // замок: создаём booking_open_sent/<дата>, только если его ещё нет
+    const lockUrl = `${DB}/booking_open_sent/${date}.json`;
+    const head = await fetch(lockUrl, { headers: { Authorization: `Bearer ${token}`, 'X-Firebase-ETag': 'true' }, signal: AbortSignal.timeout(8000) });
+    if ((await head.json()) !== null) return { date, skipped: 'уже отправлено' };
+    const lock = await fetch(lockUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'if-match': head.headers.get('etag') || 'null_etag', 'Content-Type': 'application/json' }, body: JSON.stringify({ at: Date.now() }), signal: AbortSignal.timeout(8000) });
+    if (!lock.ok) return { date, skipped: 'уже отправляется' };
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const hike = await get(`hikes/${date}`) || {};
+    const list = await get(`hike_waitlist/${date}`) || {};
+    const [y, m, d] = date.split('-').map(Number);
+    const when = WDF[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] + ', ' + d + ' ' + MG[m - 1] + (hike.start_time ? ' · ' + hike.start_time : '');
+    const marks = {};
+    let sent = 0;
+    for (const [uid, p] of Object.entries(list)) {
+        if (!p || p.notified_at || !/^\d+$/.test(uid)) continue;
+        const text = (p.name ? escH(p.name) + ', ' : '') + 'открыли запись 🏔\n\n<b>' + escH(hike.title || 'хайк') + '</b>\n' + when +
+            '\n\nкак и обещали – сообщаем первыми. открой хайк, чтобы посмотреть маршрут и записаться 👇';
+        try {
+            const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
+                body: JSON.stringify({ chat_id: uid, text, parse_mode: 'HTML', disable_web_page_preview: true,
+                    reply_markup: { inline_keyboard: [[{ text: 'открыть хайк', url: `https://t.me/yaltahiking_bot?startapp=hike_${date}` }]] } }),
+            });
+            if ((await r.json().catch(() => ({}))).ok) { sent++; marks[`${uid}/notified_at`] = Math.floor(Date.now() / 1000); }
+        } catch (e) { console.error('booking-open send', uid, e.message); }
+    }
+    if (sent) await fetch(`${DB}/hike_waitlist/${date}.json`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(marks), signal: AbortSignal.timeout(8000) });
+    await fetch(lockUrl, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ sent, total: Object.keys(list).length }), signal: AbortSignal.timeout(8000) });
+    return { date, sent };
+}
+
 module.exports = async (req, res) => {
     if (req.query && req.query.photo) return sendPhoto(req, res, String(req.query.photo));
+    if (req.query && (req.query.open || req.query.cron === 'booking-open')) {
+        res.setHeader('Cache-Control', 'no-store');
+        try {
+            const { getAccessToken } = require('./club-content');
+            const token = await getAccessToken();
+            let dates = [];
+            if (req.query.open) dates = /^\d{4}-\d{2}-\d{2}$/.test(String(req.query.open)) ? [String(req.query.open)] : [];
+            else {
+                const r = await fetch(`${DB}/booking_opens.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) });
+                dates = Object.keys((r.ok ? await r.json() : null) || {});
+            }
+            const results = [];
+            for (const d of dates) results.push(await openBooking(d, token));
+            return res.status(200).json({ results });
+        } catch (e) {
+            console.error('booking-open:', e.message);
+            return res.status(502).json({ error: 'не получилось' });
+        }
+    }
     try {
         const r = await fetch(`${DB}/hikes.json`);
         if (!r.ok) throw new Error('firebase ' + r.status);

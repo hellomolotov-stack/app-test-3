@@ -10,6 +10,7 @@ import { showBottomSheet, isWaitlisted, toggleTeaserNotify, fetchGoingFromServer
 import { heroPhotoFor } from './rd-home.js';
 import { isUpcomingHike, hikeTiming } from '../hike-timing.js';
 import { nextHikeLinkActive, nextHikeLinkDate } from './next-hike-link.js';
+import { bookingNotOpen, opensLabel } from '../booking-opens.js';
 
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
 const MON3 = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -27,10 +28,10 @@ function paintNotify(card, on) {
     card.classList.toggle('is-on', on);
     card.setAttribute('aria-pressed', String(on));
     const label = card.querySelector('.cf-tlab');
-    if (label) label.textContent = on ? 'сообщим об открытии' : 'сообщить об открытии';
+    if (label) label.textContent = on ? (card.dataset.lon || 'сообщим об открытии') : (card.dataset.loff || 'сообщить об открытии');
 }
 window.addEventListener('club:waitlist-updated', ({ detail }) => {
-    document.querySelectorAll('.cf-card.is-teaser[data-date]').forEach(card => {
+    document.querySelectorAll('.cf-card.is-teaser[data-date], .cf-card.is-announce[data-date]').forEach(card => {
         if (card.dataset.date === detail.date) paintNotify(card, detail.on);
     });
 });
@@ -89,6 +90,13 @@ function cardHtml(h, i) {
         return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
+    }
+    if (!past && bookingNotOpen(h.date)) {
+        // анонс без записи: фото и название видны, сверху «с 17 ноября», внизу «напомнить»; детали не открываются
+        const on2 = isWaitlisted(h.date);
+        return `<button type="button" class="cf-card is-announce${on2 ? ' is-on' : ''}" data-i="${i}" data-date="${h.date}" data-lon="напомним" data-loff="напомнить" aria-pressed="${on2}">${bg}
+            <span class="cf-tag">${esc(opensLabel(h.date, { short: true }))}</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
+            <span class="cf-tbar"><span class="cf-tlab">${on2 ? 'напомним' : 'напомнить'}</span><i class="cf-sw"></i></span></button>`;
     }
     const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
     const title = esc(h.title)
@@ -210,7 +218,7 @@ export function renderCalFlow(container) {
         const h = list[i];
         haptic();
         log('календарь-витрина: карточка', state.userCard?.status !== 'active', state.user, { date: h.date });
-        if (isTeaser(h)) {
+        if (isTeaser(h) || c.classList.contains('is-announce')) {
             c.disabled = true;
             const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
             paintNotify(c, on);
@@ -221,7 +229,7 @@ export function renderCalFlow(container) {
         const idx = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
         if (idx >= 0) showBottomSheet(idx);
     }));
-    const dates = list.filter(h => h.date >= t && !isTeaser(h) && !h.nextMonth).map(h => h.date).slice(0, 8);
+    const dates = list.filter(h => h.date >= t && !isTeaser(h) && !h.nextMonth && !bookingNotOpen(h.date)).map(h => h.date).slice(0, 8);
     if (dates.length) fetchGoingFromServer(dates).then(lists => dates.forEach((d, k) => fillGoing(container, d, lists[k]))).catch(() => {});
 }
 

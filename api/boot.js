@@ -33,6 +33,13 @@ module.exports = async (req, res) => {
             const r = await fetch(`${DB}/hikePhotoIndex.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });
             out.hikePhotos = (r.ok ? await r.json() : null) || {};
         } catch (e) { console.error('boot hikePhotos:', e.message); }
+        // «анонс без записи»: { 'YYYY-MM-DD': ISO-время открытия записи } (js/booking-opens.js)
+        try {
+            const { getAccessToken } = require('./club-content');
+            const token = await getAccessToken();
+            const r = await fetch(`${DB}/booking_opens.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });
+            out.bookingOpens = (r.ok ? await r.json() : null) || {};
+        } catch (e) { console.error('boot bookingOpens:', e.message); }
         res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
         res.setHeader('Content-Type', 'application/json; charset=utf-8');
         res.status(200).send(JSON.stringify(out));

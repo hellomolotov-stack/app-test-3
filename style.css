@@ -8366,3 +8366,19 @@ html.sheet-lock, html.sheet-lock body { overscroll-behavior: none; }
 .cf-card.is-next .cf-q { font-size: 64px; top: 26%; }
 .cf-card.is-next .cf-in-t b { font-size: 18px; }
 .cf-d.is-next b { font-size: 15px; }
+/* 14.11: «анонс без записи» – название и дата видны, запись откроется в booking_opens (js/booking-opens.js) */
+.rd-opens { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; padding: 11px 14px; border-radius: 14px; background: rgba(255,255,255,.06); }
+.rd-opens span { font-size: 13px; color: rgba(255,255,255,.7); }
+.rd-opens b { font-size: 14px; font-weight: 700; color: var(--yellow); white-space: nowrap; }
+.rd-remind { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; height: 48px; margin-top: 10px; border: 0; border-radius: 16px; background: rgba(255,255,255,.08);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.rd-remind.is-on { color: var(--yellow); }
+.rd-remind.is-on .cf-sw { background: var(--yellow); }
+.rd-remind.is-on .cf-sw::after { transform: translateX(16px); background: #141800; }
+.rd-hero.is-announce .rd-hero-cover { cursor: default; }
+.cf-card.is-announce .cf-tag { background: var(--yellow); color: #141800; }
+.cf-card.is-announce .cf-in-t b { font-size: 16px; }
+.cf-card.is-announce.is-on .cf-sw { background: var(--yellow); }
+.cf-card.is-announce.is-on .cf-sw::after { transform: translateX(16px); background: #141800; }
+.cf-card.is-announce.is-on .cf-tlab { color: var(--yellow); font-weight: 700; }
+.cf-card.is-announce.is-on::before { content: ''; position: absolute; inset: 0; z-index: 3; border-radius: 22px; pointer-events: none; box-shadow: inset 0 0 0 2px var(--yellow), inset 0 0 36px rgba(217,253,25,.35); }
