@@ -94,9 +94,9 @@ function cardHtml(h, i) {
     if (!past && bookingNotOpen(h.date)) {
         // анонс без записи: фото и название видны, сверху «с 17 ноября», внизу «напомнить»; детали не открываются
         const on2 = isWaitlisted(h.date);
-        return `<button type="button" class="cf-card is-announce${on2 ? ' is-on' : ''}" data-i="${i}" data-date="${h.date}" aria-pressed="${on2}">${bg}
-            <span class="cf-tag">готовим</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
-            <span class="cf-tbar"><span class="cf-tlab">${on2 ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
+        return `<button type="button" class="cf-card is-announce${on2 ? ' is-on' : ''}" data-i="${i}" data-date="${h.date}" data-lon="ты в списке первых" data-loff="хочу на хайк" aria-pressed="${on2}">${bg}
+            <span class="cf-tag">анонс</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
+            <span class="cf-tbar"><span class="cf-tlab">${on2 ? 'ты в списке первых' : 'хочу на хайк'}</span><i class="cf-sw"></i></span></button>`;
     }
     const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
     const title = esc(h.title)

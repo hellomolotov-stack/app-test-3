@@ -1,5 +1,5 @@
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
-import { bookingNotOpen, opensLabel } from '../booking-opens.js';
+import { bookingNotOpen, opensPhrase } from '../booking-opens.js';
 import { ensureSmoothDem, smoothDemTiles } from './smooth-dem.js';
 import { requireAdmission } from './admission.js';
 import { hikeTiming, isUpcomingHike, moscowDateKey } from '../hike-timing.js';
@@ -781,7 +781,7 @@ function feedNotifyToast(date, container) {
     el.style.top = (inset ? inset + 8 : 12) + 'px';
     el.innerHTML = `
         <div class="ef-push-ic">🔔</div>
-        <div class="ef-push-text"><b>сообщим об открытии</b><span>${hike ? `запись на ${what} ${FEED_WD_ACC[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}` : `запись на хайки в ${FEED_MONTHS_PREP[d.getMonth()]}`} · напишем в бота</span></div>
+        <div class="ef-push-text">${bookingNotOpen(date) ? `<b>ты в списке первых</b><span>напишем в бота ${opensPhrase(date, { full: false })}</span>` : `<b>сообщим об открытии</b><span>${hike ? `запись на ${what} ${FEED_WD_ACC[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}` : `запись на хайки в ${FEED_MONTHS_PREP[d.getMonth()]}`} · напишем в бота</span>`}</div>
         <button type="button" class="ef-push-undo" data-log-label="лист ожидания: отменить из уведомления">отменить</button>
         <div class="ef-push-bar"></div>`;
     document.body.appendChild(el);
@@ -2003,7 +2003,7 @@ export function showBottomSheet(index) {
     // анонс без записи (js/booking-opens.js): детали откроются вместе с записью
     if (bookingNotOpen(state.hikesWithTitle[index].date)) {
         const d = state.hikesWithTitle[index].date;
-        feedToast(`запись откроется ${opensLabel(d)} – ${isWaitlisted(d) ? 'напомним в бота' : 'включи «напомнить» на карточке'}`);
+        feedToast(`маршрут и запись откроем ${opensPhrase(d)}${isWaitlisted(d) ? ' – ты в списке первых' : ''}`);
         return;
     }
     scheduleHikeClock();

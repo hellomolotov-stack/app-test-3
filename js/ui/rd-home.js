@@ -11,7 +11,7 @@ import { isV2 } from '../redesign.js';
 import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { openCardSheet } from './card-sheet.js';
 import { setRdGlow } from '../redesign.js';
-import { bookingNotOpen, opensLabel } from '../booking-opens.js';
+import { bookingNotOpen, opensPhrase } from '../booking-opens.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -123,20 +123,22 @@ function openStory(s) {
 }
 
 // ---------- карточка ближайшего события ----------
-const REMIND_OFF = 'напомнить об открытии записи', REMIND_ON = '✓ напомним в бота';
+const REMIND_OFF = 'хочу на этот хайк', REMIND_ON = '✓ ты в списке первых';
 function heroHtml(ev) {
     if (!ev) return '';
     const h = ev.hike;
     if (bookingNotOpen(h.date)) {
-        // анонс без записи: фото, дата, название и время открытия записи; детали не открываются
+        // анонс: название и дата видны, маршрут и запись – в booking_opens; «хочу на этот хайк» = лист ожидания
         const on = isWaitlisted(h.date);
+        const d = new Date(h.date + 'T12:00:00');
         return `
-        <div class="rd-hero is-${eventKind(h)} is-announce" id="rdHero" data-index="${ev.index}">
-            <div class="rd-hero-cover"><img src="assets/teaser/${heroPhotoFor(h.title)}.webp" alt="" loading="lazy"><span class="rd-hero-when"><i></i>${esc(whenLabel(h))}</span></div>
+        <div class="rd-hero is-${eventKind(h)} is-announce${on ? ' is-on' : ''}" id="rdHero" data-index="${ev.index}">
+            <div class="rd-hero-cover"><img src="assets/teaser/${heroPhotoFor(h.title)}.webp" alt="" loading="lazy"><span class="rd-ann">анонс</span><span class="rd-ann-date">${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</span></div>
             <div class="rd-hero-body">
                 <span class="rd-hero-title">${esc(h.title)}</span>
-                <div class="rd-opens"><span>запись откроется</span><b>${esc(opensLabel(h.date))}</b></div>
+                <span class="rd-ann-note">маршрут и запись откроем ${esc(opensPhrase(h.date))}</span>
                 <button type="button" class="rd-cta rd-remind${on ? ' is-on' : ''}" id="rdRemind" aria-pressed="${on}"><span>${on ? REMIND_ON : REMIND_OFF}</span></button>
+                <span class="rd-ann-hint">${on ? 'напишем в бота, как только откроем · нажми ещё раз, чтобы отменить' : 'напишем в бота, как только откроем'}</span>
             </div>
         </div>`;
     }
@@ -373,7 +375,7 @@ export function wireRdHomeTop() {
     if (!ev) return;
     const remind = document.getElementById('rdRemind');
     if (remind) {
-        const paint = on => { remind.classList.toggle('is-on', on); remind.setAttribute('aria-pressed', String(on)); remind.querySelector('span').textContent = on ? REMIND_ON : REMIND_OFF; };
+        const paint = on => { remind.classList.toggle('is-on', on); remind.setAttribute('aria-pressed', String(on)); remind.querySelector('span').textContent = on ? REMIND_ON : REMIND_OFF; document.getElementById('rdHero')?.classList.toggle('is-on', on); const hint = document.querySelector('#rdHero .rd-ann-hint'); if (hint) hint.textContent = on ? 'напишем в бота, как только откроем · нажми ещё раз, чтобы отменить' : 'напишем в бота, как только откроем'; };
         remind.addEventListener('click', async () => {
             if (remind.disabled) return;
             remind.disabled = true;

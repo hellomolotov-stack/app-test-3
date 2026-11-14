@@ -25,3 +25,13 @@ export function opensLabel(date, { short = false } = {}) {
     if (short) return `с ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
     return `${WD[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} · ${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
 }
+
+const WD_ACC = ['в воскресенье', 'в понедельник', 'во вторник', 'в среду', 'в четверг', 'в пятницу', 'в субботу'];
+// «в понедельник, 16 ноября, в 19:00» (full) или «16 ноября в 19:00»
+export function opensPhrase(date, { full = true } = {}) {
+    const t = bookingOpensAt(date);
+    if (!t) return '';
+    const d = new Date(t + 3 * 3600000);
+    const hm = `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+    return full ? `${WD_ACC[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}, в ${hm}` : `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} в ${hm}`;
+}
