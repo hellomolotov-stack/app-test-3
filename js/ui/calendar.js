@@ -1248,11 +1248,11 @@ export function hikeTrackPoints(hike) {
     return t ? (t.coords || t.segments?.flat() || []) : [];
 }
 
-// Хайки по дате: заход на вершину «туда и обратно» – показываем пунктиром отдельно от основного трека.
+// Хайки по дате или route_id: заход на вершину «туда и обратно» – показываем пунктиром отдельно от основного трека.
 // branch – развилка, peak – вершина (точки ищутся в треке ближайшими, так правка переживёт перезагрузку GPX).
 // exaggeration – слабее рельеф, demMaxzoom – высоты погрубее: при 1.8 и детальных высотах вершина выглядит остриём.
 const HIKE_TRACK_SPURS = {
-    '2026-11-15': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12, flatPeak: { center: [44.40596, 33.7377], radius: 1000, inner: 420, blur: 110, peak: 681, base: 520 } } // Ильяс-Кая 681 м – округлый купол // Байдарская яйла
+    'baydarskaya-yayla': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12, flatPeak: { center: [44.40596, 33.7377], radius: 1000, inner: 420, blur: 110, peak: 681, base: 520 } } // Ильяс-Кая 681 м – округлый купол // Байдарская яйла
 };
 
 function withSpur(track, cfg) {
@@ -1272,7 +1272,7 @@ function withSpur(track, cfg) {
 
 function getHikeTrack(hike) {
     let track = getHikeTrackRaw(hike);
-    const spurCfg = track && HIKE_TRACK_SPURS[hike.date];
+    const spurCfg = track && (HIKE_TRACK_SPURS[hike.date] || HIKE_TRACK_SPURS[hike.route_id]);
     if (spurCfg) track = { ...withSpur(track, spurCfg), ...(spurCfg.exaggeration ? { exaggeration: spurCfg.exaggeration } : {}), ...(spurCfg.demMaxzoom ? { demMaxzoom: spurCfg.demMaxzoom } : {}), ...(spurCfg.flatPeak ? { flatPeak: spurCfg.flatPeak } : {}) };
     const route = track && findCatalogRoute(hike);
     const exaggeration = (route && ROUTE_TERRAIN_EXAGGERATION[route.id]) || track?.exaggeration;
