@@ -26,9 +26,6 @@ async function sendPhoto(req, res, date) {
 // «анонс без записи»: в минуту booking_opens/<дата> пишем подписчикам hike_waitlist/<дата> «открыли запись».
 // Зовут: Vercel Cron (?cron=booking-open) и само приложение, открытое после этого времени (?open=<дата>).
 // Повторный вызов ничего не шлёт: замок booking_open_sent/<дата> ставится условной записью (ETag).
-const WDF = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
-const MG = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
-const escH = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 async function openBooking(date, token) {
     const get = async path => { const r = await fetch(`${DB}/${path}.json`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) }); if (!r.ok) throw new Error(path + ' ' + r.status); return r.json(); };
     const at = Date.parse(await get(`booking_opens/${date}`) || '');
@@ -44,19 +41,18 @@ async function openBooking(date, token) {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     const hike = await get(`hikes/${date}`) || {};
     const list = await get(`hike_waitlist/${date}`) || {};
-    const [y, m, d] = date.split('-').map(Number);
-    const when = WDF[new Date(Date.UTC(y, m - 1, d)).getUTCDay()] + ', ' + d + ' ' + MG[m - 1] + (hike.start_time ? ' · ' + hike.start_time : '');
+    const msg = require('../lib/booking-open-message');
+    const template = await get(`booking_open_text/${date}`).catch(() => null);
     const marks = {};
     let sent = 0;
     for (const [uid, p] of Object.entries(list)) {
         if (!p || p.notified_at || !/^\d+$/.test(uid)) continue;
-        const text = (p.name ? escH(p.name) + ', ' : '') + 'открыли запись 🏔\n\n<b>' + escH(hike.title || 'хайк') + '</b>\n' + when +
-            '\n\nкак и обещали – сообщаем первыми. открой хайк, чтобы посмотреть маршрут и записаться 👇';
+        const text = msg.render(template, { name: p.name || '', title: hike.title, date, startTime: hike.start_time || '' });
         try {
             const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
                 body: JSON.stringify({ chat_id: uid, text, parse_mode: 'HTML', disable_web_page_preview: true,
-                    reply_markup: { inline_keyboard: [[{ text: 'открыть хайк', url: `https://t.me/yaltahiking_bot?startapp=hike_${date}` }]] } }),
+                    reply_markup: msg.button(date) }),
             });
             if ((await r.json().catch(() => ({}))).ok) { sent++; marks[`${uid}/notified_at`] = Math.floor(Date.now() / 1000); }
         } catch (e) { console.error('booking-open send', uid, e.message); }

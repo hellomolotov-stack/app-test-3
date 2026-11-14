@@ -206,6 +206,27 @@ module.exports = async (req, res) => {
                 return res.status(502).json({ error: 'не удалось сохранить фото' });
             }
         }
+        // текст сообщения «открыли запись» (lib/booking-open-message.js): прочитать / прислать себе пример
+        if (body.action === 'booking_open_get' || body.action === 'booking_open_test') {
+            const date = String(body.date || '');
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return res.status(400).json({ error: 'плохая дата' });
+            const msg = require('../lib/booking-open-message');
+            try {
+                const t = await getAccessToken();
+                const get = async path => (await fetch(`${DB}/${path}.json`, { headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) })).json();
+                if (body.action === 'booking_open_get') return res.status(200).json({ text: (await get(`booking_open_text/${date}`)) || '', default: msg.DEFAULT });
+                const hike = (await get(`hikes/${date}`)) || {};
+                const html = msg.render(String(body.text || '').slice(0, 1500), { name: String(user.first_name || ''), title: String(body.title || hike.title || ''), date, startTime: String(body.start_time || hike.start_time || '') });
+                const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000),
+                    body: JSON.stringify({ chat_id: user.id, text: html, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: msg.button(date) }) });
+                const j = await r.json().catch(() => ({}));
+                if (!j.ok) return res.status(502).json({ error: j.description ? 'телеграм: ' + j.description : 'не отправилось' });
+                return res.status(200).json({ ok: true });
+            } catch (e) {
+                console.error('booking_open_text:', e.message);
+                return res.status(502).json({ error: 'не получилось' });
+            }
+        }
         // «когда откроется запись» (js/booking-opens.js): booking_opens/<дата> = ISO по Москве; at: null – запись открыта сразу
         if (body.action === 'booking_opens') {
             const date = String(body.date || ''), original = String(body.original || '');
@@ -218,6 +239,12 @@ module.exports = async (req, res) => {
                 const prev = await (await fetch(`${DB}/booking_opens/${date}.json`, { headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) })).json().catch(() => null);
                 const rs = [await put(`booking_opens/${date}`, at)];
                 if (original && original !== date) rs.push(await put(`booking_opens/${original}`, null));
+                if (typeof body.text === 'string') {
+                    const text = body.text.trim().slice(0, 1500);
+                    const isDefault = !text || text === require('../lib/booking-open-message').DEFAULT;
+                    rs.push(await put(`booking_open_text/${date}`, isDefault ? null : text));
+                    if (original && original !== date) rs.push(await put(`booking_open_text/${original}`, null));
+                }
                 // время поменяли – рассылку «открыли запись» можно отправить заново в новую минуту
                 if (prev !== at) rs.push(await put(`booking_open_sent/${date}`, null));
                 if (rs.some(r => !r.ok)) throw new Error('write failed');

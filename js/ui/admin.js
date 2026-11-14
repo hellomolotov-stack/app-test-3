@@ -725,9 +725,43 @@ function opensInput(date) {
     const t = Date.parse(state.bookingOpens?.[date] || '');
     return Number.isFinite(t) ? new Date(t + 3 * 3600000).toISOString().slice(0, 16) : '';
 }
-async function saveBookingOpens(date, at, original) {
+const BOOKING_DEFAULT = '{имя}, открыли запись 🏔\n\n{название}\n{дата}\n\nкак и обещали – сообщаем первыми. открой хайк, чтобы посмотреть маршрут и записаться 👇';
+async function bookingCall(payload) {
     const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
-        body: JSON.stringify({ action: 'booking_opens', date, at, original: original || '', initData: tg?.initData || '' }) });
+        body: JSON.stringify({ ...payload, initData: tg?.initData || '' }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(j.error || 'не получилось');
+    return j;
+}
+// поле «сообщение подписчикам»: текст хайка из базы (или по умолчанию), пример себе в бота, сброс
+function wireBookingText(body, d) {
+    const ta = body.querySelector('#admBookingText');
+    if (!ta) return;
+    const set = v => { d.booking_text = v; ta.value = v; };
+    if (d.booking_text === null) {
+        ta.disabled = true;
+        const date = d.original;
+        (date ? bookingCall({ action: 'booking_open_get', date }) : Promise.resolve({ text: '' })).then(j => {
+            if (d !== draft) return;
+            d.booking_text_orig = j.text || BOOKING_DEFAULT;
+            set(d.booking_text_orig);
+        }).catch(() => { if (d === draft) { d.booking_text_orig = BOOKING_DEFAULT; set(BOOKING_DEFAULT); } }).finally(() => { ta.disabled = false; });
+    } else if (!d.booking_text) set(BOOKING_DEFAULT);
+    if (d.booking_text_orig === '') d.booking_text_orig = BOOKING_DEFAULT;
+    ta.addEventListener('input', () => { d.booking_text = ta.value; });
+    body.querySelector('#admBookingReset')?.addEventListener('click', () => { haptic(); set(BOOKING_DEFAULT); });
+    body.querySelector('#admBookingTest')?.addEventListener('click', async e => {
+        const btn = e.currentTarget;
+        if (!d.date) return toast('сначала укажите дату', true);
+        btn.disabled = true; btn.textContent = 'отправляю…';
+        try { await bookingCall({ action: 'booking_open_test', date: d.date, text: ta.value, title: d.title, start_time: d.start_time }); toast('пример в боте ✓'); haptic(); }
+        catch (err) { toast(err.message, true); }
+        btn.disabled = false; btn.textContent = '📨 прислать себе пример';
+    });
+}
+async function saveBookingOpens(date, at, original, text) {
+    const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
+        body: JSON.stringify({ action: 'booking_opens', date, at, original: original || '', ...(typeof text === 'string' ? { text } : {}), initData: tg?.initData || '' }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'не удалось сохранить время открытия записи');
     const map = { ...(state.bookingOpens || {}) };
@@ -990,6 +1024,7 @@ function openEditor(date) {
         emoji: h.emoji || '',
         start_time: h.start_time || '',
         booking_opens: opensInput(date),
+        booking_text: null, booking_text_orig: null,
         tags: tagsText(h),
         feature_tags: Array.isArray(h.feature_tags) ? h.feature_tags.join(', ') : String(h.feature_tags || ''),
         image: h.image || '',
@@ -1013,7 +1048,7 @@ function openEditor(date) {
         routeMode: h.track ? 'gpx' : ((h.route_id || findCatalogRoute(h)) ? 'catalog' : 'none'),
         templateNote: ''
     } : {
-        original: '', date: '', title: '', emoji: '', start_time: '12:00', booking_opens: '', tags: '', feature_tags: '', image: '',
+        original: '', date: '', title: '', emoji: '', start_time: '12:00', booking_opens: '', booking_text: '', booking_text_orig: '', tags: '', feature_tags: '', image: '',
         features: '', access: '', details: '', location_link: '', report_link: '', letter_link: '', summary_link: '', summary_title: '', capacity: '',
         cancelled: false, woman: false, city: false, track: null, trackChanged: false, trackStats: null,
         route_id: '', routeMode: 'none', templateNote: ''
@@ -1048,7 +1083,10 @@ function renderEditor(body) {
         <div class="adm-chips">${PLACEHOLDER_EMOJI.map(([e, l]) => `<button class="adm-chip${d.emoji === e ? ' is-on' : ''}" data-emoji="${e}">${l}</button>`).join('')}</div>
         ${field('start_time', 'время старта', 'placeholder="12:00" inputmode="numeric"')}
         ${field('booking_opens', 'когда откроется запись', 'type="datetime-local"')}
-        <div class="adm-hint">пусто – запись открыта сразу. до этого времени название и дата видны, а детали закрыты и вместо записи кнопка «напомнить». в эту минуту запись откроется сама и подписавшимся придёт сообщение в бота. время – московское</div>
+        <div class="adm-hint">пусто – запись открыта сразу. до этого времени название и дата видны, а детали закрыты и вместо записи кнопка «хочу на этот хайк». в эту минуту запись откроется сама и подписавшимся придёт сообщение в бота. время – московское</div>
+        ${d.booking_opens ? `<label class="adm-field"><span>сообщение подписчикам в момент открытия</span><textarea id="admBookingText" rows="7" placeholder="загружаю…">${esc(d.booking_text ?? '')}</textarea></label>
+        <div class="adm-hint">{имя} – имя человека, {название} – название хайка жирным, {дата} – «воскресенье, 22 ноября · 12:00». под сообщением кнопка «открыть хайк». стереть всё – вернётся текст по умолчанию</div>
+        <div class="adm-row2"><button type="button" class="adm-ghost" id="admBookingTest">📨 прислать себе пример</button><button type="button" class="adm-ghost" id="admBookingReset">текст по умолчанию</button></div>` : ''}
         ${field('capacity', 'мест (пусто – 10)', 'placeholder="10" inputmode="numeric"')}
         ${field('tags', 'теги через запятую', 'placeholder="умеренно, 10 км, 4-5 часов, без пропуска"')}
 
@@ -1107,6 +1145,9 @@ function renderEditor(body) {
         if (k === 'image') inp.addEventListener('change', () => render());
     });
     bindDateNote(body.querySelector('#admDateNote'));
+    // время открытия появилось/исчезло – показать или спрятать поле сообщения
+    body.querySelector('[data-k="booking_opens"]')?.addEventListener('change', () => { if (!!d.booking_opens !== !!body.querySelector('#admBookingText')) render(); });
+    wireBookingText(body, d);
     body.querySelectorAll('[data-emoji]').forEach(b => b.addEventListener('click', () => {
         haptic();
         d.emoji = d.emoji === b.dataset.emoji ? '' : b.dataset.emoji;
@@ -1301,7 +1342,9 @@ async function saveHike() {
     try {
         // время открытия – до сохранения хайка: Apps Script при первом названии смотрит на него и не пишет «открыли запись» раньше срока
         const prevOpens = (d.original && state.bookingOpens?.[d.original]) || null;
-        if (opensAt !== prevOpens || (d.original && d.original !== d.date && prevOpens)) await saveBookingOpens(d.date, opensAt, d.original);
+        const textChanged = typeof d.booking_text === 'string' && d.booking_text_orig !== null && d.booking_text !== d.booking_text_orig;
+        if (opensAt !== prevOpens || textChanged || (d.original && d.original !== d.date && prevOpens))
+            await saveBookingOpens(d.date, opensAt, d.original, opensAt && typeof d.booking_text === 'string' && d.booking_text_orig !== null ? d.booking_text : undefined);
         const res = await adminCall('adminSaveHike', { date: d.date, original_date: d.original, fields: JSON.stringify(fields) });
         // Firebase-подписка обновит хайки сама; подставляем локально, чтобы список сразу был свежим
         if (fields.route_id && templates) templates[fields.route_id] = { ...fields, from_date: d.date };
