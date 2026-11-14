@@ -1247,10 +1247,34 @@ export function hikeTrackPoints(hike) {
     return t ? (t.coords || t.segments?.flat() || []) : [];
 }
 
+// Хайки по дате: заход на вершину «туда и обратно» – показываем пунктиром отдельно от основного трека.
+// branch – развилка, peak – вершина (точки ищутся в треке ближайшими, так правка переживёт перезагрузку GPX).
+// exaggeration – слабее рельеф, demMaxzoom – высоты погрубее: при 1.8 и детальных высотах вершина выглядит остриём.
+const HIKE_TRACK_SPURS = {
+    '2026-11-15': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12 } // Байдарская яйла
+};
+
+function withSpur(track, cfg) {
+    const C = track.coords;
+    if (!Array.isArray(C) || C.length < 10) return track;
+    const near = (p, from = 0, to = C.length) => {
+        let bi = -1, bd = Infinity;
+        for (let k = from; k < to; k++) { const d = _hvKm(C[k][0], C[k][1], p[0], p[1]); if (d < bd) { bd = d; bi = k; } }
+        return bd < 0.08 ? bi : -1;
+    };
+    const a = near(cfg.peak);
+    const i = a > 0 ? near(cfg.branch, 0, a) : -1;
+    const j = a > 0 ? near(cfg.branch, a + 1) : -1;
+    if (i < 0 || j < 0) return track;
+    return { ...track, coords: C.slice(0, i + 1).concat(C.slice(j)), spurs: [C.slice(i, a + 1)] };
+}
+
 function getHikeTrack(hike) {
-    const track = getHikeTrackRaw(hike);
+    let track = getHikeTrackRaw(hike);
+    const spurCfg = track && HIKE_TRACK_SPURS[hike.date];
+    if (spurCfg) track = { ...withSpur(track, spurCfg), ...(spurCfg.exaggeration ? { exaggeration: spurCfg.exaggeration } : {}), ...(spurCfg.demMaxzoom ? { demMaxzoom: spurCfg.demMaxzoom } : {}) };
     const route = track && findCatalogRoute(hike);
-    const exaggeration = route && ROUTE_TERRAIN_EXAGGERATION[route.id];
+    const exaggeration = (route && ROUTE_TERRAIN_EXAGGERATION[route.id]) || track?.exaggeration;
     const orbitArc = route && ROUTE_ORBIT_ARC[route.id];
     return exaggeration || orbitArc ? { ...track, ...(exaggeration ? { exaggeration } : {}), ...(orbitArc ? { orbitArc } : {}) } : track;
 }
@@ -1815,7 +1839,7 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         map.addSource('dem', {
             type: 'raster-dem',
             tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
-            tileSize: 256, encoding: 'terrarium', maxzoom: 15
+            tileSize: 256, encoding: 'terrarium', maxzoom: track.demMaxzoom || 15
         });
         map.setTerrain({ source: 'dem', exaggeration: track.exaggeration || 1.8 });
         map.setSky({ 'sky-color': '#0A0B09', 'horizon-color': '#1a1a1a', 'fog-color': '#0A0B09' });
@@ -1832,6 +1856,16 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
             paint: { 'line-color': '#D9FD19', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 1.8, 15, 3.2], 'line-opacity': 1 },
             layout: { 'line-cap': 'round', 'line-join': 'round' }
         });
+
+        // заход на вершину и обратно – пунктиром тем же цветом
+        if (Array.isArray(track.spurs) && track.spurs.length) {
+            map.addSource('route-spur', { type: 'geojson', data: { type: 'Feature', geometry: { type: 'MultiLineString', coordinates: track.spurs.map(sp => sp.map(c => [c[1], c[0]])) } } });
+            map.addLayer({
+                id: 'route-spur', type: 'line', source: 'route-spur',
+                paint: { 'line-color': '#D9FD19', 'line-width': ['interpolate', ['linear'], ['zoom'], 11, 1.8, 15, 3.2], 'line-opacity': 0.95, 'line-dasharray': [2, 1.4] },
+                layout: { 'line-cap': 'butt', 'line-join': 'round' }
+            });
+        }
 
         // Точки начала и конца рисуем слоем карты, а не DOM-маркерами: на рельефе
         // маркеры пересчитывают высоту каждый кадр и дрожат, а слой едет вместе с треком.
