@@ -1252,7 +1252,7 @@ export function hikeTrackPoints(hike) {
 // branch – развилка, peak – вершина (точки ищутся в треке ближайшими, так правка переживёт перезагрузку GPX).
 // exaggeration – слабее рельеф, demMaxzoom – высоты погрубее: при 1.8 и детальных высотах вершина выглядит остриём.
 const HIKE_TRACK_SPURS = {
-    '2026-11-15': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12, flatPeak: { center: [44.40596, 33.7377], radius: 1000, inner: 420, blur: 140, plateau: 630 } } // Байдарская яйла
+    '2026-11-15': { branch: [44.40644, 33.74175], peak: [44.40596, 33.7377], exaggeration: 1.1, demMaxzoom: 12, flatPeak: { center: [44.40596, 33.7377], radius: 1000, inner: 420, blur: 110, peak: 681, base: 520 } } // Ильяс-Кая 681 м – округлый купол // Байдарская яйла
 };
 
 function withSpur(track, cfg) {
