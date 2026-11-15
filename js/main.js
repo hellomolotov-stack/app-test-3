@@ -353,7 +353,7 @@ function scrollToWhenReady(getter, opts = {}) {
     import('./ui/achievements-popup.js').then(m => m.afterNewAchievements()).catch(() => null)
         .then(r => { if (r !== 'handled') scrollToWhenReadyNow(getter, opts); });
 }
-function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 12000 } = {}) {
+function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 12000, center = false, glow = '' } = {}) {
     const t0 = Date.now();
     let goneAt = 0;
     const iv = setInterval(() => {
@@ -364,9 +364,13 @@ function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 1
         const el = getter();
         if (!el) return;
         clearInterval(iv);
-        const y = el.getBoundingClientRect().top + window.pageYOffset - getCurrentTopOffset();
-        glideTo(y);
-        setTimeout(() => highlightElement(el), 1100);
+        const r = el.getBoundingClientRect();
+        const y = center ? r.top + window.pageYOffset - Math.max(getCurrentTopOffset(), (window.innerHeight - r.height) / 2)
+            : r.top + window.pageYOffset - getCurrentTopOffset();
+        glideTo(Math.max(0, y), center ? 1500 : 1200);
+        // своё свечение блока (класс со своей анимацией) вместо общей белой подсветки
+        if (glow) setTimeout(() => { el.classList.remove(glow); void el.offsetWidth; el.classList.add(glow); setTimeout(() => el.classList.remove(glow), 4200); }, center ? 1300 : 1100);
+        else setTimeout(() => highlightElement(el), 1100);
     }, interval);
 }
 
@@ -487,6 +491,11 @@ function handleDeepLink(startParam) {
     }
     const isGuest = state.userCard.status !== 'active';
     switch (startParam) {
+        case 'hof':
+            // ссылка из поста: t.me/yaltahiking_bot?startapp=hof – плавно к трекеру дыхания, мягкое голубое свечение из-под блока
+            log('пришёл к трекеру дыхания по ссылке', isGuest, state.user);
+            scrollToWhenReady(() => document.querySelector('#hofBlock .hof-card'), { center: true, glow: 'hof-link-glow' });
+            break;
         case 'card_offer':
             // из рассылки «новичкам после хайка»: сразу шторка карты со спецпредложением
             log('открыл спецпредложение карты', true, state.user);
