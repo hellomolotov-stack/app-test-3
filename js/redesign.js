@@ -32,6 +32,8 @@ export function isRedesign() {
 export function applyRedesignFlag() {
     document.documentElement.classList.toggle('rd', isRedesign());
     document.documentElement.classList.toggle('v2', isV2());
+    // 15.11: блоки «со свечением изнутри» своим цветом – пока только @maxmolotov
+    document.documentElement.classList.toggle('glow', currentUserId() === '163665735');
     mountDesignToggle();
 }
 
