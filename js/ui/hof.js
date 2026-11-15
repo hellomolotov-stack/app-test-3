@@ -3,7 +3,7 @@
 // Голос – дорожка из видео-руководства (assets/hof/voice.m4a), фазы на экране идут по разметке TIMELINE (секунды дорожки).
 // Сессии пишутся в Firebase hof/<uid> через /api/me action hof. Открыт всем с 13.11.2026.
 import { state } from '../state.js';
-import { haptic } from '../utils.js';
+import { haptic, openLink } from '../utils.js';
 import { log } from '../api.js';
 import { TIMELINE } from './hof-timeline.js';
 
@@ -48,7 +48,7 @@ function paintBlock(el) {
     <div class="card-container hof-card">
         <div class="hof-tag">техника, которую мы делаем на хайках</div>
         <div class="hof-title">метод Вима Хофа</div>
-        <div class="hof-text">11 минут дыхания – и тело просыпается, как после холодного душа, а стресс уходит. Исследование нидерландских учёных в журнале PNAS показало: практика запускает выброс адреналина и гасит воспаление. С этим методом Вим Хоф поставил десятки мировых рекордов – почти два часа просидел во льду и поднялся на Килиманджаро в одних шортах.</div>
+        <div class="hof-text">11 минут дыхания – и тело просыпается, как после холодного душа, а стресс уходит. исследование нидерландских учёных в журнале PNAS показало: практика запускает выброс адреналина и гасит воспаление. с этим методом Вим Хоф поставил десятки мировых рекордов – почти два часа просидел во льду и поднялся на Килиманджаро в одних шортах.</div>
         <div class="hof-video" id="hofVideo">
             <img src="assets/hof/cover.jpg" alt="" loading="lazy">
             <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф · 45 с</span>
@@ -114,12 +114,18 @@ function openPrep() {
                 <div class="hof-p-card"><div class="ic ic-15">15</div><div><b>вдох и держим 15 с</b><span>восстановление – и следующий раунд</span></div></div>
             </div>
             <button class="hof-btn" id="hofGo">поехали · 11 минут</button>
+            <button type="button" class="hof-share" id="hofShare">поделиться трекером</button>
             <div class="hof-p-warn">сидя или лёжа · не в воде и не за рулём. закружилась голова – просто дыши как обычно</div>
         </div>`;
     document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('is-in'));
     const close = () => { ov.classList.remove('is-in'); setTimeout(() => ov.remove(), 250); };
     ov.querySelector('.hof-x').addEventListener('click', () => { haptic(); close(); });
+    ov.querySelector('#hofShare').addEventListener('click', () => {
+        haptic(); lg('хоф: поделиться трекером');
+        const url = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/yaltahiking_bot?startapp=hof')}&text=${encodeURIComponent('трекер дыхания по методу Вима Хофа')}`;
+        openLink(url, 'хоф: поделиться', false);
+    });
     ov.querySelector('#hofGo').addEventListener('click', () => { haptic(); close(); lg('хоф: начал сессию'); openSession(); });
 }
 
