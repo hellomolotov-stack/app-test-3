@@ -6,7 +6,7 @@ import { catalogByTitle, tierOf } from './achievements-catalog.js';
 // Значки открыты всем с 27.10.2026. Скрыть снова – вернуть проверку по id в achievementsVisible().
 export const achievementsVisible = () => true;
 export function routeRepeatMark(a) {
-    const count = a.kind === 'route' ? Number(a.grant?.count) || 1 : 1;
+    const count = Number(a.grant?.count) || 1; // маршрут – сколько раз прошёл; «три раунда по Хофу» – сколько полных сессий
     return count > 1 ? `<b class="route-repeat" aria-label="пройдено ${count} раз">×${count}</b>` : '';
 }
 

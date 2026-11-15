@@ -204,6 +204,8 @@ module.exports = async (req, res) => {
             return res.status(200).json({ ok: false });
         }
     }
+    // значок за полную сессию: запись clubAchievements (создана 15.11, картинка /assets/achievements/badges/hof-session.png)
+    const HOF_BADGE_ID = '74f5ce35-0d66-4167-9955-c26f58a420fe';
     // дыхание по Виму Хофу: hof/<uid>/<ключ-время> = { t, rounds, holds:[сек], done }
     if (body && body.action === 'hof') {
         try {
@@ -216,7 +218,21 @@ module.exports = async (req, res) => {
             }
             const r = await fetch(`${DB}/hof/${uid}.json?orderBy="$key"&limitToLast=400`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });
             const data = r.ok ? (await r.json()) || {} : {};
-            return res.status(200).json({ sessions: Object.values(data).sort((a, b) => a.t - b.t) });
+            const sessions = Object.values(data).sort((a, b) => a.t - b.t);
+            // значок «три раунда по Хофу» (15.11): за каждую полную сессию – множитель = число полных сессий
+            let badge = null;
+            if (body.op === 'save' && body.done && (Number(body.rounds) || 0) >= 3) {
+                try {
+                    const count = sessions.filter(x => x && x.done && (x.rounds || 0) >= 3).length;
+                    const now = Date.now(), day = new Date(now + 3 * 3600000).toISOString().slice(0, 10);
+                    const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || uid).slice(0, 100);
+                    const grant = { userId: uid, name, date: day, issuedAt: now, issuedBy: 'auto-hof', count, notificationAt: now };
+                    const w = await fetch(`${DB}/clubAchievements/${HOF_BADGE_ID}.json`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ [`grants/${uid}`]: grant, [`recipients/${uid}`]: { userId: uid, name, date: day }, updatedAt: now, updatedBy: 'auto-hof' }), signal: AbortSignal.timeout(6000) });
+                    if (w.ok) badge = { id: HOF_BADGE_ID, count };
+                } catch (e) { console.error('me hof badge:', e.message); }
+            }
+            return res.status(200).json({ sessions, badge });
         } catch (e) {
             console.error('me hof:', e.message);
             return res.status(502).json({ error: 'db unavailable' });

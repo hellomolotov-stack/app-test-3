@@ -26,6 +26,7 @@ export const ACHIEVEMENT_CATALOG = [
     { id: "headlamps", title: "спуск с фонариком", rarity: 'legendary', tier: 'rare', description: "спускались в темноте – и это был лучший кусок хайка" },
     { id: "rain", title: "промок, но дошёл", rarity: 'legendary', tier: 'rare', description: "дождь не остановил – промокли, посмеялись и дошли" },
     { id: "wim-hof", title: "дыхание по Хофу", rarity: 'common', tier: 'common', description: "дышали на вершине так, что закружилась голова – в хорошем смысле" },
+    { id: "hof-session", title: "три раунда по Хофу", rarity: 'common', tier: 'common', description: "прошёл полную сессию дыхания по Хофу в приложении – все три раунда до конца" },
     { id: "above-1500", title: "выше 1500 метров", rarity: 'legendary', tier: 'rare', description: "поднялся выше полутора километров – Крым под ногами" },
     { id: "swim", title: "нырнул после тропы", rarity: 'legendary', tier: 'rare', description: "искупался в море или горном озере сразу после хайка" },
     { id: "four-seasons", title: "четыре сезона в горах", rarity: 'mythical', tier: 'very', description: "ходил с клубом зимой, весной, летом и осенью" },

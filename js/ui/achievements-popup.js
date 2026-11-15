@@ -342,7 +342,7 @@ export async function drawAchievementsStory(list) {
         if (rarityName(a.rarity)) ctx.fillText(rarityName(a.rarity).toUpperCase(), W / 2, 1270);
         ctx.fillStyle = '#fff'; ctx.font = `800 72px ${FONT}`;
         let y = 1360;
-        wrap(ctx, a.title + (a.kind === 'route' && a.grant?.count > 1 ? ` ×${a.grant.count}` : ''), W - 160).slice(0, 2).forEach(l => { ctx.fillText(l, W / 2, y); y += 84; });
+        wrap(ctx, a.title + (a.grant?.count > 1 ? ` ×${a.grant.count}` : ''), W - 160).slice(0, 2).forEach(l => { ctx.fillText(l, W / 2, y); y += 84; });
         ctx.fillStyle = 'rgba(255,255,255,.72)'; ctx.font = `500 40px ${FONT}`;
         wrap(ctx, [a.description, dateRu(a.grant?.date)].filter(Boolean).join(' · '), W - 200).slice(0, 3).forEach(l => { ctx.fillText(l, W / 2, y + 10); y += 54; });
     } else {

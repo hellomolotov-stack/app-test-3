@@ -443,7 +443,7 @@ function createHandler(deps = {}) {
                                 && (titleKey(record.title) !== 'добро пожаловать' || !club || club.has(String(g.userId)))).length } : {}),
                             medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
                             grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt,
-                                ...(record.kind === 'route' ? { dates: routeDates(grant), count: routeDates(grant).length } : {}) } });
+                                ...(record.kind === 'route' ? { dates: routeDates(grant), count: routeDates(grant).length } : Number(grant.count) > 1 ? { count: Number(grant.count) } : {}) } });
                     }
                 }
                 Object.values(collections).forEach(items => items.sort((a, b) => b.grant.issuedAt - a.grant.issuedAt));

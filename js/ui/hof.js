@@ -136,6 +136,23 @@ function phaseAt(t) {
     return cur;
 }
 
+// значок «три раунда по Хофу» за полную сессию: экран «отличная работа» ещё секунду, потом окно значка, как после хайка
+async function showHofBadge(badge, closeSession) {
+    try {
+        const ach = await import('../achievements.js');
+        ach.clearAchievementCache();
+        const uid = String(state.user?.id || '');
+        const items = (await ach.loadAchievementCollections([uid]))[uid] || [];
+        const item = items.find(i => i.id === badge.id);
+        if (!item) return;
+        lg(`хоф: значок «${item.title}»${badge.count > 1 ? ` ×${badge.count}` : ''}`);
+        setTimeout(() => {
+            closeSession();
+            setTimeout(() => import('./achievements-popup.js').then(m => m.openAchievementsPopup([item], { fresh: true, source: 'дыхание по Хофу', owned: items.length })).catch(() => {}), 300);
+        }, 1600);
+    } catch (e) { /* значок выдан – увидит в коллекции */ }
+}
+
 function openSession() {
     const ov = document.createElement('div');
     ov.className = 'hof-ov hof-run';
@@ -226,7 +243,10 @@ function openSession() {
     const save = done => {
         const list = holds.filter(Boolean);
         if (!done && !list.length) return;
-        api({ op: 'save', rounds: list.length, holds: list, done }).then(j => { sessions = j.sessions || sessions; const b = document.getElementById('hofBlock'); if (b) paintBlock(b); }).catch(() => {});
+        api({ op: 'save', rounds: list.length, holds: list, done }).then(j => {
+            sessions = j.sessions || sessions; const b = document.getElementById('hofBlock'); if (b) paintBlock(b);
+            if (done && j.badge?.id) showHofBadge(j.badge, close);
+        }).catch(() => {});
         lg(done ? `хоф: сессия завершена${list.length ? ' · ' + list.map(mmss).join(' / ') : ''}` : `хоф: вышел на раунде ${list.length + 1}`);
     };
     const close = () => {

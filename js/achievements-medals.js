@@ -13,6 +13,7 @@ export const MEDAL_LIBRARY = [
     { title: 'промок, но дошёл', imageUrl: '/assets/achievements/badges/rain.png' },
     { title: 'нырнул после тропы', imageUrl: '/assets/achievements/badges/swim.png' },
     { title: 'дыхание по Хофу', imageUrl: '/assets/achievements/badges/wim-hof-v2.png' },
+    { title: 'три раунда по Хофу', imageUrl: '/assets/achievements/badges/hof-session.png' },
     { title: 'первый бухайкинг', imageUrl: '/assets/achievements/badges/after-hike-drinks-v2.png' },
     { title: 'свои в городе', imageUrl: '/assets/achievements/badges/first-city-event-v2.png' },
     { title: 'хайкинг бокс', imageUrl: '/assets/achievements/badges/hiking-box.png' },
