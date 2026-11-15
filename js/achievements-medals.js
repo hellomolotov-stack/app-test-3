@@ -64,7 +64,7 @@ export const medalByUrl = url => MEDAL_LIBRARY.find(m => m.imageUrl === url) || 
 // Лёгкие копии значков (WebP): thumbs – 256 px для сеток и полок, md – 512 px для слайдера.
 // Делаются из PNG скриптом scripts/medal-thumbs.py; если копии нет – картинка сама откатывается на исходный PNG.
 // MEDAL_REV – поднять, когда картинки значков перерисованы (иначе телефоны неделю держат старые из кэша)
-const MEDAL_REV = 3;
+const MEDAL_REV = 4;
 const variant = (url, dir) => typeof url === 'string' && url.startsWith('/assets/achievements/') && url.endsWith('.png')
     ? url.replace('/assets/achievements/', `/assets/achievements/${dir}/`).replace(/\.png$/, `.webp?v=${MEDAL_REV}`) : url;
 export const medalThumb = url => variant(url, 'thumbs');
