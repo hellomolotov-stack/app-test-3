@@ -512,7 +512,7 @@ export function openCircleSheet() {
     const tgw = window.Telegram?.WebApp;
     const topInset = tgw?.isFullscreen ? (tgw.safeAreaInset?.top || 0) + (tgw.contentSafeAreaInset?.top || 0) : 0;
     overlay.innerHTML = `
-        <div class="cs2-sheet cs3" role="dialog" aria-label="твои связи" style="max-height:calc(100% - ${topInset + 10}px)">
+        <div class="cs2-sheet cs3" role="dialog" aria-label="твои связи" style="max-height:calc(100% - ${topInset + 20}px - env(safe-area-inset-bottom, 0px))">
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
             <div class="cs3-hd"><div class="cs2-h">твои связи</div><div class="cs3-cnt"><b id="cs3Num">${stages[0].n}</b><span id="cs3Lbl">${stages[0].l}</span></div></div>

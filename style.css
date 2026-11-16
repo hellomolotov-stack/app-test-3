@@ -8494,3 +8494,16 @@ html.v2 #circleContainer.lv-card .cc-lock { position: relative; z-index: 3; marg
   background: radial-gradient(75% 90% at 0% 105%, rgba(140,110,255,.8), transparent 70%), radial-gradient(75% 90% at 100% 105%, rgba(110,175,255,.8), transparent 70%),
     radial-gradient(80% 75% at 50% 112%, rgba(217,253,25,.75), transparent 72%), linear-gradient(180deg, rgba(10,11,14,0), rgb(10,11,14) 30%); }
 .cs-overlay.is-city .cs-bar { background: radial-gradient(70% 70% at 50% 120%, rgba(65,181,237,.5), transparent 72%), linear-gradient(180deg, rgba(10,11,14,0), rgba(10,11,14,.96) 26%); }
+/* 16.11: все шторки снизу – единый вид, как окно карты и окно значков: отступ 10 px снизу, слева и справа, все углы скруглены,
+   кромка по всему краю. Закрытая шторка уезжает вниз с запасом, чтобы из-за отступа не торчала полоска */
+.bottom-sheet, .ns-panel, .inv-sheet, .cq-sheet, .sa-sheet, .pv-sheet {
+  width: calc(100% - 20px) !important; max-width: 580px; margin-left: auto !important; margin-right: auto !important;
+  margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important; border-radius: 32px !important; box-sizing: border-box; }
+.hb-sheet, .acol-sheet, .sv-sheet, .cs2-sheet, .zp-sheet {
+  left: 10px !important; right: 10px !important; bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  width: auto !important; max-width: 580px; margin-left: auto !important; margin-right: auto !important; border-radius: 32px !important; }
+.bottom-sheet, .ns-panel, .inv-sheet, .cq-sheet, .sa-sheet, .pv-sheet, .hb-sheet, .acol-sheet, .sv-sheet, .cs2-sheet, .zp-sheet, .cs-sheet {
+  border: 1px solid rgba(255,255,255,.16) !important; }
+.bottom-sheet, .ns-panel, .inv-sheet, .cq-sheet, .acol-sheet, .sa-sheet, .sv-sheet, .cs-sheet, .pv-sheet { transform: translateY(calc(100% + 60px)); }
+.acol-sheet { height: calc(100% - var(--acol-top, 40px) - 10px - env(safe-area-inset-bottom, 0px)); }
+.sa-sheet { height: calc(90dvh - 10px - env(safe-area-inset-bottom, 0px)); }
