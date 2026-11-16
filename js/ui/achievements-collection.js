@@ -152,7 +152,7 @@ export function openAchievementsCollection(items = []) {
             <div class="acol-sub">${c.key === 'routes' ? 'пройдено' : 'получено'} <b>${c.earned.length} из ${c.total}</b></div>
             <div class="bdg-g3">${earned.map(a => `<button type="button" class="bdg-it" data-open="${esc(a.id)}">${img(a)}${routeRepeatMark(a)}<span>${esc(a.title)}</span>${dateOrWait(a)}</button>`).join('')}
             ${c.missing.map(m => { const art = medalForTitle(m.title), only = !member && isCardOnly(m.id);
-                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}"><span class="wait-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}${only ? '<b class="card-only">с картой</b>' : ''}</span><span>${esc(m.title)}</span>${only ? '<em class="is-card">только с картой</em>' : ''}</button>`; }).join('')}</div>
+                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}"><span class="wait-pic${only && art ? ' has-wv' : ''}">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}${only && art ? medalWaves(art.imageUrl) : ''}${only ? '<b class="card-only">с картой</b>' : ''}</span><span>${esc(m.title)}</span>${only ? '<em class="is-card">только с картой</em>' : ''}</button>`; }).join('')}</div>
             ${member ? '' : cardCta()}`;
         titleEl.textContent = c.title;
         main.hidden = true; catView.hidden = false; catView.scrollTop = 0;
