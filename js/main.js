@@ -33,6 +33,17 @@ window.userInteracted = false;
 window.isPrivPage = false;
 // главная сейчас на экране? фоновые перерисовки главной (догрузились данные) не должны уводить с других вкладок
 const homeOnScreen = () => !!(document.getElementById('calendarContainer') || document.getElementById('rdHero') || document.querySelector('#mainContent > .loader') || !document.getElementById('mainContent')?.children.length);
+// фоновая перерисовка главной (догрузились данные) – без сброса прокрутки: после перехода по ссылке к блоку
+// (startapp=hof и т.п.) экран раньше прыгал наверх. Возвращаем позицию после отрисовки и после асинхронных блоков
+function renderHomeKeep() {
+    const y = window.scrollY;
+    renderHome();
+    if (y < 40) return;
+    const back = () => { if (Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y); };
+    requestAnimationFrame(() => requestAnimationFrame(back));
+    setTimeout(back, 350);
+    setTimeout(back, 900);
+}
 window.isMenuActive = false;
 
 function mountAssistant() {
@@ -783,7 +794,7 @@ async function loadAppData() {
             earlyRenderHome(); // показать экран сразу, как пришли хайки (для тех, у кого нет кэша)
             if (firstRenderWasEmpty && newList.length && !window._deepLinkPageChanged && homeOnScreen()) {
                 firstRenderWasEmpty = false;
-                renderHome();
+                renderHomeKeep();
             }
         };
 
@@ -826,7 +837,7 @@ async function loadAppData() {
                 refreshBottomSheetIfOpen(); // обновить открытый шит если он уже был показан до загрузки _userRegs
                 // ранний рендер показал гостевую главную – перерисовываем для владельца карты сразу,
                 // не дожидаясь отзывов, саммари и прочего
-                if (firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHome();
+                if (firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHomeKeep();
             } else {
                 state.hikeBookingStatus = loadBookingStatusFromLocal();
             }
@@ -847,7 +858,7 @@ async function loadAppData() {
                 const fresh = Object.entries(me.passes || {}).filter(([date, code]) => passCodeFor(date) !== code);
                 fresh.forEach(([date, code]) => savePass(date, code));
                 if (fresh.length) {
-                    if (firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHome();
+                    if (firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHomeKeep();
                     refreshBottomSheetIfOpen();
                 }
             } catch (e) { console.error('me passes', e); }
@@ -905,7 +916,7 @@ async function loadAppData() {
                 Object.entries(keys).forEach(([node, field]) => { const val = v(node); if (val) state[field] = val; });
                 saveCachedState();
                 // у кого был кэш – главная уже нарисована из него, лишний раз не перерисовываем
-                if (!hadCache && firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHome();
+                if (!hadCache && firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHomeKeep();
             } catch (e) { console.error('boot apply', e); }
         });
 
@@ -1026,7 +1037,7 @@ async function loadAppData() {
 
         // финальный рендер с актуальными данными — пропускаем, если диплинк увёл на другую страницу
         // или человек уже сам ушёл с главной (16.11: из «интеллигентов» выкидывало на главную, когда догружались данные)
-        if (!window._deepLinkPageChanged && homeOnScreen()) renderHome();
+        if (!window._deepLinkPageChanged && homeOnScreen()) renderHomeKeep();
         window.toggleShareButton(false);
         if (!firstRenderDone) mountAssistant();
 
