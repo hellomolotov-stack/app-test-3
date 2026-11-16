@@ -287,7 +287,9 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     if (oneBtn) oneBtn.onclick = () => {
         if (!isWaiting(items[current])) return share([items[current]], oneBtn, items[current].title);
         haptic(); log(`значки: нажал «активировать с картой» на «${items[current].title}»`, true, state.user); close();
-        import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значок ждёт активации' })).catch(() => {});
+        // кусок кода шторки грузится отдельно: на плохой сети или после обновления приложения мог не подгрузиться – пробуем ещё раз, потом перезагружаем
+        const openSheet = () => import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значок ждёт активации' }));
+        openSheet().catch(() => setTimeout(() => openSheet().catch(() => location.reload()), 700));
     };
 }
 
