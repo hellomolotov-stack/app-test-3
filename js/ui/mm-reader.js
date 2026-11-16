@@ -219,7 +219,7 @@ function buildReader(list, id, drag) {
     document.body.style.overflow = 'hidden';
     const me = overlay, sheetEl = overlay.querySelector('.mmr-sheet');
     // не вплотную к кнопкам Telegram сверху (полноэкранный режим): отступ = системная + верхняя панель Telegram + 16
-    { const tw = window.Telegram?.WebApp; const inset = (tw?.safeAreaInset?.top || 0) + (tw?.contentSafeAreaInset?.top || 0); sheetEl.style.maxHeight = `calc(100dvh - ${inset + 16}px)`; }
+    { const tw = window.Telegram?.WebApp; const inset = (tw?.safeAreaInset?.top || 0) + (tw?.contentSafeAreaInset?.top || 0); sheetEl.style.maxHeight = `calc(100dvh - ${inset + 26}px - env(safe-area-inset-bottom, 0px))`; }
     if (!drag) requestAnimationFrame(() => { if (overlay === me) me.classList.add('is-on'); });
     else {
         me.classList.add('mmr-drag');

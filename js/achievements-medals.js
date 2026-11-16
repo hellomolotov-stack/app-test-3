@@ -75,6 +75,9 @@ export const medalSrc = (url, size = 'thumbs') => {
     const e = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
     return src === url ? `src="${e(url)}"` : `src="${e(src)}" data-orig="${e(url)}" decoding="async"`;
 };
+// значок «ждёт активации» (без карты): силуэт в серых волнах, как у карты в углу; вспышками волны рвутся и проступает настоящий значок.
+// Слои кладутся поверх картинки (она прячется классом has-wv у контейнера).
+export const medalWaves = (url, size = 'thumbs') => `<span class="wv" aria-hidden="true" style="--u:url('${variant(url, size)}')"><i class="wv-w"></i><i class="wv-b"></i><i class="wv-1"></i><i class="wv-2"></i></span>`;
 if (typeof document !== 'undefined' && !window.__medalFallback) {
     window.__medalFallback = true;
     document.addEventListener('error', e => {

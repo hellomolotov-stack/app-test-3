@@ -8520,3 +8520,13 @@ html.v2 #circleContainer.lv-card .cc-lock { position: relative; z-index: 3; marg
   background: linear-gradient(180deg, rgba(10,11,14,0), #0a0b0e 22%) !important; }
 .cs-overlay.is-city .cs-sheet::before { background: conic-gradient(from var(--aur), #41b5ed, #8fe3ff, #41b5ed 50%, #8fe3ff, #41b5ed); }
 @media (prefers-reduced-motion: reduce) { .cs-sheet::before { animation: none; } }
+/* 16.11: шторка хайка – как окно карты: 10 px по краям, непрозрачный фон, кнопки внизу с запасом от края шторки,
+   под кнопками мягкое затемнение, чтобы текст не лез под них */
+.bottom-sheet-overlay { padding: 0 !important; }
+.bottom-sheet { background: #12151b !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; overflow: hidden; }
+.bottom-sheet::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 130px; border-radius: 0 0 31px 31px; pointer-events: none; z-index: 5;
+  background: linear-gradient(180deg, rgba(18,21,27,0), #12151b 62%); }
+.floating-sheet-buttons { left: 24px !important; right: 24px !important; bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important; margin: 0 auto; max-width: 552px; }
+/* саммари мастермайнда – тоже с отступами и скруглением снизу */
+html .mmr-sheet { width: calc(100% - 20px) !important; max-width: 580px; margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
+  border-radius: 32px !important; border: 1px solid rgba(255,255,255,.16) !important; }

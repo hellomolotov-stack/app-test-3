@@ -5,7 +5,7 @@ import { state } from '../state.js';
 import { tg, haptic, showConfetti } from '../utils.js';
 import { log } from '../api.js';
 import { ACHIEVEMENT_RARITIES, rarityLabel, achievementRequest, loadAchievementCollections, claimAchievements, achievementHolders, rarityShare, achievementsVisible, isWaiting, metalOf } from '../achievements.js';
-import { medalSrc } from '../achievements-medals.js';
+import { medalSrc, medalWaves } from '../achievements-medals.js';
 import { fetchWithTimeout } from '../net.js';
 import { routeRepeatMark } from '../achievements.js';
 
@@ -110,7 +110,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         <button type="button" class="ach-close" aria-label="закрыть">✕</button>
         <h2 class="ach-title">${title ? title : fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b>первый</b> значок' : 'у тебя <b>новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : owner ? `значки <b>${esc(nameGenitive(owner))}</b>` : 'твои значки'}</h2>
         <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : owner ? 'значок клуба' : 'значок клуба – только твой'}</p>
-        <div class="ach-track">${items.map((a, i) => `<div class="ach-slide${waiting(a) ? ` is-wait is-${metalOf(a)}` : ''}" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false">${routeRepeatMark(a)}${waiting(a) ? '<b class="wait-lock">🔒</b>' : ''}</div>`).join('')}</div>
+        <div class="ach-track">${items.map((a, i) => `<div class="ach-slide${waiting(a) ? ` is-wait has-wv is-${metalOf(a)}` : ''}" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false">${routeRepeatMark(a)}${waiting(a) ? medalWaves(a.medal.imageUrl, 'md') : ''}</div>`).join('')}</div>
         ${n > 1 ? `<div class="ach-dots">${Array.from({ length: Math.min(3, n) }, (_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
         <div class="ach-with" hidden></div>

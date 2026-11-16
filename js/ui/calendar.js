@@ -2044,13 +2044,12 @@ export function showBottomSheet(index) {
     const sheet = document.getElementById('hikeBottomSheet');
     const contentWrapper = document.getElementById('bottomSheetContent');
 
-    const safeTop = tg?.contentSafeAreaInset?.top || 0;
-    const windowHeight = window.innerHeight;
-    const availableHeight = windowHeight - safeTop - 40;
-    const maxHeight = availableHeight * 0.95;
+    // 16.11: как окно карты – верх ниже кнопок Telegram «Закрыть» и «•••», снизу отступ 10 px (+ системная полоска)
+    const safeTop = (tg?.safeAreaInset?.top || 0) + (tg?.contentSafeAreaInset?.top || 0);
+    const safeBottom = tg?.safeAreaInset?.bottom || 0;
+    const maxHeight = window.innerHeight - (safeTop ? safeTop + 14 : 40) - 10 - safeBottom;
     sheet.style.maxHeight = `${maxHeight}px`;
     sheet.style.height = `${maxHeight}px`;
-    overlay.style.paddingTop = safeTop + 'px';
 
     setSheetIndex(index);
     const isGuest = state.userCard.status !== 'active';

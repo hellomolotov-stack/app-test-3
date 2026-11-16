@@ -9,7 +9,7 @@ import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { ACHIEVEMENT_CATALOG, ACHIEVEMENT_CATEGORIES, EXTRA_CATEGORY, categoryOf, catalogByTitle } from '../achievements-catalog.js';
-import { medalForTitle, medalSrc } from '../achievements-medals.js';
+import { medalForTitle, medalSrc, medalWaves } from '../achievements-medals.js';
 import { routeRepeatMark } from '../achievements.js';
 import { openAchievementsPopup } from './achievements-popup.js';
 import { rarityShare, rarityLabel, achievementMeta, sortByValue, isWaiting, metalOf, isCardOnly } from '../achievements.js';
@@ -51,7 +51,7 @@ export function openAchievementsCollection(items = []) {
     // ждущий активации – в цвете со свечением своего металла и замком
     const img = (a, cls = '', size = 'thumbs') => {
         const tag = `<img ${medalSrc(a.medal.imageUrl, size)} alt="" loading="lazy" class="${cls}">`;
-        return isWaiting(a) ? `<span class="wait-pic is-${metalOf(a)}">${tag}<b class="wait-lock">🔒</b></span>` : tag;
+        return isWaiting(a) ? `<span class="wait-pic has-wv is-${metalOf(a)}">${tag}${medalWaves(a.medal.imageUrl, size)}</span>` : tag;
     };
     const stackHtml = list => `<span class="bdg-stack">${list.slice(0, 4).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy" class="${isWaiting(a) ? `is-glow-${metalOf(a)}` : ''}">`).join('')}</span>`;
     const dateOrWait = a => isWaiting(a) ? `<em class="is-wait-${metalOf(a)}">ждёт активации</em>` : `<em>${esc(ddmmyyyy(a.grant?.date))}</em>`;
