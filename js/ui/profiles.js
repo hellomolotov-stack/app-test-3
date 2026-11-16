@@ -496,3 +496,19 @@ async function rdPeopleNext(box) {
     </div>`;
     box.querySelector('#rdPeopleNextOpen')?.addEventListener('click', () => { haptic(); if (index !== -1) showBottomSheet(index); });
 }
+
+// 16.11: «перейти в профиль» из шторки «твои связи»: открываем «интеллигентов» и плавно доезжаем до карточки человека
+// с лаймовым свечением. Без карты (или без своего профиля) раздел сам показывает размытую ленту и баннер про карту.
+export async function openProfileOf(userId) {
+    await renderProfiles();
+    const id = String(userId || '');
+    let tries = 0;
+    const find = () => {
+        const card = mainDiv().querySelector(`#profilesResults .profile-card[data-user-id="${CSS.escape(id)}"]`);
+        if (!card) { if (++tries < 15) setTimeout(find, 150); return; }
+        const r = card.getBoundingClientRect();
+        window.scrollTo({ top: Math.max(0, r.top + window.pageYOffset - Math.max(80, (window.innerHeight - r.height) / 2)), behavior: 'smooth' });
+        setTimeout(() => { card.classList.remove('profile-link-glow'); void card.offsetWidth; card.classList.add('profile-link-glow'); setTimeout(() => card.classList.remove('profile-link-glow'), 4200); }, 700);
+    };
+    if (state.userCard.status === 'active') setTimeout(find, 200);
+}

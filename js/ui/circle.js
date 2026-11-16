@@ -98,6 +98,34 @@ const STYLE = `
 .cs2-stack i.new { background: rgba(217,253,25,.18); color: var(--yellow); border: 2px dashed rgba(217,253,25,.6); }
 .cs2-go { display: block; width: 100%; height: 50px; margin-top: 12px; border: 0; border-radius: 16px; background: var(--yellow); color: #1d2200; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
 .cs2-org { margin: 16px 24px 0; text-align: center; font-size: 12.5px; line-height: 1.45; color: rgba(255,255,255,.5); }
+/* v3 (16.11): масштаб сверху, список людей снизу */
+.cs3-hd { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 60px 0 20px; }
+.cs3 .cs2-h { text-align: left; }
+.cs3-cnt { text-align: right; }
+.cs3-cnt b { display: block; font-size: 30px; font-weight: 800; line-height: 1; color: var(--yellow); font-variant-numeric: tabular-nums; }
+.cs3-cnt span { font-size: 11.5px; color: rgba(255,255,255,.6); }
+.cs3-net { margin-top: 10px; }
+.cs3-cam { transform-box: view-box; transform-origin: 50% 50%; transition: transform 1.6s cubic-bezier(.65,0,.35,1); }
+.cs3-club { opacity: 0; transition: opacity 1.2s ease .3s; }
+.cs3-club-on .cs3-club { opacity: .55; }
+.cs3-stage { display: flex; justify-content: center; gap: 6px; margin: 0 16px; }
+.cs3-stage button { border: 0; border-radius: 999px; padding: 7px 13px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.65); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; transition: background .3s, color .3s; }
+.cs3-stage button.on { background: var(--yellow); color: #1d2200; }
+.cs3-list { margin: 0 16px; display: flex; flex-direction: column; gap: 6px; }
+.cs3-row { border-radius: 16px; background: rgba(255,255,255,.04); overflow: hidden; transition: background .2s; }
+.cs3-row.on { background: rgba(217,253,25,.08); box-shadow: inset 0 0 0 1px rgba(217,253,25,.35); }
+.cs3-rb { display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 12px; border: 0; background: none; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.cs3-rb .cs2-av { width: 40px; height: 40px; margin: 0; font-size: 13px; flex: none; }
+.cs3-nm { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cs3-nm b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cs3-nm small { font-size: 11.5px; color: rgba(255,255,255,.55); margin-top: 2px; }
+.cs3-n { flex: none; min-width: 30px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center; background: rgba(217,253,25,.12); color: var(--yellow); font-size: 13px; font-weight: 800; }
+.cs3-more { display: none; padding: 0 12px 12px 64px; }
+.cs3-row.on .cs3-more { display: block; }
+.cs3-routes { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+.cs3-routes span { font-size: 11px; padding: 4px 9px; border-radius: 999px; background: rgba(255,255,255,.07); color: rgba(255,255,255,.75); }
+.cs3-go { height: 38px; padding: 0 16px; border: 0; border-radius: 12px; background: var(--yellow); color: #1d2200; font: inherit; font-size: 13.5px; font-weight: 800; cursor: pointer; }
+.cs3-nop { font-size: 12px; color: rgba(255,255,255,.45); }
 `;
 function ensureCss() {
     if (document.getElementById('circleCss')) return;
@@ -434,32 +462,66 @@ function wireNetLens(svg, host, net, getMode, redraw) {
 }
 
 let overlay = null;
+// 16.11: шторка «твои связи» v3 – сначала масштаб: камера на тебе и близких → отъезд к знакомым → вся паутина клуба,
+// счётчик бежит. Ниже список людей (фото, имя, сколько хайков вместе, последний), по нажатию – «перейти в профиль».
+const MS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+const dShort = s => (/^\d{4}-\d{2}-\d{2}$/.test(s || '') ? `${Number(s.slice(8))} ${MS[Number(s.slice(5, 7)) - 1]}` : '');
+let profileIds = null;
+function loadProfileIds() {
+    if (profileIds) return Promise.resolve(profileIds);
+    return import('../firebase.js').then(m => m.loadAllProfiles()).then(all => {
+        profileIds = new Set(Object.entries(all || {}).map(([id, p]) => String(p?.userId || id)));
+        return profileIds;
+    }).catch(() => new Set());
+}
+function clubDotsSvg(n) {
+    let out = '';
+    const k = Math.min(n, 180);
+    for (let i = 0; i < k; i++) {
+        const ang = i * 2.39996 + (i % 7) * .13, r = 165 + ((i * 53) % 100);
+        out += `<circle cx="${(SCX + Math.cos(ang) * r * 1.25).toFixed(1)}" cy="${(SCY + Math.sin(ang) * r).toFixed(1)}" r="${(2.6 + (i % 3) * .8).toFixed(1)}" fill="#8a96a3"/>`;
+    }
+    return `<g class="cs3-club">${out}</g>`;
+}
+
 export function openCircleSheet() {
     if (overlay || !data) return;
     ensureCss();
     log('твои связи: открыл', false, state.user);
     const d = data, nx = d.next;
+    const isOwner = state.userCard?.status === 'active';
     overlay = document.createElement('div');
     overlay.className = 'cs2-overlay';
-    const net = sheetNet(d), near = Math.min(d.nearN || NEAR, d.people.length), far = d.people.length - near;
-    let mode = 'near', sel = null;
-    const hiddenN = d.people.filter(p => p.hidden && p.known).length;
-    const cardsFor = list => list.filter(p => !p.hidden).map((p, i) => `<button type="button" class="cs2-pc" data-pid="${esc(p.id)}"><div class="cs2-av" style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</div><b>${esc(short(p.name))}</b><span>${p.n} ${plural(p.n, 'общий хайк', 'общих хайка', 'общих хайков')}</span></button>`).join('')
-        + (d.orgs || []).map(p => `<div class="cs2-pc org"><div class="cs2-av" style="${p.photo ? `background-image:url('${esc(p.photo)}')` : 'background:linear-gradient(135deg,#C7B8E6,#6B5A9A)'}">${p.photo ? '' : esc(initials(p.name))}</div><b>${esc(short(p.name))}</b><span>организатор · ${p.n} ${plural(p.n, 'хайк', 'хайка', 'хайков')}</span></div>`).join('')
-        + (hiddenN ? `<button type="button" class="cs2-pc q" data-cs2-card><div class="cs2-av">?</div><b>ещё ${hiddenN}</b><span>${plural(hiddenN, 'знакомый', 'знакомых', 'знакомых')} – с картой</span></button>` : '');
-    const cards = cardsFor(d.people.slice(0, near));
+    const net = sheetNet(d), near = Math.min(d.nearN || NEAR, d.people.length);
+    let mode = 'near', sel = null, open = null;
+    const club = !d.locked && (Number(d.clubCount) || 0) > 0;
+    // ступени масштаба: число, подпись, режим сети, масштаб камеры
+    const stages = d.locked
+        ? [{ n: d.total, l: plural(d.total, 'знакомство', 'знакомства', 'знакомств'), b: 'знакомые', m: 'near', z: 1.25 },
+           { n: d.total + (d.clubCount || 0), l: 'человек в клубе', b: 'весь клуб', m: 'all', z: 1 }]
+        : [{ n: near, l: 'близкий круг', b: 'близкие', m: 'near', z: 1.35 },
+           { n: d.total, l: `${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках`, b: 'знакомые', m: 'all', z: 1 },
+           ...(club ? [{ n: d.total + d.clubCount + 1, l: 'человек в клубе', b: 'весь клуб', m: 'all', z: .82, club: true }] : [])];
+    const people = d.people.filter(p => !p.hidden);
+    const rowHtml = (p, i, org = false) => `<div class="cs3-row" data-pid="${esc(p.id)}"><button type="button" class="cs3-rb">
+        <span class="cs2-av" style="${org ? (p.photo ? `background-image:url('${esc(p.photo)}')` : 'background:linear-gradient(135deg,#C7B8E6,#6B5A9A)') : avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</span>
+        <span class="cs3-nm"><b>${esc(p.name || 'участник')}</b><small>${org ? 'организатор · ' : ''}${p.n} ${plural(p.n, 'хайк', 'хайка', 'хайков')} вместе${p.last ? ` · последний ${dShort(p.last)}` : ''}</small></span>
+        <span class="cs3-n">${p.n}</span></button><div class="cs3-more"></div></div>`;
+    const svgCam = net.svg.replace('<g class="cs2-lines">', `<g class="cs3-cam">${club ? clubDotsSvg(d.clubCount) : ''}<g class="cs2-lines">`).replace('</svg>', '</g></svg>');
     const stack = nx ? [...nx.known.slice(0, 2).map((p, i) => `<i style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</i>`), nx.freshCount ? `<i class="new">+${nx.freshCount}</i>` : ''].join('') : '';
+    const tgw = window.Telegram?.WebApp;
+    const topInset = tgw?.isFullscreen ? (tgw.safeAreaInset?.top || 0) + (tgw.contentSafeAreaInset?.top || 0) : 0;
     overlay.innerHTML = `
-        <div class="cs2-sheet" role="dialog" aria-label="твои связи">
+        <div class="cs2-sheet cs3" role="dialog" aria-label="твои связи" style="max-height:calc(100% - ${topInset + 10}px)">
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
-            <div class="cs2-h">твои связи</div>
-            <div class="cs2-sub">${d.locked ? `${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб. всё откроется с картой интеллигента` : 'люди, с которыми ты был на хайках клуба. близкий круг – те, с кем вы ходили вместе хотя бы дважды'}</div>
-            ${far ? `<div class="cs2-tg" id="cs2Tg"><button type="button" class="on" data-mode="near">${d.locked ? `знакомые · ${d.total}` : `близкие · ${near}`}</button><button type="button" data-mode="all">${d.locked ? `весь клуб · ${d.total + (d.clubCount || 0)}` : `все · ${d.people.length}`}</button></div>` : ''}
-            <div class="cs2-net" id="cs2Net">${net.svg}</div>
-            <div class="cs2-stats"><div><b>${d.total}</b>${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках</div><div><b style="color:var(--yellow)">${d.strong}</b>близкий круг</div><div><b>${d.hikes}</b>${plural(d.hikes, 'твой хайк', 'твоих хайка', 'твоих хайков')}</div></div>
-            <div class="cs2-car" id="cs2Car">${cards}</div>
-            ${d.locked ? '<button type="button" class="cs2-go" style="width:calc(100% - 32px);margin:12px 16px 0" data-cs2-card>открыть все связи с картой</button>' : ''}
+            <div class="cs3-hd"><div class="cs2-h">твои связи</div><div class="cs3-cnt"><b id="cs3Num">${stages[0].n}</b><span id="cs3Lbl">${stages[0].l}</span></div></div>
+            <div class="cs2-net cs3-net" id="cs2Net">${svgCam}</div>
+            ${stages.length > 1 ? `<div class="cs3-stage" id="cs3Stage">${stages.map((st, i) => `<button type="button" data-st="${i}"${i ? '' : ' class="on"'}>${st.b}</button>`).join('')}</div>` : ''}
+            ${d.locked ? `<div class="cs2-sub">${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка открыты сейчас. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб</div>
+                <button type="button" class="cs2-go" style="width:calc(100% - 32px);margin:12px 16px 0" data-cs2-card>открыть все связи с картой</button>` : ''}
+            <div class="cs2-sec">с кем ты ходишь чаще всего</div>
+            <div class="cs3-list" id="cs3List">${people.map((p, i) => rowHtml(p, i)).join('')}${(d.orgs || []).map((p, i) => rowHtml(p, i, true)).join('')}</div>
             ${nx ? `<div class="cs2-sec">ближайший хайк</div>
             <div class="cs2-next"><div class="top"><b>${dayLabel(nx.date)}${nx.title ? ' · ' + esc(nx.title) : ''}</b></div>
                 <div class="row"><div class="cs2-stack">${stack}</div><span>${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em></span></div>
@@ -468,44 +530,102 @@ export function openCircleSheet() {
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
-    const svg = overlay.querySelector('#cs2Net svg'), lines = svg.querySelector('.cs2-lines');
+    const svg = overlay.querySelector('#cs2Net svg'), lines = svg.querySelector('.cs2-lines'), cam = svg.querySelector('.cs3-cam');
     let zoom = null;
     const drawLines = (L = zoom?.map() || null) => { lines.innerHTML = sheetLines(net, d, mode, sel, L); };
     drawLines();
     zoom = isRedesign() || isV2() ? wireNetLens(svg, overlay.querySelector('#cs2Net'), net, () => mode, L => drawLines(L)) : null;
-    const select = id => {
-        sel = id;
-        svg.querySelectorAll('.cs2-node').forEach(n => n.classList.toggle('sel', n.dataset.id === id));
-        svg.classList.toggle('has-sel', !!id);
-        drawLines();
-        overlay.querySelectorAll('.cs2-pc').forEach(c => c.classList.toggle('on', c.dataset.pid === id));
+    // счётчик бежит от текущего числа к новому
+    const numEl = overlay.querySelector('#cs3Num'), lblEl = overlay.querySelector('#cs3Lbl');
+    let numNow = stages[0].n, numRaf = 0;
+    const countTo = (to, ms = 1400) => {
+        cancelAnimationFrame(numRaf);
+        const from = numNow, t0 = performance.now();
+        const f = t => { const k = Math.min(1, (t - t0) / ms); numNow = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3))); numEl.textContent = numNow; if (k < 1) numRaf = requestAnimationFrame(f); };
+        numRaf = requestAnimationFrame(f);
     };
     const setMode = m => {
         if (m === mode) return;
         mode = m;
         zoom?.reset();
-        log(`твои связи: слой ${m === 'all' ? 'все' : 'близкие'}`, false, state.user);
-        overlay.querySelectorAll('#cs2Tg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
         lines.style.opacity = '0';
         svg.classList.toggle('is-all', m === 'all');
         setTimeout(() => { drawLines(); lines.style.opacity = '1'; }, 480);
-        overlay.querySelector('#cs2Car').innerHTML = cardsFor(m === 'all' ? d.people : d.people.slice(0, near));
-        if (sel) overlay.querySelector(`.cs2-pc[data-pid="${CSS.escape(sel)}"]`)?.classList.add('on');
+    };
+    let stageNow = 0;
+    const goStage = (i, user = false) => {
+        const st = stages[i]; if (!st) return;
+        stageNow = i;
+        if (user) log(`твои связи: масштаб «${st.b}»`, false, state.user);
+        overlay.querySelectorAll('#cs3Stage button').forEach(b => b.classList.toggle('on', +b.dataset.st === i));
+        setMode(st.m);
+        if (cam) cam.style.transform = `scale(${st.z})`;
+        svg.classList.toggle('cs3-club-on', !!st.club);
+        lblEl.textContent = st.l;
+        countTo(st.n);
+    };
+    if (cam) { cam.style.transition = 'none'; cam.style.transform = `scale(${stages[0].z})`; }
+    // сам отъезд камеры при открытии; любое касание сети или плашки – останавливает
+    const timers = [];
+    if (stages.length > 1) {
+        requestAnimationFrame(() => { if (cam) cam.style.transition = ''; });
+        timers.push(setTimeout(() => goStage(1), 1300));
+        if (stages.length > 2) timers.push(setTimeout(() => goStage(2), 3500));
+    }
+    const stopAuto = () => { while (timers.length) clearTimeout(timers.pop()); };
+    overlay.querySelector('#cs2Net').addEventListener('touchstart', stopAuto, { passive: true });
+    const select = id => {
+        sel = id;
+        svg.querySelectorAll('.cs2-node').forEach(n => n.classList.toggle('sel', n.dataset.id === id));
+        svg.classList.toggle('has-sel', !!id);
+        drawLines();
+    };
+    // раскрыть строку человека: маршруты и «перейти в профиль»
+    const openRow = async id => {
+        overlay.querySelectorAll('.cs3-row').forEach(r => r.classList.toggle('on', r.dataset.pid === id));
+        open = id;
+        const row = id && overlay.querySelector(`.cs3-row[data-pid="${CSS.escape(id)}"]`);
+        if (!row) return;
+        const p = [...d.people, ...(d.orgs || [])].find(x => x.id === id);
+        const more = row.querySelector('.cs3-more');
+        const routes = (p?.routes || []).length ? `<div class="cs3-routes">${p.routes.map(r => `<span>${esc(r)}</span>`).join('')}</div>` : '';
+        more.innerHTML = routes + '<div class="cs3-pf"></div>';
+        const ids = isOwner ? await loadProfileIds() : null;
+        if (open !== id) return;
+        more.querySelector('.cs3-pf').innerHTML = !isOwner || ids.has(String(id))
+            ? `<button type="button" class="cs3-go" data-prof="${esc(id)}">перейти в профиль ›</button>`
+            : '<div class="cs3-nop">профиля интеллигента пока нет</div>';
     };
     overlay.addEventListener('click', e => {
         if (e.target.closest('[data-cs2-card]')) { haptic(); closeCircleSheet(); setTimeout(() => openCard('шторка'), 320); return; }
-        const tg = e.target.closest('#cs2Tg button');
-        if (tg) { haptic(); setMode(tg.dataset.mode); return; }
-        const pc = e.target.closest('.cs2-pc:not(.q)');
-        if (pc) { haptic(); select(pc.classList.contains('on') ? null : pc.dataset.pid); return; }
+        const prof = e.target.closest('[data-prof]');
+        if (prof) {
+            haptic();
+            const id = prof.dataset.prof;
+            log('твои связи: перейти в профиль', !isOwner, state.user, { id });
+            closeCircleSheet();
+            setTimeout(() => import('./profiles.js').then(m => m.openProfileOf(id)).catch(() => {}), 320);
+            return;
+        }
+        const stb = e.target.closest('#cs3Stage button');
+        if (stb) { haptic(); stopAuto(); goStage(+stb.dataset.st, true); return; }
+        const rb = e.target.closest('.cs3-rb');
+        if (rb) {
+            haptic();
+            const id = rb.parentElement.dataset.pid, on = open === id ? null : id;
+            select(on && d.people.some(p => p.id === on) ? on : null);
+            if (on) log('твои связи: человек', false, state.user);
+            openRow(on);
+            return;
+        }
         const node = e.target.closest('#cs2Net .cs2-node');
         if (node && !node.classList.contains('q') && (mode === 'all' || node.classList.contains('l1'))) {
-            haptic(); select(node.dataset.id);
-            overlay.querySelector(`.cs2-pc[data-pid="${CSS.escape(node.dataset.id)}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            haptic(); stopAuto(); select(node.dataset.id); openRow(node.dataset.id);
+            overlay.querySelector(`.cs3-row[data-pid="${CSS.escape(node.dataset.id)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             return;
         }
         if (e.target.closest('[data-cs2-hike]')) { haptic(); closeCircleSheet(); setTimeout(openNextHike, 320); return; }
-        if (e.target === overlay || e.target.closest('.cs2-x')) { haptic(); closeCircleSheet(); }
+        if (e.target === overlay || e.target.closest('.cs2-x')) { haptic(); stopAuto(); closeCircleSheet(); }
     });
 }
 

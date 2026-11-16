@@ -8472,3 +8472,10 @@ html.glow .rd-annrow.is-on { box-shadow: inset 0 -46px 56px -22px rgba(217,253,2
 /* 16.11: «твои связи» – пыльная роза; затемнения сверху/снизу сети под тёмный фон свечения (иначе серая полоса) */
 html.glow #circleContainer .lv-ft { background: linear-gradient(rgba(10,10,13,.95), rgba(10,10,13,0)); }
 html.glow #circleContainer .lv-fb { background: linear-gradient(rgba(10,10,13,0), rgba(10,10,13,.92) 72%); }
+/* 16.11: карточка интеллигента, к которой пришли из «твоих связей» – мягкое лаймовое свечение */
+.profile-card.profile-link-glow { animation: profileLinkGlow 4.2s ease-in-out both; }
+@keyframes profileLinkGlow {
+  0%, 100% { box-shadow: none; }
+  25%, 72% { box-shadow: 0 0 0 2px rgba(217,253,25,.7), 0 12px 50px rgba(217,253,25,.35); }
+  50% { box-shadow: 0 0 0 1px rgba(217,253,25,.4), 0 10px 36px rgba(217,253,25,.2); }
+}
