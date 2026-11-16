@@ -11,7 +11,7 @@ import { isV2 } from '../redesign.js';
 import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { openCardSheet } from './card-sheet.js';
 import { setRdGlow } from '../redesign.js';
-import { bookingNotOpen, opensPhrase } from '../booking-opens.js';
+import { bookingNotOpen, opensPhrase, bookingOpensAt } from '../booking-opens.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const MONTHS = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
@@ -123,24 +123,31 @@ function openStory(s) {
 }
 
 // ---------- карточка ближайшего события ----------
-const REMIND_OFF = 'хочу на этот хайк', REMIND_ON = '✓ ты в списке первых';
+const MON3S = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+// «сегодня в 19:00» / «завтра в 19:00» / «в пн, 16 ноября, в 19:00»; подписан – «напишем в бота …»
+function annWhen(date, on) {
+    const at = bookingOpensAt(date);
+    if (!at) return '';
+    const m = new Date(at + 3 * 3600000), hm = `${String(m.getUTCHours()).padStart(2, '0')}:${String(m.getUTCMinutes()).padStart(2, '0')}`;
+    const day = m.toISOString().slice(0, 10), today = new Date(Date.now() + 3 * 3600000).toISOString().slice(0, 10);
+    const tomorrow = new Date(Date.now() + 27 * 3600000).toISOString().slice(0, 10);
+    const when = day === today ? `сегодня в ${hm}` : day === tomorrow ? `завтра в ${hm}` : esc(opensPhrase(date));
+    return on ? `напишем в бота <b>${when}</b>, когда откроем запись` : `запись откроется <b>${when}</b>`;
+}
 function heroHtml(ev) {
     if (!ev) return '';
     const h = ev.hike;
     if (bookingNotOpen(h.date)) {
-        // анонс: название и дата видны, маршрут и запись – в booking_opens; «хочу на этот хайк» = лист ожидания
+        // анонс (16.11 – компактная строка): дата хайка слева, название и время открытия записи, тумблер «напомнить в бота».
+        // Нажатие на всю строку = тумблер (лист ожидания), детали до открытия записи не открываются
         const on = isWaitlisted(h.date);
         const d = new Date(h.date + 'T12:00:00');
         return `
-        <div class="rd-hero is-${eventKind(h)} is-announce${on ? ' is-on' : ''}" id="rdHero" data-index="${ev.index}">
-            <div class="rd-hero-cover"><img src="assets/teaser/${heroPhotoFor(h.title)}.webp" alt="" loading="lazy"><span class="rd-ann">анонс</span><span class="rd-ann-date">${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</span></div>
-            <div class="rd-hero-body">
-                <span class="rd-hero-title">${esc(h.title)}</span>
-                <span class="rd-ann-note">маршрут и запись откроем ${esc(opensPhrase(h.date))}</span>
-                <button type="button" class="rd-cta rd-remind${on ? ' is-on' : ''}" id="rdRemind" aria-pressed="${on}"><span>${on ? REMIND_ON : REMIND_OFF}</span></button>
-                <span class="rd-ann-hint">${on ? 'напишем в бота, как только откроем · нажми ещё раз, чтобы отменить' : 'напишем в бота, как только откроем'}</span>
-            </div>
-        </div>`;
+        <button type="button" class="rd-annrow${on ? ' is-on' : ''}" id="rdHero" data-index="${ev.index}" aria-pressed="${on}">
+            <span class="ar-date"><b>${d.getDate()}</b><small>${MON3S[d.getMonth()]}, ${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}</small></span>
+            <span class="ar-tx"><span class="ar-tag">анонс</span><span class="ar-title">${esc(h.title)}</span><span class="ar-when">${annWhen(h.date, on)}</span></span>
+            <span class="ar-sw"><i class="ar-k"></i><span>${on ? 'напомним' : 'напомнить<br>в бота'}</span></span>
+        </button>`;
     }
     const kind = eventKind(h);
     const tags = (Array.isArray(h.tags) ? h.tags : []).slice(0, 4);
@@ -373,17 +380,22 @@ export function wireRdHomeTop() {
         });
     }
     if (!ev) return;
-    const remind = document.getElementById('rdRemind');
-    if (remind) {
-        const paint = on => { remind.classList.toggle('is-on', on); remind.setAttribute('aria-pressed', String(on)); remind.querySelector('span').textContent = on ? REMIND_ON : REMIND_OFF; document.getElementById('rdHero')?.classList.toggle('is-on', on); const hint = document.querySelector('#rdHero .rd-ann-hint'); if (hint) hint.textContent = on ? 'напишем в бота, как только откроем · нажми ещё раз, чтобы отменить' : 'напишем в бота, как только откроем'; };
-        remind.addEventListener('click', async () => {
-            if (remind.disabled) return;
-            remind.disabled = true;
-            log('rd: анонс – напомнить', !owner, state.user, { date: ev.hike.date });
-            paint(await toggleTeaserNotify(ev.hike.date).catch(() => isWaitlisted(ev.hike.date)));
-            remind.disabled = false;
+    const annRow = document.querySelector('#rdHero.rd-annrow');
+    if (annRow) {
+        const date = ev.hike.date;
+        const paint = on => {
+            annRow.classList.toggle('is-on', on); annRow.setAttribute('aria-pressed', String(on));
+            annRow.querySelector('.ar-when').innerHTML = annWhen(date, on);
+            annRow.querySelector('.ar-sw span').innerHTML = on ? 'напомним' : 'напомнить<br>в бота';
+        };
+        annRow.addEventListener('click', async () => {
+            if (annRow.disabled) return;
+            annRow.disabled = true;
+            log('rd: анонс – напомнить', !owner, state.user, { date });
+            paint(await toggleTeaserNotify(date).catch(() => isWaitlisted(date)));
+            annRow.disabled = false;
         });
-        window.addEventListener('club:waitlist-updated', ({ detail }) => { if (detail.date === ev.hike.date && remind.isConnected) paint(detail.on); });
+        window.addEventListener('club:waitlist-updated', ({ detail }) => { if (detail.date === date && annRow.isConnected) paint(detail.on); });
         return;
     }
     const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
