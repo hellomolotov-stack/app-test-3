@@ -8559,3 +8559,8 @@ html .mmr-sheet { width: calc(100% - 20px) !important; max-width: 580px; margin-
 .vt-it .wv { filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)); }
 .vt-l .wv { transform: rotate(-8deg) translateY(6px); }
 .vt-r .wv { transform: rotate(8deg) translateY(6px); }
+/* 16.11: календарь без свечения изнутри – обычное стекло; светится только плашка анонса над ним */
+html.glow #mainContent #calendarContainer {
+  background: var(--glass-bg) !important; border-color: var(--glass-border) !important;
+  box-shadow: var(--glass-highlight), var(--glass-shadow) !important;
+}
