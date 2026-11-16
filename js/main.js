@@ -38,6 +38,17 @@ const homeOnScreen = () => !!(document.getElementById('calendarContainer') || do
 function renderHomeKeep() {
     const y = window.scrollY;
     renderHome();
+    // идёт плавный доскролл по ссылке – он сам пересчитывает цель каждый кадр, не мешаем
+    if (window._glideActive) return;
+    // недавно доехали по ссылке до блока – после перерисовки держим именно этот блок, а не старую цифру прокрутки
+    const keep = window._keepTarget && Date.now() < window._keepTarget.until ? window._keepTarget : null;
+    if (keep) {
+        const align = () => { const yy = keep.y(); if (yy != null && Math.abs(window.scrollY - yy) > 4) window.scrollTo(0, yy); };
+        requestAnimationFrame(() => requestAnimationFrame(align));
+        setTimeout(align, 350);
+        setTimeout(align, 900);
+        return;
+    }
     if (y < 40) return;
     const back = () => { if (Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y); };
     requestAnimationFrame(() => requestAnimationFrame(back));
@@ -356,6 +367,31 @@ function glideTo(targetY, duration = 1200) {
     };
     requestAnimationFrame(step);
 }
+// плавный доскролл к движущейся цели: getY() вызывается каждый кадр; касание экрана прерывает
+function glideToLive(getY, duration, done) {
+    const y0 = window.pageYOffset, t0 = performance.now();
+    const ease = t => 1 - Math.pow(1 - t, 3) * (1 - t * .15); // мягкий разгон и долгое торможение
+    let stop = false;
+    const cancel = () => { stop = true; };
+    window.addEventListener('touchstart', cancel, { once: true, passive: true });
+    window.addEventListener('wheel', cancel, { once: true, passive: true });
+    window._glideActive = true;
+    const html = document.documentElement, prev = html.style.scrollBehavior;
+    html.style.scrollBehavior = 'auto';
+    const step = now => {
+        const t = Math.min(1, (now - t0) / duration), target = getY();
+        if (stop || target == null) { finish(); return; }
+        window.scrollTo(0, y0 + (target - y0) * ease(t));
+        if (t < 1) requestAnimationFrame(step); else finish(true);
+    };
+    const finish = ok => {
+        window._glideActive = false;
+        html.style.scrollBehavior = prev;
+        window.removeEventListener('touchstart', cancel); window.removeEventListener('wheel', cancel);
+        if (ok && done) done();
+    };
+    requestAnimationFrame(step);
+}
 const loaderGone = () => { const l = document.getElementById('initial-loader'); return !l || l.classList.contains('fade-out') || l.style.display === 'none'; };
 
 // диплинк на блок главной: после заставки сначала видно верх приложения, затем плавный доскролл к блоку
@@ -377,13 +413,26 @@ function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 1
         const el = getter();
         if (!el) return;
         clearInterval(iv);
-        const r = el.getBoundingClientRect();
-        const y = center ? r.top + window.pageYOffset - Math.max(getCurrentTopOffset(), (window.innerHeight - r.height) / 2)
-            : r.top + window.pageYOffset - getCurrentTopOffset();
-        glideTo(Math.max(0, y), center ? 1500 : 1200);
-        // своё свечение блока (класс со своей анимацией) вместо общей белой подсветки
-        if (glow) setTimeout(() => { el.classList.remove(glow); void el.offsetWidth; el.classList.add(glow); setTimeout(() => el.classList.remove(glow), 4200); }, center ? 1300 : 1100);
-        else setTimeout(() => highlightElement(el), 1100);
+        // цель считаем заново на каждом кадре: блок может перерисоваться и съехать, пока догружаются данные
+        const targetY = () => {
+            const e = getter(); if (!e) return null;
+            const r = e.getBoundingClientRect();
+            const y = center ? r.top + window.pageYOffset - Math.max(getCurrentTopOffset(), (window.innerHeight - r.height) / 2)
+                : r.top + window.pageYOffset - getCurrentTopOffset();
+            return Math.max(0, Math.min(y, document.documentElement.scrollHeight - window.innerHeight));
+        };
+        const dur = center ? 1400 : 1200;
+        glideToLive(targetY, dur, () => {
+            window._keepTarget = { y: targetY, until: Date.now() + 8000 };
+            // человек сам листает – больше не держим блок
+            const drop = () => { window._keepTarget = null; };
+            window.addEventListener('touchstart', drop, { once: true, passive: true });
+            window.addEventListener('wheel', drop, { once: true, passive: true });
+            const cur = getter() || el;
+            // своё свечение блока (класс со своей анимацией) вместо общей белой подсветки
+            if (glow) { cur.classList.remove(glow); void cur.offsetWidth; cur.classList.add(glow); setTimeout(() => cur.classList.remove(glow), 4200); }
+            else highlightElement(cur);
+        });
     }, interval);
 }
 
