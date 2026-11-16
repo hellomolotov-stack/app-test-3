@@ -421,10 +421,11 @@ function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 1
                 : r.top + window.pageYOffset - getCurrentTopOffset();
             return Math.max(0, Math.min(y, document.documentElement.scrollHeight - window.innerHeight));
         };
-        const dur = center ? 1400 : 1200;
-        glideToLive(targetY, dur, () => {
+        // ждём, пока страница перестанет перестраиваться (цель на месте 3 замера подряд), и едем встроенной плавной
+        // прокруткой браузера – она идёт отдельно от загрузки данных и не дёргается, даже если приложение занято
+        let prevY = null, same = 0, tries = 0;
+        const arrive = () => {
             window._keepTarget = { y: targetY, until: Date.now() + 8000 };
-            // человек сам листает – больше не держим блок
             const drop = () => { window._keepTarget = null; };
             window.addEventListener('touchstart', drop, { once: true, passive: true });
             window.addEventListener('wheel', drop, { once: true, passive: true });
@@ -432,7 +433,28 @@ function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 1
             // своё свечение блока (класс со своей анимацией) вместо общей белой подсветки
             if (glow) { cur.classList.remove(glow); void cur.offsetWidth; cur.classList.add(glow); setTimeout(() => cur.classList.remove(glow), 4200); }
             else highlightElement(cur);
-        });
+        };
+        const go = () => {
+            const y = targetY(); if (y == null) return;
+            window._glideActive = true;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+            let n = 0, lastS = -1, still = 0;
+            const watch = setInterval(() => {
+                n++;
+                const t = targetY(), sy = window.scrollY;
+                still = Math.abs(sy - lastS) < 1 ? still + 1 : 0; lastS = sy;
+                if (t != null && Math.abs(sy - t) <= 4) { clearInterval(watch); window._glideActive = false; arrive(); return; }
+                // встали не там (блок сдвинулся) – доводим плавно ещё раз
+                if (still >= 3 && t != null) { still = 0; window.scrollTo({ top: t, behavior: 'smooth' }); }
+                if (n > 40) { clearInterval(watch); window._glideActive = false; if (t != null) window.scrollTo(0, t); arrive(); }
+            }, 100);
+        };
+        const settle = setInterval(() => {
+            const y = targetY();
+            same = y != null && prevY != null && Math.abs(y - prevY) < 2 ? same + 1 : 0;
+            prevY = y;
+            if (same >= 3 || ++tries > 25) { clearInterval(settle); go(); }
+        }, 150);
     }, interval);
 }
 
