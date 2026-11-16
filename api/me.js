@@ -239,7 +239,8 @@ module.exports = async (req, res) => {
         }
     }
     // значок за полную сессию: запись clubAchievements (создана 15.11, картинка /assets/achievements/badges/hof-session.png)
-    const HOF_BADGE_ID = '74f5ce35-0d66-4167-9955-c26f58a420fe';
+    // 17.11: один значок с хайковым «дыхание по Хофу»: множитель = хайки (hikeN) + полные сессии в приложении (sessionN)
+    const HOF_BADGE_ID = 'a30b6efc-346b-4f50-8c8c-f4bd34d1d183';
     // дыхание по Виму Хофу: hof/<uid>/<ключ-время> = { t, rounds, holds:[сек], done }
     if (body && body.action === 'hof') {
         try {
@@ -257,10 +258,12 @@ module.exports = async (req, res) => {
             let badge = null;
             if (body.op === 'save' && body.done && (Number(body.rounds) || 0) >= 3) {
                 try {
-                    const count = sessions.filter(x => x && x.done && (x.rounds || 0) >= 3).length;
+                    const sessionN = sessions.filter(x => x && x.done && (x.rounds || 0) >= 3).length;
                     const now = Date.now(), day = new Date(now + 3 * 3600000).toISOString().slice(0, 10);
                     const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || uid).slice(0, 100);
-                    const grant = { userId: uid, name, date: day, issuedAt: now, issuedBy: 'auto-hof', count, notificationAt: now };
+                    const ex = await read(`clubAchievements/${HOF_BADGE_ID}/grants/${uid}`, token).catch(() => null);
+                    const hikeN = Number(ex?.hikeN) || (ex ? 1 : 0), count = hikeN + sessionN;
+                    const grant = { ...(ex || {}), userId: uid, name: ex?.name || name, date: ex?.date || day, issuedAt: ex?.issuedAt || now, issuedBy: ex?.issuedBy || 'auto-hof', hikeN, sessionN, count, notificationAt: now };
                     const w = await fetch(`${DB}/clubAchievements/${HOF_BADGE_ID}.json`, { method: 'PATCH', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
                         body: JSON.stringify({ [`grants/${uid}`]: grant, [`recipients/${uid}`]: { userId: uid, name, date: day }, updatedAt: now, updatedBy: 'auto-hof' }), signal: AbortSignal.timeout(6000) });
                     if (w.ok) badge = { id: HOF_BADGE_ID, count };
