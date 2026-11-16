@@ -214,11 +214,11 @@ module.exports = async (req, res) => {
             try {
                 const t = await getAccessToken();
                 const get = async path => (await fetch(`${DB}/${path}.json`, { headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) })).json();
-                if (body.action === 'booking_open_get') return res.status(200).json({ text: (await get(`booking_open_text/${date}`)) || '', default: msg.DEFAULT });
+                if (body.action === 'booking_open_get') return res.status(200).json({ text: (await get(`booking_open_text/${date}`)) || '', button: (await get(`booking_open_button/${date}`)) || '', default: msg.DEFAULT, defaultButton: msg.BUTTON });
                 const hike = (await get(`hikes/${date}`)) || {};
                 const html = msg.render(String(body.text || '').slice(0, 1500), { name: String(user.first_name || ''), title: String(body.title || hike.title || ''), date, startTime: String(body.start_time || hike.start_time || '') });
                 const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(15000),
-                    body: JSON.stringify({ chat_id: user.id, text: html, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: msg.button(date) }) });
+                    body: JSON.stringify({ chat_id: user.id, text: html, parse_mode: 'HTML', disable_web_page_preview: true, reply_markup: msg.button(date, body.button) }) });
                 const j = await r.json().catch(() => ({}));
                 if (!j.ok) return res.status(502).json({ error: j.description ? 'телеграм: ' + j.description : 'не отправилось' });
                 return res.status(200).json({ ok: true });
@@ -244,6 +244,11 @@ module.exports = async (req, res) => {
                     const isDefault = !text || text === require('../lib/booking-open-message').DEFAULT;
                     rs.push(await put(`booking_open_text/${date}`, isDefault ? null : text));
                     if (original && original !== date) rs.push(await put(`booking_open_text/${original}`, null));
+                }
+                if (typeof body.button === 'string') {
+                    const bt = body.button.trim().slice(0, 40);
+                    rs.push(await put(`booking_open_button/${date}`, !bt || bt === require('../lib/booking-open-message').BUTTON ? null : bt));
+                    if (original && original !== date) rs.push(await put(`booking_open_button/${original}`, null));
                 }
                 // время поменяли – рассылку «открыли запись» можно отправить заново в новую минуту
                 if (prev !== at) rs.push(await put(`booking_open_sent/${date}`, null));

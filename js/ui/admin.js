@@ -745,23 +745,26 @@ function wireBookingText(body, d) {
             if (d !== draft) return;
             d.booking_text_orig = j.text || BOOKING_DEFAULT;
             set(d.booking_text_orig);
+            d.booking_btn = d.booking_btn_orig = j.button || '';
+            const bi = body.querySelector('#admBookingBtn'); if (bi) bi.value = d.booking_btn;
         }).catch(() => { if (d === draft) { d.booking_text_orig = BOOKING_DEFAULT; set(BOOKING_DEFAULT); } }).finally(() => { ta.disabled = false; });
     } else if (!d.booking_text) set(BOOKING_DEFAULT);
     if (d.booking_text_orig === '') d.booking_text_orig = BOOKING_DEFAULT;
     ta.addEventListener('input', () => { d.booking_text = ta.value; });
+    body.querySelector('#admBookingBtn')?.addEventListener('input', e => { d.booking_btn = e.target.value; });
     body.querySelector('#admBookingReset')?.addEventListener('click', () => { haptic(); set(BOOKING_DEFAULT); });
     body.querySelector('#admBookingTest')?.addEventListener('click', async e => {
         const btn = e.currentTarget;
         if (!d.date) return toast('сначала укажите дату', true);
         btn.disabled = true; btn.textContent = 'отправляю…';
-        try { await bookingCall({ action: 'booking_open_test', date: d.date, text: ta.value, title: d.title, start_time: d.start_time }); toast('пример в боте ✓'); haptic(); }
+        try { await bookingCall({ action: 'booking_open_test', date: d.date, text: ta.value, button: d.booking_btn || '', title: d.title, start_time: d.start_time }); toast('пример в боте ✓'); haptic(); }
         catch (err) { toast(err.message, true); }
         btn.disabled = false; btn.textContent = '📨 прислать себе пример';
     });
 }
-async function saveBookingOpens(date, at, original, text) {
+async function saveBookingOpens(date, at, original, text, button) {
     const r = await fetch('/api/club-content', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
-        body: JSON.stringify({ action: 'booking_opens', date, at, original: original || '', ...(typeof text === 'string' ? { text } : {}), initData: tg?.initData || '' }) });
+        body: JSON.stringify({ action: 'booking_opens', date, at, original: original || '', ...(typeof text === 'string' ? { text } : {}), ...(typeof button === 'string' ? { button } : {}), initData: tg?.initData || '' }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || 'не удалось сохранить время открытия записи');
     const map = { ...(state.bookingOpens || {}) };
@@ -1085,7 +1088,9 @@ function renderEditor(body) {
         ${field('booking_opens', 'когда откроется запись', 'type="datetime-local"')}
         <div class="adm-hint">пусто – запись открыта сразу. до этого времени название и дата видны, а детали закрыты и вместо записи кнопка «хочу на этот хайк». в эту минуту запись откроется сама и подписавшимся придёт сообщение в бота. время – московское</div>
         ${d.booking_opens ? `<label class="adm-field"><span>сообщение подписчикам в момент открытия</span><textarea id="admBookingText" rows="7" placeholder="загружаю…">${esc(d.booking_text ?? '')}</textarea></label>
-        <div class="adm-hint">{имя} – имя человека, {название} – название хайка жирным, {дата} – «воскресенье, 22 ноября · 12:00». под сообщением кнопка «открыть хайк». стереть всё – вернётся текст по умолчанию</div>
+        <div class="adm-hint">{имя} – имя человека, {название} – название хайка жирным, {дата} – «воскресенье, 22 ноября · 12:00». стереть всё – вернётся текст по умолчанию</div>
+        <label class="adm-field"><span>текст кнопки под сообщением</span><input id="admBookingBtn" maxlength="40" placeholder="открыть хайк" value="${esc(d.booking_btn ?? '')}"></label>
+        <div class="adm-hint">кнопка открывает этот хайк в приложении. пусто – «открыть хайк»</div>
         <div class="adm-row2"><button type="button" class="adm-ghost" id="admBookingTest">📨 прислать себе пример</button><button type="button" class="adm-ghost" id="admBookingReset">текст по умолчанию</button></div>` : ''}
         ${field('capacity', 'мест (пусто – 10)', 'placeholder="10" inputmode="numeric"')}
         ${field('tags', 'теги через запятую', 'placeholder="умеренно, 10 км, 4-5 часов, без пропуска"')}
@@ -1343,8 +1348,10 @@ async function saveHike() {
         // время открытия – до сохранения хайка: Apps Script при первом названии смотрит на него и не пишет «открыли запись» раньше срока
         const prevOpens = (d.original && state.bookingOpens?.[d.original]) || null;
         const textChanged = typeof d.booking_text === 'string' && d.booking_text_orig !== null && d.booking_text !== d.booking_text_orig;
-        if (opensAt !== prevOpens || textChanged || (d.original && d.original !== d.date && prevOpens))
-            await saveBookingOpens(d.date, opensAt, d.original, opensAt && typeof d.booking_text === 'string' && d.booking_text_orig !== null ? d.booking_text : undefined);
+        const btnChanged = typeof d.booking_btn === 'string' && (d.booking_btn_orig ?? '') !== d.booking_btn;
+        if (opensAt !== prevOpens || textChanged || btnChanged || (d.original && d.original !== d.date && prevOpens))
+            await saveBookingOpens(d.date, opensAt, d.original, opensAt && typeof d.booking_text === 'string' && d.booking_text_orig !== null ? d.booking_text : undefined,
+                opensAt && typeof d.booking_btn === 'string' ? d.booking_btn : undefined);
         const res = await adminCall('adminSaveHike', { date: d.date, original_date: d.original, fields: JSON.stringify(fields) });
         // Firebase-подписка обновит хайки сама; подставляем локально, чтобы список сразу был свежим
         if (fields.route_id && templates) templates[fields.route_id] = { ...fields, from_date: d.date };

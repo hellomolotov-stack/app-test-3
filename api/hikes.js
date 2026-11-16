@@ -43,6 +43,7 @@ async function openBooking(date, token) {
     const list = await get(`hike_waitlist/${date}`) || {};
     const msg = require('../lib/booking-open-message');
     const template = await get(`booking_open_text/${date}`).catch(() => null);
+    const btnText = await get(`booking_open_button/${date}`).catch(() => null);
     const marks = {};
     let sent = 0;
     for (const [uid, p] of Object.entries(list)) {
@@ -52,7 +53,7 @@ async function openBooking(date, token) {
             const r = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(8000),
                 body: JSON.stringify({ chat_id: uid, text, parse_mode: 'HTML', disable_web_page_preview: true,
-                    reply_markup: msg.button(date) }),
+                    reply_markup: msg.button(date, btnText) }),
             });
             if ((await r.json().catch(() => ({}))).ok) { sent++; marks[`${uid}/notified_at`] = Math.floor(Date.now() / 1000); }
         } catch (e) { console.error('booking-open send', uid, e.message); }
