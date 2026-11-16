@@ -8427,3 +8427,25 @@ html.glow .cc-card { --g: 60, 200, 190; }
 html.glow .achievements-home { --g: 190, 140, 255; }
 html.glow .v2-tg { --g: 217, 253, 25; }
 html.glow #mainContent > .card-container:has(.metrics-title) { --g: 217, 253, 25; }
+/* 15.11: три варианта стекла (только @maxmolotov) – А на «клубе в цифрах», Б на погоде, В на методе Хофа */
+/* А. стеклянная подушка: тёмный центр, лаймовый свет со всех краёв, белая стеклянная грань с бликом */
+html.glow #mainContent > .card-container:has(.metrics-title) {
+  background: radial-gradient(120% 95% at 50% 45%, #07090a 40%, rgba(150,190,20,.5) 80%, rgba(217,253,25,.9) 100%) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.5), inset 0 2px 6px rgba(255,255,255,.3), inset 0 0 18px rgba(255,255,255,.14) !important;
+}
+/* Б. свет из-под низа: строгий тёмный верх, яркая почти белая кромка снизу, от неё сетка цвета блока */
+html.glow #mainContent #weatherBlock {
+  background:
+    linear-gradient(180deg, #090c10 0%, #090c10 38%, rgba(9,12,16,0) 82%),
+    linear-gradient(rgba(79,176,240,.14) 1px, transparent 1px) 0 0 / 18px 18px,
+    linear-gradient(90deg, rgba(79,176,240,.14) 1px, transparent 1px) 0 0 / 18px 18px,
+    linear-gradient(180deg, #090c10 50%, rgba(40,110,170,.55) 88%, rgba(79,176,240,.9) 100%) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.2), inset 0 1px 0 rgba(255,255,255,.35), inset 0 -3px 0 rgba(200,235,255,.9), inset 0 -26px 40px -10px rgba(160,215,255,.5) !important;
+}
+/* В. цветное стекло: весь блок – голубое стекло с тёмной глубиной в центре, точечная фактура, толстая белая кромка */
+html.glow #mainContent #hofBlock .hof-card {
+  background:
+    radial-gradient(rgba(255,255,255,.11) 1px, transparent 1.3px) 0 0 / 7px 7px,
+    radial-gradient(90% 70% at 50% 45%, rgba(8,18,34,.97) 32%, rgba(40,90,170,.92) 72%, #6aa8ff 100%) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(255,255,255,.6), inset 0 3px 10px rgba(255,255,255,.4), inset 0 -2px 10px rgba(255,255,255,.22), inset 0 0 30px rgba(255,255,255,.1) !important;
+}
