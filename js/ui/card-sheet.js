@@ -166,7 +166,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     // верх шторки – ниже кнопок Telegram «Закрыть» и «•••» (в полноэкранном режиме они поверх приложения)
     const tgw = window.Telegram?.WebApp;
     const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
-    overlay.querySelector('.cs-sheet').style.height = `calc(100% - ${inset ? inset + 14 : 40}px)`;
+    overlay.querySelector('.cs-sheet').style.height = `calc(100% - ${inset ? inset + 24 : 50}px - env(safe-area-inset-bottom, 0px))`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
