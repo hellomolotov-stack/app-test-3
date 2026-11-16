@@ -8530,3 +8530,19 @@ html.v2 #circleContainer.lv-card .cc-lock { position: relative; z-index: 3; marg
 /* саммари мастермайнда – тоже с отступами и скруглением снизу */
 html .mmr-sheet { width: calc(100% - 20px) !important; max-width: 580px; margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px)) !important;
   border-radius: 32px !important; border: 1px solid rgba(255,255,255,.16) !important; }
+
+/* ==================== значки «ждёт активации»: серые волны + глитч, как у карты в углу ==================== */
+.has-wv > img { visibility: hidden; }
+.has-wv .wv { position: absolute; inset: 0; pointer-events: none; }
+.mya-it.has-wv .wv { inset: 8%; }
+.wv i { position: absolute; inset: 0; display: block; background: var(--u) center / contain no-repeat; opacity: 0; }
+.wv .wv-w { opacity: 1; background: url(assets/card-grey.png) center / cover; filter: brightness(.85);
+    -webkit-mask: var(--u) center / contain no-repeat; mask: var(--u) center / contain no-repeat; }
+.wv .wv-b { animation: mc-b 9s steps(1, end) infinite; }
+.wv .wv-1 { filter: hue-rotate(150deg) saturate(3) contrast(1.2); mix-blend-mode: screen; animation: mc-g1 9s steps(1, end) infinite; }
+.wv .wv-2 { filter: hue-rotate(-70deg) saturate(3) contrast(1.2); mix-blend-mode: screen; animation: mc-g2 9s steps(1, end) infinite; }
+.ach-slide.has-wv .wv { transform: scale(.58); opacity: .45; transition: transform .3s ease, opacity .3s ease; }
+.ach-slide.has-wv.is-on .wv { transform: scale(1); opacity: 1; }
+.wait-pic.has-wv img { filter: none; }
+.bdg-cat-pic .wait-pic.has-wv { display: block; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { .wv i { animation: none; } }
