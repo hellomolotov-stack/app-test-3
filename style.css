@@ -8546,3 +8546,11 @@ html .mmr-sheet { width: calc(100% - 20px) !important; max-width: 580px; margin-
 .wait-pic.has-wv img { filter: none; }
 .bdg-cat-pic .wait-pic.has-wv { display: block; width: 100%; height: 100%; }
 @media (prefers-reduced-motion: reduce) { .wv i { animation: none; } }
+/* 16.11: анонс внутри шторки хайка (долистали до хайка, запись на который ещё не открыта) */
+.ann-sheet { padding: 28px 22px 140px; color: #fff; }
+.ann-tag { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--yellow); color: #141800; font-size: 13px; font-weight: 800; }
+.ann-date { margin-top: 18px; font-size: 14px; color: rgba(255,255,255,.6); }
+.ann-title { margin-top: 6px; font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -.01em; }
+.ann-plate { margin-top: 22px; padding: 16px; border-radius: 18px; background: rgba(217,253,25,.08); box-shadow: inset 0 0 0 1px rgba(217,253,25,.3); }
+.ann-plate b { display: block; font-size: 16px; color: var(--yellow); }
+.ann-plate span { display: block; margin-top: 6px; font-size: 14px; line-height: 1.45; color: rgba(255,255,255,.75); }

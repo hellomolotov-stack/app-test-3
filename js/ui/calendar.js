@@ -2067,6 +2067,20 @@ export function showBottomSheet(index) {
     function updateContent(instant = false) {
         const hike = state.hikesWithTitle[curSheetIndex()];
         if (!hike) return;
+        // 16.11: анонс без записи – если долистали до него в шторке: название, дата и «запись откроется …», без деталей и записи
+        if (bookingNotOpen(hike.date)) {
+            const d = new Date(hike.date + 'T12:00:00');
+            const WDF = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
+            contentWrapper.classList.remove('city-sheet', 'bookclub-sheet');
+            contentWrapper.innerHTML = `<div class="ann-sheet">
+                <span class="ann-tag">анонс</span>
+                <div class="ann-date">${WDF[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}${hike.start_time ? ' · ' + hike.start_time : ''}</div>
+                <div class="ann-title">${String(hike.title).replace(/</g, "&lt;")}</div>
+                <div class="ann-plate"><b>регистрация ещё не открыта</b><span>маршрут и запись откроем ${opensPhrase(hike.date)}. включи уведомление – напишем в бота в эту минуту</span></div>
+            </div>`;
+            updateFloatingSheetButtons();
+            return;
+        }
         trackFunnel('hike_view', hike.date);
 
         const isWoman = hike.woman === 'yes';
@@ -3062,6 +3076,16 @@ function updateFloatingSheetButtons() {
 
     container.innerHTML = '';
     container.classList.remove('has-plates');
+    // анонс без записи: вместо записи – «сообщить об открытии записи» (лист ожидания)
+    if (bookingNotOpen(hike.date)) {
+        const on = isWaitlisted(hike.date);
+        container.innerHTML = `<button type="button" class="btn ${on ? 'btn-outline' : 'btn-yellow'}" id="annNotifyBtn">${on ? '✓ сообщим об открытии' : 'сообщить об открытии записи'}</button>`;
+        container.querySelector('#annNotifyBtn').addEventListener('click', async () => {
+            await toggleTeaserNotify(hike.date).catch(() => {});
+            updateFloatingSheetButtons();
+        });
+        return;
+    }
 
     // Бокс предлагаем только на ближайшем актуальном хайке с открытой записью.
     // плашка над слайдером – и для записавшихся тоже (14.11: бокс можно взять после записи)
