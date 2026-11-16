@@ -166,7 +166,7 @@ export async function renderProfiles() {
     document.getElementById('floatingCardBtn')?.remove();   // ← удаление кнопки
 
     window.isPrivPage = true; window.isMenuActive = false; resetNavActive(); setActiveNav('navProfiles');
-    subtitle().textContent = `🫆 члены клуба`; hideBack(); haptic(); log('раздел профили', state.userCard.status!=='active', state.user);
+    subtitle().textContent = `члены клуба`; hideBack(); haptic(); log('раздел профили', state.userCard.status!=='active', state.user);
     showBottomNav(true); setupBottomNav();
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     await loadProfilesData();
@@ -188,11 +188,7 @@ export async function renderProfiles() {
         ...await renderProfileCard(p, shouldAnimate),
         hikeDate: nextHikesByUser.get(String(p.userId))?.date || null,
     })));
-    // члены клуба без профиля – пунктирные карточки в конце ленты (только в открытой ленте владельца карты)
-    if (!shouldAnimate) {
-        const people = await loadProfilePeople();
-        people.missing.forEach(m => allCards.push({ html: ghostCardHtml(m, people.nudged.has(m.id)), weight: 200, hikeDate: null }));
-    }
+
 
     function wrapInfiniteScroll(content) {
         const scrollWrapperHeight = Math.max(320, window.innerHeight - 160);
@@ -230,7 +226,6 @@ export async function renderProfiles() {
         <div id="rdPeopleNext"></div><div id="rdPeopleCircle"></div>` : '';
     mainDiv().innerHTML = `${rdTop}${filtersHtml}<div id="profilesResults" aria-live="polite">${html}</div>`;
     wireProfileCardActions(mainDiv());
-    wireNudges(mainDiv());
     if (rd) {
         mountCircle(document.getElementById('rdPeopleCircle'));
         rdPeopleNext(document.getElementById('rdPeopleNext'));
@@ -568,21 +563,15 @@ function renderGuestPeople() {
     const list = Object.entries(profiles).map(([id, p]) => ({ ...p, userId: String(p.userId || id) }))
         .filter(p => p.userId !== me && p.guest !== true && p.name)
         .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-    const shown = list.slice(0, 24);
+    // 8 случайных членов клуба с профилем (каждый заход – новые лица), остальные – числом
+    const shown = list.slice().sort(() => Math.random() - .5).slice(0, 8);
     const mine = myProfile
         ? `<div class="gp-mine"><b>твой профиль готов</b><p>его видят члены клуба – повод заговорить на тропе</p><button type="button" class="btn btn-outline" id="gpEdit">редактировать профиль</button></div>`
         : `<div class="gp-mine"><b>твой профиль интеллигента</b><p>создай бесплатно – увлечения и профессия, чтобы на хайке было о чём поговорить</p><button type="button" class="btn btn-yellow" id="gpEdit">создать свой профиль</button></div>`;
     mainDiv().innerHTML = `<div class="gp-wrap">${mine}
         <div class="gp-sec"><b>профили членов клуба</b><span>🔒 с картой</span></div>
         <div class="gp-grid">${shown.map(p => `<button type="button" class="gp-card" data-uid="${escapeHtml(p.userId)}"><span class="lk">🔒</span>${gpAv(p)}<b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.profession || 'член клуба')}</small><i>${escapeHtml(p.hobbies || 'горы, люди, разговоры')}</i></button>`).join('')}</div>
-        ${list.length > shown.length ? `<div class="gp-more">и ещё ${list.length - shown.length} членов клуба</div>` : ''}
-        <div class="gp-grid" id="gpGhosts" style="margin-top:10px"></div></div>`;
-    loadProfilePeople().then(pp => {
-        const box = document.getElementById('gpGhosts'); if (!box) return;
-        box.innerHTML = pp.missing.map(m => `<div class="gp-card gp-ghost"><span class="gp-av pg-q">?</span><b>${escapeHtml(m.name)}</b><small>профиль интеллигента ещё не создан</small>
-            <button type="button" class="pg-nudge${pp.nudged.has(m.id) ? ' is-done' : ''}" data-nudge="${escapeHtml(m.id)}"${pp.nudged.has(m.id) ? ' disabled' : ''}>${pp.nudged.has(m.id) ? '✓ предложили' : 'предложить создать'}</button></div>`).join('');
-        wireNudges(box);
-    });
+        ${list.length > shown.length ? `<div class="gp-more">и ещё ${list.length - shown.length} ${plural(list.length - shown.length, 'профиль', 'профиля', 'профилей')} членов клуба – с картой</div>` : ''}</div>`;
     mainDiv().querySelector('#gpEdit')?.addEventListener('click', () => { haptic(); log(myProfile ? 'гость: редактировать профиль' : 'гость: создать профиль', true, state.user); renderEditProfile(); });
     mainDiv().querySelectorAll('.gp-card').forEach(c => c.addEventListener('click', () => {
         haptic();
@@ -679,3 +668,5 @@ export async function checkProfileNudges() {
     el.querySelector('.pn-go').addEventListener('click', () => { haptic(); done(); log('создать профиль (по предложению)', state.userCard.status !== 'active', state.user); renderEditProfile(); });
     el.querySelector('.pn-x').addEventListener('click', () => { haptic(); done(); });
 }
+
+function plural(n, one, few, many) { return n % 10 === 1 && n % 100 !== 11 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? few : many; }

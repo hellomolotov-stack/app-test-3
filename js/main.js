@@ -31,6 +31,8 @@ import { startClubMetricsRefresh } from './club-content.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
+// главная сейчас на экране? фоновые перерисовки главной (догрузились данные) не должны уводить с других вкладок
+const homeOnScreen = () => !!(document.getElementById('calendarContainer') || document.getElementById('rdHero') || document.querySelector('#mainContent > .loader') || !document.getElementById('mainContent')?.children.length);
 window.isMenuActive = false;
 
 function mountAssistant() {
@@ -779,7 +781,7 @@ async function loadAppData() {
             applyOwnerBookings(); // #5: переприменить записи владельца при обновлении хайков
             saveCachedState();
             earlyRenderHome(); // показать экран сразу, как пришли хайки (для тех, у кого нет кэша)
-            if (firstRenderWasEmpty && newList.length && !window._deepLinkPageChanged) {
+            if (firstRenderWasEmpty && newList.length && !window._deepLinkPageChanged && homeOnScreen()) {
                 firstRenderWasEmpty = false;
                 renderHome();
             }
@@ -824,7 +826,7 @@ async function loadAppData() {
                 refreshBottomSheetIfOpen(); // обновить открытый шит если он уже был показан до загрузки _userRegs
                 // ранний рендер показал гостевую главную – перерисовываем для владельца карты сразу,
                 // не дожидаясь отзывов, саммари и прочего
-                if (firstRenderDone && !window._deepLinkPageChanged) renderHome();
+                if (firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHome();
             } else {
                 state.hikeBookingStatus = loadBookingStatusFromLocal();
             }
@@ -845,13 +847,11 @@ async function loadAppData() {
                 const fresh = Object.entries(me.passes || {}).filter(([date, code]) => passCodeFor(date) !== code);
                 fresh.forEach(([date, code]) => savePass(date, code));
                 if (fresh.length) {
-                    if (firstRenderDone && !window._deepLinkPageChanged) renderHome();
+                    if (firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHome();
                     refreshBottomSheetIfOpen();
                 }
             } catch (e) { console.error('me passes', e); }
             // личное спецпредложение карты (включает админка «новички») – баннер над меню
-            // предложили создать профиль интеллигента – карточка сверху (js/ui/profiles.js)
-            setTimeout(() => import('./ui/profiles.js').then(m => m.checkProfileNudges()).catch(() => {}), 2500);
             if (me.offer && me.card?.status !== 'active') {
                 import('./ui/offer-banner.js').then(m => m.mountOfferBanner(me.offer)).catch(e => console.error('offer banner', e));
             }
@@ -905,7 +905,7 @@ async function loadAppData() {
                 Object.entries(keys).forEach(([node, field]) => { const val = v(node); if (val) state[field] = val; });
                 saveCachedState();
                 // у кого был кэш – главная уже нарисована из него, лишний раз не перерисовываем
-                if (!hadCache && firstRenderDone && !window._deepLinkPageChanged) renderHome();
+                if (!hadCache && firstRenderDone && !window._deepLinkPageChanged && homeOnScreen()) renderHome();
             } catch (e) { console.error('boot apply', e); }
         });
 
@@ -1025,7 +1025,8 @@ async function loadAppData() {
         }
 
         // финальный рендер с актуальными данными — пропускаем, если диплинк увёл на другую страницу
-        if (!window._deepLinkPageChanged) renderHome();
+        // или человек уже сам ушёл с главной (16.11: из «интеллигентов» выкидывало на главную, когда догружались данные)
+        if (!window._deepLinkPageChanged && homeOnScreen()) renderHome();
         window.toggleShareButton(false);
         if (!firstRenderDone) mountAssistant();
 
