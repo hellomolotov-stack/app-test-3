@@ -850,6 +850,8 @@ async function loadAppData() {
                 }
             } catch (e) { console.error('me passes', e); }
             // личное спецпредложение карты (включает админка «новички») – баннер над меню
+            // предложили создать профиль интеллигента – карточка сверху (js/ui/profiles.js)
+            setTimeout(() => import('./ui/profiles.js').then(m => m.checkProfileNudges()).catch(() => {}), 2500);
             if (me.offer && me.card?.status !== 'active') {
                 import('./ui/offer-banner.js').then(m => m.mountOfferBanner(me.offer)).catch(e => console.error('offer banner', e));
             }

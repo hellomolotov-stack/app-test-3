@@ -188,6 +188,11 @@ export async function renderProfiles() {
         ...await renderProfileCard(p, shouldAnimate),
         hikeDate: nextHikesByUser.get(String(p.userId))?.date || null,
     })));
+    // члены клуба без профиля – пунктирные карточки в конце ленты (только в открытой ленте владельца карты)
+    if (!shouldAnimate) {
+        const people = await loadProfilePeople();
+        people.missing.forEach(m => allCards.push({ html: ghostCardHtml(m, people.nudged.has(m.id)), weight: 200, hikeDate: null }));
+    }
 
     function wrapInfiniteScroll(content) {
         const scrollWrapperHeight = Math.max(320, window.innerHeight - 160);
@@ -225,6 +230,7 @@ export async function renderProfiles() {
         <div id="rdPeopleNext"></div><div id="rdPeopleCircle"></div>` : '';
     mainDiv().innerHTML = `${rdTop}${filtersHtml}<div id="profilesResults" aria-live="polite">${html}</div>`;
     wireProfileCardActions(mainDiv());
+    wireNudges(mainDiv());
     if (rd) {
         mountCircle(document.getElementById('rdPeopleCircle'));
         rdPeopleNext(document.getElementById('rdPeopleNext'));
@@ -569,7 +575,14 @@ function renderGuestPeople() {
     mainDiv().innerHTML = `<div class="gp-wrap">${mine}
         <div class="gp-sec"><b>профили членов клуба</b><span>🔒 с картой</span></div>
         <div class="gp-grid">${shown.map(p => `<button type="button" class="gp-card" data-uid="${escapeHtml(p.userId)}"><span class="lk">🔒</span>${gpAv(p)}<b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.profession || 'член клуба')}</small><i>${escapeHtml(p.hobbies || 'горы, люди, разговоры')}</i></button>`).join('')}</div>
-        ${list.length > shown.length ? `<div class="gp-more">и ещё ${list.length - shown.length} членов клуба</div>` : ''}</div>`;
+        ${list.length > shown.length ? `<div class="gp-more">и ещё ${list.length - shown.length} членов клуба</div>` : ''}
+        <div class="gp-grid" id="gpGhosts" style="margin-top:10px"></div></div>`;
+    loadProfilePeople().then(pp => {
+        const box = document.getElementById('gpGhosts'); if (!box) return;
+        box.innerHTML = pp.missing.map(m => `<div class="gp-card gp-ghost"><span class="gp-av pg-q">?</span><b>${escapeHtml(m.name)}</b><small>профиль интеллигента ещё не создан</small>
+            <button type="button" class="pg-nudge${pp.nudged.has(m.id) ? ' is-done' : ''}" data-nudge="${escapeHtml(m.id)}"${pp.nudged.has(m.id) ? ' disabled' : ''}>${pp.nudged.has(m.id) ? '✓ предложили' : 'предложить создать'}</button></div>`).join('');
+        wireNudges(box);
+    });
     mainDiv().querySelector('#gpEdit')?.addEventListener('click', () => { haptic(); log(myProfile ? 'гость: редактировать профиль' : 'гость: создать профиль', true, state.user); renderEditProfile(); });
     mainDiv().querySelectorAll('.gp-card').forEach(c => c.addEventListener('click', () => {
         haptic();
@@ -610,4 +623,59 @@ function openGuestPreview(p, total) {
         }
         if (e.target.closest('[data-gp-free]')) { haptic(); close(); setTimeout(renderEditProfile, 330); }
     });
+}
+
+
+// ---------- члены клуба без профиля: «предложить создать профиль» (api/me profile_people / profile_nudge) ----------
+function meCall(action, data = {}) {
+    return fetch('/api/me', { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(10000),
+        body: JSON.stringify({ initData: window.Telegram?.WebApp?.initData || '', action, ...data }) }).then(r => (r.ok ? r.json() : null));
+}
+let peopleReq = null;
+function loadProfilePeople() {
+    if (!window.Telegram?.WebApp?.initData) return Promise.resolve({ missing: [], nudged: new Set() });
+    return (peopleReq ||= meCall('profile_people').then(j => ({ missing: j?.missing || [], nudged: new Set(j?.nudged || []) }))
+        .catch(() => { peopleReq = null; return { missing: [], nudged: new Set() }; }));
+}
+function ghostCardHtml(m, done) {
+    return `<div class="profile-card profile-ghost" data-user-id="${escapeHtml(m.id)}"><div class="profile-avatar-wrap"><div class="profile-avatar-placeholder pg-q">?</div></div>
+        <div class="profile-name-status"><span class="profile-name">${escapeHtml(m.name)}</span></div>
+        <div class="pg-note">профиль интеллигента ещё не создан</div>
+        <button type="button" class="pg-nudge${done ? ' is-done' : ''}" data-nudge="${escapeHtml(m.id)}"${done ? ' disabled' : ''}>${done ? '✓ предложили' : 'предложить создать'}</button></div>`;
+}
+function wireNudges(root) {
+    root.querySelectorAll('.pg-nudge:not(.is-done)').forEach(b => b.addEventListener('click', async e => {
+        e.stopPropagation();
+        if (b.disabled) return;
+        haptic(); b.disabled = true; b.textContent = 'отправляю…';
+        const j = await meCall('profile_nudge', { to: b.dataset.nudge }).catch(() => null);
+        if (j?.ok) {
+            b.classList.add('is-done'); b.textContent = '✓ предложили';
+            peopleReq?.then(pp => pp.nudged.add(b.dataset.nudge));
+            log('предложил создать профиль', state.userCard.status !== 'active', state.user, { to: b.dataset.nudge });
+        } else { b.disabled = false; b.textContent = 'предложить создать'; }
+    }));
+}
+
+// человеку, которому предложили создать профиль: карточка сверху при заходе (пока не создал профиль или не закрыл)
+export async function checkProfileNudges() {
+    if (!window.Telegram?.WebApp?.initData || document.querySelector('.pn-card')) return;
+    const j = await meCall('profile_nudges').catch(() => null);
+    if (!j?.names?.length) return;
+    let seen = 0; try { seen = Number(localStorage.getItem('pnSeen')) || 0; } catch (e) {}
+    if (seen >= j.last) return;
+    const first = n => String(n || '').trim().split(/\s+/)[0];
+    const who = j.names.length > 1 ? `${escapeHtml(first(j.names[0]))} и ещё ${j.names.length - 1}` : escapeHtml(first(j.names[0]));
+    const tw = window.Telegram?.WebApp, inset = (tw?.safeAreaInset?.top || 0) + (tw?.contentSafeAreaInset?.top || 0);
+    const el = document.createElement('div');
+    el.className = 'pn-card';
+    el.style.top = `${inset ? inset + 8 : 12}px`;
+    el.innerHTML = `<div class="pn-ic">🎩</div><div class="pn-tx"><b>${who} ${j.names.length > 1 ? 'предлагают' : 'предлагает'} тебе создать профиль интеллигента</b><span>чтобы на хайке было о чём поговорить</span></div>
+        <button type="button" class="pn-go">создать</button><button type="button" class="pn-x" aria-label="закрыть">✕</button>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('is-on'));
+    log('увидел: предлагают создать профиль', state.userCard.status !== 'active', state.user, { n: j.names.length });
+    const done = () => { try { localStorage.setItem('pnSeen', String(j.last)); } catch (e) {} el.classList.remove('is-on'); setTimeout(() => el.remove(), 300); meCall('profile_nudge_seen').catch(() => {}); };
+    el.querySelector('.pn-go').addEventListener('click', () => { haptic(); done(); log('создать профиль (по предложению)', state.userCard.status !== 'active', state.user); renderEditProfile(); });
+    el.querySelector('.pn-x').addEventListener('click', () => { haptic(); done(); });
 }

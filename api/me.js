@@ -204,6 +204,40 @@ module.exports = async (req, res) => {
             return res.status(200).json({ ok: false });
         }
     }
+    // 16.11: члены клуба без профиля интеллигента – пунктирные карточки во вкладке «Интеллигенты» и «предложить создать профиль».
+    // profileNudges/<кому>/<от кого> = { name, at }; человек видит в приложении «… предлагает тебе создать профиль»
+    if (body && ['profile_people', 'profile_nudge', 'profile_nudges', 'profile_nudge_seen'].includes(body.action)) {
+        try {
+            const token = await getAccessToken(), uid = String(user.id);
+            const req = (path, method, data) => fetch(`${DB}/${path}.json`, { method, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: data === undefined ? undefined : JSON.stringify(data), signal: AbortSignal.timeout(6000) });
+            if (body.action === 'profile_people') {
+                const [members, profs, mine] = await Promise.all([read('members', token), read('userProfiles', token), read(`profileNudgesSent/${uid}`, token)]);
+                const has = new Set(Object.entries(profs || {}).map(([id, p]) => String(p?.userId || id)));
+                const missing = Object.values(members || {}).filter(m => m && m.user_id && String(m.user_id) !== uid && !has.has(String(m.user_id)))
+                    .map(m => ({ id: String(m.user_id), name: String(m.user_name || '').trim().slice(0, 40) })).filter(m => m.name);
+                return res.status(200).json({ missing, nudged: Object.keys(mine || {}) });
+            }
+            if (body.action === 'profile_nudge') {
+                const to = String(body.to || '');
+                if (!/^\d+$/.test(to) || to === uid) return res.status(400).json({ error: 'bad user' });
+                const [member, prof] = await Promise.all([read(`members/${to}`, token), read(`userProfiles/${to}`, token)]);
+                if (!member?.user_id || prof) return res.status(200).json({ ok: false });
+                const name = String(user.first_name || user.username || 'участник клуба').slice(0, 40), at = Date.now();
+                await Promise.all([req(`profileNudges/${to}/${uid}`, 'PUT', { name, at }), req(`profileNudgesSent/${uid}/${to}`, 'PUT', at)]);
+                return res.status(200).json({ ok: true });
+            }
+            if (body.action === 'profile_nudges') {
+                const [list, prof] = await Promise.all([read(`profileNudges/${uid}`, token), read(`userProfiles/${uid}`, token)]);
+                const items = prof ? [] : Object.values(list || {}).filter(x => x && x.name).sort((a, b) => b.at - a.at);
+                return res.status(200).json({ names: items.map(x => x.name), last: items[0]?.at || 0 });
+            }
+            await req(`profileNudges/${uid}`, 'DELETE');
+            return res.status(200).json({ ok: true });
+        } catch (e) {
+            console.error('me profile:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
+        }
+    }
     // значок за полную сессию: запись clubAchievements (создана 15.11, картинка /assets/achievements/badges/hof-session.png)
     const HOF_BADGE_ID = '74f5ce35-0d66-4167-9955-c26f58a420fe';
     // дыхание по Виму Хофу: hof/<uid>/<ключ-время> = { t, rounds, holds:[сек], done }
