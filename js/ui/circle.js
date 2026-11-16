@@ -6,6 +6,7 @@ import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { fetchWithTimeout } from '../net.js';
 import { isRedesign, isV2 } from '../redesign.js';
+import { bookingNotOpen } from '../booking-opens.js';
 
 // видят все: с картой – все связи, без карты – 5 самых близких, остальные «?» (сервер их имён не отдаёт)
 export const circleEnabled = () => !!state.user?.id;
@@ -99,9 +100,9 @@ const STYLE = `
 .cs2-go { display: block; width: 100%; height: 50px; margin-top: 12px; border: 0; border-radius: 16px; background: var(--yellow); color: #1d2200; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
 .cs2-org { margin: 16px 24px 0; text-align: center; font-size: 12.5px; line-height: 1.45; color: rgba(255,255,255,.5); }
 /* v3 (16.11): масштаб сверху, список людей снизу */
-.cs3-hd { display: flex; align-items: flex-end; justify-content: space-between; margin: 6px 60px 0 20px; }
+.cs3-hd { margin: 8px 60px 0 20px; }
 .cs3 .cs2-h { text-align: left; }
-.cs3-cnt { text-align: right; }
+.cs3-cnt { position: absolute; left: 14px; bottom: 12px; z-index: 2; pointer-events: none; text-shadow: 0 2px 12px rgba(0,0,0,.8); }
 .cs3-cnt b { display: block; font-size: 30px; font-weight: 800; line-height: 1; color: var(--yellow); font-variant-numeric: tabular-nums; }
 .cs3-cnt span { font-size: 11.5px; color: rgba(255,255,255,.6); }
 .cs3-net { margin-top: 10px; }
@@ -119,7 +120,10 @@ const STYLE = `
 .cs3-nm { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .cs3-nm b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cs3-nm small { font-size: 11.5px; color: rgba(255,255,255,.55); margin-top: 2px; }
-.cs3-n { flex: none; min-width: 30px; height: 30px; border-radius: 15px; display: flex; align-items: center; justify-content: center; background: rgba(217,253,25,.12); color: var(--yellow); font-size: 13px; font-weight: 800; }
+.cs3-ch { flex: none; width: 14px; text-align: center; font-size: 22px; line-height: 1; color: rgba(255,255,255,.45); visibility: hidden; }
+.cs3-row.has-prof .cs3-ch { visibility: visible; }
+.cs3-hint { margin: -4px 16px 10px; font-size: 12px; color: rgba(255,255,255,.5); }
+.cs3-link { display: block; margin: 4px auto 0; padding: 8px 12px; border: 0; background: none; color: var(--yellow); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
 .cs3-more { display: none; padding: 0 12px 12px 64px; }
 .cs3-row.on .cs3-more { display: block; }
 .cs3-routes { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
@@ -506,7 +510,7 @@ export function openCircleSheet() {
     const rowHtml = (p, i, org = false) => `<div class="cs3-row" data-pid="${esc(p.id)}"><button type="button" class="cs3-rb">
         <span class="cs2-av" style="${org ? (p.photo ? `background-image:url('${esc(p.photo)}')` : 'background:linear-gradient(135deg,#C7B8E6,#6B5A9A)') : avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</span>
         <span class="cs3-nm"><b>${esc(p.name || 'участник')}</b><small>${org ? 'организатор · ' : ''}${p.n} ${plural(p.n, 'хайк', 'хайка', 'хайков')} вместе${p.last ? ` · последний ${dShort(p.last)}` : ''}</small></span>
-        <span class="cs3-n">${p.n}</span></button><div class="cs3-more"></div></div>`;
+        <span class="cs3-ch" aria-hidden="true">›</span></button><div class="cs3-more"></div></div>`;
     const svgCam = net.svg.replace('<g class="cs2-lines">', `<g class="cs3-cam">${club ? clubDotsSvg(d.clubCount) : ''}<g class="cs2-lines">`).replace('</svg>', '</g></svg>');
     const stack = nx ? [...nx.known.slice(0, 2).map((p, i) => `<i style="${avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</i>`), nx.freshCount ? `<i class="new">+${nx.freshCount}</i>` : ''].join('') : '';
     const tgw = window.Telegram?.WebApp;
@@ -515,21 +519,29 @@ export function openCircleSheet() {
         <div class="cs2-sheet cs3" role="dialog" aria-label="твои связи" style="max-height:calc(100% - ${topInset + 20}px - env(safe-area-inset-bottom, 0px))">
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
-            <div class="cs3-hd"><div class="cs2-h">твои связи</div><div class="cs3-cnt"><b id="cs3Num">${stages[0].n}</b><span id="cs3Lbl">${stages[0].l}</span></div></div>
-            <div class="cs2-net cs3-net" id="cs2Net">${svgCam}</div>
+            <div class="cs3-hd"><div class="cs2-h">твои связи</div></div>
+            <div class="cs2-net cs3-net" id="cs2Net">${svgCam}<div class="cs3-cnt"><b id="cs3Num">${stages[0].n}</b><span id="cs3Lbl">${stages[0].l}</span></div></div>
             ${stages.length > 1 ? `<div class="cs3-stage" id="cs3Stage">${stages.map((st, i) => `<button type="button" data-st="${i}"${i ? '' : ' class="on"'}>${st.b}</button>`).join('')}</div>` : ''}
             ${d.locked ? `<div class="cs2-sub">${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка открыты сейчас. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб</div>
-                <button type="button" class="cs2-go" style="width:calc(100% - 32px);margin:12px 16px 0" data-cs2-card>открыть все связи с картой</button>` : ''}
-            <div class="cs2-sec">с кем ты ходишь чаще всего</div>
+                <button type="button" class="cs3-link" data-cs2-card>открыть все связи с картой ›</button>` : ''}
+            <div class="cs2-sec">твой круг на тропе</div>
+            <div class="cs3-hint">у членов клуба есть профили – они со стрелкой ›</div>
             <div class="cs3-list" id="cs3List">${people.map((p, i) => rowHtml(p, i)).join('')}${(d.orgs || []).map((p, i) => rowHtml(p, i, true)).join('')}</div>
             ${nx ? `<div class="cs2-sec">ближайший хайк</div>
             <div class="cs2-next"><div class="top"><b>${dayLabel(nx.date)}${nx.title ? ' · ' + esc(nx.title) : ''}</b></div>
-                <div class="row"><div class="cs2-stack">${stack}</div><span>${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em></span></div>
+                <div class="row"><div class="cs2-stack">${stack}</div><span>${bookingNotOpen(nx.date) ? 'анонс · <em>новые лица и новые истории</em>' : `${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em>`}</span></div>
                 <button type="button" class="cs2-go" data-cs2-hike>открыть хайк</button></div>` : ''}
         </div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => overlay.classList.add('is-on'));
+    // стрелка › – у тех, у кого есть профиль члена клуба (по нажатию – сразу в его профиль)
+    const me0 = overlay;
+    loadProfileIds().then(ids => {
+        if (overlay !== me0) return;
+        const all = !isOwner && !ids.size; // гостю, если список не загрузился, – стрелки у всех (откроется баннер про карту)
+        me0.querySelectorAll('.cs3-row').forEach(r => r.classList.toggle('has-prof', all || ids.has(String(r.dataset.pid))));
+    });
     const svg = overlay.querySelector('#cs2Net svg'), lines = svg.querySelector('.cs2-lines'), cam = svg.querySelector('.cs3-cam');
     let zoom = null;
     const drawLines = (L = zoom?.map() || null) => { lines.innerHTML = sheetLines(net, d, mode, sel, L); };
@@ -590,11 +602,7 @@ export function openCircleSheet() {
         const more = row.querySelector('.cs3-more');
         const routes = (p?.routes || []).length ? `<div class="cs3-routes">${p.routes.map(r => `<span>${esc(r)}</span>`).join('')}</div>` : '';
         more.innerHTML = routes + '<div class="cs3-pf"></div>';
-        const ids = isOwner ? await loadProfileIds() : null;
-        if (open !== id) return;
-        more.querySelector('.cs3-pf').innerHTML = !isOwner || ids.has(String(id))
-            ? `<button type="button" class="cs3-go" data-prof="${esc(id)}">перейти в профиль ›</button>`
-            : '<div class="cs3-nop">профиля интеллигента пока нет</div>';
+        more.querySelector('.cs3-pf').innerHTML = '<div class="cs3-nop">профиль есть только у членов клуба</div>';
     };
     overlay.addEventListener('click', e => {
         if (e.target.closest('[data-cs2-card]')) { haptic(); closeCircleSheet(); setTimeout(() => openCard('шторка'), 320); return; }
@@ -610,6 +618,14 @@ export function openCircleSheet() {
         const stb = e.target.closest('#cs3Stage button');
         if (stb) { haptic(); stopAuto(); goStage(+stb.dataset.st, true); return; }
         const rb = e.target.closest('.cs3-rb');
+        if (rb && rb.parentElement.classList.contains('has-prof')) {
+            haptic();
+            const id = rb.parentElement.dataset.pid;
+            log('твои связи: перейти в профиль', !isOwner, state.user, { id });
+            closeCircleSheet();
+            setTimeout(() => import('./profiles.js').then(m => m.openProfileOf(id)).catch(() => {}), 320);
+            return;
+        }
         if (rb) {
             haptic();
             const id = rb.parentElement.dataset.pid, on = open === id ? null : id;
