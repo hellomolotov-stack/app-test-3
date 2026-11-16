@@ -545,7 +545,7 @@ const GP_CSS = `
 .gp-ov.is-on .gp-sheet { transform: none; }
 .gp-who { display: flex; align-items: center; gap: 14px; } .gp-who .gp-av { width: 60px; height: 60px; margin: 0; font-size: 23px; flex: none; }
 .gp-who b { display: block; font-size: 19px; font-weight: 800; } .gp-who small { display: block; margin-top: 2px; font-size: 13.5px; color: rgba(255,255,255,.6); }
-.gp-blur { margin-top: 14px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.05); font-size: 14px; line-height: 1.5; }
+.gp-blur { overflow: hidden; margin-top: 14px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.05); font-size: 14px; line-height: 1.5; }
 .gp-blur span { filter: blur(4px); color: rgba(255,255,255,.75); user-select: none; }
 .gp-why { margin: 16px 0 0; font-size: 15px; line-height: 1.45; } .gp-why em { font-style: normal; color: var(--yellow); }
 .gp-sheet .btn { width: 100%; margin: 14px 0 0; }
@@ -593,7 +593,7 @@ function openGuestPreview(p, total) {
     ov.innerHTML = `<div class="gp-sheet" role="dialog" aria-label="профиль ${escapeHtml(first)}">
         <div class="gp-who">${gpAv(p)}<div><b>${escapeHtml(p.name || 'участник')}</b><small>${escapeHtml(p.profession || 'член клуба')}</small></div></div>
         <div class="gp-blur"><span>${escapeHtml([p.hobbies, (p.friendshipStatuses || []).join(', ')].filter(Boolean).join(' · ') || 'увлечения, любимые маршруты, с кем ходит на хайки')}</span></div>
-        <div class="gp-why">профиль ${escapeHtml(first)}${total > 1 ? ` и ещё ${total - 1} членов клуба` : ''} <em>открываются с картой</em></div>
+        <div class="gp-why">этот профиль${total > 1 ? ` и ещё ${total - 1} членов клуба` : ''} <em>${total > 1 ? 'открываются' : 'открывается'} с картой</em></div>
         <button type="button" class="btn btn-yellow" data-gp-card>открыть с картой интеллигента</button>
         <button type="button" class="gp-free" data-gp-free>${myProfile ? 'твой профиль уже создан ›' : 'а свой профиль можно создать бесплатно ›'}</button>
     </div>`;
