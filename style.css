@@ -8516,7 +8516,7 @@ html.v2 #circleContainer.lv-card .cc-lock { position: relative; z-index: 3; marg
   background: conic-gradient(from var(--aur), #d9fd19, #6eafff, #8c6eff, #ff96c3, #d9fd19 50%, #6eafff, #8c6eff, #ff96c3, #d9fd19);
   animation: aurSpin 30s linear infinite; }
 .cs-sheet::after { content: ''; position: absolute; inset: 10px; z-index: -1; border-radius: 24px; background: #0a0b0e; filter: blur(10px); pointer-events: none; }
-.cs-bar { left: 10px; right: 10px; bottom: 6px; padding: 14px 6px 10px; border-radius: 0 0 24px 24px;
-  background: linear-gradient(180deg, rgba(10,11,14,0), rgba(10,11,14,.94) 28%) !important; }
+.cs-bar { left: 12px; right: 12px; bottom: 12px; padding: 14px 4px 6px; border-radius: 0 0 22px 22px;
+  background: linear-gradient(180deg, rgba(10,11,14,0), #0a0b0e 22%) !important; }
 .cs-overlay.is-city .cs-sheet::before { background: conic-gradient(from var(--aur), #41b5ed, #8fe3ff, #41b5ed 50%, #8fe3ff, #41b5ed); }
 @media (prefers-reduced-motion: reduce) { .cs-sheet::before { animation: none; } }
