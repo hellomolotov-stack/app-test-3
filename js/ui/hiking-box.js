@@ -407,8 +407,11 @@ export function openHikingBox(fromEl, hike, isGuest) {
         closed = true;
         if (reason) log(`hiking box: закрыл (${reason}) – ${hike.title}`, isGuest, state.user);
         overlay.classList.remove('is-on');
-        sheet.style.transition = ''; // после свайпа sheet-drag оставляет свой transition
+        // 16.11: шторка тает, пока сжимается в плашку, а плашка проявляется раньше – без пустого прямоугольника
+        sheet.style.transition = 'transform .36s cubic-bezier(.2, .9, .25, 1), opacity .24s ease .06s';
         sheet.style.transform = fromPlate();
+        sheet.style.opacity = '0';
+        setTimeout(() => { fromEl.style.visibility = ''; }, 180);
         setTimeout(() => {
             overlay.remove();
             fromEl.style.visibility = '';
