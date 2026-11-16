@@ -3391,7 +3391,8 @@ function updateFloatingSheetButtons() {
 
 
     // «уже идут N» показываем от 5 записавшихся: 1–4 человека выглядят как «никто не идёт»
-    if (!isSoldOut && !hasInvite && bookedCount >= 5) {
+    // у владельца карты, который уже записан, счётчика нет
+    if (!isSoldOut && !hasInvite && bookedCount >= 5 && !(hasCard && isBooked)) {
         const spotsLeft = Math.max(0, capacityFor(hike) - bookedCount);
         const chipRow = document.createElement('div');
         chipRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center; pointer-events: none;';
