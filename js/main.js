@@ -370,7 +370,7 @@ function glideTo(targetY, duration = 1200) {
 // плавный доскролл к движущейся цели: getY() вызывается каждый кадр; касание экрана прерывает
 function glideToLive(getY, duration, done) {
     const y0 = window.pageYOffset, t0 = performance.now();
-    const ease = t => 1 - Math.pow(1 - t, 3) * (1 - t * .15); // мягкий разгон и долгое торможение
+    const ease = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2); // плавный разгон и плавное торможение
     let stop = false;
     const cancel = () => { stop = true; };
     window.addEventListener('touchstart', cancel, { once: true, passive: true });
@@ -435,19 +435,12 @@ function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 1
             else highlightElement(cur);
         };
         const go = () => {
-            const y = targetY(); if (y == null) return;
-            window._glideActive = true;
-            window.scrollTo({ top: y, behavior: 'smooth' });
-            let n = 0, lastS = -1, still = 0;
-            const watch = setInterval(() => {
-                n++;
-                const t = targetY(), sy = window.scrollY;
-                still = Math.abs(sy - lastS) < 1 ? still + 1 : 0; lastS = sy;
-                if (t != null && Math.abs(sy - t) <= 4) { clearInterval(watch); window._glideActive = false; arrive(); return; }
-                // встали не там (блок сдвинулся) – доводим плавно ещё раз
-                if (still >= 3 && t != null) { still = 0; window.scrollTo({ top: t, behavior: 'smooth' }); }
-                if (n > 40) { clearInterval(watch); window._glideActive = false; if (t != null) window.scrollTo(0, t); arrive(); }
-            }, 100);
+            // страница уже спокойна – своя мягкая кривая (разгон и долгое торможение), цель пересчитывается каждый кадр
+            glideToLive(targetY, 1300, () => {
+                const t = targetY();
+                if (t != null && Math.abs(window.scrollY - t) > 4) window.scrollTo({ top: t, behavior: 'smooth' });
+                arrive();
+            });
         };
         const settle = setInterval(() => {
             const y = targetY();
