@@ -530,8 +530,8 @@ const GP_CSS = `
 .gp-mine .btn { width: 100%; margin: 14px 0 0; }
 .gp-sec { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 4px 10px; color: #fff; }
 .gp-sec b { font-size: 17px; font-weight: 800; } .gp-sec span { font-size: 13px; color: var(--yellow); font-weight: 700; }
-.gp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.gp-card { position: relative; padding: 12px; border: 0; border-radius: 18px; background: #14181d; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.gp-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gp-card { position: relative; min-width: 0; width: 100%; margin: 0; box-sizing: border-box; padding: 12px; border: 0; border-radius: 18px; background: #14181d; color: #fff; font: inherit; text-align: left; cursor: pointer; }
 .gp-card .lk { position: absolute; right: 10px; top: 10px; font-size: 12px; opacity: .55; }
 .gp-av { width: 48px; height: 48px; border-radius: 50%; background: #40a7e3 center/cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 8px; }
 .gp-card b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
