@@ -163,15 +163,15 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
     d.links.forEach(([a, b, w]) => {
         const A = at.get(a), B = at.get(b); if (!A || !B) return;
         const on = sel && (a === sel || b === sel);
-        out += `<path d="${curve(A, B)}" fill="none" stroke="${on ? '#D9FD19' : '#a9bccf'}" stroke-opacity="${on ? .7 : (sel ? .04 : Math.min(.06 + w * .03, .22))}" stroke-width="${on ? 1.4 : .7}" stroke-linecap="round"/>`;
+        out += `<path d="${curve(A, B)}" fill="none" stroke="${on ? '#FFB3D1' : '#d9b3c4'}" stroke-opacity="${on ? .7 : (sel ? .04 : Math.min(.06 + w * .03, .22))}" stroke-width="${on ? 1.4 : .7}" stroke-linecap="round"/>`;
     });
     // связи к тебе: толще и ярче – чем чаще вместе
     const me = { x: cx, y: cy };
     pts.forEach(p => {
-        if (p.hidden) { out += `<path d="${curve(me, p)}" fill="none" stroke="${p.known ? '#D9FD19' : '#fff'}" stroke-opacity="${p.known ? .25 : .08}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
+        if (p.hidden) { out += `<path d="${curve(me, p)}" fill="none" stroke="${p.known ? '#FFB3D1' : '#fff'}" stroke-opacity="${p.known ? .25 : .08}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
         const strong = p.n > 1, dim = sel && p.id !== sel;
         const op = dim ? (strong ? .15 : .06) : (strong ? .35 + .5 * p.n / maxN : .3);
-        out += `<path d="${curve(me, p)}" fill="none" stroke="${strong ? '#D9FD19' : '#d6aa6e'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${(strong ? 1 + 2.4 * p.n / maxN : .8) * (big ? 1 : .8)}" stroke-linecap="round"/>`;
+        out += `<path d="${curve(me, p)}" fill="none" stroke="${strong ? '#FFB3D1' : '#e8a3c1'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${(strong ? 1 + 2.4 * p.n / maxN : .8) * (big ? 1 : .8)}" stroke-linecap="round"/>`;
     });
     // люди
     const base = big ? 10 : 7;
@@ -329,15 +329,15 @@ function sheetLines(net, d, mode, sel, L = null) {
         const A = at.get(a), B = at.get(b); if (!A || !B || !vis(A) || !vis(B)) return;
         const on = sel && (a === sel || b === sel);
         if (!on && mode === 'all' && w < 2) return; // во «всех» – только заметные связи, иначе каша
-        out += `<path d="M${P(A)[0].toFixed(1)} ${P(A)[1].toFixed(1)} L${P(B)[0].toFixed(1)} ${P(B)[1].toFixed(1)}" stroke="${on ? '#D9FD19' : '#a9bccf'}" stroke-opacity="${on ? .7 : (sel ? .03 : Math.min(.05 + w * .025, .2))}" stroke-width="${on ? 1.3 : .6}" fill="none"/>`;
+        out += `<path d="M${P(A)[0].toFixed(1)} ${P(A)[1].toFixed(1)} L${P(B)[0].toFixed(1)} ${P(B)[1].toFixed(1)}" stroke="${on ? '#FFB3D1' : '#d9b3c4'}" stroke-opacity="${on ? .7 : (sel ? .03 : Math.min(.05 + w * .025, .2))}" stroke-width="${on ? 1.3 : .6}" fill="none"/>`;
     });
     net.pts.forEach(p => {
         const strong = p.n > 1, dim = sel && p.id !== sel;
-        if (p.hidden) { out += `<path d="${cv(ME, P(p))}" fill="none" stroke="${p.known ? '#D9FD19' : '#fff'}" stroke-opacity="${(p.known ? .28 : .07) * (vis(p) ? 1 : .6)}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
+        if (p.hidden) { out += `<path d="${cv(ME, P(p))}" fill="none" stroke="${p.known ? '#FFB3D1' : '#fff'}" stroke-opacity="${(p.known ? .28 : .07) * (vis(p) ? 1 : .6)}" stroke-width=".8" stroke-dasharray="3 4"/>`; return; }
         if (!vis(p)) { out += `<path d="${cv(ME, L ? L(p.a) : p.a)}" fill="none" stroke="#fff" stroke-opacity=".06" stroke-width=".6"/>`; return; }
         const op = dim ? .06 : (strong ? .3 + .5 * p.n / net.maxN : .25) * (mode === 'all' && p.layer === 2 ? .7 : 1);
         const w = (strong ? 1 + 2.2 * p.n / net.maxN : .8) * (mode === 'all' ? .7 : 1);
-        out += `<path d="${cv(ME, P(p))}" fill="none" stroke="${strong ? '#D9FD19' : '#d6aa6e'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${w.toFixed(2)}" stroke-linecap="round"/>`;
+        out += `<path d="${cv(ME, P(p))}" fill="none" stroke="${strong ? '#FFB3D1' : '#e8a3c1'}" stroke-opacity="${op.toFixed(2)}" stroke-width="${w.toFixed(2)}" stroke-linecap="round"/>`;
     });
     return out;
 }
