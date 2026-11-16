@@ -3446,10 +3446,16 @@ function updateFloatingSheetButtons() {
         const goBtn = document.createElement('a');
         goBtn.href = '#';
         goBtn.className = 'btn btn-yellow';
-        goBtn.textContent = 'ты записан';
         goBtn.style.backgroundColor = accentColor;
         goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
-        goBtn.style.pointerEvents = 'none';
+        if (isCity || isBookClub) {
+            goBtn.textContent = 'ты записан';
+            goBtn.style.pointerEvents = 'none';
+        } else {
+            // 16.11: вместо неактивного «ты записан» – билет «ты в деле» (что взять, точка сбора, чат)
+            goBtn.textContent = '✓ открыть билет';
+            goBtn.addEventListener('click', e => { e.preventDefault(); haptic(); openHikeTicket(hike.date); });
+        }
         row.appendChild(goBtn);
         container.appendChild(row);
         return;
@@ -4189,6 +4195,18 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
     if (hikeObj && (hikeObj.city === true || hikeObj.city === 'yes')) return showCityRegistrationSuccess(hikeObj);
     if (hikeObj && hikeObj.book_club === true) return;
+    openHikeTicket(hikeDate, { fresh: true, title: hikeTitle });
+}
+
+// 16.11: билет «ты в деле» – открывается после записи и потом снова: «твой билет» на главной, в «моих записях», в шторке хайка.
+// Погоды нет (прогноз не на ту дату), вместо неё – точка сбора; «что взять» – чек-лист прямо в билете
+const PACK_BASE = ['вода 1,5 л', 'перекус', 'обувь с закрытым носком', 'санскрин'];
+const packKey = d => `packChecks:${d}`;
+export function openHikeTicket(hikeDate, { fresh = false, title = '' } = {}) {
+    document.querySelector('.reg-ticket-overlay')?.remove();
+    const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
+    const hikeTitle = title || hikeObj?.title || '';
+    if (!fresh) log('открыл билет', state.userCard.status !== 'active', state.user, { hike_date: hikeDate });
 
     const isExperienced = hasPastBooking() || state.userCard.status === 'active';
     const d = feedDate(hikeDate);
@@ -4233,15 +4251,16 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
                     </button>
                     <button type="button" class="rt-row" id="rtPack">
                         <div class="rt-n">3</div>
-                        <div class="rt-text"><b>собери рюкзак</b><span>${isExperienced ? 'вода, перекус, удобная обувь, санскрин' : 'вода 1,5 л, перекус, обувь с закрытым носком, санскрин'}</span></div>
-                        <div class="rt-go">›</div>
+                        <div class="rt-text"><b>что взять с собой</b><span id="rtPackSub"></span></div>
+                        <div class="rt-go" id="rtPackGo">⌄</div>
                     </button>
+                    <div class="rt-pack" id="rtPackList" hidden></div>
                     ${boxOk ? hikingBoxRowHtml('rt-box', hikeDate) : ''}
-                    <button type="button" class="rt-row" id="rtWeather">
+                    ${hikeObj?.location_link ? `<button type="button" class="rt-row" id="rtPlace">
                         <div class="rt-n">4</div>
-                        <div class="rt-text"><b>погода на ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}</b><span>${route ? 'горы · ' + esc(route.title) : 'южный берег'}</span></div>
-                        <div class="rt-chip" id="rtWeatherChip">смотреть</div>
-                    </button>
+                        <div class="rt-text"><b>точка сбора${hikeObj.start_time ? ' · ' + esc(hikeObj.start_time) : ''}</b><span>${route ? esc(route.title) + ' · ' : ''}место встречи на карте</span></div>
+                        <div class="rt-chip">карта</div>
+                    </button>` : ''}
                     <button type="button" class="rt-row" id="rtPhone">
                         <div class="rt-n">5</div>
                         <div class="rt-text"><b>сохрани телефон организатора</b><span>${PHONE} · Максим</span></div>
@@ -4258,9 +4277,24 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     `;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-on'));
-    showConfetti({ soft: true });
+    if (fresh) {
+        showConfetti({ soft: true });
+        tg?.HapticFeedback?.notificationOccurred?.('success');
+    }
     haptic();
-    tg?.HapticFeedback?.notificationOccurred?.('success');
+    // чек-лист «что взять»: отметки – на телефоне, по дате хайка
+    const winter = [10, 11, 0, 1, 2].includes(d.getMonth());
+    const packItems = [...PACK_BASE.slice(0, 3), ...(winter ? ['ветровка или тёплая кофта – наверху ветрено'] : []), PACK_BASE[3]];
+    let packOn = {}; try { packOn = JSON.parse(localStorage.getItem(packKey(hikeDate)) || '{}') || {}; } catch (e) {}
+    const paintPack = () => {
+        const n = packItems.filter((_, i) => packOn[i]).length;
+        const sub = document.getElementById('rtPackSub');
+        if (sub) sub.textContent = n ? `собрано ${n} из ${packItems.length}` : `${packItems.length} пунктов · отметь собранное`;
+    };
+    const packList = document.getElementById('rtPackList');
+    packList.innerHTML = packItems.map((t, i) => `<button type="button" class="rt-pk${packOn[i] ? ' is-on' : ''}" data-pk="${i}"><i></i><span>${esc(t)}</span></button>`).join('')
+        + '<button type="button" class="rt-pk-ask" id="rtPackAsk">спросить помощника, что ещё взять ›</button>';
+    paintPack();
 
     loadAllParticipants(hikeDate).then(pts => {
         const el = document.getElementById('rtCount');
@@ -4268,27 +4302,12 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
         el.textContent = pts.length > 1 ? `ты ${pts.length}-й участник – до встречи на тропе` : 'ты первый – скоро подтянутся остальные';
     }).catch(() => {});
 
-    // погода на день хайка в горах маршрута (прогноз есть на 16 дней вперёд)
-    const chip = document.getElementById('rtWeatherChip');
-    const lat = route?.bounds ? (route.bounds[0][1] + route.bounds[1][1]) / 2 : 44.4314;
-    const lon = route?.bounds ? (route.bounds[0][0] + route.bounds[1][0]) / 2 : 34.0644;
-    const daysAhead = Math.round((d - new Date(new Date().toDateString())) / 86400000);
-    if (daysAhead >= 0 && daysAhead < 16) {
-        fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max&timezone=Europe%2FMoscow&start_date=${hikeDate}&end_date=${hikeDate}`)
-            .then(r => r.json())
-            .then(j => {
-                const t = j?.daily?.temperature_2m_max?.[0];
-                const code = j?.daily?.weathercode?.[0];
-                if (chip && Number.isFinite(t)) chip.textContent = `${regWeatherIcon(code)} ${t > 0 ? '+' : ''}${Math.round(t)}°`;
-            }).catch(() => {});
-    }
-
     const closeSuccess = () => {
         haptic();
         overlay.classList.remove('is-on');
         setTimeout(() => overlay.remove(), 250);
         // после поздравления – самый понятный момент попросить разрешение на сообщения
-        maybeAskNotifications('booking', 400);
+        if (fresh) maybeAskNotifications('booking', 400);
     };
 
     // разрешение писать в бот – прямо в билете: без него человек не попадёт в рассылки и напоминания
@@ -4314,22 +4333,38 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
     bindHikingBoxRow(overlay.querySelector('.rt-box'), hikeDate, 'записали тебя', () => overlay.remove());
     document.getElementById('rtPack').addEventListener('click', () => {
         haptic();
-        overlay.remove();
-        openOnboardingChat('pack');
+        const open = packList.hidden;
+        packList.hidden = !open;
+        document.getElementById('rtPackGo').textContent = open ? '⌃' : '⌄';
     });
-    // погода – наш блок на главной: закрываем билет и слайдер хайка и прокручиваем к нему
-    document.getElementById('rtWeather').addEventListener('click', () => {
+    packList.addEventListener('click', e => {
+        const pk = e.target.closest('[data-pk]');
+        if (pk) {
+            haptic();
+            const i = pk.dataset.pk;
+            packOn[i] = !packOn[i];
+            pk.classList.toggle('is-on', !!packOn[i]);
+            try { localStorage.setItem(packKey(hikeDate), JSON.stringify(packOn)); } catch (err) {}
+            paintPack();
+            return;
+        }
+        if (e.target.closest('#rtPackAsk')) {
+            // помощник поверх билета: билет прячем и показываем снова, когда чат закроют
+            haptic();
+            overlay.style.display = 'none';
+            openOnboardingChat('pack');
+            setTimeout(() => {
+                const watch = setInterval(() => {
+                    if (!document.body.contains(overlay)) { clearInterval(watch); return; }
+                    if (!document.querySelector('.bot-chat-overlay')) { clearInterval(watch); overlay.style.display = ''; }
+                }, 400);
+            }, 1500);
+        }
+    });
+    document.getElementById('rtPlace')?.addEventListener('click', () => {
         haptic();
-        log('погода из успешной регистрации', state.userCard.status !== 'active', state.user, { hike_date: hikeDate });
-        overlay.remove();
-        closeBottomSheet();
-        setTimeout(() => {
-            const block = document.getElementById('weatherBlock');
-            if (!block) return;
-            if (block.classList.contains('is-collapsed')) block.querySelector('.blk-toggle')?.click();
-            const top = block.getBoundingClientRect().top + window.scrollY - ((tgw?.contentSafeAreaInset?.top || 0) + 60);
-            window.scrollTo({ top, behavior: 'smooth' });
-        }, 350);
+        log('точка сбора из билета', state.userCard.status !== 'active', state.user, { hike_date: hikeDate });
+        openLink(hikeObj.location_link, 'точка сбора из билета', state.userCard.status !== 'active');
     });
     document.getElementById('rtPhone').addEventListener('click', () => {
         haptic();
