@@ -120,7 +120,7 @@ const STYLE = `
 .cs3-nm { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .cs3-nm b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cs3-nm small { font-size: 11.5px; color: rgba(255,255,255,.55); margin-top: 2px; }
-.cs3-ch { flex: none; width: 14px; text-align: center; font-size: 22px; line-height: 1; color: rgba(255,255,255,.45); visibility: hidden; }
+.cs3-ch { flex: none; width: 14px; text-align: center; font-size: 22px; line-height: 1; color: var(--yellow); visibility: hidden; }
 .cs3-row.has-prof .cs3-ch { visibility: visible; }
 .cs3-hint { margin: -4px 16px 10px; font-size: 12px; color: rgba(255,255,255,.5); }
 .cs3-link { display: block; margin: 4px auto 0; padding: 8px 12px; border: 0; background: none; color: var(--yellow); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
@@ -302,6 +302,13 @@ export async function mountCircle(container) {
 async function openNextHike() {
     const d = data?.next?.date; if (!d) return;
     log('твои связи: ближайший хайк', false, state.user);
+    // анонс без записи – ведём на самый верх главной, к строке анонса, и мягко подсвечиваем её
+    if (bookingNotOpen(d)) {
+        if (!document.getElementById('rdHero')) await import('./home.js').then(m => m.renderHome()).catch(() => {});
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => { const el = document.getElementById('rdHero'); if (!el) return; el.classList.remove('ann-flash'); void el.offsetWidth; el.classList.add('ann-flash'); setTimeout(() => el.classList.remove('ann-flash'), 3000); }, 450);
+        return;
+    }
     const { showBottomSheet } = await import('./calendar.js');
     const i = (state.hikesWithTitle || []).findIndex(h => h.date === d);
     if (i !== -1) showBottomSheet(i);
@@ -612,7 +619,8 @@ export function openCircleSheet() {
             const id = prof.dataset.prof;
             log('твои связи: перейти в профиль', !isOwner, state.user, { id });
             closeCircleSheet();
-            setTimeout(() => import('./profiles.js').then(m => m.openProfileOf(id)).catch(() => {}), 320);
+            const who = [...d.people, ...(d.orgs || [])].find(x => x.id === id) || {};
+            setTimeout(() => import('./profiles.js').then(m => m.openProfileOf(id, { name: who.name, photo: who.photo })).catch(() => {}), 320);
             return;
         }
         const stb = e.target.closest('#cs3Stage button');
@@ -623,7 +631,8 @@ export function openCircleSheet() {
             const id = rb.parentElement.dataset.pid;
             log('твои связи: перейти в профиль', !isOwner, state.user, { id });
             closeCircleSheet();
-            setTimeout(() => import('./profiles.js').then(m => m.openProfileOf(id)).catch(() => {}), 320);
+            const who = [...d.people, ...(d.orgs || [])].find(x => x.id === id) || {};
+            setTimeout(() => import('./profiles.js').then(m => m.openProfileOf(id, { name: who.name, photo: who.photo })).catch(() => {}), 320);
             return;
         }
         if (rb) {

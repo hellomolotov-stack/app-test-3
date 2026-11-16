@@ -8564,3 +8564,6 @@ html.glow #mainContent #calendarContainer {
   background: var(--glass-bg) !important; border-color: var(--glass-border) !important;
   box-shadow: var(--glass-highlight), var(--glass-shadow) !important;
 }
+/* 16.11: пришли к анонсу из «твоих связей» («открыть хайк») – строка анонса мягко вспыхивает лаймом */
+.rd-annrow.ann-flash { animation: annFlash 3s ease-in-out both; }
+@keyframes annFlash { 0%, 100% { filter: none; } 25%, 70% { filter: drop-shadow(0 0 18px rgba(217,253,25,.55)); } 48% { filter: drop-shadow(0 0 8px rgba(217,253,25,.3)); } }

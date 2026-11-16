@@ -499,9 +499,14 @@ async function rdPeopleNext(box) {
 
 // 16.11: «перейти в профиль» из шторки «твои связи»: открываем «интеллигентов» и плавно доезжаем до карточки человека
 // с лаймовым свечением. Без карты (или без своего профиля) раздел сам показывает размытую ленту и баннер про карту.
-export async function openProfileOf(userId) {
-    await renderProfiles();
+export async function openProfileOf(userId, info = {}) {
     const id = String(userId || '');
+    // без карты (или без своего профиля) раздел размыт – в плашке «… уже создали профиль» показываем именно этого человека
+    if (!(state.userCard.status === 'active' && state.myProfile)) {
+        const p = state.profiles?.[id] || Object.values(state.profiles || {}).find(x => String(x?.userId) === id) || {};
+        state.pendingProfileClick = { userId: id, name: p.name || info.name || 'участник', photoUrl: p.avatarUrl || info.photo || null };
+    }
+    await renderProfiles();
     let tries = 0;
     const find = () => {
         const card = mainDiv().querySelector(`#profilesResults .profile-card[data-user-id="${CSS.escape(id)}"]`);
