@@ -109,7 +109,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         <div class="cs-grab ach-grab" aria-hidden="true"></div>
         <button type="button" class="ach-close" aria-label="закрыть">✕</button>
         <h2 class="ach-title">${title ? title : fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b>первый</b> значок' : 'у тебя <b>новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : owner ? `значки <b>${esc(nameGenitive(owner))}</b>` : 'твои значки'}</h2>
-        <p class="ach-sub">${n > 1 ? 'листай, чтобы посмотреть все' : owner ? 'значок клуба' : 'значок клуба – только твой'}</p>
+        ${n > 1 ? '<p class="ach-sub">листай, чтобы посмотреть все</p>' : owner ? '<p class="ach-sub">значок клуба</p>' : ''}
         <div class="ach-track">${items.map((a, i) => `<div class="ach-slide${waiting(a) ? ` is-wait has-wv is-${metalOf(a)}` : ''}" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false">${routeRepeatMark(a)}${waiting(a) ? medalWaves(a.medal.imageUrl, 'md') : ''}</div>`).join('')}</div>
         ${n > 1 ? `<div class="ach-dots">${Array.from({ length: Math.min(3, n) }, (_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
