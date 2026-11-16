@@ -8583,3 +8583,22 @@ html.glow #mainContent #calendarContainer {
 .pn-tx { flex: 1; min-width: 0; } .pn-tx b { display: block; font-size: 13.5px; line-height: 1.3; } .pn-tx span { display: block; margin-top: 2px; font-size: 12px; color: rgba(255,255,255,.6); }
 .pn-go { flex: none; padding: 8px 12px; border: 0; border-radius: 12px; background: var(--yellow); color: #141800; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
 .pn-x { flex: none; width: 28px; height: 28px; border: 0; border-radius: 14px; background: rgba(255,255,255,.08); color: rgba(255,255,255,.7); font-size: 12px; cursor: pointer; }
+/* 16.11: финал дыхания по Хофу – итоги сессии и «забрать значок» по кнопке */
+.hof-sum { width: 100%; max-width: 420px; padding: 0 18px; box-sizing: border-box; margin-top: -40px; }
+.hs-chk { width: 66px; height: 66px; margin: 0 auto; border-radius: 50%; background: rgba(143,227,255,.16); border: 2px solid #8fe3ff; box-shadow: 0 0 30px rgba(143,227,255,.35); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+.hs-t1 { margin-top: 14px; text-align: center; font-size: 23px; font-weight: 800; }
+.hs-t2 { margin-top: 4px; text-align: center; font-size: 14px; color: rgba(255,255,255,.6); }
+.hs-card { margin-top: 18px; padding: 16px; border-radius: 22px; background: rgba(10,20,30,.7); box-shadow: inset 0 0 0 1px rgba(143,227,255,.2); }
+.hs-row { display: flex; align-items: center; gap: 10px; font-size: 14px; } .hs-row + .hs-row { margin-top: 10px; }
+.hs-row span { width: 64px; color: rgba(255,255,255,.6); }
+.hs-bar { flex: 1; height: 10px; border-radius: 5px; background: rgba(255,255,255,.07); overflow: hidden; }
+.hs-bar b { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #4fa8d8, #8fe3ff); }
+.hs-row em { width: 42px; text-align: right; font-style: normal; font-variant-numeric: tabular-nums; }
+.hs-rec { display: flex; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); font-size: 12.5px; color: rgba(255,255,255,.6); }
+.hs-rec b { display: block; margin-top: 2px; font-size: 19px; color: #fff; font-weight: 800; } .hs-rec b.is-new { color: var(--yellow); } .hs-rec .r { text-align: right; }
+.hs-note { margin-top: 12px; text-align: center; font-size: 13.5px; line-height: 1.45; color: rgba(255,255,255,.7); }
+.hs-actions { width: 100%; max-width: 420px; padding: 0 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; }
+.hs-badge { height: 54px; border: 0; border-radius: 17px; background: #8fe3ff; color: #06202c; font: inherit; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 6px 22px rgba(143,227,255,.35); cursor: pointer; }
+.hs-badge:disabled { opacity: .55; }
+.hs-badge i { width: 34px; height: 34px; border-radius: 50%; background: center/contain no-repeat; }
+.hs-close { height: 44px; border: 0; background: none; color: rgba(255,255,255,.65); font: inherit; font-size: 15px; cursor: pointer; }

@@ -136,21 +136,17 @@ function phaseAt(t) {
     return cur;
 }
 
-// значок «три раунда по Хофу» за полную сессию: экран «отличная работа» ещё секунду, потом окно значка, как после хайка
-async function showHofBadge(badge, closeSession) {
+// значок «три раунда по Хофу» за полную сессию: запись из коллекции человека (для окна значка по кнопке «забрать значок»)
+async function findBadge(badge) {
     try {
         const ach = await import('../achievements.js');
         ach.clearAchievementCache();
         const uid = String(state.user?.id || '');
         const items = (await ach.loadAchievementCollections([uid]))[uid] || [];
         const item = items.find(i => i.id === badge.id);
-        if (!item) return;
-        lg(`хоф: значок «${item.title}»${badge.count > 1 ? ` ×${badge.count}` : ''}`);
-        setTimeout(() => {
-            closeSession();
-            setTimeout(() => import('./achievements-popup.js').then(m => m.openAchievementsPopup([item], { fresh: true, source: 'дыхание по Хофу', owned: items.length })).catch(() => {}), 300);
-        }, 1600);
-    } catch (e) { /* значок выдан – увидит в коллекции */ }
+        if (item) lg(`хоф: значок «${item.title}»${badge.count > 1 ? ` ×${badge.count}` : ''}`);
+        return item ? { item, owned: items.length } : null;
+    } catch (e) { return null; }
 }
 
 function openSession() {
@@ -179,6 +175,7 @@ function openSession() {
     audio.preload = 'auto';
     const $ = id => ov.querySelector('#' + id);
     const holds = []; // секунды задержки на выдохе по раундам
+    const before = (sessions || []).slice(); // сессии до этой – для «лучшая задержка / в прошлый раз»
     let holdStart = null, holdWall = 0, holdRound = 0, raf = 0, finished = false, lastPhaseKey = '';
     try { window.Telegram?.WebApp?.disableVerticalSwipes?.(); } catch (e) {}
     let wake = null;
@@ -195,7 +192,7 @@ function openSession() {
             if (p.kind !== 'hold' && holdStart !== null) { holds[holdRound - 1] = Math.round((performance.now() - holdWall) / 1000); holdStart = null; renderHist(); }
             $('hofBreathe').style.display = p.kind === 'hold' ? '' : 'none';
             ov.dataset.phase = p.kind;
-            $('hofRound').textContent = p.round ? `раунд ${p.round} из 3` : (p.kind === 'end' ? 'готово' : 'приготовься');
+            $('hofRound').textContent = p.round ? `раунд ${p.round} из 3` : (p.kind === 'end' ? 'раунд 3 из 3 · завершаем' : 'приготовься');
         }
         if (p.kind === 'breathe') {
             // один цикл вдох-выдох = (end - t0) / count
@@ -233,7 +230,8 @@ function openSession() {
             core.style.transform = `scale(${(0.8 + 0.04 * Math.sin(t * 1.4)).toFixed(3)})`;
             $('hofBig').textContent = '';
             $('hofSmall').textContent = '';
-            $('hofPhase').textContent = p.kind === 'end' ? 'отличная работа' : (p.label || 'слушай инструкцию');
+            $('hofPhase').textContent = p.kind === 'end' ? 'пусть дыхание нормализуется' : (p.label || 'слушай инструкцию');
+            if (p.kind === 'end') $('hofHist').innerHTML = '<span>пошевели пальцами рук и ног, не торопись вставать</span>';
         }
         if (!finished) raf = requestAnimationFrame(paint);
     };
@@ -245,9 +243,57 @@ function openSession() {
         if (!done && !list.length) return;
         api({ op: 'save', rounds: list.length, holds: list, done }).then(j => {
             sessions = j.sessions || sessions; const b = document.getElementById('hofBlock'); if (b) paintBlock(b);
-            if (done && j.badge?.id) showHofBadge(j.badge, close);
+            if (done) onSaved(j.badge || null);
         }).catch(() => {});
         lg(done ? `хоф: сессия завершена${list.length ? ' · ' + list.map(mmss).join(' / ') : ''}` : `хоф: вышел на раунде ${list.length + 1}`);
+    };
+    // итоги сессии: задержки по раундам, лучшая задержка, сравнение с прошлым разом; значок – по кнопке
+    let badgeInfo = null, summaryShown = false;
+    const showSummary = () => {
+        summaryShown = true;
+        const list = holds.filter(Boolean), best = Math.max(0, ...list);
+        const prevDone = before.filter(x => x && x.done && (x.rounds || 0) >= 3);
+        const prevHolds = before.flatMap(x => (x && Array.isArray(x.holds) ? x.holds : []));
+        const record = Math.max(0, ...prevHolds), last = prevDone.length ? Math.max(0, ...(prevDone[prevDone.length - 1].holds || [0])) : 0;
+        const nth = prevDone.length + 1, top = Math.max(best, record, 60);
+        const isRecord = best > 0 && best > record && prevHolds.length > 0;
+        const dur = Math.round(audio.duration || 623);
+        const rows = list.map((h, i) => `<div class="hs-row"><span>раунд ${i + 1}</span><div class="hs-bar"><b style="width:${Math.max(6, Math.round(h / top * 100))}%"></b></div><em>${mmss(h)}</em></div>`).join('');
+        const compare = !prevHolds.length ? '<div class="hs-note">это твоя первая сессия – запомним результат</div>'
+            : `<div class="hs-rec"><div>лучшая задержка<b${isRecord ? ' class="is-new"' : ''}>${mmss(best)}${isRecord ? ' · рекорд' : ''}</b></div><div class="r">${isRecord ? 'в прошлый раз' : 'твой рекорд'}<b>${mmss(isRecord ? last || record : record)}</b></div></div>`
+              + (isRecord ? '' : '<div class="hs-note">задержка растёт от раунда к раунду – так и должно быть</div>');
+        ov.querySelector('.hof-center').innerHTML = `<div class="hof-sum">
+            <div class="hs-chk">✓</div>
+            <div class="hs-t1">три раунда пройдены</div>
+            <div class="hs-t2">${Math.floor(dur / 60)} мин ${dur % 60} с · ${nth}-я сессия</div>
+            ${rows ? `<div class="hs-card">${rows}${compare}</div>` : ''}
+        </div>`;
+        ov.querySelector('.hof-ctrl').innerHTML = `<div class="hs-actions">
+            <button type="button" class="hs-badge" id="hsBadge" disabled><i></i><span>сохраняю…</span></button>
+            <button type="button" class="hs-close" id="hsClose">закрыть</button></div>`;
+        ov.querySelector('#hsClose').addEventListener('click', () => { haptic(); close(); });
+        ov.querySelector('#hsBadge').addEventListener('click', async () => {
+            if (!badgeInfo?.item) return;
+            haptic();
+            lg(`хоф: забрал значок${badgeInfo.count > 1 ? ` ×${badgeInfo.count}` : ''}`);
+            close();
+            setTimeout(() => import('./achievements-popup.js').then(m => m.openAchievementsPopup([badgeInfo.item], { fresh: true, source: 'дыхание по Хофу', owned: badgeInfo.owned })).catch(() => {}), 300);
+        });
+        if (badgeInfo) paintBadgeBtn();
+        else setTimeout(() => { if (!badgeInfo) { badgeInfo = {}; paintBadgeBtn(); } }, 9000);
+    };
+    const paintBadgeBtn = () => {
+        const b = ov.querySelector('#hsBadge'); if (!b) return;
+        if (!badgeInfo?.item) { b.remove(); return; }
+        b.disabled = false;
+        b.querySelector('i').style.backgroundImage = `url('${badgeInfo.item.medal?.imageUrl || ''}')`;
+        b.querySelector('span').textContent = `забрать значок${badgeInfo.count > 1 ? ` ×${badgeInfo.count}` : ''}`;
+    };
+    const onSaved = async badge => {
+        if (!badge?.id) { badgeInfo = {}; if (summaryShown) paintBadgeBtn(); return; }
+        const item = await findBadge(badge);
+        badgeInfo = item ? { ...item, count: badge.count } : {};
+        if (summaryShown) paintBadgeBtn();
     };
     const close = () => {
         finished = true; cancelAnimationFrame(raf); audio.pause();
@@ -260,10 +306,7 @@ function openSession() {
         save(true);
         ov.dataset.phase = 'end';
         $('hofRound').textContent = 'готово';
-        $('hofBig').textContent = '✓'; $('hofSmall').textContent = '';
-        $('hofPhase').textContent = 'отличная работа';
-        renderHist();
-        $('hofPause').style.display = 'none';
+        showSummary();
     });
     $('hofPause').addEventListener('click', () => {
         haptic();
