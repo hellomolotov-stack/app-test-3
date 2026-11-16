@@ -2462,10 +2462,19 @@ export function showBottomSheet(index) {
                 const countEl = contentWrapper.querySelector('#participantCountValue');
                 const avatarsEl = contentWrapper.querySelector('#participantAvatars');
                 if (countEl) {
-                    if (count === 0) {
+                    // 16.11: никто ещё не записан – вместо «идут 0» зовём первым (у прошедших – как было)
+                    const txt = contentWrapper.querySelector('#participantCounter .participant-text');
+                    if (txt && !txt.dataset.base) txt.dataset.base = txt.textContent;
+                    if (count === 0 && !isPast) {
+                        countEl.style.display = 'none';
+                        if (txt) txt.textContent = isCity || isBookClub ? 'стань первым' : 'будь первым на тропе';
+                    } else if (count === 0) {
                         countEl.style.display = 'inline';
                         countEl.textContent = count;
-                    } else countEl.style.display = 'none';
+                    } else {
+                        countEl.style.display = 'none';
+                        if (txt && txt.dataset.base) txt.textContent = txt.dataset.base;
+                    }
                 }
                 if (avatarsEl) {
                     avatarsEl.innerHTML = '';
@@ -4851,8 +4860,9 @@ export function mountHikePreviewCard(containerId, hike, onRegisterClick) {
         const countEl = container.querySelector('#hikePreviewCountVal');
         const avatarsEl = container.querySelector('#hikePreviewAvatars');
         if (countEl) {
-            countEl.style.display = participants.length === 0 ? 'inline' : 'none';
-            countEl.textContent = participants.length;
+            countEl.style.display = 'none';
+            const txt = container.querySelector('#hikePreviewCounter .participant-text');
+            if (txt) txt.textContent = participants.length === 0 ? 'будь первым на тропе' : 'идут';
         }
         if (avatarsEl) {
             avatarsEl.innerHTML = '';
