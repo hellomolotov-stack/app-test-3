@@ -86,7 +86,7 @@ async function renderProfileCard(profile, isBlurred = false) {
     const medals = !isBlurred && achievementsVisible() ? medalsByUser[String(profile.userId)] || [] : [];
     // в карточке – три последние медали и «+N»: повод заговорить («ты тоже промок на Демерджи?»)
     const medalsHtml = medals.length ? `<div class="profile-section-title">${medals.length} ${medals.length % 10 === 1 && medals.length % 100 !== 11 ? 'значок' : medals.length % 10 >= 2 && medals.length % 10 <= 4 && (medals.length % 100 < 10 || medals.length % 100 >= 20) ? 'значка' : 'значков'}</div>${medalStripHtml(medals.slice(0, 3), true).replace(/<\/div>$/, medals.length > 3 ? `<button type="button" class="medal-miniature medal-more" data-medal="3" aria-label="все значки"><b>+${medals.length - 3}</b><span>ещё</span></button></div>` : '</div>')}` : '';
-    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
+    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${profile.guest === true ? '<span class="status-tag status-tag-guest">гость клуба</span>' : ''}${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
 
     // Грубая оценка высоты карточки для балансировки колонок в шахматном порядке –
     // без неё карточки просто чередуются по индексу и «падают» не туда, где есть место.
@@ -172,6 +172,7 @@ export async function renderProfiles() {
     await loadProfilesData();
 
     const isCardHolder = state.userCard.status === 'active';
+    if (!isCardHolder) { renderGuestPeople(); return; }
     const hasMyProfile = !!myProfile;
     const placeholderCount = 6;
     const shouldAnimate = !(isCardHolder && hasMyProfile);
@@ -441,7 +442,7 @@ async function renderEditProfile() {
         let customLink = document.getElementById('customLinkInput').value.trim();
         if (customLink && !customLink.match(/^https?:\/\//i)) customLink = 'https://' + customLink;
 
-        const data = { name, friendshipStatuses: selected, hobbies, profession, allowMessages, customLink, username: state.user?.username || '', avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null, avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(), userId: state.user?.id };
+        const data = { name, friendshipStatuses: selected, hobbies, profession, allowMessages, customLink, username: state.user?.username || '', avatarUrl: fresh?.avatarUrl || state.user?.photo_url || null, avatarUpdatedAt: fresh?.avatarUpdatedAt || Date.now(), userId: state.user?.id, guest: state.userCard.status !== 'active' };
         await saveProfile(state.user?.id, data);
         syncProfileToSheet(data, state.user).catch(console.error);
         log('сохранить профиль', false, state.user);
@@ -516,4 +517,97 @@ export async function openProfileOf(userId, info = {}) {
         setTimeout(() => { card.classList.remove('profile-link-glow'); void card.offsetWidth; card.classList.add('profile-link-glow'); setTimeout(() => card.classList.remove('profile-link-glow'), 4200); }, 700);
     };
     if (state.userCard.status === 'active') setTimeout(find, 200);
+}
+
+
+// 16.11: «Интеллигенты» без карты. Сверху – свой профиль (создать бесплатно / редактировать), ниже – профили членов клуба:
+// фото, имя и профессия видны, увлечения размыты, замочек. Нажатие – превью человека и «открыть с картой».
+// Профили гостей (без карты) видят только члены клуба, в этой витрине их нет.
+const GP_CSS = `
+.gp-mine { margin: 4px 0 6px; padding: 16px; border-radius: 22px; background: #101418; box-shadow: inset 0 -46px 56px -26px rgba(217,253,25,.38), inset 0 0 0 1px rgba(217,253,25,.26); color: #fff; }
+.gp-mine b { display: block; font-size: 17px; font-weight: 800; }
+.gp-mine p { margin: 6px 0 0; font-size: 13.5px; line-height: 1.45; color: rgba(255,255,255,.65); }
+.gp-mine .btn { width: 100%; margin: 14px 0 0; }
+.gp-sec { display: flex; justify-content: space-between; align-items: baseline; margin: 20px 4px 10px; color: #fff; }
+.gp-sec b { font-size: 17px; font-weight: 800; } .gp-sec span { font-size: 13px; color: var(--yellow); font-weight: 700; }
+.gp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.gp-card { position: relative; padding: 12px; border: 0; border-radius: 18px; background: #14181d; color: #fff; font: inherit; text-align: left; cursor: pointer; }
+.gp-card .lk { position: absolute; right: 10px; top: 10px; font-size: 12px; opacity: .55; }
+.gp-av { width: 48px; height: 48px; border-radius: 50%; background: #40a7e3 center/cover no-repeat; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 800; color: #fff; margin-bottom: 8px; }
+.gp-card b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gp-card small { display: block; margin-top: 2px; font-size: 12.5px; color: rgba(255,255,255,.6); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.gp-card i { display: block; margin-top: 6px; font-style: normal; font-size: 12px; color: rgba(255,255,255,.55); filter: blur(3.5px); white-space: nowrap; overflow: hidden; }
+.gp-more { margin: 12px 0 0; text-align: center; font-size: 13px; color: rgba(255,255,255,.5); }
+.gp-ov { position: fixed; inset: 0; z-index: 2200; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,0); transition: background .3s ease; }
+.gp-ov.is-on { background: rgba(0,0,0,.6); }
+.gp-sheet { width: calc(100% - 20px); max-width: 580px; margin-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); padding: 20px 18px 18px; box-sizing: border-box; border-radius: 32px;
+  background: #12151b; border: 1px solid rgba(255,255,255,.16); color: #fff; transform: translateY(calc(100% + 60px)); transition: transform .36s cubic-bezier(.2,.9,.25,1); }
+.gp-ov.is-on .gp-sheet { transform: none; }
+.gp-who { display: flex; align-items: center; gap: 14px; } .gp-who .gp-av { width: 60px; height: 60px; margin: 0; font-size: 23px; flex: none; }
+.gp-who b { display: block; font-size: 19px; font-weight: 800; } .gp-who small { display: block; margin-top: 2px; font-size: 13.5px; color: rgba(255,255,255,.6); }
+.gp-blur { margin-top: 14px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.05); font-size: 14px; line-height: 1.5; }
+.gp-blur span { filter: blur(4px); color: rgba(255,255,255,.75); user-select: none; }
+.gp-why { margin: 16px 0 0; font-size: 15px; line-height: 1.45; } .gp-why em { font-style: normal; color: var(--yellow); }
+.gp-sheet .btn { width: 100%; margin: 14px 0 0; }
+.gp-free { display: block; width: 100%; margin-top: 12px; padding: 6px; border: 0; background: none; color: rgba(255,255,255,.65); font: inherit; font-size: 14px; cursor: pointer; }
+.status-tag-guest { background: rgba(255,255,255,.1) !important; color: rgba(255,255,255,.75) !important; }
+`;
+function gpAv(p) {
+    const ph = p?.avatarUrl;
+    return `<span class="gp-av"${ph ? ` style="background-image:url('${escapeHtml(ph)}')"` : ''}>${ph ? '' : escapeHtml((p?.name || '?').charAt(0).toUpperCase())}</span>`;
+}
+function renderGuestPeople() {
+    if (!document.getElementById('gpCss')) { const st = document.createElement('style'); st.id = 'gpCss'; st.textContent = GP_CSS; document.head.appendChild(st); }
+    const me = String(state.user?.id || '');
+    const list = Object.entries(profiles).map(([id, p]) => ({ ...p, userId: String(p.userId || id) }))
+        .filter(p => p.userId !== me && p.guest !== true && p.name)
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+    const shown = list.slice(0, 24);
+    const mine = myProfile
+        ? `<div class="gp-mine"><b>твой профиль готов</b><p>его видят члены клуба – повод заговорить на тропе</p><button type="button" class="btn btn-outline" id="gpEdit">редактировать профиль</button></div>`
+        : `<div class="gp-mine"><b>твой профиль интеллигента</b><p>создай бесплатно – увлечения и профессия, чтобы на хайке было о чём поговорить</p><button type="button" class="btn btn-yellow" id="gpEdit">создать свой профиль</button></div>`;
+    mainDiv().innerHTML = `<div class="gp-wrap">${mine}
+        <div class="gp-sec"><b>профили членов клуба</b><span>🔒 с картой</span></div>
+        <div class="gp-grid">${shown.map(p => `<button type="button" class="gp-card" data-uid="${escapeHtml(p.userId)}"><span class="lk">🔒</span>${gpAv(p)}<b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.profession || 'член клуба')}</small><i>${escapeHtml(p.hobbies || 'горы, люди, разговоры')}</i></button>`).join('')}</div>
+        ${list.length > shown.length ? `<div class="gp-more">и ещё ${list.length - shown.length} членов клуба</div>` : ''}</div>`;
+    mainDiv().querySelector('#gpEdit')?.addEventListener('click', () => { haptic(); log(myProfile ? 'гость: редактировать профиль' : 'гость: создать профиль', true, state.user); renderEditProfile(); });
+    mainDiv().querySelectorAll('.gp-card').forEach(c => c.addEventListener('click', () => {
+        haptic();
+        const p = list.find(x => x.userId === c.dataset.uid);
+        if (p) openGuestPreview(p, list.length);
+    }));
+    // пришли из «твоих связей» по стрелке – сразу превью этого человека
+    const pend = state.pendingProfileClick;
+    state.pendingProfileClick = null;
+    if (pend) {
+        const p = list.find(x => x.userId === String(pend.userId)) || { userId: String(pend.userId), name: pend.name, avatarUrl: pend.photoUrl };
+        setTimeout(() => openGuestPreview(p, list.length), 250);
+    }
+}
+function openGuestPreview(p, total) {
+    document.querySelector('.gp-ov')?.remove();
+    log('гость: превью профиля', true, state.user, { id: p.userId });
+    const first = String(p.name || '').trim().split(/\s+/)[0] || 'участника';
+    const ov = document.createElement('div');
+    ov.className = 'gp-ov';
+    ov.innerHTML = `<div class="gp-sheet" role="dialog" aria-label="профиль ${escapeHtml(first)}">
+        <div class="gp-who">${gpAv(p)}<div><b>${escapeHtml(p.name || 'участник')}</b><small>${escapeHtml(p.profession || 'член клуба')}</small></div></div>
+        <div class="gp-blur"><span>${escapeHtml([p.hobbies, (p.friendshipStatuses || []).join(', ')].filter(Boolean).join(' · ') || 'увлечения, любимые маршруты, с кем ходит на хайки')}</span></div>
+        <div class="gp-why">профиль ${escapeHtml(first)}${total > 1 ? ` и ещё ${total - 1} членов клуба` : ''} <em>открываются с картой</em></div>
+        <button type="button" class="btn btn-yellow" data-gp-card>открыть с картой интеллигента</button>
+        <button type="button" class="gp-free" data-gp-free>${myProfile ? 'твой профиль уже создан ›' : 'а свой профиль можно создать бесплатно ›'}</button>
+    </div>`;
+    document.body.appendChild(ov);
+    requestAnimationFrame(() => ov.classList.add('is-on'));
+    const close = () => { ov.classList.remove('is-on'); setTimeout(() => ov.remove(), 320); };
+    ov.addEventListener('click', async e => {
+        if (e.target === ov) { close(); return; }
+        if (e.target.closest('[data-gp-card]')) {
+            haptic(); close();
+            const { openCardSheet } = await import('./card-sheet.js');
+            setTimeout(() => openCardSheet({ source: 'интеллигенты: профиль' }), 330);
+            return;
+        }
+        if (e.target.closest('[data-gp-free]')) { haptic(); close(); setTimeout(renderEditProfile, 330); }
+    });
 }
