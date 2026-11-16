@@ -747,8 +747,7 @@ async function changeFeedNotify(date, container, { silentOff = false } = {}) {
     try {
         await setHikeWaitlist(date, on);
         log(on ? 'лист ожидания: подписался' : 'лист ожидания: отписался', state.userCard.status !== 'active', state.user, { date });
-        if (on) feedNotifyToast(date, container);
-        else if (silentOff) feedToast('ок, не будем сообщать');
+        if (!on && silentOff) feedToast('ок, не будем сообщать');
     } catch (err) {
         setFeedWaitlist(date, !on);
         renderEventsFeed(container);
