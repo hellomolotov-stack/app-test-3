@@ -8626,3 +8626,4 @@ html.glow #mainContent #calendarContainer {
 .rd-tk-ck { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--yellow); color: #141800; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 900; }
 .rd-tk-tx { flex: 1; min-width: 0; } .rd-tk-tx b { display: block; font-size: 15px; font-weight: 800; } .rd-tk-tx small { display: block; margin-top: 2px; font-size: 12.5px; color: rgba(255,255,255,.6); }
 .rd-tk-go { flex: none; font-size: 22px; color: var(--yellow); }
+.rt-pack[hidden] { display: none !important; }
