@@ -113,7 +113,7 @@ function openPrep() {
                 <div class="hof-p-card"><div class="ic ic-timer">1:30</div><div><b>задержка на выдохе</b><span>не дыши, сколько комфортно – таймер считает</span></div></div>
                 <div class="hof-p-card"><div class="ic ic-15">15</div><div><b>вдох и держим 15 с</b><span>восстановление – и следующий раунд</span></div></div>
             </div>
-            <button class="hof-btn" id="hofGo">поехали · 11 минут</button>
+            <button class="hof-btn" id="hofGo">начать · 11 минут</button>
             <button type="button" class="hof-share" id="hofShare">поделиться трекером</button>
             <div class="hof-p-warn">сидя или лёжа · не в воде и не за рулём. закружилась голова – просто дыши как обычно</div>
         </div>`;
