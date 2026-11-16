@@ -287,7 +287,7 @@ function renderSafetyBanner() {
 
 // подпись в самом низу главной: «разработано в мастерской Молотова» → личка в Telegram
 function renderMakerCredit() {
-    return `<div class="maker-credit"><button type="button" id="makerCreditBtn">приложение разработано с ❤️</button></div>`;
+    return `<div class="maker-credit"><button type="button" id="makerCreditBtn"><small>разработано</small><span>в мастерской Молотова <span aria-hidden="true">↗</span></span></button></div>`;
 }
 
 function wireSafetyBanner() {
