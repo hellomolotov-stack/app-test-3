@@ -8479,3 +8479,9 @@ html.glow #circleContainer .lv-fb { background: linear-gradient(rgba(10,10,13,0)
   25%, 72% { box-shadow: 0 0 0 2px rgba(217,253,25,.7), 0 12px 50px rgba(217,253,25,.35); }
   50% { box-shadow: 0 0 0 1px rgba(217,253,25,.4), 0 10px 36px rgba(217,253,25,.2); }
 }
+/* 16.11: «обрети больше связей» (без карты) – стеклянная плашка поверх низа паутины, без своего отдельного свечения */
+html.v2 #circleContainer.lv-card .cc-lock { position: relative; z-index: 3; margin: -66px 12px 12px; width: calc(100% - 24px);
+  background: rgba(12,14,12,.6); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,.12); box-shadow: inset 0 1px 0 rgba(255,255,255,.14); }
+#circleContainer.lv-card:has(.cc-lock) .lv-stats { bottom: 84px; }
+#circleContainer.lv-card:has(.cc-lock) .lv-fb { display: none; }
