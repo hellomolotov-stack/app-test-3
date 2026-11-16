@@ -4269,10 +4269,10 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '' } = {}) {
                 </div>
             </div>
         </div>
-        <button type="button" class="btn btn-yellow rt-story" id="rtStory">📸 поделиться в сторис</button>
-        <div class="rt-actions">
-            <button type="button" class="btn rt-invite" id="rtInvite">пригласить друга</button>
-            <button type="button" class="btn rt-invite rt-done" id="rtDone">готово</button>
+        <button type="button" class="btn btn-yellow rt-story" id="rtStory">поделиться в сторис</button>
+        <div class="rt-links">
+            <button type="button" class="rt-link is-main" id="rtInvite">позвать друга</button>
+            <button type="button" class="rt-link" id="rtDone">готово</button>
         </div>
     `;
     document.body.appendChild(overlay);

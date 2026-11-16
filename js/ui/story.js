@@ -209,8 +209,8 @@ export async function openStoryShare(hikeDate, source = '') {
     overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div class="inv-scroll">
         <h2 class="story-title">рисуем твою сторис…</h2>
         <div class="story-preview"><div class="story-wait"><b>🗺️</b>рисуем 3D-карту маршрута…</div></div>
-        <button type="button" class="btn btn-yellow inv-wide" data-share disabled>📸 поделиться в сторис</button>
-        <button type="button" class="btn btn-outline inv-wide" data-save disabled>сохранить на телефон</button>
+        <button type="button" class="btn btn-yellow inv-wide" data-share disabled>поделиться в сторис</button>
+        <button type="button" class="story-save" data-save disabled>сохранить на телефон</button>
         <div class="inv-note story-note"></div>
     </div></div>`;
     document.body.appendChild(overlay);
