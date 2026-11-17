@@ -6501,7 +6501,7 @@ body:has(#bottomNav.hidden) .offer-banner { display: none; }
 .hb-head .hb-note { display: block; width: auto; max-width: none; margin: -2px 0 0; padding: 0 6px 0 0; background: none; border: 0; border-radius: 0; box-shadow: none;
     text-align: right; transform: rotate(-4deg); transform-origin: right center; font-family: Caveat, cursive; font-size: 24px; font-weight: 700; line-height: 1; color: #F3D9B1; }
 .hb-scroll > .hb-head + .hb-sub { margin-top: 0; }
-.hb-scroll > .hb-head + .hb-sub { margin-top: 12px; }
+.hb-scroll > .hb-head + .hb-sub { margin-top: 20px; }
 .hb-head .hb-note { margin-top: -4px; }
 
 /* приглашение в близкий круг – тёплая плашка вместо жёлтой «акции» */
