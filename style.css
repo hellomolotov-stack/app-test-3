@@ -8634,3 +8634,21 @@ html.glow #mainContent #calendarContainer {
 .rt-story { box-shadow: 0 6px 22px rgba(217,253,25,.35); }
 .story-save { display: block; margin: 12px auto 0; padding: 10px 12px; border: 0; background: none; color: rgba(255,255,255,.75); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .story-save:disabled { opacity: .4; }
+
+/* Hof mode choice: preserve the existing blue preparation screen. */
+.hof-mode-steps { display:flex; justify-content:space-between; gap:10px; margin:24px 0; font-size:12px; color:rgba(255,255,255,.6); }
+.hof-mode-steps span { display:flex; flex-direction:column; gap:5px; }
+.hof-mode-steps b { font-size:14px; font-weight:600; color:#fff; }
+.hof-modes { display:flex; flex-direction:column; gap:10px; margin:0 0 22px; }
+.hof-mode { display:flex; align-items:center; gap:14px; min-height:90px; width:100%; text-align:left; padding:16px; border:1px solid #344754; border-radius:20px; background:rgba(10,20,30,.7); color:#fff; font:inherit; cursor:pointer; }
+.hof-mode[aria-pressed="true"] { border-color:#8fe3ff; background:rgba(143,227,255,.07); }
+.hof-mode i { display:grid; place-items:center; width:19px; height:19px; border:1.5px solid #758a96; border-radius:50%; flex:none; }
+.hof-mode[aria-pressed="true"] i { border-color:#8fe3ff; }
+.hof-mode[aria-pressed="true"] i::after { content:''; width:9px; height:9px; border-radius:50%; background:#8fe3ff; }
+.hof-mode b { display:block; font-size:17px; font-weight:650; margin-bottom:5px; }
+.hof-mode small { display:block; font-size:12px; line-height:1.45; color:rgba(255,255,255,.65); }
+.hof-mode:focus-visible { outline:2px solid #8fe3ff; outline-offset:3px; }
+.hof-c-go { max-width:calc(100vw - 100px); }
+
+.hof-hint { margin-top:8px; padding:0 24px; text-align:center; color:rgba(255,255,255,.55); font-size:13px; line-height:1.4; }
+.hof-hint:empty { display:none; }

@@ -248,7 +248,9 @@ module.exports = async (req, res) => {
             const uid = String(user.id);
             if (body.op === 'save') {
                 const holds = (Array.isArray(body.holds) ? body.holds : []).slice(0, 8).map(x => Math.max(0, Math.min(900, Math.round(Number(x) || 0))));
-                const rec = { t: Date.now(), rounds: Math.max(0, Math.min(8, Number(body.rounds) || holds.length)), holds, done: !!body.done };
+                const mode = ['guided', 'personal'].includes(body.mode) ? body.mode : 'legacy';
+                const rec = { t: Date.now(), mode, rounds: Math.max(0, Math.min(8, Number(body.rounds) || holds.length)), holds: mode === 'guided' ? [] : holds, done: !!body.done,
+                    duration: Math.max(0, Math.min(86400, Math.round(Number(body.duration) || 0))) };
                 await fetch(`${DB}/hof/${uid}/${rec.t.toString(36)}.json`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(rec), signal: AbortSignal.timeout(6000) });
             }
             const r = await fetch(`${DB}/hof/${uid}.json?orderBy="$key"&limitToLast=400`, { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000) });

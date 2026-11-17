@@ -6,6 +6,7 @@ import { state } from '../state.js';
 import { haptic, openLink } from '../utils.js';
 import { log } from '../api.js';
 import { TIMELINE } from './hof-timeline.js';
+import { createHoldTracker, personalHofSessions } from './hof-session.js';
 
 let sessions = null;
 
@@ -22,15 +23,15 @@ async function api(payload) {
 
 function stats() {
     const list = (sessions || []).filter(s => s.done || (s.holds || []).length);
-    const best = Math.max(0, ...list.flatMap(s => s.holds || []));
+    const best = Math.max(0, ...personalHofSessions(list).flatMap(s => s.holds || []));
     return { n: list.length, best };
 }
 
 function statLine() {
     const { n, best } = stats();
-    if (!n) return 'первая сессия – 11 минут, сидя или лёжа';
+    if (!n) return 'выбери тренировку или свой темп';
     const word = n % 10 === 1 && n % 100 !== 11 ? 'раз' : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? 'раза' : 'раз');
-    return `ты дышал ${n} ${word}${best ? ` · лучшая задержка ${mmss(best)}` : ''}`;
+    return `ты дышал ${n} ${word}${best ? `, лучшая задержка ${mmss(best)}` : ''}`;
 }
 
 export function mountHof() {
@@ -48,10 +49,10 @@ function paintBlock(el) {
     <div class="card-container hof-card">
         <div class="hof-tag">техника, которую мы делаем на хайках</div>
         <div class="hof-title">метод Вима Хофа</div>
-        <div class="hof-text">11 минут дыхания – и тело просыпается, как после холодного душа, а стресс уходит. исследование в журнале PNAS: практика запускает выброс адреналина и гасит воспаление. с этим методом Вим Хоф поставил десятки мировых рекордов – почти два часа просидел во льду и поднялся на Килиманджаро в одних шортах</div>
+        <div class="hof-text">11 минут дыхания, и тело просыпается, как после холодного душа, а стресс уходит. исследование в журнале PNAS: практика запускает выброс адреналина и гасит воспаление. с этим методом Вим Хоф поставил десятки мировых рекордов, почти два часа просидел во льду и поднялся на Килиманджаро в одних шортах</div>
         <div class="hof-video" id="hofVideo">
             <img src="assets/hof/cover.jpg" alt="" loading="lazy">
-            <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф · 45 с</span>
+            <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф 45 с</span>
         </div>
         <button class="hof-btn" id="hofStart">начать дыхание</button>
         <div class="hof-stat">${esc(statLine())}</div>
@@ -104,18 +105,16 @@ function openPrep() {
     ov.innerHTML = `
         <div class="hof-top"><span>перед стартом</span><button class="hof-x" aria-label="закрыть">✕</button></div>
         <div class="hof-prep-body">
-            <div class="hof-title hof-p-title">один раунд –<br>три фазы</div>
-            <div class="hof-p-sub">повторим 3 раза. голос подскажет каждый шаг</div>
-            <div class="hof-p-bar"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
-            <div class="hof-p-legend"><span class="b1">≈2 мин</span><span class="b2">30 с – 1,5 мин</span><span class="b3">15 с</span></div>
-            <div class="hof-p-cards">
-                <div class="hof-p-card is-main"><div class="ic ic-ring"></div><div><b>30 глубоких вдохов</b><span>полный вдох животом и грудью, выдох – свободно, без усилия</span></div></div>
-                <div class="hof-p-card"><div class="ic ic-timer">1:30</div><div><b>задержка на выдохе</b><span>не дыши, сколько комфортно – таймер считает</span></div></div>
-                <div class="hof-p-card"><div class="ic ic-15">15</div><div><b>вдох и держим 15 с</b><span>восстановление – и следующий раунд</span></div></div>
+            <div class="hof-title hof-p-title">три раунда<br>с голосом</div>
+            <div class="hof-p-sub">выбери, как пройдёт задержка</div>
+            <div class="hof-mode-steps"><span><b>30 вдохов</b>дышим</span><span><b>задержка</b>на выдохе</span><span><b>15 секунд</b>восстановление</span></div>
+            <div class="hof-modes" role="group" aria-label="режим дыхания">
+                <button type="button" class="hof-mode" data-mode="guided" aria-pressed="true"><i aria-hidden="true"></i><span><b>тренировка</b><small>осваивай технику<br>голос ведёт каждый шаг</small></span></button>
+                <button type="button" class="hof-mode" data-mode="personal" aria-pressed="false"><i aria-hidden="true"></i><span><b>в своём темпе</b><small>сам выбирай длительность задержек<br>и отмечай личные рекорды</small></span></button>
             </div>
-            <button class="hof-btn" id="hofGo">начать · 11 минут</button>
+            <button class="hof-btn" id="hofGo">начать ≈11 минут</button>
             <button type="button" class="hof-share" id="hofShare">поделиться трекером</button>
-            <div class="hof-p-warn">сидя или лёжа · не в воде и не за рулём. закружилась голова – просто дыши как обычно</div>
+            <div class="hof-p-warn">сидя или лёжа, не в воде и не за рулём<br>закружилась голова, дыши как обычно</div>
         </div>`;
     document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('is-in'));
@@ -126,7 +125,20 @@ function openPrep() {
         const url = `https://t.me/share/url?url=${encodeURIComponent('https://t.me/yaltahiking_bot?startapp=hof')}&text=${encodeURIComponent('трекер дыхания по методу Вима Хофа')}`;
         openLink(url, 'хоф: поделиться', false);
     });
-    ov.querySelector('#hofGo').addEventListener('click', () => { haptic(); close(); lg('хоф: начал сессию'); openSession(); });
+    let mode = 'guided';
+    try { if (localStorage.getItem('hof-mode') === 'personal') mode = 'personal'; } catch (e) {}
+    const selectMode = value => {
+        mode = value;
+        ov.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+        ov.querySelector('#hofGo').textContent = mode === 'personal' ? 'начать в своём темпе' : 'начать ≈11 минут';
+    };
+    ov.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { haptic(); selectMode(b.dataset.mode); }));
+    selectMode(mode);
+    ov.querySelector('#hofGo').addEventListener('click', () => {
+        haptic();
+        try { localStorage.setItem('hof-mode', mode); } catch (e) {}
+        close(); lg(`хоф: начал сессию ${mode}`); openSession(mode);
+    });
 }
 
 // фаза в момент t: из разметки дорожки
@@ -149,7 +161,8 @@ async function findBadge(badge) {
     } catch (e) { return null; }
 }
 
-function openSession() {
+function openSession(mode = 'guided') {
+    const personal = mode === 'personal';
     const ov = document.createElement('div');
     ov.className = 'hof-ov hof-run';
     ov.innerHTML = `
@@ -162,11 +175,12 @@ function openSession() {
                 <div class="hof-num"><b id="hofBig"></b><small id="hofSmall"></small></div>
             </div>
             <div class="hof-phase" id="hofPhase">слушай инструкцию</div>
+            <div class="hof-hint" id="hofHint"></div>
             <div class="hof-hist" id="hofHist"></div>
         </div>
         <div class="hof-ctrl">
             <button class="hof-c" id="hofPause" aria-label="пауза">❚❚</button>
-            <button class="hof-c hof-c-go" id="hofBreathe" style="display:none">вдохнуть</button>
+            <button class="hof-c hof-c-go" id="hofBreathe" style="display:none">перейти к вдоху</button>
             <button class="hof-c hof-c-x" id="hofClose" aria-label="выйти">✕</button>
         </div>`;
     document.body.appendChild(ov);
@@ -174,25 +188,41 @@ function openSession() {
     const audio = new Audio('assets/hof/voice.m4a');
     audio.preload = 'auto';
     const $ = id => ov.querySelector('#' + id);
-    const holds = []; // секунды задержки на выдохе по раундам
-    const before = (sessions || []).slice(); // сессии до этой – для «лучшая задержка / в прошлый раз»
-    let holdStart = null, holdWall = 0, holdRound = 0, raf = 0, finished = false, lastPhaseKey = '';
+    const tracker = createHoldTracker(mode);
+    const holds = tracker.holds;
+    const completed = new Set();
+    const startedAt = performance.now();
+    let pauseStarted = null, pausedMs = 0;
+    const sessionDuration = () => Math.round((performance.now() - startedAt - pausedMs - (pauseStarted === null ? 0 : performance.now() - pauseStarted)) / 1000);
+    const before = (sessions || []).slice(); // сессии до этой, для «лучшая задержка / в прошлый раз»
+    let raf = 0, finished = false, lastPhaseKey = '', saveStarted = false;
     try { window.Telegram?.WebApp?.disableVerticalSwipes?.(); } catch (e) {}
     let wake = null;
     try { navigator.wakeLock?.request('screen').then(w => { wake = w; }).catch(() => {}); } catch (e) {}
 
+    audio.addEventListener('timeupdate', () => {
+        if (finished || !personal) return;
+        const phase = phaseAt(audio.currentTime);
+        if (phase.kind === 'hold') { tracker.begin(phase.round); audio.pause(); }
+    });
     const paint = () => {
         const t = audio.currentTime;
         const p = phaseAt(t);
+        TIMELINE.filter(x => x.kind === 'recover' && x.end <= t).forEach(x => completed.add(x.round));
         const key = `${p.kind}${p.round || ''}`;
         const core = $('hofCore');
         if (key !== lastPhaseKey) {
             lastPhaseKey = key;
-            if (p.kind === 'hold' && holdStart === null) { holdStart = t; holdWall = performance.now(); holdRound = p.round; try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('soft'); } catch (e) {} }
-            if (p.kind !== 'hold' && holdStart !== null) { holds[holdRound - 1] = Math.round((performance.now() - holdWall) / 1000); holdStart = null; renderHist(); }
+            if (p.kind === 'hold') {
+                tracker.begin(p.round);
+                if (personal) audio.pause();
+                try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('soft'); } catch (e) {}
+            } else tracker.discard();
+            $('hofPause').style.display = personal && p.kind === 'hold' ? 'none' : '';
             $('hofBreathe').style.display = p.kind === 'hold' ? '' : 'none';
+            $('hofHint').textContent = p.kind === 'hold' ? (personal ? 'готов вдохнуть, нажми кнопку' : 'следующая фаза начнётся сама') : '';
             ov.dataset.phase = p.kind;
-            $('hofRound').textContent = p.round ? `раунд ${p.round} из 3` : (p.kind === 'end' ? 'раунд 3 из 3 · завершаем' : 'приготовься');
+            $('hofRound').textContent = p.round ? `раунд ${p.round} из 3` : (p.kind === 'end' ? 'раунд 3 из 3 завершаем' : 'приготовься');
         }
         if (p.kind === 'breathe') {
             // один цикл вдох-выдох = (end - t0) / count
@@ -208,7 +238,7 @@ function openSession() {
             $('hofPhase').textContent = inhale ? 'вдох' : 'выдох';
         } else if (p.kind === 'hold') {
             core.style.transform = 'scale(0.86)';
-            const held = holdStart === null ? 0 : (performance.now() - holdWall) / 1000;
+            const held = tracker.elapsed();
             // шкала между кольцами: полный круг – минута, следующая минута идёт поверх другим цветом
             const lap = Math.floor(held / 60), arc = $('hofArc');
             arc.style.strokeDashoffset = String(1000 - Math.round((held % 60) / 60 * 1000));
@@ -217,9 +247,9 @@ function openSession() {
                 ov.querySelector('.hof-arc').dataset.lap = String(Math.min(lap, 3));
                 if (lap > 0) { try { window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light'); } catch (e) {} }
             }
-            $('hofBig').textContent = mmss(held);
-            $('hofSmall').textContent = 'задержка';
-            $('hofPhase').textContent = audio.paused ? 'на паузе – держи, сколько хочется' : 'выдохни и не дыши';
+            $('hofBig').textContent = mmss(personal ? held : Math.max(0, Math.ceil(p.skipTo - t)));
+            $('hofSmall').textContent = personal ? 'задержка на выдохе' : 'до следующей фазы';
+            $('hofPhase').textContent = personal ? 'голос ждёт тебя' : 'следуй голосу';
         } else if (p.kind === 'recover') {
             const left = Math.max(0, Math.ceil(p.end - t));
             core.style.transform = 'scale(1)';
@@ -236,16 +266,20 @@ function openSession() {
         if (!finished) raf = requestAnimationFrame(paint);
     };
     const renderHist = () => {
-        $('hofHist').innerHTML = holds.map((h, i) => h ? `<span>раунд ${i + 1} · ${mmss(h)}</span>` : '').join('');
+        $('hofHist').innerHTML = holds.map((h, i) => h ? `<span>раунд ${i + 1} ${mmss(h)}</span>` : '').join('');
     };
     const save = done => {
         const list = holds.filter(Boolean);
-        if (!done && !list.length) return;
-        api({ op: 'save', rounds: list.length, holds: list, done }).then(j => {
+        if (saveStarted || (!done && !completed.size && !list.length)) return;
+        saveStarted = true;
+        api({ op: 'save', mode, duration: sessionDuration(), rounds: completed.size, holds: list, done }).then(j => {
             sessions = j.sessions || sessions; const b = document.getElementById('hofBlock'); if (b) paintBlock(b);
             if (done) onSaved(j.badge || null);
-        }).catch(() => {});
-        lg(done ? `хоф: сессия завершена${list.length ? ' · ' + list.map(mmss).join(' / ') : ''}` : `хоф: вышел на раунде ${list.length + 1}`);
+        }).catch(() => {
+            const summary = ov.querySelector('.hof-sum');
+            if (summary) { const notice = document.createElement('div'); notice.className = 'hs-note'; notice.textContent = 'не удалось сохранить сессию'; summary.appendChild(notice); }
+        });
+        lg(done ? `хоф: сессия завершена ${personal ? 'в своём темпе' : 'тренировка'}${list.length ? ' ' + list.map(mmss).join(' / ') : ''}` : `хоф: вышел на раунде ${list.length + 1}`);
     };
     // итоги сессии: задержки по раундам, лучшая задержка, сравнение с прошлым разом; значок – по кнопке
     let badgeInfo = null, summaryShown = false;
@@ -253,20 +287,20 @@ function openSession() {
         summaryShown = true;
         const list = holds.filter(Boolean), best = Math.max(0, ...list);
         const prevDone = before.filter(x => x && x.done && (x.rounds || 0) >= 3);
-        const prevHolds = before.flatMap(x => (x && Array.isArray(x.holds) ? x.holds : []));
-        const record = Math.max(0, ...prevHolds), last = prevDone.length ? Math.max(0, ...(prevDone[prevDone.length - 1].holds || [0])) : 0;
+        const prevPersonalDone = personalHofSessions(prevDone);
+        const prevHolds = personalHofSessions(before).flatMap(x => Array.isArray(x.holds) ? x.holds : []);
+        const record = Math.max(0, ...prevHolds), last = prevPersonalDone.length ? Math.max(0, ...(prevPersonalDone[prevPersonalDone.length - 1].holds || [0])) : 0;
         const nth = prevDone.length + 1, top = Math.max(best, record, 60);
         const isRecord = best > 0 && best > record && prevHolds.length > 0;
-        const dur = Math.round(audio.duration || 623);
+        const dur = sessionDuration();
         const rows = list.map((h, i) => `<div class="hs-row"><span>раунд ${i + 1}</span><div class="hs-bar"><b style="width:${Math.max(6, Math.round(h / top * 100))}%"></b></div><em>${mmss(h)}</em></div>`).join('');
-        const compare = !prevHolds.length ? '<div class="hs-note">это твоя первая сессия – запомним результат</div>'
-            : `<div class="hs-rec"><div>лучшая задержка<b${isRecord ? ' class="is-new"' : ''}>${mmss(best)}${isRecord ? ' · рекорд' : ''}</b></div><div class="r">${isRecord ? 'в прошлый раз' : 'твой рекорд'}<b>${mmss(isRecord ? last || record : record)}</b></div></div>`
-              + (isRecord ? '' : '<div class="hs-note">задержка растёт от раунда к раунду – так и должно быть</div>');
+        const compare = !prevHolds.length ? '<div class="hs-note">первый личный результат</div>'
+            : `<div class="hs-rec"><div>лучшая задержка<b${isRecord ? ' class="is-new"' : ''}>${mmss(best)}${isRecord ? ' рекорд' : ''}</b></div><div class="r">${isRecord ? 'в прошлый раз' : 'твой рекорд'}<b>${mmss(isRecord ? last || record : record)}</b></div></div>`;
         ov.querySelector('.hof-center').innerHTML = `<div class="hof-sum">
             <div class="hs-chk">✓</div>
             <div class="hs-t1">три раунда пройдены</div>
-            <div class="hs-t2">${Math.floor(dur / 60)} мин ${dur % 60} с · ${nth}-я сессия</div>
-            ${rows ? `<div class="hs-card">${rows}${compare}</div>` : ''}
+            <div class="hs-t2">${Math.floor(dur / 60)} мин ${dur % 60} с<br>${nth}-я сессия</div>
+            ${personal && rows ? `<div class="hs-card">${rows}${compare}</div>` : '<div class="hs-note">тренировка завершена<br>личное время не записывали</div>'}
         </div>`;
         ov.querySelector('.hof-ctrl').innerHTML = `<div class="hs-actions">
             <button type="button" class="hs-badge" id="hsBadge" disabled><i></i><span>сохраняю…</span></button>
@@ -301,22 +335,34 @@ function openSession() {
         ov.classList.remove('is-in'); setTimeout(() => ov.remove(), 250);
     };
     audio.addEventListener('ended', () => {
-        if (holdStart !== null) { holds[holdRound - 1] = Math.round((performance.now() - holdWall) / 1000); holdStart = null; }
+        if (finished) return;
+        tracker.discard();
+        TIMELINE.filter(x => x.kind === 'recover' && x.end <= audio.currentTime).forEach(x => completed.add(x.round));
         finished = true; cancelAnimationFrame(raf);
-        save(true);
+        save(completed.size === 3);
         ov.dataset.phase = 'end';
         $('hofRound').textContent = 'готово';
         showSummary();
     });
     $('hofPause').addEventListener('click', () => {
         haptic();
-        if (audio.paused) { audio.play().catch(() => {}); $('hofPause').textContent = '❚❚'; }
-        else { audio.pause(); $('hofPause').textContent = '▶'; }
+        if (personal && phaseAt(audio.currentTime).kind === 'hold') return;
+        if (audio.paused) {
+            audio.play().then(() => {
+                if (pauseStarted !== null) { pausedMs += performance.now() - pauseStarted; pauseStarted = null; }
+                $('hofPause').textContent = '❚❚';
+            }).catch(() => {});
+        } else { audio.pause(); pauseStarted = performance.now(); $('hofPause').textContent = '▶'; }
     });
     $('hofBreathe').addEventListener('click', () => {
         haptic();
         const p = phaseAt(audio.currentTime);
-        if (p.kind === 'hold' && p.skipTo) { audio.currentTime = p.skipTo; if (audio.paused) { audio.play().catch(() => {}); $('hofPause').textContent = '❚❚'; } }
+        if (finished || p.kind !== 'hold' || !p.skipTo) return;
+        tracker.confirm();
+        audio.currentTime = p.skipTo;
+        renderHist();
+        if (pauseStarted !== null) { pausedMs += performance.now() - pauseStarted; pauseStarted = null; }
+        audio.play().then(() => { $('hofPause').textContent = '❚❚'; }).catch(() => { $('hofPause').textContent = '▶'; });
     });
     $('hofClose').addEventListener('click', () => { haptic(); if (!audio.ended) save(false); close(); });
     audio.play().then(() => { raf = requestAnimationFrame(paint); }).catch(() => {
