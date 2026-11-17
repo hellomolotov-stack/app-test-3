@@ -334,7 +334,20 @@ export async function loadUserRegistrations(userId) {
 
 export async function loadAllProfiles() {
     if (!database) return {};
-    return (await fastRead('userProfiles')) || {};
+    const profiles = (await fastRead('userProfiles')) || {};
+    // Старые анкеты не содержат guest, а сохранённый флаг устаревает после покупки карты.
+    // Метка и фильтр используют тот же источник членства, что и loadUserData.
+    const entries = await Promise.all(Object.entries(profiles).map(async ([id, profile]) => {
+        try {
+            const member = await fastRead(`members/${profile.userId || id}`);
+            return [id, { ...profile, guest: !member?.user_id }];
+        } catch (error) {
+            console.warn('Profile membership unavailable:', error?.message || error);
+            // Не объявляем владельца карты гостем при сетевой ошибке.
+            return [id, { ...profile, guest: null }];
+        }
+    }));
+    return Object.fromEntries(entries);
 }
 
 export async function loadMyProfile(userId) {

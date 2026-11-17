@@ -254,7 +254,7 @@ export async function renderProfiles() {
                 : !nearestHikeDate ? 'пока нет предстоящих хайков'
                 : 'пока никто не записался на ближайший хайк';
             results.innerHTML = cards.length ? `<div class="card-container">${renderProfilesColumns(cards)}</div>`
-                : `<div class="profiles-empty" role="status">${filter === 'nearest' ? emptyText : filter === 'guests' ? 'пока нет анкет гостей' : filter === 'all' ? 'пока нет профилей' : 'пока нет анкет с таким статусом'}</div>`;
+                : `<div class="profiles-empty" role="status">${filter === 'nearest' ? emptyText : filter === 'guests' ? (Object.values(profiles).some(p => p.guest == null) ? 'не удалось проверить статус гостей' : 'пока нет анкет гостей') : filter === 'all' ? 'пока нет профилей' : 'пока нет анкет с таким статусом'}</div>`;
             mainDiv().querySelectorAll('[data-profile-filter]').forEach(item => {
                 item.setAttribute('aria-pressed', String(item === button));
             });
