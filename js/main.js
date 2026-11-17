@@ -40,7 +40,7 @@ function renderHomeKeep() {
     if (deferHofHomeRender(renderHomeKeep)) return;
     const hofGeneration = hofLinkGeneration();
     const y = window.scrollY;
-    renderHome();
+    renderHome({ preserveLoadedBlocks: true });
     if (hofLinkActive()) return;
     // идёт плавный доскролл по ссылке – он сам пересчитывает цель каждый кадр, не мешаем
     if (window._glideActive) return;
@@ -959,7 +959,7 @@ async function loadAppData() {
             const bo = await import('./booking-opens.js');
             const before = JSON.stringify(state.bookingOpens || {});
             bo.setBookingOpens(raw.bookingOpens);
-            const rerender = () => { if (document.getElementById('rdHero') || document.querySelector('.cf-wrap')) import('./ui/home.js').then(m => m.renderHome()).catch(() => {}); };
+            const rerender = () => { if (document.getElementById('rdHero') || document.querySelector('.cf-wrap')) renderHomeKeep(); };
             if (JSON.stringify(state.bookingOpens) !== before) rerender();
             Object.keys(state.bookingOpens).forEach(d => {
                 const at = bo.bookingOpensAt(d), left = at - Date.now();

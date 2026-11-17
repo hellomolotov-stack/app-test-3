@@ -900,7 +900,7 @@ function renderCalendarOrStrip(el) {
     renderCalendar(el);
 }
 
-export function renderHome() {
+export function renderHome(options = {}) {
     if (deferHofHomeRender(renderHome)) return;
     setLumenContext({ screen: 'home', scenario: localStorage.getItem('chatOnboardingVisited') ? 'home' : 'first_visit' });
     document.querySelector('.profile-edit-fab')?.remove();
@@ -929,6 +929,15 @@ export function renderHome() {
     });
 
     applyRedesignFlag();
+    const main = mainDiv();
+    const homeKey = JSON.stringify([String(state.user?.id || ''), state.userCard.status, state.userCard.cardUrl || '', isRedesign(), isV2()]);
+    const nearestHike = (state.hikesWithTitle || []).find(h => h && h.cancelled !== true && h.city !== true && h.city !== 'yes' && h.book_club !== true && h.book_club !== 'yes' && isUpcomingHike(h))?.date || '';
+    // При фоновой перерисовке не заменяем уже загруженные блоки на скелетоны.
+    // При смене пользователя, статуса карты или вида главной пересоздаём их как обычно.
+    const sameHome = options.preserveLoadedBlocks === true && main.dataset.homeKey === homeKey;
+    const keepCircle = sameHome ? main.querySelector('#circleContainer') : null;
+    const keepAchievements = sameHome ? main.querySelector('#myAchievements') : null;
+    const keepWeather = sameHome && main.dataset.homeNearestHike === nearestHike ? main.querySelector('#weatherBlock') : null;
     if (isRedesign()) {
         renderRdHome();
     } else if (state.userCard.status === 'active' && state.userCard.cardUrl) {
@@ -936,6 +945,15 @@ export function renderHome() {
     } else {
         renderGuestHome();
     }
+    main.dataset.homeKey = homeKey;
+    main.dataset.homeNearestHike = nearestHike;
+    // Сохраняем существующие DOM-узлы вместе с обработчиками и незавершёнными загрузками.
+    const newCircle = main.querySelector('#circleContainer');
+    if (keepCircle && newCircle) newCircle.replaceWith(keepCircle);
+    const newWeather = main.querySelector('#weatherBlock');
+    if (keepWeather && newWeather) newWeather.replaceWith(keepWeather);
+    const achievementsAnchor = main.querySelector('#cardBlock') || main.querySelector('#rdMedalsAnchor');
+    if (keepAchievements && achievementsAnchor) achievementsAnchor.after(keepAchievements);
     mountAdminEntry();
     mountAdmissionEntry();
     mountMyAchievements();
