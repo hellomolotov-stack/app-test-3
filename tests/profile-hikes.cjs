@@ -55,7 +55,7 @@ const context = vm.createContext({
         body: { style: {}, appendChild() {} },
         createElement: () => ({ innerHTML: '', className: '' }),
     },
-    loadAllProfiles: async () => ({ '1': { name: 'Max', userId: 1 }, '2': { name: 'Member' }, '3': { name: 'Not registered', userId: 3 } }),
+    loadAllProfiles: async () => ({ '1': { name: 'Max', userId: 1, friendshipStatuses: ['бизнес', 'дружба'] }, '2': { name: 'Member', guest: true, friendshipStatuses: ['отношения'] }, '3': { name: 'Not registered', userId: 3 } }),
     loadMyProfile: async () => ({ userId: 1 }), loadRouteFavorites: async () => ({}),
     loadHikeParticipantIds: async d => { reads.push(d); return participants[d] || []; },
     setIntelligentsiaRouteFavorites() {}, getFavoriteRoutesForUser: () => [],
@@ -82,6 +82,22 @@ vm.runInContext(source, context);
     assert.ok(prevented);
     assert.deepEqual(opened, [0], 'Open correct slider index by date');
     assert.equal(filters[0].pressed, 'true', 'All is selected initially');
+    assert.deepEqual(filters.map(b => b.dataset.profileFilter), ['all', 'nearest', 'guests', 'friendship', 'business', 'romance']);
+    const guestCard = await context.renderProfileCard({ name: 'Guest', guest: true, avatarUrl: 'avatar.jpg' });
+    assert.match(guestCard.html, /profile-avatar-wrap[\s\S]*profile-guest-badge[\s\S]*profile-name-status/, 'Guest badge is inside the photo wrapper');
+    assert.ok(!guestCard.html.includes('status-tag-guest'), 'Do not duplicate the badge among intent tags');
+    assert.ok((await context.renderProfileCard({ name: 'Guest', guest: true })).html.includes('profile-guest-badge'), 'Missing photo still shows guest badge');
+    assert.ok(!(await context.renderProfileCard({ name: 'Member' })).html.includes('profile-guest-badge'), 'Member has no guest badge');
+    assert.ok(!(await context.renderProfileCard({ name: 'Preview', guest: true }, true)).html.includes('profile-guest-badge'), 'Do not label blurred previews');
+    filters[2].click();
+    assert.ok(results.innerHTML.includes('Member') && !results.innerHTML.includes('Max'), 'Guests filter uses explicit guest flag');
+    filters[3].click();
+    assert.ok(results.innerHTML.includes('Max') && results.innerHTML.includes('Not registered') && !results.innerHTML.includes('Member'), 'Friendship includes default friendship and multi-status profiles');
+    filters[4].click();
+    assert.ok(results.innerHTML.includes('Max') && !results.innerHTML.includes('Member') && !results.innerHTML.includes('Not registered'), 'Business label maps to stored business status');
+    filters[5].click();
+    assert.ok(results.innerHTML.includes('Member') && !results.innerHTML.includes('Max'), 'Romance filter selects matching status');
+
     filters[1].click();
     assert.equal(filters[1].pressed, 'true');
     assert.equal(links.length, 1, 'Nearest filter excludes later bookings');

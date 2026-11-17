@@ -3110,13 +3110,13 @@ body::before {
 .profiles-filters {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
     margin: 8px 12px 16px;
 }
 .profiles-filter {
-    min-height: 40px;
+    min-height: 44px;
     max-width: 100%;
-    padding: 8px 14px;
+    padding: 8px;
     border: 1px solid var(--glass-border);
     border-radius: 999px;
     background: var(--glass-bg);
@@ -3125,17 +3125,18 @@ body::before {
     box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
     color: var(--text-main, #fff);
     font: inherit;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 20px;
     letter-spacing: 0;
     cursor: pointer;
     transition: background .15s, border-color .15s, color .15s;
 }
 .profiles-filter[aria-pressed="true"] {
-    color: var(--yellow);
-    border-color: rgba(217,253,25,.6);
-    background: rgba(217,253,25,.12);
+    color: #0B0D10;
+    border-color: #F5F5F7;
+    background: #F5F5F7;
 }
+.profiles-filter-break { flex-basis: 100%; height: 0; margin-top: -6px; }
 .profiles-filter:focus-visible { outline: 2px solid var(--yellow); outline-offset: 3px; }
 .profiles-empty { padding: 32px 16px; color: var(--text-muted, rgba(255,255,255,.7)); text-align: center; font-size: 14px; }
 .profiles-two-columns {
@@ -3220,6 +3221,23 @@ body::before {
     margin-bottom: 0;
 }
 .profile-avatar-wrap [hidden] { display: none; }
+.profile-guest-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(21,24,29,.94);
+    color: #CED4DC;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    font-size: 11px;
+    line-height: 16px;
+    font-weight: 550;
+    pointer-events: none;
+}
+
 .profile-card > .profile-avatar-wrap {
     width: calc(100% + 24px);
     margin: -12px -12px 12px;

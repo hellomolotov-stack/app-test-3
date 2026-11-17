@@ -57,9 +57,10 @@ async function getNextHikeForUser(userId) {
 
 async function renderProfileCard(profile, isBlurred = false) {
     const initial = escapeHtml((profile.name?.charAt(0) || '?').toUpperCase());
+    const guestBadge = profile.guest === true && !isBlurred ? '<span class="profile-guest-badge">гость</span>' : '';
     const avatarHtml = profile.avatarUrl
-        ? `<div class="profile-avatar-wrap"><img src="${escapeHtml(profile.avatarUrl)}" alt="" class="profile-avatar" onerror="this.hidden=true;this.nextElementSibling.hidden=false;"><div class="profile-avatar-placeholder" hidden>${initial}</div></div>`
-        : `<div class="profile-avatar-wrap"><div class="profile-avatar-placeholder">${initial}</div></div>`;
+        ? `<div class="profile-avatar-wrap"><img src="${escapeHtml(profile.avatarUrl)}" alt="" class="profile-avatar" onerror="this.hidden=true;this.nextElementSibling.hidden=false;"><div class="profile-avatar-placeholder" hidden>${initial}</div>${guestBadge}</div>`
+        : `<div class="profile-avatar-wrap"><div class="profile-avatar-placeholder">${initial}</div>${guestBadge}</div>`;
     const statusTags = (profile.friendshipStatuses||[]).map(s => {
         let cls = ''; if (s==='дружба') cls='status-tag-friendship'; else if (s==='отношения') cls='status-tag-romance'; else if (s==='бизнес') cls='status-tag-business';
         return `<span class="status-tag ${cls}">${s}</span>`;
@@ -86,7 +87,7 @@ async function renderProfileCard(profile, isBlurred = false) {
     const medals = !isBlurred && achievementsVisible() ? medalsByUser[String(profile.userId)] || [] : [];
     // в карточке – три последние медали и «+N»: повод заговорить («ты тоже промок на Демерджи?»)
     const medalsHtml = medals.length ? `<div class="profile-section-title">${medals.length} ${medals.length % 10 === 1 && medals.length % 100 !== 11 ? 'значок' : medals.length % 10 >= 2 && medals.length % 10 <= 4 && (medals.length % 100 < 10 || medals.length % 100 >= 20) ? 'значка' : 'значков'}</div>${medalStripHtml(medals.slice(0, 3), true).replace(/<\/div>$/, medals.length > 3 ? `<button type="button" class="medal-miniature medal-more" data-medal="3" aria-label="все значки"><b>+${medals.length - 3}</b><span>ещё</span></button></div>` : '</div>')}` : '';
-    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${profile.guest === true ? '<span class="status-tag status-tag-guest">гость клуба</span>' : ''}${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
+    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
 
     // Грубая оценка высоты карточки для балансировки колонок в шахматном порядке –
     // без неё карточки просто чередуются по индексу и «падают» не туда, где есть место.
@@ -187,6 +188,8 @@ export async function renderProfiles() {
     const allCards = await Promise.all(sorted.map(async ([,p]) => ({
         ...await renderProfileCard(p, shouldAnimate),
         hikeDate: nextHikesByUser.get(String(p.userId))?.date || null,
+        guest: p.guest === true,
+        statuses: Array.isArray(p.friendshipStatuses) && p.friendshipStatuses.length ? p.friendshipStatuses : ['дружба'],
     })));
 
 
@@ -217,7 +220,12 @@ export async function renderProfiles() {
     const canFilter = isCardHolder && hasMyProfile;
     const filtersHtml = canFilter ? `<div class="profiles-filters" role="group" aria-label="фильтр профилей">
         <button type="button" class="profiles-filter" data-profile-filter="all" aria-pressed="true">все</button>
-        <button type="button" class="profiles-filter" data-profile-filter="nearest" aria-pressed="false">идут на ближайший хайк</button>
+        <button type="button" class="profiles-filter" data-profile-filter="nearest" aria-pressed="false">ближайший хайк</button>
+        <button type="button" class="profiles-filter" data-profile-filter="guests" aria-pressed="false">гости</button>
+        <span class="profiles-filter-break" aria-hidden="true"></span>
+        <button type="button" class="profiles-filter" data-profile-filter="friendship" aria-pressed="false">дружба</button>
+        <button type="button" class="profiles-filter" data-profile-filter="business" aria-pressed="false">общее дело</button>
+        <button type="button" class="profiles-filter" data-profile-filter="romance" aria-pressed="false">отношения</button>
     </div>` : '';
     // новый дизайн: заголовок, «на ближайший хайк с тобой» и твои связи над сеткой профилей
     const rd = isRedesign();
@@ -236,13 +244,17 @@ export async function renderProfiles() {
             if (button.getAttribute('aria-pressed') === 'true') return;
             haptic();
             const filter = button.dataset.profileFilter;
-            const cards = filter === 'all' ? allCards : allCards.filter(card => nearestHikeDate && card.hikeDate === nearestHikeDate);
+            const status = { friendship: 'дружба', business: 'бизнес', romance: 'отношения' }[filter];
+            const cards = allCards.filter(card => filter === 'all'
+                || (filter === 'nearest' && nearestHikeDate && card.hikeDate === nearestHikeDate)
+                || (filter === 'guests' && card.guest)
+                || (status && card.statuses.includes(status)));
             const results = document.getElementById('profilesResults');
             const emptyText = participantsLoadFailed ? 'не удалось загрузить записи на хайк'
                 : !nearestHikeDate ? 'пока нет предстоящих хайков'
                 : 'пока никто не записался на ближайший хайк';
             results.innerHTML = cards.length ? `<div class="card-container">${renderProfilesColumns(cards)}</div>`
-                : `<div class="profiles-empty" role="status">${filter === 'all' ? 'пока нет профилей' : emptyText}</div>`;
+                : `<div class="profiles-empty" role="status">${filter === 'nearest' ? emptyText : filter === 'guests' ? 'пока нет анкет гостей' : filter === 'all' ? 'пока нет профилей' : 'пока нет анкет с таким статусом'}</div>`;
             mainDiv().querySelectorAll('[data-profile-filter]').forEach(item => {
                 item.setAttribute('aria-pressed', String(item === button));
             });
@@ -551,7 +563,6 @@ const GP_CSS = `
 .gp-why { margin: 16px 0 0; font-size: 15px; line-height: 1.45; } .gp-why em { font-style: normal; color: var(--yellow); }
 .gp-sheet .btn { width: 100%; margin: 14px 0 0; }
 .gp-free { display: block; width: 100%; margin-top: 12px; padding: 6px; border: 0; background: none; color: rgba(255,255,255,.65); font: inherit; font-size: 14px; cursor: pointer; }
-.status-tag-guest { background: rgba(255,255,255,.1) !important; color: rgba(255,255,255,.75) !important; }
 `;
 function gpAv(p) {
     const ph = p?.avatarUrl;
