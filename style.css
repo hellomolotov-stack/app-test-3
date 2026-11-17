@@ -8663,3 +8663,8 @@ html.glow #mainContent #calendarContainer {
 
 .hof-hint { margin-top:8px; padding:0 24px; text-align:center; color:rgba(255,255,255,.55); font-size:13px; line-height:1.4; }
 .hof-hint:empty { display:none; }
+
+/* Список участников не меняет высоту карточки после ответа сервера. */
+html.v2 .rd-going { min-height: 126px; }
+/* WKWebView: неподвижные светящиеся карточки без лишнего фильтра над всей страницей. */
+html.v2.glow .rd-hero { backdrop-filter: none; -webkit-backdrop-filter: none; }

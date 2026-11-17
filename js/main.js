@@ -34,27 +34,37 @@ window.userInteracted = false;
 window.isPrivPage = false;
 // главная сейчас на экране? фоновые перерисовки главной (догрузились данные) не должны уводить с других вкладок
 const homeOnScreen = () => !!(document.getElementById('calendarContainer') || document.getElementById('rdHero') || document.querySelector('#mainContent > .loader') || !document.getElementById('mainContent')?.children.length);
+// Любое ручное действие отменяет отложенное восстановление старой прокрутки.
+let homeScrollGeneration = 0;
+let lastHomeScrollInput = 0;
+const cancelHomeScrollRestore = () => { homeScrollGeneration++; lastHomeScrollInput = Date.now(); };
+for (const type of ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'wheel', 'keydown']) {
+    window.addEventListener(type, cancelHomeScrollRestore, { passive: true });
+}
+let navScrollBound = false;
+let navScrollFrame = 0;
 // фоновая перерисовка главной (догрузились данные) – без сброса прокрутки: после перехода по ссылке к блоку
 // (startapp=hof и т.п.) экран раньше прыгал наверх. Возвращаем позицию после отрисовки и после асинхронных блоков
 function renderHomeKeep() {
     if (deferHofHomeRender(renderHomeKeep)) return;
     const hofGeneration = hofLinkGeneration();
+    const scrollGeneration = ++homeScrollGeneration;
     const y = window.scrollY;
     renderHome({ preserveLoadedBlocks: true });
-    if (hofLinkActive()) return;
+    if (hofLinkActive() || Date.now() - lastHomeScrollInput < 1200) return;
     // идёт плавный доскролл по ссылке – он сам пересчитывает цель каждый кадр, не мешаем
     if (window._glideActive) return;
     // недавно доехали по ссылке до блока – после перерисовки держим именно этот блок, а не старую цифру прокрутки
     const keep = window._keepTarget && Date.now() < window._keepTarget.until ? window._keepTarget : null;
     if (keep) {
-        const align = () => { if (hofLinkActive() || hofGeneration !== hofLinkGeneration()) return; const yy = keep.y(); if (yy != null && Math.abs(window.scrollY - yy) > 4) window.scrollTo(0, yy); };
+        const align = () => { if (scrollGeneration !== homeScrollGeneration || !homeOnScreen() || hofLinkActive() || hofGeneration !== hofLinkGeneration()) return; const yy = keep.y(); if (yy != null && Math.abs(window.scrollY - yy) > 4) window.scrollTo(0, yy); };
         requestAnimationFrame(() => requestAnimationFrame(align));
         setTimeout(align, 350);
         setTimeout(align, 900);
         return;
     }
     if (y < 40) return;
-    const back = () => { if (!hofLinkActive() && hofGeneration === hofLinkGeneration() && Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y); };
+    const back = () => { if (scrollGeneration === homeScrollGeneration && homeOnScreen() && !hofLinkActive() && hofGeneration === hofLinkGeneration() && Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y); };
     requestAnimationFrame(() => requestAnimationFrame(back));
     setTimeout(back, 350);
     setTimeout(back, 900);
@@ -298,10 +308,14 @@ function setupBottomNav() {
             updateActiveNav();
         }
     });
-    window.addEventListener('scroll', () => {
-        setUserInteracted();
-        requestAnimationFrame(updateActiveNav);
-    });
+    if (!navScrollBound) {
+        navScrollBound = true;
+        window.addEventListener('scroll', () => {
+            setUserInteracted();
+            if (navScrollFrame) return;
+            navScrollFrame = requestAnimationFrame(() => { navScrollFrame = 0; updateActiveNav(); });
+        }, { passive: true });
+    }
     updateActiveNav();
 }
 

@@ -26,8 +26,10 @@ export function setManualNav(target) {
 }
 
 export function setActiveNav(activeId) {
-    document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-    if (activeId) document.getElementById(activeId)?.classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(item => {
+        const active = item.id === activeId;
+        if (item.classList.contains('active') !== active) item.classList.toggle('active', active);
+    });
 }
 
 export function resetNavActive() {
