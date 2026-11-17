@@ -105,12 +105,23 @@ function openPrep() {
     ov.innerHTML = `
         <div class="hof-top"><span>перед стартом</span><button class="hof-x" aria-label="закрыть">✕</button></div>
         <div class="hof-prep-body">
-            <div class="hof-title hof-p-title">три раунда<br>с голосом</div>
-            <div class="hof-p-sub">выбери, как пройдёт задержка</div>
-            <div class="hof-mode-steps"><span><b>30 вдохов</b>дышим</span><span><b>задержка</b>на выдохе</span><span><b>15 секунд</b>восстановление</span></div>
+            <div class="hof-title hof-p-title">один раунд<br>три фазы</div>
+            <div class="hof-p-sub">повторим 3 раза, голос подскажет каждый шаг</div>
+            <div class="hof-p-bar" aria-label="дыхание, задержка, восстановление"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+            <div class="hof-p-legend"><span class="b1">≈2 мин</span><span class="b2" id="hofHoldLegend">до 1,5 мин</span><span class="b3">15 с</span></div>
+            <div class="hof-p-cards">
+                <div class="hof-p-card is-main"><div class="ic ic-ring" aria-hidden="true"></div><div><b>30 глубоких вдохов</b><span>полный вдох животом и грудью<br>выдох свободно, без усилия</span></div></div>
+                <div class="hof-p-card"><div class="ic ic-timer" id="hofHoldIcon" aria-hidden="true">1:30</div><div><b>задержка на выдохе</b><span id="hofHoldInstruction">следуй голосу<br>можно перейти к вдоху раньше</span></div></div>
+                <div class="hof-p-card"><div class="ic ic-15" aria-hidden="true">15</div><div><b>вдох и держим 15 с</b><span>восстановление<br>и следующий раунд</span></div></div>
+            </div>
+            <div class="hof-mode-label">выбери свой режим</div>
             <div class="hof-modes" role="group" aria-label="режим дыхания">
-                <button type="button" class="hof-mode" data-mode="guided" aria-pressed="true"><i aria-hidden="true"></i><span><b>тренировка</b><small>осваивай технику<br>голос ведёт каждый шаг</small></span></button>
-                <button type="button" class="hof-mode" data-mode="personal" aria-pressed="false"><i aria-hidden="true"></i><span><b>в своём темпе</b><small>сам выбирай длительность задержек<br>и отмечай личные рекорды</small></span></button>
+                <button type="button" class="hof-mode" data-mode="guided" aria-pressed="true" aria-describedby="hofGuidedCaption">тренировка</button>
+                <button type="button" class="hof-mode" data-mode="personal" aria-pressed="false" aria-describedby="hofPersonalCaption">в своём темпе</button>
+            </div>
+            <div class="hof-mode-captions">
+                <div id="hofGuidedCaption" data-mode-caption="guided" data-active="true">осваивай технику<br>голос ведёт каждый шаг</div>
+                <div id="hofPersonalCaption" data-mode-caption="personal" data-active="false">сам выбирай длительность задержек<br>и отмечай личные рекорды</div>
             </div>
             <button class="hof-btn" id="hofGo">начать ≈11 минут</button>
             <button type="button" class="hof-share" id="hofShare">поделиться трекером</button>
@@ -130,6 +141,12 @@ function openPrep() {
     const selectMode = value => {
         mode = value;
         ov.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+        ov.querySelectorAll('[data-mode-caption]').forEach(c => c.dataset.active = String(c.dataset.modeCaption === mode));
+        ov.querySelector('#hofHoldLegend').textContent = mode === 'personal' ? 'твой темп' : 'до 1,5 мин';
+        ov.querySelector('#hofHoldIcon').textContent = mode === 'personal' ? '∞' : '1:30';
+        ov.querySelector('#hofHoldInstruction').innerHTML = mode === 'personal'
+            ? 'задержку заканчиваешь кнопкой<br>голос ждёт, время сохраняется'
+            : 'следуй голосу<br>можно перейти к вдоху раньше';
         ov.querySelector('#hofGo').textContent = mode === 'personal' ? 'начать в своём темпе' : 'начать ≈11 минут';
     };
     ov.querySelectorAll('[data-mode]').forEach(b => b.addEventListener('click', () => { haptic(); selectMode(b.dataset.mode); }));
