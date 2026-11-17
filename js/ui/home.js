@@ -26,6 +26,7 @@ import { mountMyAchievements } from './medals.js';
 import { maybeShowNewAchievements } from './achievements-popup.js';
 import { isRedesign, applyRedesignFlag, isV2 } from '../redesign.js';
 import { rdHomeTopHtml, wireRdHomeTop, v2HomeTopHtml, v2GuestTopHtml } from './rd-home.js';
+import { deferHofHomeRender } from './hof-link-scroll.js';
 
 function getVisitedRouteIds() {
     const visited = new Set();
@@ -900,6 +901,7 @@ function renderCalendarOrStrip(el) {
 }
 
 export function renderHome() {
+    if (deferHofHomeRender(renderHome)) return;
     setLumenContext({ screen: 'home', scenario: localStorage.getItem('chatOnboardingVisited') ? 'home' : 'first_visit' });
     document.querySelector('.profile-edit-fab')?.remove();
     hideBack();

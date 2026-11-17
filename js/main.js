@@ -28,6 +28,7 @@ import { openOnboardingChat } from './ui/chat-entry.js';
 import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
 import { focusNextUnopenedHike } from './ui/next-hike-link.js';
 import { startClubMetricsRefresh } from './club-content.js';
+import { startHofLinkScroll, cancelHofLinkScroll, deferHofHomeRender, hofLinkActive, hofLinkGeneration } from './ui/hof-link-scroll.js';
 
 window.userInteracted = false;
 window.isPrivPage = false;
@@ -36,21 +37,24 @@ const homeOnScreen = () => !!(document.getElementById('calendarContainer') || do
 // фоновая перерисовка главной (догрузились данные) – без сброса прокрутки: после перехода по ссылке к блоку
 // (startapp=hof и т.п.) экран раньше прыгал наверх. Возвращаем позицию после отрисовки и после асинхронных блоков
 function renderHomeKeep() {
+    if (deferHofHomeRender(renderHomeKeep)) return;
+    const hofGeneration = hofLinkGeneration();
     const y = window.scrollY;
     renderHome();
+    if (hofLinkActive()) return;
     // идёт плавный доскролл по ссылке – он сам пересчитывает цель каждый кадр, не мешаем
     if (window._glideActive) return;
     // недавно доехали по ссылке до блока – после перерисовки держим именно этот блок, а не старую цифру прокрутки
     const keep = window._keepTarget && Date.now() < window._keepTarget.until ? window._keepTarget : null;
     if (keep) {
-        const align = () => { const yy = keep.y(); if (yy != null && Math.abs(window.scrollY - yy) > 4) window.scrollTo(0, yy); };
+        const align = () => { if (hofLinkActive() || hofGeneration !== hofLinkGeneration()) return; const yy = keep.y(); if (yy != null && Math.abs(window.scrollY - yy) > 4) window.scrollTo(0, yy); };
         requestAnimationFrame(() => requestAnimationFrame(align));
         setTimeout(align, 350);
         setTimeout(align, 900);
         return;
     }
     if (y < 40) return;
-    const back = () => { if (Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y); };
+    const back = () => { if (!hofLinkActive() && hofGeneration === hofLinkGeneration() && Math.abs(window.scrollY - y) > 4) window.scrollTo(0, y); };
     requestAnimationFrame(() => requestAnimationFrame(back));
     setTimeout(back, 350);
     setTimeout(back, 900);
@@ -369,6 +373,7 @@ function glideTo(targetY, duration = 1200) {
 }
 // плавный доскролл к движущейся цели: getY() вызывается каждый кадр; касание экрана прерывает
 function glideToLive(getY, duration, done) {
+    const hofGeneration = hofLinkGeneration();
     const y0 = window.pageYOffset, t0 = performance.now();
     const ease = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2); // плавный разгон и плавное торможение
     let stop = false;
@@ -380,7 +385,7 @@ function glideToLive(getY, duration, done) {
     html.style.scrollBehavior = 'auto';
     const step = now => {
         const t = Math.min(1, (now - t0) / duration), target = getY();
-        if (stop || target == null) { finish(); return; }
+        if (stop || target == null || hofGeneration !== hofLinkGeneration()) { finish(); return; }
         window.scrollTo(0, y0 + (target - y0) * ease(t));
         if (t < 1) requestAnimationFrame(step); else finish(true);
     };
@@ -398,14 +403,17 @@ const loaderGone = () => { const l = document.getElementById('initial-loader'); 
 // По ссылке («календарь» и т.п.): если при входе всплывает окно новых значков – сначала оно,
 // прокрутка к нужному блоку – после его закрытия. Нажал в окне «записаться на хайк» – не прокручиваем.
 function scrollToWhenReady(getter, opts = {}) {
+    cancelHofLinkScroll();
     window.scrollTo(0, 0);
     import('./ui/achievements-popup.js').then(m => m.afterNewAchievements()).catch(() => null)
         .then(r => { if (r !== 'handled') scrollToWhenReadyNow(getter, opts); });
 }
 function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 12000, center = false, glow = '' } = {}) {
+    const hofGeneration = hofLinkGeneration();
     const t0 = Date.now();
     let goneAt = 0;
     const iv = setInterval(() => {
+        if (hofGeneration !== hofLinkGeneration()) return clearInterval(iv);
         if (Date.now() - t0 > timeout) return clearInterval(iv);
         if (!loaderGone()) return;
         goneAt ||= Date.now();
@@ -443,6 +451,7 @@ function scrollToWhenReadyNow(getter, { pause = 900, interval = 100, timeout = 1
             });
         };
         const settle = setInterval(() => {
+            if (hofGeneration !== hofLinkGeneration()) return clearInterval(settle);
             const y = targetY();
             same = y != null && prevY != null && Math.abs(y - prevY) < 2 ? same + 1 : 0;
             prevY = y;
@@ -571,7 +580,13 @@ function handleDeepLink(startParam) {
         case 'hof':
             // ссылка из поста: t.me/yaltahiking_bot?startapp=hof – плавно к трекеру дыхания, мягкое голубое свечение из-под блока
             log('пришёл к трекеру дыхания по ссылке', isGuest, state.user);
-            scrollToWhenReady(() => document.querySelector('#hofBlock .hof-card'), { center: true, glow: 'hof-link-glow' });
+            window._keepTarget = null;
+            startHofLinkScroll({
+                getTarget: () => document.querySelector('#hofBlock .hof-card'),
+                getTopOffset: getCurrentTopOffset,
+                ready: import('./ui/achievements-popup.js').then(m => m.afterNewAchievements()),
+                isReady: () => loaderGone() && !document.documentElement.classList.contains('sheet-lock'),
+            });
             break;
         case 'card_offer':
             // из рассылки «новичкам после хайка»: сразу шторка карты со спецпредложением
