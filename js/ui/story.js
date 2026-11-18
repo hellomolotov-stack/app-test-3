@@ -57,7 +57,7 @@ function kmLength(pts) {
 const statsCache = new Map();
 
 // Дополнительные цифры не должны задерживать уже готовую карту при сбое сервиса высот.
-async function trackStats(hike) {
+export async function trackStats(hike) {
     const { hikeTrackPoints } = await import('./calendar.js');
     const all = hikeTrackPoints(hike);
     if (all.length < 2) return null;
@@ -178,11 +178,11 @@ export async function drawStory(hike, { colorful = false, footer = true } = {}) 
     return c;
 }
 
-async function upload(dataUrl, date) {
+export async function upload(dataUrl, date, temporary = false) {
     const r = await fetchWithTimeout('/api/story', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ initData: tg?.initData || '', date, img: dataUrl.split(',')[1] })
+        body: JSON.stringify({ initData: tg?.initData || '', date, temporary, img: dataUrl.split(',')[1] })
     }, 60000);
     const j = await r.json().catch(() => ({}));
     if (!r.ok || !j.url) throw new Error(j.error || 'upload failed');

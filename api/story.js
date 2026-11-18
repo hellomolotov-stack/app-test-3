@@ -8,6 +8,7 @@ const crypto = require('crypto');
 
 const DB = 'https://hiking-club-app-b6c7c-default-rtdb.europe-west1.firebasedatabase.app';
 const MAX_AGE_SEC = 7 * 24 * 3600;
+const PHOTO_STORY_TTL_MS = 15 * 60 * 1000;
 const MAX_IMG_B64 = 3.5 * 1024 * 1024;
 
 function verifyInitData(initData, botToken) {
@@ -60,10 +61,14 @@ module.exports = async (req, res) => {
             const token = await dbToken();
             const r = await fetch(`${DB}/stories/${id}.json?access_token=${token}`);
             const rec = r.ok ? await r.json() : null;
+            if (rec?.temporary === true && (!Number.isFinite(rec.ts) || Date.now() - rec.ts > PHOTO_STORY_TTL_MS)) {
+                res.setHeader('Cache-Control', 'no-store');
+                return res.status(404).end();
+            }
             const b64 = rec && rec.img;
             if (!b64 || typeof b64 !== 'string') return res.status(404).end();
             res.setHeader('Content-Type', rec.type === 'png' ? 'image/png' : 'image/jpeg');
-            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            res.setHeader('Cache-Control', rec.temporary === true ? 'private, no-store' : 'public, max-age=31536000, immutable');
             return res.status(200).send(Buffer.from(b64, 'base64'));
         }
         if (req.method !== 'POST') return res.status(405).end();
@@ -86,7 +91,7 @@ module.exports = async (req, res) => {
         const w = await fetch(`${DB}/stories/${id}.json?access_token=${token}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ img, uid: String(user.id), date, ts: Date.now(), ...(isPng ? { type: 'png' } : {}) })
+            body: JSON.stringify({ img, uid: String(user.id), date, ts: Date.now(), ...(body.temporary === true ? { temporary: true } : {}), ...(isPng ? { type: 'png' } : {}) })
         });
         if (!w.ok) return res.status(502).json({ error: 'save failed' });
         const host = req.headers['x-forwarded-host'] || req.headers.host;
