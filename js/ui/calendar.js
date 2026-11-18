@@ -2543,6 +2543,19 @@ export function showBottomSheet(index) {
             }
         }
 
+        if (isPast && !isCancelled && !isPlaceholder) {
+            import('./post-hike-story-banner.js').then(({ completedPhotoHike, openPhotoStoryFor }) => {
+                if (!contentWrapper.isConnected || !completedPhotoHike(hike) || hikeTrackPoints(hike).length < 2) return;
+                if (contentWrapper.querySelector('[data-past-photo-story]')) return;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'story-save';
+                button.dataset.pastPhotoStory = '';
+                button.textContent = 'сделать сторис';
+                button.addEventListener('click', () => openPhotoStoryFor(hike));
+                contentWrapper.append(button);
+            });
+        }
         updateFloatingSheetButtons();
 
         const imageContainer = contentWrapper.querySelector('.image-container');

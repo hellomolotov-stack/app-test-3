@@ -8724,3 +8724,26 @@ button.rd-pass-meeting { cursor: pointer; }
 .rd-pass-open { position: relative; display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 46px; padding: 8px 26px; border: 0; border-radius: 12px; background: var(--yellow, #d9fd19); color: #1b2200; font: inherit; font-weight: 760; cursor: pointer; }
 .rd-pass-open span { position: absolute; right: 11px; font-size: 22px; line-height: 1; }
 .rd-pass-card button:focus-visible { outline: 2px solid #2d654b; outline-offset: 3px; }
+
+.post-hike-story-banner {
+    display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:center;width:100%;
+    margin:0 0 12px;padding:14px;border-radius:24px;border:1px solid #ffffff1c;color:#f5f5f7;
+    background:radial-gradient(85% 85% at 52% 114%,rgba(79,176,240,.64),transparent 91%),#090b0e;
+    text-align:left;font:inherit;cursor:pointer;
+}
+.post-hike-story-banner strong { display:block;font-size:27px;line-height:1.04;font-weight:800;letter-spacing:-.04em; }
+.post-hike-story-banner i { color:var(--yellow);font-size:19px;font-style:normal; }
+.post-hike-story-banner small { display:block;margin-top:9px;color:#c2c4c9;font-size:13px; }
+.post-hike-story-banner img { width:92px;height:auto;border-radius:11px;border:1px solid #ffffff30; }
+.post-photo-overlay [hidden] { display:none !important; }
+.post-photo-overlay .inv-sheet {
+    background:radial-gradient(85% 39% at 50% 111%,#4fb0f047,transparent 94%),#12151b;
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+.post-photo-overlay header { display:flex;align-items:center;justify-content:space-between;gap:10px; }
+.post-photo-overlay header button { width:44px;height:44px;border:0;border-radius:22px;background:#ffffff0e;color:#fff;font-size:24px; }
+.post-photo-overlay [data-intro] { margin:0 0 12px;color:#c2c4c9;font-size:14px; }
+.post-photo-overlay .story-preview { width:min(45vw,176px);margin:8px auto 12px; }
+.post-photo-overlay .story-preview img { display:block;width:100%;height:auto;border-radius:14px; }
+.post-photo-actions { display:flex;gap:12px;justify-content:center; }
+.post-photo-actions button { width:auto;min-height:44px;margin:0; }

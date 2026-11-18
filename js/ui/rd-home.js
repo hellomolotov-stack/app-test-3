@@ -1,3 +1,4 @@
+import { openPhotoStoryFor, photoBannerHtml } from './post-hike-story-banner.js';
 // Верх новой главной (редизайн, пока только для html.rd):
 // шапка с маленькой картой, «свежее в клубе», карточка ближайшего события с теми, кто идёт.
 // Всё ниже (связи, календарь, саммари, погода, цифры) – прежние блоки в новых стилях.
@@ -6,7 +7,7 @@ import { state } from '../state.js';
 import { haptic, openLink, parseLinks } from '../utils.js';
 import { log } from '../api.js';
 import { isUpcomingHike, moscowDateKey } from '../hike-timing.js';
-import { capacityFor, isPostponed, fetchGoingFromServer, showBottomSheet, snapshotHikeMap, nextTeaser, isWaitlisted, toggleTeaserNotify } from './calendar.js';
+import { capacityFor, isPostponed, fetchGoingFromServer, showBottomSheet, snapshotHikeMap, hikeTrackPoints, nextTeaser, isWaitlisted, toggleTeaserNotify } from './calendar.js';
 import { renderPriv } from './privileges.js';
 import { isV2 } from '../redesign.js';
 import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
@@ -277,6 +278,7 @@ export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, her
         </div>
         ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : '<div id="clubStoriesHost"></div>'}
         ${between}
+        ${hero ? photoBannerHtml(hike => hikeTrackPoints(hike).length >= 2) : ''}
         ${!hero ? '' : ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
 }
 
@@ -346,6 +348,8 @@ function teaserHtml() {
 }
 
 export function wireRdHomeTop() {
+    const storyBanner = document.querySelector('.post-hike-story-banner');
+    storyBanner?.addEventListener('click', () => openPhotoStoryFor(state.hikesWithTitle.find(hike => hike.date === storyBanner.dataset.storyHike)));
     // сторис клуба (js/ui/club-stories.js) заменяют «свежее в клубе», когда есть опубликованные
     const csHost = document.getElementById('clubStoriesHost');
     if (csHost) import('./club-stories.js').then(m => m.mountClubStories(csHost)).catch(e => console.error(e));
