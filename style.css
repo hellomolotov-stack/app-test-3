@@ -8669,7 +8669,9 @@ html.glow #mainContent #calendarContainer {
 .hof-mode[aria-pressed="true"] { background:#8fe3ff; color:#06202c; }
 .hof-mode:focus-visible { outline:2px solid #8fe3ff; outline-offset:3px; }
 .hof-mode-captions { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:4px; margin-top:10px; }
-.hof-mode-captions > div { padding:0 4px; text-align:center; font-size:12.5px; line-height:1.45; color:rgba(176,196,208,.6); }
+.hof-mode-captions > div { padding:0 4px; font-size:12.5px; line-height:1.45; color:rgba(176,196,208,.6); }
+.hof-mode-captions > div:first-child { text-align:left; }
+.hof-mode-captions > div:last-child { text-align:right; }
 .hof-mode-captions > div[data-active="true"] { color:#b0c4d0; }
 .hof-c-go { max-width:calc(100vw - 100px); }
 
