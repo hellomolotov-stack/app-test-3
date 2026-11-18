@@ -29,7 +29,7 @@ const bannerHtml = b => `
             <div class="sv-b-txt"><small>опрос · 2–3 минуты</small><b>${esc(b.title)}</b><span>${esc(b.text)}</span></div>
         </div>
         <div class="sv-b-btns">
-            <button type="button" class="btn btn-yellow sv-go" data-sv="go">${b.resume ? 'продолжить' : 'пройти'}</button>
+            <button type="button" class="btn btn-yellow sv-go" data-sv="go">${b.resume ? 'продолжить' : 'поделиться взглядом'}</button>
             <div class="sv-b-sub"><button type="button" class="sv-ghost" data-sv="later">позже</button><button type="button" class="sv-ghost" data-sv="declined">отказаться</button></div>
         </div>
     </div>`;
