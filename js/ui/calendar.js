@@ -4243,7 +4243,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
             <button type="button" class="rt-link" id="rtDone">готово</button>
         </div>`;
     overlay.innerHTML = `
-        <div class="reg-ticket${fromBoardingPass ? ' rt-pilot-sheet' : ''}">
+        <div class="reg-ticket${fromBoardingPass ? ' rt-boarding-sheet' : ''}">
             ${fromBoardingPass ? '<div class="cs-grab" aria-hidden="true"></div>' : ''}
             <div class="rt-part rt-top">
                 <div class="rt-head">
