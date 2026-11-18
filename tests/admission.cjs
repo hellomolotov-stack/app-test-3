@@ -9,7 +9,7 @@ async function call(action, values = {}, user = fixture.signed()) {
     });
     return result;
 }
-const form = { name: 'Макс', city: 'Ялта', about: 'Люблю горы и хочу познакомиться с новыми людьми', respect: true };
+const form = { name: 'Макс', yalta: 'local', views: ['alone', 'irony'] };
 (async () => {
     assert.equal((await call('status', {}, '')).status, 401);
     assert.equal((await call('status', {}, fixture.signed('visitor', 20))).status, 403);
@@ -17,8 +17,8 @@ const form = { name: 'Макс', city: 'Ялта', about: 'Люблю горы �
     assert.equal((await call('status', {}, fixture.signed('HelloIntelligent', 7845375334, 8 * 86400))).status, 401);
     assert.equal(fixture.writes, 0);
     assert.equal((await call('status')).data.application.status, 'new');
-    assert.equal((await call('submit', { form: { ...form, respect: false } })).status, 400);
-    assert.equal((await call('submit', { form: { ...form, about: 'x'.repeat(801) } })).status, 400);
+    assert.equal((await call('submit', { form: { ...form, yalta: 'unknown' } })).status, 400);
+    assert.equal((await call('submit', { form: { ...form, name: 'x'.repeat(81) } })).status, 400);
     assert.equal((await call('payment', { payment: { cardType: 'ticket' } })).status, 403);
     let result = await call('submit', { form, context: { hikeDate: '2026-10-18', hikeTitle: 'Ай-Йори' } });
     assert.equal(result.status, 200);
