@@ -421,7 +421,8 @@ export function wireRdHomeTop() {
     heroEl?.querySelector('.rd-ticket, .rd-pass-open')?.addEventListener('click', e => {
         e.stopPropagation(); haptic();
         const date = e.currentTarget.dataset.ticket || ev.hike.date;
-        import('./calendar.js').then(m => m.openHikeTicket(date)).catch(() => {});
+        const fromBoardingPass = e.currentTarget.classList.contains('rd-pass-open');
+        import('./calendar.js').then(m => m.openHikeTicket(date, { fromBoardingPass })).catch(() => {});
     });
     if (heroEl && heroEl.querySelector('.rd-ok')) heroEl.addEventListener('click', e => {
         if (e.target.closest('.rd-box, .rd-more, .rd-ticket')) return;

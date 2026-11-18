@@ -4,7 +4,7 @@
 // у каждой шторки он уже закрывает её штатным способом. Тянуть можно за ручку или за любое
 // место, если содержимое прокручено в самый верх; по карте – с любой позиции прокрутки.
 // Горизонтальные жесты и управление картой двумя пальцами не трогаем.
-const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet, .hb-sheet, .zp-sheet, .ach-sheet, .acol-sheet, .cs2-sheet, .mmr-sheet, .sa-sheet, .ns-panel';
+const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet, .hb-sheet, .zp-sheet, .ach-sheet, .acol-sheet, .cs2-sheet, .mmr-sheet, .sa-sheet, .ns-panel, .rt-pilot-sheet';
 const HANDLE = '.bottom-sheet-handle, .cs-grab, .ns-grab';  // .inv-grab тоже несёт класс cs-grab
 const SKIP = 'input, textarea, select, .swipe-track, .bottom-sheet-nav-arrow';
 const CLOSE_DY = 110;     // столько протянуть – и шторка свернётся
@@ -32,7 +32,8 @@ function onStart(e) {
     const t = e.touches[0];
     g = {
         sheet, handle: sheet.querySelector(HANDLE), overlay: sheet.parentElement,
-        onHandle: !!e.target.closest(HANDLE), scroller: scrollerOf(e.target, sheet),
+        onHandle: !!e.target.closest(HANDLE),
+        scroller: scrollerOf(e.target, sheet) || (sheet.matches('.rt-pilot-sheet') ? sheet.parentElement : null),
         onMap: !!e.target.closest('.hike-map-box'),
         x0: t.clientX, y0: t.clientY, dy: 0, on: false, last: [t.clientY, e.timeStamp], speed: 0
     };

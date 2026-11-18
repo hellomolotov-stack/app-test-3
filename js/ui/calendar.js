@@ -4217,7 +4217,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
 // Погоды нет (прогноз не на ту дату), вместо неё – точка сбора; «что взять» – чек-лист прямо в билете
 const PACK_BASE = ['вода 1,5 л', 'перекус', 'обувь с закрытым носком'];
 const packKey = d => `packChecks:${d}`;
-export function openHikeTicket(hikeDate, { fresh = false, title = '' } = {}) {
+export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardingPass = false } = {}) {
     document.querySelector('.reg-ticket-overlay')?.remove();
     const hikeObj = state.hikesWithTitle.find(h => h.date === hikeDate);
     const hikeTitle = title || hikeObj?.title || '';
@@ -4237,8 +4237,14 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '' } = {}) {
     const overlay = document.createElement('div');
     overlay.className = 'reg-ticket-overlay';
     overlay.style.paddingTop = (inset ? inset + 12 : 24) + 'px';
+    const footer = `
+        <div class="rt-links">
+            <button type="button" class="rt-link is-main" id="rtInvite">${fromBoardingPass ? 'позвать +1' : 'позвать друга'}</button>
+            <button type="button" class="rt-link" id="rtDone">готово</button>
+        </div>`;
     overlay.innerHTML = `
-        <div class="reg-ticket">
+        <div class="reg-ticket${fromBoardingPass ? ' rt-pilot-sheet' : ''}">
+            ${fromBoardingPass ? '<div class="cs-grab" aria-hidden="true"></div>' : ''}
             <div class="rt-part rt-top">
                 <div class="rt-head">
                     <div class="rt-check">✓</div>
@@ -4283,12 +4289,9 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '' } = {}) {
                     </button>
                 </div>
             </div>
+            ${fromBoardingPass ? footer : ''}
         </div>
-        <button type="button" class="btn btn-yellow rt-story" id="rtStory">поделиться в сторис</button>
-        <div class="rt-links">
-            <button type="button" class="rt-link is-main" id="rtInvite">позвать друга</button>
-            <button type="button" class="rt-link" id="rtDone">готово</button>
-        </div>
+        ${fromBoardingPass ? '' : `<button type="button" class="btn btn-yellow rt-story" id="rtStory">поделиться в сторис</button>${footer}`}
     `;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-on'));
@@ -4337,7 +4340,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '' } = {}) {
         row.querySelector('.rt-text').innerHTML = '<b>сообщения включены</b><span>напишем в бот, если что-то поменяется</span>';
         row.querySelector('.rt-chip')?.remove();
     });
-    document.getElementById('rtStory').addEventListener('click', () => {
+    overlay.querySelector('#rtStory')?.addEventListener('click', () => {
         import('./story.js').then(m => m.openStoryShare(hikeDate, 'после записи'));
     });
     document.getElementById('rtChat').addEventListener('click', () => {
