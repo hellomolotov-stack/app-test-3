@@ -1,3 +1,4 @@
+import { loadTrackElevations } from '../track-elevation.js';
 // js/ui/story.js – «поделиться в сторис» после записи на хайк.
 // Рисуем картинку 1080×1920: на весь экран – снимок нашей 3D-карты с жёлтым треком, сверху дата и название,
 // снизу крупно локация, вершина · набор · путь и @yaltahiking, а под ними – место для подписи человека. Показываем превью, по кнопке
@@ -54,7 +55,6 @@ function kmLength(pts) {
 }
 
 const statsCache = new Map();
-const ELEVATION_TIMEOUT = 2000;
 
 // Дополнительные цифры не должны задерживать уже готовую карту при сбое сервиса высот.
 async function trackStats(hike) {
@@ -73,16 +73,8 @@ async function trackStats(hike) {
     const pts = all.filter((_, i) => i % step === 0);
     if (pts[pts.length - 1] !== all[all.length - 1]) pts.push(all[all.length - 1]);
     const pick = pts.slice(0, 100);
-    const controller = new AbortController();
-    let timer;
-    const result = await Promise.race([
-        fetch(`https://api.open-meteo.com/v1/elevation?latitude=${pick.map(p => p[0].toFixed(5)).join(',')}&longitude=${pick.map(p => p[1].toFixed(5)).join(',')}`, { signal: controller.signal })
-            .then(r => r.ok ? r.json() : null).catch(() => null),
-        new Promise(resolve => { timer = setTimeout(() => { controller.abort(); resolve(null); }, ELEVATION_TIMEOUT); })
-    ]).finally(() => clearTimeout(timer));
-    const els = result?.elevation;
-    // Не склеиваем точки через пропуски: иначе набор высоты получится недостоверным.
-    if (!Array.isArray(els) || els.length !== pick.length || !els.every(Number.isFinite)) return base;
+    const els = await loadTrackElevations(pick);
+    if (!els) return base;
     let gain = 0;
     for (let i = 1; i < els.length; i++) if (els[i] > els[i - 1]) gain += els[i] - els[i - 1];
     const stats = { peak: base.peak ?? Math.max(...els), gain: base.gain ?? gain, km: base.km };
