@@ -1,9 +1,5 @@
 import { hikeTrackPoints } from './calendar.js';
 
-export function isBoardingPassPilot(userId) {
-    return String(userId ?? '') === '163665735'; // Telegram @maxmolotov
-}
-
 function meetingUrl(value) {
     try {
         const url = new URL(value);
@@ -18,6 +14,8 @@ const pin = icon('<path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><cir
 const check = icon('<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3 4.7-5"/>');
 const arrow = icon('<path d="M7 17 17 7M7 7h10v10"/>');
 const ticket = icon('<path d="M4 6h16a1 1 0 0 1 1 1v2a3 3 0 0 0 0 6v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a3 3 0 0 0 0-6V7a1 1 0 0 1 1-1ZM13 6v2m0 3v2m0 3v2"/>');
+// На карте Форосского выезда старт справа. Порядок точек и высот сохраняем.
+const RIGHT_TO_LEFT_PROFILE_DATE = '2026-11-22';
 const dateFormat = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/Moscow' });
 
 export function boardingPassHtml(hike, esc) {
@@ -37,7 +35,7 @@ export function boardingPassHtml(hike, esc) {
         </div>
         <div class="rd-pass-seam" aria-hidden="true"></div>
         <div class="rd-pass-stub">
-            <div class="rd-pass-profile" hidden><span class="rd-pass-bars" aria-hidden="true"></span><small>силуэт маршрута</small></div>
+            <div class="rd-pass-profile" hidden><span class="rd-pass-bars" dir="${hike.date === RIGHT_TO_LEFT_PROFILE_DATE ? 'rtl' : 'ltr'}" aria-hidden="true"></span><small>силуэт маршрута</small></div>
             <button class="rd-pass-open" type="button" data-ticket="${esc(hike.date)}">${ticket} открыть мой билет <span aria-hidden="true">›</span></button>
         </div>
     </article>`;

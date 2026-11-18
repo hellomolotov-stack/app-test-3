@@ -2,7 +2,7 @@ import { openPhotoStoryFor, photoBannerHtml } from './post-hike-story-banner.js'
 // Верх новой главной (редизайн, пока только для html.rd):
 // шапка с маленькой картой, «свежее в клубе», карточка ближайшего события с теми, кто идёт.
 // Всё ниже (связи, календарь, саммари, погода, цифры) – прежние блоки в новых стилях.
-import { boardingPassHtml, isBoardingPassPilot, mountBoardingPassProfile } from './rd-hike-ticket.js';
+import { boardingPassHtml, mountBoardingPassProfile } from './rd-hike-ticket.js';
 import { state } from '../state.js';
 import { haptic, openLink, parseLinks } from '../utils.js';
 import { log } from '../api.js';
@@ -10,7 +10,6 @@ import { isUpcomingHike, moscowDateKey } from '../hike-timing.js';
 import { capacityFor, isPostponed, fetchGoingFromServer, showBottomSheet, snapshotHikeMap, hikeTrackPoints, nextTeaser, isWaitlisted, toggleTeaserNotify } from './calendar.js';
 import { renderPriv } from './privileges.js';
 import { isV2 } from '../redesign.js';
-import { hikingBoxEnabled, hikingBoxRowHtml, bindHikingBoxRow } from './hiking-box.js';
 import { openCardSheet } from './card-sheet.js';
 import { setRdGlow } from '../redesign.js';
 import { bookingNotOpen, opensPhrase, bookingOpensAt } from '../booking-opens.js';
@@ -153,8 +152,8 @@ function heroHtml(ev) {
     }
     const kind = eventKind(h);
     const booked = state.hikeBookingStatus?.[ev.index] === true;
-    if (booked && isBoardingPassPilot(state.user?.id) && (kind === 'hike' || kind === 'woman')) {
-        return `<div class="rd-pass" id="rdHero">${boardingPassHtml(h, esc)}${bookingExtrasHtml(ev)}</div>`;
+    if (booked && (kind === 'hike' || kind === 'woman')) {
+        return `<div class="rd-pass" id="rdHero">${boardingPassHtml(h, esc)}${otherBookingHtml(ev)}</div>`;
     }
     const tags = (Array.isArray(h.tags) ? h.tags : []).slice(0, 4);
     // обложка – наше фото с этого маршрута (assets/teaser), не схема трека; маршрута нет в фото – любой пейзаж клуба
@@ -188,16 +187,14 @@ function ticketHtml(ev) {
     // 16.11: «твой билет» – снова открыть экран «ты в деле» (чат, что взять, точка сбора, телефон)
     const d = new Date(h.date + 'T12:00:00');
     const ticket = city ? '' : `<button type="button" class="rd-ticket" data-ticket="${h.date}"><span class="rd-tk-ck">✓</span><span class="rd-tk-tx"><b>твой билет · ${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</b><small>что взять, точка сбора, чат хайка</small></span><span class="rd-tk-go">›</span></button>`;
-    return ticket + bookingExtrasHtml(ev);
+    return ticket + otherBookingHtml(ev);
 }
 
-function bookingExtrasHtml(ev) {
-    const h = ev.hike;
-    const city = yes(h.city) || yes(h.book_club);
+function otherBookingHtml(ev) {
     const more = otherBookings(ev)[0];
-    const md = more ? new Date(more.h.date + 'T12:00:00') : null;
-    return `${!city && hikingBoxEnabled(h.date) ? `<div class="rd-box" data-box-date="${h.date}">${hikingBoxRowHtml('', h.date)}</div>` : ''}
-        ${more ? `<button type="button" class="rd-more" data-more="${more.i}"><span>ещё запись</span><b>${md.getDate()} ${MONTHS[md.getMonth()]} · ${esc(more.h.title)} ›</b></button>` : ''}`;
+    if (!more) return '';
+    const md = new Date(more.h.date + 'T12:00:00');
+    return `<button type="button" class="rd-more" data-more="${more.i}"><span>ещё запись</span><b>${md.getDate()} ${MONTHS[md.getMonth()]} · ${esc(more.h.title)} ›</b></button>`;
 }
 
 function avatarHtml(p, i) {
@@ -416,19 +413,18 @@ export function wireRdHomeTop() {
     }
     const open = () => { haptic(); log('rd: ближайшее событие', !owner, state.user, { date: ev.hike.date }); showBottomSheet(ev.index); };
     document.getElementById('rdHeroCta')?.addEventListener('click', open);
-    // записан: вся карточка открывает шторку хайка (кроме строки бокса и «ещё запись»)
+    // записан: вся карточка открывает шторку хайка (кроме билета и «ещё запись»)
     const heroEl = document.getElementById('rdHero');
     heroEl?.querySelector('.rd-ticket, .rd-pass-open')?.addEventListener('click', e => {
         e.stopPropagation(); haptic();
         const date = e.currentTarget.dataset.ticket || ev.hike.date;
-        import('./calendar.js').then(m => m.openHikeTicket(date)).catch(() => {});
+        const fromBoardingPass = e.currentTarget.classList.contains('rd-pass-open');
+        import('./calendar.js').then(m => m.openHikeTicket(date, { fromBoardingPass })).catch(() => {});
     });
     if (heroEl && heroEl.querySelector('.rd-ok')) heroEl.addEventListener('click', e => {
-        if (e.target.closest('.rd-box, .rd-more, .rd-ticket')) return;
+        if (e.target.closest('.rd-more, .rd-ticket')) return;
         open();
     });
-    const boxEl = document.querySelector('#rdHero .rd-box');
-    if (boxEl) bindHikingBoxRow(boxEl.querySelector('.hb-row'), boxEl.dataset.boxDate, 'билет на главной');
     document.querySelector('#rdHero .rd-more')?.addEventListener('click', e => { haptic(); showBottomSheet(Number(e.currentTarget.dataset.more)); });
     document.getElementById('rdHeroCover')?.addEventListener('click', open);
     if (heroEl?.classList.contains('rd-pass')) {

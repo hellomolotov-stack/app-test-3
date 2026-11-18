@@ -7698,7 +7698,6 @@ html.v2 .rd-hero-cover img { animation: rdFade .35s ease both; }
 .rd-acts { display: grid; gap: 8px; }
 .rd-act { border: 0; border-radius: 16px; background: rgba(255,255,255,.06); padding: 10px 6px; color: rgba(255,255,255,.85); font: inherit; font-size: 12px; cursor: pointer; }
 .rd-act span { display: block; font-size: 18px; margin-bottom: 3px; }
-.rd-box .hb-row { margin: 0; }
 .rd-more { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 0 0; border: 0; border-top: 1px solid rgba(255,255,255,.07); background: none; color: rgba(255,255,255,.6); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
 .rd-more b { color: #fff; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
@@ -8683,7 +8682,7 @@ html.v2 .rd-going { min-height: 126px; }
 /* WKWebView: неподвижные светящиеся карточки без лишнего фильтра над всей страницей. */
 html.v2.glow .rd-hero { backdrop-filter: none; -webkit-backdrop-filter: none; }
 
-/* Посадочный талон на главной в пилоте */
+/* Посадочный талон на главной */
 .rd-pass { display: grid; gap: 9px; margin-bottom: 12px; }
 .rd-pass-card { color: #1f2825; }
 .rd-pass-front, .rd-pass-stub { border-radius: 21px; }
