@@ -8141,6 +8141,11 @@ html.v2 .sv-banner { position: relative; overflow: hidden; padding: 16px; margin
 
 /* баннер опроса – вариант В: значок по центру сверху, большая кнопка, «позже» и «отказаться» под ней */
 html.v2 .sv-banner { padding: 22px 16px 10px; text-align: center; background: radial-gradient(80% 70% at 50% 0%, rgba(255, 176, 64, .26), transparent 70%), #14171C; }
+#svBanner { --g: 255, 176, 64; }
+#svBanner .sv-go.btn-yellow {
+    background: linear-gradient(180deg, #ffd37e 0%, #ffb040 100%);
+    color: #3a2204;
+}
 .sv-banner .sv-b-top { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .sv-banner .sv-badge-img { display: block; width: 150px; height: 150px; margin: -26px 0 -14px; object-fit: contain; filter: drop-shadow(0 10px 14px rgba(0, 0, 0, .45)); background: radial-gradient(closest-side, rgba(255, 176, 64, .42), rgba(255, 176, 64, .14) 60%, transparent 100%); }
 .sv-banner .sv-b-txt { align-items: center; }
