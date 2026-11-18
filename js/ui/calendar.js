@@ -4004,10 +4004,8 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             const item = document.createElement('div');
             item.className = 'participant-dropdown-item';
             item.dataset.userId = p.userId;
-            if (hasProfile) {
-                item.classList.add('clickable-profile');
-                item.style.cursor = 'pointer';
-            }
+            item.classList.add('clickable-profile');
+            item.style.cursor = 'pointer';
 
             if (p.photoUrl) {
                 item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
@@ -4022,17 +4020,20 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             {
                 item.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (!state.profiles[p.userId]) return;
-                    log('профиль участника из списка', false, state.user);
+                    const profile = state.profiles[p.userId];
+                    // Гостевой профиль (или неизвестный статус карты) не должен
+                    // открываться как платное превью члена клуба.
+                    const memberProfile = profile?.guest === false;
+                    log('профиль участника из списка', state.userCard.status !== 'active', state.user);
                     closeParticipantDropdown();
                     closeBottomSheet();
-                    state.pendingProfileClick = {
+                    state.pendingProfileClick = memberProfile ? {
                         userId: p.userId,
                         name: name,
                         photoUrl: p.photoUrl || null
-                    };
+                    } : null;
                     renderProfiles();
-                    setTimeout(() => {
+                    if (memberProfile) setTimeout(() => {
                         const profileCard = document.querySelector(`.profile-card[data-user-id="${p.userId}"]`);
                         if (profileCard) {
                             profileCard.scrollIntoView({ behavior: 'smooth', block: 'center' });

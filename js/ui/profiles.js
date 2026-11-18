@@ -14,6 +14,7 @@ import { mountCircle } from './circle.js';
 import { renderPersonalRoutesMap, isPersonalMapPilotUser } from './personal-routes-map.js';
 import { loadAchievementCollections, achievementsVisible } from '../achievements.js';
 import { medalStripHtml, wireMedalStrip } from './medals.js';
+import { showProfileAwardAfterSave } from './profile-award.js';
 
 let profiles = {};
 let myProfile = null;
@@ -22,6 +23,8 @@ let participantsLoadFailed = false;
 let nearestHikeDate = null;
 let previewResizeObserver = null;
 let medalsByUser = {};
+let profileRenderId = 0;
+let pendingGuestPreviewTimer = null;
 
 async function loadProfilesData() {
     const [allProfiles, myProf, routeFavorites] = await Promise.all([
@@ -163,6 +166,9 @@ function renderProfilesColumns(cards) {
 }
 
 export async function renderProfiles() {
+    const renderId = ++profileRenderId;
+    if (pendingGuestPreviewTimer) clearTimeout(pendingGuestPreviewTimer);
+    pendingGuestPreviewTimer = null;
     cleanupProfileOverlays();
     document.getElementById('floatingCardBtn')?.remove();   // ← удаление кнопки
 
@@ -171,9 +177,10 @@ export async function renderProfiles() {
     showBottomNav(true); setupBottomNav();
     mainDiv().innerHTML = '<div class="loader" style="display:flex;justify-content:center;padding:40px 0;"></div>';
     await loadProfilesData();
+    if (renderId !== profileRenderId) return;
 
     const isCardHolder = state.userCard.status === 'active';
-    if (!isCardHolder) { renderGuestPeople(); return; }
+    if (!isCardHolder) { renderGuestPeople(renderId); return; }
     const hasMyProfile = !!myProfile;
     const placeholderCount = 6;
     const shouldAnimate = !(isCardHolder && hasMyProfile);
@@ -463,7 +470,10 @@ async function renderEditProfile() {
         if(bottomNav) bottomNav.style.display='flex';
         showBottomNav(true); setupBottomNav(); setActiveNav('navProfiles');
         cleanupProfileOverlays();
-        renderProfiles();
+        const rendering = renderProfiles().catch(error => console.warn('Profile list unavailable:', error));
+        try { await showProfileAwardAfterSave(); }
+        catch (error) { console.warn('Profile award unavailable:', error); }
+        await rendering;
     });
 
     if(document.getElementById('deleteProfileBtn')){
@@ -568,11 +578,11 @@ function gpAv(p) {
     const ph = p?.avatarUrl;
     return `<span class="gp-av"${ph ? ` style="background-image:url('${escapeHtml(ph)}')"` : ''}>${ph ? '' : escapeHtml((p?.name || '?').charAt(0).toUpperCase())}</span>`;
 }
-function renderGuestPeople() {
+function renderGuestPeople(renderId = profileRenderId) {
     if (!document.getElementById('gpCss')) { const st = document.createElement('style'); st.id = 'gpCss'; st.textContent = GP_CSS; document.head.appendChild(st); }
     const me = String(state.user?.id || '');
     const list = Object.entries(profiles).map(([id, p]) => ({ ...p, userId: String(p.userId || id) }))
-        .filter(p => p.userId !== me && p.guest !== true && p.name)
+        .filter(p => p.userId !== me && p.guest === false && p.name)
         .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     // 8 случайных членов клуба с профилем (каждый заход – новые лица), остальные – числом
     const shown = list.slice().sort(() => Math.random() - .5).slice(0, 8);
@@ -589,12 +599,15 @@ function renderGuestPeople() {
         const p = list.find(x => x.userId === c.dataset.uid);
         if (p) openGuestPreview(p, list.length);
     }));
-    // пришли из «твоих связей» по стрелке – сразу превью этого человека
+    // Переход из другого раздела открывает платное превью только для подтверждённого владельца карты.
     const pend = state.pendingProfileClick;
     state.pendingProfileClick = null;
     if (pend) {
-        const p = list.find(x => x.userId === String(pend.userId)) || { userId: String(pend.userId), name: pend.name, avatarUrl: pend.photoUrl };
-        setTimeout(() => openGuestPreview(p, list.length), 250);
+        const p = list.find(x => x.userId === String(pend.userId));
+        if (p) pendingGuestPreviewTimer = setTimeout(() => {
+            pendingGuestPreviewTimer = null;
+            if (renderId === profileRenderId) openGuestPreview(p, list.length);
+        }, 250);
     }
 }
 function openGuestPreview(p, total) {

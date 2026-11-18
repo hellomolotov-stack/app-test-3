@@ -118,6 +118,9 @@ const AUTO_ACHIEVEMENTS = [
     // стартовый значок – единственный, который выдаётся сам и при выключенной автовыдаче: при первом входе в приложение.
     { key: 'welcome', title: 'добро пожаловать', rarity: 'common', always: true, imageUrl: '/assets/achievements/badges/welcome-v2.png',
         description: 'первый вход в приложение клуба – дальше значки за хайки, маршруты и всё, что случится на тропе' },
+    // Бесплатный профиль и карта независимы: значок доступен обоим после сохранения анкеты.
+    { key: 'profile', title: 'показал себя клубу', rarity: 'common', profile: true, always: true, imageUrl: '/assets/achievements/badges/profile-v2.png',
+        description: 'заполнил профиль – теперь тебя легко найти и позвать на хайк' },
     { key: 'first-hike', title: 'первый хайк с интеллигенцией', rarity: 'common', min: 1, imageUrl: null,
         description: 'первый раз вышел на тропу с клубом – дальше только выше' },
     { key: 'hikes-5', title: '5 хайков', rarity: 'common', min: 5, imageUrl: '/assets/achievements/badges/hikes-5-v2.png',
@@ -227,11 +230,13 @@ function createHandler(deps = {}) {
     }
     async function claimAuto(token, user) {
         const userId = String(user.id);
-        const progress = await hikeProgress(token, userId);
-        const snapshot = (await read('clubAchievements', token)).value || {};
+        const [progress, profile, snapshotRead] = await Promise.all([
+            hikeProgress(token, userId), read(`userProfiles/${userId}`, token).catch(() => ({ value: null })), read('clubAchievements', token),
+        ]);
+        const snapshot = snapshotRead.value || {};
         const owned = new Set(Object.values(snapshot).filter(r => r?.grants?.[userId]?.issuedAt && r.publicationStatus === 'published').map(r => titleKey(r.title)));
         const due = AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
-            && (a.card ? progress.member : a.always || progress.hikes >= a.min) && (a.always || AUTO_GRANT_ENABLED));
+            && (a.profile ? !!profile.value : a.card ? progress.member : a.always || progress.hikes >= a.min) && (a.always || AUTO_GRANT_ENABLED));
         const granted = [];
         const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || userId).slice(0, 100);
         for (const a of due) {
