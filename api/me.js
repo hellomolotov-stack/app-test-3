@@ -126,8 +126,32 @@ async function grantCardOwnerBadge(uid, name, token) {
     }
 }
 
+async function serveSoloGpx(req, res) {
+    const solo = require('../lib/solo-hiking');
+    const { soloGpx: id, expires, signature } = req.query || {};
+    const secret = process.env.TELEGRAM_BOT_TOKEN;
+    if (!secret || !solo.canDownload(id, expires, signature, secret)) {
+        return res.status(403).json({ error: 'download link expired or invalid' });
+    }
+    try {
+        const route = solo.readCatalog(await read('routes', await getAccessToken())).find(item => item.id === id);
+        if (!route?.segments.length) return res.status(404).json({ error: 'track unavailable' });
+        const { kind } = solo.describe(route);
+        res.setHeader('Content-Type', 'application/gpx+xml; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${id}-solo.gpx"`);
+        res.setHeader('Access-Control-Allow-Origin', 'https://web.telegram.org');
+        res.setHeader('Referrer-Policy', 'no-referrer');
+        if (req.method === 'HEAD') return res.status(200).end();
+        return res.status(200).send(solo.gpx(route, kind));
+    } catch (error) {
+        console.error('me solo gpx:', error.message);
+        return res.status(502).json({ error: 'track unavailable' });
+    }
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
+    if (['GET', 'HEAD'].includes(req.method) && req.query?.soloGpx !== undefined) return serveSoloGpx(req, res);
     if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) return res.status(503).json({ error: 'not configured' });
@@ -137,13 +161,24 @@ module.exports = async (req, res) => {
     const user = verifyInitData(String((body && body.initData) || ''), botToken);
     if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
 
-    if (body?.action === 'soloRoutes') {
+    if (body?.action === 'soloRoutes' || body?.action === 'soloDownload') {
         const id = String(user.id);
         if (id !== '163665735') return res.status(403).json({ error: 'forbidden' });
         try {
-            const member = await read(`members/${id}`, await getAccessToken());
+            const solo = require('../lib/solo-hiking');
+            const token = await getAccessToken();
+            const [member, raw] = await Promise.all([read(`members/${id}`, token), read('routes', token)]);
             if (!member?.user_id) return res.status(403).json({ error: 'card required' });
-            return res.status(200).json({ routes: require('../lib/solo-hiking-routes.json') });
+            const routes = solo.readCatalog(raw).map(route => ({
+                ...solo.describe(route),
+                download: route.segments.length ? solo.downloadPath(route.id, botToken) : null
+            }));
+            if (body.action === 'soloDownload') {
+                const match = routes.find(route => route.id === body.routeId);
+                if (!match?.download) return res.status(404).json({ error: 'track unavailable' });
+                return res.status(200).json({ download: match.download });
+            }
+            return res.status(200).json({ routes });
         } catch (error) {
             console.error('me solo routes:', error.message);
             return res.status(502).json({ error: 'routes unavailable' });
