@@ -4215,7 +4215,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
 
 // 16.11: билет «ты в деле» – открывается после записи и потом снова: «твой билет» на главной, в «моих записях», в шторке хайка.
 // Погоды нет (прогноз не на ту дату), вместо неё – точка сбора; «что взять» – чек-лист прямо в билете
-const PACK_BASE = ['вода 1,5 л', 'перекус', 'обувь с закрытым носком'];
+const PACK_BASE = ['вода 1,5 л', 'перекус', 'обувь с протекторами'];
 const packKey = d => `packChecks:${d}`;
 export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardingPass = false } = {}) {
     document.querySelector('.reg-ticket-overlay')?.remove();
@@ -4249,7 +4249,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                 <div class="rt-head">
                     <div class="rt-check">✓</div>
                     <div class="rt-head-text">
-                        <div class="rt-title">ты в деле!</div>
+                        <div class="rt-title">ты в деле</div>
                         <div class="rt-sub"><b>${esc(hikeTitle)}</b> · ${whenShort}</div>
                     </div>
                 </div>
@@ -4302,7 +4302,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
     haptic();
     // чек-лист «что взять»: отметки – на телефоне, по дате хайка
     const winter = [10, 11, 0, 1, 2].includes(d.getMonth());
-    const packItems = [...PACK_BASE, ...(winter ? ['ветровка или тёплая кофта – наверху ветрено'] : [])];
+    const packItems = [...PACK_BASE, ...(winter ? ['ветровка и тёплая кофта'] : []), 'фонарик'];
     let packOn = {}; try { packOn = JSON.parse(localStorage.getItem(packKey(hikeDate)) || '{}') || {}; } catch (e) {}
     const paintPack = () => {
         const n = packItems.filter((_, i) => packOn[i]).length;
