@@ -117,17 +117,22 @@ export function hideAnimatedLoader() {
     wait();
 }
 
+let currentBackHandler;
+
 export function showBack(callback) {
-    const tg = window.Telegram?.WebApp;
-    if (!tg) return;
-    const backButton = tg.BackButton;
-    backButton.offClick();
-    backButton.onClick(() => { haptic(); callback(); });
+    const backButton = window.Telegram?.WebApp?.BackButton;
+    if (!backButton) return;
+    if (currentBackHandler) backButton.offClick(currentBackHandler);
+    currentBackHandler = () => { haptic(); callback(); };
+    backButton.onClick(currentBackHandler);
     backButton.show();
 }
 
 export function hideBack() {
-    window.Telegram?.WebApp?.BackButton?.hide();
+    const backButton = window.Telegram?.WebApp?.BackButton;
+    if (currentBackHandler) backButton?.offClick(currentBackHandler);
+    currentBackHandler = null;
+    backButton?.hide();
 }
 
 export function setUserInteracted() { userInteracted = true; }

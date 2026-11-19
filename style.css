@@ -8871,3 +8871,40 @@ button.rd-pass-meeting { cursor: pointer; }
 .solo-notes p { margin: 6px 0; font-size: 13px; color: rgba(255,255,255,.7); }
 .solo-source { padding: 6px 0; background: transparent; color: var(--yellow); font-size: 13px; }
 .solo-credit { color: rgba(255,255,255,.55); font-size: 11px; }
+
+.solo-back {
+    justify-self: start;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 8px;
+    border: 0;
+    background: transparent;
+    color: var(--yellow);
+    font: inherit;
+    font-size: 25px;
+    line-height: 1;
+    cursor: pointer;
+}
+.solo-loader {
+    display: grid;
+    place-items: center;
+    min-height: min(60vh, 480px);
+    min-height: min(60svh, 480px);
+}
+.solo-loader-stage {
+    width: min(280px, 100%);
+    height: 110px;
+    text-align: center;
+    color: #fff;
+    font: 500 18px/1.2 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+.solo-loader-stage > span { opacity: .9; }
+.solo-loader-tracks { position: relative; width: 48px; height: 48px; margin: 0 auto 16px; color: var(--yellow); }
+.solo-loader-tracks svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; animation: il-step 6s linear infinite, il-pulse 1.5s ease-in-out infinite; }
+.solo-loader-tracks svg:nth-child(2) { animation-delay: 1.5s, 0s; }
+.solo-loader-tracks svg:nth-child(3) { animation-delay: 3s, 0s; }
+.solo-loader-tracks svg:nth-child(4) { animation-delay: 4.5s, 0s; }
+@media (prefers-reduced-motion: reduce) {
+    .solo-loader-tracks svg { animation: none; }
+    .solo-loader-tracks svg:first-child { opacity: 1; }
+}
