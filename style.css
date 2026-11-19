@@ -8657,7 +8657,7 @@ html.glow #mainContent #calendarContainer {
 .rt-links { width: 100%; max-width: 420px; display: flex; justify-content: center; gap: 28px; margin-top: 12px; }
 .rt-link { padding: 10px 6px; border: 0; background: none; color: rgba(255,255,255,.7); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .rt-link.is-main { color: var(--yellow); font-weight: 700; }
-.rt-story { box-shadow: 0 6px 22px rgba(217,253,25,.35); }
+.rt-story, .rd-pass-open { box-shadow: 0 6px 22px rgba(217,253,25,.35); }
 .story-save { display: block; margin: 12px auto 0; padding: 10px 12px; border: 0; background: none; color: rgba(255,255,255,.75); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
 .story-save:disabled { opacity: .4; }
 
@@ -8714,7 +8714,7 @@ button.rd-pass-meeting { cursor: pointer; }
 .rd-pass-date strong { margin-top: 2px; font-size: 13px; }
 .rd-pass-map-action { display: flex; align-items: center; gap: 3px; color: #435344; font-size: 11px; font-weight: 720; }
 .rd-pass-map-action svg { width: 13px; height: 13px; }
-.rd-pass-seam { position: relative; z-index: 1; height: 0; margin: 0 24px; border-top: 1px dashed #5e645e; }
+.rd-pass-seam { position: relative; z-index: 1; height: 0; margin: 0 24px; border-top: 2px dashed #838982; }
 .rd-pass-stub { padding: 12px 15px 13px; background: #f3eee2; }
 .rd-pass-profile:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 10px; margin-bottom: 11px; }
 .rd-pass-profile small { color: #4c5648; font-size: 11px; font-weight: 650; }
