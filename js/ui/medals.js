@@ -44,17 +44,17 @@ export async function mountMyAchievements() {
         const shelf = [...items].sort((a, b) => (b.grant?.issuedAt || 0) - (a.grant?.issuedAt || 0)).slice(0, 3);
         const owned = new Set(items.map(a => catalogByTitle(a.title)?.id || a.title));
         const nextSteps = FIRST_STEPS.filter(st => !owned.has(st.id)).slice(0, 3 - shelf.length);
-        host.innerHTML = `<div class="mya-head"><h2 class="section-title">твои значки</h2></div>
-            ${items.length ? '' : '<p class="mya-sub">собирай значки за хайки, маршруты и моменты на тропе</p>'}
+        host.innerHTML = `<div class="mya-head"><h2 data-app-copy="copy_e83749c857d819c97100" class="section-title">твои значки</h2></div>
+            ${items.length ? '' : '<p data-app-copy="copy_66636522b288a8492bc7" class="mya-sub">собирай значки за хайки, маршруты и моменты на тропе</p>'}
             <div class="mya-shelf">${shelf.map((a, i) => { const w = isWaiting(a) ? metalOf(a) : '';
                 return `<button type="button" class="mya-it${w ? ` is-wait has-wv is-${w}` : ''}" data-medal="${i}" aria-label="${esc(a.title)}">
                 <span class="mya-pic">${routeRepeatMark(a) || (a.seenAt === null ? '<span class="mya-new">new</span>' : '')}<img ${medalSrc(a.medal.imageUrl)} alt="" loading="lazy">${w ? medalWaves(a.medal.imageUrl) : ''}</span><span class="mya-name">${esc(a.title)}</span></button>`; }).join('')}
             ${nextSteps.map(st => { const art = medalForTitle(st.title);
                 return `<button type="button" class="mya-it is-next" data-mya-all aria-label="${esc(st.title)}"><span class="mya-pic">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy">` : '<b>?</b>'}</span><span class="mya-name">${esc(st.short)}</span></button>`; }).join('')}
-            <button type="button" class="mya-it is-all" data-mya-all aria-label="все значки"><span class="mya-pic"><b>${items.length > shelf.length ? `+${items.length - shelf.length}` : '›'}</b></span><span class="mya-name">все значки</span></button></div>
+            <button type="button" class="mya-it is-all" data-mya-all aria-label="все значки"><span class="mya-pic"><b>${items.length > shelf.length ? `+${items.length - shelf.length}` : '›'}</b></span><span data-app-copy="copy_1f1751980786c75d09f8" class="mya-name">все значки</span></button></div>
             ${goalsHtml(owned)}
             ${false && waiting.length ? `<button type="button" class="mya-wait" data-mya-card><span class="mya-wait-stack">${waiting.slice(0, 3).map(a => `<img ${medalSrc(a.medal.imageUrl)} alt="" class="is-glow-${metalOf(a)}">`).join('')}</span>
-                <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small>откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
+                <span><b>${waiting.length} ${plural(waiting.length, 'значок ждёт', 'значка ждут', 'значков ждут')} активации</b><small data-app-copy="copy_7e9df3dde5a525aed9f6">откроются с картой интеллигента</small></span><i>›</i></button>` : ''}`;
         // классика v2 (html.v2): «витрина» – последний значок крупно, два предыдущих по бокам, ниже следующая цель
         if (document.documentElement.classList.contains('v2') && items.length) {
             host.innerHTML = vitrineHtml(items, shelf, owned, waiting);
@@ -248,7 +248,7 @@ function vitrineHtml(items, shelf, owned, waiting) {
         const art = medalForTitle(g.title);
         goal += `<button type="button" class="vt-line" data-mya-step="${esc(g.action)}">${art ? `<img ${medalSrc(art.imageUrl)} alt="">` : ''}<span>следующий: <b>${esc(g.title)}</b></span><em>${esc(g.link)}</em></button>`;
     }
-    return `<div class="vt-head"><b>твои значки<small>${items.length} из ${total}</small></b><button type="button" class="vt-all" data-mya-all>все ›</button></div>
+    return `<div class="vt-head"><b>твои значки<small>${items.length} из ${total}</small></b><button data-app-copy="copy_657dfe55362d0629bf51" type="button" class="vt-all" data-mya-all>все ›</button></div>
         ${a0.seenAt === null ? `<span class="vt-rays" aria-hidden="true"></span><span class="vt-conf" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="left:${(i * 37) % 100}%;animation-delay:${(i % 7) * .35}s;background:${['#D9FD19', '#F2C14E', '#7FC4F0', '#FF8FB8', '#fff'][i % 5]}"></i>`).join('')}</span>` : ''}
         <div class="vt-stage">${pic(a1, 1, 'vt-side vt-l')}${pic(a0, 0, 'vt-main')}${pic(a2, 2, 'vt-side vt-r')}</div>
         <div class="vt-title">${esc(a0.title)}</div>

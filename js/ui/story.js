@@ -199,10 +199,10 @@ export async function openStoryShare(hikeDate, source = '') {
     const overlay = document.createElement('div');
     overlay.className = 'inv-overlay story-overlay';
     overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div class="inv-scroll">
-        <h2 class="story-title">рисуем твою сторис…</h2>
-        <div class="story-preview"><div class="story-wait"><b>🗺️</b>рисуем 3D-карту маршрута…</div></div>
-        <button type="button" class="btn btn-yellow inv-wide" data-share disabled>поделиться в сторис</button>
-        <button type="button" class="story-save" data-save disabled>сохранить на телефон</button>
+        <h2 data-app-copy="copy_f9e6e492642634532042" class="story-title">рисуем твою сторис…</h2>
+        <div class="story-preview"><div class="story-wait"><b data-app-copy="copy_d6c5a3e6ec6894f1fbc0">🗺️</b>рисуем 3D-карту маршрута…</div></div>
+        <button data-app-copy="copy_0aaea2ca360089ec97df" type="button" class="btn btn-yellow inv-wide" data-share disabled>поделиться в сторис</button>
+        <button data-app-copy="copy_70627dd28083e3daefb6" type="button" class="story-save" data-save disabled>сохранить на телефон</button>
         <div class="inv-note story-note"></div>
     </div></div>`;
     document.body.appendChild(overlay);
@@ -220,7 +220,7 @@ export async function openStoryShare(hikeDate, source = '') {
         const canvas = await drawStory(hike);
         dataUrl = canvas.toDataURL('image/jpeg', 0.88);
     } catch (e) {
-        preview.innerHTML = '<div class="story-wait">не получилось нарисовать картинку, попробуй ещё раз</div>';
+        preview.innerHTML = '<div data-app-copy="copy_4da5eefc1d3ae33f87d5" class="story-wait">не получилось нарисовать картинку, попробуй ещё раз</div>';
         return;
     }
     if (!overlay.isConnected) return;

@@ -42,11 +42,11 @@ export function renderNewcomerPage(isGuest = false) {
     }
 
     // письмо от клуба – дополняет «как всё устроено»; пока только для пилотного входа по анкете
-    const letterHtml = isAdmissionPilot() ? `<div class="partner-item club-letter"><strong>лучше одному, чем с кем попало</strong>
-        <p>мы знаем много людей, которые гуляют одни. в наушниках по набережной, с книжкой в кафе, одни в горах. они не против людей – просто не хотят тратить день на шумную случайную компанию</p>
-        <p>мы собрали клуб для них. чтобы можно было пойти в горы и не бояться, с кем окажешься рядом. для этого мы сначала знакомимся – ты отмечаешь пару пунктов о себе, мы читаем и пишем в течение 3 часов</p>
-        <p>нам неважно, кем ты работаешь и как выглядишь. важно, чтобы тебе было хорошо с нами, а нам с тобой. группа маленькая, до 10 человек – здесь каждый на виду и каждого слышно</p>
-        <p>если тебе это откликается, кажется, ты к нам</p></div>` : '';
+    const letterHtml = isAdmissionPilot() ? `<div class="partner-item club-letter"><strong data-app-copy="copy_5b04ef025c02c924f89b">лучше одному, чем с кем попало</strong>
+        <p data-app-copy="copy_1e3b4aa298645f31dbee">мы знаем много людей, которые гуляют одни. в наушниках по набережной, с книжкой в кафе, одни в горах. они не против людей – просто не хотят тратить день на шумную случайную компанию</p>
+        <p data-app-copy="copy_b69076a471e40a9e9cbc">мы собрали клуб для них. чтобы можно было пойти в горы и не бояться, с кем окажешься рядом. для этого мы сначала знакомимся – ты отмечаешь пару пунктов о себе, мы читаем и пишем в течение 3 часов</p>
+        <p data-app-copy="copy_cdc05735160692d1ef90">нам неважно, кем ты работаешь и как выглядишь. важно, чтобы тебе было хорошо с нами, а нам с тобой. группа маленькая, до 10 человек – здесь каждый на виду и каждого слышно</p>
+        <p data-app-copy="copy_b478f950dd6bd080149c">если тебе это откликается, кажется, ты к нам</p></div>` : '';
     mainDiv().innerHTML = `
         <div class="card-container newcomer-page faq-page" style="margin-bottom: 0;">
             ${letterHtml}
@@ -135,9 +135,9 @@ export function renderGuestPrivileges() {
             </ul>
         </div>
         <div class="card-container">
-            <h2 class="section-title" style="font-style: italic;">в клубе</h2>
+            <h2 data-app-copy="copy_cd5fd70ac6e2d0802250" class="section-title" style="font-style: italic;">в клубе</h2>
             ${clubHtml}
-            <h2 class="section-title second" style="font-style: italic;">в городе</h2>
+            <h2 data-app-copy="copy_eab53e5231a45007606e" class="section-title second" style="font-style: italic;">в городе</h2>
             ${cityHtml}
         </div>
     `;
@@ -201,14 +201,14 @@ export function renderPriv() {
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const rdHero = rd ? `
         <div class="rd-cardhero">
-            <span class="rd-page-title">карта интеллигента</span>
+            <span data-app-copy="copy_d87d12df0f2470e66af6" class="rd-page-title">карта интеллигента</span>
             <img src="${esc(state.userCard.cardUrl || 'assets/card-front.jpg')}" alt="моя карта интеллигента" class="rd-cardhero-img">
             <div class="rd-cardhero-row">
-                <div class="rd-cardhero-count"><b>${Number(state.userCard.hikes || 0)}</b><span>хайков пройдено</span></div>
-                ${cardQrEnabled() ? `<button type="button" class="rd-cardhero-qr" id="rdCardQr"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7"/></svg><b>показать QR</b><span>для партнёров</span></button>` : ''}
+                <div class="rd-cardhero-count"><b>${Number(state.userCard.hikes || 0)}</b><span data-app-copy="copy_83452a4c977b56e9ca65">хайков пройдено</span></div>
+                ${cardQrEnabled() ? `<button type="button" class="rd-cardhero-qr" id="rdCardQr"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 14v7h-7"/></svg><b data-app-copy="copy_6f2775dc81166ba9e816">показать QR</b><span data-app-copy="copy_fe24e5f882df25172a22">для партнёров</span></button>` : ''}
             </div>
-            <button type="button" class="rd-cardhero-gift" id="rdCardGift"><span><b>подарить карту другу</b><span>он увидит, от кого подарок</span></span><i>›</i></button>
-            <h2 class="rd-section-title">что открывает карта</h2>
+            <button type="button" class="rd-cardhero-gift" id="rdCardGift"><span><b data-app-copy="copy_54845b2c62c43ba80eff">подарить карту другу</b><span data-app-copy="copy_c8bc6730346fea851f4f">он увидит, от кого подарок</span></span><i>›</i></button>
+            <h2 data-app-copy="copy_48484b6fbd7249aa0c2a" class="rd-section-title">что открывает карта</h2>
         </div>` : '';
 
     // классика v2 (09.11): «кошелёк» – карта с QR для кассы, лента клубных привилегий, партнёры с фильтром
@@ -217,9 +217,9 @@ export function renderPriv() {
         <div class="card-container">
             ${foodHomeHtml()}
             ${soloHikingEntryHtml()}
-            <h2 class="section-title" style="font-style: italic;">в клубе</h2>
+            <h2 data-app-copy="copy_cd5fd70ac6e2d0802250" class="section-title" style="font-style: italic;">в клубе</h2>
             ${clubHtml}
-            <h2 class="section-title second" style="font-style: italic;">в городе</h2>
+            <h2 data-app-copy="copy_eab53e5231a45007606e" class="section-title second" style="font-style: italic;">в городе</h2>
             ${cityHtml}
         </div>
     `;
@@ -243,7 +243,7 @@ export function renderGift(isGuest = false) {
     const giftText = state.giftContent || 'Информация о подарке временно недоступна.';
     mainDiv().innerHTML = `
         <div class="card-container">
-            <div class="partner-item"><strong>как подарить карту интеллигента</strong><p style="white-space: pre-line;">${giftText}</p></div>
+            <div class="partner-item"><strong data-app-copy="copy_d2d8f7fa0ef0c7cb02ae">как подарить карту интеллигента</strong><p style="white-space: pre-line;">${giftText}</p></div>
             <button class="btn btn-yellow btn-glow" id="giftOpenBtn" style="width: calc(100% - 32px); margin: 8px 16px 0;">🎁 подарить карту</button>
         </div>
     `;
@@ -268,7 +268,7 @@ export function renderPassPage(isGuest = false) {
     const buttonLink = state.passInfo.buttonLink || '';
     mainDiv().innerHTML = `
         <div class="card-container">
-            <div class="partner-item"><strong>как оформить пропуск</strong><p style="white-space: pre-line;">${content}</p></div>
+            <div class="partner-item"><strong data-app-copy="copy_f549feafbc728a4fdd7a">как оформить пропуск</strong><p style="white-space: pre-line;">${content}</p></div>
             <div style="display: flex; justify-content: center; margin: 20px 16px 0;"><a href="#" class="btn btn-yellow" id="passButton" style="width: 100%;">оформить пропуск</a></div>
         </div>
     `;
@@ -357,12 +357,12 @@ export function renderSafetyPage(isGuest = false) {
     });
     // если категория «эссе Макса» не нашлась — показываем обновления сверху
     if (updatesHtml && !updatesInserted) catsHtml = updatesHtml + catsHtml;
-    if (!catsHtml) catsHtml = '<div class="safety-cat"><p>информация скоро появится</p></div>';
+    if (!catsHtml) catsHtml = '<div class="safety-cat"><p data-app-copy="copy_0f7906bab3fa39c32368">информация скоро появится</p></div>';
 
     const reportBlock = `
         <div class="safety-cat safety-report-block">
-            <div class="safety-cat-title">знаешь что-то важное?</div>
-            <div class="safety-cat-desc">если у тебя есть актуальная информация – поделись с организаторами. мы добавим её в чек-лист</div>
+            <div data-app-copy="copy_e7aed669cc1319ec4957" class="safety-cat-title">знаешь что-то важное?</div>
+            <div data-app-copy="copy_27a4f35f16bc9c64147b" class="safety-cat-desc">если у тебя есть актуальная информация – поделись с организаторами. мы добавим её в чек-лист</div>
             <button class="btn btn-yellow safety-report-btn" id="safetyReportBtn">📢 поделиться информацией</button>
         </div>
     `;
@@ -372,10 +372,10 @@ export function renderSafetyPage(isGuest = false) {
     const pdfUrl = 'https://intelligentsia-club.ru/safety-checklist.pdf';
     const downloadBlock = `
         <a href="${pdfUrl}" id="safetyDownloadBtn" class="safety-download" target="_blank" rel="noopener">
-            <span class="safety-download-ic">⬇</span>
+            <span data-app-copy="copy_d1705de4e77d05832644" class="safety-download-ic">⬇</span>
             <span class="safety-download-tx">
-                <span class="safety-download-t">скачать список одним файлом</span>
-                <span class="safety-download-s">экстренные службы и чек-лист · сохрани, пока есть интернет</span>
+                <span data-app-copy="copy_23150af01a986ccb0bd3" class="safety-download-t">скачать список одним файлом</span>
+                <span data-app-copy="copy_07775f5cd042044ddb3b" class="safety-download-s">экстренные службы и чек-лист · сохрани, пока есть интернет</span>
             </span>
         </a>
     `;
@@ -550,17 +550,17 @@ function renderPrivWallet(esc) {
         <div class="pv">
             <div class="pv-wallet">
                 <img src="${esc(state.userCard.cardUrl || 'assets/card-front.jpg')}" alt="">
-                <div><b>покажи на кассе</b><span>QR карты – скидка засчитается сама</span></div>
+                <div><b data-app-copy="copy_864e11de354927cb12d3">покажи на кассе</b><span data-app-copy="copy_a1b41df9a7638866875e">QR карты – скидка засчитается сама</span></div>
                 ${cardQrEnabled() ? '<button type="button" class="pv-qr" id="pvQr">QR</button>' : ''}
             </div>
-            <div class="pv-sec">в клубе</div>
+            <div data-app-copy="copy_cd5fd70ac6e2d0802250" class="pv-sec">в клубе</div>
             <div class="pv-club">${club.map((c, i) => { const isNew = /^новое:/i.test(c.title); const t = String(c.title).replace(/^новое:\s*/i, ''); return `<button type="button" class="pv-cl" data-cl="${i}"><i>${pvClubIcon(t + ' ' + c.description)}</i><b>${esc(t)}</b></button>`; }).join('')}</div>
             ${foodHomeHtml()}
             ${soloHikingEntryHtml()}
             <div class="pv-sec">партнёры · ${city.length}</div>
             <div class="pv-chips">${cats.map(([k, l]) => `<button type="button" class="${k === cur ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('')}</div>
             <div class="pv-list" id="pvList">${rows()}</div>
-            <button type="button" class="pv-gift" id="pvGift"><span><b>подарить карту другу</b><small>он увидит, от кого подарок</small></span><i>›</i></button>
+            <button type="button" class="pv-gift" id="pvGift"><span><b data-app-copy="copy_54845b2c62c43ba80eff">подарить карту другу</b><small data-app-copy="copy_c8bc6730346fea851f4f">он увидит, от кого подарок</small></span><i>›</i></button>
         </div>`;
     bindFoodHome(mainDiv());
     bindSoloHikingEntry(mainDiv(), renderPriv);
@@ -593,7 +593,7 @@ function renderPrivWallet(esc) {
         log(`привилегии: ${t}`, false, state.user);
         const ov = document.createElement('div');
         ov.className = 'pv-ov';
-        ov.innerHTML = `<div class="pv-sheet"><span class="pv-grab"></span><i>${pvClubIcon(t + ' ' + c.description)}</i><b>${esc(t)}</b><p>${parseLinks(String(c.description || ''), false).replace(/\n/g, '<br>')}</p>${c.button_text && c.button_link ? `<button type="button" class="btn btn-yellow" id="pvClBtn">${esc(c.button_text)}</button>` : ''}<button type="button" class="pv-close">закрыть</button></div>`;
+        ov.innerHTML = `<div class="pv-sheet"><span class="pv-grab"></span><i>${pvClubIcon(t + ' ' + c.description)}</i><b>${esc(t)}</b><p>${parseLinks(String(c.description || ''), false).replace(/\n/g, '<br>')}</p>${c.button_text && c.button_link ? `<button type="button" class="btn btn-yellow" id="pvClBtn">${esc(c.button_text)}</button>` : ''}<button data-app-copy="copy_f7838dbabbd5b03ecc56" type="button" class="pv-close">закрыть</button></div>`;
         document.body.appendChild(ov);
         requestAnimationFrame(() => ov.classList.add('on'));
         const close = () => { ov.classList.remove('on'); setTimeout(() => ov.remove(), 250); };

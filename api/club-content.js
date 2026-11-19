@@ -150,12 +150,12 @@ function validateValue(section, value) {
     return normalizeUpdates(updates);
 }
 
-const COPY_KEYS = new Set(['homeAsk0', 'homeAsk1', 'homeAsk2', 'homeAsk3', 'homeAssistant', 'homeMastermind', 'homeMetrics', 'homeNew', 'homeReasons', 'homeUpdates', 'ticketBell', 'ticketDone', 'ticketHike', 'ticketHikeTitle', 'ticketHome', 'ticketHomeTitle', 'ticketInvite', 'ticketInviteFriend', 'ticketNotify', 'ticketNotifyInfo', 'ticketOpen', 'ticketPack', 'ticketPhone', 'ticketPlace', 'ticketRoute', 'ticketSaved', 'ticketStatus']);
+const COPY_KEYS = new Set([...require('../lib/app-copy-keys.json'), 'homeAsk0', 'homeAsk1', 'homeAsk2', 'homeAsk3', 'homeAssistant', 'homeMastermind', 'homeMetrics', 'homeNew', 'homeReasons', 'homeUpdates', 'ticketBell', 'ticketDone', 'ticketHike', 'ticketHikeTitle', 'ticketHome', 'ticketHomeTitle', 'ticketInvite', 'ticketInviteFriend', 'ticketNotify', 'ticketNotifyInfo', 'ticketOpen', 'ticketPack', 'ticketPhone', 'ticketPlace', 'ticketRoute', 'ticketSaved', 'ticketStatus']);
 async function appCopy(req, res, body, user) {
     if (body && !(body.restore === true || (COPY_KEYS.has(body.key)
-        && typeof body.text === 'string' && body.text.trim() && body.text.length <= 240
+        && typeof body.text === 'string' && body.text.trim() && body.text.length <= 500
         && !/[\r\n\u0000-\u001f]/.test(body.text)))) {
-        return res.status(400).json({ error: 'введи текст до 240 символов в одну строку' });
+        return res.status(400).json({ error: 'введи текст до 500 символов в одну строку' });
     }
     try {
         const url = `${DB}/adminContent/appCopy.json`;

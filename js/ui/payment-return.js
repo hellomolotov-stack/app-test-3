@@ -121,9 +121,9 @@ export async function confirmCardPaymentReturn(celebration = null) {
         if (me?.card?.status === 'active') return showCardSuccess(pending, me);
     }
     const wait = overlay(`
-        <div style="font-size:44px; margin-bottom:12px;">💳</div>
-        <div class="modal-title" style="text-align:center;">проверяем оплату…</div>
-        <div class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">обычно это занимает несколько секунд</div>`);
+        <div data-app-copy="copy_95e289299a9f81177e2c" style="font-size:44px; margin-bottom:12px;">💳</div>
+        <div data-app-copy="copy_9e73efeabffc8efa0233" class="modal-title" style="text-align:center;">проверяем оплату…</div>
+        <div data-app-copy="copy_0f5d27faa851670a26cc" class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">обычно это занимает несколько секунд</div>`);
     const deadline = Date.now() + 25000;
     let me = null;
     while (Date.now() < deadline) {
@@ -141,10 +141,10 @@ export async function confirmCardPaymentReturn(celebration = null) {
     try { localStorage.setItem(PENDING_KEY, JSON.stringify({ ...pending, userId: state.user?.id || '' })); } catch (e) {}
     watchCardPayment();
     overlay(`
-        <div class="modal-title" style="text-align:center; color: var(--yellow);">оплату обрабатываем</div>
-        <div class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">как только платёжная система подтвердит оплату, карта появится в приложении сама. если её нет через 15 минут – напиши нам, разберёмся</div>
-        <button class="btn btn-yellow" data-support style="margin-top:16px; width:100%;">написать в поддержку</button>
-        <button class="btn btn-outline" data-close style="margin-top:10px; width:100%;">хорошо</button>`)
+        <div data-app-copy="copy_151a51d026d7f0a4878d" class="modal-title" style="text-align:center; color: var(--yellow);">оплату обрабатываем</div>
+        <div data-app-copy="copy_650f756bb52b5c1810a2" class="modal-text" style="text-align:center; margin-top:8px; line-height:1.5;">как только платёжная система подтвердит оплату, карта появится в приложении сама. если её нет через 15 минут – напиши нам, разберёмся</div>
+        <button data-app-copy="copy_05f08353c226e08f12ff" class="btn btn-yellow" data-support style="margin-top:16px; width:100%;">написать в поддержку</button>
+        <button data-app-copy="copy_a5f34365dc313fc483f7" class="btn btn-outline" data-close style="margin-top:10px; width:100%;">хорошо</button>`)
         .querySelector('[data-support]').addEventListener('click', e => {
             e.currentTarget.closest('.card-payment-overlay')?.remove();
             import('../utils.js').then(m => m.openLink('https://t.me/hellointelligent', 'оплата карты – написать в поддержку', true));

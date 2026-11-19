@@ -66,28 +66,28 @@ function cardHtml(h, i) {
     const booked = !past && !teaser && wi >= 0 && state.hikeBookingStatus?.[wi] === true;
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
     const tag = past ? `<span class="cf-tag is-past">${isCity(h) ? 'завершено' : 'завершён'}</span>`
-        : teaser ? '<span class="cf-tag is-soon">готовим</span>'
-        : booked ? '<span class="cf-tag is-booked">✓ ты записан</span>'
-        : isCity(h) ? '<span class="cf-tag is-city">в городе</span>' : '<span class="cf-tag">запись открыта</span>';
+        : teaser ? '<span data-app-copy="copy_2e3c54f9419b135864fe" class="cf-tag is-soon">готовим</span>'
+        : booked ? '<span data-app-copy="copy_9b631d2cbe727405242a" class="cf-tag is-booked">✓ ты записан</span>'
+        : isCity(h) ? '<span data-app-copy="copy_eab53e5231a45007606e" class="cf-tag is-city">в городе</span>' : '<span data-app-copy="copy_72d79e96e893be8b8aaf" class="cf-tag">запись открыта</span>';
     const on = teaser && isWaitlisted(h.date);
     const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
     if (h.nextMonth) {
         // заглушка в конце ленты: размытая зима, снежинка, «сообщить об открытии» на весь месяц
         const m = d.getMonth(), winter = m === 11 || m <= 1;
-        return `<button type="button" class="${cls} is-next" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}"><span class="cf-bg"></span><span class="cf-q">${winter ? '❄' : '?'}</span><span class="cf-tag is-soon">готовим</span>
+        return `<button type="button" class="${cls} is-next" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}"><span class="cf-bg"></span><span class="cf-q">${winter ? '❄' : '?'}</span><span data-app-copy="copy_2e3c54f9419b135864fe" class="cf-tag is-soon">готовим</span>
             <span class="cf-in cf-in-t"><small>${MONN[m]}</small><b class="cf-title">${winter ? 'зимние хайки' : 'новые маршруты'}</b></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
     const bg = '<span class="cf-bg"></span>';
     if (teaser && /🌧/.test(h.emoji || '')) {
         // заглушка «хайк перенесён»: стрелка вместо «?», без колокольчика и подписки
-        return `<button type="button" class="cf-card is-moved" data-i="${i}" data-date="${h.date}">${bg}<span class="cf-q">→</span><span class="cf-tag is-soon">перенесён</span>
+        return `<button type="button" class="cf-card is-moved" data-i="${i}" data-date="${h.date}">${bg}<span class="cf-q">→</span><span data-app-copy="copy_170db65f62b035361626" class="cf-tag is-soon">перенесён</span>
             <span class="cf-in cf-in-t"><small>${when}</small></span>
-            <span class="cf-tbar"><span class="cf-tlab">хайк перенесён</span></span></button>`;
+            <span class="cf-tbar"><span data-app-copy="copy_6dc6d430215a201db5f5" class="cf-tlab">хайк перенесён</span></span></button>`;
     }
     if (teaser) {
         // будущий без маршрута: «?», колокольчик, строка с тумблером; подписан – карточка «загорается» лаймом
-        return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}">${bg}<span class="cf-q">?</span>${tag}<span class="cf-bell">🔔</span>
+        return `<button type="button" class="${cls}" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}">${bg}<span class="cf-q">?</span>${tag}<span data-app-copy="ticketBell" class="cf-bell">🔔</span>
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
@@ -95,7 +95,7 @@ function cardHtml(h, i) {
         // анонс без записи: фото и название видны, сверху «с 17 ноября», внизу «напомнить»; детали не открываются
         const on2 = isWaitlisted(h.date);
         return `<button type="button" class="cf-card is-announce${on2 ? ' is-on' : ''}" data-i="${i}" data-date="${h.date}" aria-pressed="${on2}">${bg}
-            <span class="cf-tag">анонс</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
+            <span data-app-copy="copy_7be49ec0932ca83d94b1" class="cf-tag">анонс</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
             <span class="cf-tbar"><span class="cf-tlab">${on2 ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
     const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
@@ -108,7 +108,7 @@ function cardHtml(h, i) {
 function wheelHtml(list) {
     const t = today();
     return `<div class="cf-wheel" aria-hidden="true"><span class="cf-lens"></span><div class="cf-wl">${list.map((h, i) => { const d = dt(h.date);
-        if (h.nextMonth) return `<span class="cf-d is-next" data-w="${i}"><small>${MON3[d.getMonth()]}</small><b>❄</b></span>`;
+        if (h.nextMonth) return `<span class="cf-d is-next" data-w="${i}"><small>${MON3[d.getMonth()]}</small><b data-app-copy="copy_750ed7638b575446dd33">❄</b></span>`;
         return `<span class="cf-d${h.date < t ? ' is-past' : ''}${isCity(h) ? ' is-city' : ''}" data-w="${i}"><small>${WD[d.getDay()]}</small><b>${d.getDate()}</b></span>`; }).join('')}</div></div>
         <div class="cf-mon"><span data-mp></span><b data-mc></b><span data-mn></span></div>`;
 }
@@ -142,7 +142,7 @@ export function renderCalFlow(container) {
     if (linked >= 0) start = linked;
     container.className = 'card-container cf-wrap';
     container.innerHTML = `
-        <div class="cf-head"><b>календарь</b><span>${list.filter(h => h.date >= t && !h.nextMonth).length} впереди</span></div>
+        <div class="cf-head"><b data-app-copy="copy_25c5ee9e379e5cff52f9">календарь</b><span>${list.filter(h => h.date >= t && !h.nextMonth).length} впереди</span></div>
         <div class="cf-track">${list.map(cardHtml).join('')}</div>
         ${wheelHtml(list)}`;
     const track = container.querySelector('.cf-track');

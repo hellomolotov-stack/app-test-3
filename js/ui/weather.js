@@ -319,7 +319,7 @@ function paintNow(root, coast) {
     if (wd) {
         const ms = cur.windspeed_10m || 0;
         const gust = Math.round(cur.windgusts_10m || 0);
-        wd.querySelector('.wstat-val').innerHTML = `${Math.round(ms)}<small> м/с</small>`;
+        wd.querySelector('.wstat-val').innerHTML = `${Math.round(ms)}<small data-app-copy="copy_433131102f3406b1da9e"> м/с</small>`;
         const dir = windDir(cur.winddirection_10m || 0);
         wd.querySelector('.wstat-sub').textContent = gust >= ms + 2 ? `${dir} · порывы ${gust}` : `${windWord(ms)}, ${dir}`;
         // стрелка показывает, куда дует ветер (направление в прогнозе – откуда)
@@ -368,7 +368,7 @@ function skyHtml(city) {
         </div>
         <div class="wstats">
             <div class="wday">
-                <div class="wstat-head"><span>восход · закат</span><span class="wday-len"></span></div>
+                <div class="wstat-head"><span data-app-copy="copy_690592e53f39026810ed">восход · закат</span><span class="wday-len"></span></div>
                 <div class="wday-row">
                     <span class="wday-rise">–</span>
                     <div class="wday-bar"><div class="wday-fill"></div><div class="wday-dot"></div></div>
@@ -377,14 +377,14 @@ function skyHtml(city) {
                 <div class="wday-sub">&nbsp;</div>
             </div>
             <div class="wstat wstat--cloud">
-                <div class="wstat-head"><span>облачность</span>
+                <div class="wstat-head"><span data-app-copy="copy_055a4679ab08039696b2">облачность</span>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19a4.5 4.5 0 1 0-1.4-8.8A6 6 0 1 0 6 16.9 3.5 3.5 0 0 0 7 19h10.5z"/></svg>
                 </div>
                 <div class="wstat-val">–</div>
                 <div class="wstat-bottom"><span class="wstat-sub">&nbsp;</span><div class="wstat-bar"><div class="wstat-fill"></div></div></div>
             </div>
             <div class="wstat wstat--wind">
-                <div class="wstat-head"><span>ветер</span>
+                <div class="wstat-head"><span data-app-copy="copy_f295067392bd9630a1df">ветер</span>
                     <svg class="wstat-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>
                 </div>
                 <div class="wstat-val">–</div>
@@ -424,7 +424,7 @@ function showCityPicker(onSelect) {
     overlay.innerHTML = `
         <div class="bottom-sheet" style="padding-bottom: 32px;">
             <div class="bottom-sheet-handle"></div>
-            <div style="padding: 20px 20px 12px; font-size: 18px; font-weight: 600; color: #fff;">выбери город</div>
+            <div data-app-copy="copy_8e327732c3da8d9cb553" style="padding: 20px 20px 12px; font-size: 18px; font-weight: 600; color: #fff;">выбери город</div>
             ${CITIES.map(c => `
                 <button class="city-picker-btn" data-city="${c.name}">${c.name}</button>
             `).join('')}
@@ -479,7 +479,7 @@ async function loadAndRender(containerId) {
         const mLabel = container.querySelector('.weather-mountain-label');
         if (mLabel) mLabel.textContent = city.mountain.label;
     } catch (e) {
-        coastEl.innerHTML    = '<div class="weather-error">не удалось загрузить</div>';
+        coastEl.innerHTML    = '<div data-app-copy="copy_eb1bcd6ccda9bedd9dbe" class="weather-error">не удалось загрузить</div>';
         mountainEl.innerHTML = '';
     }
 }
@@ -498,8 +498,8 @@ function wt2Html(city, data) {
     const head = days.map(d => { const w = new Date(d + 'T12:00:00').getDay(); return `<span class="wt2-d${d === hd ? ' is-hk' : ''}">${d === today ? 'сег' : WD2[w]}</span>`; }).join('');
     const row = z => days.map((d, i) => `<span class="wt2-t${d === hd ? ' is-hk' : ''}"><i>${wmoEmoji(z.weathercode[i])}</i>${Math.round(z.temperature_2m_max[i])}°</span>`).join('');
     return `<div class="wt2-grid"><span></span>${head}
-        <button type="button" class="wt2-lab" id="weatherCityBtn"><b>город</b>${city.name} ›</button>${row(data.coast)}
-        <span class="wt2-lab"><b>горы</b>${city.mountain.label}</span>${row(data.mountain)}</div>
+        <button type="button" class="wt2-lab" id="weatherCityBtn"><b data-app-copy="copy_c4f5a5fa45653c53c589">город</b>${city.name} ›</button>${row(data.coast)}
+        <span class="wt2-lab"><b data-app-copy="copy_e427e7e5859f51a4610b">горы</b>${city.mountain.label}</span>${row(data.mountain)}</div>
 `;
 }
 async function loadWt2() {
@@ -508,7 +508,7 @@ async function loadWt2() {
     if (!box) return;
     const city = getCity();
     try { box.innerHTML = wt2Html(city, await fetchWeather(city)); }
-    catch (e) { box.innerHTML = '<div class="wt2-skel">не удалось загрузить прогноз</div>'; }
+    catch (e) { box.innerHTML = '<div data-app-copy="copy_c90b02183bc6264e3d57" class="wt2-skel">не удалось загрузить прогноз</div>'; }
     box.querySelector('#weatherCityBtn')?.addEventListener('click', () => {
         haptic(); log('выбор города погоды', false, state.user);
         showCityPicker(name => { saveCity(name); localStorage.removeItem(CACHE_KEY); loadWt2(); });
@@ -521,14 +521,14 @@ const HOME_WEATHER_ENABLED = false;
 export function renderWeatherBlock() {
     if (!HOME_WEATHER_ENABLED) return '';
     const city = getCity();
-    if (isV2()) return `<div class="card-container wt2" id="weatherBlock"><div class="wt2-h"><b>погода на неделю</b></div><div class="wt2-body"><div class="wt2-skel">загружаю прогноз…</div></div></div>`;
+    if (isV2()) return `<div class="card-container wt2" id="weatherBlock"><div class="wt2-h"><b data-app-copy="copy_d089d593e7ff1fefb406">погода на неделю</b></div><div class="wt2-body"><div class="wt2-skel">загружаю прогноз…</div></div></div>`;
     return `
     <div class="card-container" id="weatherBlock">
         <div class="weather-header">
-            <span class="weather-title">☁️ погода</span>
+            <span data-app-copy="copy_d9be0a5e16bef0da0237" class="weather-title">☁️ погода</span>
         </div>
         ${skyHtml(city)}
-        <div class="weather-zone-label">🌊 побережье</div>
+        <div data-app-copy="copy_0c7ed878c0f01b1d6eab" class="weather-zone-label">🌊 побережье</div>
         <div class="weather-days weather-days--coast"></div>
         <div class="weather-zone-label" style="margin-top: 12px;">⛰️ горы · <span class="weather-mountain-label">${city.mountain.label}</span></div>
         <div class="weather-days weather-days--mountain"></div>

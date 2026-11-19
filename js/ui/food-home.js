@@ -61,14 +61,14 @@ export function foodHomeHtml() {
     if (!foodHomeEnabled()) return '';
     return `<div class="fh2" id="fhBlock">
         <div class="fh2-head">
-            <span class="fh2-tag">интеллигенция × жить здорово</span><span class="fh2-pct">−10%</span>
-            <h3>продукты домой, на хайкинг и в зал</h3>
-            <p>полезная еда, перекусы и БАДы со скидкой по карте</p>
+            <span data-app-copy="copy_1a5c562068fdcded56b3" class="fh2-tag">интеллигенция × жить здорово</span><span class="fh2-pct">−10%</span>
+            <h3 data-app-copy="copy_80ee38486c3d239b1811">продукты домой, на хайкинг и в зал</h3>
+            <p data-app-copy="copy_5e797e7d825cee447003">полезная еда, перекусы и БАДы со скидкой по карте</p>
         </div>
         <div class="fh2-in">
-            <form class="fh2-search" id="fhSearch"><input type="search" id="fhQuery" placeholder="найди: творог, протеин, хлеб…" enterkeyhint="search" autocomplete="off" aria-label="найти продукт"><button type="submit" aria-label="найти">›</button></form>
+            <form class="fh2-search" id="fhSearch"><input data-app-copy-placeholder="copy_67e2086e2130104e3b91" type="search" id="fhQuery" placeholder="найди: творог, протеин, хлеб…" enterkeyhint="search" autocomplete="off" aria-label="найти продукт"><button type="submit" aria-label="найти">›</button></form>
             <div class="fh2-tiles">${TILES.map(([e, t, slug, hl]) => `<button type="button" class="fh2-tile${hl ? ' hl' : ''}" data-cat="${slug}" data-name="${t}"><i>${e}</i>${t}</button>`).join('')}</div>
-            <div class="fh2-sav" id="fhSav" hidden><div class="fh2-sh"><span>сэкономил с картой</span><b id="fhSum">0 ₽</b></div><small>за твои заказы продуктов и хайкинг боксов</small><div class="fh2-bar"><u id="fhBar"></u></div></div>
+            <div class="fh2-sav" id="fhSav" hidden><div class="fh2-sh"><span data-app-copy="copy_aca951da3505ed58e18f">сэкономил с картой</span><b id="fhSum">0 ₽</b></div><small data-app-copy="copy_8ef7efaef1a7a9d4b7d2">за твои заказы продуктов и хайкинг боксов</small><div class="fh2-bar"><u id="fhBar"></u></div></div>
             <button type="button" class="fh2-go" id="fhGo">открыть магазин</button>
         </div>
     </div>`;

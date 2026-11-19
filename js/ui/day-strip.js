@@ -102,10 +102,10 @@ export function renderDayStrip(container) {
     const row = (h, k) => `<button type="button" class="ev-row${h.date < t ? ' is-past' : ''}" data-ev="${k}">${thumb(h)}<span class="ev-rm"><b>${esc(titleOf(h))}</b><small>${h.date < t ? `${dt(h.date).getDate()} ${MONTHS[dt(h.date).getMonth()]}` : dayShort(h)}${h.date >= t && h.start_time && !isTeaser(h) ? ' · ' + esc(h.start_time) : ''}${kind(h) === 'city' ? ' · в городе' : ''}<span data-evc="${h.date}"></span></small></span>${h.date >= t && isTeaser(h) ? `<span class="ev-bell${isWaitlisted(h.date) ? ' is-on' : ''}" data-bell="${h.date}">${isWaitlisted(h.date) ? '✓' : '🔔'}</span>` : '<span class="ev-av" data-eva="' + h.date + '"></span>'}</button>`;
     const list = [...later, ...past];
     container.innerHTML = `<div class="ev">
-        <div class="ev-hd"><h2 class="section-title">события</h2></div>
+        <div class="ev-hd"><h2 data-app-copy="copy_71382fd3628215b3bdc3" class="section-title">события</h2></div>
         ${hero ? heroHtml(hero) : ''}
-        ${later.length || teaserRow ? `<div class="ev-grp"><b>позже</b></div>${later.map(h => row(h, list.indexOf(h))).join('')}${teaserRow}` : ''}
-        ${past.length ? `<div class="ev-grp"><b>было</b><span id="evPastSum"></span></div>${past.map(h => row(h, list.indexOf(h))).join('')}` : ''}
+        ${later.length || teaserRow ? `<div class="ev-grp"><b data-app-copy="copy_295bd5ba2d793a9fb4e0">позже</b></div>${later.map(h => row(h, list.indexOf(h))).join('')}${teaserRow}` : ''}
+        ${past.length ? `<div class="ev-grp"><b data-app-copy="copy_3b79270b18c82245ad3d">было</b><span id="evPastSum"></span></div>${past.map(h => row(h, list.indexOf(h))).join('')}` : ''}
     </div>`;
     container.querySelectorAll('[data-ev]').forEach(b => b.addEventListener('click', async e => {
         const h = list[+b.dataset.ev]; if (!h) return;

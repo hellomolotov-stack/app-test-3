@@ -8912,7 +8912,7 @@ button.rd-pass-meeting { cursor: pointer; }
 /* Inline copy editor, shown only for the club's two admin accounts. */
 .copy-pencil { position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); z-index: 10900; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #d9fd19; background: #171a16; color: #d9fd19; font: 24px/1 system-ui; cursor: pointer; }
 .copy-pencil[aria-pressed=true] { color: #171a16; background: #d9fd19; }
-.copy-editing [data-app-copy] { outline: 1px dashed #a2b633; outline-offset: 2px; cursor: text; }
+.copy-editing :is([data-app-copy], [data-app-copy-placeholder], [data-app-copy-tail]) { outline: 1px dashed #a2b633; outline-offset: 2px; cursor: text; }
 .copy-dialog { width: min(400px, calc(100% - 32px)); max-height: 80dvh; margin: auto auto 12px; padding: 16px; background: #171a1e; color: #fff; border: 1px solid #414640; border-radius: 20px; font: inherit; }
 .copy-dialog::backdrop { background: transparent; }
 .copy-dialog form, .copy-dialog label { display: grid; gap: 10px; }

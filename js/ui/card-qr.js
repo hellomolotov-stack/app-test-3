@@ -56,17 +56,17 @@ export function openCardQr() {
     const close = () => { overlay.classList.remove('is-on'); document.body.style.overflow = ''; setTimeout(() => overlay.remove(), 250); };
 
     const showList = () => {
-        body.innerHTML = `<div class="cq-emoji">🪪</div>
-            <div class="cq-title">покажи карту на кассе</div>
-            <div class="cq-sub">выбери, кому</div>
+        body.innerHTML = `<div data-app-copy="copy_0e4f7972577c3c328afb" class="cq-emoji">🪪</div>
+            <div data-app-copy="copy_94594b811ade08bcaef8" class="cq-title">покажи карту на кассе</div>
+            <div data-app-copy="copy_e89243bbfba0fcb040d1" class="cq-sub">выбери, кому</div>
             <div class="cq-list">${PARTNERS.map(p => `<button type="button" class="cq-partner" data-p="${p.key}">
                 <span class="cq-p-e">${p.emoji}</span><span class="cq-p-t"><b>${p.name}</b><small>${p.note}</small></span><span class="cq-p-go">›</span></button>`).join('')}</div>`;
     };
     const showQr = async (p) => {
-        body.innerHTML = `<button type="button" class="cq-back">‹ назад</button>
+        body.innerHTML = `<button data-app-copy="copy_ce93a00dd229d317ef4f" type="button" class="cq-back">‹ назад</button>
             <div class="cq-title">${p.emoji} ${p.name}</div>
-            <div class="cq-sub">кассир сканирует QR камерой телефона</div>
-            <div class="cq-qr"><div class="cq-load">готовим QR…</div></div>
+            <div data-app-copy="copy_9043f0d49a237dbc1407" class="cq-sub">кассир сканирует QR камерой телефона</div>
+            <div class="cq-qr"><div data-app-copy="copy_6fbcdeff947c4ab4e07c" class="cq-load">готовим QR…</div></div>
             <div class="cq-note">${p.note}</div>`;
         try {
             const [lib, url] = await Promise.all([loadQrLib(), fetchCardUrl()]);

@@ -213,8 +213,8 @@ export function mountHikingBoxPlate(container, hike, isGuest) {
     row.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
     row.innerHTML = `<div class="letter-plate box-plate" role="button">
         ${boxThumbHtml()}
-        <span class="letter-plate-text"><b>возьми бокс на хайк</b><small>доставим прямо на старте${routeOf(hike) ? ' · ' + routeOf(hike) : ''}</small></span>
-        <button type="button" class="box-plate-btn">что внутри</button></div>`;
+        <span class="letter-plate-text"><b data-app-copy="copy_e2d9c9d5268deba0182e">возьми бокс на хайк</b><small>доставим прямо на старте${routeOf(hike) ? ' · ' + routeOf(hike) : ''}</small></span>
+        <button data-app-copy="copy_e4be10bf5d1518297751" type="button" class="box-plate-btn">что внутри</button></div>`;
     const plate = row.querySelector('.box-plate');
     plate.addEventListener('click', e => {
         e.preventDefault();
@@ -256,36 +256,36 @@ export function openHikingBox(fromEl, hike, isGuest) {
             <div class="cs-grab hb-grab"></div>
             <button type="button" class="hb-close" aria-label="закрыть">✕</button>
             <div class="hb-scroll">
-                <div class="hb-head"><div class="hb-title">хайкинг бокс</div>${noteHtml(hike)}</div>
-                <div class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой</div>
+                <div class="hb-head"><div data-app-copy="copy_527155442c76bb56197c" class="hb-title">хайкинг бокс</div>${noteHtml(hike)}</div>
+                <div data-app-copy="copy_1e70e2bcbed828499a1f" class="hb-sub">получаешь перед стартом и не думаешь, что взять с собой</div>
                 <div class="hb-tabs" role="tablist">${Object.entries(BOXES).map(([k, b]) =>
                     `<button type="button" class="hb-tab" data-box="${k}" role="tab">${b.tab}</button>`).join('')}</div>
                 <div class="hb-collage-wrap"><div class="hb-collage"></div></div>
-                <div class="hb-tap-hint">нажми на продукт – расскажем о нём</div>
+                <div data-app-copy="copy_8879a981dc0cef4ccc32" class="hb-tap-hint">нажми на продукт – расскажем о нём</div>
                 <div class="hb-warn"></div>
-                <div class="hb-swaps"><span class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
-                <div class="hb-label">как получить</div>
+                <div class="hb-swaps"><span data-app-copy="copy_5f6ae471353ceb43a801" class="hb-swaps-k">в магазине можно заменить</span><div class="hb-swaps-list"></div></div>
+                <div data-app-copy="copy_508b17cbd50e9e08e3bd" class="hb-label">как получить</div>
                 <div class="hb-ways">
-                    <div class="hb-way"><span>🚚</span><b>доставка по Ялте</b><small>накануне</small></div>
-                    <div class="hb-way"><span>🏪</span><b>самовывоз</b><small>из магазина</small></div>
-                    <div class="hb-way is-hl"><span>🏔</span><b>на хайк</b><small>на точке сбора</small></div>
+                    <div class="hb-way"><span data-app-copy="copy_417710f369590e56a4d9">🚚</span><b data-app-copy="copy_24e093567e3c94150039">доставка по Ялте</b><small data-app-copy="copy_e418f3e376d9762677c7">накануне</small></div>
+                    <div class="hb-way"><span data-app-copy="copy_d03cdebb998a544b7115">🏪</span><b data-app-copy="copy_56d5aba6c014ae1e439f">самовывоз</b><small data-app-copy="copy_2cee5b0e4d7f9f72ecf8">из магазина</small></div>
+                    <div class="hb-way is-hl"><span data-app-copy="copy_d831eb952784d72e44ec">🏔</span><b data-app-copy="copy_c305eb7ac6c6601981ae">на хайк</b><small data-app-copy="copy_89d35384f0f57ef54e67">на точке сбора</small></div>
                 </div>
                 <div class="hb-price">
                     <span class="hb-price-k"></span>
                     <div class="hb-price-row">
-                        <div class="hb-p-full"><small>без карты</small><b></b></div>
-                        <div class="hb-p-card"><span class="hb-p-badge">−10%</span><small>с картой интеллигента</small><b></b></div>
+                        <div class="hb-p-full"><small data-app-copy="copy_1a62bea69e1d8a69486e">без карты</small><b></b></div>
+                        <div class="hb-p-card"><span class="hb-p-badge">−10%</span><small data-app-copy="copy_f62753ec61c28bccac75">с картой интеллигента</small><b></b></div>
                     </div>
                     <small class="hb-price-note"></small>
                 </div>
-                <div class="hb-facts"><div><b>100+</b><span>продуктов на выбор – собери бокс под свои вкусы</span></div><div><b>0%</b><span>нашей наценки – по прямой цене магазина</span></div></div>
-                <div class="hb-why"><span>почему мы это сделали</span><p>сами часто стояли в очередях перед хайком и брали что попало. поэтому нашли в Ялте магазин, где основатель подходит к каждому продукту с любовью: всё в нём – про полезную и при этом вкусную еду. это отлично совпадает с нашей философией хайкинга</p></div>
+                <div class="hb-facts"><div><b>100+</b><span data-app-copy="copy_4adbb8548d175c6dd178">продуктов на выбор – собери бокс под свои вкусы</span></div><div><b>0%</b><span data-app-copy="copy_aa449193c2a7e26a7c90">нашей наценки – по прямой цене магазина</span></div></div>
+                <div class="hb-why"><span data-app-copy="copy_97c124dfb9ccb0653a05">почему мы это сделали</span><p data-app-copy="copy_aa1ba6c71f8fd452b4c1">сами часто стояли в очередях перед хайком и брали что попало. поэтому нашли в Ялте магазин, где основатель подходит к каждому продукту с любовью: всё в нём – про полезную и при этом вкусную еду. это отлично совпадает с нашей философией хайкинга</p></div>
                 <div class="hb-partner">продукты и сборка – <b>dietcakes.ru</b></div>
             </div>
             <div class="hb-pop" hidden></div>
             <div class="hb-bar">
-                <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b>скидка 10%</b> с картой интеллигента</span><em>купить ›</em></button>
-                <button type="button" class="btn btn-yellow hb-buy hb-buy-full hb-custom">Настроить свой бокс</button>
+                <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b data-app-copy="copy_92894fd444e7f2dfc3d9">скидка 10%</b> с картой интеллигента</span><em data-app-copy="copy_faae07a6400251cdb2c0">купить ›</em></button>
+                <button data-app-copy="copy_b7f760805a0ca3b08b16" type="button" class="btn btn-yellow hb-buy hb-buy-full hb-custom">Настроить свой бокс</button>
             </div>
         </div>`;
     const sheet = overlay.querySelector('.hb-sheet');
@@ -436,7 +436,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
         // владельцу карты – та же плашка, но без «оформить»: просто напоминание о его скидке
         if (isMember) {
             el.classList.add('is-member');
-            el.querySelector('span').innerHTML = 'по твоей карте интеллигента – <b>скидка 10%</b>';
+            el.querySelector('span').innerHTML = 'по твоей карте интеллигента – <b data-app-copy="copy_92894fd444e7f2dfc3d9">скидка 10%</b>';
             el.querySelector('em').textContent = '✓';
             return;
         }

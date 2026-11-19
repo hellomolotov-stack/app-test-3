@@ -190,7 +190,7 @@ export function mountLumen(initialContext = {}) {
         <div class="lumen-prompt" role="status">
             <button class="lumen-prompt-close" aria-label="закрыть подсказку">×</button>
             <button class="lumen-prompt-open"><span class="lumen-prompt-text"></span></button>
-            <button class="lumen-prompt-disable">не показывать подсказки</button>
+            <button data-app-copy="copy_6fba1c1e6a1d749b0384" class="lumen-prompt-disable">не показывать подсказки</button>
         </div>
         <button class="lumen-character" aria-label="открыть чат с Люменом">
             <span class="lumen-glow"></span>

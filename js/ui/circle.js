@@ -245,7 +245,7 @@ function avStyle(p, i) {
 function liveNetHtml(d) {
     const total = d.locked ? d.open : d.total, strong = d.locked ? 0 : (d.strong || 0);
     return `<div class="lv-wrap" data-cc-open>
-        <div class="lv-hdr"><h2>твои связи</h2><span>открыть ›</span></div>
+        <div class="lv-hdr"><h2 data-app-copy="copy_e6ec8d302b7dcc9d797a">твои связи</h2><span data-app-copy="copy_8632477339bc207bd2f9">открыть ›</span></div>
         <div class="lv-net">${netSvg({ ...d, people: d.people.slice(0, d.locked ? 90 : NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccv' })}</div>
         <div class="lv-ft"></div><div class="lv-fb"></div>
         <div class="lv-stats">${strong ? `<div class="is-c"><b>${strong}</b><span>${plural(strong, 'близкая связь', 'близкие связи', 'близких связей')}</span></div>` : ''}
@@ -257,7 +257,7 @@ function blockHtml(d) {
     if (document.documentElement.classList.contains('v2')) return liveNetHtml(d);
     const n = d.total, nx = d.next;
     return `
-        <div class="cc-hdr"><h2>твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
+        <div class="cc-hdr"><h2 data-app-copy="copy_e6ec8d302b7dcc9d797a">твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
         <div class="cc-panel" data-cc-open>
             ${netSvg({ ...d, people: d.people.slice(0, d.locked ? 90 : NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccm' })}
             <div class="cc-fade"></div>
@@ -267,7 +267,7 @@ function blockHtml(d) {
             </div>
         </div>${d.locked ? lockHtml(d) : ''}`;
 }
-const lockHtml = d => `<button type="button" class="cc-lock" data-cc-card><img src="assets/card-front.jpg" alt=""><span><b>обрети больше связей</b>с картой интеллигента откроются все твои ${d.total} ${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} и весь клуб</span><em>›</em></button>`;
+const lockHtml = d => `<button type="button" class="cc-lock" data-cc-card><img src="assets/card-front.jpg" alt=""><span><b data-app-copy="copy_cc29fcec0d2dafacc375">обрети больше связей</b>с картой интеллигента откроются все твои ${d.total} ${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} и весь клуб</span><em>›</em></button>`;
 async function openCard(source) {
     log(`твои связи: карта (${source})`, true, state.user);
     const { openCardSheet } = await import('./card-sheet.js');
@@ -278,7 +278,7 @@ export async function mountCircle(container) {
     if (!container || !circleEnabled()) return;
     ensureCss();
     container.className = 'card-container cc-card' + (document.documentElement.classList.contains('v2') ? ' lv-card' : '');
-    container.innerHTML = '<div class="cc-hdr"><h2>твои связи</h2></div><div class="cc-load">собираю твои связи…</div>';
+    container.innerHTML = '<div class="cc-hdr"><h2 data-app-copy="copy_e6ec8d302b7dcc9d797a">твои связи</h2></div><div data-app-copy="copy_afb62030fcedb8f093f2" class="cc-load">собираю твои связи…</div>';
     try {
         // один запрос на запуск: главная перерисовывается 2–3 раза подряд, и каждый раз уходил новый запрос
         data = data || await (dataRequest ||= load().catch(() => null).then(d => { if (!d) dataRequest = null; return d; }));
@@ -526,18 +526,18 @@ export function openCircleSheet() {
         <div class="cs2-sheet cs3" role="dialog" aria-label="твои связи" style="max-height:calc(100% - ${topInset + 20}px - env(safe-area-inset-bottom, 0px))">
             <div class="cs-grab cs2-grab"></div>
             <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
-            <div class="cs3-hd"><div class="cs2-h">твои связи</div></div>
+            <div class="cs3-hd"><div data-app-copy="copy_e6ec8d302b7dcc9d797a" class="cs2-h">твои связи</div></div>
             <div class="cs2-net cs3-net" id="cs2Net">${svgCam}<div class="cs3-cnt"><b id="cs3Num">${stages[0].n}</b><span id="cs3Lbl">${stages[0].l}</span></div></div>
             ${stages.length > 1 ? `<div class="cs3-stage" id="cs3Stage">${stages.map((st, i) => `<button type="button" data-st="${i}"${i ? '' : ' class="on"'}>${st.b}</button>`).join('')}</div>` : ''}
             ${d.locked ? `<div class="cs2-sub">${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка открыты сейчас. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб</div>
-                <button type="button" class="cs3-link" data-cs2-card>открыть все связи с картой ›</button>` : ''}
-            <div class="cs2-sec">твой круг на тропе</div>
-            <div class="cs3-hint">у членов клуба есть профили – они со стрелкой ›</div>
+                <button data-app-copy="copy_fbbb5461d32e4600cc2d" type="button" class="cs3-link" data-cs2-card>открыть все связи с картой ›</button>` : ''}
+            <div data-app-copy="copy_c773b44f7d9cb1f92cc8" class="cs2-sec">твой круг на тропе</div>
+            <div data-app-copy="copy_3dc71993946f50656bd0" class="cs3-hint">у членов клуба есть профили – они со стрелкой ›</div>
             <div class="cs3-list" id="cs3List">${people.map((p, i) => rowHtml(p, i)).join('')}${(d.orgs || []).map((p, i) => rowHtml(p, i, true)).join('')}</div>
-            ${nx ? `<div class="cs2-sec">ближайший хайк</div>
+            ${nx ? `<div data-app-copy="copy_4fda854687cb2078765c" class="cs2-sec">ближайший хайк</div>
             <div class="cs2-next"><div class="top"><b>${dayLabel(nx.date)}${nx.title ? ' · ' + esc(nx.title) : ''}</b></div>
-                <div class="row"><div class="cs2-stack">${stack}</div><span>${bookingNotOpen(nx.date) ? 'анонс · <em>новые лица и новые истории</em>' : `${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em>`}</span></div>
-                <button type="button" class="cs2-go" data-cs2-hike>открыть хайк</button></div>` : ''}
+                <div class="row"><div class="cs2-stack">${stack}</div><span>${bookingNotOpen(nx.date) ? 'анонс · <em data-app-copy="copy_be540139be3a76c5ae74">новые лица и новые истории</em>' : `${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em>`}</span></div>
+                <button data-app-copy="copy_76f0149273aed5f7288b" type="button" class="cs2-go" data-cs2-hike>открыть хайк</button></div>` : ''}
         </div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
@@ -609,7 +609,7 @@ export function openCircleSheet() {
         const more = row.querySelector('.cs3-more');
         const routes = (p?.routes || []).length ? `<div class="cs3-routes">${p.routes.map(r => `<span>${esc(r)}</span>`).join('')}</div>` : '';
         more.innerHTML = routes + '<div class="cs3-pf"></div>';
-        more.querySelector('.cs3-pf').innerHTML = '<div class="cs3-nop">профиль есть только у членов клуба</div>';
+        more.querySelector('.cs3-pf').innerHTML = '<div data-app-copy="copy_402f11f15efcd73d09fd" class="cs3-nop">профиль есть только у членов клуба</div>';
     };
     overlay.addEventListener('click', e => {
         if (e.target.closest('[data-cs2-card]')) { haptic(); closeCircleSheet(); setTimeout(() => openCard('шторка'), 320); return; }

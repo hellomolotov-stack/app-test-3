@@ -5,7 +5,7 @@ import { haptic } from '../utils.js';
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const ddmm = ts => { const d = new Date(ts); return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`; };
-export const DEFAULT_TEXT = '[имя], у тебя новый значок клуба 🏅\n\n<b>[значки]</b>\n\nзагляни – его можно посмотреть и поделиться в сторис';
+export const DEFAULT_TEXT = '[имя], у тебя новый значок клуба 🏅\n\n<b data-app-copy="copy_97c550c54a9ef339d963">[значки]</b>\n\nзагляни – его можно посмотреть и поделиться в сторис';
 
 const ui = { open: false, people: null, picked: new Set(), text: DEFAULT_TEXT, busy: false, note: '', error: '' };
 
@@ -36,8 +36,8 @@ export function mountAchievementNotify(host) {
     };
     const panel = people => `<div class="an-panel">
         ${ui.error ? `<p class="adm-error-inline" role="alert">${esc(ui.error)}</p>` : ''}
-        ${!people.length ? '<p class="adm-muted">за последние 45 дней новых ачивок нет</p>' : `
-        <div class="an-tools"><button class="adm-link" data-an-new>только кому не отправляли</button><button class="adm-link" data-an-all>всех</button><button class="adm-link" data-an-none>снять</button></div>
+        ${!people.length ? '<p data-app-copy="copy_19f8144c35ee69f67bfc" class="adm-muted">за последние 45 дней новых ачивок нет</p>' : `
+        <div class="an-tools"><button data-app-copy="copy_b31339d09985b069ddb9" class="adm-link" data-an-new>только кому не отправляли</button><button data-app-copy="copy_87b1acc1531713ec8ba3" class="adm-link" data-an-all>всех</button><button data-app-copy="copy_07b2539a7ea39d280c65" class="adm-link" data-an-none>снять</button></div>
         <div class="an-list">${people.map(p => {
             const fresh = p.items.filter(i => !i.notifiedAt);
             const last = Math.max(...p.items.map(i => i.notifiedAt || 0));
@@ -46,9 +46,9 @@ export function mountAchievementNotify(host) {
                 <em>${p.items.map(i => `${i.notifiedAt ? '' : '🆕 '}${esc(i.title)}`).join(' · ')}</em></span>
                 <span class="an-status${fresh.length ? ' is-new' : ''}">${fresh.length ? 'не отправляли' : `✓ ушло ${ddmm(last)}`}</span></label>`;
         }).join('')}</div>`}
-        <label class="adm-field"><span>текст · [имя] – имя, [значки] – названия новых значков</span><textarea rows="6" data-an-text>${esc(ui.text)}</textarea></label>
-        <div class="adm-hint">под сообщением кнопка «🏅 посмотреть значки» – откроет приложение сразу на поп-апе с медалями. повторно человеку уходят только ачивки, о которых ещё не писали</div>
-        <button class="adm-link" data-an-reset>вернуть текст по умолчанию</button>
+        <label class="adm-field"><span data-app-copy="copy_e7c1772030ad95f733ad">текст · [имя] – имя, [значки] – названия новых значков</span><textarea rows="6" data-an-text>${esc(ui.text)}</textarea></label>
+        <div data-app-copy="copy_9e1f15789e8ccbaeb199" class="adm-hint">под сообщением кнопка «🏅 посмотреть значки» – откроет приложение сразу на поп-апе с медалями. повторно человеку уходят только ачивки, о которых ещё не писали</div>
+        <button data-app-copy="copy_9879b31bf18ab75d3869" class="adm-link" data-an-reset>вернуть текст по умолчанию</button>
         ${ui.note ? `<p class="adm-hint an-note" role="status">${esc(ui.note)}</p>` : ''}
         <div class="adm-row2"><button class="adm-ghost" data-an-test ${ui.busy || !ui.picked.size ? 'disabled' : ''}>отправить себе</button>
         <button class="btn btn-yellow adm-primary" data-an-send ${ui.busy || !ui.picked.size ? 'disabled' : ''}>${ui.busy ? 'отправляю…' : `отправить · ${ui.picked.size}`}</button></div>

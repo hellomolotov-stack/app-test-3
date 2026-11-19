@@ -483,14 +483,14 @@ export function renderIntelligentsiaRoutes(container) {
     container.innerHTML = `
         <div class="card-container intelligentsia-routes-card">
             <div class="intelligentsia-routes-header">
-                <h2 class="section-title">карта хайков</h2>
+                <h2 data-app-copy="copy_8669e91589d4960266e9" class="section-title">карта хайков</h2>
             </div>
             <div class="intelligentsia-route-map-wrap">
                 <div id="intelligentsiaRoutesMap" class="intelligentsia-route-map"></div>
                 <div id="intelligentsiaRouteStatus" class="intelligentsia-route-status" hidden>
                     <span class="intelligentsia-route-status-lock" aria-hidden="true">🔒</span>
                     <div class="intelligentsia-route-status-copy">
-                        <div class="intelligentsia-route-status-title">маршрут временно закрыт</div>
+                        <div data-app-copy="copy_c21ce6ce2744899b0cfd" class="intelligentsia-route-status-title">маршрут временно закрыт</div>
                         <a id="intelligentsiaRouteStatusReason" class="intelligentsia-route-status-reason" target="_blank" rel="noopener noreferrer"></a>
                     </div>
                 </div>
@@ -658,7 +658,7 @@ export function renderIntelligentsiaRoutes(container) {
         }
     }).catch(() => {
         const el = document.getElementById('intelligentsiaRoutesMap');
-        if (el) el.innerHTML = '<div class="intelligentsia-map-fallback">карта временно недоступна</div>';
+        if (el) el.innerHTML = '<div data-app-copy="copy_3b2c0287ca323f8162c0" class="intelligentsia-map-fallback">карта временно недоступна</div>';
     });
 }
 

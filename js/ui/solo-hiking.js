@@ -30,7 +30,7 @@ function track(route) {
 }
 
 function profile(route) {
-    if (!route.profile?.length || !route.meters) return '<p class="solo-muted">профиль высот уточняется</p>';
+    if (!route.profile?.length || !route.meters) return '<p data-app-copy="copy_08877954883eba429fef" class="solo-muted">профиль высот уточняется</p>';
     const forward = route.profile;
     const end = forward.at(-1).at(-1)[0];
     if (end <= 0) return '';
@@ -57,14 +57,14 @@ function profile(route) {
     const middle = route.kind === 'linear'
         ? '<line x1="140" x2="140" y1="7" y2="65" stroke-dasharray="3 3" class="solo-grid-line"/>' : '';
     return `<section class="solo-profile">
-        <h3>профиль высот</h3>
+        <h3 data-app-copy="copy_4fca8a0467b06185f0a5">профиль высот</h3>
         <div class="solo-plot">
             <div class="solo-axis"><span>${high} м</span><span>${low} м</span></div>
             <svg viewBox="0 0 280 72" preserveAspectRatio="none" role="img" aria-label="Профиль высот">
                 <path d="M0 7H280 M0 36H280 M0 65H280" fill="none" class="solo-grid-line"/>${middle}${paths}
             </svg>
             <div class="solo-dist"><span>${route.kind === 'parts' ? '0 км' : 'старт'}</span>
-              ${route.kind === 'linear' ? '<span>разворот</span>' : ''}
+              ${route.kind === 'linear' ? '<span data-app-copy="copy_20d934fb1f4ff7c2dce1">разворот</span>' : ''}
               <span>${route.kind === 'parts' ? `${route.km} км участков` : 'финиш'}</span>
             </div>
         </div>
@@ -94,7 +94,7 @@ function catalogRows(routes, time, difficulty) {
         (difficulty === 'all' || route.difficulty === DIFFICULTIES[Number(difficulty)]) &&
         (time === 'all' || timeGroup(route) === time)
     );
-    if (!matches.length) return '<p class="solo-muted">с этими фильтрами маршрутов нет</p>';
+    if (!matches.length) return '<p data-app-copy="copy_c7e30c5719b4a84495a8" class="solo-muted">с этими фильтрами маршрутов нет</p>';
     return [['short', 'до 3 часов на тропе'], ['long', 'дольше 3 часов'], ['unknown', 'время уточняется']]
         .map(([group,label]) => {
             const rows = matches.filter(route => timeGroup(route) === group);
@@ -109,24 +109,24 @@ function guide(route) {
     }[route.kind];
     const hasGpx = route.canDownload || Boolean(route.download);
     return `<h2>${esc(route.title)}</h2><p class="solo-muted">${trip}</p>
-        ${route.line.length ? `<div class="solo-cover">${track(route)}<span>форма трека</span></div>` : ''}
+        ${route.line.length ? `<div class="solo-cover">${track(route)}<span data-app-copy="copy_6bca1b6dca27705b06db">форма трека</span></div>` : ''}
         <div class="solo-facts">
           <div><b>${route.km === null ? 'уточняется' : kmLabel(route)}</b><span>${route.kind === 'parts' ? 'сумма участков' : 'весь маршрут'}</span></div>
-          <div><b>${route.minutes === null ? 'уточняется' : timeLabel(route)}</b><span>на тропе</span></div>
-          <div><b>${route.difficulty ?? 'уточняется'}</b><span>сложность</span></div>
+          <div><b>${route.minutes === null ? 'уточняется' : timeLabel(route)}</b><span data-app-copy="copy_a8381ed7aa079d64f6c1">на тропе</span></div>
+          <div><b>${route.difficulty ?? 'уточняется'}</b><span data-app-copy="copy_d87cfe370f4f59899f64">сложность</span></div>
         </div>
         ${profile(route)}
         ${route.start || hasGpx ? `<section class="solo-links">
-          <h3>полезные ссылки</h3>
-          ${route.start ? '<button type="button" class="solo-link" data-solo-action="map"><span><b>точка старта в Яндекс Картах</b><small>как добраться до начала маршрута</small></span><i>↗</i></button>' : ''}
-          ${hasGpx ? `<button type="button" class="solo-link" data-solo-action="gpx"><span><b>скачать GPX</b><small>${route.kind === 'parts' ? 'отдельные участки трека' : 'полный маршрут для офлайн-карты'}</small></span><i>↓</i></button>` : ''}
+          <h3 data-app-copy="copy_5064dc1d4b31db15a992">полезные ссылки</h3>
+          ${route.start ? '<button type="button" class="solo-link" data-solo-action="map"><span><b data-app-copy="copy_e34baf44d338af0df173">точка старта в Яндекс Картах</b><small data-app-copy="copy_1d099909c07e79855319">как добраться до начала маршрута</small></span><i>↗</i></button>' : ''}
+          ${hasGpx ? `<button type="button" class="solo-link" data-solo-action="gpx"><span><b data-app-copy="copy_10f9d0c149c48679fc04">скачать GPX</b><small>${route.kind === 'parts' ? 'отдельные участки трека' : 'полный маршрут для офлайн-карты'}</small></span><i>↓</i></button>` : ''}
           <p class="solo-muted" role="status" data-solo-download-status></p>
         </section>` : ''}
         ${route.description || route.reference || route.kind === 'parts' ? `<details class="solo-notes" open>
-          <summary>что важно на маршруте</summary>
+          <summary data-app-copy="copy_c57576d9874135c38f71">что важно на маршруте</summary>
           ${route.description ? `<p>${esc(route.description)}</p>` : ''}
-          ${route.kind === 'parts' ? '<p>между участками нет связующего трека, время прохождения уточняется</p>' : ''}
-          ${route.reference ? '<button class="solo-source" type="button" data-solo-action="reference">описание и условия маршрута ↗</button>' : ''}
+          ${route.kind === 'parts' ? '<p data-app-copy="copy_56bf9190b284316e352e">между участками нет связующего трека, время прохождения уточняется</p>' : ''}
+          ${route.reference ? '<button data-app-copy="copy_c5d03441ed0344583e81" class="solo-source" type="button" data-solo-action="reference">описание и условия маршрута ↗</button>' : ''}
         </details>` : ''}
         ${route.profile?.length ? `<p class="solo-credit">${SOURCE_CREDIT}</p>` : ''}`;
 }
@@ -228,7 +228,7 @@ export async function openSoloHiking(uid, back) {
             try { localStorage.removeItem(catalogCacheKey(uid)); } catch {}
         }
         if (page.isConnected) {
-            page.innerHTML = `${backHtml}<p class="solo-muted" role="status">${forbidden ? 'раздел доступен с активной картой' : 'не удалось загрузить маршруты'}</p>${forbidden ? '' : '<button class="solo-source" type="button">попробовать ещё раз</button>'}`;
+            page.innerHTML = `${backHtml}<p class="solo-muted" role="status">${forbidden ? 'раздел доступен с активной картой' : 'не удалось загрузить маршруты'}</p>${forbidden ? '' : '<button data-app-copy="copy_dbcf617a7ed59b4d06f3" class="solo-source" type="button">попробовать ещё раз</button>'}`;
             const retry = page.querySelector('.solo-source');
             if (retry) retry.onclick = () => openSoloHiking(uid, back);
         }
@@ -245,13 +245,13 @@ export async function openSoloHiking(uid, back) {
         showBack(back);
         const feature = routes.find(route => route.id === 'tsarskaya-tropa') || routes.find(route => route.line.length);
         page.innerHTML = `${feature ? `<button class="solo-feature" type="button" data-solo-route="${feature.id}">
-              <span><small>из каталога клуба</small><b>${esc(feature.title)}</b><span>${kmLabel(feature)} · ${timeLabel(feature)}</span></span>
+              <span><small data-app-copy="copy_539fea93563c5c6aa016">из каталога клуба</small><b>${esc(feature.title)}</b><span>${kmLabel(feature)} · ${timeLabel(feature)}</span></span>
               <span>${track(feature)}</span>
             </button>` : ''}
-            <fieldset class="solo-filters"><legend>время на тропе</legend>
+            <fieldset class="solo-filters"><legend data-app-copy="copy_c8721bd74d32a184395d">время на тропе</legend>
               ${chip('time','all','любое',time)}${chip('time','short','до 3 ч',time)}${chip('time','long','дольше 3 ч',time)}
             </fieldset>
-            <fieldset class="solo-filters"><legend>сложность</legend>
+            <fieldset class="solo-filters"><legend data-app-copy="copy_d87cfe370f4f59899f64">сложность</legend>
               ${chip('level','all','любая',difficulty)}${DIFFICULTIES.map((level,i) => chip('level',String(i),level,difficulty)).join('')}
             </fieldset>
             <div class="solo-results" aria-live="polite">${catalogRows(routes,time,difficulty)}</div>`;

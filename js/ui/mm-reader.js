@@ -67,7 +67,7 @@ function render(md) {
             prev = 'view'; continue;
         }
         if (card && speaker !== 'Макс' && /^Макс (подытожил|выделил|отметил|связал|признал)(?:\s|[,:—–-]|$)/u.test(line)) {
-            closeList(); html += `<div class="mmr-moderator"><span>Макс · комментарий</span><p>${inline(line)}</p></div>`;
+            closeList(); html += `<div class="mmr-moderator"><span data-app-copy="copy_0accd3312198469983c8">Макс · комментарий</span><p>${inline(line)}</p></div>`;
             prev = 'moderator'; continue;
         }
         // строка целиком жирным: сразу после заголовка ответа – имя участника, иначе – главный совет (старый шаблон)
@@ -214,7 +214,7 @@ function buildReader(list, id, drag) {
         <div class="cs-grab mmr-grab" aria-hidden="true"></div>
         <div class="mmr-top"><div class="k"></div><button type="button" class="mmr-ib mmr-x" aria-label="закрыть">✕</button></div>
         <div class="mmr-scroll"></div>
-        <div class="mmr-dock"><button type="button" class="mmr-ib mmr-nav" data-go="1" aria-label="раньше">‹</button><div class="mmr-mid"><span class="mmr-cnt"></span><small>листай свайпом</small></div><button type="button" class="mmr-ib mmr-nav" data-go="-1" aria-label="позже">›</button><button type="button" class="mmr-all" data-v="all" aria-label="все саммари">☰ все</button></div></div>`;
+        <div class="mmr-dock"><button type="button" class="mmr-ib mmr-nav" data-go="1" aria-label="раньше">‹</button><div class="mmr-mid"><span class="mmr-cnt"></span><small data-app-copy="copy_4ca6ad515ec9448108ba">листай свайпом</small></div><button type="button" class="mmr-ib mmr-nav" data-go="-1" aria-label="позже">›</button><button data-app-copy="copy_de8e3cc06fceaf78e4a4" type="button" class="mmr-all" data-v="all" aria-label="все саммари">☰ все</button></div></div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
     const me = overlay, sheetEl = overlay.querySelector('.mmr-sheet');
@@ -232,19 +232,19 @@ function buildReader(list, id, drag) {
     const scroll = overlay.querySelector('.mmr-scroll');
     const draw = () => {
         const cur = list[idx];
-        overlay.querySelector('.mmr-top .k').innerHTML = `${esc(dayLabel(cur.date))} <span>· саммари мастермайнда</span>`;
+        overlay.querySelector('.mmr-top .k').innerHTML = `${esc(dayLabel(cur.date))} <span data-app-copy="copy_eebd60084be93d4f2cc8">· саммари мастермайнда</span>`;
         overlay.querySelector('.mmr-cnt').textContent = `выпуск ${list.length - idx} из ${list.length}`;
         overlay.querySelector('[data-v]').classList.toggle('on', view === 'all');
         overlay.querySelector('[data-go="1"]').disabled = idx >= list.length - 1;
         overlay.querySelector('[data-go="-1"]').disabled = idx <= 0;
         if (view === 'all') {
-            scroll.innerHTML = '<h2 class="mmr-title" style="margin-bottom:14px">все саммари</h2>' + list.map((n, i) => `<button type="button" class="mmr-item${i === idx ? ' on' : ''}" data-i="${i}"><span class="d">${(() => { const [, m, dd] = String(n.date).split('-').map(Number); return `<b>${dd}</b>${['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][m - 1]}`; })()}</span><span class="t">${esc(n.title)}${n.place ? `<small>${esc(n.place)}</small>` : ''}</span></button>`).join('');
+            scroll.innerHTML = '<h2 data-app-copy="copy_6df9d827ed1f8288d195" class="mmr-title" style="margin-bottom:14px">все саммари</h2>' + list.map((n, i) => `<button type="button" class="mmr-item${i === idx ? ' on' : ''}" data-i="${i}"><span class="d">${(() => { const [, m, dd] = String(n.date).split('-').map(Number); return `<b>${dd}</b>${['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'][m - 1]}`; })()}</span><span class="t">${esc(n.title)}${n.place ? `<small>${esc(n.place)}</small>` : ''}</span></button>`).join('');
         } else {
             const n = list[idx];
             log(`саммари: читает ${n.date} ${n.title}`, n.locked, state.user);
             scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud-v2.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2></div></div><div class="mmr-people" data-mmp="${esc(n.date)}"></div>`
                 + render(n.body)
-                + (n.locked ? `<div class="mmr-lock"><p>целиком саммари мастермайндов читают владельцы карты интеллигента</p><button type="button" class="mmr-btn" data-card>открыть с картой</button></div>` : '');
+                + (n.locked ? `<div class="mmr-lock"><p data-app-copy="copy_54ffa561f921c9ef832d">целиком саммари мастермайндов читают владельцы карты интеллигента</p><button data-app-copy="copy_379bd85f690168dab360" type="button" class="mmr-btn" data-card>открыть с картой</button></div>` : '');
         }
         scroll.scrollTop = 0;
         // кто был на этой встрече – аватарки под заголовком

@@ -62,17 +62,17 @@ export function openAchievementsCollection(items = []) {
     const goalHtml = goal ? (() => {
         const [min, title] = goal, art = medalForTitle(title);
         return `<div class="bdg-card bdg-goal">${art ? `<img ${medalSrc(art.imageUrl)} alt="" class="is-gray">` : '<i class="acol-blank">?</i>'}
-            <div><b>вперёд!</b><span>${esc(title)} с клубом</span><small>${progress.hikes} из ${min}</small><i class="bdg-bar"><i style="width:${Math.round(progress.hikes / min * 100)}%"></i></i></div></div>`;
+            <div><b data-app-copy="copy_eab50604a4b2a8373271">вперёд!</b><span>${esc(title)} с клубом</span><small>${progress.hikes} из ${min}</small><i class="bdg-bar"><i style="width:${Math.round(progress.hikes / min * 100)}%"></i></i></div></div>`;
     })() : '';
 
     // последний полученный (из видимых)
     const latest = byDate(items)[0];
     const restForStack = sortByValue(items.filter(a => a !== latest));
     const featHtml = latest ? `<div class="bdg-card bdg-feat">
-        <h3>последний значок</h3>
+        <h3 data-app-copy="copy_90a8e7b3e5ad7dc8d066">последний значок</h3>
         <button type="button" class="bdg-feat-pic" data-open="${esc(latest.id)}">${img(latest, '', 'md')}${routeRepeatMark(latest)}</button>
         <div class="bdg-t">${esc(latest.title)}</div><div class="bdg-d">${esc([isWaiting(latest) ? 'ждёт активации' : ddmmyyyy(latest.grant?.date), rarityLabel(latest.rarity)].filter(Boolean).join(' · '))}</div>
-        ${items.length > 1 ? `<button type="button" class="bdg-foot" data-open-all>${stackHtml(restForStack)}<span class="bdg-more">и ещё ${items.length - 1}<b>показать все</b></span></button>` : ''}
+        ${items.length > 1 ? `<button type="button" class="bdg-foot" data-open-all>${stackHtml(restForStack)}<span class="bdg-more">и ещё ${items.length - 1}<b data-app-copy="copy_485c78026397b86808b5">показать все</b></span></button>` : ''}
     </div>` : '';
 
     const catCard = c => {
@@ -84,16 +84,16 @@ export function openAchievementsCollection(items = []) {
             const gray = (m, cls = 'is-gray') => `<img ${medalSrc(m.imageUrl)} alt="" loading="lazy" class="${cls}">`;
             return `<button type="button" class="bdg-cat is-empty" data-cat="${c.key}"><h4>${esc(c.title)}</h4>
             ${arts[0] ? `<span class="bdg-cat-pic">${gray(arts[0])}</span>` : '<i class="acol-blank">?</i>'}<span class="bdg-hint">${esc(c.hint)}</span>
-            ${arts.length > 1 ? `<span class="bdg-foot"><span class="bdg-stack">${arts.slice(1, 5).map(m => gray(m)).join('')}</span><span class="bdg-more">0 из ${c.total}<b>все</b></span></span>` : ''}</button>`;
+            ${arts.length > 1 ? `<span class="bdg-foot"><span class="bdg-stack">${arts.slice(1, 5).map(m => gray(m)).join('')}</span><span class="bdg-more">0 из ${c.total}<b data-app-copy="copy_c3089753a24678feea05">все</b></span></span>` : ''}</button>`;
         }
         return `<button type="button" class="bdg-cat" data-cat="${c.key}"><h4>${esc(c.title)}</h4>
             <span class="bdg-cat-pic">${img(top)}${routeRepeatMark(top)}</span><span class="bdg-t">${esc(top.title)}</span><span class="bdg-d">${isWaiting(top) ? 'ждёт активации' : esc(ddmmyyyy(top.grant?.date))}</span>
-            <span class="bdg-foot">${stackHtml(others)}<span class="bdg-more">${c.earned.length} из ${c.total}<b>все</b></span></span></button>`;
+            <span class="bdg-foot">${stackHtml(others)}<span class="bdg-more">${c.earned.length} из ${c.total}<b data-app-copy="copy_c3089753a24678feea05">все</b></span></span></button>`;
     };
 
     // что откроет карта: свои ждущие значки + значки только для владельцев карты
     const cardOnlyLeft = ACHIEVEMENT_CATALOG.filter(c => isCardOnly(c.id) && !items.some(a => catalogByTitle(a.title)?.id === c.id)).length;
-    const cardCta = () => (waiting.length || cardOnlyLeft) ? `<button type="button" class="acol-cta" data-card><b>с картой интеллигента</b> – ${[
+    const cardCta = () => (waiting.length || cardOnlyLeft) ? `<button type="button" class="acol-cta" data-card><b data-app-copy="copy_f62753ec61c28bccac75">с картой интеллигента</b> – ${[
         waiting.length ? `активируются твои ${waiting.length} ${plural(waiting.length, 'значок', 'значка', 'значков')}` : '',
         cardOnlyLeft ? `откроются ещё ${cardOnlyLeft} ${plural(cardOnlyLeft, 'значок', 'значка', 'значков')} клуба` : ''].filter(Boolean).join(' и ')}&nbsp;›</button>` : '';
 
@@ -101,7 +101,7 @@ export function openAchievementsCollection(items = []) {
     overlay.className = 'acol-overlay';
     overlay.innerHTML = `<div class="acol-sheet bdg-sheet" role="dialog" aria-modal="true" aria-label="значки">
         <div class="cs-grab acol-grab" aria-hidden="true"></div>
-        <div class="acol-top"><h2>значки</h2><button type="button" class="acol-close" aria-label="закрыть">✕</button></div>
+        <div class="acol-top"><h2 data-app-copy="copy_d9b9564ccc92382b0b23">значки</h2><button type="button" class="acol-close" aria-label="закрыть">✕</button></div>
         <div class="acol-scroll" data-view="main">
             <div class="acol-sub">собрано <b>${items.length} из ${totalAll}</b></div>
             ${goalHtml}${featHtml}
@@ -148,11 +148,11 @@ export function openAchievementsCollection(items = []) {
         if (!c) return;
         haptic(); how.hidden = true;
         const earned = sortByValue([...c.earned]);
-        catView.innerHTML = `<button type="button" class="bdg-back" data-back>‹ значки</button>
+        catView.innerHTML = `<button data-app-copy="copy_5dbc6e1e1643d1743e84" type="button" class="bdg-back" data-back>‹ значки</button>
             <div class="acol-sub">${c.key === 'routes' ? 'пройдено' : 'получено'} <b>${c.earned.length} из ${c.total}</b></div>
             <div class="bdg-g3">${earned.map(a => `<button type="button" class="bdg-it" data-open="${esc(a.id)}">${img(a)}${routeRepeatMark(a)}<span>${esc(a.title)}</span>${dateOrWait(a)}</button>`).join('')}
             ${c.missing.map(m => { const art = medalForTitle(m.title), only = !member && isCardOnly(m.id);
-                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}"><span class="wait-pic${only && art ? ' has-wv' : ''}">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}${only && art ? medalWaves(art.imageUrl) : ''}${only ? '<b class="card-only">с картой</b>' : ''}</span><span>${esc(m.title)}</span></button>`; }).join('')}</div>
+                return `<button type="button" class="bdg-it is-missing" data-how="${esc(m.id)}"><span class="wait-pic${only && art ? ' has-wv' : ''}">${art ? `<img ${medalSrc(art.imageUrl)} alt="" loading="lazy" class="is-gray">` : '<i class="acol-blank">?</i>'}${only && art ? medalWaves(art.imageUrl) : ''}${only ? '<b data-app-copy="copy_15268d643e5549f91aaf" class="card-only">с картой</b>' : ''}</span><span>${esc(m.title)}</span></button>`; }).join('')}</div>
             ${member ? '' : cardCta()}`;
         titleEl.textContent = c.title;
         main.hidden = true; catView.hidden = false; catView.scrollTop = 0;
