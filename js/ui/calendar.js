@@ -4239,8 +4239,8 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
     overlay.style.paddingTop = (inset ? inset + 12 : 24) + 'px';
     const footer = `
         <div class="rt-links">
-            <button type="button" class="rt-link is-main" id="rtInvite">${fromBoardingPass ? 'позвать +1' : 'позвать друга'}</button>
-            <button type="button" class="rt-link" id="rtDone">готово</button>
+            <button type="button" class="rt-link is-main" id="rtInvite">${fromBoardingPass ? '<span data-app-copy="ticketInvite">позвать +1</span>' : '<span data-app-copy="ticketInviteFriend">позвать друга</span>'}</button>
+            <button type="button" class="rt-link" id="rtDone"><span data-app-copy="ticketDone">готово</span></button>
         </div>`;
     overlay.innerHTML = `
         <div class="reg-ticket${fromBoardingPass ? ' rt-boarding-sheet' : ''}">
@@ -4249,7 +4249,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                 <div class="rt-head">
                     <div class="rt-check">✓</div>
                     <div class="rt-head-text">
-                        <div class="rt-title">ты в деле</div>
+                        <div class="rt-title"><span data-app-copy="ticketStatus">ты в деле</span></div>
                         <div class="rt-sub"><b>${esc(hikeTitle)}</b> · ${whenShort}</div>
                     </div>
                 </div>
@@ -4258,11 +4258,11 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                 <div class="rt-list">
                     <div class="rt-row">
                         <div class="rt-n is-done">✓</div>
-                        <div class="rt-text"><b>записали тебя</b><span id="rtCount">до встречи на тропе</span></div>
+                        <div class="rt-text"><b><span data-app-copy="ticketSaved">записали тебя</span></b><span id="rtCount">до встречи на тропе</span></div>
                     </div>
                     ${needsWriteAccess() ? `<button type="button" class="rt-row rt-notify" id="rtNotify">
-                        <div class="rt-n">🔔</div>
-                        <div class="rt-text"><b>разреши нам написать тебе</b><span>пришлём в бот, если по хайку что-то поменяется</span></div>
+                        <div class="rt-n"><span data-app-copy="ticketBell">🔔</span></div>
+                        <div class="rt-text"><b><span data-app-copy="ticketNotify">разреши нам написать тебе</span></b><span><span data-app-copy="ticketNotifyInfo">пришлём в бот, если по хайку что-то поменяется</span></span></div>
                         <div class="rt-chip">включить</div>
                     </button>` : ''}
                     <button type="button" class="rt-row" id="rtChat">
@@ -4272,19 +4272,19 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                     </button>
                     <button type="button" class="rt-row" id="rtPack">
                         <div class="rt-n">3</div>
-                        <div class="rt-text"><b>что взять с собой</b><span id="rtPackSub"></span></div>
+                        <div class="rt-text"><b><span data-app-copy="ticketPack">что взять с собой</span></b><span id="rtPackSub"></span></div>
                         <div class="rt-go" id="rtPackGo">⌄</div>
                     </button>
                     <div class="rt-pack" id="rtPackList" hidden></div>
                     ${boxOk ? hikingBoxRowHtml('rt-box', hikeDate) : ''}
                     ${hikeObj?.location_link ? `<button type="button" class="rt-row" id="rtPlace">
                         <div class="rt-n">4</div>
-                        <div class="rt-text"><b>точка сбора${hikeObj.start_time ? ' · ' + esc(hikeObj.start_time) : ''}</b><span>${route ? esc(route.title) + ' · ' : ''}место встречи на карте</span></div>
+                        <div class="rt-text"><b>точка сбора${hikeObj.start_time ? ' · ' + esc(hikeObj.start_time) : ''}</b><span>${route ? esc(route.title) + ' · ' : ''}<span data-app-copy="ticketPlace">место встречи на карте</span></span></div>
                         <div class="rt-chip">карта</div>
                     </button>` : ''}
                     <button type="button" class="rt-row" id="rtPhone">
                         <div class="rt-n">5</div>
-                        <div class="rt-text"><b>сохрани телефон организатора</b><span>${PHONE} · Максим</span></div>
+                        <div class="rt-text"><b><span data-app-copy="ticketPhone">сохрани телефон организатора</span></b><span>${PHONE} · Максим</span></div>
                         <div class="rt-chip" id="rtPhoneChip">скопировать</div>
                     </button>
                 </div>

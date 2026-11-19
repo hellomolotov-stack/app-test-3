@@ -1,3 +1,4 @@
+import { initCopyEditor } from './ui/copy-editor.js';
 // js/main.js
 import { applyAdmissionVisitorMode, initAdmission, isAdmissionPilot } from './admission.js';
 import { openAdmission } from './ui/admission.js';
@@ -1203,6 +1204,7 @@ function startApp() {
     initCollapsibleBlocks();
     initClickLog();
     initSheetDrag();
+    initCopyEditor(tg);
     initTypograph(); // без висящих предлогов во всех текстах
     loadAppData();
     startClubMetricsRefresh();
