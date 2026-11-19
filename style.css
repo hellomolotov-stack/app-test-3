@@ -8746,3 +8746,128 @@ button.rd-pass-meeting { cursor: pointer; }
 .post-photo-overlay .story-preview img { display:block;width:100%;height:auto;border-radius:14px; }
 .post-photo-actions { display:flex;gap:12px;justify-content:center; }
 .post-photo-actions button { width:auto;min-height:44px;margin:0; }
+/* Соло хайкинг */
+.solo-entry, .solo-feature, .solo-row, .solo-link, .solo-source {
+    border: 0;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.solo-entry {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: block;
+    width: 100%;
+    min-height: 145px;
+    margin-top: 12px;
+    padding: 15px;
+    border-radius: 24px;
+    background: #0e140e;
+    box-shadow: inset 0 0 0 1px rgba(217,253,25,.38), inset 0 -46px 62px -40px rgba(217,253,25,.42);
+}
+.solo-entry strong { display: block; font-size: 21px; line-height: 1.15; }
+.solo-entry > span {
+    display: block;
+    max-width: min(170px, 58%);
+    margin-top: 5px;
+    color: rgba(255,255,255,.68);
+    font-size: 12px;
+}
+.solo-entry b { display: inline-block; margin-top: 10px; color: var(--yellow); font-size: 13px; }
+.solo-entry i, .solo-row i, .solo-link i { color: var(--yellow); font-size: 20px; font-style: normal; line-height: 1; }
+.solo-entry-track {
+    position: absolute;
+    inset: 0 0 0 auto;
+    z-index: -1;
+    width: 46%;
+    height: 100%;
+    color: var(--yellow);
+    mask-image: linear-gradient(90deg, transparent, #000 30%);
+}
+.solo-entry-track, .solo-feature > span:last-child, .solo-cover, .solo-thumb {
+    background: linear-gradient(90deg, rgba(217,253,25,.09) 1px, transparent 1px),
+                linear-gradient(rgba(217,253,25,.09) 1px, transparent 1px), #131a12;
+    background-size: 16px 16px;
+}
+.solo-entry:active, .solo-row:active, .solo-link:active { filter: brightness(1.15); }
+.solo-page { display: grid; gap: 12px; padding-bottom: 18px; }
+.solo-page :is(h2,h3,p,fieldset) { margin: 0; }
+.solo-page h2 { font-size: 27px; line-height: 1.15; overflow-wrap: anywhere; }
+.solo-page h3 { font-size: 15px; }
+.solo-muted { color: rgba(255,255,255,.65); font-size: 13px; }
+.solo-muted:empty { display: none; }
+.solo-feature {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    overflow: hidden;
+    min-height: 118px;
+    border-radius: 24px;
+    background: #0e140e;
+    box-shadow: inset 0 0 0 1px rgba(217,253,25,.4);
+}
+.solo-feature > span:first-child { align-self: center; padding: 13px; }
+.solo-feature small { color: var(--yellow); }
+.solo-feature b { display: block; margin-top: 3px; font-size: 17px; line-height: 1.24; }
+.solo-feature span span { font-size: 12px; color: rgba(255,255,255,.68); }
+.solo-feature > span:last-child { display: grid; place-items: center; margin: 1px; border-radius: 0 23px 23px 0; color: var(--yellow); }
+.solo-feature svg { width: 100%; max-height: 116px; }
+.solo-filters { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; padding: 0; border: 0; }
+.solo-filters legend { margin-bottom: 5px; color: rgba(255,255,255,.66); font-size: 12px; }
+.solo-filters .solo-chip { border: 1px solid transparent; background: #191d22; color: #fff; font-family: inherit; cursor: pointer; }
+.solo-filters .solo-chip[aria-pressed="true"] { background: var(--yellow); color: #141800; }
+.solo-results .solo-group { margin-top: 13px; font-size: 12px; color: rgba(255,255,255,.65); }
+.solo-results .solo-group:first-child { margin-top: 0; }
+.solo-row {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 60px;
+    padding: 7px 0;
+    border-bottom: 1px solid #2a3035;
+    background: transparent;
+}
+.solo-thumb { display: grid; place-items: center; min-height: 42px; border-radius: 13px; color: var(--yellow); }
+.solo-thumb svg { width: 44px; height: 36px; }
+.solo-row b, .solo-row small { display: block; }
+.solo-row b { font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.solo-row small, .solo-link small { color: rgba(255,255,255,.65); font-size: 12px; }
+.solo-cover {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 153px;
+    overflow: hidden;
+    border: 1px solid rgba(217,253,25,.4);
+    border-radius: 24px;
+    color: var(--yellow);
+}
+.solo-cover svg { width: min(86%, 285px); height: 145px; }
+.solo-cover span { position: absolute; bottom: 7px; left: 10px; color: rgba(255,255,255,.68); font-size: 11px; }
+.solo-facts { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+.solo-facts div { padding: 7px 4px; border-radius: 13px; background: #14171c; text-align: center; }
+.solo-facts :is(b,span) { display: block; }
+.solo-facts b { font-size: 14px; }
+.solo-facts span { color: rgba(255,255,255,.65); font-size: 11px; }
+.solo-profile { padding: 12px 13px; border: 1px solid #2a3035; border-radius: 18px; background: #14171c; }
+.solo-plot { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 8px; margin-top: 8px; }
+.solo-plot svg { display: block; width: 100%; height: 72px; color: var(--yellow); }
+.solo-grid-line { stroke: #343a3e; }
+.solo-axis, .solo-dist { display: flex; justify-content: space-between; gap: 6px; color: rgba(255,255,255,.65); font-size: 11px; }
+.solo-axis { flex-direction: column; text-align: right; }
+.solo-dist { grid-column: 2; }
+.solo-elevation { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 7px; font-size: 12px; }
+.solo-elevation span { color: rgba(255,255,255,.65); }
+.solo-elevation b { color: #fff; }
+.solo-links { display: grid; gap: 6px; }
+.solo-link { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 48px; padding: 7px 12px; border-radius: 14px; background: #14171c; }
+.solo-link span { display: grid; gap: 2px; font-size: 13px; }
+.solo-link:disabled { opacity: .55; cursor: wait; }
+.solo-notes { padding: 10px 12px; border-radius: 14px; background: #14171c; }
+.solo-notes summary { font-size: 14px; font-weight: 650; }
+.solo-notes p { margin: 6px 0; font-size: 13px; color: rgba(255,255,255,.7); }
+.solo-source { padding: 6px 0; background: transparent; color: var(--yellow); font-size: 13px; }
+.solo-credit { color: rgba(255,255,255,.55); font-size: 11px; }

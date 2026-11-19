@@ -10,6 +10,7 @@ import { foodHomeHtml, bindFoodHome } from './food-home.js';
 import { isRedesign, setRdGlow } from '../redesign.js';
 import { cardQrEnabled, openCardQr } from './card-qr.js';
 import { openCardSheet } from './card-sheet.js';
+import { soloHikingEntryHtml, bindSoloHikingEntry } from './solo-hiking.js';
 
 export function renderNewcomerPage(isGuest = false) {
     cleanupProfileOverlays();
@@ -215,6 +216,7 @@ export function renderPriv() {
     mainDiv().innerHTML = `${rdHero}
         <div class="card-container">
             ${foodHomeHtml()}
+            ${soloHikingEntryHtml()}
             <h2 class="section-title" style="font-style: italic;">в клубе</h2>
             ${clubHtml}
             <h2 class="section-title second" style="font-style: italic;">в городе</h2>
@@ -222,6 +224,7 @@ export function renderPriv() {
         </div>
     `;
     bindFoodHome(mainDiv());
+    bindSoloHikingEntry(mainDiv(), renderPriv);
     document.getElementById('rdCardQr')?.addEventListener('click', () => { haptic(); setUserInteracted(); openCardQr(); });
     document.getElementById('rdCardGift')?.addEventListener('click', () => { haptic(); openCardSheet({ source: 'привилегии (новый дизайн)', gift: true }); });
 }
@@ -553,12 +556,14 @@ function renderPrivWallet(esc) {
             <div class="pv-sec">в клубе</div>
             <div class="pv-club">${club.map((c, i) => { const isNew = /^новое:/i.test(c.title); const t = String(c.title).replace(/^новое:\s*/i, ''); return `<button type="button" class="pv-cl" data-cl="${i}"><i>${pvClubIcon(t + ' ' + c.description)}</i><b>${esc(t)}</b></button>`; }).join('')}</div>
             ${foodHomeHtml()}
+            ${soloHikingEntryHtml()}
             <div class="pv-sec">партнёры · ${city.length}</div>
             <div class="pv-chips">${cats.map(([k, l]) => `<button type="button" class="${k === cur ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('')}</div>
             <div class="pv-list" id="pvList">${rows()}</div>
             <button type="button" class="pv-gift" id="pvGift"><span><b>подарить карту другу</b><small>он увидит, от кого подарок</small></span><i>›</i></button>
         </div>`;
     bindFoodHome(mainDiv());
+    bindSoloHikingEntry(mainDiv(), renderPriv);
     const root = mainDiv();
     root.querySelector('#pvQr')?.addEventListener('click', () => { haptic(); setUserInteracted(); log('привилегии: QR', false, state.user); openCardQr(); });
     root.querySelector('#pvGift')?.addEventListener('click', () => { haptic(); openCardSheet({ source: 'привилегии', gift: true }); });
