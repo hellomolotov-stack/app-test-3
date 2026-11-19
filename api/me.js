@@ -137,6 +137,19 @@ module.exports = async (req, res) => {
     const user = verifyInitData(String((body && body.initData) || ''), botToken);
     if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
 
+    if (body?.action === 'soloRoutes') {
+        const id = String(user.id);
+        if (id !== '163665735') return res.status(403).json({ error: 'forbidden' });
+        try {
+            const member = await read(`members/${id}`, await getAccessToken());
+            if (!member?.user_id) return res.status(403).json({ error: 'card required' });
+            return res.status(200).json({ routes: require('../lib/solo-hiking-routes.json') });
+        } catch (error) {
+            console.error('me solo routes:', error.message);
+            return res.status(502).json({ error: 'routes unavailable' });
+        }
+    }
+
     // лёгкая проверка статуса – для возврата из оплаты: только карта и записи, без подсчёта хайков
     if (body && body.action === 'status') {
         try {
