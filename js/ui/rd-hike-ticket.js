@@ -28,8 +28,8 @@ export function boardingPassHtml(hike, esc) {
         <div class="rd-pass-front">
             <header class="rd-pass-head"><span>${check} ты в деле</span><strong>${esc(hike.title)}</strong></header>
             <div class="rd-pass-route">
-                <div><b>дом</b><small>диван, дела, заботы</small></div><i aria-hidden="true"></i>
-                <div><b>хайк</b><small>ветер, тропы, встречи</small></div>
+                <div><b>дом</b><small>наблюдать жизнь</small></div><i aria-hidden="true"></i>
+                <div><b>хайк</b><small>жить жизнь</small></div>
             </div>
             ${map ? `<button class="rd-pass-meeting" type="button" data-map="${esc(map)}" aria-label="точка сбора на карте">${meeting}<span class="rd-pass-map-action">карта ${arrow}</span></button>` : `<div class="rd-pass-meeting">${meeting}</div>`}
         </div>
