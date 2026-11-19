@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/hof.js – блок «дыхание по Виму Хофу» на главной (под «твоими связями»).
 // Блок – вариант А (голубой, видео в карточке), подготовка – экран А, дыхание – экран Б (кольца, таймер задержки).
 // Голос – дорожка из видео-руководства (assets/hof/voice.m4a), фазы на экране идут по разметке TIMELINE (секунды дорожки).
@@ -294,7 +295,7 @@ function openSession(mode = 'guided') {
             if (done) onSaved(j.badge || null);
         }).catch(() => {
             const summary = ov.querySelector('.hof-sum');
-            if (summary) { const notice = document.createElement('div'); notice.className = 'hs-note'; notice.textContent = 'не удалось сохранить сессию'; summary.appendChild(notice); }
+            if (summary) { const notice = document.createElement('div'); notice.className = 'hs-note'; setUiCopy(notice, ["copy_cf554571ab68b0fc78d6", 'не удалось сохранить сессию']); summary.appendChild(notice); }
         });
         lg(done ? `хоф: сессия завершена ${personal ? 'в своём темпе' : 'тренировка'}${list.length ? ' ' + list.map(mmss).join(' / ') : ''}` : `хоф: вышел на раунде ${list.length + 1}`);
     };

@@ -5,7 +5,6 @@ import { state } from './state.js';
 
 // 05.11: новый дизайн из облачной сессии выключен – Макс вернулся к классическому (с правками v2 ниже)
 const RD_USER_IDS = new Set([]);
-const LIGHT_HOME_PILOT_ID = '163665735'; // @maxmolotov
 // v2 – классический дизайн с правками (карта в углу, ближайший хайк, фото только в шапке, единые скругления)
 const V2_USER_IDS = new Set(['163665735', '7845375334']); // @maxmolotov, @hellointelligent (тест версии для гостей)
 // 07.11.2026: новая главная (v2) раскатана на всех пользователей; V2_USER_IDS оставлен для истории
@@ -35,7 +34,6 @@ export function applyRedesignFlag() {
     document.documentElement.classList.toggle('v2', isV2());
     // блоки «со свечением изнутри» своим цветом: 15.11 – только @maxmolotov, 16.11 – у всех
     document.documentElement.classList.add('glow');
-    document.documentElement.classList.toggle('sky-home-pilot', currentUserId() === LIGHT_HOME_PILOT_ID);
     mountDesignToggle();
 }
 

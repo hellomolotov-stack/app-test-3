@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // Экран «значки» – как «Награды» в Apple:
 //   • «вперёд!» – ближайшая цель по хайкам (владельцам карты, у них точный счётчик);
 //   • «последний значок» крупно + стопка и «и ещё N · показать все» (слайдер);
@@ -139,7 +140,7 @@ export function openAchievementsCollection(items = []) {
         e.stopPropagation(); haptic(); log('значки: нажал «карта интеллигента» в разделе значков', true, state.user); openCard('значки');
     });
 
-    const back = () => { how.hidden = true; catView.hidden = true; main.hidden = false; titleEl.textContent = 'значки'; };
+    const back = () => { how.hidden = true; catView.hidden = true; main.hidden = false; setUiCopy(titleEl, ["copy_d9b9564ccc92382b0b23", 'значки']); };
     // свайп вниз внутри раздела – назад к значкам, а не закрыть всё
     overlay.querySelector('.acol-sheet').onDragBack = () => { if (catView.hidden) return false; back(); return true; };
     // раздел целиком

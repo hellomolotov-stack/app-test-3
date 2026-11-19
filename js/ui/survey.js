@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/survey.js – опросы в приложении: баннер на главной и шторка «один вопрос на экране».
 // Что показывать и какие вопросы – решает сервер (lib/survey.js, /api/me survey). Ответы уходят сразу после каждого вопроса,
 // поэтому недопройденный опрос не теряется, а баннер потом предлагает «продолжить».
@@ -133,7 +134,7 @@ function openSurvey(host) {
         const left = qs.length - idx;
         el.querySelector('.sv-rw small').textContent = `до значка · ${left} ${left === 1 ? 'вопрос' : left >= 2 && left <= 4 ? 'вопроса' : 'вопросов'}`;
         el.querySelector('.sv-dots').innerHTML = qs.map((_, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('');
-        next.textContent = idx === qs.length - 1 ? (q.type === 'text' ? 'отправить' : 'готово') : (q.type === 'text' ? 'отправить' : 'дальше');
+        setUiCopy(next, idx === qs.length - 1 ? (q.type === 'text' ? ["copy_32189e2472c8a8fb55e3", 'отправить'] : ["ticketDone", 'готово']) : (q.type === 'text' ? ["copy_32189e2472c8a8fb55e3", 'отправить'] : ["copy_5466d3973538299a3713", 'дальше']));
         const hint = q.type === 'multi' ? 'можно выбрать несколько' : q.note || '';
         let inner = `<div class="sv-msg"><span data-app-copy="copy_eead37caf818d0fae6de" class="sv-av">и</span><div class="sv-bub">${esc(q.title)}</div></div><div class="sv-hint">${esc(hint)}</div>`;
         if (q.type === 'text') {

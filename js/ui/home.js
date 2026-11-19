@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/home.js
 import { mountAdmissionEntry } from './admission.js';
 import { isAdmissionPilot } from '../admission.js';
@@ -288,7 +289,7 @@ function renderSafetyBanner() {
 
 // подпись в самом низу главной: «разработано в мастерской Молотова» → личка в Telegram
 function renderMakerCredit() {
-    return `<div class="maker-credit"><button type="button" id="makerCreditBtn"><small data-app-copy="copy_6c9f65fdabc49611e972">разработано</small><span>в мастерской Молотова <span aria-hidden="true">↗</span></span></button></div>`;
+    return `<div class="maker-credit"><button type="button" id="makerCreditBtn"><small data-app-copy="copy_6c9f65fdabc49611e972">разработано</small><span><span data-app-copy="copy_1e869b0a5562e7721235">в мастерской Молотова</span> <span aria-hidden="true">↗</span></span></button></div>`;
 }
 
 function wireSafetyBanner() {
@@ -373,7 +374,7 @@ function metricsStoryHtml() {
     const span = months >= 15 && months <= 20 ? 'за полтора года' : months >= 21 && months <= 27 ? 'за два года' : months >= 12 ? 'за год с лишним' : `за ${months} мес.`;
     const v = k => `<em data-metric="${k}">${m[k] ?? ''}</em>`;
     return `<div class="mst-text">${span} мы прошли ${v('kilometers')}&nbsp;км на ${v('hikes')}&nbsp;хайках, побывали в ${v('locations')}&nbsp;местах Крыма и познакомили людей друг с другом ${v('meetings')}&nbsp;раз</div>
-        <div class="mst-chips"><span>🪪 <b>20+</b> владельцев карты</span><span>🏔 выше всего – <b data-app-copy="copy_0d84a114dce049da205b">1527 м</b></span><span data-app-copy="copy_a275dcc640c721f5f3e2">📅 с мая 2025</span></div>`;
+        <div class="mst-chips"><span>🪪 <b>20+</b> <span data-app-copy="copy_a1b8faf8d4a3627f320d">владельцев карты</span></span><span>🏔 <span data-app-copy="copy_5241b39699a19fb385f7">выше всего</span> – <b>1527 м</b></span><span>📅 с мая 2025</span></div>`;
 }
 
 window.addEventListener('club:content-updated', () => {
@@ -550,7 +551,7 @@ function renderGuestHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span><span data-app-copy="copy_1d355ed471f2c48f1144">отчёты ›</span></a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div data-app-copy="copy_3af3288af0981024d97e" class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
@@ -605,7 +606,7 @@ function renderGuestHome() {
 
             const chatBtn = document.createElement('button');
             chatBtn.className = 'gc-chip-chat';
-            chatBtn.textContent = 'в чат';
+            setUiCopy(chatBtn, ["copy_1dc8e5a6cb3959e0a7c9", 'в чат']);
             chatBtn.addEventListener('click', () => {
                 haptic();
                 log('в чат из qa', true, state.user);
@@ -630,7 +631,7 @@ function renderGuestHome() {
         const showHikeChip = () => {
             const chip = document.createElement('button');
             chip.className = 'gc-chip gc-chip-hike';
-            chip.textContent = 'пойти на хайк →';
+            setUiCopy(chip, ["copy_4da14644f4a38ef78932", 'пойти на хайк →']);
             chip.addEventListener('click', () => {
                 haptic();
                 log('пойти на хайк из qa', true, state.user, { target: nextHike ? 'hike' : 'calendar' });
@@ -778,7 +779,7 @@ function renderOwnerHome() {
         </div>
         ` : ''}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span><span data-app-copy="copy_1d355ed471f2c48f1144">отчёты ›</span></a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div data-app-copy="copy_3af3288af0981024d97e" class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
@@ -862,7 +863,7 @@ function renderRdHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span><span data-app-copy="copy_1d355ed471f2c48f1144">отчёты ›</span></a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div data-app-copy="copy_3af3288af0981024d97e" class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>

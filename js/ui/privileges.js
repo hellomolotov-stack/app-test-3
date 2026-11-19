@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/privileges.js
 import { isAdmissionPilot } from '../admission.js';
 import { haptic, openLink, mainDiv, subtitle, parseLinks, tg } from '../utils.js';
@@ -38,7 +39,7 @@ export function renderNewcomerPage(isGuest = false) {
             faqHtml += `<div class="partner-item"><strong>${item.q}</strong><p>${answer}</p></div>`;
         });
     } else {
-        faqHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        faqHtml = '<div class="partner-item"><p data-app-copy="copy_76848548e29c0ad0e841">Нет данных</p></div>';
     }
 
     // письмо от клуба – дополняет «как всё устроено»; пока только для пилотного входа по анкете
@@ -99,7 +100,7 @@ export function renderGuestPrivileges() {
             clubHtml += `</div>`;
         });
     } else {
-        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        clubHtml = '<div class="partner-item"><p data-app-copy="copy_76848548e29c0ad0e841">Нет данных</p></div>';
     }
 
     let cityHtml = '';
@@ -120,7 +121,7 @@ export function renderGuestPrivileges() {
             cityHtml += `</div>`;
         });
     } else {
-        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        cityHtml = '<div class="partner-item"><p data-app-copy="copy_76848548e29c0ad0e841">Нет данных</p></div>';
     }
 
     const CHECK = `<svg width="14" height="11" viewBox="0 0 14 11" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 5.5l3.5 4 8.5-9" stroke="#27ae60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -171,7 +172,7 @@ export function renderPriv() {
             clubHtml += `</div>`;
         });
     } else {
-        clubHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        clubHtml = '<div class="partner-item"><p data-app-copy="copy_76848548e29c0ad0e841">Нет данных</p></div>';
     }
 
     let cityHtml = '';
@@ -192,7 +193,7 @@ export function renderPriv() {
             cityHtml += `</div>`;
         });
     } else {
-        cityHtml = '<div class="partner-item"><p>Нет данных</p></div>';
+        cityHtml = '<div class="partner-item"><p data-app-copy="copy_76848548e29c0ad0e841">Нет данных</p></div>';
     }
 
     // новый дизайн: сверху сама карта, счётчик хайков, QR и «подарить другу»
@@ -423,7 +424,7 @@ function addSafetyShareButton(isGuest) {
     const btn = document.createElement('button');
     btn.id = 'safetyShareBtn';
     btn.className = 'floating-share-btn';
-    btn.textContent = '🔗 поделиться чек-листом';
+    setUiCopy(btn, ["copy_f7c74ae5b530dc9a130c", '🔗 поделиться чек-листом']);
     btn.addEventListener('click', () => {
         haptic();
         log('поделиться чеклистом ЧП', isGuest, state.user);
@@ -459,7 +460,7 @@ function addFloatingCardButton() {
 
     const btn = document.createElement('button');
     btn.id = 'floatingCardBtn';
-    btn.textContent = '🔫 выпускайте мою карту';
+    setUiCopy(btn, ["copy_bfe26864e0537b318a14", '🔫 выпускайте мою карту']);
     btn.style.cssText = `
         position: fixed;
         bottom: 90px;
@@ -573,7 +574,7 @@ function renderPrivWallet(esc) {
         if (codeEl) {
             haptic();
             navigator.clipboard?.writeText(p.code).catch(() => {});
-            codeEl.textContent = 'скопировано ✓';
+            setUiCopy(codeEl, ["copy_322226736ff3dafdf2b4", 'скопировано ✓']);
             setTimeout(() => { codeEl.textContent = p.code; }, 1600);
             log(`привилегии: промокод ${p.name}`, false, state.user);
             return;

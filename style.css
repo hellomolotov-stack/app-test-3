@@ -7939,7 +7939,7 @@ html.v2 .metrics-link { color: var(--yellow); }
 .mst-text { padding: 0 16px; font-size: 20px; line-height: 1.35; font-weight: 700; letter-spacing: -.01em; color: #fff; }
 .mst-text em { font-style: normal; color: var(--yellow); }
 .mst-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px; margin-top: 16px; }
-.mst-chips span { padding: 7px 11px; border-radius: 999px; background: rgba(255,255,255,.07); font-size: 12.5px; color: rgba(255,255,255,.8); }
+.mst-chips > span { padding: 7px 11px; border-radius: 999px; background: rgba(255,255,255,.07); font-size: 12.5px; color: rgba(255,255,255,.8); }
 .mst-chips b { color: #fff; }
 
 /* классика v2: все блоки – плотный тёмный фон с тонкой серой окантовкой, без «стекла» */
@@ -8910,122 +8910,18 @@ button.rd-pass-meeting { cursor: pointer; }
 }
 
 /* Inline copy editor, shown only for the club's two admin accounts. */
+.copy-dialog textarea { resize: vertical; }
+:is([data-app-copy], [data-app-copy-scripted]).copy-multiline { white-space: pre-line; }
 .copy-pencil { position: fixed; right: 16px; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); z-index: 10900; width: 44px; height: 44px; border-radius: 50%; border: 1px solid #d9fd19; background: #171a16; color: #d9fd19; font: 24px/1 system-ui; cursor: pointer; }
 .copy-pencil[aria-pressed=true] { color: #171a16; background: #d9fd19; }
-.copy-editing :is([data-app-copy], [data-app-copy-placeholder], [data-app-copy-tail]) { outline: 1px dashed #a2b633; outline-offset: 2px; cursor: text; }
+.copy-editing :is([data-app-copy], [data-app-copy-placeholder], [data-app-copy-tail], [data-app-copy-scripted]) { outline: 1px dashed #a2b633; outline-offset: 2px; cursor: text; }
 .copy-dialog { width: min(400px, calc(100% - 32px)); max-height: 80dvh; margin: auto auto 12px; padding: 16px; background: #171a1e; color: #fff; border: 1px solid #414640; border-radius: 20px; font: inherit; }
 .copy-dialog::backdrop { background: transparent; }
 .copy-dialog form, .copy-dialog label { display: grid; gap: 10px; }
-.copy-dialog input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; border: 1px solid #545950; border-radius: 10px; background: #101210; color: #fff; font: 16px system-ui; }
+.copy-dialog textarea { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; border: 1px solid #545950; border-radius: 10px; background: #101210; color: #fff; font: 16px system-ui; }
 .copy-dialog p, .copy-error { margin: 0; font-size: 13px; color: #c4c8bf; }
 .copy-error:empty { display: none; }
 .copy-actions { display: flex; gap: 8px; }
 .copy-dialog button { min-height: 42px; border: 0; border-radius: 10px; padding: 8px 12px; background: #2a2d30; color: #fff; font: inherit; }
 .copy-dialog button[type=submit] { flex: 1; background: #d9fd19; color: #171a16; }
 .copy-dialog button:disabled { opacity: .55; }
-
-/* Sky home pilot: calendarContainer is the home-only mount in every home layout.
-   Keep the page scope in CSS so leaving home removes it with the same DOM update. */
-html.sky-home-pilot:has(#mainContent > #calendarContainer) {
-    --sky-ink: #10293b;
-    --sky-muted: #425e71;
-    --sky-link: #145778;
-    --sky-line: #c7e0ee;
-    --sky-chip: #e9f4fa;
-    --sky-paper: #fff;
-    background: linear-gradient(180deg, #3399cf 0%, #69b9e4 40%, #b8e3f8 82%, #d4eefb 100%) fixed;
-}
-html.sky-home-pilot:has(#mainContent > #calendarContainer) :is(#mainContent, #subtitle) {
-    color: var(--sky-ink);
-}
-html.sky-home-pilot:has(#mainContent > #calendarContainer) .header-blur {
-    background: rgba(52, 155, 208, .30);
-}
-html.sky-home-pilot:has(#mainContent > #calendarContainer) .bottom-nav {
-    background: rgba(251, 254, 255, .94);
-    border-color: #fff;
-    box-shadow: inset 0 0 16px #daeff9, 0 6px 24px rgba(21, 89, 124, .20);
-}
-html.sky-home-pilot:has(#mainContent > #calendarContainer) .bottom-nav .nav-item { color: var(--sky-muted); }
-html.sky-home-pilot:has(#mainContent > #calendarContainer) .bottom-nav .nav-item.active { color: var(--sky-link); }
-
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .rd-head::after { display: none; }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .rd-hello { color: var(--sky-ink); text-shadow: none; }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.rd-date, .rd-fresh-head, .rd-story-label) { color: var(--sky-ink); }
-
-/* White faces with a gentle wash around the inside of the existing cards. */
-html.sky-home-pilot.v2 #mainContent:has(> #calendarContainer) :is(
-    .card-container, .rd-hero, .rd-annrow, #calendarContainer, #circleContainer.lv-card,
-    #myAchievements, #hofBlock .hof-card, .mmc, .sv-banner, .post-hike-story-banner, .fh2, .safety-banner
-) {
-    --sky-glow: 113, 183, 227;
-    color: var(--sky-ink);
-    background: var(--sky-paper) !important;
-    border-color: rgba(247, 253, 255, .94) !important;
-    box-shadow: inset 0 0 0 1px rgba(var(--sky-glow), .19),
-        inset 0 -26px 44px -31px rgba(var(--sky-glow), .58),
-        0 6px 18px rgba(22, 94, 130, .10) !important;
-}
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(#myAchievements, .post-hike-story-banner) { --sky-glow: 229, 183, 95 !important; }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .mmc { --sky-glow: 166, 143, 233 !important; }
-
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(
-    .section-title, .metrics-title, .rd-hero-title, .rd-more b, .lv-hdr h2, .lv-stats b,
-    .hof-title, .mmc-meta b, .vt-fresh .vt-title, .vt-goal, .vt-line b, .mast-title,
-    .ar-title, .ar-date b, .v2-tg-text b, .sv-n-t, .mst-text em
-) { color: var(--sky-ink); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(
-    .rd-going-text, .rd-going-wait, .rd-going-text span, .rd-live, .rd-seats-note, .rd-more,
-    .rd-annrow .ar-date small, .rd-annrow .ar-when, .rd-annrow .ar-sw span, .v2-tg-text span,
-    .lv-stats span, .hof-text, .hof-stat, .mmc-when, .mmc-q, .mmc-n, .vt-date,
-    .vt-head b small, .vt-goal > small, .vt-sub, .vt-line, .mst-text, .sv-n-s, .sv-n-later
-) { color: var(--sky-muted); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(
-    .metrics-link, .lv-hdr span, .lv-stats .is-c b, .hof-tag, .mmc-k, .vt-all, .vt-line em,
-    .rd-annrow .ar-when b, .rd-annrow.is-on .ar-sw span, .v2-tg-date small
-) { color: var(--sky-link); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(
-    .rd-tags span, .rd-annrow .ar-date, .v2-tg-row .v2-tg-date, .vt-goal, .mst-chips span,
-    .rd-going-n, .rd-ticket, .cf-head button
-) { background: var(--sky-chip); color: var(--sky-ink); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.rd-more, .vt-line) { border-color: var(--sky-line); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.rd-annrow:not(.is-on) .ar-k, .v2-tg-sw:not(.is-on), .vt-bar, .rd-seats) { background: #c6deec; }
-
-/* Photographs and the pearlescent finish of the boarding pass stay intact. */
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .rd-hero-cover {
-    background: radial-gradient(100% 110% at 55% 12%, #d0ecfa, #fff 76%);
-}
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .rd-hero-cover::after { background: linear-gradient(transparent, #fff); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .rd-hero-body::before {
-    box-shadow: inset 0 -38px 50px -34px rgba(101, 178, 223, .42);
-}
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.rd-hero-when, .v2-tg-photo span) { background: #f5fbff; color: var(--sky-ink); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .rd-pass-seam { border-color: #54788c; }
-
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.cf-head span, .cf-d b, .cf-d small, .cf-mon, .cf-mon b, .cf-months i, .cf-mlab, .cf-count) { color: var(--sky-muted); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.cf-d.is-on b, .cf-d.is-on small, .cf-months i.is-on, .cf-mon b) { color: var(--sky-ink); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.cf-line, .cf-dots i:not(.is-on)) { background: #b0cbdb; }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .cf-card:not(.is-past) { background: #eaf6fc; color: var(--sky-ink); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .cf-card:not(.is-past)::after {
-    background: linear-gradient(180deg, transparent 10%, rgba(255,255,255,.32) 35%, #fff 90%);
-}
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .cf-card:not(.is-past) :is(.cf-in, .cf-in small, .cf-in em, .cf-q, .cf-going) {
-    color: var(--sky-ink); text-shadow: none;
-}
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .cf-card:not(.is-past) :is(.cf-tbar, .cf-tag.is-soon) { background: #edf7fc; color: var(--sky-ink); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .cf-card:not(.is-past) .cf-tlab { color: var(--sky-ink); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .cf-card:not(.is-past):not(.is-on) .cf-sw { background: #bdd8e8; }
-
-html.sky-home-pilot.glow #mainContent:has(> #calendarContainer) #circleContainer .lv-ft { background: linear-gradient(#fff, transparent); }
-html.sky-home-pilot.glow #mainContent:has(> #calendarContainer) #circleContainer .lv-fb { background: linear-gradient(transparent, #f2f9fe 72%); }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .lv-net svg :is(path, circle)[stroke="#D9FD19"] { stroke: #2881aa; }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .lv-net svg path[stroke="#fff"] { stroke: #5d8095; }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) .maker-credit { color: var(--sky-muted); }
-
-html.sky-home-pilot:has(#mainContent > #calendarContainer) .bottom-nav .nav-item.active { background-color: #e2f2fa; }
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.cc-lock, .post-hike-story-banner button:not(.btn-yellow)) {
-    background: var(--sky-chip); color: var(--sky-ink); border-color: var(--sky-line);
-}
-html.sky-home-pilot #mainContent:has(> #calendarContainer) :is(.cc-lock span, .cc-lock small, .rd-tk-tx small, .maker-credit button) {
-    color: var(--sky-muted);
-}

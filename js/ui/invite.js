@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/invite.js – приглашение +1 от владельца карты (привилегия «свой +1 на хайк»).
 // Владелец карты, записанный на хайк, получает личную ссылку t.me/<бот>?startapp=inv_<код> и шлёт другу.
 // Друг видит «Имя приглашает тебя на хайк», конфетти, билет-карточку и кнопку «открыть хайк»:
@@ -36,14 +37,14 @@ export function renderPlus1Block(slot, hike) {
         btn.dataset.busy = '1';
         haptic();
         const label = btn.textContent;
-        btn.textContent = 'готовим ссылку…';
+        setUiCopy(btn, ["copy_31cb5c60211806f90810", 'готовим ссылку…']);
         try {
             const res = await inviteApi('inviteCreate', { hike_date: hike.date });
             log('+1: взял ссылку', false, state.user, { hike_date: hike.date });
             if (res.used) {
                 status.hidden = false;
                 status.textContent = `🤍 твой +1${res.friend ? ` – ${res.friend}` : ''} уже в списке участников`;
-                btn.textContent = 'отправить ссылку ещё раз';
+                setUiCopy(btn, ["copy_1cc4e5184a9e55502dc8", 'отправить ссылку ещё раз']);
             } else {
                 btn.textContent = label;
             }

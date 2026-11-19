@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 import { openPhotoStoryFor, photoBannerHtml } from './post-hike-story-banner.js';
 // Верх новой главной (редизайн, пока только для html.rd):
 // шапка с маленькой картой, «свежее в клубе», карточка ближайшего события с теми, кто идёт.
@@ -186,7 +187,7 @@ function ticketHtml(ev) {
     const city = yes(h.city) || yes(h.book_club);
     // 16.11: «твой билет» – снова открыть экран «ты в деле» (чат, что взять, точка сбора, телефон)
     const d = new Date(h.date + 'T12:00:00');
-    const ticket = city ? '' : `<button type="button" class="rd-ticket" data-ticket="${h.date}"><span class="rd-tk-ck">✓</span><span class="rd-tk-tx"><b>твой билет · ${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</b><small data-app-copy="copy_013d1e6a5d7314f2fb57">что взять, точка сбора, чат хайка</small></span><span class="rd-tk-go">›</span></button>`;
+    const ticket = city ? '' : `<button type="button" class="rd-ticket" data-ticket="${h.date}"><span class="rd-tk-ck">✓</span><span class="rd-tk-tx"><b><span data-app-copy="copy_9cfc2f1a32124457829d">твой билет</span> · ${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</b><small data-app-copy="copy_013d1e6a5d7314f2fb57">что взять, точка сбора, чат хайка</small></span><span class="rd-tk-go">›</span></button>`;
     return ticket + otherBookingHtml(ev);
 }
 
@@ -265,7 +266,7 @@ export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, her
         <div class="rd-head">
             <div class="rd-head-text">
                 <span class="rd-date">${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span>
-                <span class="rd-hello">привет, ${esc(user?.first_name || 'друг')}</span>
+                <span class="rd-hello"><span data-app-copy="copy_e58f1e8c55fa105bdd3f">привет</span>, ${esc(user?.first_name || 'друг')}</span>
             </div>
             ${mini ? '' : '<!--'}<button type="button" class="rd-mini-card${owner ? '' : ' is-guest'}" id="rdMiniCard" aria-label="${owner ? 'моя карта интеллигента' : 'карта интеллигента'}">
                 ${owner ? `<img src="${esc(cardImg)}" alt="">
@@ -296,7 +297,7 @@ window.addEventListener('club:waitlist-updated', ({ detail }) => {
     button.classList.toggle('is-on', detail.on);
     button.setAttribute('aria-checked', String(detail.on));
     const subtitle = document.getElementById('v2TgSub');
-    if (subtitle) subtitle.textContent = detail.on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи';
+    if (subtitle) setUiCopy(subtitle, detail.on ? ["copy_15882e59b2a52e113075", 'сообщим, когда откроется запись'] : ["copy_39c0e81f1df68ef649cb", 'включи, чтобы узнать об открытии записи']);
     try { localStorage.setItem(ALERTS_KEY, detail.on ? '1' : '0'); } catch (e) {}
 });
 // пейзажи с хайков клуба без людей (assets/teaser, отобраны из «Хайкинг интеллигенция фото»); при каждом заходе – новое
@@ -338,7 +339,7 @@ function teaserHtml() {
             <div class="v2-tg-photo" style="background-image:url('assets/teaser/${file}.webp')"><span>фото с хайка ${esc(where)}</span></div>
             <div class="v2-tg-row">
                 <div class="v2-tg-date"><b>${d.getDate()}</b><small>${MON3[d.getMonth()]}</small></div>
-                <div class="v2-tg-text"><b data-app-copy="copy_60179cfdda820f4c56a3">готовим хайк</b><span id="v2TgSub">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
+                <div class="v2-tg-text"><b data-app-copy="copy_60179cfdda820f4c56a3">готовим хайк</b><span id="v2TgSub" data-app-copy="${on ? 'copy_15882e59b2a52e113075' : 'copy_39c0e81f1df68ef649cb'}">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
                 <button type="button" class="v2-tg-sw${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}" role="switch" aria-checked="${on}" aria-label="уведомлять об открытии записи"></button>
             </div>
         </div>`;
@@ -378,14 +379,14 @@ export function wireRdHomeTop() {
             haptic();
             const want = !tb.classList.contains('is-on');
             tb.classList.toggle('is-on', want); tb.setAttribute('aria-checked', want);
-            document.getElementById('v2TgSub').textContent = want ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи';
+            setUiCopy(document.getElementById('v2TgSub'), want ? ['copy_15882e59b2a52e113075', 'сообщим, когда откроется запись'] : ['copy_39c0e81f1df68ef649cb', 'включи, чтобы узнать об открытии записи']);
             try { localStorage.setItem(ALERTS_KEY, want ? '1' : '0'); } catch (e) {}
             log(want ? 'главная: уведомления о хайках – вкл' : 'главная: уведомления о хайках – выкл', !owner, state.user, { date });
             if (isWaitlisted(date) !== want) {
                 const now = await toggleTeaserNotify(date).catch(() => isWaitlisted(date));
                 if (now !== want) {
                     tb.classList.toggle('is-on', now); tb.setAttribute('aria-checked', now);
-                    document.getElementById('v2TgSub').textContent = now ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи';
+                    setUiCopy(document.getElementById('v2TgSub'), now ? ['copy_15882e59b2a52e113075', 'сообщим, когда откроется запись'] : ['copy_39c0e81f1df68ef649cb', 'включи, чтобы узнать об открытии записи']);
                     try { localStorage.setItem(ALERTS_KEY, now ? '1' : '0'); } catch (e) {}
                 }
             }

@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/gift.js – подарок: карта интеллигента другу.
 // Даритель оплачивает подарочную карту в шторке карты (openCardSheet({ gift: true })) и возвращается
 // по startapp=giftpaid_<invId>: здесь он получает ссылку-подарок startapp=gift_<код> и отправляет её.
@@ -105,7 +106,7 @@ export async function openGiftReceiveScreen(code) {
         if (claimBtn.dataset.busy) return;
         claimBtn.dataset.busy = '1';
         haptic();
-        claimBtn.textContent = 'принимаем…';
+        setUiCopy(claimBtn, ["copy_34799fbaf63847dcefc4", 'принимаем…']);
         try {
             await serverCall('giftClaim', { code });
             log('подарок: принял', true, state.user);
@@ -116,7 +117,7 @@ export async function openGiftReceiveScreen(code) {
                 <button data-app-copy="copy_a83539dd668af2bdec24" class="btn btn-outline inv-wide" data-close>отлично</button>`;
             sheet.querySelector('[data-close]').addEventListener('click', close);
         } catch (e) {
-            claimBtn.textContent = 'принять подарок';
+            setUiCopy(claimBtn, ["copy_fb06631ff98435056a4f", 'принять подарок']);
             delete claimBtn.dataset.busy;
             alert(e.message || 'не получилось принять подарок, попробуй ещё раз');
         }

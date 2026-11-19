@@ -461,8 +461,8 @@ async function loadAndRender(containerId) {
     const mountainEl = container.querySelector('.weather-days--mountain');
     if (!coastEl || !mountainEl) return;
 
-    coastEl.innerHTML    = '<div class="weather-skeleton">загружаю...</div>';
-    mountainEl.innerHTML = '<div class="weather-skeleton">загружаю...</div>';
+    coastEl.innerHTML    = '<div data-app-copy="copy_321251112ac0d4194643" class="weather-skeleton">загружаю...</div>';
+    mountainEl.innerHTML = '<div data-app-copy="copy_321251112ac0d4194643" class="weather-skeleton">загружаю...</div>';
 
     const city = getCity();
     const cityName = container.querySelector('.wsky-city span');
@@ -493,7 +493,7 @@ function hikeDay() {
 function wt2Html(city, data) {
     const hd = hikeDay();
     const days = (data?.coast?.time || []).slice(0, 7);
-    if (!days.length) return '<div class="wt2-skel">загружаю прогноз…</div>';
+    if (!days.length) return '<div data-app-copy="copy_27290c1bbb5c9f4a0198" class="wt2-skel">загружаю прогноз…</div>';
     const today = days[0];
     const head = days.map(d => { const w = new Date(d + 'T12:00:00').getDay(); return `<span class="wt2-d${d === hd ? ' is-hk' : ''}">${d === today ? 'сег' : WD2[w]}</span>`; }).join('');
     const row = z => days.map((d, i) => `<span class="wt2-t${d === hd ? ' is-hk' : ''}"><i>${wmoEmoji(z.weathercode[i])}</i>${Math.round(z.temperature_2m_max[i])}°</span>`).join('');
@@ -521,7 +521,7 @@ const HOME_WEATHER_ENABLED = false;
 export function renderWeatherBlock() {
     if (!HOME_WEATHER_ENABLED) return '';
     const city = getCity();
-    if (isV2()) return `<div class="card-container wt2" id="weatherBlock"><div class="wt2-h"><b data-app-copy="copy_d089d593e7ff1fefb406">погода на неделю</b></div><div class="wt2-body"><div class="wt2-skel">загружаю прогноз…</div></div></div>`;
+    if (isV2()) return `<div class="card-container wt2" id="weatherBlock"><div class="wt2-h"><b data-app-copy="copy_d089d593e7ff1fefb406">погода на неделю</b></div><div class="wt2-body"><div data-app-copy="copy_27290c1bbb5c9f4a0198" class="wt2-skel">загружаю прогноз…</div></div></div>`;
     return `
     <div class="card-container" id="weatherBlock">
         <div class="weather-header">

@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/day-strip.js – календарь «события» (пока только для isV2(), вариант А: Luma + Apple Invites).
 // Сверху ближайшее событие карточкой: фото (админка → «фото на обложку») или 3D-карта маршрута,
 // фон – размытый цвет этой же картинки. Ниже компактный список: «позже» и «было» с квадратными фото.
@@ -165,7 +166,7 @@ function wireHero(container, h) {
         if (isTeaser(h)) {
             haptic();
             const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
-            go.textContent = on ? '✓ сообщим об открытии' : '🔔 сообщить об открытии';
+            setUiCopy(go, on ? ["copy_22e2f521c31556dda7a2", '✓ сообщим об открытии'] : ["copy_f7bbd4ff143c8075cf14", '🔔 сообщить об открытии']);
             go.classList.toggle('is-on', !!on);
             return;
         }

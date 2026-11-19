@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/personal-routes-map.js
 // «Мой Крым»: личная 3D-панорама южного берега. Три категории маршрутов: был (жёлтый, облака над ним
 // разошлись), идём (дата ближайшего хайка, по нажатию — слайдер с записью), в облаках (не был).
@@ -699,7 +700,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
     try {
         await ensureMapLibre();
     } catch (error) {
-        loading.textContent = 'карта временно недоступна';
+        setUiCopy(loading, ["copy_3b2c0287ca323f8162c0", 'карта временно недоступна']);
         return;
     }
     const el = container.querySelector('#personalRoutesMap');
@@ -870,7 +871,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
         if (shareButton.disabled) return;
         shareButton.disabled = true;
         const originalText = shareButton.textContent;
-        shareButton.textContent = 'готовлю…';
+        setUiCopy(shareButton, ["copy_19a0626f01fd130522f2", 'готовлю…']);
         log('мой Крым: поделиться', false, state.user, { visited: count, total });
         try {
             const saved = { center: map.getCenter(), zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
