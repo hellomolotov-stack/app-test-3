@@ -250,7 +250,7 @@ function renderMastermindSummaries() {
 
     return `
         <div class="card-container" id="mastermindSummariesCard">
-            <h2 class="section-title" style="margin: 0 16px 16px 16px;">саммари мастермайнда
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;"><span data-app-copy="homeMastermind">саммари мастермайнда</span>
             </h2>
             <p style="margin: -8px 16px 16px; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.55);">здесь собраны записи всех ценных мыслей, которые были озвучены участниками на мастермайнд сессиях во время хайков на вершинах гор южного берега. материал записан Plaud Note Pro и обработан с помощью последних моделей ChatGPT и Claude</p>
             <div class="mm-scroll">${innerHtml}</div>
@@ -332,7 +332,7 @@ function renderTestimonialsBlock() {
 
     return `
         <div class="card-container" id="testimonialsContainer">
-            <h2 class="section-title" style="margin: 0 16px 16px 16px;">почему остаются</h2>
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;"><span data-app-copy="homeReasons">почему остаются</span></h2>
             <div class="tst-scroller">${cards}</div>
         </div>
     `;
@@ -357,7 +357,7 @@ function renderUpdatesBlock() {
 
     return `
         <div class="card-container updates-container">
-            <h2 class="section-title" style="margin: 0 16px 16px 16px;">обновления
+            <h2 class="section-title" style="margin: 0 16px 16px 16px;"><span data-app-copy="homeUpdates">обновления</span>
             </h2>
             <div class="updates-scroll">${itemsHtml}</div>
         </div>
@@ -416,16 +416,16 @@ const GUEST_QA = [
 // ==================== СТРОКА «СПРОСИ» НАВЕРХУ ГЛАВНОЙ ====================
 // Написанное уходит организаторам сразу (через чат поддержки → бот), чипы открывают готовые ответы.
 const ASK_GROUPS = [
-    ['🥾 первый хайк', [
+    ['<span data-app-copy="homeAsk0">🥾 первый хайк</span>', [
         ['как проходит хайк', 'first_time'], ['что взять с собой', 'pack'], ['нужна ли подготовка', 'faq:подготовк'],
         ['вдруг не выдержу темп', 'd_pace'], ['будет неловко с незнакомыми', 'd_awkward'], ['нет подходящей обуви', 'd_gear'],
     ]],
-    ['🏔 клуб', [
+    ['<span data-app-copy="homeAsk1">🏔 клуб</span>', [
         ['что за клуб', 'faq:о клубе'], ['что такое хайкинг', 'faq:что такое хайкинг'], ['как вступить в клуб', 'join', 'pilot'],
         ['что такое мастермайнд', 'faq:мастермайнд'], ['зачем звёзды в чате', 'faq:звёзд'],
     ]],
-    ['🌟 запись и карта', [['как попасть на хайк', 'faq:как попасть'], ['что даёт карта интеллигента', 'card']]],
-    ['🛡️ правила', [['как с безопасностью', 'faq:безопасност'], ['можно ли с алкоголем', 'faq:алкогол'], ['нужен ли пропуск в заповедник', 'faq:пропуск']]],
+    ['<span data-app-copy="homeAsk2">🌟 запись и карта</span>', [['как попасть на хайк', 'faq:как попасть'], ['что даёт карта интеллигента', 'card']]],
+    ['<span data-app-copy="homeAsk3">🛡️ правила</span>', [['как с безопасностью', 'faq:безопасност'], ['можно ли с алкоголем', 'faq:алкогол'], ['нужен ли пропуск в заповедник', 'faq:пропуск']]],
 ];
 
 function askGroups() {
@@ -521,7 +521,7 @@ function renderGuestHome() {
         </div>
         ${/* блок «интеллигентный помощник» на главной гостя убран (15.10) – спросить можно строкой сверху */ false ? `
         <div class="card-container" id="chatBlock">
-            <h2 class="section-title">интеллигентный помощник</h2>
+            <h2 class="section-title"><span data-app-copy="homeAssistant">интеллигентный помощник</span></h2>
             <div class="guest-chat">
                 <div class="gc-inner">
                     <div class="gc-viewport">
@@ -540,7 +540,7 @@ function renderGuestHome() {
         ${v2 ? '' : '<div class="card-container" id="calendarContainer"></div>'}
         ${/* блок «для новичков» убран у всех (07.11) */ false ? `
         <div class="card-container">
-            <h2 class="section-title">для новичков</h2>
+            <h2 class="section-title"><span data-app-copy="homeNew">для новичков</span></h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
                 <span class="newcomer-text">как всё устроено</span>
                 <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
@@ -550,7 +550,7 @@ function renderGuestHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span class="ml-long">смотреть </span>отчёты ›</a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
@@ -770,7 +770,7 @@ function renderOwnerHome() {
         ${renderWeatherBlock()}
         ${/* блок «для новичков» убран у всех (07.11) */ false ? `
         <div class="card-container">
-            <h2 class="section-title">для новичков</h2>
+            <h2 class="section-title"><span data-app-copy="homeNew">для новичков</span></h2>
             <div class="btn-newcomer" id="newcomerBtn">
                 <span class="newcomer-text">как всё устроено</span>
                 <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
@@ -778,7 +778,7 @@ function renderOwnerHome() {
         </div>
         ` : ''}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span class="ml-long">смотреть </span>отчёты ›</a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
@@ -862,7 +862,7 @@ function renderRdHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title">клуб в цифрах</h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span class="ml-long">смотреть </span>отчёты ›</a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
                 <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>

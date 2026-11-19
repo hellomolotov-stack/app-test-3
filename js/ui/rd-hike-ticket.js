@@ -26,17 +26,17 @@ export function boardingPassHtml(hike, esc) {
     const meeting = `<span class="rd-pass-pin">${pin}</span><span class="rd-pass-date"><small>${esc(when)}</small>${map ? '<strong>точка сбора</strong>' : ''}</span>`;
     return `<article class="rd-pass-card" aria-label="посадочный талон на хайк">
         <div class="rd-pass-front">
-            <header class="rd-pass-head"><span>${check} ты в деле</span><strong>${esc(hike.title)}</strong></header>
+            <header class="rd-pass-head"><span>${check} <span data-app-copy="ticketStatus">ты в деле</span></span><strong>${esc(hike.title)}</strong></header>
             <div class="rd-pass-route">
-                <div><b>дом</b><small>наблюдать жизнь</small></div><i aria-hidden="true"></i>
-                <div><b>хайк</b><small>жить жизнь</small></div>
+                <div><b><span data-app-copy="ticketHomeTitle">дом</span></b><small><span data-app-copy="ticketHome">наблюдать жизнь</span></small></div><i aria-hidden="true"></i>
+                <div><b><span data-app-copy="ticketHikeTitle">хайк</span></b><small><span data-app-copy="ticketHike">жить жизнь</span></small></div>
             </div>
             ${map ? `<button class="rd-pass-meeting" type="button" data-map="${esc(map)}" aria-label="точка сбора на карте">${meeting}<span class="rd-pass-map-action">карта ${arrow}</span></button>` : `<div class="rd-pass-meeting">${meeting}</div>`}
         </div>
         <div class="rd-pass-seam" aria-hidden="true"></div>
         <div class="rd-pass-stub">
-            <div class="rd-pass-profile" hidden><span class="rd-pass-bars" dir="${hike.date === RIGHT_TO_LEFT_PROFILE_DATE ? 'rtl' : 'ltr'}" aria-hidden="true"></span><small>силуэт маршрута</small></div>
-            <button class="rd-pass-open" type="button" data-ticket="${esc(hike.date)}">${ticket} открыть мой билет <span aria-hidden="true">›</span></button>
+            <div class="rd-pass-profile" hidden><span class="rd-pass-bars" dir="${hike.date === RIGHT_TO_LEFT_PROFILE_DATE ? 'rtl' : 'ltr'}" aria-hidden="true"></span><small><span data-app-copy="ticketRoute">силуэт маршрута</span></small></div>
+            <button class="rd-pass-open" type="button" data-ticket="${esc(hike.date)}">${ticket} <span data-app-copy="ticketOpen">открыть мой билет</span> <span aria-hidden="true">›</span></button>
         </div>
     </article>`;
 }

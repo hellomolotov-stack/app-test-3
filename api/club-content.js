@@ -150,11 +150,51 @@ function validateValue(section, value) {
     return normalizeUpdates(updates);
 }
 
+const COPY_KEYS = new Set(['homeAsk0', 'homeAsk1', 'homeAsk2', 'homeAsk3', 'homeAssistant', 'homeMastermind', 'homeMetrics', 'homeNew', 'homeReasons', 'homeUpdates', 'ticketBell', 'ticketDone', 'ticketHike', 'ticketHikeTitle', 'ticketHome', 'ticketHomeTitle', 'ticketInvite', 'ticketInviteFriend', 'ticketNotify', 'ticketNotifyInfo', 'ticketOpen', 'ticketPack', 'ticketPhone', 'ticketPlace', 'ticketRoute', 'ticketSaved', 'ticketStatus']);
+async function appCopy(req, res, body, user) {
+    if (body && !(body.restore === true || (COPY_KEYS.has(body.key)
+        && typeof body.text === 'string' && body.text.trim() && body.text.length <= 240
+        && !/[\r\n\u0000-\u001f]/.test(body.text)))) {
+        return res.status(400).json({ error: 'введи текст до 240 символов в одну строку' });
+    }
+    try {
+        const url = `${DB}/adminContent/appCopy.json`;
+        const auth = { Authorization: `Bearer ${await getAccessToken()}` };
+        const current = await fetch(url, { headers: { ...auth, 'X-Firebase-ETag': 'true' }, signal: AbortSignal.timeout(6000) });
+        if (!current.ok) throw new Error('copy read failed');
+        const stored = await current.json();
+        const value = stored?.value || {};
+        const revision = current.headers.get('etag');
+        if (!body) return res.status(200).json({ value, revision, canRestore: !!stored?.hasPrevious });
+        if (!revision || body.revision !== revision) return res.status(409).json({ error: 'текст уже обновился, открой редактор снова' });
+        if (body.restore && !stored?.hasPrevious) return res.status(400).json({ error: 'предыдущей версии нет' });
+        const next = body.restore ? (stored.previous || {}) : { ...value, [body.key]: body.text.trim() };
+        const result = await fetch(url, {
+            method: 'PUT', signal: AbortSignal.timeout(6000),
+            headers: { ...auth, 'Content-Type': 'application/json', 'If-Match': revision },
+            body: JSON.stringify({ value: next, previous: value, hasPrevious: true, updatedBy: String(user.id), updatedAt: Date.now() }),
+        });
+        if (result.status === 412) return res.status(409).json({ error: 'текст уже обновился, открой редактор снова' });
+        if (!result.ok) throw new Error('copy write failed');
+        return res.status(200).json({ value: next, canRestore: true });
+    } catch (error) {
+        console.error('app-copy:', error.message);
+        return res.status(502).json({ error: 'тексты сейчас недоступны, попробуй ещё раз' });
+    }
+}
+
 module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'метод не поддерживается' });
     let body = req.body || {};
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'неверный запрос' }); } }
+    if (req.method === 'GET' && req.query?.copy === '1') return appCopy(req, res);
+    if (req.method === 'POST' && body.action === 'app_copy') {
+        if (!process.env.TELEGRAM_BOT_TOKEN) return res.status(503).json({ error: 'сервер не настроен' });
+        const telegram = verifyInitData(String(body.initData || ''), process.env.TELEGRAM_BOT_TOKEN);
+        if (!isAdminUser(telegram)) return res.status(403).json({ error: 'только для администраторов' });
+        return appCopy(req, res, body, telegram);
+    }
     // пробный HTML-виджет Telegram (Bot API 10.4) – только Максу, по тому же секрету, что и саммари
     if (req.method === 'POST' && body.action === 'widgetTest') {
         const secret = process.env.SUMMARY_SECRET || '';
