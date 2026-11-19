@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/profiles.js
 import { haptic, openLink, mainDiv, subtitle, tg, formatDateForDisplay, normalizeDate } from '../utils.js';
 import { state } from '../state.js';
@@ -443,7 +444,7 @@ async function renderEditProfile() {
 
     const allowCheck = document.getElementById('allowMessagesCheck');
     const allowLabel = document.getElementById('allowMessagesLabel');
-    allowCheck.addEventListener('change', ()=> allowLabel.textContent = allowCheck.checked ? 'разрешено писать в телеграм' : 'запрещено писать в телеграм');
+    allowCheck.addEventListener('change', ()=> setUiCopy(allowLabel, allowCheck.checked ? ["copy_16234fab3e30e364570b", 'разрешено писать в телеграм'] : ["copy_f575756bbcca400c12af", 'запрещено писать в телеграм']));
 
     const backHandler = ()=>{ if(bottomNav) bottomNav.style.display='flex'; showBottomNav(true); setupBottomNav(); renderProfiles(); };
     tg.BackButton.onClick(backHandler); tg.BackButton.show();
@@ -660,13 +661,13 @@ function wireNudges(root) {
     root.querySelectorAll('.pg-nudge:not(.is-done)').forEach(b => b.addEventListener('click', async e => {
         e.stopPropagation();
         if (b.disabled) return;
-        haptic(); b.disabled = true; b.textContent = 'отправляю…';
+        haptic(); b.disabled = true; setUiCopy(b, ["copy_4e66d87f172a10a81b48", 'отправляю…']);
         const j = await meCall('profile_nudge', { to: b.dataset.nudge }).catch(() => null);
         if (j?.ok) {
-            b.classList.add('is-done'); b.textContent = '✓ предложили';
+            b.classList.add('is-done'); setUiCopy(b, ["copy_c10fbe3482348be0cd66", '✓ предложили']);
             peopleReq?.then(pp => pp.nudged.add(b.dataset.nudge));
             log('предложил создать профиль', state.userCard.status !== 'active', state.user, { to: b.dataset.nudge });
-        } else { b.disabled = false; b.textContent = 'предложить создать'; }
+        } else { b.disabled = false; setUiCopy(b, ["copy_5e864df11993f2e2086c", 'предложить создать']); }
     }));
 }
 

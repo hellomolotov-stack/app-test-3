@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // Поп-ап «у тебя новые ачивки» (макет А – карусель): медаль крупно в центре, соседние выглядывают по бокам,
 // под медалью название, редкость и описание. Сторис – текущей медалью или всеми сразу.
 // Открывается сам при первом заходе после выдачи и по ссылке из бота (startapp=ach).
@@ -140,7 +141,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         if (!withBox.hidden && withBox.dataset.for === a.id) { withBox.hidden = true; return; }
         withBox.dataset.for = a.id;
         withBox.hidden = false;
-        withBox.innerHTML = '<small>загружаю…</small>';
+        withBox.innerHTML = '<small data-app-copy="copy_51b9f75c16a684a247aa">загружаю…</small>';
         try {
             const r = await achievementHolders(a.id);
             const others = (r.people || []).filter(p => p.userId !== String(state.user?.id));
@@ -172,7 +173,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         // ждёт активации: вместо «поделиться» – активировать с картой
         overlay.querySelector('.ach-why').hidden = !wait;
         const btn = overlay.querySelector('[data-share-one]');
-        if (btn && !btn.dataset.busy) btn.textContent = wait ? 'активировать с картой' : 'поделиться в сторис';
+        if (btn && !btn.dataset.busy) setUiCopy(btn, wait ? ["copy_477b6a5742fbf87220ef", 'активировать с картой'] : ["copy_0aaea2ca360089ec97df", 'поделиться в сторис']);
         info.querySelector('[data-with]')?.addEventListener('click', () => openWith(a));
         overlay.querySelectorAll('.ach-slide').forEach((s, k) => s.classList.toggle('is-on', k === i));
         // точек максимум три: первая – начало, последняя – конец, средняя – всё между
@@ -255,14 +256,14 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     const share = async (list, btn, label) => {
         if (btn.dataset.busy) return;
         haptic();
-        if (!tg?.shareToStory || !tg.isVersionAtLeast?.('7.8')) { note.textContent = 'в этой версии Telegram сторис из приложения недоступны – обнови Telegram'; return; }
-        btn.dataset.busy = '1'; const text = btn.textContent; btn.textContent = 'рисуем сторис…'; note.textContent = '';
+        if (!tg?.shareToStory || !tg.isVersionAtLeast?.('7.8')) { setUiCopy(note, ["copy_3026d85294a6340cb325", 'в этой версии Telegram сторис из приложения недоступны – обнови Telegram']); return; }
+        btn.dataset.busy = '1'; const text = btn.textContent; setUiCopy(btn, ["copy_bdff8b95eaadfa843534", 'рисуем сторис…']); note.textContent = '';
         try {
             const canvas = await drawAchievementsStory(list);
             const url = await upload(canvas.toDataURL('image/jpeg', 0.9));
             tg.shareToStory(url);
             log(`значки: поделился в сторис «${label}»`, isGuest(), state.user);
-        } catch { note.textContent = 'не получилось – проверь интернет и попробуй ещё раз'; }
+        } catch { setUiCopy(note, ["copy_780552dfaa265be2d38c", 'не получилось – проверь интернет и попробуй ещё раз']); }
         btn.textContent = text; delete btn.dataset.busy;
     };
     // «смотреть все»: тот же слайдер, но по всем значкам человека, на текущем значке

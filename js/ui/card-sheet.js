@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/card-sheet.js – шторка «карта интеллигента»: карта крутится в 3D, что внутри,
 // партнёры, клуб в цифрах и выбор карты. Открывается кнопкой «узнать» на главной.
 import { rememberCardPayment } from './payment-return.js';
@@ -221,7 +222,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
         act('card_buy');
         haptic();
         const label = buyBtn_.innerHTML;
-        buyBtn_.textContent = 'открываем оплату…';
+        setUiCopy(buyBtn_, ["copy_25d2b3d11d96bf71537e", 'открываем оплату…']);
         log(gift ? 'подарок: клик оплатить' : (plan === 'permanent' ? 'клик бессрочная карта' : 'клик сезонная карта'), !gift, state.user, { source: 'шторка карты' });
         try {
             const { url } = await initPayment({

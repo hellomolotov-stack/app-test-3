@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 import { haptic, tg } from '../utils.js';
 import { hikeTrackPoints } from './calendar.js';
 import { trackStats, upload } from './story.js';
@@ -132,7 +133,7 @@ export function openPhotoStory(hike, onShare) {
         input.value = '';
         if (!file) return;
         run(async () => {
-            note.textContent = 'готовим фото…';
+            setUiCopy(note, ["copy_40df80277fd8e1e9b5a5", 'готовим фото…']);
             try {
                 photo = await renderPhoto(file, hike);
                 const image = get('.story-preview img');
@@ -145,16 +146,16 @@ export function openPhotoStory(hike, onShare) {
                 get('.post-photo-actions').hidden = false;
                 note.textContent = '';
             } catch {
-                note.textContent = 'не получилось оформить фото, попробуй другой снимок';
+                setUiCopy(note, ["copy_2bc5d72bb97e10f41740", 'не получилось оформить фото, попробуй другой снимок']);
             }
         });
     });
     share.addEventListener('click', () => run(async () => {
         if (!tg?.shareToStory || !tg.isVersionAtLeast?.('7.8')) {
-            note.textContent = 'сохрани фото и поделись им из галереи';
+            setUiCopy(note, ["copy_0f99d24f72f52a10994a", 'сохрани фото и поделись им из галереи']);
             return;
         }
-        note.textContent = 'готовим отправку…';
+        setUiCopy(note, ["copy_28928334d2e31f410b62", 'готовим отправку…']);
         try {
             const publicUrl = await upload(photo, hike.date, true);
             if (!overlay.isConnected || !overlay.classList.contains('is-on')) return;
@@ -162,7 +163,7 @@ export function openPhotoStory(hike, onShare) {
             note.textContent = '';
             onShare();
         } catch {
-            note.textContent = 'не получилось открыть сторис, попробуй ещё раз';
+            setUiCopy(note, ["copy_ae80370c3ec6967aa7f1", 'не получилось открыть сторис, попробуй ещё раз']);
         }
     }));
     save.addEventListener('click', () => run(async () => {
@@ -182,7 +183,7 @@ export function openPhotoStory(hike, onShare) {
             }
             note.textContent = '';
         } catch {
-            note.textContent = 'не получилось сохранить фото, попробуй ещё раз';
+            setUiCopy(note, ["copy_5cbee837d6f4fe97090d", 'не получилось сохранить фото, попробуй ещё раз']);
         }
     }));
 }

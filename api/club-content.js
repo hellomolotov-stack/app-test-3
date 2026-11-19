@@ -153,9 +153,9 @@ function validateValue(section, value) {
 const COPY_KEYS = new Set([...require('../lib/app-copy-keys.json'), 'homeAsk0', 'homeAsk1', 'homeAsk2', 'homeAsk3', 'homeAssistant', 'homeMastermind', 'homeMetrics', 'homeNew', 'homeReasons', 'homeUpdates', 'ticketBell', 'ticketDone', 'ticketHike', 'ticketHikeTitle', 'ticketHome', 'ticketHomeTitle', 'ticketInvite', 'ticketInviteFriend', 'ticketNotify', 'ticketNotifyInfo', 'ticketOpen', 'ticketPack', 'ticketPhone', 'ticketPlace', 'ticketRoute', 'ticketSaved', 'ticketStatus']);
 async function appCopy(req, res, body, user) {
     if (body && !(body.restore === true || (COPY_KEYS.has(body.key)
-        && typeof body.text === 'string' && body.text.trim() && body.text.length <= 500
-        && !/[\r\n\u0000-\u001f]/.test(body.text)))) {
-        return res.status(400).json({ error: 'введи текст до 500 символов в одну строку' });
+        && typeof body.text === 'string' && body.text.trim() && body.text.length <= 1500
+        && !/[\r\u0000-\u0009\u000b-\u001f]/.test(body.text)))) {
+        return res.status(400).json({ error: 'введи текст до 1500 символов' });
     }
     try {
         const url = `${DB}/adminContent/appCopy.json`;

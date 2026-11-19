@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 import { haptic } from '../utils.js';
 import { state } from '../state.js';
 import { log } from '../api.js';
@@ -232,7 +233,7 @@ function updateRouteMeta(route, index) {
     if (status) status.hidden = !isRouteTemporarilyClosed(route);
     if (statusReason) {
         statusReason.href = RESERVE_CLOSURE_SOURCE_URL;
-        statusReason.textContent = 'ограничение заповедника';
+        setUiCopy(statusReason, ["copy_01f43181808fd30209e8", 'ограничение заповедника']);
     }
 }
 

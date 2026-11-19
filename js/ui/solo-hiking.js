@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 import { state } from '../state.js';
 import { mainDiv, subtitle, haptic, openLink } from '../utils.js';
 import { fetchWithTimeout } from '../net.js';
@@ -186,7 +187,7 @@ function loader() {
         <div class="solo-loader-tracks" aria-hidden="true">
             ${LOADER_TRACKS.map(line => track({ line })).join('')}
         </div>
-        <span>Загружаем маршруты</span>
+        <span data-app-copy="copy_837bb04dcb819c85ea0e">Загружаем маршруты</span>
     </div></div>`;
 }
 
@@ -303,11 +304,11 @@ export async function openSoloHiking(uid, back) {
                     if (tg.downloadFile && tg.isVersionAtLeast?.('8.0')) {
                         downloadGpx(freshUrl, route.id);
                     } else {
-                        status.textContent = 'файл готов, нажми «скачать GPX»';
+                        setUiCopy(status, ["copy_6d705afc359a104d23b1", 'файл готов, нажми «скачать GPX»']);
                     }
                 }
             } catch {
-                status.textContent = 'не удалось скачать GPX, попробуй ещё раз';
+                setUiCopy(status, ["copy_7500ecaacede03872f73", 'не удалось скачать GPX, попробуй ещё раз']);
             } finally {
                 button.disabled = false;
             }

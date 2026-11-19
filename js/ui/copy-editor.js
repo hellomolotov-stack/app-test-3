@@ -1,6 +1,31 @@
-const selector = '[data-app-copy], [data-app-copy-placeholder], [data-app-copy-tail]';
+const selector = '[data-app-copy], [data-app-copy-placeholder], [data-app-copy-tail], [data-app-copy-scripted]';
+
+const scriptedCopy = new WeakMap();
+
+// Only explicit UI literals enter the editor. A later plain assignment (count,
+// route name, etc.) invalidates the field rather than inheriting its key.
+export function setUiCopy(node, [key, text]) {
+    scriptedCopy.set(node, { key, text, shown: text });
+    delete node.dataset.appCopy;
+    node.dataset.appCopyScripted = '';
+    node.textContent = text;
+}
 
 function copyField(node) {
+    const scripted = scriptedCopy.get(node);
+    if (scripted) {
+        if (node.textContent !== scripted.shown || node.childElementCount) {
+            delete node.dataset.appCopyScripted;
+            node.classList.remove('copy-multiline');
+            scriptedCopy.delete(node);
+            return null;
+        }
+        return {
+            key: scripted.key, original: scripted.text,
+            get: () => node.textContent,
+            set: text => { scripted.shown = text; node.textContent = text; },
+        };
+    }
     if (node.dataset.appCopyPlaceholder) return {
         key: node.dataset.appCopyPlaceholder,
         get: () => node.placeholder,
@@ -27,8 +52,9 @@ export function initCopyEditor(tg) {
             if (!field?.key) continue;
             if (!defaults.has(node)) defaults.set(node, field.get());
             const { key } = field;
-            const text = draft?.key === key ? draft.text : typeof saved[key] === 'string' ? saved[key] : defaults.get(node);
+            const text = draft?.key === key ? draft.text : typeof saved[key] === 'string' ? saved[key] : field.original ?? defaults.get(node);
             if (field.get() !== text) field.set(text);
+            if (typeof text === 'string') node.classList.toggle('copy-multiline', text.includes('\n'));
         }
     }
     async function read() {
@@ -42,9 +68,13 @@ export function initCopyEditor(tg) {
     }
     const refresh = () => { if (!draft && !document.hidden) read().catch(() => {}); };
     const watched = new MutationObserver(records => {
-        if (records.some(r => [...r.addedNodes].some(n => n.nodeType === 1 && (n.matches(selector) || n.querySelector(selector))))) paint();
+        if (records.some(r => {
+            const changed = r.target.nodeType === 3 ? r.target.parentElement : r.target;
+            return !!changed?.closest?.('[data-app-copy-scripted]')
+                || [...r.addedNodes].some(n => n.nodeType === 1 && (n.matches(selector) || n.querySelector(selector)));
+        })) paint();
     });
-    watched.observe(document.body, { childList: true, subtree: true });
+    watched.observe(document.body, { childList: true, subtree: true, characterData: true });
     refresh();
     document.addEventListener('visibilitychange', refresh);
     if (!tg?.initData || !adminIds.has(String(tg.initDataUnsafe?.user?.id))) return;
@@ -61,7 +91,7 @@ export function initCopyEditor(tg) {
     dialog.innerHTML = `
       <form>
         <b>текст в приложении</b>
-        <label>текст и эмоджи<input aria-label="текст и эмоджи" maxlength="500" required type="text"></label>
+        <label>текст и эмоджи<textarea aria-label="текст и эмоджи" maxlength="1500" required rows="4"></textarea></label>
         <p>изменения видны только тебе до публикации</p>
         <div class="copy-error" role="status"></div>
         <div class="copy-actions">
@@ -72,7 +102,7 @@ export function initCopyEditor(tg) {
       </form>`;
     document.body.append(dialog);
     const form = dialog.querySelector('form');
-    const input = dialog.querySelector('input');
+    const input = dialog.querySelector('textarea');
     const error = dialog.querySelector('.copy-error');
     const submit = dialog.querySelector('[type=submit]');
     const back = dialog.querySelector('[data-back]');
@@ -110,7 +140,7 @@ export function initCopyEditor(tg) {
         setBusy(true);
         read().then(value => {
             revision = value;
-            input.value = typeof saved[draft.key] === 'string' ? saved[draft.key] : defaults.get(target);
+            input.value = typeof saved[draft.key] === 'string' ? saved[draft.key] : field.original ?? defaults.get(target);
             draft.text = input.value;
             restore.hidden = !canRestore;
             paint();

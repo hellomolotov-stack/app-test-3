@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { bookingNotOpen, opensPhrase } from '../booking-opens.js';
 import { ensureSmoothDem, smoothDemTiles } from './smooth-dem.js';
@@ -905,7 +906,7 @@ function feedPaintSeats(el, n) {
     if (go) {
         const date = el.dataset.seatsFor || '';
         const soldOutForGuest = left <= 0 && state.userCard?.status !== 'active' && !passCodeFor(date);
-        go.textContent = soldOutForGuest ? 'подробнее' : 'записаться';
+        setUiCopy(go, soldOutForGuest ? ["copy_bff7cea740af8a514b6b", 'подробнее'] : ["copy_36477f30eadb4628d790", 'записаться']);
         go.classList.toggle('btn-yellow', !soldOutForGuest);
         go.classList.toggle('btn-outline', soldOutForGuest);
     }
@@ -952,7 +953,7 @@ function refreshFeedRegistration(date, booked) {
         button.classList.toggle('is-in', booked);
         button.classList.toggle('btn-yellow', !booked);
         button.classList.remove('btn-outline');
-        button.textContent = booked ? 'ты записан ✓' : 'записаться';
+        setUiCopy(button, booked ? ["copy_909459dba50b6aa5f64f", 'ты записан ✓'] : ["copy_36477f30eadb4628d790", 'записаться']);
     });
     const matchesUser = p => String(p.userId) === String(user?.id);
     if (user?.id && feedGoingList[date]) {
@@ -1932,7 +1933,7 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
     if (!standalone) {
         const tip = document.createElement('div');
         tip.className = 'map-gesture-tip';
-        tip.textContent = 'ты можешь крутить, наклонять и увеличивать карту двумя пальцами: вверх, вниз или по кругу';
+        setUiCopy(tip, ["copy_764534cddb76eb7e4ac4", 'ты можешь крутить, наклонять и увеличивать карту двумя пальцами: вверх, вниз или по кругу']);
         el.appendChild(tip);
         const hideTip = () => { tip.classList.add('is-hidden'); setTimeout(() => tip.remove(), 400); };
         ['touchstart', 'mousedown', 'wheel'].forEach(ev => el.addEventListener(ev, hideTip, { once: true, passive: true }));
@@ -2467,7 +2468,7 @@ export function showBottomSheet(index) {
                     if (txt && !txt.dataset.base) txt.dataset.base = txt.textContent;
                     if (count === 0 && !isPast) {
                         countEl.style.display = 'none';
-                        if (txt) txt.textContent = isCity || isBookClub ? 'стань первым' : 'будь первым на тропе';
+                        if (txt) setUiCopy(txt, isCity || isBookClub ? ["copy_7259bcdc37ea08501af6", 'стань первым'] : ["copy_b5cd82f4ab4040a84256", 'будь первым на тропе']);
                     } else if (count === 0) {
                         countEl.style.display = 'inline';
                         countEl.textContent = count;
@@ -2551,7 +2552,7 @@ export function showBottomSheet(index) {
                 button.type = 'button';
                 button.className = 'story-save';
                 button.dataset.pastPhotoStory = '';
-                button.textContent = 'сделать сторис';
+                setUiCopy(button, ["copy_9c32cb6c608a05e4cc27", 'сделать сторис']);
                 button.addEventListener('click', () => openPhotoStoryFor(hike));
                 contentWrapper.append(button);
             });
@@ -2808,7 +2809,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
             hint.style.right = 'auto';
             hint.style.width = Math.max(0, thumbLeftPos - 28) + 'px';
             hint.style.justifyContent = 'flex-start';
-            hint.textContent = paymentPhase === 'creating' ? 'готовим оплату' : 'ожидаем оплату';
+            setUiCopy(hint, paymentPhase === 'creating' ? ["copy_28afaba873407aa3b10c", 'готовим оплату'] : ["copy_4752eb37055c886b031c", 'ожидаем оплату']);
         } else if (!isBooked) {
             const availableLeft = thumbLeftPos + thumbW + GAP_BETWEEN;
             const availableRight = trackW - EDGE_PADDING;
@@ -2995,7 +2996,7 @@ function renderSwipeControl({ isBooked, isGuest, hike, accentColor }) {
         wrapper.append(track);
         const note = document.createElement('p');
         note.className = 'admission-swipe-note';
-        note.textContent = 'сначала познакомимся – по анкете или по приглашению';
+        setUiCopy(note, ["copy_c221155b23eec8f40a05", 'сначала познакомимся – по анкете или по приглашению']);
         wrapper.append(note);
         return wrapper;
     }
@@ -3122,7 +3123,7 @@ function updateFloatingSheetButtons() {
             const infoMsg = document.createElement('div');
             infoMsg.className = 'availability-floating';
             infoMsg.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(255, 241, 178, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;`;
-            infoMsg.textContent = 'вход по карте интеллигента';
+            setUiCopy(infoMsg, ["copy_164a237131428bb8675b", 'вход по карте интеллигента']);
             container.appendChild(infoMsg);
 
             const cardsBlock = document.createElement('div');
@@ -3200,7 +3201,7 @@ function updateFloatingSheetButtons() {
             const goBtn = document.createElement('a');
             goBtn.href = '#';
             goBtn.className = 'btn btn-yellow btn-glow';
-            goBtn.textContent = isBooked ? (isBookClub ? 'читаю' : 'ты записан') : (isBookClub ? 'читаю' : (isCity ? 'буду' : 'я иду'));
+            setUiCopy(goBtn, isBooked ? (isBookClub ? ["copy_ced369940866f8487aa6", 'читаю'] : ["copy_4e79e83cf0573589520f", 'ты записан']) : (isBookClub ? ["copy_ced369940866f8487aa6", 'читаю'] : (isCity ? ["copy_a69a88b459d4e648fbc9", 'буду'] : ["copy_cac8aef6b0cbfc9579e6", 'я иду'])));
             goBtn.style.backgroundColor = accentColor;
             goBtn.style.color = (accentColor === '#41B5ED') ? '#ffffff' : '#000000';
             goBtn.addEventListener('click', (e) => {
@@ -3221,7 +3222,7 @@ function updateFloatingSheetButtons() {
         const placeholderMsg = document.createElement('div');
         placeholderMsg.className = 'availability-floating';
         placeholderMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
-        placeholderMsg.textContent = '💫 скоро появится';
+        setUiCopy(placeholderMsg, ["copy_c07df417dad891628c37", '💫 скоро появится']);
         container.appendChild(placeholderMsg);
         return;
     }
@@ -3239,7 +3240,7 @@ function updateFloatingSheetButtons() {
         const cancelledMsg = document.createElement('div');
         cancelledMsg.className = 'availability-floating';
         cancelledMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); text-align: center; color: #ffffff;';
-        cancelledMsg.textContent = '🚫 хайк отменён';
+        setUiCopy(cancelledMsg, ["copy_f50a32ba43f1672b96e0", '🚫 хайк отменён']);
         container.appendChild(cancelledMsg);
         return;
     }
@@ -3333,7 +3334,7 @@ function updateFloatingSheetButtons() {
         completedMsg.className = 'availability-floating';
         // margin: 0 – с auto-отступами плашка и кнопка «отчёт» разъезжались к краям; теперь обе по центру рядом
         completedMsg.style.cssText = glassBase + ' background: rgba(73, 138, 176, 0.15); margin: 0;';
-        completedMsg.textContent = (isCity || isBookClub) ? '✓ событие завершено' : '✓ хайк завершён';
+        setUiCopy(completedMsg, (isCity || isBookClub) ? ["copy_c8b49c6e6aa2e5eff778", '✓ событие завершено'] : ["copy_1ed74e50a9812a0b9d08", '✓ хайк завершён']);
         container.appendChild(completedMsg);
 
         if (hasReportLink(hike)) {
@@ -3341,7 +3342,7 @@ function updateFloatingSheetButtons() {
             const reportBtn = document.createElement('button');
             reportBtn.type = 'button';
             reportBtn.className = 'btn btn-yellow report-btn';
-            reportBtn.textContent = '📷 отчёт';
+            setUiCopy(reportBtn, ["copy_ad4dc824fc3c46e90edb", '📷 отчёт']);
             reportBtn.addEventListener('click', e => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -3396,7 +3397,7 @@ function updateFloatingSheetButtons() {
         const closedMsg = document.createElement('div');
         closedMsg.className = 'availability-floating';
         closedMsg.style.cssText = 'margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(73, 138, 176, 0.15); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); box-sizing: border-box; text-align: center; color: #ffffff; font-weight: 600;';
-        closedMsg.textContent = '⏳ запись закрыта';
+        setUiCopy(closedMsg, ["copy_8cde7998e46b77a470e4", '⏳ запись закрыта']);
         container.appendChild(closedMsg);
         container.style.pointerEvents = 'none';
         return;
@@ -3449,7 +3450,7 @@ function updateFloatingSheetButtons() {
         const cancelBtn = document.createElement('a');
         cancelBtn.href = '#';
         cancelBtn.className = 'btn btn-outline';
-        cancelBtn.textContent = 'отменить';
+        setUiCopy(cancelBtn, ["copy_bf5ddc74cddcc2fd780d", 'отменить']);
         cancelBtn.addEventListener('click', e => {
             e.preventDefault();
             cancelWithoutPayment(hike, isGuest);
@@ -3463,11 +3464,11 @@ function updateFloatingSheetButtons() {
         goBtn.style.backgroundColor = accentColor;
         goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
         if (isCity || isBookClub) {
-            goBtn.textContent = 'ты записан';
+            setUiCopy(goBtn, ["copy_4e79e83cf0573589520f", 'ты записан']);
             goBtn.style.pointerEvents = 'none';
         } else {
             // 16.11: вместо неактивного «ты записан» – билет «ты в деле» (что взять, точка сбора, чат)
-            goBtn.textContent = '✓ открыть билет';
+            setUiCopy(goBtn, ["copy_81ffebfa6ee2ef0faf08", '✓ открыть билет']);
             goBtn.addEventListener('click', e => { e.preventDefault(); haptic(); openHikeTicket(hike.date); });
         }
         row.appendChild(goBtn);
@@ -3485,7 +3486,7 @@ function updateFloatingSheetButtons() {
         const questionBtn = document.createElement('a');
         questionBtn.href = '#';
         questionBtn.className = 'btn btn-outline';
-        questionBtn.textContent = 'задать вопрос';
+        setUiCopy(questionBtn, ["copy_3b5dda237b815f0ddf0a", 'задать вопрос']);
         questionBtn.addEventListener('click', e => {
             e.preventDefault();
             openLink('https://t.me/hellointelligent', 'написать организатору', true);
@@ -3495,7 +3496,7 @@ function updateFloatingSheetButtons() {
         const goBtn = document.createElement('a');
         goBtn.href = '#';
         goBtn.className = 'btn btn-yellow btn-glow';
-        goBtn.textContent = 'иду';
+        setUiCopy(goBtn, ["copy_031988da09439a4af689", 'иду']);
         goBtn.style.fontWeight = '900';
         goBtn.style.backgroundColor = accentColor;
         goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
@@ -3518,7 +3519,7 @@ function updateFloatingSheetButtons() {
     const goBtn = document.createElement('a');
     goBtn.href = '#';
     goBtn.className = 'btn btn-yellow btn-glow';
-    goBtn.textContent = 'иду';
+    setUiCopy(goBtn, ["copy_031988da09439a4af689", 'иду']);
     goBtn.style.fontWeight = '900';
     goBtn.style.backgroundColor = accentColor;
     goBtn.style.color = accentColor === '#41B5ED' ? '#ffffff' : '#000000';
@@ -4279,7 +4280,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                     ${boxOk ? hikingBoxRowHtml('rt-box', hikeDate) : ''}
                     ${hikeObj?.location_link ? `<button type="button" class="rt-row" id="rtPlace">
                         <div class="rt-n">4</div>
-                        <div class="rt-text"><b>точка сбора${hikeObj.start_time ? ' · ' + esc(hikeObj.start_time) : ''}</b><span>${route ? esc(route.title) + ' · ' : ''}<span data-app-copy="ticketPlace">место встречи на карте</span></span></div>
+                        <div class="rt-text"><b><span data-app-copy="copy_ef773baa141d01d0ffd1">точка сбора</span>${hikeObj.start_time ? ' · ' + esc(hikeObj.start_time) : ''}</b><span>${route ? esc(route.title) + ' · ' : ''}<span data-app-copy="ticketPlace">место встречи на карте</span></span></div>
                         <div data-app-copy="copy_7566e3f4f0a3d1e3e955" class="rt-chip">карта</div>
                     </button>` : ''}
                     <button type="button" class="rt-row" id="rtPhone">
@@ -4387,7 +4388,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
     document.getElementById('rtPhone').addEventListener('click', () => {
         haptic();
         const phoneChip = document.getElementById('rtPhoneChip');
-        const done = () => { if (phoneChip) phoneChip.textContent = 'скопировано ✓'; };
+        const done = () => { if (phoneChip) setUiCopy(phoneChip, ["copy_322226736ff3dafdf2b4", 'скопировано ✓']); };
         try {
             navigator.clipboard.writeText(PHONE.replace(/\s/g, '')).then(done, done);
         } catch (e) { done(); }
@@ -4680,7 +4681,7 @@ export function offerPendingTicketRecovery({ force = false } = {}) {
         const button = document.getElementById('ticketPaidYesBtn');
         if (button.disabled) return;
         button.disabled = true;
-        button.textContent = 'проверяем оплату…';
+        setUiCopy(button, ["copy_9e73efeabffc8efa0233", 'проверяем оплату…']);
         document.getElementById('ticketPaidNoBtn').disabled = true;
         log('проверить оплату билета', true, state.user, { hike_date: pending.hikeDate });
         try { await confirmTicketPaymentReturn(pending.hikeDate); }
@@ -4915,7 +4916,7 @@ export function mountHikePreviewCard(containerId, hike, onRegisterClick) {
         if (countEl) {
             countEl.style.display = 'none';
             const txt = container.querySelector('#hikePreviewCounter .participant-text');
-            if (txt) txt.textContent = participants.length === 0 ? 'будь первым на тропе' : 'идут';
+            if (txt) setUiCopy(txt, participants.length === 0 ? ["copy_b5cd82f4ab4040a84256", 'будь первым на тропе'] : ["copy_1fa041d65ab87964907e", 'идут']);
         }
         if (avatarsEl) {
             avatarsEl.innerHTML = '';

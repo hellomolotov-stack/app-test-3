@@ -328,7 +328,7 @@ async function openArchive() {
     ov.className = 'sa-overlay';
     ov.innerHTML = `<div class="sa-sheet" role="dialog" aria-label="архив сторис"><div class="cs-grab" aria-hidden="true"></div>
         <div class="sa-top"><b data-app-copy="copy_171e64ab63839203424d">архив сторис</b><button type="button" class="sa-x" aria-label="закрыть">✕</button></div>
-        <div class="sa-scroll"><div class="sa-wait">загружаю…</div></div></div>`;
+        <div class="sa-scroll"><div data-app-copy="copy_51b9f75c16a684a247aa" class="sa-wait">загружаю…</div></div></div>`;
     document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('is-on'));
     const close = () => { ov.classList.remove('is-on'); setTimeout(() => ov.remove(), 280); };

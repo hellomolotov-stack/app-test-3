@@ -1,3 +1,4 @@
+import { setUiCopy } from './copy-editor.js';
 import { loadTrackElevations } from '../track-elevation.js';
 // js/ui/story.js – «поделиться в сторис» после записи на хайк.
 // Рисуем картинку 1080×1920: на весь экран – снимок нашей 3D-карты с жёлтым треком, сверху дата и название,
@@ -239,7 +240,7 @@ export async function openStoryShare(hikeDate, source = '') {
         btn.dataset.busy = '1';
         const text = btn.textContent;
         btn.textContent = label;
-        try { await fn(); } catch (e) { note.textContent = 'не получилось – проверь интернет и попробуй ещё раз'; }
+        try { await fn(); } catch (e) { setUiCopy(note, ["copy_780552dfaa265be2d38c", 'не получилось – проверь интернет и попробуй ещё раз']); }
         btn.textContent = text;
         delete btn.dataset.busy;
     };
@@ -247,7 +248,7 @@ export async function openStoryShare(hikeDate, source = '') {
     shareBtn.addEventListener('click', () => busy(shareBtn, 'готовим…', async () => {
         haptic();
         if (!tg?.shareToStory || !tg.isVersionAtLeast?.('7.8')) {
-            note.textContent = 'в этой версии Telegram сторис из приложения недоступны – сохрани картинку и выложи её вручную';
+            setUiCopy(note, ["copy_42985d5c41b1b741ad23", 'в этой версии Telegram сторис из приложения недоступны – сохрани картинку и выложи её вручную']);
             return;
         }
         const url = await getUrl();
