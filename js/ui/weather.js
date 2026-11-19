@@ -515,7 +515,11 @@ async function loadWt2() {
     });
 }
 
+// Temporary switch for the home weather block across all home layouts.
+const HOME_WEATHER_ENABLED = false;
+
 export function renderWeatherBlock() {
+    if (!HOME_WEATHER_ENABLED) return '';
     const city = getCity();
     if (isV2()) return `<div class="card-container wt2" id="weatherBlock"><div class="wt2-h"><b>погода на неделю</b></div><div class="wt2-body"><div class="wt2-skel">загружаю прогноз…</div></div></div>`;
     return `
