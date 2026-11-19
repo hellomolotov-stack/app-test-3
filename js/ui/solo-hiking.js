@@ -1,9 +1,9 @@
 import { state } from '../state.js';
 import { mainDiv, subtitle, haptic, openLink } from '../utils.js';
 import { fetchWithTimeout } from '../net.js';
-import { showBack, resetNavActive, scrollPageToTop, setUserInteracted } from './common.js';
+import { showBack, resetNavActive, scrollPageToTop } from './common.js';
 
-const PILOT_ID = '163665735';
+const CACHE_TTL = 60 * 60 * 1000;
 const SOURCE_CREDIT = 'produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved';
 const DIFFICULTIES = ['лёгкий', 'средний', 'сложный'];
 const LOADER_TRACKS = [
@@ -12,39 +12,6 @@ const LOADER_TRACKS = [
     ["117.0,28.3 115.7,27.2 113.6,26.0 111.5,25.3 111.0,26.4 108.3,27.7 103.0,29.1 99.6,29.9 94.5,29.9 90.6,33.7 84.1,37.8 77.8,41.6 70.6,40.7 66.6,45.0 62.2,47.7 57.8,48.4 58.7,51.3 53.8,52.3 50.1,54.1 45.9,56.9 42.7,58.3 42.0,54.7 36.1,53.3 30.8,52.0 25.8,50.3 21.4,52.0 15.5,54.9 11.8,56.7 11.0,57.2"],
     ["88.9,60.5 90.8,54.2 89.8,49.0 85.2,50.9 81.4,53.1 77.8,50.7 75.0,45.2 71.4,40.5 68.2,36.3 62.8,32.3 60.3,24.3 57.7,19.5 53.0,15.8 45.6,11.7 42.1,11.7 37.1,14.6 38.2,19.8 41.8,25.2 45.7,30.1 44.2,37.3 40.6,40.2 39.1,52.3 53.9,58.2 66.7,65.8 70.6,73.7 75.2,68.1 81.6,66.4 85.4,63.3 89.0,60.3"]
 ];
-
-export function isSoloHikingPilot() {
-    return state.userCard?.status === 'active'
-        && String(state.user?.id ?? '') === PILOT_ID
-        && Boolean(window.Telegram?.WebApp?.initData);
-}
-
-export function soloHikingEntryHtml() {
-    if (!isSoloHikingPilot()) return '';
-    return `<button type="button" class="solo-entry" id="soloHikingEntry">
-        <svg class="solo-entry-track" viewBox="0 0 128 84" aria-hidden="true">
-            <path d="M21 56 L35 51 42 58 55 45 60 32 68 34 75 27 80 39 91 36 102 27"
-                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            <circle cx="21" cy="56" r="2.5" fill="currentColor"/><circle cx="102" cy="27" r="2.5" fill="currentColor"/>
-        </svg>
-        <strong>соло хайкинг</strong>
-        <span>треки и гайды для самостоятельных хайков</span>
-        <b>открыть маршруты <i aria-hidden="true">›</i></b>
-    </button>`;
-}
-
-export function bindSoloHikingEntry(root, back) {
-    const entry = root.querySelector('#soloHikingEntry');
-    entry?.addEventListener('click', () => {
-        haptic();
-        setUserInteracted();
-        const scrollY = window.scrollY;
-        openSoloHiking(() => {
-            back();
-            requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }));
-        });
-    });
-}
 
 function duration(minutes) {
     const hours = Math.floor(minutes / 60);
@@ -140,6 +107,7 @@ function guide(route) {
         loop: 'кольцевой маршрут', linear: 'туда и обратно по одному треку',
         parts: 'GPX с отдельными участками', missing: 'трек уточняется'
     }[route.kind];
+    const hasGpx = route.canDownload || Boolean(route.download);
     return `<h2>${esc(route.title)}</h2><p class="solo-muted">${trip}</p>
         ${route.line.length ? `<div class="solo-cover">${track(route)}<span>форма трека</span></div>` : ''}
         <div class="solo-facts">
@@ -148,10 +116,10 @@ function guide(route) {
           <div><b>${route.difficulty ?? 'уточняется'}</b><span>сложность</span></div>
         </div>
         ${profile(route)}
-        ${route.start || route.download ? `<section class="solo-links">
+        ${route.start || hasGpx ? `<section class="solo-links">
           <h3>полезные ссылки</h3>
           ${route.start ? '<button type="button" class="solo-link" data-solo-action="map"><span><b>точка старта в Яндекс Картах</b><small>как добраться до начала маршрута</small></span><i>↗</i></button>' : ''}
-          ${route.download ? `<button type="button" class="solo-link" data-solo-action="gpx"><span><b>скачать GPX</b><small>${route.kind === 'parts' ? 'отдельные участки трека' : 'полный маршрут для офлайн-карты'}</small></span><i>↓</i></button>` : ''}
+          ${hasGpx ? `<button type="button" class="solo-link" data-solo-action="gpx"><span><b>скачать GPX</b><small>${route.kind === 'parts' ? 'отдельные участки трека' : 'полный маршрут для офлайн-карты'}</small></span><i>↓</i></button>` : ''}
           <p class="solo-muted" role="status" data-solo-download-status></p>
         </section>` : ''}
         ${route.description || route.reference || route.kind === 'parts' ? `<details class="solo-notes" open>
@@ -163,15 +131,45 @@ function guide(route) {
         ${route.profile?.length ? `<p class="solo-credit">${SOURCE_CREDIT}</p>` : ''}`;
 }
 
-function askServer(action, routeId) {
+function askServer(action, options = {}) {
     return fetchWithTimeout('/api/me', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, routeId, initData: window.Telegram.WebApp.initData })
+        body: JSON.stringify({ action, ...options, initData: window.Telegram.WebApp.initData })
     }).then(response => {
-        if (!response.ok) throw new Error('solo request failed');
+        if (!response.ok) {
+            const error = new Error('solo request failed');
+            error.status = response.status;
+            throw error;
+        }
         return response.json();
     });
+}
+
+const catalogCacheKey = uid => `solo-hiking-catalog:v1:${uid}`;
+
+function readCachedCatalog(uid) {
+    try {
+        const entry = JSON.parse(localStorage.getItem(catalogCacheKey(uid)));
+        if (entry?.expires > Date.now() && Array.isArray(entry.routes) && entry.routes.length) return entry.routes;
+        localStorage.removeItem(catalogCacheKey(uid));
+    } catch {}
+    return null;
+}
+
+function saveCatalog(uid, routes) {
+    // Подписанные ссылки на GPX нужны только в памяти открытого экрана.
+    const records = routes.map(({ download, ...route }) => ({ ...route, canDownload: Boolean(download) }));
+    try {
+        localStorage.setItem(catalogCacheKey(uid), JSON.stringify({ expires: Date.now() + CACHE_TTL, routes: records }));
+    } catch {}
+}
+
+function soloDownloadUrl(value) {
+    if (!value) return null;
+    const url = new URL(value, window.location.origin);
+    if (url.origin !== window.location.origin || url.protocol !== 'https:') throw new Error('invalid download URL');
+    return url;
 }
 
 function downloadGpx(url, id) {
@@ -194,8 +192,8 @@ function loader() {
 
 const backHtml = '<button type="button" class="solo-back" data-solo-action="back" aria-label="назад">‹</button>';
 
-async function openSoloHiking(back) {
-    if (!isSoloHikingPilot()) return;
+export async function openSoloHiking(uid, back) {
+    if (String(state.user?.id) !== uid || state.userCard?.status !== 'active') return;
     const root = mainDiv();
     window.isPrivPage = false;
     window.isMenuActive = false;
@@ -214,16 +212,28 @@ async function openSoloHiking(back) {
     scrollPageToTop();
     let routes;
     try {
-        ({ routes } = await askServer('soloRoutes'));
-        if (!Array.isArray(routes) || !routes.length) throw new Error('empty routes');
-    } catch {
+        const cached = readCachedCatalog(uid);
+        const response = await askServer('soloRoutes', { cached: Boolean(cached) });
+        if (!page.isConnected || String(state.user?.id) !== uid) return;
+        if (cached && response.cached === true) {
+            routes = cached;
+        } else {
+            routes = response.routes;
+            if (!Array.isArray(routes) || !routes.length) throw new Error('empty routes');
+            saveCatalog(uid, routes);
+        }
+    } catch (error) {
+        const forbidden = error.status === 403;
+        if (forbidden || error.status === 401) {
+            try { localStorage.removeItem(catalogCacheKey(uid)); } catch {}
+        }
         if (page.isConnected) {
-            page.innerHTML = `${backHtml}<p class="solo-muted" role="status">не удалось загрузить маршруты</p><button class="solo-source" type="button">попробовать ещё раз</button>`;
-            page.querySelector('.solo-source').onclick = () => openSoloHiking(back);
+            page.innerHTML = `${backHtml}<p class="solo-muted" role="status">${forbidden ? 'раздел доступен с активной картой' : 'не удалось загрузить маршруты'}</p>${forbidden ? '' : '<button class="solo-source" type="button">попробовать ещё раз</button>'}`;
+            const retry = page.querySelector('.solo-source');
+            if (retry) retry.onclick = () => openSoloHiking(uid, back);
         }
         return;
     }
-    if (!page.isConnected) return;
 
     let time = 'all';
     let difficulty = 'all';
@@ -281,15 +291,21 @@ async function openSoloHiking(back) {
             status.textContent = '';
             button.disabled = true;
             try {
-                const url = new URL(route.download, window.location.origin);
-                if (url.origin !== window.location.origin || url.protocol !== 'https:') throw new Error('invalid download URL');
-                if (Number(url.searchParams.get('expires')) > Date.now() + 30000) {
+                const url = soloDownloadUrl(route.download);
+                if (url && Number(url.searchParams.get('expires')) > Date.now() + 30000) {
                     downloadGpx(url, route.id);
                 } else {
-                    const { download } = await askServer('soloDownload', route.id);
-                    if (!download) throw new Error('track unavailable');
+                    const { download } = await askServer('soloDownload', { routeId: route.id });
+                    const freshUrl = soloDownloadUrl(download);
+                    if (!freshUrl) throw new Error('track unavailable');
                     route.download = download;
-                    status.textContent = 'файл готов, нажми «скачать GPX»';
+                    if (!status.isConnected || String(state.user?.id) !== uid) return;
+                    const tg = window.Telegram.WebApp;
+                    if (tg.downloadFile && tg.isVersionAtLeast?.('8.0')) {
+                        downloadGpx(freshUrl, route.id);
+                    } else {
+                        status.textContent = 'файл готов, нажми «скачать GPX»';
+                    }
                 }
             } catch {
                 status.textContent = 'не удалось скачать GPX, попробуй ещё раз';
