@@ -1118,6 +1118,7 @@ async function loadAppData() {
         // пишем отдельными событиями – они попадут в ежечасный отчёт.
         const src = tg?.initDataUnsafe?.start_param || '';
         if (/^pin/.test(src)) log(`📌 пришёл из закрепа${src.length > 3 ? ` (${src.slice(3).replace(/^_/, '')})` : ''}`, isGuestNow, state.user);
+        else if (src === 'post') log('📝 пришёл из поста', isGuestNow, state.user);
         else if (src) log(`пришёл по ссылке: ${src.replace(/^(hike|card|paid)_.*/, '$1_(дата)')}`, isGuestNow, state.user);
         saveCachedState();
 
