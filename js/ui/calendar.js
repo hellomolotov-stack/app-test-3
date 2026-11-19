@@ -76,7 +76,7 @@ export function renderCalendar(container) {
     const hasNextMonth = hasHikesInMonth(year, month + 1);
 
     let calendarHtml = `
-        <h2 class="section-title" style="margin:0 16px 16px 16px;">календарь</h2>
+        <h2 data-app-copy="copy_25c5ee9e379e5cff52f9" class="section-title" style="margin:0 16px 16px 16px;">календарь</h2>
         <div class="calendar-item">
             <div class="calendar-header-with-legend">
                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 8px;">
@@ -91,11 +91,11 @@ export function renderCalendar(container) {
                     </div>
                 </div>
                 <div class="calendar-legend" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">📷 отчёт</span>
-                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🎟️ запись</span>
-                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">⛰️ готовим хайк</span>
-                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🌧️ дата перенесена</span>
-                    <span class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🏄🏻‍♂️ готовим событие</span>
+                    <span data-app-copy="copy_ad4dc824fc3c46e90edb" class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">📷 отчёт</span>
+                    <span data-app-copy="copy_98f79089551e206c9235" class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🎟️ запись</span>
+                    <span data-app-copy="copy_59e6ccee40176a816ced" class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">⛰️ готовим хайк</span>
+                    <span data-app-copy="copy_f4e2a8a1f8003ccbc538" class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🌧️ дата перенесена</span>
+                    <span data-app-copy="copy_cb78dd023299abadcdfe" class="bottom-sheet-tag" style="background: rgba(255,255,255,0.1); color: white;">🏄🏻‍♂️ готовим событие</span>
                 </div>
             </div>
             <div class="weekdays">${weekdays.map(d => `<span>${d}</span>`).join('')}</div>
@@ -130,27 +130,27 @@ export function renderCalendar(container) {
         let innerHtml = `${day}`;
         if (isFullHike) {
             if (isPast && hasReportLink(hike))
-                innerHtml += `<span class="calendar-emoji">📷</span>`;
+                innerHtml += `<span data-app-copy="copy_6a8fe57e59bad9adc011" class="calendar-emoji">📷</span>`;
             else if (isPast && (hike.letter_text || hike.letter_link))
-                innerHtml += `<span class="calendar-emoji-letter">✉️</span>`;
+                innerHtml += `<span data-app-copy="copy_93b2d3447a7fdd7df7ce" class="calendar-emoji-letter">✉️</span>`;
             else if (hike.emoji && hike.emoji.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">${hike.emoji}</span>`;
             else {
                 const hikeIndex = state.hikesWithTitle.findIndex(h => h.date === dateStr);
                 if (!isPast && hikeIndex !== -1 && state.hikeBookingStatus[hikeIndex] === true && !isCancelled) {
-                    innerHtml += `<span class="calendar-emoji">🎟️</span>`;
+                    innerHtml += `<span data-app-copy="copy_a6296025843caf7069a8" class="calendar-emoji">🎟️</span>`;
                     classes += ' booked-day';
                 }
             }
             if (isCancelled) {
-                innerHtml += `<span class="calendar-emoji">🚫</span>`;
+                innerHtml += `<span data-app-copy="copy_8162a3e4c7fa2a2c13fc" class="calendar-emoji">🚫</span>`;
                 classes += ' cancelled-hike';
             }
         } else if (isPlaceholder) {
             if (hike.emoji && hike.emoji.trim() !== '')
                 innerHtml += `<span class="calendar-emoji">${hike.emoji}</span>`;
             else
-                innerHtml += `<span class="calendar-emoji">💫</span>`;
+                innerHtml += `<span data-app-copy="copy_bef082c71fa56883d67e" class="calendar-emoji">💫</span>`;
         }
 
         let inlineStyle = '';
@@ -230,9 +230,9 @@ function bindSuggestEventButton() {
                 overlay.className = 'modal-overlay';
                 overlay.innerHTML = `
                     <div class="modal-content" style="max-width:360px; text-align:center;">
-                        <div style="font-size:52px; margin-bottom:16px;">🔒</div>
-                        <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">события в городе</div>
-                        <div class="modal-text" style="text-align:center; margin-top:8px;">члены клуба могут предлагать свои события</div>
+                        <div data-app-copy="copy_6ae1d2ee2e9592ea2e66" style="font-size:52px; margin-bottom:16px;">🔒</div>
+                        <div data-app-copy="copy_26ba18fbdafa13b4aec8" class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">события в городе</div>
+                        <div data-app-copy="copy_010987405a76b8161a17" class="modal-text" style="text-align:center; margin-top:8px;">члены клуба могут предлагать свои события</div>
                         <button class="btn btn-yellow" id="closeLockBtn" style="margin-top:16px;">понятно</button>
                     </div>
                 `;
@@ -384,11 +384,11 @@ function feedDateBadge(dateStr) {
 
 function feedNearestCard(h) {
     if (!h) {
-        return `<div class="ef-next ef-next-empty"><div class="ef-next-title">⛰️ следующий хайк скоро в календаре</div><div class="ef-next-sub">обычно анонсируем за неделю</div></div>`;
+        return `<div class="ef-next ef-next-empty"><div data-app-copy="copy_deee8db7193d67c9f0b3" class="ef-next-title">⛰️ следующий хайк скоро в календаре</div><div data-app-copy="copy_73ae201b8d7aa24a49d0" class="ef-next-sub">обычно анонсируем за неделю</div></div>`;
     }
     if (isPostponed(h)) {
         const name = h.title && h.title.trim() ? feedEsc(h.title) : 'хайк';
-        return `<div class="ef-next ef-next-teaser ef-rain"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">🌧️ ${name} – дата перенесена</div><div class="ef-next-sub">погода не пускает в горы. новую дату объявим в календаре</div></div></div>${feedNotifyButton(h.date)}</div>`;
+        return `<div class="ef-next ef-next-teaser ef-rain"><div class="ef-next-row">${feedDateBadge(h.date)}<div class="ef-next-info"><div class="ef-next-title">🌧️ ${name} – дата перенесена</div><div data-app-copy="copy_00a1eca98d08ad634d35" class="ef-next-sub">погода не пускает в горы. новую дату объявим в календаре</div></div></div>${feedNotifyButton(h.date)}</div>`;
     }
     if (!h.title || !h.title.trim()) {
         const waiting = !!feedWaitlist()[h.date];
@@ -418,8 +418,8 @@ function feedNearestCard(h) {
         </div>`}
         <div class="ef-tk-actions">
             ${registered
-                ? `<button class="btn ef-tk-go is-in">ты записан ✓</button>`
-                : closed ? '<button class="btn ef-tk-go">посмотреть маршрут</button>' : `<button class="btn btn-yellow ef-tk-go">записаться</button>`}
+                ? `<button data-app-copy="copy_909459dba50b6aa5f64f" class="btn ef-tk-go is-in">ты записан ✓</button>`
+                : closed ? '<button data-app-copy="copy_84c6b757a4e980c19948" class="btn ef-tk-go">посмотреть маршрут</button>' : `<button data-app-copy="copy_36477f30eadb4628d790" class="btn btn-yellow ef-tk-go">записаться</button>`}
         </div>
     </div>`;
 }
@@ -451,10 +451,10 @@ function feedRow(h, nearestDate = '') {
     const km = feedKm(h);
     let sub = FEED_WD[d.getDay()];
     if (cancelled) sub += ' · отменили';
-    else if (postponed) sub += ' · <span class="ef-rain-text">дата перенесена</span>';
+    else if (postponed) sub += ' · <span data-app-copy="copy_19452ce27613304ff2e6" class="ef-rain-text">дата перенесена</span>';
     else if (isTeaser) sub += ' · запись скоро откроется';
     else {
-        if (isCity) sub += ' · <span class="ef-city">клубный вечер</span>';
+        if (isCity) sub += ' · <span data-app-copy="copy_273bcd70f77ca6fd99ef" class="ef-city">клубный вечер</span>';
         else if (km) sub += ` · ${km} км`;
         if (!isPast && h.start_time) sub += ` · ${h.start_time}`;
     }
@@ -464,9 +464,9 @@ function feedRow(h, nearestDate = '') {
     else if (!cancelled && isPast && hasLetterLink(h)) action = `<button class="ef-report ef-letter" data-report="${h.date}">✉️ письмо</button>`;
     else if (!cancelled && !isPast && (isTeaser || postponed)) action = feedNotifyButton(h.date, true);
     // жёлтая «записаться» одна – в карточке ближайшего; в списке строка сама открывает хайк
-    else if (completed) action = '<span class="ef-near is-underway">хайк завершён</span>';
-    else if (underway) action = '<span class="ef-near is-underway">уже идём</span>';
-    else if (!cancelled && !isPast && h.date === nearestDate) action = `<span class="ef-near">ближайший хайк</span>`;
+    else if (completed) action = '<span data-app-copy="copy_f490b8690eb5a0d2289e" class="ef-near is-underway">хайк завершён</span>';
+    else if (underway) action = '<span data-app-copy="copy_a372b760a8e2b69702e5" class="ef-near is-underway">уже идём</span>';
+    else if (!cancelled && !isPast && h.date === nearestDate) action = `<span data-app-copy="copy_4fda854687cb2078765c" class="ef-near">ближайший хайк</span>`;
     else if (!cancelled && !isPast) action = `<span class="ef-go" aria-hidden="true">›</span>`;
     const thumbCls = `ef-thumb${isCity ? ' is-city' : ''}${feedIsWoman(h) ? ' is-woman' : ''}${cancelled ? ' is-off' : ''}${postponed ? ' is-rain' : ''}`;
     const img = h.image && !cancelled && !postponed ? ` style="background-image:url('${String(h.image).replace(/'/g, '%27')}')"` : '';
@@ -534,12 +534,12 @@ function renderEventsFeed(container) {
         : `<div class="ef-row-sub ef-empty-month">${feedMonth >= nowMonth ? 'планируем хайки и события' : 'в этом месяце событий не было'}</div>`;
 
     container.innerHTML = `
-        <h2 class="section-title" style="margin:0 16px 16px 16px;">календарь</h2>
+        <h2 data-app-copy="copy_25c5ee9e379e5cff52f9" class="section-title" style="margin:0 16px 16px 16px;">календарь</h2>
         <div class="calendar-item events-feed">
             ${hideFeatured ? '' : `<div class="ef-label is-soon">${featuredLabel}</div>
             ${feedNearestCard(nearest)}`}
             <div class="ef-label-row">
-                <div class="ef-label">события клуба</div>
+                <div data-app-copy="copy_eea262e193e03d09f637" class="ef-label">события клуба</div>
                 <div class="ef-month-nav">
                     <button class="calendar-nav-arrow" data-month-step="-1" aria-label="предыдущий месяц" ${months.indexOf(feedMonth) <= 0 ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
                     <button class="calendar-nav-arrow" data-month-step="1" aria-label="следующий месяц" ${months.indexOf(feedMonth) >= months.length - 1 ? 'disabled' : ''}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
@@ -779,9 +779,9 @@ function feedNotifyToast(date, container) {
     el.className = 'ef-push';
     el.style.top = (inset ? inset + 8 : 12) + 'px';
     el.innerHTML = `
-        <div class="ef-push-ic">🔔</div>
-        <div class="ef-push-text">${bookingNotOpen(date) ? `<b>ты в списке первых</b><span>напишем в бота ${opensPhrase(date, { full: false })}</span>` : `<b>сообщим об открытии</b><span>${hike ? `запись на ${what} ${FEED_WD_ACC[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}` : `запись на хайки в ${FEED_MONTHS_PREP[d.getMonth()]}`} · напишем в бота</span>`}</div>
-        <button type="button" class="ef-push-undo" data-log-label="лист ожидания: отменить из уведомления">отменить</button>
+        <div data-app-copy="ticketBell" class="ef-push-ic">🔔</div>
+        <div class="ef-push-text">${bookingNotOpen(date) ? `<b data-app-copy="copy_98d100c571db2d5db9fa">ты в списке первых</b><span>напишем в бота ${opensPhrase(date, { full: false })}</span>` : `<b data-app-copy="copy_c7095a05fe1ffe329b85">сообщим об открытии</b><span>${hike ? `запись на ${what} ${FEED_WD_ACC[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}` : `запись на хайки в ${FEED_MONTHS_PREP[d.getMonth()]}`} · напишем в бота</span>`}</div>
+        <button data-app-copy="copy_bf5ddc74cddcc2fd780d" type="button" class="ef-push-undo" data-log-label="лист ожидания: отменить из уведомления">отменить</button>
         <div class="ef-push-bar"></div>`;
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('is-on'));
@@ -805,11 +805,11 @@ function spotTakenBanner(hike) {
     el.className = 'spot-taken';
     el.style.top = (inset ? inset + 8 : 12) + 'px';
     el.innerHTML = `
-        <b>упс! место уже заняли 🙈</b>
-        <span>кто-то успел раньше тебя. но места иногда освобождаются – напиши нам, если очень хочешь пойти</span>
+        <b data-app-copy="copy_ec71ed9f25c46ae20943">упс! место уже заняли 🙈</b>
+        <span data-app-copy="copy_f6e95dfdc71acd0dd079">кто-то успел раньше тебя. но места иногда освобождаются – напиши нам, если очень хочешь пойти</span>
         <div class="spot-taken-btns">
-            <button type="button" class="spot-taken-write" data-log-label="место заняли: напиши нам">напиши нам</button>
-            <button type="button" class="spot-taken-ok" data-log-label="место заняли: ок">ок</button>
+            <button data-app-copy="copy_6d5fbbe2e81ba12d863b" type="button" class="spot-taken-write" data-log-label="место заняли: напиши нам">напиши нам</button>
+            <button data-app-copy="copy_5185496a2606881d3091" type="button" class="spot-taken-ok" data-log-label="место заняли: ок">ок</button>
         </div>`;
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('is-on'));
@@ -838,7 +838,7 @@ function feedModal(icon, title, text) {
             <div style="font-size:52px; margin-bottom:12px;">${icon}</div>
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">${title}</div>
             <div class="modal-text" style="text-align:center; margin-top:8px;">${text}</div>
-            <button class="btn btn-yellow" data-close style="margin-top:16px;">понятно</button>
+            <button data-app-copy="copy_f32f7a6f6e1b2914fb7e" class="btn btn-yellow" data-close style="margin-top:16px;">понятно</button>
         </div>`;
     document.body.appendChild(overlay);
     const close = () => { haptic(); overlay.remove(); };
@@ -859,9 +859,9 @@ function feedOpenHike(date, logName) {
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width:360px; text-align:center;">
-            <div style="font-size:52px; margin-bottom:12px;">⛰️</div>
+            <div data-app-copy="copy_b22b1bfbafe804f0d17a" style="font-size:52px; margin-bottom:12px;">⛰️</div>
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">${FEED_WD_FULL[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}</div>
-            <div class="modal-text" style="text-align:center; margin-top:8px;">маршрут ещё готовим. запись откроется здесь, как только объявим хайк</div>
+            <div data-app-copy="copy_047c73a97dae0fae9d4b" class="modal-text" style="text-align:center; margin-top:8px;">маршрут ещё готовим. запись откроется здесь, как только объявим хайк</div>
             <button class="btn btn-yellow" id="feedTeaserOk" style="margin-top:16px;">понятно</button>
         </div>`;
     document.body.appendChild(overlay);
@@ -1033,7 +1033,7 @@ function showLetterPopup(letterText, letterLink, isGuest) {
     overlayPopup.innerHTML = `
         <div class="letter-popup-content">
             <div class="letter-popup-header">
-                <div class="letter-popup-title">✉️ письмо Макса после хайка</div>
+                <div data-app-copy="copy_95b8b38b079fa5add865" class="letter-popup-title">✉️ письмо Макса после хайка</div>
                 <button class="letter-popup-close">&times;</button>
             </div>
             <div class="letter-popup-text">${processedText}${chatHtml}</div>
@@ -1094,7 +1094,7 @@ function pixelMask(len, inline = false) {
     while (left > 0) { const w = 3 + Math.floor(Math.random() * 7); words.push(w); left -= w + 1; }
     const blocks = words.map(w => `<i class="px-word" style="width:${w * 0.62}em"></i>`).join(' ');
     return `<span class="px-mask${inline ? ' is-inline' : ''}" aria-label="видно только владельцам карты">${blocks}</span>`
-        + `<span class="px-lock">🔒 видно владельцам карты</span>`;
+        + `<span data-app-copy="copy_3269508adf16de77e4a5" class="px-lock">🔒 видно владельцам карты</span>`;
 }
 
 function hasLetterLink(hike) {
@@ -1309,7 +1309,7 @@ export function renderRoutesMap(container) {
     if (!container) return;
     container.innerHTML = `
         <div class="card-container">
-            <h2 class="section-title">наши маршруты</h2>
+            <h2 data-app-copy="copy_5d319434607bbf310623" class="section-title">наши маршруты</h2>
             <div id="routesMapEl" style="height: 340px; border-radius: 14px; margin: 0 16px 16px; overflow: hidden; background: #0A0B09;"></div>
         </div>
     `;
@@ -1461,7 +1461,7 @@ export function renderIntelligentsiaRoutes(container) {
     container.innerHTML = `
         <div class="card-container intelligentsia-routes-card">
             <div class="intelligentsia-routes-header">
-                <h2 class="section-title">Маршруты интеллигенции</h2>
+                <h2 data-app-copy="copy_b5cee11e2fb719fc8b5a" class="section-title">Маршруты интеллигенции</h2>
                 <div class="intelligentsia-routes-nav">
                     <button class="calendar-nav-arrow" id="prevIntelligentsiaRoute" aria-label="предыдущий маршрут">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
@@ -1588,7 +1588,7 @@ export function renderIntelligentsiaRoutes(container) {
         });
     }).catch(() => {
         const el = document.getElementById('intelligentsiaRoutesMap');
-        if (el) el.innerHTML = '<div class="intelligentsia-map-fallback">карта временно недоступна</div>';
+        if (el) el.innerHTML = '<div data-app-copy="copy_3b2c0287ca323f8162c0" class="intelligentsia-map-fallback">карта временно недоступна</div>';
     });
 }
 
@@ -2073,10 +2073,10 @@ export function showBottomSheet(index) {
             const WDF = ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'];
             contentWrapper.classList.remove('city-sheet', 'bookclub-sheet');
             contentWrapper.innerHTML = `<div class="ann-sheet">
-                <span class="ann-tag">анонс</span>
+                <span data-app-copy="copy_7be49ec0932ca83d94b1" class="ann-tag">анонс</span>
                 <div class="ann-date">${WDF[d.getDay()]}, ${d.getDate()} ${FEED_MONTHS_GEN[d.getMonth()]}${hike.start_time ? ' · ' + hike.start_time : ''}</div>
                 <div class="ann-title">${String(hike.title).replace(/</g, "&lt;")}</div>
-                <div class="ann-plate"><b>регистрация ещё не открыта</b><span>маршрут и запись откроем ${opensPhrase(hike.date)}. включи уведомление – напишем в бота в эту минуту</span></div>
+                <div class="ann-plate"><b data-app-copy="copy_b2e03fc144861b44183e">регистрация ещё не открыта</b><span>маршрут и запись откроем ${opensPhrase(hike.date)}. включи уведомление – напишем в бота в эту минуту</span></div>
             </div>`;
             updateFloatingSheetButtons();
             return;
@@ -2241,7 +2241,7 @@ export function showBottomSheet(index) {
                                 <span class="info-icon" style="color: ${accentColor};">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                 </span>
-                                <span><strong>начало:</strong> ${hike.start_time}</span>
+                                <span><strong data-app-copy="copy_90133052df0590869a1b">начало:</strong> ${hike.start_time}</span>
                             </div>
                         `;
                     } else {
@@ -2250,7 +2250,7 @@ export function showBottomSheet(index) {
                                 <span class="info-icon" style="color: ${accentColor};">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                                 </span>
-                                <span><strong>начало:</strong> ${hike.start_time}</span>
+                                <span><strong data-app-copy="copy_90133052df0590869a1b">начало:</strong> ${hike.start_time}</span>
                             </div>
                         `;
                     }
@@ -2260,7 +2260,7 @@ export function showBottomSheet(index) {
                             <span class="info-icon" style="color: ${accentColor};">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             </span>
-                            <span><strong>начало:</strong> ${hike.start_time}</span>
+                            <span><strong data-app-copy="copy_90133052df0590869a1b">начало:</strong> ${hike.start_time}</span>
                         </div>
                     `;
                 }
@@ -2301,10 +2301,10 @@ export function showBottomSheet(index) {
                     ? (hike.leaders.length === 1 ? 'организатор' : 'организаторы')
                     : (hike.leaders.length === 1 ? 'ведёт' : 'ведут');
                 if (leaderLinks.length === 1) leaderText = leaderLinks[0];
-                else if (leaderLinks.length === 2) leaderText = `${leaderLinks[0]} <span style="color: white;">и</span> ${leaderLinks[1]}`;
+                else if (leaderLinks.length === 2) leaderText = `${leaderLinks[0]} <span data-app-copy="copy_eead37caf818d0fae6de" style="color: white;">и</span> ${leaderLinks[1]}`;
                 else {
                     const last = leaderLinks.pop();
-                    leaderText = `${leaderLinks.join(', ')} <span style="color: white;">и</span> ${last}`;
+                    leaderText = `${leaderLinks.join(', ')} <span data-app-copy="copy_eead37caf818d0fae6de" style="color: white;">и</span> ${last}`;
                 }
                 extraInfoHtml += `
                     <div class="info-row ${isWoman ? 'woman-row' : ''}" style="color: ${accentColor};">
@@ -2356,14 +2356,14 @@ export function showBottomSheet(index) {
                 </div>
                 ${tagsHtml}
             </div>
-            ${state.pendingInvite?.date === hike.date && !state.hikeBookingStatus[state.hikesWithTitle.findIndex(h => h.date === hike.date)] ? `<div class="inv-sheet-banner" id="inviteSheetBanner">🎟️ ${String(state.pendingInvite.name || 'член клуба').replace(/</g, '&lt;')} берёт тебя своим +1 – для тебя <b>без билета</b>. сдвинь «иду» внизу, чтобы записаться</div>` : ''}
+            ${state.pendingInvite?.date === hike.date && !state.hikeBookingStatus[state.hikesWithTitle.findIndex(h => h.date === hike.date)] ? `<div class="inv-sheet-banner" id="inviteSheetBanner">🎟️ ${String(state.pendingInvite.name || 'член клуба').replace(/</g, '&lt;')} берёт тебя своим +1 – для тебя <b data-app-copy="copy_cabe9668a66a2b40b78d">без билета</b>. сдвинь «иду» внизу, чтобы записаться</div>` : ''}
             ${imageHtml}
             ${isRedesign() && !isPlaceholder && !isCancelled ? '<div class="rd-sheet-going" id="rdSheetGoing"></div>' : ''}
             ${extraInfoHtml}
             ${sectionsHtml}
             ${inviteButtonHtml}
             ${shareButtonHtml}
-            ${!isPlaceholder && !hike.cancelled && new Date(hike.date) >= new Date().setHours(0, 0, 0, 0) ? `<button class="hike-ask-row" id="hikeAskBtn">есть вопрос про ${isCity || isBookClub ? 'это событие' : 'этот хайк'}? <b>спросить ›</b></button>` : ''}
+            ${!isPlaceholder && !hike.cancelled && new Date(hike.date) >= new Date().setHours(0, 0, 0, 0) ? `<button class="hike-ask-row" id="hikeAskBtn">есть вопрос про ${isCity || isBookClub ? 'это событие' : 'этот хайк'}? <b data-app-copy="copy_f5519113efaa604fe21d">спросить ›</b></button>` : ''}
         `;
 
         if (sheetA) {
@@ -2375,7 +2375,7 @@ export function showBottomSheet(index) {
                 const fn = x => String(x || '').trim().split(/\s+/)[0] || '';
                 gEl.innerHTML = n ? `<span class="sha-avs">${ppl.slice(0, 4).map((p, k) => `<i style="background:${G[k % 5]}">${p.photoUrl ? `<img src="${String(p.photoUrl).replace(/"/g, '')}" alt="" onerror="this.remove()">` : (fn(p.name)[0] || '?').toUpperCase()}</i>`).join('')}</span>
                     <span class="sha-gt"><b>${ppl.slice(0, 2).map(p => fn(p.name)).join(', ')}${n > 2 ? ` +${n - 2}` : ''}</b><small>${isPast ? 'были на хайке' : Math.max(0, cap - n) ? `осталось ${Math.max(0, cap - n)} мест` : 'мест нет'}</small></span>${!isCity && !isBookClub ? `<span class="sha-n">${n}/${cap}</span>` : ''}`
-                    : `<span class="sha-gt"><b>запись открыта</b><small>будь первым</small></span>`;
+                    : `<span class="sha-gt"><b data-app-copy="copy_72d79e96e893be8b8aaf">запись открыта</b><small data-app-copy="copy_109fb742babb4efd1321">будь первым</small></span>`;
             }).catch(() => {});
         }
 
@@ -3130,7 +3130,7 @@ function updateFloatingSheetButtons() {
             cardsBlock.style.cssText = `margin: 0 auto 6px auto; width: auto; max-width: calc(100% - 32px); border-radius: 28px; padding: 12px 16px; background: rgba(255, 241, 178, 0.15); backdrop-filter: blur(12px); text-align: center;`;
             cardsBlock.innerHTML = `
                 <div style="font-size: 14px; line-height: 1.4;">
-                    <strong style="color: #FFF1B2; font-style: italic; font-weight: 800;">вступить в клуб</strong>
+                    <strong data-app-copy="copy_ddd60f3e9f6cc65857be" style="color: #FFF1B2; font-style: italic; font-weight: 800;">вступить в клуб</strong>
                 </div>
                 <button id="buyCardFromFloatingBtn" class="btn" style="margin-top: 10px; background-color: #FFF1B2; color: #000000; font-weight: 800; border-radius: 40px; padding: 8px 20px; border: none; width: auto; display: inline-block;">узнать о карте</button>
             `;
@@ -3184,7 +3184,7 @@ function updateFloatingSheetButtons() {
                 if (!isBooked && isGuest && hike.book_club !== true && !(hike.city === true || hike.city === 'yes') && accentColor === 'var(--yellow)') {
                     const n = document.createElement('button');
                     n.type = 'button'; n.className = 'sw-card-note';
-                    n.innerHTML = 'с картой – <b>все хайки без билетов ›</b>';
+                    n.innerHTML = 'с картой – <b data-app-copy="copy_e7a23134c87cb13b9710">все хайки без билетов ›</b>';
                     n.addEventListener('click', () => { haptic(); log('слайдер: с картой без билетов', true, state.user); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'слайдер записи' })); });
                     container.appendChild(n);
                 }
@@ -3229,7 +3229,7 @@ function updateFloatingSheetButtons() {
     if (isPostponed(hike) && !isPast) {
         const rainMsg = document.createElement('div');
         rainMsg.className = 'availability-floating rain-plate';
-        rainMsg.innerHTML = '<span class="rain-plate-ic">🌧️</span><span><b>дата перенесена</b><small>погода не пускает в горы – новую дату объявим в календаре</small></span>';
+        rainMsg.innerHTML = '<span data-app-copy="copy_3255a4cc14c4edd8ee54" class="rain-plate-ic">🌧️</span><span><b data-app-copy="copy_19452ce27613304ff2e6">дата перенесена</b><small data-app-copy="copy_eb18f8d0fb54d555d619">погода не пускает в горы – новую дату объявим в календаре</small></span>';
         container.appendChild(rainMsg);
         container.style.pointerEvents = 'none';
         return;
@@ -3272,7 +3272,7 @@ function updateFloatingSheetButtons() {
     if (soldOutForMe && !hasCard && viaPass) {
         const note = document.createElement('div');
         note.className = 'availability-floating so-card-plate';
-        note.innerHTML = `<div class="so-card-text" style="text-align:center"><b>🔑 место для тебя</b><span>запись открыта по личной ссылке</span></div>`;
+        note.innerHTML = `<div class="so-card-text" style="text-align:center"><b data-app-copy="copy_a4d420700a50d0466df7">🔑 место для тебя</b><span data-app-copy="copy_ebec281d83cd83940399">запись открыта по личной ссылке</span></div>`;
         const noteRow = document.createElement('div');
         noteRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
         noteRow.appendChild(note);
@@ -3290,10 +3290,10 @@ function updateFloatingSheetButtons() {
         plate.innerHTML = `
             <button type="button" class="so-full-top">
                 <img src="assets/card-front.jpg" alt="" class="so-card-img">
-                <div class="so-card-text"><b>места закончились</b><span>но с картой интеллигента можно прийти</span></div>
+                <div class="so-card-text"><b data-app-copy="copy_4bd96ee4fa19e1caebc4">места закончились</b><span data-app-copy="copy_b64f6ccb11030bc55d0c">но с картой интеллигента можно прийти</span></div>
                 <div class="so-card-arrow">›</div>
             </button>
-            <div class="so-full-ask">очень хочешь пойти? <button type="button" class="so-full-write">напиши нам</button></div>`;
+            <div class="so-full-ask">очень хочешь пойти? <button data-app-copy="copy_6d5fbbe2e81ba12d863b" type="button" class="so-full-write">напиши нам</button></div>`;
         plate.querySelector('.so-full-top').addEventListener('click', e => {
             e.preventDefault();
             haptic();
@@ -3317,7 +3317,7 @@ function updateFloatingSheetButtons() {
         note.innerHTML = `
             <div class="so-full-top" style="cursor:default">
                 <img src="assets/card-front.jpg" alt="" class="so-card-img">
-                <div class="so-card-text"><b>места закончились</b><span>но с картой интеллигента можно прийти</span></div>
+                <div class="so-card-text"><b data-app-copy="copy_4bd96ee4fa19e1caebc4">места закончились</b><span data-app-copy="copy_b64f6ccb11030bc55d0c">но с картой интеллигента можно прийти</span></div>
             </div>`;
         const noteRow = document.createElement('div');
         noteRow.style.cssText = 'flex-basis: 100%; display: flex; justify-content: center;';
@@ -3356,8 +3356,8 @@ function updateFloatingSheetButtons() {
             const letterRow = document.createElement('div');
             letterRow.style.cssText = 'flex-basis: 100%; min-width: 0; max-width: 100%; display: flex; justify-content: center;';
             letterRow.innerHTML = `<button type="button" class="letter-plate">
-                <span class="letter-plate-env">✉️</span>
-                <span class="letter-plate-text"><b>письмо Макса</b><small>после хайка · читать в чате клуба</small></span>
+                <span data-app-copy="copy_93b2d3447a7fdd7df7ce" class="letter-plate-env">✉️</span>
+                <span class="letter-plate-text"><b data-app-copy="copy_88fc0ca4c24f18876083">письмо Макса</b><small data-app-copy="copy_2d040930494d7152150a">после хайка · читать в чате клуба</small></span>
                 <span class="letter-plate-go">›</span></button>`;
             letterRow.querySelector('.letter-plate').addEventListener('click', e => {
                 e.preventDefault();
@@ -3374,7 +3374,7 @@ function updateFloatingSheetButtons() {
             const sumNote = (state.mmNotes || []).find(n => n.date === hike.date);
             sumRow.innerHTML = `<button type="button" class="letter-plate summary-plate"${sumNote ? ` data-mm-note="${sumNote.id}"` : ''}>
                 <img class="summary-plate-img" src="assets/plaud-v2.webp" alt="">
-                <span class="letter-plate-text"><b>саммари мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
+                <span class="letter-plate-text"><b data-app-copy="homeMastermind">саммари мастермайнда</b><small>${String(summary.title).replace(/</g, '&lt;')}</small></span>
                 <span class="letter-plate-go">${state.userCard.status === 'active' ? '›' : '🔒'}</span></button>`;
             sumRow.querySelector('.summary-plate').addEventListener('click', e => {
                 e.preventDefault();
@@ -3430,7 +3430,7 @@ function updateFloatingSheetButtons() {
         if (!isBooked && isGuest && hike.book_club !== true && !(hike.city === true || hike.city === 'yes') && accentColor === 'var(--yellow)') {
             const n = document.createElement('button');
             n.type = 'button'; n.className = 'sw-card-note';
-            n.innerHTML = 'с картой – <b>все хайки без билетов ›</b>';
+            n.innerHTML = 'с картой – <b data-app-copy="copy_e7a23134c87cb13b9710">все хайки без билетов ›</b>';
             n.addEventListener('click', () => { haptic(); log('слайдер: с картой без билетов', true, state.user); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'слайдер записи' })); });
             container.appendChild(n);
         }
@@ -3632,39 +3632,39 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
     const FEATURE_TEXTS = {
         profiles: `
             <div class="bpu-text">
-                <div class="bpu-line bpu-title">профили – это не тиндер</div>
-                <div class="bpu-line">здесь живут анкеты людей, которые ходят с нами</div>
-                <div class="bpu-line"><em>кто чем занят, что умеет, с кем стоит обсудить твою идею</em></div>
+                <div data-app-copy="copy_c3a5304bb50d272cbc0f" class="bpu-line bpu-title">профили – это не тиндер</div>
+                <div data-app-copy="copy_4f52c015c20fec70dcec" class="bpu-line">здесь живут анкеты людей, которые ходят с нами</div>
+                <div class="bpu-line"><em data-app-copy="copy_ad6a3319af106ba39755">кто чем занят, что умеет, с кем стоит обсудить твою идею</em></div>
                 <div class="bpu-divider"></div>
-                <div class="bpu-line">публично профили не покажем. это не реклама себя в интернете. это закрытый круг деятельных личностей</div>
-                <div class="bpu-line bpu-accent">с картой – ты станешь его частью и обретёшь новые связи</div>
+                <div data-app-copy="copy_cf39ff5da5582466ae6a" class="bpu-line">публично профили не покажем. это не реклама себя в интернете. это закрытый круг деятельных личностей</div>
+                <div data-app-copy="copy_27d8b360b09137cabc18" class="bpu-line bpu-accent">с картой – ты станешь его частью и обретёшь новые связи</div>
             </div>
         `,
         mastermind: `
             <div class="bpu-text">
-                <div class="bpu-line bpu-title">саммари – главное из разговора на вершине</div>
-                <div class="bpu-line">каждый мастермайнд мы записываем и превращаем в короткий конспект: какие задачи разбирали и к каким решениям пришли</div>
-                <div class="bpu-line"><em>опыт людей, которые уже прошли то, с чем ты сейчас разбираешься</em></div>
+                <div data-app-copy="copy_f80008bd1a5f1450a5f7" class="bpu-line bpu-title">саммари – главное из разговора на вершине</div>
+                <div data-app-copy="copy_ef4eef8567b393f4269c" class="bpu-line">каждый мастермайнд мы записываем и превращаем в короткий конспект: какие задачи разбирали и к каким решениям пришли</div>
+                <div class="bpu-line"><em data-app-copy="copy_4329f44d22c2041a366f">опыт людей, которые уже прошли то, с чем ты сейчас разбираешься</em></div>
                 <div class="bpu-divider"></div>
-                <div class="bpu-line">можно прочитать за пару минут – даже если в тот день не получилось подняться с нами – и вернуться, когда понадобится</div>
-                <div class="bpu-line bpu-accent">карта открывает все саммари – прошлые и будущие</div>
+                <div data-app-copy="copy_aae76af17ab180b46872" class="bpu-line">можно прочитать за пару минут – даже если в тот день не получилось подняться с нами – и вернуться, когда понадобится</div>
+                <div data-app-copy="copy_788718edaac94ecc4ed0" class="bpu-line bpu-accent">карта открывает все саммари – прошлые и будущие</div>
             </div>
         `,
         city: `
             <div class="bpu-text">
-                <div class="bpu-line bpu-title">событие в городе и на море – для своих</div>
-                <div class="bpu-line">закрытый чат с членами клуба, привилегии у десятка партнёров в городе, безлимитный VPN, саммари мастермайндов, профили членов клуба, одна карта – все двери открыты</div>
+                <div data-app-copy="copy_9600bf11a69d8bda6cd5" class="bpu-line bpu-title">событие в городе и на море – для своих</div>
+                <div data-app-copy="copy_a10496c8263c2b3a02ec" class="bpu-line">закрытый чат с членами клуба, привилегии у десятка партнёров в городе, безлимитный VPN, саммари мастермайндов, профили членов клуба, одна карта – все двери открыты</div>
             </div>
         `,
         generic: `
             <div class="bpu-text">
-                <div class="bpu-line bpu-title">эта часть клуба – для своих</div>
-                <div class="bpu-line">и ещё десятки: события в городе, чат с членами клуба, привилегии у десятка партнёров в городе, безлимитный *PN, мастермайнды, профили членов клуба</div>
-                <div class="bpu-line"><em>одна карта – все двери открыты</em></div>
+                <div data-app-copy="copy_ab549bb5be6c9a7875ed" class="bpu-line bpu-title">эта часть клуба – для своих</div>
+                <div data-app-copy="copy_2d233b2a24f286d69768" class="bpu-line">и ещё десятки: события в городе, чат с членами клуба, привилегии у десятка партнёров в городе, безлимитный *PN, мастермайнды, профили членов клуба</div>
+                <div class="bpu-line"><em data-app-copy="copy_fc3047a0f9245a39fd73">одна карта – все двери открыты</em></div>
                 <div class="bpu-divider"></div>
-                <div class="bpu-line">мы не продаём доступы по билетам – <em>намеренно</em></div>
-                <div class="bpu-line">клуб – это единое целое, а не набор кнопок</div>
-                <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
+                <div class="bpu-line">мы не продаём доступы по билетам – <em data-app-copy="copy_ae9d125ffd48d424a43a">намеренно</em></div>
+                <div data-app-copy="copy_6b6a5ce9ec8d7c10568a" class="bpu-line">клуб – это единое целое, а не набор кнопок</div>
+                <div data-app-copy="copy_95175226e08e41c54700" class="bpu-line bpu-accent">здесь не туристы. личности</div>
             </div>
         `
     };
@@ -3672,21 +3672,21 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
     const hikeReturningHtml = `
         <div class="bpu-text">
             <div class="bpu-line bpu-title">рады снова видеть тебя, ${firstName || 'друг'}</div>
-            <div class="bpu-line">один хайк позади – и обычным хайком это уже не назовёшь</div>
+            <div data-app-copy="copy_bc3ec5dd46362c5e660d" class="bpu-line">один хайк позади – и обычным хайком это уже не назовёшь</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">мы ждём тебя в клубе</div>
-            <div class="bpu-line">карта интеллигента – твой вход в закрытое окружение</div>
-            <div class="bpu-line bpu-accent">здесь не туристы. личности</div>
+            <div data-app-copy="copy_1b448a2464d1118b4094" class="bpu-line">мы ждём тебя в клубе</div>
+            <div data-app-copy="copy_3a557838a9e526b48d27" class="bpu-line">карта интеллигента – твой вход в закрытое окружение</div>
+            <div data-app-copy="copy_95175226e08e41c54700" class="bpu-line bpu-accent">здесь не туристы. личности</div>
         </div>
     `;
     const hikeNewHtml = `
         <div class="bpu-text">
-            <div class="bpu-line bpu-title">запись на хайк</div>
-            <div class="bpu-line">билет на хайк – 1 200 ₽ 🎟️</div>
-            <div class="bpu-line">купил – идёшь. один раз, без обязательств</div>
+            <div data-app-copy="copy_e9e6c91d75a6ed3303ed" class="bpu-line bpu-title">запись на хайк</div>
+            <div data-app-copy="copy_8e06bc0b7c9553ec848c" class="bpu-line">билет на хайк – 1 200 ₽ 🎟️</div>
+            <div data-app-copy="copy_36119ee9f65d8465e6e3" class="bpu-line">купил – идёшь. один раз, без обязательств</div>
             <div class="bpu-divider"></div>
-            <div class="bpu-line">хочешь ходить постоянно и быть частью клуба?</div>
-            <div class="bpu-line bpu-accent">карта открывает всё – и хайки, и людей</div>
+            <div data-app-copy="copy_3153a1d356b64b4d2f39" class="bpu-line">хочешь ходить постоянно и быть частью клуба?</div>
+            <div data-app-copy="copy_c0cfcb1f0730686d1d58" class="bpu-line bpu-accent">карта открывает всё – и хайки, и людей</div>
         </div>
     `;
 
@@ -3707,7 +3707,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
     }
     const faqHtml = faqItemsHtml ? `
         <div class="booking-popup-faq-toggle" id="faqToggle">
-            <span>частые вопросы</span><span class="faq-toggle-arrow">↓</span>
+            <span data-app-copy="copy_1fd3b4f703e85fcb7dfb">частые вопросы</span><span class="faq-toggle-arrow">↓</span>
         </div>
         <div id="faqBody" style="display:none;">${faqItemsHtml}</div>
     ` : '';
@@ -3753,7 +3753,7 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
 
             <div id="clubJoinAccordion" style="display: none; margin-top: 20px;">
 
-                <div class="booking-popup-what-is-card">
+                <div data-app-copy="copy_d0e47933dc41e2a9a291" class="booking-popup-what-is-card">
                     карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе
                 </div>
 
@@ -3761,19 +3761,19 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
 
                 <div class="booking-card-option">
                     <div class="booking-card-name">бессрочная – ${config.permanentCardPrice || 7500} ₽</div>
-                                        <div class="booking-card-desc">оплатил один раз – доступ к клубу всегда, без продлений и подписок. выгоднее годовой уже на второй год – привилегии остаются навсегда. все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
+                                        <div data-app-copy="copy_38d92330fc1434ad6ed7" class="booking-card-desc">оплатил один раз – доступ к клубу всегда, без продлений и подписок. выгоднее годовой уже на второй год – привилегии остаются навсегда. все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">купить навсегда</button>
-                    <div class="booking-card-ticket-note">если ты оплачивал билет, но так и не успел сходить по нему – можешь приобрести карту с учётом ранее оплаченного билета. для этого напиши нам в поддержку и пришли чек билета – отправим тебе специальную ссылку для оформления карты</div>
+                    <div data-app-copy="copy_47c27c756d12fc7281e0" class="booking-card-ticket-note">если ты оплачивал билет, но так и не успел сходить по нему – можешь приобрести карту с учётом ранее оплаченного билета. для этого напиши нам в поддержку и пришли чек билета – отправим тебе специальную ссылку для оформления карты</div>
                     <button class="btn btn-outline booking-card-support-btn" id="cardTicketSupportBtn" style="width: 100%; margin: 10px 0 0;">написать в поддержку</button>
                 </div>
 
                 <div class="booking-card-option" style="margin-top: 12px;">
                     <div class="booking-card-name">на год – ${config.seasonCardPrice} ₽</div>
-                    <div class="booking-card-desc">действует год с момента оплаты</div>
+                    <div data-app-copy="copy_9545a05f604dd913e379" class="booking-card-desc">действует год с момента оплаты</div>
                     <button class="btn btn-outline" id="buySeasonCardBtn" style="width: 100%; margin: 0;">купить на год</button>
                 </div>
 
-                <div class="booking-popup-reassurance">🔒 оформление через Robokassa займёт минуту – карта появится в приложении сразу после оплаты. платёж защищён</div>
+                <div data-app-copy="copy_2c1087aa194213fe400f" class="booking-popup-reassurance">🔒 оформление через Robokassa займёт минуту – карта появится в приложении сразу после оплаты. платёж защищён</div>
 
                 ${perksPreviewHtml}
 
@@ -4009,7 +4009,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.addEventListener('touchmove', (e) => e.stopPropagation());
 
     if (participants.length === 0) {
-        dropdown.innerHTML = '<div class="participant-dropdown-item" style="justify-content:center;">Пока никого нет</div>';
+        dropdown.innerHTML = '<div data-app-copy="copy_280d06fad6c7f0dc900d" class="participant-dropdown-item" style="justify-content:center;">Пока никого нет</div>';
     } else {
         participants.forEach(p => {
             const name = p.name || 'Участник';
@@ -4177,10 +4177,10 @@ function showCityRegistrationSuccess(h) {
     overlay.innerHTML = `
         <div class="ct-wrap ct-v">
             <div class="ct-circle">${escT(h.emoji || '🏙️')}</div>
-            <div class="ct-big">ты с нами 🤍</div>
+            <div data-app-copy="copy_774d76cba8563e56db11" class="ct-big">ты с нами 🤍</div>
             <div class="ct-sub">записали тебя на <b>${escT(h.title)}</b><br>${when}</div>
-            <button type="button" class="ct-line" id="ctMap"${locUrl ? '' : ' disabled'}><i>📍</i><span><b>где встречаемся</b><small>${locUrl ? 'адрес теперь открыт для тебя' : 'адрес пришлём ближе к дате'}</small></span>${locUrl ? '<em>›</em>' : ''}</button>
-            <button type="button" class="ct-line" id="ctAsk"><i>💬</i><span><b>есть вопрос?</b><small>напиши – ответим лично</small></span><em>›</em></button>
+            <button type="button" class="ct-line" id="ctMap"${locUrl ? '' : ' disabled'}><i>📍</i><span><b data-app-copy="copy_3257c7b33e9ddffec77f">где встречаемся</b><small>${locUrl ? 'адрес теперь открыт для тебя' : 'адрес пришлём ближе к дате'}</small></span>${locUrl ? '<em>›</em>' : ''}</button>
+            <button type="button" class="ct-line" id="ctAsk"><i>💬</i><span><b data-app-copy="copy_1dac711458d5bc2fac41">есть вопрос?</b><small data-app-copy="copy_443c587ad47a4642c1c2">напиши – ответим лично</small></span><em>›</em></button>
             <button type="button" class="btn ct-ok" id="ctOk">до встречи</button>
         </div>`;
     document.body.appendChild(overlay);
@@ -4263,11 +4263,11 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                     ${needsWriteAccess() ? `<button type="button" class="rt-row rt-notify" id="rtNotify">
                         <div class="rt-n"><span data-app-copy="ticketBell">🔔</span></div>
                         <div class="rt-text"><b><span data-app-copy="ticketNotify">разреши нам написать тебе</span></b><span><span data-app-copy="ticketNotifyInfo">пришлём в бот, если по хайку что-то поменяется</span></span></div>
-                        <div class="rt-chip">включить</div>
+                        <div data-app-copy="copy_547683134baf0f89aaf7" class="rt-chip">включить</div>
                     </button>` : ''}
                     <button type="button" class="rt-row" id="rtChat">
                         <div class="rt-n">2</div>
-                        <div class="rt-text"><b>${isExperienced ? 'загляни в чат хайка' : 'вступи в чат хайка'}</b><span>такси, детали и обновления – только там</span></div>
+                        <div class="rt-text"><b>${isExperienced ? 'загляни в чат хайка' : 'вступи в чат хайка'}</b><span data-app-copy="copy_54d81d3236a9839706c3">такси, детали и обновления – только там</span></div>
                         <div class="rt-go">›</div>
                     </button>
                     <button type="button" class="rt-row" id="rtPack">
@@ -4280,7 +4280,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                     ${hikeObj?.location_link ? `<button type="button" class="rt-row" id="rtPlace">
                         <div class="rt-n">4</div>
                         <div class="rt-text"><b>точка сбора${hikeObj.start_time ? ' · ' + esc(hikeObj.start_time) : ''}</b><span>${route ? esc(route.title) + ' · ' : ''}<span data-app-copy="ticketPlace">место встречи на карте</span></span></div>
-                        <div class="rt-chip">карта</div>
+                        <div data-app-copy="copy_7566e3f4f0a3d1e3e955" class="rt-chip">карта</div>
                     </button>` : ''}
                     <button type="button" class="rt-row" id="rtPhone">
                         <div class="rt-n">5</div>
@@ -4337,7 +4337,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
         row.disabled = true;
         row.querySelector('.rt-n').textContent = '✓';
         row.querySelector('.rt-n').classList.add('is-done');
-        row.querySelector('.rt-text').innerHTML = '<b>сообщения включены</b><span>напишем в бот, если что-то поменяется</span>';
+        row.querySelector('.rt-text').innerHTML = '<b data-app-copy="copy_e8c1819568474f9cc991">сообщения включены</b><span data-app-copy="copy_7d5f409862428f7ed048">напишем в бот, если что-то поменяется</span>';
         row.querySelector('.rt-chip')?.remove();
     });
     overlay.querySelector('#rtStory')?.addEventListener('click', () => {
@@ -4442,7 +4442,7 @@ export function showHikePickerSheet() {
                             </div>
                         </div>
                         <div class="hike-slide-footer">
-                            <button class="btn btn-yellow hike-slide-reg-btn">записаться</button>
+                            <button data-app-copy="copy_36477f30eadb4628d790" class="btn btn-yellow hike-slide-reg-btn">записаться</button>
                         </div>
                     </div>
                 `).join('')}
@@ -4667,7 +4667,7 @@ export function offerPendingTicketRecovery({ force = false } = {}) {
     overlay.dataset.hikeDate = pending.hikeDate;
     overlay.innerHTML = `
         <div class="modal-content" style="max-width:360px; text-align:center;">
-            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">проверим оплату билета?</div>
+            <div data-app-copy="copy_9649deffe6a8c47a99de" class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">проверим оплату билета?</div>
             <div class="modal-text" style="text-align:center; margin-top:8px;">если оплатил билет за «${title}», проверим подтверждение от платёжной системы</div>
             <button class="btn btn-yellow" id="ticketPaidYesBtn" style="width:100%; margin:16px 0 0;">проверить оплату</button>
             <button class="btn btn-outline" id="ticketPaidNoBtn" style="width:100%; margin:10px 0 0;">не оплатил – отменить</button>
@@ -4764,8 +4764,8 @@ async function verifyTicketPaymentReturn(hikeDate) {
     overlay.dataset.hikeDate = hikeDate;
     overlay.innerHTML = `
         <div class="modal-content" style="max-width:360px; text-align:center;">
-            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">оплату обрабатываем</div>
-            <div class="modal-text" style="text-align:center; margin-top:8px;">пока не получили подтверждение от платёжной системы. проверь оплату позже или напиши нам, поможем разобраться</div>
+            <div data-app-copy="copy_151a51d026d7f0a4878d" class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">оплату обрабатываем</div>
+            <div data-app-copy="copy_6bdd5bf6deb3412ce245" class="modal-text" style="text-align:center; margin-top:8px;">пока не получили подтверждение от платёжной системы. проверь оплату позже или напиши нам, поможем разобраться</div>
             <button class="btn btn-yellow" id="ticketWaitSupportBtn" style="width:100%; margin:16px 0 0;">написать в поддержку</button>
             <button class="btn btn-outline" id="ticketWaitOkBtn" style="width:100%; margin:10px 0 0;">хорошо</button>
         </div>
@@ -4834,8 +4834,8 @@ async function showHikeRegisterChoicePopup(hikeDate, hikeTitle, onClose, direct 
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
         <div class="modal-content" style="max-width:360px; text-align:center;">
-            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">пойти на хайк</div>
-            <div class="modal-text" style="text-align:center; margin-top:8px;">можешь купить разовый билет или оформить карту интеллигента, чтобы ходить безлимитно – не только на хайки, но и на события в городе</div>
+            <div data-app-copy="copy_62fb63a3e17974a69e56" class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">пойти на хайк</div>
+            <div data-app-copy="copy_5485acedd11cb5d6ab5c" class="modal-text" style="text-align:center; margin-top:8px;">можешь купить разовый билет или оформить карту интеллигента, чтобы ходить безлимитно – не только на хайки, но и на события в городе</div>
             <button class="btn btn-outline" id="choiceButBtn" style="width:100%; margin:16px 0 0;">купить билет · 🎟️ 1 200 ₽</button>
             <button class="btn btn-yellow" id="choiceCardBtn" style="width:100%; margin:10px 0 0;">узнать о карте</button>
         </div>
@@ -4893,14 +4893,14 @@ export function mountHikePreviewCard(containerId, hike, onRegisterClick) {
         <div class="image-container hike-preview-img-wrap">
             <img src="${hike.image}" class="bottom-sheet-image hike-preview-img" loading="lazy" onerror="this.style.display='none'">
             <div class="participant-counter" id="hikePreviewCounter" style="color: var(--yellow);">
-                <span class="participant-text" style="color: var(--yellow);">идут</span>
+                <span data-app-copy="copy_1fa041d65ab87964907e" class="participant-text" style="color: var(--yellow);">идут</span>
                 <span class="participant-count" id="hikePreviewCountVal" style="color: var(--yellow); display: none;">0</span>
                 <div class="participant-avatars" id="hikePreviewAvatars"></div>
             </div>
         </div>
         ` : ''}
         <div class="hike-preview-footer">
-            <button class="btn btn-yellow hike-preview-reg-btn">записаться на хайк</button>
+            <button data-app-copy="copy_68660b0da105c0f2cbfe" class="btn btn-yellow hike-preview-reg-btn">записаться на хайк</button>
         </div>
     `;
 
@@ -4975,7 +4975,7 @@ function rdFillSheetGoing(box, hike, list, isPast) {
         const photo = String(p.photoUrl || '');
         return `<div class="rd-sg-cell"><span class="rd-sg-av" style="background:linear-gradient(135deg,${g[0]},${g[1]})">${photo ? `<img src="${esc(photo)}" alt="" onerror="this.remove()">` : ''}${esc(name[0] || '?').toUpperCase()}</span><span class="rd-sg-name">${String(p.userId) === me ? 'ты' : esc(name)}</span></div>`;
     }).join('');
-    const free = !isPast && !iAmIn && people.length < cap ? '<div class="rd-sg-cell is-free"><span class="rd-sg-av">+</span><span class="rd-sg-name">ты?</span></div>' : '';
+    const free = !isPast && !iAmIn && people.length < cap ? '<div class="rd-sg-cell is-free"><span class="rd-sg-av">+</span><span data-app-copy="copy_4a258b81de80df45edbc" class="rd-sg-name">ты?</span></div>' : '';
     box.innerHTML = `
         <div class="rd-sg-head"><span>${isPast ? 'кто был' : 'кто идёт'}</span>${showCap ? `<b>${people.length} из ${cap}</b>` : `<b>${people.length}</b>`}</div>
         ${people.length || free ? `<div class="rd-sg-grid">${cells}${free}</div>` : ''}

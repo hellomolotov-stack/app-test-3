@@ -61,8 +61,8 @@ export async function mountOfferBanner(offer) {
         if (circle) {
             el.innerHTML = `
             <button type="button" class="ob-main">
-                <span class="ob-icon">🤝</span>
-                <span class="ob-txt"><b>${name ? esc(name) + ', мы' : 'мы'} засчитали твои билеты в карту</b><small>приглашение в близкий круг клуба</small></span>
+                <span data-app-copy="copy_68b979d698eb1a5394be" class="ob-icon">🤝</span>
+                <span class="ob-txt"><b>${name ? esc(name) + ', мы' : 'мы'} засчитали твои билеты в карту</b><small data-app-copy="copy_1930e56e0bf2416a95c5">приглашение в близкий круг клуба</small></span>
                 <span class="ob-go">›</span>
             </button>
             <button type="button" class="ob-close" aria-label="скрыть">×</button>`;
@@ -70,7 +70,7 @@ export async function mountOfferBanner(offer) {
         }
         el.innerHTML = `
             <button type="button" class="ob-main">
-                <span class="ob-icon">🎁</span>
+                <span data-app-copy="copy_8001511fe17d23f5d522" class="ob-icon">🎁</span>
                 <span class="ob-txt"><b>${esc(fillOfferText(offer.title, offer))}</b>${offer.text ? `<small>${esc(fillOfferText(offer.text, offer))}</small>` : ''}</span>
                 <span class="ob-go">›</span>
             </button>

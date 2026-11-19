@@ -26,11 +26,11 @@ const bannerHtml = b => `
     <div class="card-container sv-banner" id="svBanner">
         <div class="sv-b-top">
             <img class="sv-badge-img" src="assets/survey-badge.webp" alt="">
-            <div class="sv-b-txt"><small>опрос · 2–3 минуты</small><b>${esc(b.title)}</b><span>${esc(b.text)}</span></div>
+            <div class="sv-b-txt"><small data-app-copy="copy_e6057a00afe47d3c482b">опрос · 2–3 минуты</small><b>${esc(b.title)}</b><span>${esc(b.text)}</span></div>
         </div>
         <div class="sv-b-btns">
             <button type="button" class="btn btn-yellow sv-go" data-sv="go">${b.resume ? 'продолжить' : 'поделиться взглядом'}</button>
-            <div class="sv-b-sub"><button type="button" class="sv-ghost" data-sv="later">позже</button><button type="button" class="sv-ghost" data-sv="declined">отказаться</button></div>
+            <div class="sv-b-sub"><button data-app-copy="copy_295bd5ba2d793a9fb4e0" type="button" class="sv-ghost" data-sv="later">позже</button><button data-app-copy="copy_294c2561a90897161c7a" type="button" class="sv-ghost" data-sv="declined">отказаться</button></div>
         </div>
     </div>`;
 
@@ -78,7 +78,7 @@ function openSurvey(host) {
         <button type="button" class="hb-close sv-close" aria-label="закрыть">✕</button>
         <div class="sv-rw"><img src="assets/survey-badge.webp" alt=""><div class="sv-rw-t"><small></small><div class="sv-dots"></div></div></div>
         <div class="sv-body"></div>
-        <div class="sv-bar"><button type="button" class="sv-skip">пропустить</button><button type="button" class="btn btn-yellow sv-next">дальше</button></div>
+        <div class="sv-bar"><button data-app-copy="copy_0477bb58a12e4bf710b8" type="button" class="sv-skip">пропустить</button><button data-app-copy="copy_5466d3973538299a3713" type="button" class="btn btn-yellow sv-next">дальше</button></div>
     </div>`;
     const tgw = window.Telegram?.WebApp;
     const inset = (tgw?.safeAreaInset?.top || 0) + (tgw?.contentSafeAreaInset?.top || 0);
@@ -135,9 +135,9 @@ function openSurvey(host) {
         el.querySelector('.sv-dots').innerHTML = qs.map((_, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('');
         next.textContent = idx === qs.length - 1 ? (q.type === 'text' ? 'отправить' : 'готово') : (q.type === 'text' ? 'отправить' : 'дальше');
         const hint = q.type === 'multi' ? 'можно выбрать несколько' : q.note || '';
-        let inner = `<div class="sv-msg"><span class="sv-av">и</span><div class="sv-bub">${esc(q.title)}</div></div><div class="sv-hint">${esc(hint)}</div>`;
+        let inner = `<div class="sv-msg"><span data-app-copy="copy_eead37caf818d0fae6de" class="sv-av">и</span><div class="sv-bub">${esc(q.title)}</div></div><div class="sv-hint">${esc(hint)}</div>`;
         if (q.type === 'text') {
-            inner += `<textarea class="sv-text" rows="7" maxlength="2000" placeholder="напиши своими словами"></textarea>`;
+            inner += `<textarea data-app-copy-placeholder="copy_0cdbc2210a5d787e9ed8" class="sv-text" rows="7" maxlength="2000" placeholder="напиши своими словами"></textarea>`;
         } else {
             const list = optionsOf(q);
             const wide = list.some(o => o.length > 52);
@@ -203,11 +203,11 @@ function showBadgeReward(onClose) {
     el.className = 'ach-overlay sv-reward';
     el.innerHTML = `<div class="ach-sheet sv-reward-sheet" role="dialog" aria-modal="true" aria-label="значок за опрос">
         <button type="button" class="ach-close" aria-label="закрыть">✕</button>
-        <h2 class="ach-title">спасибо!</h2>
+        <h2 data-app-copy="copy_fba66133867b4dc3bfb9" class="ach-title">спасибо!</h2>
         <div class="sv-r-stage"><img src="assets/survey-badge.webp" alt="значок «поделился взглядом»"></div>
         <span class="ach-rar is-legendary">${esc(rarityLabel('legendary') || 'легендарный')}</span>
-        <p class="sv-r-cap">значок «поделился взглядом» уже твой</p>
-        <button type="button" class="btn btn-yellow ach-btn">закрыть</button>
+        <p data-app-copy="copy_fb92621b426ffe59c82e" class="sv-r-cap">значок «поделился взглядом» уже твой</p>
+        <button data-app-copy="copy_f7838dbabbd5b03ecc56" type="button" class="btn btn-yellow ach-btn">закрыть</button>
     </div>`;
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('is-on'));
@@ -271,8 +271,8 @@ function showNudge(banner, test) {
     el.innerHTML = `<button type="button" class="sv-nx" aria-label="закрыть">✕</button>
         <img class="sv-n-img" src="assets/survey-badge.webp" alt="">
         <div class="sv-n-t">${esc(data.banner.title)}</div>
-        <div class="sv-n-s">ответишь на пару вопросов? подарим легендарный значок</div>
-        <div class="sv-n-b"><button type="button" class="btn btn-yellow sv-n-yes">да, отвечу</button><button type="button" class="sv-n-later">позже</button></div>`;
+        <div data-app-copy="copy_17c3afd74b519423a143" class="sv-n-s">ответишь на пару вопросов? подарим легендарный значок</div>
+        <div class="sv-n-b"><button data-app-copy="copy_9fa13e5c9f9943c89b44" type="button" class="btn btn-yellow sv-n-yes">да, отвечу</button><button data-app-copy="copy_295bd5ba2d793a9fb4e0" type="button" class="sv-n-later">позже</button></div>`;
     document.body.appendChild(el);
     nudgeEl = el;
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-on')));

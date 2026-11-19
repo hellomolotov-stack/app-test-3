@@ -16,8 +16,8 @@ export function soloHikingEntryHtml() {
                   fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             <circle cx="21" cy="56" r="2.5" fill="currentColor"/><circle cx="102" cy="27" r="2.5" fill="currentColor"/>
         </svg>
-        <strong>соло хайкинг</strong>
-        <span>треки и гайды для самостоятельных хайков</span>
+        <strong data-app-copy="copy_378061d5104acdfdc7c9">соло хайкинг</strong>
+        <span data-app-copy="copy_0c8b91b2e9b347d4b40d">треки и гайды для самостоятельных хайков</span>
         <b>открыть маршруты <i aria-hidden="true">›</i></b>
     </button>`;
 }

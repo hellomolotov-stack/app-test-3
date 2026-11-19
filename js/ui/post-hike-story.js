@@ -96,11 +96,11 @@ export function openPhotoStory(hike, onShare) {
         <div class="inv-grab cs-grab"></div>
         <div class="inv-scroll">
             <header><h2 class="story-title" id="post-photo-title">хайк в сторис</h2><button type="button" data-close aria-label="закрыть">×</button></header>
-            <p data-intro>выбери фото с хайка, добавим трек и данные маршрута</p>
+            <p data-app-copy="copy_37c0ec73db672ae3c950" data-intro>выбери фото с хайка, добавим трек и данные маршрута</p>
             <div class="story-preview"><img src="/assets/post-hike-story.webp" alt="пример готовой сторис"></div>
-            <button type="button" class="btn btn-yellow inv-wide" data-pick>выбрать фото</button>
-            <button type="button" class="btn btn-yellow inv-wide" data-share hidden>поделиться сторис</button>
-            <div class="post-photo-actions" hidden><button type="button" class="story-save" data-save>сохранить фото</button><button type="button" class="story-save" data-replace>заменить фото</button></div>
+            <button data-app-copy="copy_38a2e88596f1405c2e46" type="button" class="btn btn-yellow inv-wide" data-pick>выбрать фото</button>
+            <button data-app-copy="copy_71d7c3833d977926812e" type="button" class="btn btn-yellow inv-wide" data-share hidden>поделиться сторис</button>
+            <div class="post-photo-actions" hidden><button data-app-copy="copy_d0bf53b666399eadcb48" type="button" class="story-save" data-save>сохранить фото</button><button data-app-copy="copy_dbe1824ddb9255727d11" type="button" class="story-save" data-replace>заменить фото</button></div>
             <p class="inv-note story-note" role="status"></p>
             <input type="file" accept="image/*" hidden>
         </div></div>`;

@@ -108,14 +108,14 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     overlay.innerHTML = `<div class="ach-sheet" role="dialog" aria-modal="true" aria-label="новые значки">
         <div class="cs-grab ach-grab" aria-hidden="true"></div>
         <button type="button" class="ach-close" aria-label="закрыть">✕</button>
-        <h2 class="ach-title">${title ? title : fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b>первый</b> значок' : 'у тебя <b>новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : owner ? `значки <b>${esc(nameGenitive(owner))}</b>` : 'твои значки'}</h2>
-        ${n > 1 ? '<p class="ach-sub">листай, чтобы посмотреть все</p>' : owner ? '<p class="ach-sub">значок клуба</p>' : ''}
+        <h2 class="ach-title">${title ? title : fresh ? (n === 1 ? (items[0].title === 'добро пожаловать' ? 'твой <b data-app-copy="copy_123b030778ccaa873be3">первый</b> значок' : 'у тебя <b data-app-copy="copy_da0a315913ce937b3886">новый</b> значок') : `у тебя <b>${n} ${plural(n, 'новый', 'новых', 'новых')}</b> ${plural(n, 'значок', 'значка', 'значков')}`) : owner ? `значки <b>${esc(nameGenitive(owner))}</b>` : 'твои значки'}</h2>
+        ${n > 1 ? '<p data-app-copy="copy_6e3a55f375b3b7d4d485" class="ach-sub">листай, чтобы посмотреть все</p>' : owner ? '<p data-app-copy="copy_8063ebc62bda3400e8fc" class="ach-sub">значок клуба</p>' : ''}
         <div class="ach-track">${items.map((a, i) => `<div class="ach-slide${waiting(a) ? ` is-wait has-wv is-${metalOf(a)}` : ''}" data-i="${i}"><img ${medalSrc(a.medal.imageUrl, 'md')} alt="${esc(a.title)}" draggable="false">${routeRepeatMark(a)}${waiting(a) ? medalWaves(a.medal.imageUrl, 'md') : ''}</div>`).join('')}</div>
         ${n > 1 ? `<div class="ach-dots">${Array.from({ length: Math.min(3, n) }, (_, i) => `<i data-dot="${i}"></i>`).join('')}</div>` : ''}
         <div class="ach-info" aria-live="polite"></div>
         <div class="ach-with" hidden></div>
-        <p class="ach-why" hidden>легендарные и эпические значки <b>активируются с картой интеллигента</b> – он уже твой и будет ждать</p>
-        ${firstVisit ? '<button type="button" class="btn btn-yellow ach-btn" data-first-hike>записаться на хайк</button>' : ''}
+        <p class="ach-why" hidden>легендарные и эпические значки <b data-app-copy="copy_4fc153a0f478d76ebb01">активируются с картой интеллигента</b> – он уже твой и будет ждать</p>
+        ${firstVisit ? '<button data-app-copy="copy_68660b0da105c0f2cbfe" type="button" class="btn btn-yellow ach-btn" data-first-hike>записаться на хайк</button>' : ''}
         ${owner ? '' : `<button type="button" class="btn ${firstVisit ? 'ach-btn-all' : 'btn-yellow'} ach-btn" data-share-one>поделиться в сторис</button>`}
         ${all && all.length > items.length ? `<button type="button" class="btn ach-btn ach-btn-all" data-all>смотреть все · ${all.length}</button>` : ''}
 
@@ -144,7 +144,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         try {
             const r = await achievementHolders(a.id);
             const others = (r.people || []).filter(p => p.userId !== String(state.user?.id));
-            if (!others.length) { withBox.innerHTML = '<small>пока больше ни у кого нет</small>'; return; }
+            if (!others.length) { withBox.innerHTML = '<small data-app-copy="copy_5b8ba83fd2d3dbc709b4">пока больше ни у кого нет</small>'; return; }
             withBox.innerHTML = `<small>вместе с тобой «${esc(a.title)}» получили:</small><div class="ach-with-list">${others.map(p => {
                 const name = p.name || 'участник клуба';
                 const pic = p.avatarUrl ? `<img src="${esc(p.avatarUrl)}" alt="" loading="lazy">` : `<i>${esc(name.slice(0, 1).toUpperCase())}</i>`;
@@ -152,7 +152,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
                     : `<div class="ach-with-p is-off">${pic}<span>${esc(name)}</span></div>`; }).join('')}</div>`;
             withBox.querySelectorAll('[data-uid]').forEach(b => b.onclick = () => openProfile(b.dataset.uid, b.querySelector('span').textContent, b.querySelector('img')?.src));
             log(`значки: смотрел, кто ещё получил «${a.title}»`, isGuest(), state.user);
-        } catch { withBox.innerHTML = '<small>не получилось загрузить – попробуй ещё раз</small>'; }
+        } catch { withBox.innerHTML = '<small data-app-copy="copy_07a30c33b9710962cb6c">не получилось загрузить – попробуй ещё раз</small>'; }
     };
     const centerSlide = (slide, behavior = 'instant') => {
         const s = slide.getBoundingClientRect(), t = track.getBoundingClientRect();

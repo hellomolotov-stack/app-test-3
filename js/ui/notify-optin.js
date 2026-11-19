@@ -104,8 +104,8 @@ export async function maybeAskNotifications(reason = 'home', delay = 0) {
             <div style="font-size:52px; margin-bottom:12px;">${t.icon}</div>
             <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">${t.title}</div>
             <div class="modal-text" style="text-align:center; margin-top:8px;">${t.text}</div>
-            <button class="btn btn-yellow" data-optin="yes" style="margin:16px 0 0; width:100%;">да, присылать</button>
-            <button data-optin="later" style="margin-top:12px; background:none; border:0; color:rgba(255,255,255,.6); font:inherit; font-size:14px; cursor:pointer;">не сейчас</button>
+            <button data-app-copy="copy_391f840e975f0205b326" class="btn btn-yellow" data-optin="yes" style="margin:16px 0 0; width:100%;">да, присылать</button>
+            <button data-app-copy="copy_22ddb2bec51046e8e4dd" data-optin="later" style="margin-top:12px; background:none; border:0; color:rgba(255,255,255,.6); font:inherit; font-size:14px; cursor:pointer;">не сейчас</button>
         </div>`;
     document.body.appendChild(overlay);
     const close = () => overlay.remove();
@@ -149,15 +149,15 @@ export async function maybeShowHomeBanner(delay = 1200) {
     el.setAttribute('role', 'dialog');
     el.innerHTML = `
         <div class="optin-banner-top">
-            <span class="optin-banner-ic">🌧️</span>
+            <span data-app-copy="copy_3255a4cc14c4edd8ee54" class="optin-banner-ic">🌧️</span>
             <div class="optin-banner-body">
-                <div class="optin-banner-title">вдруг хайк перенесут?</div>
-                <div class="optin-banner-text">о переносах, новой дате и месте встречи мы пишем в бот. включи сообщения – и ничего не пропустишь 🤍</div>
+                <div data-app-copy="copy_6f706a32c494bfffb693" class="optin-banner-title">вдруг хайк перенесут?</div>
+                <div data-app-copy="copy_7c162eb3bc4acff09aae" class="optin-banner-text">о переносах, новой дате и месте встречи мы пишем в бот. включи сообщения – и ничего не пропустишь 🤍</div>
             </div>
         </div>
         <div class="optin-banner-btns">
-            <button class="optin-banner-yes" data-optin="yes">включить</button>
-            <button class="optin-banner-no" data-optin="later">не сейчас</button>
+            <button data-app-copy="copy_547683134baf0f89aaf7" class="optin-banner-yes" data-optin="yes">включить</button>
+            <button data-app-copy="copy_22ddb2bec51046e8e4dd" class="optin-banner-no" data-optin="later">не сейчас</button>
         </div>`;
     document.body.appendChild(el);
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('is-on')));

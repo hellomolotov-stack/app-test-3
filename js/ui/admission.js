@@ -8,11 +8,11 @@ let reviewTimer = null;
 
 function reviewMarkup(application) {
     const timing = reviewWindow(application.createdAt);
-    if (!timing) return '<p class="admission-fine">читаем анкету – напишем тебе в боте</p>';
+    if (!timing) return '<p data-app-copy="copy_95a7c2f4729affcc49d6" class="admission-fine">читаем анкету – напишем тебе в боте</p>';
     return `<div class="admission-review" data-review-created="${Number(application.createdAt)}">
-        <div class="admission-review-top"><span class="admission-status-tag">читаем анкету</span><span class="admission-review-time"><span data-review-prefix>${timing.expired ? 'срок прошёл' : 'ещё'}</span> <time data-review-countdown ${timing.expired ? 'hidden' : ''}>${timing.countdown}</time></span></div>
+        <div class="admission-review-top"><span data-app-copy="copy_39a8d96e039aa95201dd" class="admission-status-tag">читаем анкету</span><span class="admission-review-time"><span data-review-prefix>${timing.expired ? 'срок прошёл' : 'ещё'}</span> <time data-review-countdown ${timing.expired ? 'hidden' : ''}>${timing.countdown}</time></span></div>
         <div class="admission-review-track" role="progressbar" aria-label="сколько прошло из 3 часов на ответ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(timing.ratio * 100)}"><span class="admission-review-fill" style="animation-delay:-${timing.elapsed}ms"></span></div>
-        <div class="admission-review-labels"><span>анкета отправлена</span><span>ответ в течение 3 часов</span></div>
+        <div class="admission-review-labels"><span data-app-copy="copy_9d15df5b49c345b8bff9">анкета отправлена</span><span data-app-copy="copy_0d08a9c125f086028a58">ответ в течение 3 часов</span></div>
         <p class="admission-review-overdue" ${timing.expired ? '' : 'hidden'}>ответ ещё готовится – напишем в боте</p>
     </div>`;
 }
@@ -69,33 +69,33 @@ export function mountAdmissionEntry() {
         approved: ['добро пожаловать в клуб', 'мы прочитали анкету – теперь можно записаться на хайк или оформить карту', 'продолжить'],
         rejected: ['ответ по анкете', 'сейчас не получится позвать тебя в клуб – подробности внутри', 'посмотреть ответ'],
     }[status];
-    block.innerHTML = status === 'new' ? `<h2 class="section-title">как попасть в клуб</h2>
-        <p class="adm-lead">в горы можно пойти с кем угодно – одному, с другом или с очередным походным чатом. к нам приходят не за маршрутом, а за людьми</p>
+    block.innerHTML = status === 'new' ? `<h2 data-app-copy="copy_319d62522f1b3d1a351d" class="section-title">как попасть в клуб</h2>
+        <p data-app-copy="copy_0a4dba27fc93d8b52bac" class="adm-lead">в горы можно пойти с кем угодно – одному, с другом или с очередным походным чатом. к нам приходят не за маршрутом, а за людьми</p>
         <div class="calendar-item adm-inner">
             <div class="adm-paths" role="tablist">
-                <button type="button" class="adm-path" role="tab" data-path="invite" aria-selected="false"><span class="adm-path-ico">🤝🏻</span><b>приглашение</b></button>
-                <button type="button" class="adm-path is-on" role="tab" data-path="form" aria-selected="true"><span class="adm-path-ico">✍🏻</span><b>анкета</b></button>
+                <button type="button" class="adm-path" role="tab" data-path="invite" aria-selected="false"><span data-app-copy="copy_eaa6bbe8bab66c9b4b73" class="adm-path-ico">🤝🏻</span><b data-app-copy="copy_5e964db0649c718eb5e0">приглашение</b></button>
+                <button type="button" class="adm-path is-on" role="tab" data-path="form" aria-selected="true"><span data-app-copy="copy_1926c53821f29fe99b93" class="adm-path-ico">✍🏻</span><b data-app-copy="copy_38257889bd6cae7e758e">анкета</b></button>
             </div>
             <div class="adm-steps" data-for="form">
-                <div><i>1</i><span>рассказываешь о себе</span></div>
-                <div><i>2</i><span>мы читаем и пишем тебе в течение 3 часов</span></div>
-                <div><i>3</i><span>записываешься на хайк или оформляешь карту</span></div>
+                <div><i>1</i><span data-app-copy="copy_7a595a45720cec5d16a6">рассказываешь о себе</span></div>
+                <div><i>2</i><span data-app-copy="copy_d3aebf4ca431a833bad5">мы читаем и пишем тебе в течение 3 часов</span></div>
+                <div><i>3</i><span data-app-copy="copy_1b5eacd651cc071ab07e">записываешься на хайк или оформляешь карту</span></div>
             </div>
             <div class="adm-steps" data-for="invite" hidden>
-                <div><i>1</i><span>член клуба отправляет тебе ссылку-приглашение</span></div>
-                <div><i>2</i><span>ты переходишь по ней в приложение</span></div>
-                <div><i>3</i><span>мы сразу открываем тебе доступ – без анкеты</span></div>
+                <div><i>1</i><span data-app-copy="copy_6d75de069085f21b49b0">член клуба отправляет тебе ссылку-приглашение</span></div>
+                <div><i>2</i><span data-app-copy="copy_359d7d69e559a705cf73">ты переходишь по ней в приложение</span></div>
+                <div><i>3</i><span data-app-copy="copy_1a08a5e6501e1a8cf398">мы сразу открываем тебе доступ – без анкеты</span></div>
             </div>
             <div data-for="form">
-                <button type="button" class="btn btn-yellow admission-entry-button">заполнить анкету</button>
-                <p class="adm-entry-note">меньше 20 секунд</p>
+                <button data-app-copy="copy_e6fe90a593fb33bf6e6f" type="button" class="btn btn-yellow admission-entry-button">заполнить анкету</button>
+                <p data-app-copy="copy_930c0039ff7d03d90dc5" class="adm-entry-note">меньше 20 секунд</p>
             </div>
-            <p class="adm-entry-note adm-invite-note" data-for="invite" hidden>если тебя уже позвали – просто открой присланную ссылку</p>
+            <p data-app-copy="copy_c8fdf5dc02d2fe82793c" class="adm-entry-note adm-invite-note" data-for="invite" hidden>если тебя уже позвали – просто открой присланную ссылку</p>
         </div>
-        <button type="button" class="adm-why-row" id="admissionWhy"><span>почему вход не для всех</span><b>узнать ›</b></button>` : `<h2 class="section-title">${copy[0]}</h2><div class="admission-entry-copy"><p>${copy[1]}</p>
+        <button type="button" class="adm-why-row" id="admissionWhy"><span data-app-copy="copy_a5a2404ca8b68723ec02">почему вход не для всех</span><b data-app-copy="copy_9fe620c1e318c9cc8c24">узнать ›</b></button>` : `<h2 class="section-title">${copy[0]}</h2><div class="admission-entry-copy"><p>${copy[1]}</p>
         ${status === 'pending' ? reviewMarkup(application) : ''}
-        ${status === 'approved' ? '<span class="admission-status-tag is-approved">заявка одобрена</span>' : ''}
-        ${status === 'rejected' ? '<span class="admission-status-tag">заявка рассмотрена</span>' : ''}
+        ${status === 'approved' ? '<span data-app-copy="copy_2842a6e0b8aba9ee895d" class="admission-status-tag is-approved">заявка одобрена</span>' : ''}
+        ${status === 'rejected' ? '<span data-app-copy="copy_bca25c465c4912698374" class="admission-status-tag">заявка рассмотрена</span>' : ''}
         </div><button type="button" class="btn btn-yellow admission-entry-button">${copy[2]}</button>`;
     block.querySelector('.btn').addEventListener('click', () => openAdmission({ view: status === 'new' ? 'form' : 'status' }));
     block.querySelector('#admissionWhy')?.addEventListener('click', openAdmissionWhy);
@@ -185,46 +185,46 @@ function render() {
         title = 'давай познакомимся';
         subtitle = 'это не экзамен – правильных ответов нет. смотрим только, совпадают ли наши взгляды';
         content = `<form id="admissionForm">
-            <label class="admission-field"><span>как тебя зовут</span><input name="name" autocomplete="given-name" minlength="2" maxlength="80" value="${esc(draft.name)}" required></label>
-            <fieldset class="admission-group"><legend>ты и Ялта</legend><div class="admission-chips">
+            <label class="admission-field"><span data-app-copy="copy_21c74be03bb243795fc5">как тебя зовут</span><input name="name" autocomplete="given-name" minlength="2" maxlength="80" value="${esc(draft.name)}" required></label>
+            <fieldset class="admission-group"><legend data-app-copy="copy_f28acedbd294f6452c58">ты и Ялта</legend><div class="admission-chips">
                 ${YALTA_OPTIONS.map(([key, label]) => `<label class="admission-chip"><input type="radio" name="yalta" value="${key}" ${draft.yalta === key ? 'checked' : ''} required><span>${esc(label)}</span></label>`).join('')}
             </div></fieldset>
-            <fieldset class="admission-group"><legend>что про тебя – отмечай сколько угодно</legend>
+            <fieldset class="admission-group"><legend data-app-copy="copy_cfda1bc103d286b70e3c">что про тебя – отмечай сколько угодно</legend>
                 ${VIEW_OPTIONS.map(([key, label]) => `<label class="admission-check"><input type="checkbox" name="views" value="${key}" ${draft.views.includes(key) ? 'checked' : ''}><span>${esc(label)}</span></label>`).join('')}
             </fieldset>
             <p class="admission-error" id="admissionError" role="alert"></p>
-            <button class="btn btn-yellow admission-primary" type="submit">отправить</button>
-            <p class="admission-fine admission-centered">мы прочитаем анкету сами и напишем тебе в течение 3 часов</p>
+            <button data-app-copy="copy_32189e2472c8a8fb55e3" class="btn btn-yellow admission-primary" type="submit">отправить</button>
+            <p data-app-copy="copy_bff7a397fd4f133284ee" class="admission-fine admission-centered">мы прочитаем анкету сами и напишем тебе в течение 3 часов</p>
         </form>`;
     } else if (admission.error) {
         title = 'не получилось загрузить'; subtitle = admission.error;
         content = button('попробовать ещё раз');
         action = async () => { await loadAdmission(); screen.view = 'status'; render(); };
     } else if (!application) {
-        title = 'секунду'; subtitle = 'загружаем твою заявку'; content = '<div class="admission-loading" role="status">загрузка…</div>';
+        title = 'секунду'; subtitle = 'загружаем твою заявку'; content = '<div data-app-copy="copy_337faea3c806b1393409" class="admission-loading" role="status">загрузка…</div>';
     } else if (application.status === 'new') {
         title = 'как попасть в клуб'; subtitle = 'в клуб входят по приглашению или через короткую анкету';
-        content = `<p class="admission-body-text">расскажи о себе – мы прочитаем и напишем тебе в течение 3 часов</p>${button('заполнить анкету')}<p class="admission-fine admission-centered">меньше 20 секунд</p>`;
+        content = `<p data-app-copy="copy_c86d926b2bbdf1a9d26a" class="admission-body-text">расскажи о себе – мы прочитаем и напишем тебе в течение 3 часов</p>${button('заполнить анкету')}<p data-app-copy="copy_930c0039ff7d03d90dc5" class="admission-fine admission-centered">меньше 20 секунд</p>`;
         action = () => { screen.view = 'form'; render(); };
     } else if (application.status === 'pending') {
         title = 'анкета у нас'; subtitle = 'спасибо! если отметил больше двух пунктов, ты уже примерно знаешь, с кем пойдёшь';
-        content = `${reviewMarkup(application)}<p class="admission-body-text">пока можно выбрать маршрут и посмотреть ближайшие встречи</p>${application.notificationStatus === 'failed' ? '<p class="admission-fine">бот пока не может написать тебе – <a class="admission-bot-link" href="https://t.me/yaltahiking_bot" target="_blank" rel="noopener">открой его и нажми «начать»</a></p>' : ''}${button('к событиям')}<button class="admission-text-button" id="admissionRefresh">обновить статус</button>`;
+        content = `${reviewMarkup(application)}<p data-app-copy="copy_effc977040ff370bb039" class="admission-body-text">пока можно выбрать маршрут и посмотреть ближайшие встречи</p>${application.notificationStatus === 'failed' ? '<p class="admission-fine">бот пока не может написать тебе – <a data-app-copy="copy_ccb0c08c06663a01341a" class="admission-bot-link" href="https://t.me/yaltahiking_bot" target="_blank" rel="noopener">открой его и нажми «начать»</a></p>' : ''}${button('к событиям')}<button class="admission-text-button" id="admissionRefresh">обновить статус</button>`;
         action = closeAdmission;
     } else if (application.status === 'rejected') {
         title = 'спасибо, что рассказал о себе'; subtitle = 'сейчас не получится позвать тебя в клуб';
-        content = `<p class="admission-body-text">но в клуб входят и по приглашению – если кто-то из клуба захочет взять тебя с собой, будем рады</p>${button('вернуться к событиям')}`;
+        content = `<p data-app-copy="copy_4234f0b52f3ccd99a894" class="admission-body-text">но в клуб входят и по приглашению – если кто-то из клуба захочет взять тебя с собой, будем рады</p>${button('вернуться к событиям')}`;
         action = closeAdmission;
     } else {
         title = 'добро пожаловать\nв Интеллигенцию'; subtitle = 'мы прочитали анкету – рады знакомству';
         const accepted = application.rulesVersion === RULES_VERSION;
         content = `<div class="admission-rules">
-            <div><span aria-hidden="true">✓</span><p>уважаем друг друга<small>бережно относимся к личным границам и разным мнениям</small></p></div>
-            <div><span aria-hidden="true">✓</span><p>бережём места встреч<small>не оставляем мусор и соблюдаем правила маршрута</small></p></div>
-            <div><span aria-hidden="true">✓</span><p>остаёмся на связи<small>предупреждаем, если планы поменялись и не получится прийти</small></p></div>
+            <div><span aria-hidden="true">✓</span><p>уважаем друг друга<small data-app-copy="copy_7d9b5430da88ab4ae995">бережно относимся к личным границам и разным мнениям</small></p></div>
+            <div><span aria-hidden="true">✓</span><p>бережём места встреч<small data-app-copy="copy_b52b36ef8a12ed0dd62e">не оставляем мусор и соблюдаем правила маршрута</small></p></div>
+            <div><span aria-hidden="true">✓</span><p>остаёмся на связи<small data-app-copy="copy_c4e0ee5fa16053f1967c">предупреждаем, если планы поменялись и не получится прийти</small></p></div>
         </div>
-        <p class="admission-body-text">теперь можно оформить билет на хайк или карту члена клуба</p>
-        <p class="admission-fine">карта и запись на события оформляются отдельно</p>
-        ${accepted ? '' : '<label class="admission-check"><input id="admissionRules" type="checkbox"><span>ознакомился с правилами клуба</span></label>'}
+        <p data-app-copy="copy_194bbdc9130c2ca6ac29" class="admission-body-text">теперь можно оформить билет на хайк или карту члена клуба</p>
+        <p data-app-copy="copy_5293226198d9a5b8cf5c" class="admission-fine">карта и запись на события оформляются отдельно</p>
+        ${accepted ? '' : '<label class="admission-check"><input id="admissionRules" type="checkbox"><span data-app-copy="copy_82c75ad370a68ea527e3">ознакомился с правилами клуба</span></label>'}
         <p class="admission-error" id="admissionError" role="alert"></p>
         ${button(application.context?.hikeDate || screen.context.hikeDate ? 'вернуться к хайку' : 'выбрать событие')}`;
         action = async () => {
@@ -300,18 +300,18 @@ export function openAdmissionWhy() {
     const overlay = document.createElement('div');
     overlay.className = 'inv-overlay adm-why-overlay';
     overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div class="inv-scroll adm-why">
-        <h2>в Ялте в горы зовут все</h2>
-        <p>чатики, каналы, туры. покупаешь билет, приходишь – и только на старте узнаёшь, с кем идёшь. иногда рядом колонка с чужим плейлистом на всю тропу</p>
-        <p>мы не про походы. маршрут найти легко – сложно найти людей, с которыми хочется идти. а в горах, где вокруг только тишина, весь день сделан из тех, кто рядом</p>
-        <p>поэтому мы сначала знакомимся. ты коротко рассказываешь о себе – и на старте приходишь к людям, которые тебя уже ждут</p>
+        <h2 data-app-copy="copy_f744865e5a26375b643b">в Ялте в горы зовут все</h2>
+        <p data-app-copy="copy_137bd80232c1a347d3cd">чатики, каналы, туры. покупаешь билет, приходишь – и только на старте узнаёшь, с кем идёшь. иногда рядом колонка с чужим плейлистом на всю тропу</p>
+        <p data-app-copy="copy_eaaf852187d0b11c88f3">мы не про походы. маршрут найти легко – сложно найти людей, с которыми хочется идти. а в горах, где вокруг только тишина, весь день сделан из тех, кто рядом</p>
+        <p data-app-copy="copy_223e39d76f63ab074aa8">поэтому мы сначала знакомимся. ты коротко рассказываешь о себе – и на старте приходишь к людям, которые тебя уже ждут</p>
         <div class="adm-why-two">
-            <div><b>смотрим</b><span>близки ли нам твои взгляды</span></div>
-            <div><b>не смотрим</b><span>работа, доход, фото, спортивная форма</span></div>
+            <div><b data-app-copy="copy_c48975dd0d9bcfa588ab">смотрим</b><span data-app-copy="copy_de330894f53008463be3">близки ли нам твои взгляды</span></div>
+            <div><b data-app-copy="copy_39666396a903b4306ff8">не смотрим</b><span data-app-copy="copy_4c7b309c04036d342364">работа, доход, фото, спортивная форма</span></div>
         </div>
-        <p>в группе не больше 10 человек – так каждого видно и слышно, и никто не оказывается рядом случайно</p>
-        <p>а если тебя позвал кто-то из клуба, анкета не нужна: тот, кто уже ходит с нами, знает тебя лучше любой анкеты</p>
-        <p class="adm-why-last">если тебе это откликается – кажется, ты к нам</p>
-        <button type="button" class="btn btn-yellow adm-why-btn">заполнить анкету</button>
+        <p data-app-copy="copy_baeb1911af3688d2b499">в группе не больше 10 человек – так каждого видно и слышно, и никто не оказывается рядом случайно</p>
+        <p data-app-copy="copy_bd4942a74cdaf408ec76">а если тебя позвал кто-то из клуба, анкета не нужна: тот, кто уже ходит с нами, знает тебя лучше любой анкеты</p>
+        <p data-app-copy="copy_efbf918dcfd3ead344f3" class="adm-why-last">если тебе это откликается – кажется, ты к нам</p>
+        <button data-app-copy="copy_e6fe90a593fb33bf6e6f" type="button" class="btn btn-yellow adm-why-btn">заполнить анкету</button>
     </div></div>`;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-on'));

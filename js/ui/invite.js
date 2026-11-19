@@ -24,10 +24,10 @@ export function renderPlus1Block(slot, hike) {
     if (!slot || !hike) return;
     slot.innerHTML = `
         <div class="plus1-box">
-            <div class="plus1-head"><span class="plus1-ico">🤝</span><div><b>твой +1 на этот хайк</b><small>привилегия карты интеллигента</small></div></div>
-            <p>можешь взять с собой друга, который ещё ни разу с нами не был. отправь ему ссылку – он увидит в приложении, что это ты его приглашаешь, и запишется без билета</p>
+            <div class="plus1-head"><span data-app-copy="copy_68b979d698eb1a5394be" class="plus1-ico">🤝</span><div><b data-app-copy="copy_fcabec180d0f4999185e">твой +1 на этот хайк</b><small data-app-copy="copy_5a97ef1a6cfd5e2bd499">привилегия карты интеллигента</small></div></div>
+            <p data-app-copy="copy_5f825e2eaeea05f5bbc7">можешь взять с собой друга, который ещё ни разу с нами не был. отправь ему ссылку – он увидит в приложении, что это ты его приглашаешь, и запишется без билета</p>
             <div class="plus1-status" hidden></div>
-            <button type="button" class="btn btn-yellow plus1-btn">взять с собой +1</button>
+            <button data-app-copy="copy_784d539f25f9ea519432" type="button" class="btn btn-yellow plus1-btn">взять с собой +1</button>
         </div>`;
     const btn = slot.querySelector('.plus1-btn');
     const status = slot.querySelector('.plus1-status');
@@ -62,7 +62,7 @@ export async function openInviteScreen(code) {
     document.querySelector('.inv-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.className = 'inv-overlay';
-    overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div class="inv-loading">открываем приглашение…</div></div>`;
+    overlay.innerHTML = `<div class="inv-sheet"><div class="inv-grab cs-grab"></div><div data-app-copy="copy_a251b91feb2bba83a5e2" class="inv-loading">открываем приглашение…</div></div>`;
     document.body.appendChild(overlay);
     requestAnimationFrame(() => overlay.classList.add('is-on'));
     const sheet = overlay.querySelector('.inv-sheet');
@@ -73,7 +73,7 @@ export async function openInviteScreen(code) {
     try {
         info = await inviteApi('inviteInfo', { code });
     } catch (e) {
-        sheet.innerHTML = `<div class="inv-msg">приглашение не найдено – возможно, ссылка скопировалась не целиком</div><button class="btn btn-outline inv-close">закрыть</button>`;
+        sheet.innerHTML = `<div data-app-copy="copy_a9691c04f816125a1544" class="inv-msg">приглашение не найдено – возможно, ссылка скопировалась не целиком</div><button data-app-copy="copy_f7838dbabbd5b03ecc56" class="btn btn-outline inv-close">закрыть</button>`;
         sheet.querySelector('.inv-close').addEventListener('click', close);
         return;
     }
@@ -101,31 +101,31 @@ export async function openInviteScreen(code) {
             <div class="inv-ticket-body">
                 <b>${esc(info.hike_title || 'хайк')}</b>
                 <small>${info.start_time ? `старт в ${esc(info.start_time)}` : dateRu(info.hike_date)}</small>
-                <span class="inv-ticket-tag">+1 · без билета</span>
+                <span data-app-copy="copy_f206c61cbd6b7aaf34ef" class="inv-ticket-tag">+1 · без билета</span>
             </div>
         </div>`;
 
     // для кого и в каком состоянии ссылка
     let action = '';
     if (info.self) {
-        action = `<div class="inv-msg">это твоё приглашение – отправь ссылку другу, и он запишется по ней без билета</div>`;
+        action = `<div data-app-copy="copy_26090b30a0b9abb1939b" class="inv-msg">это твоё приглашение – отправь ссылку другу, и он запишется по ней без билета</div>`;
     } else if (info.used_by_me || info.registered) {
-        action = `<div class="inv-msg is-ok">🤍 ты уже в списке участников</div><button class="btn btn-yellow inv-wide" data-open-hike>детали хайка</button>`;
+        action = `<div data-app-copy="copy_ced517e1cdd8cafa2727" class="inv-msg is-ok">🤍 ты уже в списке участников</div><button data-app-copy="copy_bf291a100f7275c94484" class="btn btn-yellow inv-wide" data-open-hike>детали хайка</button>`;
     } else if (info.used) {
         action = `<div class="inv-msg">по этой ссылке уже записался другой человек. попроси у ${name} новое приглашение на другой хайк</div>`;
     } else if (!info.available) {
-        action = `<div class="inv-msg">запись на этот хайк уже закрыта</div>`;
+        action = `<div data-app-copy="copy_1a51154a80246143467f" class="inv-msg">запись на этот хайк уже закрыта</div>`;
     } else if (!info.eligible) {
-        action = `<div class="inv-msg">по приглашению приходят только в первый раз, а ты уже не новичок в клубе 🤍 на этот хайк можно записаться как обычно</div><button class="btn btn-yellow inv-wide" data-open-hike>посмотреть хайк</button>`;
+        action = `<div data-app-copy="copy_657000fdf8f106c156a2" class="inv-msg">по приглашению приходят только в первый раз, а ты уже не новичок в клубе 🤍 на этот хайк можно записаться как обычно</div><button data-app-copy="copy_3fcb04f7dd930af0d6a6" class="btn btn-yellow inv-wide" data-open-hike>посмотреть хайк</button>`;
     } else {
-        action = `<button class="btn btn-yellow inv-wide" data-open-hike data-invite="1">открыть хайк</button>
-            <div class="inv-note">в хайке – маршрут, точка сбора и время. там же и запишешься, без билета</div>`;
+        action = `<button data-app-copy="copy_76f0149273aed5f7288b" class="btn btn-yellow inv-wide" data-open-hike data-invite="1">открыть хайк</button>
+            <div data-app-copy="copy_1fd06751900e7454a669" class="inv-note">в хайке – маршрут, точка сбора и время. там же и запишешься, без билета</div>`;
     }
 
     sheet.innerHTML = `
         <div class="inv-grab cs-grab"></div>
         <div class="inv-scroll">
-            <div class="inv-emoji">🎉</div>
+            <div data-app-copy="copy_6146299cd54818a0e659" class="inv-emoji">🎉</div>
             <h2><span>${name}</span> приглашает тебя на хайк</h2>
             <p class="inv-sub">${name} – член клуба хайкинг интеллигенции. с картой интеллигента можно взять с собой друга, который ещё не был с нами – и сегодня это ты</p>
             <button type="button" class="inv-card-link" id="invCardLink">что такое карта интеллигента <span>›</span></button>

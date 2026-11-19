@@ -151,7 +151,7 @@ function mmCoverHtml(fallback) {
             <div class="mmc-meta"><span class="mmc-k">мастермайнд · ${d.getDate()} ${months[d.getMonth()]}</span><b>${esc(n.title)}</b>${n.place ? `<span class="mmc-when">${esc(n.place)}</span>` : ''}</div>
         </div>
         ${req ? `<p class="mmc-q">${esc(req)}</p>` : ''}
-        <div class="mmc-foot"><span class="mmc-avs" data-mmc-avs="${esc(n.date)}"></span><button type="button" class="mmc-read" data-mmc-read>читать саммари</button></div>
+        <div class="mmc-foot"><span class="mmc-avs" data-mmc-avs="${esc(n.date)}"></span><button data-app-copy="copy_baf560a14f0c660de207" type="button" class="mmc-read" data-mmc-read>читать саммари</button></div>
     </div>`;
 }
 function wireMmCover(root) {
@@ -205,7 +205,7 @@ function renderMastermindSummaries() {
         innerHtml = `
             <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
                 <div style="flex: 1;">
-                    <span style="color: #ffffff;">скоро здесь появится первая запись</span>
+                    <span data-app-copy="copy_6cecb8a2055b438d3905" style="color: #ffffff;">скоро здесь появится первая запись</span>
                 </div>
             </div>
         `;
@@ -234,7 +234,7 @@ function renderMastermindSummaries() {
             const readBtn = note
                 ? `<button type="button" data-mm-note="${note.id}" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: #ffffff; border-radius: 20px; font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap;">${isGuest ? '🔒 начало' : 'читать'}</button>`
                 : isGuest
-                ? `<button class="btn guest-read-btn" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: rgba(255,255,255,0.85); border-radius: 20px; font-size: 13px;">🔒</button>`
+                ? `<button data-app-copy="copy_6ae1d2ee2e9592ea2e66" class="btn guest-read-btn" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: rgba(255,255,255,0.85); border-radius: 20px; font-size: 13px;">🔒</button>`
                 : `<a href="${item.link}" target="_blank" class="mastermind-read-link" style="width: auto; margin: 0; padding: 8px 14px; flex-shrink: 0; text-decoration: none; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.28); color: #ffffff; border-radius: 20px; font-size: 13px; white-space: nowrap;" data-date="${item.date}" data-title="${item.title || ''}">читать</a>`;
             innerHtml += `
                 <div style="display: flex; align-items: center; justify-content: space-between; margin: 0 16px 12px 16px; padding: 12px; background-color: var(--surface-inner); border-radius: 12px; backdrop-filter: blur(4px);">
@@ -252,7 +252,7 @@ function renderMastermindSummaries() {
         <div class="card-container" id="mastermindSummariesCard">
             <h2 class="section-title" style="margin: 0 16px 16px 16px;"><span data-app-copy="homeMastermind">саммари мастермайнда</span>
             </h2>
-            <p style="margin: -8px 16px 16px; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.55);">здесь собраны записи всех ценных мыслей, которые были озвучены участниками на мастермайнд сессиях во время хайков на вершинах гор южного берега. материал записан Plaud Note Pro и обработан с помощью последних моделей ChatGPT и Claude</p>
+            <p data-app-copy="copy_4653e287bc9535b22752" style="margin: -8px 16px 16px; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.55);">здесь собраны записи всех ценных мыслей, которые были озвучены участниками на мастермайнд сессиях во время хайков на вершинах гор южного берега. материал записан Plaud Note Pro и обработан с помощью последних моделей ChatGPT и Claude</p>
             <div class="mm-scroll">${innerHtml}</div>
         </div>
     `;
@@ -288,7 +288,7 @@ function renderSafetyBanner() {
 
 // подпись в самом низу главной: «разработано в мастерской Молотова» → личка в Telegram
 function renderMakerCredit() {
-    return `<div class="maker-credit"><button type="button" id="makerCreditBtn"><small>разработано</small><span>в мастерской Молотова <span aria-hidden="true">↗</span></span></button></div>`;
+    return `<div class="maker-credit"><button type="button" id="makerCreditBtn"><small data-app-copy="copy_6c9f65fdabc49611e972">разработано</small><span>в мастерской Молотова <span aria-hidden="true">↗</span></span></button></div>`;
 }
 
 function wireSafetyBanner() {
@@ -373,7 +373,7 @@ function metricsStoryHtml() {
     const span = months >= 15 && months <= 20 ? 'за полтора года' : months >= 21 && months <= 27 ? 'за два года' : months >= 12 ? 'за год с лишним' : `за ${months} мес.`;
     const v = k => `<em data-metric="${k}">${m[k] ?? ''}</em>`;
     return `<div class="mst-text">${span} мы прошли ${v('kilometers')}&nbsp;км на ${v('hikes')}&nbsp;хайках, побывали в ${v('locations')}&nbsp;местах Крыма и познакомили людей друг с другом ${v('meetings')}&nbsp;раз</div>
-        <div class="mst-chips"><span>🪪 <b>20+</b> владельцев карты</span><span>🏔 выше всего – <b>1527 м</b></span><span>📅 с мая 2025</span></div>`;
+        <div class="mst-chips"><span>🪪 <b>20+</b> владельцев карты</span><span>🏔 выше всего – <b data-app-copy="copy_0d84a114dce049da205b">1527 м</b></span><span data-app-copy="copy_a275dcc640c721f5f3e2">📅 с мая 2025</span></div>`;
 }
 
 window.addEventListener('club:content-updated', () => {
@@ -440,7 +440,7 @@ function askBarHtml() {
         <form class="ask-bar" id="askBar" autocomplete="off">
             <div class="ask-bar-field">
                 <span class="ask-bar-spark">✦</span>
-                <input class="ask-bar-input" id="askBarInput" type="text" maxlength="500" enterkeyhint="send"
+                <input data-app-copy-placeholder="copy_668657947bb6ecf86cf8" class="ask-bar-input" id="askBarInput" type="text" maxlength="500" enterkeyhint="send"
                     placeholder="спроси про хайки, карту или клуб…">
                 <button class="ask-bar-send" type="submit" aria-label="отправить">↑</button>
             </div>
@@ -451,9 +451,9 @@ function askBarHtml() {
                 </button>
             </div>
             <div class="ask-bar-dd"><div class="ask-bar-dd-in">
-                <div class="ask-bar-dd-head">вопросы, на которые уже есть ответ</div>
+                <div data-app-copy="copy_0bcbe9635997119d0f12" class="ask-bar-dd-head">вопросы, на которые уже есть ответ</div>
                 ${groups.map(([title, qs]) => `<div class="ask-bar-grp"><div class="ask-bar-g">${title}</div><div class="ask-bar-qs">${qs.map(q => `<button type="button" class="ask-bar-q" data-node="${q[1]}">${q[0]}</button>`).join('')}</div></div>`).join('')}
-                <button type="button" class="ask-bar-own">не нашёл ответ? <b>напиши свой вопрос ↑</b></button>
+                <button type="button" class="ask-bar-own">не нашёл ответ? <b data-app-copy="copy_70bfb1dd0e471e1d3931">напиши свой вопрос ↑</b></button>
             </div></div>
         </form>`;
 }
@@ -513,9 +513,9 @@ function renderGuestHome() {
     const cardHtml = v2 ? '' : `
         <div class="card-container" id="cardBlock">
             ${cardScratchHtml()}
-            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes || 0}</span></div>
+            <div class="hike-counter"><span data-app-copy="copy_d9b0cf7b46aecce51c3b">⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes || 0}</span></div>
             <div class="sc-row">
-                <div class="sc-text"><b>карта интеллигента</b><span>что за ней скрывается?</span></div>
+                <div class="sc-text"><b data-app-copy="copy_d87d12df0f2470e66af6">карта интеллигента</b><span data-app-copy="copy_0ea9e1b2e498edfe0930">что за ней скрывается?</span></div>
                 <button type="button" class="btn btn-yellow sc-btn" id="cardBadgeBtn">узнать</button>
             </div>
         </div>
@@ -542,7 +542,7 @@ function renderGuestHome() {
         <div class="card-container">
             <h2 class="section-title"><span data-app-copy="homeNew">для новичков</span></h2>
             <div class="btn-newcomer" id="newcomerBtnGuest">
-                <span class="newcomer-text">как всё устроено</span>
+                <span data-app-copy="copy_26aa59949c5348029663" class="newcomer-text">как всё устроено</span>
                 <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
             </div>
         </div>
@@ -550,13 +550,13 @@ function renderGuestHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="true"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span>отчёты ›</a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
-                <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
-                <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
-                <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
-                <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_3af3288af0981024d97e" class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_a55ee37386ec79cbb1c6" class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_466097404dec8f0c4bd5" class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_cbc98219465dbbe01b33" class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>`}
         </div>
         ${renderTestimonialsBlock()}
@@ -755,7 +755,7 @@ function renderOwnerHome() {
         ${v2 ? v2HomeTopHtml() + '<div class="card-container" id="calendarContainer"></div><div id="rdMedalsAnchor"></div>' : askBarHtml()}
         ${v2 ? '' : `<div class="card-container" id="cardBlock">
             <img src="${state.userCard.cardUrl}" alt="карта" class="card-image" id="ownerCardImage">
-            <div class="hike-counter"><span>⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
+            <div class="hike-counter"><span data-app-copy="copy_d9b0cf7b46aecce51c3b">⛰️ пройдено хайков</span><span class="counter-number">${state.userCard.hikes}</span></div>
             <div style="display: flex; gap: 12px; margin: 0 16px 12px 16px;">
                 <a href="#" class="btn btn-yellow" id="privBtn" style="flex: 1; margin: 0; height: 52px; display: flex; align-items: center; justify-content: center;">привилегии</a>
                 ${cardQrEnabled()
@@ -772,19 +772,19 @@ function renderOwnerHome() {
         <div class="card-container">
             <h2 class="section-title"><span data-app-copy="homeNew">для новичков</span></h2>
             <div class="btn-newcomer" id="newcomerBtn">
-                <span class="newcomer-text">как всё устроено</span>
+                <span data-app-copy="copy_26aa59949c5348029663" class="newcomer-text">как всё устроено</span>
                 <img src="https://i.postimg.cc/hjdtPQgV/sdvsd.png" alt="новичкам" class="newcomer-image">
             </div>
         </div>
         ` : ''}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="false"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span>отчёты ›</a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
-                <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
-                <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
-                <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
-                <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_3af3288af0981024d97e" class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_a55ee37386ec79cbb1c6" class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_466097404dec8f0c4bd5" class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_cbc98219465dbbe01b33" class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>`}
         </div>
         ${isV2() ? '' : renderUpdatesBlock()}
@@ -862,13 +862,13 @@ function renderRdHome() {
         <div id="mastermindSummariesContainer">${renderMastermindSummaries()}</div><div id="surveyHost"></div>
         ${renderWeatherBlock()}
         <div class="card-container">
-            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span class="ml-long">смотреть </span>отчёты ›</a></div>
+            <div class="metrics-header"><h2 class="metrics-title"><span data-app-copy="homeMetrics">клуб в цифрах</span></h2><a href="https://t.me/yaltahiking/148" class="metrics-link dynamic-link" data-url="https://t.me/yaltahiking/148" data-guest="${isGuest}"><span data-app-copy="copy_9b604334fe6dc6d0a124" class="ml-long">смотреть </span>отчёты ›</a></div>
             ${isV2() ? metricsStoryHtml() : `
             <div class="metrics-grid">
-                <div class="metric-item"><div class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
-                <div class="metric-item"><div class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
-                <div class="metric-item"><div class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
-                <div class="metric-item"><div class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_3af3288af0981024d97e" class="metric-label">хайков</div><div class="metric-value" data-metric="hikes">${state.metrics.hikes}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_a55ee37386ec79cbb1c6" class="metric-label">локаций</div><div class="metric-value" data-metric="locations">${state.metrics.locations}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_466097404dec8f0c4bd5" class="metric-label">километров</div><div class="metric-value" data-metric="kilometers">${state.metrics.kilometers}</div></div>
+                <div class="metric-item"><div data-app-copy="copy_cbc98219465dbbe01b33" class="metric-label">знакомств</div><div class="metric-value" data-metric="meetings">${state.metrics.meetings}</div></div>
             </div>`}
         </div>
         ${isV2() ? '' : renderUpdatesBlock()}
@@ -913,7 +913,7 @@ export function renderHome(options = {}) {
     if (existingPopup) existingPopup.remove();
 
     if (state.userCard.status === 'loading') {
-        mainDiv().innerHTML = '<div class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
+        mainDiv().innerHTML = '<div data-app-copy="copy_4483b08e23e1f8748439" class="loader" style="display:flex; justify-content:center; padding:40px 0;">Загрузка...</div>';
         showBottomNav(false);
         return;
     }

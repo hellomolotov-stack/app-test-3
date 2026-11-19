@@ -47,12 +47,12 @@ export function mountHof() {
 function paintBlock(el) {
     el.innerHTML = `
     <div class="card-container hof-card">
-        <div class="hof-tag">техника, которую мы делаем на хайках</div>
-        <div class="hof-title">метод Вима Хофа</div>
-        <div class="hof-text">11 минут дыхания, и тело просыпается, как после холодного душа, а стресс уходит. исследование в журнале PNAS: практика запускает выброс адреналина и гасит воспаление. с этим методом Вим Хоф поставил десятки мировых рекордов, почти два часа просидел во льду и поднялся на Килиманджаро в одних шортах</div>
+        <div data-app-copy="copy_490a77b95fee2bb701dd" class="hof-tag">техника, которую мы делаем на хайках</div>
+        <div data-app-copy="copy_4225766561126639cbb8" class="hof-title">метод Вима Хофа</div>
+        <div data-app-copy="copy_a5c1f4978cd89ea4052e" class="hof-text">11 минут дыхания, и тело просыпается, как после холодного душа, а стресс уходит. исследование в журнале PNAS: практика запускает выброс адреналина и гасит воспаление. с этим методом Вим Хоф поставил десятки мировых рекордов, почти два часа просидел во льду и поднялся на Килиманджаро в одних шортах</div>
         <div class="hof-video" id="hofVideo">
             <img src="assets/hof/cover.jpg" alt="" loading="lazy">
-            <span class="hof-play"></span><span class="hof-vcap">кто такой Вим Хоф 45 с</span>
+            <span class="hof-play"></span><span data-app-copy="copy_a70ce5380204c95b376c" class="hof-vcap">кто такой Вим Хоф 45 с</span>
         </div>
         <button class="hof-btn" id="hofStart">начать дыхание</button>
         <div class="hof-stat">${esc(statLine())}</div>
@@ -103,21 +103,21 @@ function openPrep() {
     const ov = document.createElement('div');
     ov.className = 'hof-ov hof-prep';
     ov.innerHTML = `
-        <div class="hof-top"><span>перед стартом</span><button class="hof-x" aria-label="закрыть">✕</button></div>
+        <div class="hof-top"><span data-app-copy="copy_97134af30acd1f9608be">перед стартом</span><button class="hof-x" aria-label="закрыть">✕</button></div>
         <div class="hof-prep-body">
             <div class="hof-title hof-p-title">один раунд<br>три фазы</div>
-            <div class="hof-p-sub">повторим 3 раза, голос подскажет каждый шаг</div>
+            <div data-app-copy="copy_741a865b867558a882f9" class="hof-p-sub">повторим 3 раза, голос подскажет каждый шаг</div>
             <div class="hof-p-bar" aria-label="дыхание, задержка, восстановление"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
-            <div class="hof-p-legend"><span class="b1">≈2 мин</span><span class="b2" id="hofHoldLegend">до 1,5 мин</span><span class="b3">15 с</span></div>
+            <div class="hof-p-legend"><span data-app-copy="copy_775e522d1d9376df76d9" class="b1">≈2 мин</span><span class="b2" id="hofHoldLegend">до 1,5 мин</span><span data-app-copy="copy_1a61d48e1e251b4ea07d" class="b3">15 с</span></div>
             <div class="hof-p-cards">
-                <div class="hof-p-card is-main"><div class="ic ic-ring" aria-hidden="true"></div><div><b>30 глубоких вдохов</b><span>полный вдох животом и грудью<br>выдох свободно, без усилия</span></div></div>
-                <div class="hof-p-card"><div class="ic ic-timer" id="hofHoldIcon" aria-hidden="true">1:30</div><div><b>задержка на выдохе</b><span id="hofHoldInstruction">следуй голосу<br>можно перейти к вдоху раньше</span></div></div>
-                <div class="hof-p-card"><div class="ic ic-15" aria-hidden="true">15</div><div><b>вдох и держим 15 с</b><span>восстановление<br>и следующий раунд</span></div></div>
+                <div class="hof-p-card is-main"><div class="ic ic-ring" aria-hidden="true"></div><div><b data-app-copy="copy_ffd85f780b9f9ca2313e">30 глубоких вдохов</b><span>полный вдох животом и грудью<br>выдох свободно, без усилия</span></div></div>
+                <div class="hof-p-card"><div class="ic ic-timer" id="hofHoldIcon" aria-hidden="true">1:30</div><div><b data-app-copy="copy_efb0f4189f9708ee7a6c">задержка на выдохе</b><span id="hofHoldInstruction">следуй голосу<br>можно перейти к вдоху раньше</span></div></div>
+                <div class="hof-p-card"><div class="ic ic-15" aria-hidden="true">15</div><div><b data-app-copy="copy_4e5a6c206918c16c091f">вдох и держим 15 с</b><span>восстановление<br>и следующий раунд</span></div></div>
             </div>
-            <div class="hof-mode-label">выбери свой режим</div>
+            <div data-app-copy="copy_80c0006e302459340da6" class="hof-mode-label">выбери свой режим</div>
             <div class="hof-modes" role="group" aria-label="режим дыхания">
-                <button type="button" class="hof-mode" data-mode="guided" aria-pressed="true" aria-describedby="hofGuidedCaption">тренировка</button>
-                <button type="button" class="hof-mode" data-mode="personal" aria-pressed="false" aria-describedby="hofPersonalCaption">в своём темпе</button>
+                <button data-app-copy="copy_4b13a4b1b2059c8820ab" type="button" class="hof-mode" data-mode="guided" aria-pressed="true" aria-describedby="hofGuidedCaption">тренировка</button>
+                <button data-app-copy="copy_61353618197ce6487ce0" type="button" class="hof-mode" data-mode="personal" aria-pressed="false" aria-describedby="hofPersonalCaption">в своём темпе</button>
             </div>
             <div class="hof-mode-captions">
                 <div id="hofGuidedCaption" data-mode-caption="guided" data-active="true">осваивай технику<br>голос ведёт каждый шаг</div>
@@ -278,7 +278,7 @@ function openSession(mode = 'guided') {
             $('hofBig').textContent = '';
             $('hofSmall').textContent = '';
             $('hofPhase').textContent = p.kind === 'end' ? 'пусть дыхание нормализуется' : (p.label || 'слушай инструкцию');
-            if (p.kind === 'end') $('hofHist').innerHTML = '<span>пошевели пальцами рук и ног, не торопись вставать</span>';
+            if (p.kind === 'end') $('hofHist').innerHTML = '<span data-app-copy="copy_2e5e08682fca50e48a72">пошевели пальцами рук и ног, не торопись вставать</span>';
         }
         if (!finished) raf = requestAnimationFrame(paint);
     };
@@ -311,16 +311,16 @@ function openSession(mode = 'guided') {
         const isRecord = best > 0 && best > record && prevHolds.length > 0;
         const dur = sessionDuration();
         const rows = list.map((h, i) => `<div class="hs-row"><span>раунд ${i + 1}</span><div class="hs-bar"><b style="width:${Math.max(6, Math.round(h / top * 100))}%"></b></div><em>${mmss(h)}</em></div>`).join('');
-        const compare = !prevHolds.length ? '<div class="hs-note">первый личный результат</div>'
+        const compare = !prevHolds.length ? '<div data-app-copy="copy_8e85a54ed08954c06c4a" class="hs-note">первый личный результат</div>'
             : `<div class="hs-rec"><div>лучшая задержка<b${isRecord ? ' class="is-new"' : ''}>${mmss(best)}${isRecord ? ' рекорд' : ''}</b></div><div class="r">${isRecord ? 'в прошлый раз' : 'твой рекорд'}<b>${mmss(isRecord ? last || record : record)}</b></div></div>`;
         ov.querySelector('.hof-center').innerHTML = `<div class="hof-sum">
             <div class="hs-chk">✓</div>
-            <div class="hs-t1">три раунда пройдены</div>
+            <div data-app-copy="copy_95110b1b0bf7c97dffde" class="hs-t1">три раунда пройдены</div>
             <div class="hs-t2">${Math.floor(dur / 60)} мин ${dur % 60} с<br>${nth}-я сессия</div>
             ${personal && rows ? `<div class="hs-card">${rows}${compare}</div>` : '<div class="hs-note">тренировка завершена<br>личное время не записывали</div>'}
         </div>`;
         ov.querySelector('.hof-ctrl').innerHTML = `<div class="hs-actions">
-            <button type="button" class="hs-badge" id="hsBadge" disabled><i></i><span>сохраняю…</span></button>
+            <button type="button" class="hs-badge" id="hsBadge" disabled><i></i><span data-app-copy="copy_23d39ccf3a3950788d22">сохраняю…</span></button>
             <button type="button" class="hs-close" id="hsClose">закрыть</button></div>`;
         ov.querySelector('#hsClose').addEventListener('click', () => { haptic(); close(); });
         ov.querySelector('#hsBadge').addEventListener('click', async () => {

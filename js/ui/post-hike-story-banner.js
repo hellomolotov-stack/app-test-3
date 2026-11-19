@@ -34,7 +34,7 @@ export function photoBannerHtml(hasTrack) {
     if (dismissed.has(key)) return '';
     try { if (localStorage.getItem(key)) return ''; } catch {}
     return `<button type="button" class="post-hike-story-banner" data-story-hike="${hike.date}">
-        <span><strong>сделать<br>сторис <i aria-hidden="true">↗</i></strong><small>фото с треком и высотой</small></span>
+        <span><strong>сделать<br>сторис <i aria-hidden="true">↗</i></strong><small data-app-copy="copy_c78c35da87a1c67b2c2d">фото с треком и высотой</small></span>
         <img src="/assets/post-hike-story.webp" alt="" width="92" height="163">
     </button>`;
 }

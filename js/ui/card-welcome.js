@@ -30,16 +30,16 @@ export function showCardWelcome({ name = '', cardUrl = '', plan = 'permanent', h
     const conf = Array.from({ length: 18 }, (_, i) => `<i class="cw-conf" style="left:${i % 2 ? Math.random() * 14 : 86 + Math.random() * 12}%;top:${10 + Math.random() * 330}px;background:${['#D9FD19', '#fff', '#7fd0ff', '#ff8fb8', '#ffd34d'][i % 5]};transform:rotate(${Math.random() * 360}deg)"></i>`).join('');
     el.innerHTML = `
         <div class="cw-scroll">${conf}
-            <div class="cw-k">добро пожаловать в клуб</div>
+            <div data-app-copy="copy_a12fe1672b0e90e0cd30" class="cw-k">добро пожаловать в клуб</div>
             <h1>${name ? esc(name) + ', карта твоя' : 'карта твоя'} 🎉</h1>
-            <div class="cw-sub">теперь ты член хайкинг-клуба интеллигенции. вот что у тебя есть с этой минуты</div>
+            <div data-app-copy="copy_12e5565278e55aa64d34" class="cw-sub">теперь ты член хайкинг-клуба интеллигенции. вот что у тебя есть с этой минуты</div>
             ${cardUrl ? `<div class="cw-stage"><div class="cw-card"><img src="${esc(cardUrl)}" alt="карта интеллигента"></div></div>` : ''}
             <div class="cw-meta"><span>${plan === 'season' ? 'на год' : 'бессрочная'}</span>${hikes > 0 ? `<span>пройдено: <b>${hikes}</b> ${hikesWord(hikes)}</span>` : ''}</div>
-            <div class="cs-sec">твои привилегии</div>
+            <div data-app-copy="copy_80662cd66494b0e63885" class="cs-sec">твои привилегии</div>
             ${PERKS.map(([e, t, d]) => `<div class="cs-ben"><div class="cs-e">${e}</div><div><b>${t}</b><span>${d}</span></div></div>`).join('')}
             <div style="height:96px"></div>
         </div>
-        <div class="cw-foot"><button class="btn btn-yellow cw-go">выбрать следующий хайк</button></div>`;
+        <div class="cw-foot"><button data-app-copy="copy_37c2bab5c0138c71af9e" class="btn btn-yellow cw-go">выбрать следующий хайк</button></div>`;
     document.body.appendChild(el);
     try { showConfetti(); } catch (e) {}
     el.querySelector('.cw-go').addEventListener('click', () => {
@@ -85,10 +85,10 @@ function showCardPaid() {
     const el = document.createElement('div');
     el.className = 'modal-overlay cw-paid';
     el.innerHTML = `<div class="modal-content" style="max-width:340px;text-align:center">
-        <div style="font-size:44px;line-height:1">🎉</div>
-        <h2 style="margin:10px 0 6px">оплата прошла – карта твоя</h2>
-        <p style="margin:0 0 16px;opacity:.75;line-height:1.4">привилегии уже работают. саму карту с твоим номером мы нарисуем и добавим в приложение – обычно в течение дня</p>
-        <button class="btn btn-yellow" data-close style="width:100%">отлично</button></div>`;
+        <div data-app-copy="copy_6146299cd54818a0e659" style="font-size:44px;line-height:1">🎉</div>
+        <h2 data-app-copy="copy_93172b95871940e5e48a" style="margin:10px 0 6px">оплата прошла – карта твоя</h2>
+        <p data-app-copy="copy_f133025d29519fd9c7e3" style="margin:0 0 16px;opacity:.75;line-height:1.4">привилегии уже работают. саму карту с твоим номером мы нарисуем и добавим в приложение – обычно в течение дня</p>
+        <button data-app-copy="copy_a83539dd668af2bdec24" class="btn btn-yellow" data-close style="width:100%">отлично</button></div>`;
     document.body.appendChild(el);
     try { showConfetti(); } catch (e) {}
     log('карта оплачена: ждём картинку', false, state.user);

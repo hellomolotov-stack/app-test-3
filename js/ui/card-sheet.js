@@ -34,7 +34,7 @@ function partnersHtml() {
     const shortName = t => String(t).replace(/^(магазин оригинальной обуви|экипировочный центр|технологичная хайкинг-одежда|кофейня|тематическое кафе|косметика и парфюмерия|конный клуб|маникюрный салон|барбершоп)\s+/i, '');
     const chips = list.slice(0, 9).map(p => `<span>${esc(shortName(p.title))}${perk(p.description) ? ` <b>${esc(perk(p.description))}</b>` : ''}</span>`).join('');
     const more = list.length > 9 ? `<span>+${list.length - 9}</span>` : '';
-    return `<div class="cs-sec">скидки партнёров в Ялте и онлайне</div><div class="cs-parts">${chips}${more}</div>`;
+    return `<div data-app-copy="copy_109d5c406973117fa56d" class="cs-sec">скидки партнёров в Ялте и онлайне</div><div class="cs-parts">${chips}${more}</div>`;
 }
 
 // «уже 20+ владельцев карты» – с настоящими аватарками участников, если они загружены
@@ -50,7 +50,7 @@ function statsHtml() {
     const m = state.metrics || {};
     const items = [[m.hikes, 'хайков'], [m.kilometers, 'км вместе'], [m.meetings, 'встреч']].filter(([v]) => v);
     if (!items.length) return '';
-    return `<div class="cs-sec">клуб в цифрах</div><div class="cs-stats">${items.map(([v, l]) => `<div><b>${esc(v)}</b><span>${l}</span></div>`).join('')}</div>`;
+    return `<div data-app-copy="homeMetrics" class="cs-sec">клуб в цифрах</div><div class="cs-stats">${items.map(([v, l]) => `<div><b>${esc(v)}</b><span>${l}</span></div>`).join('')}</div>`;
 }
 
 // 3D: карта сама слегка покачивается, а под пальцем наклоняется за ним
@@ -92,8 +92,8 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
     const cityHtml = ev ? `
                 <div class="cs-city">
                     <div class="cs-city-k">${escT(ev.emoji || '🏙️')} ${evDay}</div>
-                    <h2>в городе мы собираемся своими</h2>
-                    <p>так за столом остаются те, с кем хочется говорить дольше, чем длится вечер. карта интеллигента – твой вход на такие встречи и на все хайки сезона</p>
+                    <h2 data-app-copy="copy_544653fc0dd739395ee6">в городе мы собираемся своими</h2>
+                    <p data-app-copy="copy_aa587a73fd09eed4e04b">так за столом остаются те, с кем хочется говорить дольше, чем длится вечер. карта интеллигента – твой вход на такие встречи и на все хайки сезона</p>
                     <div class="cs-city-ev"><i>${escT(ev.emoji || '🏙️')}</i><div><b>${escT(ev.title)}</b><small>${Number(ev.capacity) > 0 ? `${Number(ev.capacity)} мест · ` : ''}запишем сразу после оплаты</small></div></div>
                 </div>` : '';
     const buyLabel = (price, isPermanent) => cityEvent ? `хочу с вами · ${rub(price)}` : isPermanent ? `купить навсегда · ${rub(price)}` : `купить на год · ${rub(price)}`;
@@ -112,45 +112,45 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 <div class="cs-hero${ev ? ' is-under-city' : ''}">
                     <div class="cs-stage"><div class="cs-card${scratch ? ' cs-scratch' : ''}">${scratch ? cardScratchHtml() : `<img src="${CARD_IMG}" alt="карта члена клуба хайкинг интеллигенции">`}</div></div>
                     <h2>${gift ? 'подари новый опыт' : ev ? 'карта интеллигента' : 'интеллигентное окружение'}</h2>
-                    <div class="cs-club">в главном хайкинг-клубе большой Ялты</div>
+                    <div data-app-copy="copy_404c32361a1405373eeb" class="cs-club">в главном хайкинг-клубе большой Ялты</div>
                     <p>${gift ? 'подари другу то, что есть у тебя: все хайки клуба, закрытые события и людей, с которыми хочется идти дальше' : 'карта интеллигента – это все хайки клуба, закрытые события и люди, с которыми хочется идти дальше'}</p>
                     ${membersHtml()}
                 </div>
 
-                ${ev ? '' : '<div class="cs-why">🌱 клуб растёт вместе с владельцами карты. всё новое, от маршрутов до этого приложения, появляется благодаря их поддержке</div>'}
-                <div class="cs-sec">что внутри</div>
-                <div class="cs-ben"><div class="cs-e">🥾</div><div><b>все хайки клуба</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
-                <div class="cs-ben"><div class="cs-e">🎟️</div><div><b>запись даже когда мест нет</b><span>набор закрыт для всех, но не для владельцев карты – место для тебя найдётся</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🤝</div><div><b>свой +1 на хайк</b><span>бери с собой друга, если он ещё ни разу не был с нами</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🍕</div><div><b>события в городе</b><span>приглашаем на домашнюю пиццу в гости, устраиваем пикники, собираемся в заведениях</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🏷️</div><div><b>привилегии в городе и онлайне</b><span>особые условия для членов клуба в лучших местах и магазинах города</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🧠</div><div><b>мастермайнды на вершинах</b><span>бронируй свой запрос и получай саммари каждой встречи</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🫆</div><div><b>профили интеллигентов</b><span>заранее узнаешь, кто идёт: профессии, увлечения, с кем обсудить идею</span></div></div>
-                <div class="cs-ben"><div class="cs-e">🛡️</div><div><b>свободный интернет</b><span>наше приложение по обходу блокировок, чтобы телеграм и весь интернет работали как раньше</span></div></div>
+                ${ev ? '' : '<div data-app-copy="copy_335dfc582ce43aef8b2a" class="cs-why">🌱 клуб растёт вместе с владельцами карты. всё новое, от маршрутов до этого приложения, появляется благодаря их поддержке</div>'}
+                <div data-app-copy="copy_e4be10bf5d1518297751" class="cs-sec">что внутри</div>
+                <div class="cs-ben"><div data-app-copy="copy_fcdffa450af74915bce1" class="cs-e">🥾</div><div><b data-app-copy="copy_4dad7a3a49d63811e47c">все хайки клуба</b><span>без билетов и оплат – просто записываешься. <em>обычно ${rub(TICKET_PRICE)} за хайк</em></span></div></div>
+                <div class="cs-ben"><div data-app-copy="copy_a6296025843caf7069a8" class="cs-e">🎟️</div><div><b data-app-copy="copy_25193aa13c4c7ef25960">запись даже когда мест нет</b><span data-app-copy="copy_c94038805a1c44334329">набор закрыт для всех, но не для владельцев карты – место для тебя найдётся</span></div></div>
+                <div class="cs-ben"><div data-app-copy="copy_68b979d698eb1a5394be" class="cs-e">🤝</div><div><b data-app-copy="copy_b82cb95a585d9783ce35">свой +1 на хайк</b><span data-app-copy="copy_80888a9390178049292d">бери с собой друга, если он ещё ни разу не был с нами</span></div></div>
+                <div class="cs-ben"><div data-app-copy="copy_18018b0acb3f00af268d" class="cs-e">🍕</div><div><b data-app-copy="copy_26ba18fbdafa13b4aec8">события в городе</b><span data-app-copy="copy_349b8c8b71fa06d8b995">приглашаем на домашнюю пиццу в гости, устраиваем пикники, собираемся в заведениях</span></div></div>
+                <div class="cs-ben"><div data-app-copy="copy_d6c1f600929824f71d36" class="cs-e">🏷️</div><div><b data-app-copy="copy_1269503f029d228385a1">привилегии в городе и онлайне</b><span data-app-copy="copy_407e9a68242bdbc9c36c">особые условия для членов клуба в лучших местах и магазинах города</span></div></div>
+                <div class="cs-ben"><div data-app-copy="copy_bf0e823c81b87c5de796" class="cs-e">🧠</div><div><b data-app-copy="copy_c37766886f53dd57d499">мастермайнды на вершинах</b><span data-app-copy="copy_b7fe4d3f1aa342090d9c">бронируй свой запрос и получай саммари каждой встречи</span></div></div>
+                <div class="cs-ben"><div data-app-copy="copy_174d66d52666a7d3127e" class="cs-e">🫆</div><div><b data-app-copy="copy_8a19662283e99594003f">профили интеллигентов</b><span data-app-copy="copy_62040bcfd2412205404b">заранее узнаешь, кто идёт: профессии, увлечения, с кем обсудить идею</span></div></div>
+                <div class="cs-ben"><div data-app-copy="copy_9fc96994301719e129f9" class="cs-e">🛡️</div><div><b data-app-copy="copy_9f67678ac653429e95c2">свободный интернет</b><span data-app-copy="copy_2e08f824527e774a4fa7">наше приложение по обходу блокировок, чтобы телеграм и весь интернет работали как раньше</span></div></div>
 
                 ${partnersHtml()}
                 ${statsHtml()}
 
                 ${gift ? `
-                <div class="cs-sec">как подарить</div>
+                <div data-app-copy="copy_c9244b77d0f04fb7d326" class="cs-sec">как подарить</div>
                 <div class="cs-gift-steps">
-                    <div><i>1</i><span>оплачиваешь карту</span></div>
-                    <div><i>2</i><span>получаешь ссылку-подарок</span></div>
-                    <div><i>3</i><span>друг открывает её и видит, что карта от тебя</span></div>
+                    <div><i>1</i><span data-app-copy="copy_deeb110097c1d50e53ad">оплачиваешь карту</span></div>
+                    <div><i>2</i><span data-app-copy="copy_e6b1836dd61a888743a3">получаешь ссылку-подарок</span></div>
+                    <div><i>3</i><span data-app-copy="copy_f8267047b758ae74d416">друг открывает её и видит, что карта от тебя</span></div>
                 </div>
                 ` : ''}
-                <div class="cs-sec">выбери карту</div>
+                <div data-app-copy="copy_5ebc2aa99a9411db2fc2" class="cs-sec">выбери карту</div>
                 <div class="cs-plans">
                     <button type="button" class="cs-plan is-on" data-plan="permanent">
-                        <span class="cs-hit">навсегда</span>
-                        <small>бессрочная</small>
+                        <span data-app-copy="copy_5be9c50029ff85dcde24" class="cs-hit">навсегда</span>
+                        <small data-app-copy="copy_d3bce29ed968011207b6">бессрочная</small>
                         <b>${rub(permanent)}</b>
-                        <span>один раз – и клуб твой без продлений</span>
+                        <span data-app-copy="copy_d3c7e467bd69323e8818">один раз – и клуб твой без продлений</span>
                     </button>
                     <button type="button" class="cs-plan" data-plan="season">
-                        <small>на год</small>
+                        <small data-app-copy="copy_fe91896ae3681ef8b036">на год</small>
                         <b>${rub(season)}</b>
-                        <span>действует год с момента оплаты</span>
+                        <span data-app-copy="copy_9545a05f604dd913e379">действует год с момента оплаты</span>
                     </button>
                 </div>
                 ${gift ? '' : '<button type="button" class="cs-support" id="csSupport">оплачивал билет и не успел сходить? напиши нам – зачтём его в стоимость карты</button>'}
@@ -158,7 +158,7 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             <div class="cs-bar">
                 <button type="button" class="btn btn-yellow cs-buy" id="csBuy">${gift ? `подарить бессрочную · ${rub(permanent)}` : buyLabel(permanent, true)}</button>
                 ${gift ? '' : `<button type="button" class="btn cs-buy cs-buy-season" id="csBuySeason">купить на год · ${rub(season)}</button>`}
-                ${ev ? '<div class="cs-city-note">после оплаты ты сразу в списке гостей</div>' : ''}
+                ${ev ? '<div data-app-copy="copy_a7aa1ad0d347a09d321d" class="cs-city-note">после оплаты ты сразу в списке гостей</div>' : ''}
                 ${isReturning || gift || !allowTicket || cityEvent ? '' : `<button type="button" class="cs-ticket" id="csTicket">сначала схожу по билету · ${rub(TICKET_PRICE)}</button>`}
                 ${SPLIT_NOTE}
             </div>
@@ -266,12 +266,12 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
                 const tw = `${n} ${a === 1 && b !== 11 ? 'билет' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'билета' : 'билетов'}`;
                 overlay.querySelector('.cs-members')?.insertAdjacentHTML('afterend', `
                 <div class="cs-circle">
-                    <div class="cs-circle-tag">🤝 приглашение в близкий круг</div>
-                    <p>мы рады знакомству с тобой и хотим видеть тебя в нашем близком кругу. поэтому засчитываем все твои билеты в карту: хайки с нами должны быть для тебя свободными, без билетов</p>
+                    <div data-app-copy="copy_ecdb74343caa9f4c74b8" class="cs-circle-tag">🤝 приглашение в близкий круг</div>
+                    <p data-app-copy="copy_8da7763628d5c3219d47">мы рады знакомству с тобой и хотим видеть тебя в нашем близком кругу. поэтому засчитываем все твои билеты в карту: хайки с нами должны быть для тебя свободными, без билетов</p>
                     ${n ? `<div class="cs-circle-sum">твои ${tw} – <b>${rub(offer.tickets_sum)}</b> – уже учтены</div>` : ''}
                 </div>`);
                 const plans = overlay.querySelector('.cs-plans');
-                if (plans) plans.outerHTML = `<div class="cs-plans is-offer"><div class="cs-plan is-on"><small>бессрочная · с учётом билетов</small><b><s>${rub(full)}</s> ${rub(price)}</b><span>один раз – и клуб твой без продлений</span></div></div>`;
+                if (plans) plans.outerHTML = `<div class="cs-plans is-offer"><div class="cs-plan is-on"><small data-app-copy="copy_5aadb72f9106b9e165b0">бессрочная · с учётом билетов</small><b><s>${rub(full)}</s> ${rub(price)}</b><span data-app-copy="copy_d3c7e467bd69323e8818">один раз – и клуб твой без продлений</span></div></div>`;
                 overlay.querySelector('.cs-note')?.remove();
                 plan = 'offer';
                 selectedPrice = price;
@@ -282,13 +282,13 @@ export function openCardSheet({ source = 'главная', hikeDate = '', hikeTi
             log('карта: показали спецпредложение', true, state.user, { source });
             overlay.querySelector('.cs-members')?.insertAdjacentHTML('afterend', `
                 <div class="cs-offer">
-                    <div class="cs-offer-tag">🎁 спецпредложение для тебя</div>
+                    <div data-app-copy="copy_a1e4d63635fd74a08702" class="cs-offer-tag">🎁 спецпредложение для тебя</div>
                     <div class="cs-offer-price"><b>${rub(price)}</b> <s>${rub(full)}</s></div>
-                    <div class="cs-offer-sub">бессрочная карта для тех, кто уже ходил с нами</div>
+                    <div data-app-copy="copy_c562efce545b6602b617" class="cs-offer-sub">бессрочная карта для тех, кто уже ходил с нами</div>
                     <div class="cs-offer-time">осталось <span id="csOfferLeft">${left()}</span></div>
                 </div>`);
             const plans = overlay.querySelector('.cs-plans');
-            if (plans) plans.outerHTML = `<div class="cs-plans is-offer"><div class="cs-plan is-on"><span class="cs-hit">−${rub(full - price)}</span><small>бессрочная · спецпредложение</small><b><s>${rub(full)}</s> ${rub(price)}</b><span>действует ещё <span class="cs-left2">${left()}</span></span></div></div>`;
+            if (plans) plans.outerHTML = `<div class="cs-plans is-offer"><div class="cs-plan is-on"><span class="cs-hit">−${rub(full - price)}</span><small data-app-copy="copy_71abf793c0579e9db2cb">бессрочная · спецпредложение</small><b><s>${rub(full)}</s> ${rub(price)}</b><span>действует ещё <span class="cs-left2">${left()}</span></span></div></div>`;
             overlay.querySelector('.cs-note')?.remove();
             plan = 'offer';
             selectedPrice = price;

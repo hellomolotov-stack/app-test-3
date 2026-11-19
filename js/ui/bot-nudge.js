@@ -165,7 +165,7 @@ export function mountBotTab() {
     wrap.innerHTML = `
         <span class="ai-island-spark">✦</span>
         <span class="ai-island-text"></span>
-        <span class="ai-island-go">ответить ›</span>
+        <span data-app-copy="copy_cabbd4587bef1fa31d95" class="ai-island-go">ответить ›</span>
         <button class="ai-island-close" aria-label="закрыть">✕</button>`;
     document.body.appendChild(wrap);
     bubble = wrap;

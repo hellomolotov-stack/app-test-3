@@ -517,8 +517,8 @@ function showPosterModal(blob, fileName) {
         <div class="modal-content animated pmap-modal-content">
             <button class="modal-close" type="button" aria-label="закрыть">&times;</button>
             <img class="pmap-poster" alt="моя карта маршрутов" src="${url}">
-            <div class="pmap-modal-hint">зажми картинку, чтобы сохранить, или поделись кнопкой</div>
-            <button class="btn btn-yellow pmap-modal-share" type="button">поделиться</button>
+            <div data-app-copy="copy_6a2143aa044de18ccc24" class="pmap-modal-hint">зажми картинку, чтобы сохранить, или поделись кнопкой</div>
+            <button data-app-copy="copy_b459bc23bd13be189767" class="btn btn-yellow pmap-modal-share" type="button">поделиться</button>
         </div>`;
     const close = () => {
         overlay.classList.remove('visible');
@@ -659,7 +659,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
     container.innerHTML = `
         <div class="card-container pmap-card">
             <div class="pmap-head">
-                <h2 class="section-title">мой Крым</h2>
+                <h2 data-app-copy="copy_bfcd570a8e24ce6c53fe" class="section-title">мой Крым</h2>
                 <div class="pmap-count">${count}<small> / ${total}</small></div>
             </div>
             <div class="pmap-sub">${complete ? 'весь южный берег открыт' : `маршрутов пройдено · открыто ${percent}% гор`}</div>
@@ -671,7 +671,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
             </div>
             <div class="pmap-wrap ${complete ? 'pmap-complete' : ''}">
                 <div class="pmap-map" id="personalRoutesMap"></div>
-                <div class="pmap-loading">облака собираются…</div>
+                <div data-app-copy="copy_b0873b3cd5c1988b332c" class="pmap-loading">облака собираются…</div>
                 <button class="pmap-share" id="personalMapShare" type="button">↗ в сторис</button>
                 <div class="pmap-hint">${complete ? 'весь южный берег открыт' : 'облака расходятся там, где ты уже был'}</div>
             </div>
@@ -817,7 +817,7 @@ export async function renderPersonalRoutesMap(container, options = {}) {
             } else {
                 addLabel(route, 'c', `☁ ${route.title}`, () => {
                     const text = String(route.description || '').slice(0, 140);
-                    showPopup(labelPoint(route), `<b>☁ ${escapeHtml(route.title)}</b><br>${escapeHtml(text)}${text.length === 140 ? '…' : ''}<br><span style="opacity:.6">пока не в расписании — следи за анонсами</span>`);
+                    showPopup(labelPoint(route), `<b>☁ ${escapeHtml(route.title)}</b><br>${escapeHtml(text)}${text.length === 140 ? '…' : ''}<br><span data-app-copy="copy_21f5900aa91e661afa60" style="opacity:.6">пока не в расписании — следи за анонсами</span>`);
                 });
             }
         });

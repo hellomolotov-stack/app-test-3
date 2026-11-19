@@ -1,4 +1,19 @@
-const selector = '[data-app-copy]';
+const selector = '[data-app-copy], [data-app-copy-placeholder], [data-app-copy-tail]';
+
+function copyField(node) {
+    if (node.dataset.appCopyPlaceholder) return {
+        key: node.dataset.appCopyPlaceholder,
+        get: () => node.placeholder,
+        set: text => { node.placeholder = text; },
+    };
+    if (node.dataset.appCopyTail) {
+        const tail = node.lastChild;
+        if (tail?.nodeType !== 3) return null;
+        return { key: node.dataset.appCopyTail, get: () => tail.nodeValue, set: text => { tail.nodeValue = text; } };
+    }
+    if (node.childElementCount) return null;
+    return { key: node.dataset.appCopy, get: () => node.textContent, set: text => { node.textContent = text; } };
+}
 const adminIds = new Set(['163665735', '7845375334']);
 const endpoint = '/api/club-content?copy=1';
 
@@ -8,10 +23,12 @@ export function initCopyEditor(tg) {
     let button;
     function paint() {
         for (const node of document.querySelectorAll(selector)) {
-            if (!defaults.has(node)) defaults.set(node, node.textContent);
-            const key = node.dataset.appCopy;
+            const field = copyField(node);
+            if (!field?.key) continue;
+            if (!defaults.has(node)) defaults.set(node, field.get());
+            const { key } = field;
             const text = draft?.key === key ? draft.text : typeof saved[key] === 'string' ? saved[key] : defaults.get(node);
-            if (node.textContent !== text) node.textContent = text;
+            if (field.get() !== text) field.set(text);
         }
     }
     async function read() {
@@ -44,7 +61,7 @@ export function initCopyEditor(tg) {
     dialog.innerHTML = `
       <form>
         <b>текст в приложении</b>
-        <label>текст и эмоджи<input aria-label="текст и эмоджи" maxlength="240" required type="text"></label>
+        <label>текст и эмоджи<input aria-label="текст и эмоджи" maxlength="500" required type="text"></label>
         <p>изменения видны только тебе до публикации</p>
         <div class="copy-error" role="status"></div>
         <div class="copy-actions">
@@ -80,11 +97,12 @@ export function initCopyEditor(tg) {
     document.addEventListener('click', e => {
         if (!editing || dialog.open || e.target === button) return;
         const target = e.target.closest?.(selector);
-        if (!target) return;
+        const field = target && copyField(target);
+        if (!field?.key) return;
         e.preventDefault();
         e.stopImmediatePropagation();
-        input.value = target.textContent;
-        draft = { key: target.dataset.appCopy, text: input.value };
+        input.value = field.get();
+        draft = { key: field.key, text: input.value };
         error.textContent = '';
         restore.hidden = true;
         revision = null;

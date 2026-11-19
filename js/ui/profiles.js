@@ -60,7 +60,7 @@ async function getNextHikeForUser(userId) {
 
 async function renderProfileCard(profile, isBlurred = false) {
     const initial = escapeHtml((profile.name?.charAt(0) || '?').toUpperCase());
-    const guestBadge = profile.guest === true && !isBlurred ? '<span class="profile-guest-badge">гость</span>' : '';
+    const guestBadge = profile.guest === true && !isBlurred ? '<span data-app-copy="copy_f60b03e7667fb2ed11b4" class="profile-guest-badge">гость</span>' : '';
     const avatarHtml = profile.avatarUrl
         ? `<div class="profile-avatar-wrap"><img src="${escapeHtml(profile.avatarUrl)}" alt="" class="profile-avatar" onerror="this.hidden=true;this.nextElementSibling.hidden=false;"><div class="profile-avatar-placeholder" hidden>${initial}</div>${guestBadge}</div>`
         : `<div class="profile-avatar-wrap"><div class="profile-avatar-placeholder">${initial}</div>${guestBadge}</div>`;
@@ -71,13 +71,13 @@ async function renderProfileCard(profile, isBlurred = false) {
     let nextHikeHtml = '';
     if (!isBlurred && profile.userId) {
         const next = await getNextHikeForUser(profile.userId);
-        if (next) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><a href="#" class="profile-hike-link" data-hike-date="${next.date}">${formatDateForDisplay(next.date)} · ${next.title}</a>`;
-        else nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">${participantsLoadFailed ? 'не удалось загрузить записи' : 'пока нет записей'}</span>`;
-    } else if (!isBlurred) nextHikeHtml = `<div class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
+        if (next) nextHikeHtml = `<div data-app-copy="copy_e1fa0d6af8bab8ea7413" class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><a href="#" class="profile-hike-link" data-hike-date="${next.date}">${formatDateForDisplay(next.date)} · ${next.title}</a>`;
+        else nextHikeHtml = `<div data-app-copy="copy_e1fa0d6af8bab8ea7413" class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span style="color:rgba(255,255,255,0.6);font-size:14px;">${participantsLoadFailed ? 'не удалось загрузить записи' : 'пока нет записей'}</span>`;
+    } else if (!isBlurred) nextHikeHtml = `<div data-app-copy="copy_e1fa0d6af8bab8ea7413" class="profile-section-title" style="color:var(--yellow);">идёт на хайк</div><span data-app-copy="copy_f0855d80da2165451224" style="color:rgba(255,255,255,0.6);font-size:14px;">скоро узнаем</span>`;
 
     const favoriteRoutes = !isBlurred && profile.userId ? getFavoriteRoutesForUser(profile.userId) : [];
     const favoritesHtml = favoriteRoutes.length
-        ? `<div class="profile-section-title" style="color:var(--yellow);">любимые маршруты</div><div class="profile-section-text">${favoriteRoutes.map(route => escapeHtml(route.title)).join(' · ')}</div>`
+        ? `<div data-app-copy="copy_f1c7f2f7b7e78656eea7" class="profile-section-title" style="color:var(--yellow);">любимые маршруты</div><div class="profile-section-text">${favoriteRoutes.map(route => escapeHtml(route.title)).join(' · ')}</div>`
         : '';
 
     const contactButtons = (!isBlurred && profile.userId) ? `
@@ -89,8 +89,8 @@ async function renderProfileCard(profile, isBlurred = false) {
 
     const medals = !isBlurred && achievementsVisible() ? medalsByUser[String(profile.userId)] || [] : [];
     // в карточке – три последние медали и «+N»: повод заговорить («ты тоже промок на Демерджи?»)
-    const medalsHtml = medals.length ? `<div class="profile-section-title">${medals.length} ${medals.length % 10 === 1 && medals.length % 100 !== 11 ? 'значок' : medals.length % 10 >= 2 && medals.length % 10 <= 4 && (medals.length % 100 < 10 || medals.length % 100 >= 20) ? 'значка' : 'значков'}</div>${medalStripHtml(medals.slice(0, 3), true).replace(/<\/div>$/, medals.length > 3 ? `<button type="button" class="medal-miniature medal-more" data-medal="3" aria-label="все значки"><b>+${medals.length - 3}</b><span>ещё</span></button></div>` : '</div>')}` : '';
-    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span class="status-tag status-tag-friendship">дружба</span>'}</div></div><div class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
+    const medalsHtml = medals.length ? `<div class="profile-section-title">${medals.length} ${medals.length % 10 === 1 && medals.length % 100 !== 11 ? 'значок' : medals.length % 10 >= 2 && medals.length % 10 <= 4 && (medals.length % 100 < 10 || medals.length % 100 >= 20) ? 'значка' : 'значков'}</div>${medalStripHtml(medals.slice(0, 3), true).replace(/<\/div>$/, medals.length > 3 ? `<button type="button" class="medal-miniature medal-more" data-medal="3" aria-label="все значки"><b>+${medals.length - 3}</b><span data-app-copy="copy_ac6d35c17aca84acbda2">ещё</span></button></div>` : '</div>')}` : '';
+    const html = `<div class="profile-card ${isBlurred?'profile-preview-card':''}" data-user-id="${profile.userId}">${avatarHtml}<div class="profile-name-status"><span class="profile-name">${profile.name||'Участник'}</span><div class="profile-status-tags">${statusTags||'<span data-app-copy="copy_43cb7b94b18baa173a11" class="status-tag status-tag-friendship">дружба</span>'}</div></div><div data-app-copy="copy_62c85c26ce9c942ed121" class="profile-section-title" style="color:var(--yellow);">увлечения</div><div class="profile-section-text">${profile.hobbies||'—'}</div><div data-app-copy="copy_c24f64f30028c9240da6" class="profile-section-title" style="color:var(--yellow);">профессия</div><div class="profile-section-text">${profile.profession||'—'}</div>${nextHikeHtml}${favoritesHtml}${medalsHtml}${contactButtons}</div>`;
 
     // Грубая оценка высоты карточки для балансировки колонок в шахматном порядке –
     // без неё карточки просто чередуются по индексу и «падают» не туда, где есть место.
@@ -218,7 +218,7 @@ export async function renderProfiles() {
         const placeholders = await Promise.all(Array.from({ length: placeholderCount }, () =>
             renderProfileCard({ name: 'Участник', hobbies: 'путешествия и знакомства', profession: 'своё дело' }, true)));
         html = shouldAnimate ? wrapInfiniteScroll(renderProfilesColumns(placeholders))
-            : '<div class="profiles-empty" role="status">пока нет профилей</div>';
+            : '<div data-app-copy="copy_afb41ef20ffa0762b782" class="profiles-empty" role="status">пока нет профилей</div>';
     } else {
         const twoColumnsHtml = renderProfilesColumns(allCards);
         html = shouldAnimate ? wrapInfiniteScroll(twoColumnsHtml) : `<div class="card-container">${twoColumnsHtml}</div>`;
@@ -226,18 +226,18 @@ export async function renderProfiles() {
 
     const canFilter = isCardHolder && hasMyProfile;
     const filtersHtml = canFilter ? `<div class="profiles-filters" role="group" aria-label="фильтр профилей">
-        <button type="button" class="profiles-filter" data-profile-filter="all" aria-pressed="true">все</button>
-        <button type="button" class="profiles-filter" data-profile-filter="nearest" aria-pressed="false">ближайший хайк</button>
-        <button type="button" class="profiles-filter" data-profile-filter="guests" aria-pressed="false">гости</button>
+        <button data-app-copy="copy_c3089753a24678feea05" type="button" class="profiles-filter" data-profile-filter="all" aria-pressed="true">все</button>
+        <button data-app-copy="copy_4fda854687cb2078765c" type="button" class="profiles-filter" data-profile-filter="nearest" aria-pressed="false">ближайший хайк</button>
+        <button data-app-copy="copy_c2b8c43cd3df4e608f8a" type="button" class="profiles-filter" data-profile-filter="guests" aria-pressed="false">гости</button>
         <span class="profiles-filter-break" aria-hidden="true"></span>
-        <button type="button" class="profiles-filter" data-profile-filter="friendship" aria-pressed="false">дружба</button>
-        <button type="button" class="profiles-filter" data-profile-filter="business" aria-pressed="false">общее дело</button>
-        <button type="button" class="profiles-filter" data-profile-filter="romance" aria-pressed="false">отношения</button>
+        <button data-app-copy="copy_43cb7b94b18baa173a11" type="button" class="profiles-filter" data-profile-filter="friendship" aria-pressed="false">дружба</button>
+        <button data-app-copy="copy_f1a6fe1499d008e47bca" type="button" class="profiles-filter" data-profile-filter="business" aria-pressed="false">общее дело</button>
+        <button data-app-copy="copy_4757234dc235d247b109" type="button" class="profiles-filter" data-profile-filter="romance" aria-pressed="false">отношения</button>
     </div>` : '';
     // новый дизайн: заголовок, «на ближайший хайк с тобой» и твои связи над сеткой профилей
     const rd = isRedesign();
     if (rd) { subtitle().textContent = ''; setRdGlow('people'); }
-    const rdTop = rd ? `<div class="rd-people-head"><span class="rd-page-title">люди клуба</span></div>
+    const rdTop = rd ? `<div class="rd-people-head"><span data-app-copy="copy_1a8850059332ea0fb1af" class="rd-page-title">люди клуба</span></div>
         <div id="rdPeopleNext"></div><div id="rdPeopleCircle"></div>` : '';
     mainDiv().innerHTML = `${rdTop}${filtersHtml}<div id="profilesResults" aria-live="polite">${html}</div>`;
     wireProfileCardActions(mainDiv());
@@ -425,18 +425,18 @@ async function renderEditProfile() {
     ).join('');
 
     mainDiv().innerHTML = `<div class="card-container" style="padding-top:12px; padding-bottom:8px;"><form id="editProfileForm" class="edit-form">
-        <div class="profile-field"><label>👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
-        <div class="profile-field"><label>👀 статус знакомств</label><div class="checkbox-group">${statusesHtml}</div><div class="field-hint">выбери к чему ты открыт на хайках</div></div>
-        <div class="profile-field"><label>✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
-        <div class="profile-field"><label>💼 профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
+        <div class="profile-field"><label data-app-copy="copy_e3e04303e3872e59a808">👋🏻 имя</label><input type="text" id="profileName" value="${escapeHtml(currentName)}"><div data-app-copy="copy_6f4ef5f36cc5d7e38205" class="field-hint">заполнено автоматически, как у тебя в телеграм, но ты можешь поменять</div></div>
+        <div class="profile-field"><label data-app-copy="copy_65cd1d748b9e294e0844">👀 статус знакомств</label><div class="checkbox-group">${statusesHtml}</div><div data-app-copy="copy_edbdbe1c6c4e711df292" class="field-hint">выбери к чему ты открыт на хайках</div></div>
+        <div class="profile-field"><label data-app-copy="copy_ea612a2bafaa4ba63c1b">✨ увлечения</label><textarea id="profileHobbies" rows="3">${escapeHtml(currentHobbies)}</textarea><div data-app-copy="copy_f181179e98ed941c752d" class="field-hint">перечисли через запятую то, что тебя вдохновляет</div></div>
+        <div class="profile-field"><label data-app-copy="copy_29708a8b56b74f92b4f5">💼 профессия</label><textarea id="profileProfession" rows="2">${escapeHtml(currentProfession)}</textarea><div data-app-copy="copy_7527355aeb3607c634b2" class="field-hint">в какой сфере у тебя больше всего опыта?</div></div>
         <div class="profile-field">
-            <label>💬 личные сообщения</label>
+            <label data-app-copy="copy_c2462d9968fba5455900">💬 личные сообщения</label>
             <div class="checkbox-row">
                 <input type="checkbox" id="allowMessagesCheck" ${currentAllowMessages?'checked':''}>
                 <span id="allowMessagesLabel">${currentAllowMessages?'разрешено писать в телеграм':'запрещено писать в телеграм'}</span>
             </div>
         </div>
-        <div class="profile-field"><label>🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
+        <div class="profile-field"><label data-app-copy="copy_4912054a10193d960bae">🔗 ссылка</label><input type="text" id="customLinkInput" placeholder="https://..." value="${escapeHtml(currentCustomLink)}"><div data-app-copy="copy_5c0258305ca038ec3289" class="field-hint">ссылка на твой сайт, блог, портфолио или соцсеть</div></div>
         <button type="submit" class="btn btn-yellow" id="saveProfileBtn" style="margin-top:24px;">сохранить профиль</button>
         ${fresh?'<button type="button" class="delete-profile-btn" id="deleteProfileBtn" style="margin-top:8px;">снять с публикации</button>':''}
     </form></div>`;
@@ -587,11 +587,11 @@ function renderGuestPeople(renderId = profileRenderId) {
     // 8 случайных членов клуба с профилем (каждый заход – новые лица), остальные – числом
     const shown = list.slice().sort(() => Math.random() - .5).slice(0, 8);
     const mine = myProfile
-        ? `<div class="gp-mine"><b>твой профиль готов</b><p>его видят члены клуба – повод заговорить на тропе</p><button type="button" class="btn btn-outline" id="gpEdit">редактировать профиль</button></div>`
-        : `<div class="gp-mine"><b>твой профиль интеллигента</b><p>создай бесплатно – увлечения и профессия, чтобы на хайке было о чём поговорить</p><button type="button" class="btn btn-yellow" id="gpEdit">создать свой профиль</button></div>`;
+        ? `<div class="gp-mine"><b data-app-copy="copy_e1b4a02e1f69e1edac45">твой профиль готов</b><p data-app-copy="copy_72499b260d52a9b4bee5">его видят члены клуба – повод заговорить на тропе</p><button type="button" class="btn btn-outline" id="gpEdit">редактировать профиль</button></div>`
+        : `<div class="gp-mine"><b data-app-copy="copy_a328ed83b03b1c906863">твой профиль интеллигента</b><p data-app-copy="copy_9e3c385348a598d50d5e">создай бесплатно – увлечения и профессия, чтобы на хайке было о чём поговорить</p><button type="button" class="btn btn-yellow" id="gpEdit">создать свой профиль</button></div>`;
     mainDiv().innerHTML = `<div class="gp-wrap">${mine}
-        <div class="gp-sec"><b>профили членов клуба</b><span>🔒 с картой</span></div>
-        <div class="gp-grid">${shown.map(p => `<button type="button" class="gp-card" data-uid="${escapeHtml(p.userId)}"><span class="lk">🔒</span>${gpAv(p)}<b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.profession || 'член клуба')}</small><i>${escapeHtml(p.hobbies || 'горы, люди, разговоры')}</i></button>`).join('')}</div>
+        <div class="gp-sec"><b data-app-copy="copy_d3169e9f12a876e20aad">профили членов клуба</b><span data-app-copy="copy_faad74b1caad2a88d1fe">🔒 с картой</span></div>
+        <div class="gp-grid">${shown.map(p => `<button type="button" class="gp-card" data-uid="${escapeHtml(p.userId)}"><span data-app-copy="copy_6ae1d2ee2e9592ea2e66" class="lk">🔒</span>${gpAv(p)}<b>${escapeHtml(p.name)}</b><small>${escapeHtml(p.profession || 'член клуба')}</small><i>${escapeHtml(p.hobbies || 'горы, люди, разговоры')}</i></button>`).join('')}</div>
         ${list.length > shown.length ? `<div class="gp-more">и ещё ${list.length - shown.length} ${plural(list.length - shown.length, 'профиль', 'профиля', 'профилей')} членов клуба – с картой</div>` : ''}</div>`;
     mainDiv().querySelector('#gpEdit')?.addEventListener('click', () => { haptic(); log(myProfile ? 'гость: редактировать профиль' : 'гость: создать профиль', true, state.user); renderEditProfile(); });
     mainDiv().querySelectorAll('.gp-card').forEach(c => c.addEventListener('click', () => {
@@ -620,7 +620,7 @@ function openGuestPreview(p, total) {
         <div class="gp-who">${gpAv(p)}<div><b>${escapeHtml(p.name || 'участник')}</b><small>${escapeHtml(p.profession || 'член клуба')}</small></div></div>
         <div class="gp-blur"><span>${escapeHtml([p.hobbies, (p.friendshipStatuses || []).join(', ')].filter(Boolean).join(' · ') || 'увлечения, любимые маршруты, с кем ходит на хайки')}</span></div>
         <div class="gp-why">этот профиль${total > 1 ? ` и ещё ${total - 1} членов клуба` : ''} <em>${total > 1 ? 'открываются' : 'открывается'} с картой</em></div>
-        <button type="button" class="btn btn-yellow" data-gp-card>открыть с картой интеллигента</button>
+        <button data-app-copy="copy_4a03a2deff5c85ad6dc4" type="button" class="btn btn-yellow" data-gp-card>открыть с картой интеллигента</button>
         <button type="button" class="gp-free" data-gp-free>${myProfile ? 'твой профиль уже создан ›' : 'а свой профиль можно создать бесплатно ›'}</button>
     </div>`;
     document.body.appendChild(ov);
@@ -653,7 +653,7 @@ function loadProfilePeople() {
 function ghostCardHtml(m, done) {
     return `<div class="profile-card profile-ghost" data-user-id="${escapeHtml(m.id)}"><div class="profile-avatar-wrap"><div class="profile-avatar-placeholder pg-q">?</div></div>
         <div class="profile-name-status"><span class="profile-name">${escapeHtml(m.name)}</span></div>
-        <div class="pg-note">профиль интеллигента ещё не создан</div>
+        <div data-app-copy="copy_e7cd6ea9a051575f015e" class="pg-note">профиль интеллигента ещё не создан</div>
         <button type="button" class="pg-nudge${done ? ' is-done' : ''}" data-nudge="${escapeHtml(m.id)}"${done ? ' disabled' : ''}>${done ? '✓ предложили' : 'предложить создать'}</button></div>`;
 }
 function wireNudges(root) {
@@ -683,8 +683,8 @@ export async function checkProfileNudges() {
     const el = document.createElement('div');
     el.className = 'pn-card';
     el.style.top = `${inset ? inset + 8 : 12}px`;
-    el.innerHTML = `<div class="pn-ic">🎩</div><div class="pn-tx"><b>${who} ${j.names.length > 1 ? 'предлагают' : 'предлагает'} тебе создать профиль интеллигента</b><span>чтобы на хайке было о чём поговорить</span></div>
-        <button type="button" class="pn-go">создать</button><button type="button" class="pn-x" aria-label="закрыть">✕</button>`;
+    el.innerHTML = `<div data-app-copy="copy_df5d307feed3d8accfc1" class="pn-ic">🎩</div><div class="pn-tx"><b>${who} ${j.names.length > 1 ? 'предлагают' : 'предлагает'} тебе создать профиль интеллигента</b><span data-app-copy="copy_42f67b1a9fa77f673159">чтобы на хайке было о чём поговорить</span></div>
+        <button data-app-copy="copy_de227c2f84e01051cfa1" type="button" class="pn-go">создать</button><button type="button" class="pn-x" aria-label="закрыть">✕</button>`;
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('is-on'));
     log('увидел: предлагают создать профиль', state.userCard.status !== 'active', state.user, { n: j.names.length });

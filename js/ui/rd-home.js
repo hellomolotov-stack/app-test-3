@@ -94,7 +94,7 @@ function storiesHtml(stories) {
     const unread = stories.filter(s => !seen.has(s.key)).length;
     return `
         <div class="rd-fresh">
-            <div class="rd-fresh-head"><span>свежее в клубе</span>${unread ? `<b>${unread}</b>` : ''}</div>
+            <div class="rd-fresh-head"><span data-app-copy="copy_4599b891886252d0bd8c">свежее в клубе</span>${unread ? `<b>${unread}</b>` : ''}</div>
             <div class="rd-stories">
                 ${stories.map((s, i) => `
                     <button type="button" class="rd-story${seen.has(s.key) ? '' : ' is-new'}" data-story="${i}">
@@ -118,7 +118,7 @@ function openStory(s) {
     ov.innerHTML = `<div class="rd-story-card" role="dialog" aria-label="${esc(s.label)}">
         <span class="rd-story-date">${dt.getDate()} ${MONTHS[dt.getMonth()]}</span>
         <p>${parseLinks(esc(s.text), state.userCard.status !== 'active')}</p>
-        <button type="button" class="rd-story-close">понятно</button></div>`;
+        <button data-app-copy="copy_f32f7a6f6e1b2914fb7e" type="button" class="rd-story-close">понятно</button></div>`;
     ov.addEventListener('click', e => { if (e.target === ov || e.target.closest('.rd-story-close')) ov.remove(); });
     document.body.appendChild(ov);
 }
@@ -146,7 +146,7 @@ function heroHtml(ev) {
         return `
         <button type="button" class="rd-annrow${on ? ' is-on' : ''}" id="rdHero" data-index="${ev.index}" aria-pressed="${on}">
             <span class="ar-date"><b>${d.getDate()}</b><small>${MON3S[d.getMonth()]}, ${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}</small></span>
-            <span class="ar-tx"><span class="ar-tag">анонс</span><span class="ar-title">${esc(h.title)}</span><span class="ar-when">${annWhen(h.date, on)}</span></span>
+            <span class="ar-tx"><span data-app-copy="copy_7be49ec0932ca83d94b1" class="ar-tag">анонс</span><span class="ar-title">${esc(h.title)}</span><span class="ar-when">${annWhen(h.date, on)}</span></span>
             <span class="ar-sw"><i class="ar-k"></i><span>${on ? 'напомним' : 'напомнить<br>в бота'}</span></span>
         </button>`;
     }
@@ -163,12 +163,12 @@ function heroHtml(ev) {
             <div class="rd-hero-cover" id="rdHeroCover">
                 ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}
                 <span class="rd-hero-when"><i></i>${esc(whenLabel(h))}</span>
-                ${booked && isV2() ? '<span class="rd-ok">✓ ты записан</span>' : ''}
+                ${booked && isV2() ? '<span data-app-copy="copy_9b631d2cbe727405242a" class="rd-ok">✓ ты записан</span>' : ''}
             </div>
             <div class="rd-hero-body">
                 <span class="rd-hero-title">${esc(h.title)}</span>
                 ${tags.length ? `<div class="rd-tags">${tags.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
-                <div class="rd-going" id="rdGoing"><span class="rd-going-wait">смотрю, кто идёт…</span></div>
+                <div class="rd-going" id="rdGoing"><span data-app-copy="copy_bea0e89a5cf5e188b069" class="rd-going-wait">смотрю, кто идёт…</span></div>
                 ${booked && isV2() ? ticketHtml(ev) : `<button type="button" class="rd-cta" id="rdHeroCta">${booked ? 'ты идёшь · детали' : 'детали и запись'}</button>`}
             </div>
         </div>`;
@@ -186,7 +186,7 @@ function ticketHtml(ev) {
     const city = yes(h.city) || yes(h.book_club);
     // 16.11: «твой билет» – снова открыть экран «ты в деле» (чат, что взять, точка сбора, телефон)
     const d = new Date(h.date + 'T12:00:00');
-    const ticket = city ? '' : `<button type="button" class="rd-ticket" data-ticket="${h.date}"><span class="rd-tk-ck">✓</span><span class="rd-tk-tx"><b>твой билет · ${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</b><small>что взять, точка сбора, чат хайка</small></span><span class="rd-tk-go">›</span></button>`;
+    const ticket = city ? '' : `<button type="button" class="rd-ticket" data-ticket="${h.date}"><span class="rd-tk-ck">✓</span><span class="rd-tk-tx"><b>твой билет · ${['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'][d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}</b><small data-app-copy="copy_013d1e6a5d7314f2fb57">что взять, точка сбора, чат хайка</small></span><span class="rd-tk-go">›</span></button>`;
     return ticket + otherBookingHtml(ev);
 }
 
@@ -194,7 +194,7 @@ function otherBookingHtml(ev) {
     const more = otherBookings(ev)[0];
     if (!more) return '';
     const md = new Date(more.h.date + 'T12:00:00');
-    return `<button type="button" class="rd-more" data-more="${more.i}"><span>ещё запись</span><b>${md.getDate()} ${MONTHS[md.getMonth()]} · ${esc(more.h.title)} ›</b></button>`;
+    return `<button type="button" class="rd-more" data-more="${more.i}"><span data-app-copy="copy_48f512ddc31e77314b28">ещё запись</span><b>${md.getDate()} ${MONTHS[md.getMonth()]} · ${esc(more.h.title)} ›</b></button>`;
 }
 
 function avatarHtml(p, i) {
@@ -232,7 +232,7 @@ function fillGoing(ev, list) {
     box.innerHTML = n ? `
         <div class="rd-going-row">
             <span class="rd-avs">${others.slice(0, 4).map(avatarHtml).join('')}</span>
-            <span class="rd-going-text">${names.length ? `<b>${names.join(', ')}</b>` : ''}${rest > 0 ? `<br><span>и ещё ${rest} ${plural(rest, 'идёт', 'идут', 'идут')}</span>` : names.length ? '<br><span>уже идут</span>' : ''}</span>
+            <span class="rd-going-text">${names.length ? `<b>${names.join(', ')}</b>` : ''}${rest > 0 ? `<br><span>и ещё ${rest} ${plural(rest, 'идёт', 'идут', 'идут')}</span>` : names.length ? '<br><span data-app-copy="copy_426b0275881de6d2bc48">уже идут</span>' : ''}</span>
             ${showSeats ? `<span class="rd-going-n">${n} / ${cap}</span>` : ''}
         </div>
         ${latest?.timestamp ? `<div class="rd-live"><i></i>новая запись: ${esc(latest.name)} · ${agoLabel(latest.timestamp)}</div>` : ''}
@@ -338,7 +338,7 @@ function teaserHtml() {
             <div class="v2-tg-photo" style="background-image:url('assets/teaser/${file}.webp')"><span>фото с хайка ${esc(where)}</span></div>
             <div class="v2-tg-row">
                 <div class="v2-tg-date"><b>${d.getDate()}</b><small>${MON3[d.getMonth()]}</small></div>
-                <div class="v2-tg-text"><b>готовим хайк</b><span id="v2TgSub">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
+                <div class="v2-tg-text"><b data-app-copy="copy_60179cfdda820f4c56a3">готовим хайк</b><span id="v2TgSub">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
                 <button type="button" class="v2-tg-sw${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}" role="switch" aria-checked="${on}" aria-label="уведомлять об открытии записи"></button>
             </div>
         </div>`;

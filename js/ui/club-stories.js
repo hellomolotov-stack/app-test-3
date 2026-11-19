@@ -35,7 +35,7 @@ const actionButton = story => story.type === 'member'
 // в кружке – картинка (карта, значок) или эмодзи типа
 function thumb(s) {
     if (s.type === 'summary') return `<span class="cst-pic cst-plaud"><img src="assets/plaud-v2.webp" alt=""></span>`;
-    if (s.type === 'letter') return '<span class="cst-pic cst-letter"><span>✉️</span></span>';
+    if (s.type === 'letter') return '<span class="cst-pic cst-letter"><span data-app-copy="copy_93b2d3447a7fdd7df7ce">✉️</span></span>';
     if (s.type === 'member' && s.image) return `<span class="cst-pic cst-cardthumb"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
     if (s.thumb) return `<span class="cst-pic cst-plainthumb" style="background:${BG[s.type] || BG.custom}"><img src="${esc(imgUrl(s.thumb))}" alt=""></span>`;
     if (s.image && s.visual === 'plain') return `<span class="cst-pic cst-plainthumb" style="background:${BG[s.type] || BG.custom}"><img src="${esc(imgUrl(s.image))}" alt=""></span>`;
@@ -181,7 +181,7 @@ export function openStories(list, start = 0, onClose = null, { preview = false }
             <div class="csv-bg" style="background:${BG[s.type] || BG.custom}"></div>
             ${visual(s)}
             <div class="csv-shade"></div>
-            <div class="csv-head"><span class="csv-av"></span><b>интеллигенция</b><span>· ${ago(s.date)}</span><button type="button" class="csv-x" aria-label="закрыть">✕</button></div>
+            <div class="csv-head"><span class="csv-av"></span><b data-app-copy="copy_b318468e17927d1ecd65">интеллигенция</b><span>· ${ago(s.date)}</span><button type="button" class="csv-x" aria-label="закрыть">✕</button></div>
             <div class="csv-text"><span class="csv-tag csv-t-${esc(s.type)}"><i></i>${esc(s.tag || TAG[s.type] || 'клуб')}</span><h2>${esc(s.title)}</h2>${s.text ? `<p>${esc(s.text)}</p>` : ''}
                 ${button ? `<button type="button" class="csv-btn">${esc(button.label)}</button>` : ''}</div>`;
         elapsed = 0; t0 = performance.now();
@@ -327,7 +327,7 @@ async function openArchive() {
     const ov = document.createElement('div');
     ov.className = 'sa-overlay';
     ov.innerHTML = `<div class="sa-sheet" role="dialog" aria-label="архив сторис"><div class="cs-grab" aria-hidden="true"></div>
-        <div class="sa-top"><b>архив сторис</b><button type="button" class="sa-x" aria-label="закрыть">✕</button></div>
+        <div class="sa-top"><b data-app-copy="copy_171e64ab63839203424d">архив сторис</b><button type="button" class="sa-x" aria-label="закрыть">✕</button></div>
         <div class="sa-scroll"><div class="sa-wait">загружаю…</div></div></div>`;
     document.body.appendChild(ov);
     requestAnimationFrame(() => ov.classList.add('is-on'));
@@ -336,7 +336,7 @@ async function openArchive() {
     try { if (!archive) archive = ((await meCall('stories', { all: 1 }, 10000)) || {}).stories || []; } catch (e) { archive = null; }
     const box = ov.querySelector('.sa-scroll');
     const list = archive || [];
-    if (!list.length) { box.innerHTML = '<div class="sa-wait">пока пусто</div>'; return; }
+    if (!list.length) { box.innerHTML = '<div data-app-copy="copy_e130434a11db6f3cb10b" class="sa-wait">пока пусто</div>'; return; }
     const M = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
     const day = ts => { const d = new Date(Number(ts) || Date.now()); return `${d.getDate()} ${M[d.getMonth()]}`; };
     const cover = s => {
