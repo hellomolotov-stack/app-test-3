@@ -244,8 +244,7 @@ export async function openSoloHiking(uid, back) {
         goBack = back;
         showBack(back);
         const feature = routes.find(route => route.id === 'tsarskaya-tropa') || routes.find(route => route.line.length);
-        page.innerHTML = `${backHtml}<h2>куда пойдём?</h2>
-            ${feature ? `<button class="solo-feature" type="button" data-solo-route="${feature.id}">
+        page.innerHTML = `${feature ? `<button class="solo-feature" type="button" data-solo-route="${feature.id}">
               <span><small>из каталога клуба</small><b>${esc(feature.title)}</b><span>${kmLabel(feature)} · ${timeLabel(feature)}</span></span>
               <span>${track(feature)}</span>
             </button>` : ''}
