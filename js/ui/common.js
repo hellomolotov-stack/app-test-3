@@ -107,6 +107,7 @@ export function hideAnimatedLoader() {
         if (loaderMessageTimer) clearTimeout(loaderMessageTimer);
         document.documentElement.classList.add('app-ready');
         loader.classList.add('fade-out');
+        try { window.Telegram?.WebApp?.ready?.(); } catch {}
         setTimeout(() => { loader.style.display = 'none'; loader.innerHTML = ''; }, 450);
     };
     const wait = () => {

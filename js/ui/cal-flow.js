@@ -74,11 +74,11 @@ function cardHtml(h, i) {
     if (h.nextMonth) {
         // заглушка в конце ленты: размытая зима, снежинка, «сообщить об открытии» на весь месяц
         const m = d.getMonth(), winter = m === 11 || m <= 1;
-        return `<button type="button" class="${cls} is-next" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}"><span class="cf-bg" style="background-image:url('assets/teaser/demerdzhi-3.webp')"></span><span class="cf-q">${winter ? '❄' : '?'}</span><span class="cf-tag is-soon">готовим</span>
+        return `<button type="button" class="${cls} is-next" data-i="${i}" data-date="${h.date}" aria-pressed="${!!on}"><span class="cf-bg"></span><span class="cf-q">${winter ? '❄' : '?'}</span><span class="cf-tag is-soon">готовим</span>
             <span class="cf-in cf-in-t"><small>${MONN[m]}</small><b class="cf-title">${winter ? 'зимние хайки' : 'новые маршруты'}</b></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
-    const bg = `<span class="cf-bg" style="background-image:url('${esc(photo(h))}')"></span>`;
+    const bg = '<span class="cf-bg"></span>';
     if (teaser && /🌧/.test(h.emoji || '')) {
         // заглушка «хайк перенесён»: стрелка вместо «?», без колокольчика и подписки
         return `<button type="button" class="cf-card is-moved" data-i="${i}" data-date="${h.date}">${bg}<span class="cf-q">→</span><span class="cf-tag is-soon">перенесён</span>
@@ -151,6 +151,7 @@ export function renderCalFlow(container) {
     container.addEventListener('pointerdown', markInteracted, { once: true, passive: true });
     container.addEventListener('wheel', markInteracted, { once: true, passive: true });
     const cards = [...track.children];
+    const backgrounds = cards.map(card => card.querySelector('.cf-bg'));
     const wl = container.querySelector('.cf-wl');
     const days = [...wl.children];
     const mP = container.querySelector('[data-mp]'), mC = container.querySelector('[data-mc]'), mN = container.querySelector('[data-mn]');
@@ -170,6 +171,13 @@ export function renderCalFlow(container) {
         if (best !== cur) {
             if (cur !== -1) tick();
             cur = best;
+            // Загружаем обложки рядом с выбранной датой, не всю историю за один раз.
+            for (let i = Math.max(0, best - 2); i <= Math.min(list.length - 1, best + 2); i++) {
+                const background = backgrounds[i];
+                if (background.style.backgroundImage) continue;
+                const url = list[i].nextMonth ? 'assets/teaser/demerdzhi-3.webp' : photo(list[i]);
+                background.style.backgroundImage = `url(${JSON.stringify(url)})`;
+            }
             days.forEach((d, i) => d.classList.toggle('is-on', i === best));
             if (!list[best]) return;
             const m = dt(list[best].date), mi = m.getMonth();

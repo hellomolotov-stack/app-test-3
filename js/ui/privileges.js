@@ -10,7 +10,7 @@ import { foodHomeHtml, bindFoodHome } from './food-home.js';
 import { isRedesign, setRdGlow } from '../redesign.js';
 import { cardQrEnabled, openCardQr } from './card-qr.js';
 import { openCardSheet } from './card-sheet.js';
-import { soloHikingEntryHtml, bindSoloHikingEntry } from './solo-hiking.js';
+import { soloHikingEntryHtml, bindSoloHikingEntry } from './solo-hiking-entry.js';
 
 export function renderNewcomerPage(isGuest = false) {
     cleanupProfileOverlays();

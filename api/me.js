@@ -163,21 +163,25 @@ module.exports = async (req, res) => {
 
     if (body?.action === 'soloRoutes' || body?.action === 'soloDownload') {
         const id = String(user.id);
-        if (id !== '163665735') return res.status(403).json({ error: 'forbidden' });
         try {
-            const solo = require('../lib/solo-hiking');
             const token = await getAccessToken();
-            const [member, raw] = await Promise.all([read(`members/${id}`, token), read('routes', token)]);
+            const member = await read(`members/${id}`, token);
             if (!member?.user_id) return res.status(403).json({ error: 'card required' });
-            const routes = solo.readCatalog(raw).map(route => ({
+            if (body.action === 'soloRoutes' && body.cached === true) {
+                return res.status(200).json({ cached: true });
+            }
+
+            const solo = require('../lib/solo-hiking');
+            const catalog = solo.readCatalog(await read('routes', token));
+            if (body.action === 'soloDownload') {
+                const route = catalog.find(item => item.id === body.routeId);
+                if (!route?.segments.length) return res.status(404).json({ error: 'track unavailable' });
+                return res.status(200).json({ download: solo.downloadPath(route.id, botToken) });
+            }
+            const routes = catalog.map(route => ({
                 ...solo.describe(route),
                 download: route.segments.length ? solo.downloadPath(route.id, botToken) : null
             }));
-            if (body.action === 'soloDownload') {
-                const match = routes.find(route => route.id === body.routeId);
-                if (!match?.download) return res.status(404).json({ error: 'track unavailable' });
-                return res.status(200).json({ download: match.download });
-            }
             return res.status(200).json({ routes });
         } catch (error) {
             console.error('me solo routes:', error.message);
