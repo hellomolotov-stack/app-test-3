@@ -15,6 +15,7 @@ function fixture(statuses = [], server = []) {
     let reads = 0, serverCalls = 0;
     const context = vm.createContext({
         Date, Promise, JSON, console,
+        setUiCopy(node, [, text]) { node.textContent = text; },
         setTimeout: resolve => { resolve(); },
         ticketWatch: null, sheetActHike: null, TICKET_SUPPORT_LINK: 'https://t.me/hellointelligent',
         updateTicketPaymentControls() {}, updateFloatingSheetButtons() {}, watchTicketReturn() {},
