@@ -1,8 +1,8 @@
 // js/ui/sheet-drag.js – общий свайп вниз для всех выезжающих шторок.
 // Шторка едет за пальцем, полоска-ручка сверху ломается посерединке в «галочку» вниз
 // (CSS берёт --pull 0…1), а отпущенная ниже порога – сворачивается через клик по своему оверлею:
-// у каждой шторки он уже закрывает её штатным способом. Тянуть можно за ручку или за любое
-// место, если содержимое прокручено в самый верх; по карте – с любой позиции прокрутки.
+// у каждой шторки он уже закрывает её штатным способом.
+// Свайп на закрытие должен начаться, когда содержимое уже в самом верху.
 // Горизонтальные жесты и управление картой двумя пальцами не трогаем.
 const SHEET = '.bottom-sheet, .cs-sheet, .inv-sheet, .hb-sheet, .zp-sheet, .ach-sheet, .acol-sheet, .cs2-sheet, .mmr-sheet, .sa-sheet, .ns-panel, .rt-boarding-sheet';
 const HANDLE = '.bottom-sheet-handle, .cs-grab, .ns-grab';  // .inv-grab тоже несёт класс cs-grab
@@ -12,12 +12,17 @@ const CLOSE_SPEED = 0.6;  // или смахнуть быстрее (px/мс)
 
 let g = null;
 
-function scrollerOf(target, sheet) {
-    for (let el = target; el && el !== sheet; el = el.parentElement) {
-        const oy = getComputedStyle(el).overflowY;
-        if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el;
-    }
-    return null;
+function isScrolled(el) {
+    if (!el || el.scrollTop <= 1 || !el.getClientRects().length) return false;
+    const { overflowY } = getComputedStyle(el);
+    return overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+}
+
+function hasScrolledContent(sheet) {
+    // Some sheets scroll themselves, others use an inner body or the ticket overlay.
+    return isScrolled(sheet)
+        || (sheet.matches('.rt-boarding-sheet') && isScrolled(sheet.parentElement))
+        || Array.from(sheet.querySelectorAll('*')).some(isScrolled);
 }
 
 function setPull(v) {
@@ -28,12 +33,10 @@ function onStart(e) {
     if (e.touches.length !== 1) { onEnd({ type: 'touchcancel' }); return; }
     const sheet = e.target.closest?.(SHEET);
     if (!sheet || !sheet.querySelector(HANDLE)) return;
-    if (e.target.closest(SKIP)) return;
+    if (e.target.closest(SKIP) || hasScrolledContent(sheet)) return;
     const t = e.touches[0];
     g = {
         sheet, handle: sheet.querySelector(HANDLE), overlay: sheet.parentElement,
-        onHandle: !!e.target.closest(HANDLE),
-        scroller: scrollerOf(e.target, sheet) || (sheet.matches('.rt-boarding-sheet') ? sheet.parentElement : null),
         onMap: !!e.target.closest('.hike-map-box'),
         x0: t.clientX, y0: t.clientY, dy: 0, on: false, last: [t.clientY, e.timeStamp], speed: 0
     };
@@ -48,13 +51,7 @@ function onMove(e) {
         if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) { g = null; return; }
         if (dy < -4) { g = null; return; }
         if (dy < 6) return;
-        if (!g.onHandle && !g.onMap && g.scroller && g.scroller.scrollTop > 1) {
-            // Keep following the same gesture until native scrolling reaches the top.
-            g.y0 = t.clientY;
-            g.last = [t.clientY, e.timeStamp];
-            return;
-        }
-        if (g.scroller && !g.onMap) g.scroller.scrollTop = 0;
+        if (hasScrolledContent(g.sheet)) { g = null; return; }
         g.on = true;
         g.sheet.style.transition = 'none';
         g.sheet.classList.add('is-dragging');
