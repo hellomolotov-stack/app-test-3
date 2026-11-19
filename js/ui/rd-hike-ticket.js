@@ -21,12 +21,12 @@ const dateFormat = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'nu
 export function boardingPassHtml(hike, esc) {
     const map = meetingUrl(hike.location_link);
     const day = new Date(hike.date + 'T12:00:00+03:00');
-    const date = Number.isNaN(day.getTime()) ? hike.date : dateFormat.format(day);
+    const date = Number.isNaN(day.getTime()) ? hike.date : dateFormat.format(day).toLocaleLowerCase('ru-RU');
     const when = `${date}${hike.start_time ? ' · ' + hike.start_time : ''}`;
     const meeting = `<span class="rd-pass-pin">${pin}</span><span class="rd-pass-date"><small>${esc(when)}</small>${map ? '<strong>точка сбора</strong>' : ''}</span>`;
     return `<article class="rd-pass-card" aria-label="посадочный талон на хайк">
         <div class="rd-pass-front">
-            <header class="rd-pass-head"><span>${check} ты в списке</span><strong>${esc(hike.title)}</strong></header>
+            <header class="rd-pass-head"><span>${check} ты в деле</span><strong>${esc(hike.title)}</strong></header>
             <div class="rd-pass-route">
                 <div><b>дом</b><small>диван, дела, заботы</small></div><i aria-hidden="true"></i>
                 <div><b>хайк</b><small>ветер, тропы, встречи</small></div>
