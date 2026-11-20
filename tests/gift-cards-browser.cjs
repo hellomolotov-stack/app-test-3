@@ -1,5 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const { tmpdir } = require('node:os');
+const { join } = require('node:path');
 const { chromium } = require('./_playwright.cjs');
 const source = fs.readFileSync('js/ui/card-sheet.js', 'utf8').replace(/import\s+[\s\S]*?\s+from\s+['"][^'"]+['"];?/g, '').replace(/export /g, '')
     .replaceAll('assets/card-front.jpg', 'data:image/jpeg;base64,' + fs.readFileSync('assets/card-front.jpg').toString('base64'));
@@ -30,7 +32,7 @@ const fixture = `
                 assert.ok((await page.locator('#csBuy').textContent()).endsWith(price));
                 const overflow=await page.locator('.cs-plan').evaluateAll(els=>els.some(e=>e.scrollWidth>e.clientWidth));
                 assert.equal(overflow,false);
-                await page.screenshot({path:`/private/tmp/gift-card-${plan}-${width}.png`});
+                await page.screenshot({path:join(tmpdir(), `gift-card-${plan}-${width}.png`)});
                 await page.locator('#csBuy').click();
                 const payload=await page.evaluate(()=>window.payments.at(-1));
                 assert.equal(payload.cardType,'gift');assert.equal(payload.giftCardType,plan);
@@ -44,7 +46,7 @@ const fixture = `
             assert.match(await page.locator('#csTicket').textContent(),/1\s200\s₽/);
             assert.equal(await page.locator('.cs-calc, .cs-calc-range').count(),0);
             assert.equal(await page.getByText('посчитай выгоду',{exact:true}).count(),0);
-            await page.screenshot({path:`/private/tmp/card-community-${width}.png`});
+            await page.screenshot({path:join(tmpdir(), `card-community-${width}.png`)});
             assert.deepEqual(errors,[]);await page.close();
         }
         console.log('Gift cards UI passed at 320/390/900: both choices, prices, payloads, no ticket, season note, no overflow');
