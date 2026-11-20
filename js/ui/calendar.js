@@ -3758,10 +3758,10 @@ export async function showGuestBookingPopup(hikeDate, hikeTitle, onClose, featur
                     карта интеллигента – это членство, а не билет. мы ограничиваем число новых членов каждый месяц, чтобы каждый получил внимание клуба, а не растворился в толпе
                 </div>
 
-                <div class="booking-popup-economy">билет на один хайк – 1 200 ₽. бессрочная карта окупается с ${Math.ceil((config.permanentCardPrice || 7500) / TICKET_PRICE)}-го хайка</div>
+                <div class="booking-popup-economy">билет на один хайк – 1 200 ₽. бессрочная карта окупается с ${Math.ceil((config.permanentCardPrice || 15000) / TICKET_PRICE)}-го хайка</div>
 
                 <div class="booking-card-option">
-                    <div class="booking-card-name">бессрочная – ${config.permanentCardPrice || 7500} ₽</div>
+                    <div class="booking-card-name">бессрочная – ${Number(config.permanentCardPrice || 15000).toLocaleString('ru-RU')} ₽</div>
                                         <div data-app-copy="copy_38d92330fc1434ad6ed7" class="booking-card-desc">оплатил один раз – доступ к клубу всегда, без продлений и подписок. выгоднее годовой уже на второй год – привилегии остаются навсегда. все хайки, городские события, привилегии у партнёров, книжный клуб и все новые функции карты</div>
                     <button class="btn btn-yellow" id="buyPermanentCardBtn" style="width: 100%; margin: 0;">купить навсегда</button>
                     <div data-app-copy="copy_47c27c756d12fc7281e0" class="booking-card-ticket-note">если ты оплачивал билет, но так и не успел сходить по нему – можешь приобрести карту с учётом ранее оплаченного билета. для этого напиши нам в поддержку и пришли чек билета – отправим тебе специальную ссылку для оформления карты</div>

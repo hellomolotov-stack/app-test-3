@@ -19,8 +19,8 @@ function payment(type, giftType) {
 }
 for (const [type, giftType, amount, title] of [
     ['ticket', undefined, 1200, 'Билет'], ['season', undefined, 5500, 'сезонная'],
-    ['permanent', undefined, 7500, 'бессрочная'], ['offer', undefined, 5000, 'бессрочная'],
-    ['gift', 'season', 5500, 'сезонная'], ['gift', 'permanent', 7500, 'бессрочная'],
+    ['permanent', undefined, 15000, 'бессрочная'], ['offer', undefined, 5000, 'бессрочная'],
+    ['gift', 'season', 5500, 'сезонная'], ['gift', 'permanent', 15000, 'бессрочная'],
 ]) {
     const data = payment(type, giftType);
     assert.equal(data.amount, amount);
@@ -42,8 +42,8 @@ console.log('Card payments passed: ticket, season, permanent, offer, both gifts,
 
 if (process.env.PAYMENT_INIT_READBACK) {
     const initBlock = fs.readFileSync(process.env.PAYMENT_INIT_READBACK, 'utf8');
-    for (const [type, giftType, amount] of [['ticket', '', 1200], ['season', '', 5500], ['permanent', '', 7500],
-        ['offer', '', 5000], ['gift', 'season', 5500], ['gift', 'permanent', 7500]]) {
+    for (const [type, giftType, amount] of [['ticket', '', 1200], ['season', '', 5500], ['permanent', '', 15000],
+        ['offer', '', 5000], ['gift', 'season', 5500], ['gift', 'permanent', 15000]]) {
         let pending;
         const server = vm.createContext({ CARD_OFFER_PRICE: 5000, encodeURIComponent, Date, FIREBASE_URL: 'https://test/', FIREBASE_SECRET: 'test',
             sheet: { appendRow() {} }, timestamp: 'test', activeCardOffer_: () => true,

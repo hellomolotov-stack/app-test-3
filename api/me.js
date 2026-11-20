@@ -49,7 +49,7 @@ async function passesFor(id, token) {
 // Предложение карты (логика – как activeCardOffer_ в Apps Script). С 22.10.2026 оно только одно –
 // личное приглашение в близкий круг из админки «💳 продажа карты»: card_offers/<id> с kind 'circle',
 // личной ценой (карта минус оплаченные билеты) и сроком. Автоматической спеццены после хайка больше нет.
-const FULL_PRICE = 7500;
+const FULL_PRICE = 15000;
 async function offerFor(id, token) {
     try {
         const o = await read(`card_offers/${id}`, token);

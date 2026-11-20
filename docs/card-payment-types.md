@@ -8,10 +8,10 @@ Published as Apps Script version 80 on 2026-10-21.
 | --- | ---: | --- |
 | `ticket` | 1200 | Билет на хайк |
 | `season` | 5500 | сезонная карта интеллигента – текущий и следующий сезон |
-| `permanent` | 7500 | бессрочная карта интеллигента |
+| `permanent` | 15000 | бессрочная карта интеллигента |
 | `offer` | `CARD_OFFER_PRICE`, currently 5000 | бессрочная карта интеллигента – спецпредложение |
 | `gift` + `gift_card_type=season` | 5500 | Подарочная сезонная карта интеллигента – текущий и следующий сезон |
-| `gift` + `gift_card_type=permanent` | 7500 | Подарочная бессрочная карта интеллигента |
+| `gift` + `gift_card_type=permanent` | 15000 | Подарочная бессрочная карта интеллигента |
 
 The server chooses prices; the client never controls the charged amount.
 Before opening payment, the client checks response type, chosen amount,

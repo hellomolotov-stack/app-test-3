@@ -216,7 +216,7 @@ export async function initPayment({ userId, firstName, lastName, username, hikeD
         error.code = 'REGISTRATION_CLOSED';
         throw error;
     }
-    expectedAmount ??= cardType === 'ticket' ? 1200 : cardType === 'permanent' ? 7500 : cardType === 'season' ? 5500 : cardType === 'gift' ? (giftCardType === 'permanent' ? 7500 : 5500) : undefined;
+    expectedAmount ??= cardType === 'ticket' ? 1200 : cardType === 'permanent' ? 15000 : cardType === 'season' ? 5500 : cardType === 'gift' ? (giftCardType === 'permanent' ? 15000 : 5500) : undefined;
     if (isAdmissionPilot()) {
         const data = await admissionRequest('payment', { payment: { hikeDate, hikeTitle, cardType, giftCardType } });
         return validatePayment(data, { cardType, giftCardType, expectedAmount });
