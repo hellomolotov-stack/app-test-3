@@ -7,7 +7,6 @@ const config = {
   REGISTRATION_API_URL: process.env.REGISTRATION_API_URL || '',
   ROBOKASSA_LINK: process.env.ROBOKASSA_LINK || '',
   SEASON_CARD_LINK: process.env.SEASON_CARD_LINK || '',
-  PERMANENT_CARD_LINK: process.env.PERMANENT_CARD_LINK || '',
   GISMETEO_TOKEN: process.env.GISMETEO_TOKEN || '',
   FIREBASE_CONFIG: {
     apiKey: process.env.FIREBASE_API_KEY || '',
@@ -26,7 +25,7 @@ const content = `export const GUEST_API_URL = '${config.GUEST_API_URL}';
 export const REGISTRATION_API_URL = '${config.REGISTRATION_API_URL}';
 export const ROBOKASSA_LINK = '${config.ROBOKASSA_LINK}';
 export const SEASON_CARD_LINK = '${config.SEASON_CARD_LINK}';
-export const PERMANENT_CARD_LINK = '${config.PERMANENT_CARD_LINK}';
+export const PERMANENT_CARD_LINK = 'https://t.me/yaltahiking_bot?startapp=buy_card';
 export const GISMETEO_TOKEN = '${config.GISMETEO_TOKEN}';
 export const FIREBASE_CONFIG = ${JSON.stringify(config.FIREBASE_CONFIG, null, 2)};
 `;
