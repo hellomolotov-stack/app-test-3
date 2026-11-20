@@ -26,6 +26,7 @@ const PLACEHOLDER_EMOJI = [
 ];
 // эмоджи городского события – видно в ленте календаря вместо 🥂
 const CITY_EMOJI = ['🥂', '🍷', '🍕', '🥧', '🧁', '🍰', '🎂', '🍩', '🍪', '🥐', '🍫', '🍓', '🍎', '🍷', '🍸', '🍹', '🫖', '☕', '🍽️', '🍳', '🥗', '🍣', '🌮', '🍔', '🧀', '🍇', '🎬', '🎨', '🎤', '🎶', '🎸', '📚', '✍️', '🧘', '🏓', '🎲', '♟️', '🧩', '🔥', '💃', '🌊', '🏖️', '🌅', '🎭', '🧠', '🎉', '🕯️', '🌿'].filter((e, i, a) => a.indexOf(e) === i);
+const CARD_OFFERS_ENABLED = false;
 const APP_SECTIONS = [
     ['calendar', 'календарь'],
     ['hike', 'конкретный хайк'],
@@ -214,7 +215,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['activity', '📡 активность'], ['postbtn', '🔘 кнопки поста'], ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['activity', '📡 активность'], ['postbtn', '🔘 кнопки поста'], ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ...(CARD_OFFERS_ENABLED ? [['newcomers', '💳 продажа карты']] : []), ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -306,7 +307,7 @@ function renderToday(body) {
         <div class="rd-adm-tiles">
             ${tile('broadcast', 'send', '#D9FD19', 'рассылка', '25 сегментов, шаблоны, отложенная отправка')}
             ${tile('flows', 'flows', '#C7B8E6', 'цепочки', 'сценарии бота с кнопками и автозапуском')}
-            ${tile('newcomers', 'card', '#6FA8DC', 'продажа карты', 'личная цена с учётом оплаченных билетов')}
+            ${CARD_OFFERS_ENABLED ? tile('newcomers', 'card', '#6FA8DC', 'продажа карты', 'личная цена с учётом оплаченных билетов') : ''}
             ${tile('plus1', 'plus', '#F38CC6', '+1', 'приглашения друзей владельцев карты')}
         </div>
         <div class="rd-adm-sec">клуб</div>
@@ -1484,13 +1485,13 @@ export function parseGpx(text) {
 
 // ---------- продажа карты: спецпредложение тем, кто ходил ----------
 // Само собой: на следующий день после хайка каждому, кто на нём был (и без карты), приложение 3 дня показывает
-// баннер «бессрочная карта за 5 500 вместо 7 500» (Apps Script autoCardOfferFrom_, api/me.js). Здесь – ручная
+// баннер «бессрочная карта за 5 500 вместо 15 000» (Apps Script autoCardOfferFrom_, api/me.js). Здесь – ручная
 // рассылка: бот пишет выбранным, и предложение открывается им ещё на 3 дня с момента отправки.
 // Кому бот писать не может – кнопка «написать лично» с тем же текстом.
-const OFFER_TEXT_DEFAULT = '[имя], спасибо, что ходишь с нами на хайки 🤍\n\nследующие 3 дня бессрочная карта интеллигента для тебя стоит 5 500 ₽ вместо 7 500 – один раз и навсегда:\n\n• все хайки без билетов и оплат\n• запись, даже когда мест уже нет\n• закрытые события клуба и привилегии у партнёров\n\nподробности и оформление – по кнопке ниже';
+const OFFER_TEXT_DEFAULT = '[имя], спасибо, что ходишь с нами на хайки 🤍\n\nследующие 3 дня бессрочная карта интеллигента для тебя стоит 5 500 ₽ вместо 15 000 – один раз и навсегда:\n\n• все хайки без билетов и оплат\n• запись, даже когда мест уже нет\n• закрытые события клуба и привилегии у партнёров\n\nподробности и оформление – по кнопке ниже';
 // приглашение в близкий круг: админ сам выбирает людей, бот пишет им это сообщение, в приложении – тёплая плашка.
-// Цена = 7 500 − все оплаченные билеты (не дороже 5 500 и не дешевле 1 500), считает сервер.
-const CIRCLE_TEXT = 'мы рады знакомству с тобой, [имя]!\n\nхотим, чтобы для тебя были открыты все хайки без билетов и события в гостях у членов клуба. вот как мы недавно собирались на пирог к нам. считаем, искренние отношения не должны быть коммерческими. поэтому мы подумали и решили учесть все твои уже купленные билеты в стоимость карты интеллигента. для тебя бессрочная карта теперь стоит [цена], вместо 7 500 ₽. у нашего решения нет сроков, это не акция. просто с тобой классно и мы хотим видеть тебя в нашем близком кругу\n\n[ближайший хайк]';
+// Цена = 15 000 − все оплаченные билеты (не дороже 5 500 и не дешевле 1 500), считает сервер.
+const CIRCLE_TEXT = 'мы рады знакомству с тобой, [имя]!\n\nхотим, чтобы для тебя были открыты все хайки без билетов и события в гостях у членов клуба. вот как мы недавно собирались на пирог к нам. считаем, искренние отношения не должны быть коммерческими. поэтому мы подумали и решили учесть все твои уже купленные билеты в стоимость карты интеллигента. для тебя бессрочная карта теперь стоит [цена], вместо 15 000 ₽. у нашего решения нет сроков, это не акция. просто с тобой классно и мы хотим видеть тебя в нашем близком кругу\n\n[ближайший хайк]';
 // строка про ближайший хайк: «кстати, уже завтра идём на Аю-Даг, будем очень рады тебя видеть!»
 function circleHikeLine() {
     const h = nearestTitledHike();
@@ -1619,7 +1620,7 @@ function renderNewcomers(body) {
         body.innerHTML = `
         <div class="rd-nc-hero">
             <div class="rd-nc-hero-h"><b>билеты засчитываются в карту</b><small>приглашение в близкий круг с личной ценой</small></div>
-            <div class="rd-nc-formula"><span><b>7 500 ₽</b><small>бессрочная</small></span><i>−</i><span><b>билеты</b><small>уже оплачены</small></span><i>=</i><span class="is-res"><b>цена</b><small>1 500 – 5 500 ₽</small></span></div>
+            <div class="rd-nc-formula"><span><b>15 000 ₽</b><small>бессрочная</small></span><i>−</i><span><b>билеты</b><small>уже оплачены</small></span><i>=</i><span class="is-res"><b>цена</b><small>1 500 – 5 500 ₽</small></span></div>
             <small class="rd-nc-hero-note">выбери тех, кого хочешь видеть в близком кругу – бот напишет приглашение. оно действует 30 дней, срок человеку не показываем</small>
         </div>
         <div class="rd-nc-seg">
@@ -1631,7 +1632,7 @@ function renderNewcomers(body) {
         <div class="rd-adm-sec">так напишет бот</div>
         <div class="adm-preview rd-nc-preview"><div class="rd-nc-bot">хайкинг интеллигенция</div><div class="adm-bubble">${esc(preview).replace(/\n/g, '<br>')}</div><div class="adm-bubble-btn">посмотреть карту</div></div>`;
     } else body.innerHTML = `
-        <div class="adm-hint" style="margin-top:0">выбери тех, кого хочешь видеть в близком кругу. бот напишет приглашение, а все оплаченные билеты засчитаются в бессрочную карту: 7 500 − билеты, но не дороже 5 500 и не дешевле 1 500. приглашение действует 30 дней, срок человеку не показываем</div>
+        <div class="adm-hint" style="margin-top:0">выбери тех, кого хочешь видеть в близком кругу. бот напишет приглашение, а все оплаченные билеты засчитаются в бессрочную карту: 15 000 − билеты, но не дороже 5 500 и не дешевле 1 500. приглашение действует 30 дней, срок человеку не показываем</div>
         <div class="adm-chips">
             <button class="adm-chip${nc.filter === 'recent' ? ' is-on' : ''}" data-f="recent">ходили за 2 недели · ${recent.length}</button>
             <button class="adm-chip${nc.filter === 'all' ? ' is-on' : ''}" data-f="all">все, кто ходил · ${all.length}</button>
@@ -2307,8 +2308,8 @@ function renderBroadcast(body) {
             <div class="adm-tip-text">${esc(fillTemplate(tip.text))}</div>
             <div class="adm-tip-meta">кнопка: «${esc(tip.btn.text)}»</div>
             <button class="adm-link" id="admTipApply">${bc.tipApplied === bc.segment ? 'вставить шаблон заново' : 'вставить шаблон'}</button></div>` : ''}
-        <div class="adm-label">шаблоны</div>
-        <div class="adm-chips"><button class="adm-chip${bc.tpl === 'circle' ? ' is-on' : ''}" data-bc-tpl="circle">💳 билеты в счёт карты</button></div>
+        ${CARD_OFFERS_ENABLED ? `<div class="adm-label">шаблоны</div>
+        <div class="adm-chips"><button class="adm-chip${bc.tpl === 'circle' ? ' is-on' : ''}" data-bc-tpl="circle">💳 билеты в счёт карты</button></div>` : ''}
         ${bc.tpl === 'circle' ? `<div class="adm-hint">[цена] – личная цена карты за вычетом его билетов, [билеты] и [сумма] – сколько оплатил. ${nc?.people ? `цены знаем для ${nc.people.length} чел.` : 'загружаю цены…'} от бота такое сообщение откроет человеку спеццену</div>` : ''}
         <label class="adm-field"><span>текст</span><textarea id="admBcText" rows="7" placeholder="привет, [имя]! …">${esc(bc.text)}</textarea></label>
         <div class="adm-hint">[имя] заменится именем. можно &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;a href="…"&gt;ссылка&lt;/a&gt;</div>
@@ -2641,7 +2642,7 @@ function bcPersonText(id) {
     const pp = audience?.people?.[id] || {};
     const p = ncById(id) || {};
     const name = String(p.name || pp.n || 'друг').split(' ')[0];
-    const price = p.circle_price || (nc?.people ? 7500 : 0);
+    const price = p.circle_price || (nc?.people ? 15000 : 0);
     let t = bc.text.trim().replace(/\[имя\]/gi, name);
     if (nc?.people) t = t.replace(/\[билеты\]/gi, ncTickets(p.tickets_count || 0)).replace(/\[сумма\]/gi, ncRub(p.tickets_sum || 0)).replace(/\[цена\]/gi, ncRub(price));
     // в личке теги не работают – убираем разметку
@@ -2807,6 +2808,7 @@ async function sendBroadcast(test) {
 
 // шаблон с [цена] от бота: каждому – его цена, и у него открывается спеццена на карту
 async function sendCircleBroadcast() {
+    if (!CARD_OFFERS_ENABLED) return toast('спеццены временно отключены', true);
     const r = audience ? bcRecipients() : null;
     if (!r) return toast('ещё считаю получателей', true);
     if (!r.final.length) return toast('некому отправлять', true);

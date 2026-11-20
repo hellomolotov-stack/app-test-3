@@ -31,7 +31,7 @@ const fixture = `
                 await page.locator('#csBuy').click();
                 const payload=await page.evaluate(()=>window.payments.at(-1));
                 assert.equal(payload.cardType,'gift');assert.equal(payload.giftCardType,plan);
-                assert.equal(payload.expectedAmount,plan==='season'?5500:7500);
+                assert.equal(payload.expectedAmount,plan==='season'?5500:15000);
                 assert.equal(payload.hikeDate,'');
                 await page.waitForFunction(()=>!document.querySelector('.cs-overlay'));
             }

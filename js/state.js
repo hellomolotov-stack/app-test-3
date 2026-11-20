@@ -23,7 +23,7 @@ export const state = {
         ticketLink: '',
         seasonCardPrice: 5500,
         seasonCardLink: '',
-        permanentCardPrice: 7500,
+        permanentCardPrice: 15000,
         permanentCardLink: ''
     },
     hikeBookingStatus: {},

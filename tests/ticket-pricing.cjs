@@ -8,7 +8,7 @@ for (const path of sources) {
 }
 for (const path of ['js/ui/card-sheet.js','js/ui/calendar.js']) assert.match(fs.readFileSync(path,'utf8'),/const TICKET_PRICE = 1200;/);
 assert.match(fs.readFileSync('js/state.js','utf8'),/ticketPrice: 1200/);
-assert.equal(Math.ceil(7500 / 1200), 7);
+assert.equal(Math.ceil(15000 / 1200), 13);
 const faqAnswer = 'билет на хайк за 1 200 ₽';
 const entries = { 'popupConfig/ticketPrice': 1500, faq: [{q:'как записаться?',a:'билет за 1 500 ₽'}] };
 const writes = [];
@@ -30,4 +30,4 @@ assert.equal(entries['popupConfig/ticketPrice'],1200);
 assert.equal(entries['faq/0/a'],faqAnswer);
 context.clubPaymentProduct_=()=>({amount:1500});
 assert.throws(()=>context.publishTicketPrice1200(),/Server ticket price must be 1200/);
-console.log('Ticket pricing passed: app/bot text, 1200 constants, 7-hike break-even, exact data writes, stale server rejected');
+console.log('Ticket pricing passed: app/bot text, 1200 constants, 13-hike break-even, exact data writes, stale server rejected');

@@ -16,8 +16,8 @@ export const SPLIT_NOTE = '<div class="split-note"><img src="assets/split.png" a
 
 const CARD_IMG = 'assets/card-front.jpg';
 const TICKET_PRICE = 1200;
-const PERMANENT_PRICE = 7500;
-// спецпредложение после хайка (рассылка «новичкам»): бессрочная за 5 500 вместо 7 500
+const PERMANENT_PRICE = 15000;
+// спецпредложение после хайка (рассылка «новичкам»): бессрочная за 5 500 вместо 15 000
 const OFFER_PRICE = 5500;
 
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
