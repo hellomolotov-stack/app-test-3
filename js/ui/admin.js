@@ -26,6 +26,7 @@ const PLACEHOLDER_EMOJI = [
 ];
 // эмоджи городского события – видно в ленте календаря вместо 🥂
 const CITY_EMOJI = ['🥂', '🍷', '🍕', '🥧', '🧁', '🍰', '🎂', '🍩', '🍪', '🥐', '🍫', '🍓', '🍎', '🍷', '🍸', '🍹', '🫖', '☕', '🍽️', '🍳', '🥗', '🍣', '🌮', '🍔', '🧀', '🍇', '🎬', '🎨', '🎤', '🎶', '🎸', '📚', '✍️', '🧘', '🏓', '🎲', '♟️', '🧩', '🔥', '💃', '🌊', '🏖️', '🌅', '🎭', '🧠', '🎉', '🕯️', '🌿'].filter((e, i, a) => a.indexOf(e) === i);
+const CARD_OFFERS_ENABLED = false;
 const APP_SECTIONS = [
     ['calendar', 'календарь'],
     ['hike', 'конкретный хайк'],
@@ -214,7 +215,7 @@ function render() {
     // пока содержимое пересоздаётся, держим высоту – иначе браузер на миг «схлопывает» страницу и прокрутка скачет
     const prevBody = root.querySelector('.adm-body');
     const holdHeight = sameScreen && prevBody ? prevBody.offsetHeight : 0;
-    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['activity', '📡 активность'], ['postbtn', '🔘 кнопки поста'], ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ['newcomers', '💳 продажа карты'], ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
+    const tabs = [...(isRedesign() ? [['today', 'сегодня']] : []), ['activity', '📡 активность'], ['postbtn', '🔘 кнопки поста'], ['hikes', '🏔 хайки'], ['achievements', 'ачивки'], ['analytics', 'аналитика'], ['broadcast', '📨 рассылка'], ['flows', '🔗 цепочки'], ...(CARD_OFFERS_ENABLED ? [['newcomers', '💳 продажа карты']] : []), ['plus1', '🤝 +1'], ['pass', '🔑 место'], ['stories', '📸 сторис'], ['surveys', '📋 опросы'], ['home', 'главная'], ['admissions', 'заявки']];
     root.innerHTML = `
         <div class="adm-head">
             <div class="adm-title">админка</div>
@@ -306,7 +307,7 @@ function renderToday(body) {
         <div class="rd-adm-tiles">
             ${tile('broadcast', 'send', '#D9FD19', 'рассылка', '25 сегментов, шаблоны, отложенная отправка')}
             ${tile('flows', 'flows', '#C7B8E6', 'цепочки', 'сценарии бота с кнопками и автозапуском')}
-            ${tile('newcomers', 'card', '#6FA8DC', 'продажа карты', 'личная цена с учётом оплаченных билетов')}
+            ${CARD_OFFERS_ENABLED ? tile('newcomers', 'card', '#6FA8DC', 'продажа карты', 'личная цена с учётом оплаченных билетов') : ''}
             ${tile('plus1', 'plus', '#F38CC6', '+1', 'приглашения друзей владельцев карты')}
         </div>
         <div class="rd-adm-sec">клуб</div>
@@ -2307,8 +2308,8 @@ function renderBroadcast(body) {
             <div class="adm-tip-text">${esc(fillTemplate(tip.text))}</div>
             <div class="adm-tip-meta">кнопка: «${esc(tip.btn.text)}»</div>
             <button class="adm-link" id="admTipApply">${bc.tipApplied === bc.segment ? 'вставить шаблон заново' : 'вставить шаблон'}</button></div>` : ''}
-        <div class="adm-label">шаблоны</div>
-        <div class="adm-chips"><button class="adm-chip${bc.tpl === 'circle' ? ' is-on' : ''}" data-bc-tpl="circle">💳 билеты в счёт карты</button></div>
+        ${CARD_OFFERS_ENABLED ? `<div class="adm-label">шаблоны</div>
+        <div class="adm-chips"><button class="adm-chip${bc.tpl === 'circle' ? ' is-on' : ''}" data-bc-tpl="circle">💳 билеты в счёт карты</button></div>` : ''}
         ${bc.tpl === 'circle' ? `<div class="adm-hint">[цена] – личная цена карты за вычетом его билетов, [билеты] и [сумма] – сколько оплатил. ${nc?.people ? `цены знаем для ${nc.people.length} чел.` : 'загружаю цены…'} от бота такое сообщение откроет человеку спеццену</div>` : ''}
         <label class="adm-field"><span>текст</span><textarea id="admBcText" rows="7" placeholder="привет, [имя]! …">${esc(bc.text)}</textarea></label>
         <div class="adm-hint">[имя] заменится именем. можно &lt;b&gt;жирный&lt;/b&gt;, &lt;i&gt;курсив&lt;/i&gt;, &lt;a href="…"&gt;ссылка&lt;/a&gt;</div>
@@ -2807,6 +2808,7 @@ async function sendBroadcast(test) {
 
 // шаблон с [цена] от бота: каждому – его цена, и у него открывается спеццена на карту
 async function sendCircleBroadcast() {
+    if (!CARD_OFFERS_ENABLED) return toast('спеццены временно отключены', true);
     const r = audience ? bcRecipients() : null;
     if (!r) return toast('ещё считаю получателей', true);
     if (!r.final.length) return toast('некому отправлять', true);
