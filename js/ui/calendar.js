@@ -4500,7 +4500,6 @@ function updateTicketPaymentControls(hikeDate, phase) {
 async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
     if (ticketPurchase) return;
     ticketPurchase = { hikeDate, userId: state.user?.id };
-    confirmedTickets.delete(`${state.user?.id}:${hikeDate}`);
     updateTicketPaymentControls(hikeDate, 'creating');
     log(logLabel, true, state.user, { hike_date: hikeDate });
 
@@ -4539,6 +4538,7 @@ async function startTicketPurchase(hikeDate, hikeTitle, logLabel) {
         pendingTicketMemory = {
             hikeDate, hikeTitle: hikeTitle || '', type: 'ticket', userId: state.user?.id, ts: Date.now()
         };
+        resetTicketConfirmation(state.user?.id, hikeDate);
         try {
             localStorage.setItem('pending_reg_celebration', JSON.stringify(pendingTicketMemory));
         } catch (e) {}
@@ -4626,6 +4626,28 @@ let pendingTicketMemory = null;
 const ticketConfirmations = new Map();
 const confirmedTickets = new Set();
 
+const ticketConfirmationStorageKey = key => `ticket-confirmed:${key}`;
+
+export function hasConfirmedTicketReturn(hikeDate) {
+    const userId = state.user?.id;
+    if (!userId || !hikeDate) return false;
+    const key = `${userId}:${hikeDate}`;
+    if (confirmedTickets.has(key)) return true;
+    try {
+        return localStorage.getItem(ticketConfirmationStorageKey(key)) === '1';
+    } catch (error) {
+        return false;
+    }
+}
+
+function resetTicketConfirmation(userId, hikeDate) {
+    if (!userId) return;
+    const key = `${userId}:${hikeDate}`;
+    confirmedTickets.delete(key);
+    try { localStorage.removeItem(ticketConfirmationStorageKey(key)); } catch (error) {}
+}
+
+
 function readPendingTicket() {
     try {
         const pending = pendingTicketMemory || JSON.parse(localStorage.getItem('pending_reg_celebration') || 'null');
@@ -4707,7 +4729,7 @@ export function completeTicketRegistration(hikeDate) {
 // не записывает: иначе любая ручная ссылка вида ?startapp=paid_<дата> давала бы бесплатную запись.
 export function confirmTicketPaymentReturn(hikeDate) {
     const key = `${state.user?.id}:${hikeDate}`;
-    if (confirmedTickets.has(key)) return Promise.resolve(true);
+    if (hasConfirmedTicketReturn(hikeDate)) return Promise.resolve(true);
     if (ticketConfirmations.has(key)) return ticketConfirmations.get(key);
     const promise = verifyTicketPaymentReturn(hikeDate).finally(() => {
         ticketConfirmations.delete(key);
@@ -4751,8 +4773,10 @@ async function verifyTicketPaymentReturn(hikeDate) {
         markPaymentSeen();
         if (sheetActHike?.date === hikeDate) sheetActHike.registered = true;
         window.dispatchEvent(new CustomEvent('club:act', { detail: { type: 'hike_registered', date: hikeDate } }));
-        confirmedTickets.add(`${userId}:${hikeDate}`);
         showRegistrationSuccess(hikeDate, title);
+        const key = `${userId}:${hikeDate}`;
+        confirmedTickets.add(key);
+        try { localStorage.setItem(ticketConfirmationStorageKey(key), '1'); } catch (error) {}
         return true;
     }
 

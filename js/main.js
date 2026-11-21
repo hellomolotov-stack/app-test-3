@@ -21,7 +21,7 @@ import { showAnimatedLoader, hideAnimatedLoader, showBottomNav, setUserInteracte
 import { renderHome } from './ui/home.js';
 import { renderNewcomerPage, renderGuestPrivileges, renderPriv, renderGift, renderPassPage, renderSafetyPage } from './ui/privileges.js';
 import { renderProfiles } from './ui/profiles.js';
-import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js';
+import { showBottomSheet, showGuestBookingPopup, showRegistrationSuccess, refreshBottomSheetIfOpen, completeTicketRegistration, confirmTicketPaymentReturn, hasConfirmedTicketReturn, offerPendingTicketRecovery, TICKET_PENDING_TTL } from './ui/calendar.js';
 import { mountBotTab, showBotTabHint } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
@@ -561,6 +561,7 @@ function handleDeepLink(startParam) {
     }
     if (startParam.startsWith('paid_')) {
         const paidDate = normalizeDate(startParam.substring(5));
+        if (hasConfirmedTicketReturn(paidDate)) return;
         log('вернулась из оплаты билета', true, state.user, { hike_date: paidDate });
         const run = () => confirmTicketPaymentReturn(paidDate);
         // Нужен список хайков, чтобы найти название и обновить кнопки; ждём его как в card_/hike_
