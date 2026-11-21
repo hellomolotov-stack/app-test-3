@@ -43,9 +43,9 @@ test('app_card: only verified Telegram user with an active card gets own QR',asy
  assert.equal((await pilot.request({action:'app_card',initData:'x'},{})).body.error,'pilot_card_only');
 });
 test('hike_order: store key required, notifies organizer with totals; cron summary',async()=>{
- const sk='c'.repeat(40), sent=[], db={};
+ const sk='c'.repeat(40), sent=[], audience=[], db={};
  const api=setup({DC_LOYALTY_MODE:'live',DC_STORE_KEY:sk,DC_ONLINE_ENABLED:'1',CRON_SECRET:'d'.repeat(40)});
- api.deps.notify=async t=>sent.push(t);
+ api.deps.notify=async (t, options)=>{sent.push(t); audience.push(options?.paidBoxOrder);};
  api.deps.hikeOrders={async save(o){(db[o.date] ||= {})[o.number]=o;return db[o.date]},async read(d){return db[d]||{}}};
  const order=n=>({number:String(n),status:'paid',date:'2026-10-25',route:'Ай-Петри',name:'Анна',phone:'+7',items:[{name:'CHIKABAR',qty:1,total:11800}],total:120000,card_discount:0,ready_food:false});
  const r=b=>api.request({actor:'0',...b,mode:'live'},{'x-dc-store-key':sk});
@@ -57,6 +57,7 @@ test('hike_order: store key required, notifies organizer with totals; cron summa
  assert.match(sent[1],/2 заказа на 2[\s ]400 ₽/);
  await r({action:'hike_order',order:{...order(102),status:'cancelled'}});
  assert.match(sent[2],/отменён/); assert.match(sent[2],/1 заказ на 1[\s ]200 ₽/);
+ assert.deepEqual(audience,[true,true,false]);
  // cron
  const res={setHeader(){},status(c){this.code=c;return this},json(b){this.body=b;return this}};
  const h=require('../../api/dc-loyalty').createHandler(api.deps);
