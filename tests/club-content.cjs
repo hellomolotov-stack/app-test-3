@@ -13,6 +13,23 @@ const base = {
     metrics: { hikes: '100', locations: '20', kilometers: '1200', meetings: '400' },
     updates: [{ date: '2026-10-01T21:00:00.000Z', update: 'старое обновление' }],
 };
+const attendance = {
+    hikeVisitsBefore: { '2025-01-01': { title: 'Исторический маршрут', people: { 101: 'История', 104: 'Владелец карты' } } },
+    hikes: { '2025-01-01': { title: '' }, '2025-01-02': { title: 'Хайк' }, '2025-01-03': { title: 'Перенос', cancelled: true }, '2025-01-05': { title: 'Город', city: true } },
+    hikeParticipants: {
+        '2025-01-01': { 101: { name: 'История' } },
+        '2025-01-02': { 101: { name: 'История' }, 102: { name: 'Неявка' } },
+        '2025-01-03': { 103: { name: 'Отмена' } },
+        '2025-01-04': { 105: { name: 'Без хайка' } },
+        '2025-01-05': { 106: { name: 'Город' } },
+    },
+    noShows: { '2025-01-02': { 102: true } },
+    members: { 104: { user_id: 104 } },
+    app_users: { 101: { username: 'test-hiker' } },
+    pending_payments: {},
+    card_offers: {},
+};
+let readingAttendance = false;
 const overrides = {};
 let writes = 0;
 const revisionFor = section => overrides[section]
@@ -21,6 +38,11 @@ const revisionFor = section => overrides[section]
 const realFetch = global.fetch;
 global.fetch = async (url, options = {}) => {
     if (url === 'https://oauth2.googleapis.com/token') return Response.json({ access_token: 'test-token', expires_in: 3600 });
+    const attendanceSection = String(url).match(/\/([^/]+)\.json$/)?.[1];
+    if (readingAttendance && Object.hasOwn(attendance, attendanceSection)) {
+        assert.equal(options.headers.Authorization, 'Bearer test-token');
+        return Response.json(attendance[attendanceSection]);
+    }
     // мастермайнды и узлы для подсчёта знакомств (clubPairs) – добавились в api/club-content.js позже теста
     if (/\/(adminContent\/masterminds|mastermindSummaries|hikeParticipants|hikes|hikeVisitsBefore|noShows)\.json/.test(String(url))) return Response.json(null);
     const match = String(url).match(/\/(adminContent\/)?(metrics|updates)\.json$/);
@@ -113,6 +135,18 @@ async function call(method, body) {
     delete overrides.updates.value;
     response = await call('GET');
     assert.deepEqual(response.body.updates, [], 'An empty manual list must not restore old table updates');
+    const attendanceRequest = { action: 'newcomer_attendance' };
+    assert.equal((await call('POST', attendanceRequest)).status, 401);
+    assert.equal((await call('POST', { ...attendanceRequest, initData: signedUser('visitor') })).status, 403);
+    readingAttendance = true;
+    const history = await call('POST', { ...attendanceRequest, initData });
+    readingAttendance = false;
+    assert.equal(history.status, 200);
+    assert.equal(history.headers['Cache-Control'], 'no-store');
+    assert.deepEqual(history.body.people, [{
+        id: '101', name: 'История', username: 'test-hiker', can_message: null, offer: null, last: '2025-01-02',
+        hikes: [{ date: '2025-01-01', title: 'Исторический маршрут' }, { date: '2025-01-02', title: 'Хайк' }],
+    }], 'Attendance includes historical and current hikes once and excludes no-shows, cancellations and non-hikes');
     assert.equal((await call('DELETE')).status, 405);
     console.log('Club content tests passed: auth, validation, persistence, sync protection, concurrent edits');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => { global.fetch = realFetch; });

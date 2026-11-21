@@ -1549,14 +1549,28 @@ function ncMessage(p) {
     const name = String(p?.name || state.user?.first_name || 'друг').split(' ')[0];
     return String(nc.text || '').replace(/\[имя\]/gi, name);
 }
+async function fetchNewcomerAttendance() {
+    const response = await fetch('/api/club-content', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
+        body: JSON.stringify({ action: 'newcomer_attendance', initData: tg?.initData || '' }),
+    });
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data.people)) throw new Error(data.error || 'не удалось загрузить посещения');
+    return data.people;
+}
 async function loadNewcomers(force = false) {
     if (nc && nc.people && !force) return;
     nc = nc || { filter: 'recent', selected: new Set(), text: OFFER_TEXT_DEFAULT, people: null };
     nc.people = null;
     nc.error = '';
     try {
-        const res = await adminCall('adminNewcomers');
+        const withAttendance = view.tab === 'newcomers';
+        const [res, attendance] = await Promise.all([
+            adminCall('adminNewcomers'),
+            withAttendance ? fetchNewcomerAttendance() : null,
+        ]);
         nc.people = res.people || [];
+        if (withAttendance) nc.attendance = attendance;
         nc.selected = new Set(); // выбирает админ сам
     } catch (e) {
         nc.error = e.message;
@@ -1567,7 +1581,7 @@ function ncRecent(p) {
     return (Date.now() - new Date(p.last + 'T12:00:00').getTime()) / 86400000 <= 14;
 }
 function renderNewcomers(body) {
-    if (!nc || (!nc.people && !nc.error)) {
+    if (!nc || ((!nc.people || !nc.attendance) && !nc.error)) {
         body.innerHTML = '<div class="adm-muted" style="padding:20px 4px">собираю тех, кто ходил с нами…</div>';
         if (!nc || !nc.loading) { nc = nc || { filter: 'recent', selected: new Set(), text: OFFER_TEXT_DEFAULT }; nc.loading = true; loadNewcomers(true).finally(() => { if (nc) nc.loading = false; }); }
         return;
@@ -1577,7 +1591,15 @@ function renderNewcomers(body) {
         body.querySelector('#ncRetry').addEventListener('click', () => { nc.error = ''; nc.people = null; render(); });
         return;
     }
-    const all = nc.people.filter(p => !(p.offer && p.offer.used_at));
+    const legacyById = new Map(nc.people.map(person => [String(person.id), person]));
+    const all = nc.attendance.map(person => {
+        const legacy = legacyById.get(person.id);
+        return {
+            ...person, ...legacy,
+            id: person.id, name: legacy?.name || person.name, username: legacy?.username || person.username,
+            hikes: person.hikes, last: person.last,
+        };
+    }).filter(p => !p.offer?.used_at);
     const recent = all.filter(ncRecent);
     const list = nc.filter === 'recent' ? recent : all;
     const row = p => {
@@ -1643,7 +1665,7 @@ function renderNewcomers(body) {
     body.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => { haptic(); nc.filter = b.dataset.f; render(); }));
     body.querySelectorAll('[data-circle]').forEach(b => b.addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation(); haptic();
-        inviteCircle(all.find(x => x.id === b.dataset.circle));
+        inviteCircle(all.find(x => String(x.id) === b.dataset.circle));
     }));
 }
 async function inviteCircle(p) {
