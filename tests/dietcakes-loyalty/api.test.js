@@ -47,11 +47,12 @@ test('hike_order: store key required, notifies organizer with totals; cron summa
  const api=setup({DC_LOYALTY_MODE:'live',DC_STORE_KEY:sk,DC_ONLINE_ENABLED:'1',CRON_SECRET:'d'.repeat(40)});
  api.deps.notify=async (t, options)=>{sent.push(t); audience.push(options?.paidBoxOrder);};
  api.deps.hikeOrders={async save(o){(db[o.date] ||= {})[o.number]=o;return db[o.date]},async read(d){return db[d]||{}}};
- const order=n=>({number:String(n),status:'paid',date:'2026-10-25',route:'Ай-Петри',name:'Анна',phone:'+7',items:[{name:'CHIKABAR',qty:1,total:11800}],total:120000,card_discount:0,ready_food:false});
+ const order=n=>({number:String(n),status:'paid',date:'2026-10-25',route:'Ай-Петри',name:'Анна',phone:'+7',items:[{name:'CHIKABAR, 40 г',qty:2,total:11800},{name:'Гель <ягодный>',qty:1,total:9000}],total:120000,card_discount:0,ready_food:false});
  const r=b=>api.request({actor:'0',...b,mode:'live'},{'x-dc-store-key':sk});
  assert.equal((await api.request({actor:'0',action:'hike_order',order:order(1),mode:'live'},{})).code,401);
  assert.equal((await r({action:'hike_order',order:{bad:1}})).code,400);
  assert.equal((await r({action:'hike_order',order:order(101)})).code,200);
+ assert.match(sent[0], /состав заказа<\/b>\n• CHIKABAR, 40 г × 2\n• Гель &lt;ягодный&gt;\n💳/);
  assert.match(sent[0],/Бокс на хайк 25\.10/); assert.match(sent[0],/Получить на хайке/); assert.doesNotMatch(sent[0],/забираешь в магазине/);
  await r({action:'hike_order',order:order(102)});
  assert.match(sent[1],/2 заказа на 2[\s ]400 ₽/);
