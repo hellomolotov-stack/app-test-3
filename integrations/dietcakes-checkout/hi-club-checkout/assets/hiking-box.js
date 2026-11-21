@@ -95,13 +95,13 @@
   }
   var who = forWhom(hq.get('name'));
   // заголовок: жёлтая наклейка «хайкинг бокс», под ней – маршрут (имя пока не показываем)
-  (function () { var h1 = $('hi-h1'); h1.innerHTML = '<span class="hi-pill hi-h1-pill">хайкинг бокс</span>'; if (route) { var rs = document.createElement('span'); rs.className = 'hi-h1-route'; rs.textContent = 'на ' + route; h1.appendChild(rs); } })();
+  (function () { var h1 = $('hi-h1'); h1.innerHTML = '<span class="hi-pill hi-h1-pill">хайкинг бокс</span>'; if (route) { var rs = document.createElement('span'); rs.className = 'hi-h1-route'; rs.textContent = 'на хайк ' + (/^(?:по|на|в|к|через)\s/i.test(route) ? route : 'на ' + route); h1.appendChild(rs); } })();
   var hasCard = qs.get('card') === '1';
   // личный подписанный ID карты из приложения (после # – не уходит в адрес запроса); скидку по нему считает магазин с сервером клуба
   var cardToken = /^dc1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(hq.get('card') || '') ? hq.get('card') : '';
   // подписанный Telegram ID покупателя – бот клуба напишет ему про заказ (например, если он отменит участие в хайке)
   var tgRef = /^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(hq.get('tg') || '') ? hq.get('tg') : '';
-  if (hasCard) { $('hi-card-note').textContent = 'у тебя есть карта – скидка применится в корзине сама'; $('hi-card-btn').hidden = true; }
+  if (hasCard) { $('hi-card-note').textContent = cardToken ? 'скидка по карте рассчитывается при оформлении' : 'не удалось передать карту — открой бокс из приложения ещё раз'; $('hi-card-btn').hidden = true; }
   if (qs.get('custom') === '1') setTimeout(function () { $('hi-box').scrollIntoView({ behavior: 'smooth' }); }, 600);
 
   // в каждой категории можно выбрать несколько товаров: sel[бокс][категория] = [[id, количество], …]

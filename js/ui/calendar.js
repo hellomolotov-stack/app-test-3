@@ -4277,7 +4277,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                         <div class="rt-go" id="rtPackGo">⌄</div>
                     </button>
                     <div class="rt-pack" id="rtPackList" hidden></div>
-                    ${boxOk ? hikingBoxRowHtml('rt-box', hikeDate) : ''}
+                    ${hikingBoxRowHtml('rt-box', hikeDate, { paidOnly: !boxOk })}
                     ${hikeObj?.location_link ? `<button type="button" class="rt-row" id="rtPlace">
                         <div class="rt-n">4</div>
                         <div class="rt-text"><b><span data-app-copy="copy_ef773baa141d01d0ffd1">точка сбора</span>${hikeObj.start_time ? ' · ' + esc(hikeObj.start_time) : ''}</b><span>${route ? esc(route.title) + ' · ' : ''}<span data-app-copy="ticketPlace">место встречи на карте</span></span></div>
