@@ -11,28 +11,46 @@ export const HIKING_BOX_TEST_IDS = ['7845375334', '163665735']; // @hellointelli
 const boxMember = () => state.userCard?.status === 'active';
 const SHOP_URL = 'https://dietcakes.ru/hiking-intelligence/'; // наша страница на сайте «Жить здорово»
 // онлайн-скидка по карте с месячным лимитом: ссылка несёт личный подписанный ID карты (тот же, что в QR для кассы).
-let cardToken = '', tgRef = '';
-function prefetchCardToken() {
-    // подписанный Telegram ID – всем (бот напишет человеку о его заказе бокса)
-    if (!tgRef && window.Telegram?.WebApp?.initData) fetchWithTimeout('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'app_ref', initData: window.Telegram.WebApp.initData }) })
-        .then(r => r.ok ? r.json() : null).then(b => { if (/^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(b?.ref || '')) tgRef = b.ref; }).catch(() => {});
-    if (cardToken || !boxMember()) return;
-    fetchWithTimeout('/api/dc-loyalty', { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'app_card', initData: window.Telegram?.WebApp?.initData || '' }) })
-        .then(r => r.ok ? r.json() : null)
-        .then(b => { const m = /start=(dc1_\d{1,16}_[A-Za-z0-9_-]{28})$/.exec(b?.url || ''); if (m) cardToken = m[1]; })
-        .catch(() => {});
+let handoff;
+function prepareShopLink() {
+    const initData = window.Telegram?.WebApp?.initData;
+    const needsCard = boxMember();
+    if (!initData) return Promise.resolve({});
+    if (handoff?.initData === initData && handoff.needsCard === needsCard) return handoff.promise;
+
+    const request = action => fetchWithTimeout('/api/dc-loyalty', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, initData }),
+    }).then(response => {
+        if (!response.ok) throw new Error('box handoff unavailable');
+        return response.json();
+    });
+    const promise = Promise.all([
+        request('app_ref'),
+        needsCard ? request('app_card') : null,
+    ]).then(([buyer, card]) => {
+        const tgRef = buyer?.ref;
+        const cardToken = /[?&]start=(dc1_\d{1,16}_[A-Za-z0-9_-]{28})$/.exec(card?.url || '')?.[1];
+        if (!/^tg1_\d{1,16}_[A-Za-z0-9_-]{28}$/.test(tgRef || '') || (needsCard && !cardToken)) {
+            throw new Error('box handoff incomplete');
+        }
+        return { tgRef, cardToken };
+    }).catch(() => {
+        if (handoff?.promise === promise) handoff = undefined;
+        return null;
+    });
+    handoff = { initData, needsCard, promise };
+    return promise;
 }
 
-// ссылка на страницу бокса: бокс, дата и маршрут хайка; владельцу карты – card=1 (страница сама применит промокод INTELLIGENT)
-function shopUrl(hike, boxKey, custom) {
+function shopUrl(hike, boxKey, custom, { cardToken, tgRef }) {
     const q = new URLSearchParams();
     q.set('box', boxKey === 'light' ? 'light' : 'full');
     if (custom) q.set('custom', '1');
     let shopDate = hike?.date || '';
     const checkoutPilot = HIKING_BOX_TEST_IDS.includes(String(state.user?.id || ''));
     if (checkoutPilot) {
+        q.set('hi_fast', '1');
         const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Moscow' });
         // Только тестовая ссылка: прошедший/пустой хайк проверяем на дате через неделю.
         if (!/^\d{4}-\d{2}-\d{2}$/.test(shopDate) || shopDate < today) {
@@ -42,7 +60,7 @@ function shopUrl(hike, boxKey, custom) {
     if (/^\d{4}-\d{2}-\d{2}$/.test(shopDate)) q.set('hike', shopDate);
     const route = String(hike?.title || '').replace(/^(хайк|маршрут|тропа)\s+/i, '').replace(/^на\s+/i, '').trim();
     if (route) q.set('route', route);
-    if (boxMember()) q.set('card', '1');
+    if (cardToken) q.set('card', '1');
     q.set('utm_source', 'intelligentsia');
     // имя – после #: эта часть ссылки не уходит на сервер магазина, страница сама склонит «для Макса»
     const name = String(state.user?.first_name || '').trim().split(/\s+/)[0].slice(0, 30);
@@ -175,7 +193,7 @@ function rowTexts(ctx, hike, order) {
     if (order) {
         const tail = order.pickup ? '<span data-app-copy="copy_8a16073656576cbea7a3">заберёшь сам в магазине</span>' : '<span data-app-copy="copy_b1c2185c089e1f8781b4">получишь на старте</span>';
         return ctx === 'ticket'
-            ? [`<span data-app-copy="copy_c8e5b6fa632221ea2e52">бокс на</span> ${when} <span data-app-copy="copy_19a259c173ba54938ee4">уже ждёт тебя ✓</span>`, `№${escape(order.number)} · ${tail}`]
+            ? [`<span data-app-copy="copy_19a259c173ba54938ee4">бокс собран и оплачен ✓</span>`, `№${escape(order.number)} · ${tail}`]
             : [`<span data-app-copy="copy_124602b332998c850cc8">✓ бокс заказан на</span> ${when}`, `№${escape(order.number)} · ${tail}`];
     }
     if (ctx === 'ticket') return [
@@ -249,7 +267,7 @@ function preloadHikingBox() {
 }
 
 export function openHikingBox(fromEl, hike, isGuest) {
-    prefetchCardToken(); // пока человек смотрит бокс, ID карты уже готов к переходу в магазин
+    prepareShopLink();
     preloadHikingBox();
     document.querySelector('.hb-overlay')?.remove();
     const r = fromEl.getBoundingClientRect();
@@ -288,6 +306,7 @@ export function openHikingBox(fromEl, hike, isGuest) {
             </div>
             <div class="hb-pop" hidden></div>
             <div class="hb-bar">
+                <small class="hb-handoff-status" role="status" hidden></small>
                 <button type="button" class="hb-card-hint"><img src="assets/card-front.jpg" alt=""><span><b data-app-copy="copy_92894fd444e7f2dfc3d9">скидка 10%</b> с картой интеллигента</span><em data-app-copy="copy_faae07a6400251cdb2c0">купить ›</em></button>
                 <button data-app-copy="copy_b7f760805a0ca3b08b16" type="button" class="btn btn-yellow hb-buy hb-buy-full hb-custom">Настроить свой бокс</button>
             </div>
@@ -451,20 +470,33 @@ export function openHikingBox(fromEl, hike, isGuest) {
             import('./card-sheet.js').then(m => m.openCardSheet({ source: 'хайкинг бокс' })).catch(() => {});
         });
     });
-    overlay.querySelectorAll('.hb-buy').forEach(btn => btn.addEventListener('click', () => {
+    overlay.querySelectorAll('.hb-buy').forEach(btn => btn.addEventListener('click', async () => {
         haptic();
-        const tab = BOXES[current].tab;
+        const boxKey = current;
+        const tab = BOXES[boxKey].tab;
         const what = btn.classList.contains('hb-custom') ? 'настроить свой'
             : `взять ${tab}${isMember ? ' с картой' : ''}`;
-        openLink(shopUrl(hike, current, btn.classList.contains('hb-custom')), `hiking box: ${what} – ${hike.title}`, isGuest);
+        const status = overlay.querySelector('.hb-handoff-status');
+        btn.disabled = true;
+        status.hidden = false;
+        status.textContent = 'готовим переход в магазин';
+        const credentials = await prepareShopLink();
+        if (!overlay.isConnected) return;
+        btn.disabled = false;
+        if (!credentials) {
+            status.textContent = 'не удалось подготовить переход. нажми ещё раз';
+            return;
+        }
+        status.hidden = true;
+        openLink(shopUrl(hike, boxKey, btn.classList.contains('hb-custom'), credentials), `hiking box: ${what} – ${hike.title}`, isGuest);
     }));
 }
 
 // 4. строка-приглашение там, где человек уже записан: «мои записи» на главной и окно «записали тебя»
-export function hikingBoxRowHtml(cls = '', date = '') {
+export function hikingBoxRowHtml(cls = '', date = '', { paidOnly = false } = {}) {
     const hike = (state.hikesWithTitle || []).find(h => h.date === date);
     const [t, sub] = rowTexts(cls.includes('rt-box') ? 'ticket' : 'mine', hike, null);
-    return `<button type="button" class="hb-row ${cls}">${boxThumbHtml(true)}`
+    return `<button type="button" class="hb-row ${cls}"${paidOnly ? ' hidden style="display:none"' : ''}>${boxThumbHtml(true)}`
         + `<span class="hb-row-t"><b>${t}</b><small>${sub}</small></span><span class="hb-row-go">›</span></button>`;
 }
 export function bindHikingBoxRow(el, hikeDate, source, before) {
@@ -488,5 +520,11 @@ export function bindHikingBoxRow(el, hikeDate, source, before) {
         const [t, sub] = rowTexts(ctx, hike, order);
         const box = el.querySelector('.hb-row-t'); if (box) box.innerHTML = `<b>${t}</b><small>${sub}</small>`;
         el.classList.add('is-ordered');
+        if (el.hidden) {
+            el.hidden = false;
+            el.style.removeProperty('display');
+            el.disabled = true;
+            el.querySelector('.hb-row-go')?.remove();
+        }
     });
 }
