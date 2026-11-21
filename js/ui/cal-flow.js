@@ -137,6 +137,11 @@ export function renderCalFlow(container) {
         const at = list.findIndex(h => h.date === nh.date);
         if (at >= 0) start = at;
     }
+    // Под билетом показываем именно его хайк, а не следующий анонс.
+    const passDate = container.closest('#mainContent')?.querySelector('#rdHero .rd-pass-open[data-ticket]')?.dataset.ticket;
+    const passIndex = passDate ? list.findIndex(h => !h.nextMonth && h.date === passDate) : -1;
+    if (passIndex >= 0) start = passIndex;
+
     const linkedDate = nextHikeLinkDate();
     const linked = list.findIndex(h => h.date === linkedDate);
     if (linked >= 0) start = linked;
@@ -190,7 +195,7 @@ export function renderCalFlow(container) {
     requestAnimationFrame(() => {
         center(start, false); update();
         let hinted = false; try { hinted = localStorage.getItem('cfHinted2') === '1'; } catch (e) {}
-        if (!hinted) setTimeout(() => {
+        if (!hinted && passIndex < 0) setTimeout(() => {
             if (interacted || !container.isConnected || nextHikeLinkActive()) return;
             try { localStorage.setItem('cfHinted2', '1'); } catch (e) {}
             track.scrollBy({ left: 80, behavior: 'smooth' });
