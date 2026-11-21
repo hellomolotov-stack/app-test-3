@@ -40,7 +40,8 @@ function receivingLine(o) {
 }
 function orderLines(o) {
     return [`👤 ${/^\d{1,16}$/.test(o.tg || '') ? `<a href="tg://user?id=${o.tg}">${esc(o.name || 'профиль в Telegram')}</a>` : esc(o.name || 'без имени')}${o.phone ? ' · ' + esc(o.phone) : ''}`,
-        `🧺 ${o.items.map(i => `${esc(i.name)}${i.qty > 1 ? ' ×' + i.qty : ''}`).join(', ') || '—'}`,
+        '🧺 <b>состав заказа</b>',
+        ...(o.items.length ? o.items.map(i => `• ${esc(i.name)}${i.qty > 1 ? ' × ' + i.qty : ''}`) : ['позиции не переданы']),
         `💳 ${rub(o.total)}${o.card_discount ? ` (скидка по карте ${rub(o.card_discount)})` : ''}${o.ready_food ? ' · 🍱 готовая еда' : ''}`, receivingLine(o)];
 }
 function createHandler(deps) {
