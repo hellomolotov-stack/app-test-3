@@ -8,9 +8,9 @@ const recovery = source.slice(source.indexOf('export const TICKET_PENDING_TTL'),
     .replace(/export /g, '');
 const date = '2099-01-10';
 
-function fixture(statuses = [], server = []) {
+function fixture(statuses = [], server = [], existingStorage = null) {
     const pending = JSON.stringify({ type: 'ticket', hikeDate: date, hikeTitle: 'Test hike', ts: Date.now() });
-    const storage = new Map([['pending_reg_celebration', pending]]);
+    const storage = existingStorage || new Map([['pending_reg_celebration', pending]]);
     const elements = new Map(), overlays = [], successes = [], writes = [];
     let reads = 0, serverCalls = 0;
     const context = vm.createContext({
@@ -24,6 +24,7 @@ function fixture(statuses = [], server = []) {
         localStorage: {
             getItem: key => storage.get(key) || null,
             removeItem: key => storage.delete(key),
+            setItem: (key, value) => storage.set(key, value),
         },
         document: {
             querySelector: () => null,
@@ -83,6 +84,15 @@ function fixture(statuses = [], server = []) {
     assert.equal(paid.writes.length, 0);
     assert.equal(paid.context.state.hikeBookingStatus[0], true);
     assert.ok(!paid.storage.has('pending_reg_celebration'));
+
+    const reopened = fixture([{ [date]: true }], [], paid.storage);
+    assert.equal(await reopened.context.confirmTicketPaymentReturn(date), true);
+    assert.equal(reopened.serverCalls, 0, 'Reopening skips server verification');
+    assert.equal(reopened.successes.length, 0, 'Reopening does not show success again');
+    reopened.context.resetTicketConfirmation(123, date);
+    assert.equal(await reopened.context.confirmTicketPaymentReturn(date), true);
+    assert.equal(reopened.successes.length, 1, 'A new checkout can show success again');
+
 
     // сервер отвечает: Firebase не нужен вовсе (раньше без Firebase экран успеха не приходил)
     const viaServer = fixture([new Error('no firebase')], [{ card: { status: 'inactive' }, regs: {} }, { card: { status: 'inactive' }, regs: { [date]: true } }]);
