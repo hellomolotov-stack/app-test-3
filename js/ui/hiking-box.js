@@ -168,17 +168,21 @@ function boxOrderFor(date) {
     boxCache[date] = { at: Date.now(), p };
     return p;
 }
-// заголовок и подпись строки: «мои записи» (ctx = 'mine') и окно «записали тебя» (ctx = 'ticket'); order – оплаченный заказ или null
+// Editable wording is kept separate from the date, order number and discount.
 function rowTexts(ctx, hike, order) {
     const route = routeOf(hike), when = ddmm(hike?.date), member = state.userCard?.status === 'active';
+    const escape = value => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     if (order) {
-        const tail = order.pickup ? 'заберёшь сам в магазине' : 'получишь на старте';
+        const tail = order.pickup ? '<span data-app-copy="copy_8a16073656576cbea7a3">заберёшь сам в магазине</span>' : '<span data-app-copy="copy_b1c2185c089e1f8781b4">получишь на старте</span>';
         return ctx === 'ticket'
-            ? [`бокс на ${when} уже ждёт тебя ✓`, `№${order.number} · ${tail}`]
-            : [`✓ бокс заказан на ${when}`, `№${order.number} · ${tail}`];
+            ? [`<span data-app-copy="copy_c8e5b6fa632221ea2e52">бокс на</span> ${when} <span data-app-copy="copy_19a259c173ba54938ee4">уже ждёт тебя ✓</span>`, `№${escape(order.number)} · ${tail}`]
+            : [`<span data-app-copy="copy_124602b332998c850cc8">✓ бокс заказан на</span> ${when}`, `№${escape(order.number)} · ${tail}`];
     }
-    if (ctx === 'ticket') return ['ты в списке! добавь к хайку бокс', member ? 'по твоей карте −10% на бокс' : 'получишь его на старте'];
-    return ['возьми хайкинг бокс', route ? `ты идёшь ${toRoute(route)} – привезём на старт` : 'привезём прямо на старт хайка'];
+    if (ctx === 'ticket') return [
+        '<span data-app-copy="copy_ef247b8a17b88ee986a2">ты в списке! добавь к хайку бокс</span>',
+        member ? '<span data-app-copy="copy_777bd2e676010e70e1fe">по твоей карте</span> −10% <span data-app-copy="copy_42df0ed01f6334f506d8">на бокс</span>' : '<span data-app-copy="copy_57f6290dbd240c9e0924">получишь его на старте</span>',
+    ];
+    return ['<span data-app-copy="copy_2af4c34e573a6a2d8d07">возьми хайкинг бокс</span>', route ? `<span data-app-copy="copy_19f7bb8c825eb1381b4e">ты идёшь</span> ${escape(toRoute(route))} – <span data-app-copy="copy_1277b65d93c45d6ff956">привезём на старт</span>` : '<span data-app-copy="copy_694d5a236869f60354bf">привезём прямо на старт хайка</span>'];
 }
 
 // приписка от руки справа под словом «бокс»: «для Валерии» (без имени – «хайк на Ат-Баш · 25.10»)
