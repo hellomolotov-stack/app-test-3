@@ -592,7 +592,7 @@ function renderStoriesAdmin(body) {
     const list = storiesAdm.stories || [];
     const drafts = list.filter(s => s.status === 'draft'), live = list.filter(s => s.status === 'published');
     const item = s => `<div class="adm-content-update">
-        <div class="adm-content-update-date">${s.status === 'draft' ? (s.source === 'auto' ? '🤖 автоматический черновик' : '📝 черновик') : s.expired ? '⌛ срок вышел' : s.pinned ? '📌 закреплена' : `в ленте ещё ${s.days} дн.`}${s.status === 'published' ? ` · 👀 ${s.views}` : ''} · ${esc(ST_TYPES.find(t => t[0] === s.type)?.[1] || s.type)}</div>
+        <div class="adm-content-update-date">${s.status === 'draft' ? (s.source === 'auto' ? '🤖 автоматический черновик' : '📝 черновик') : s.pinned ? '📌 закреплена' : 'в ленте'}${s.status === 'published' ? ` · 👀 ${s.views}` : ''} · ${esc(ST_TYPES.find(t => t[0] === s.type)?.[1] || s.type)}</div>
         <div class="adm-content-update-text"><b>${esc(s.title)}</b>${s.text ? '<br>' + esc(s.text.slice(0, 160)) : ''}</div>
         <div class="adm-content-update-actions">${s.status === 'draft' ? `<button class="adm-link" data-st-pub="${esc(s.id)}">опубликовать</button>` : ''}<button class="adm-link" data-st-view="${esc(s.id)}">посмотреть</button><button class="adm-link" data-st-edit="${esc(s.id)}">изменить</button><button class="adm-link is-danger" data-st-hide="${esc(s.id)}">${s.status === 'draft' ? 'не публиковать' : 'убрать'}</button></div>
     </div>`;
@@ -607,7 +607,7 @@ function renderStoriesAdmin(body) {
             <label class="adm-field"><span>кнопка</span><select id="admStAction">${(d.action.startsWith('mm:') || d.action.startsWith('letter:') ? [[d.action, d.action.startsWith('letter:') ? 'читать письмо Макса' : 'читать саммари'], ...ST_ACTIONS] : ST_ACTIONS).map(([k, l]) => `<option value="${esc(k)}"${d.action === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
             ${d.action === 'url' ? `<label class="adm-field"><span>ссылка для кнопки</span><input id="admStUrl" value="${esc(d.url)}" placeholder="https://…"></label>` : ''}
             ${d.action ? `<label class="adm-field"><span>текст кнопки</span><input id="admStLabel" maxlength="40" value="${esc(d.label)}" placeholder="${esc(ST_ACTIONS.find(x => x[0] === d.action)?.[1] || 'подробнее')}"></label>` : ''}
-            <label class="adm-field"><span>сколько дней в ленте</span><input id="admStDays" type="number" min="1" max="60" value="${esc(d.days)}"></label>
+            <div class="adm-hint">срок показа пока отключён</div>
             <label class="adm-field" style="flex-direction:row;align-items:center;gap:8px"><input id="admStPin" type="checkbox"${d.pinned ? ' checked' : ''} style="width:auto"><span>закрепить первой и не убирать по сроку</span></label>
             <div class="adm-row2"><button type="button" class="adm-ghost" id="admStPreview">предпросмотр</button><button type="button" class="adm-ghost" id="admStDraft">${d.status === 'published' ? 'сохранить' : 'в черновики'}</button></div>
             ${d.status === 'published' ? '' : `<button type="submit" class="btn btn-yellow adm-primary"${storiesBusy ? ' disabled' : ''}>опубликовать</button>`}
@@ -630,7 +630,7 @@ function renderStoriesAdmin(body) {
     if (!d) return;
     const bind = (sel, key, ev = 'input', rer = false) => body.querySelector(sel)?.addEventListener(ev, e => { d[key] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; if (rer) render(); });
     bind('#admStType', 'type', 'change'); bind('#admStTitle', 'title'); bind('#admStText', 'text'); bind('#admStImage', 'image');
-    bind('#admStAction', 'action', 'change', true); bind('#admStUrl', 'url'); bind('#admStLabel', 'label'); bind('#admStDays', 'days'); bind('#admStPin', 'pinned', 'change');
+    bind('#admStAction', 'action', 'change', true); bind('#admStUrl', 'url'); bind('#admStLabel', 'label'); bind('#admStPin', 'pinned', 'change');
     body.querySelector('#admStCancel').addEventListener('click', () => { storyDraft = null; render(); });
     body.querySelector('#admStPreview').addEventListener('click', () => { const s = storyFromDraft(); preview({ ...s, date: Date.now() }); });
     body.querySelector('#admStDraft').addEventListener('click', () => saveStory(d.status === 'published' ? 'save' : 'draft'));
