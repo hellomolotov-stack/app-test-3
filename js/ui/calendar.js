@@ -4216,7 +4216,7 @@ export function showRegistrationSuccess(hikeDate, hikeTitle) {
 
 // 16.11: билет «ты в деле» – открывается после записи и потом снова: «твой билет» на главной, в «моих записях», в шторке хайка.
 // Погоды нет (прогноз не на ту дату), вместо неё – точка сбора; «что взять» – чек-лист прямо в билете
-const PACK_BASE = ['вода 1,5 л', 'перекус', 'обувь с протекторами'];
+const PACK_BASE = [['copy_56764baadd6f118e3e11', 'вода 1,5 л'], ['copy_e5e581f0112bb23a6cce', 'перекус'], ['copy_82f7d3c74acc1ab34c8c', 'обувь с протекторами']];
 const packKey = d => `packChecks:${d}`;
 export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardingPass = false } = {}) {
     document.querySelector('.reg-ticket-overlay')?.remove();
@@ -4259,7 +4259,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                 <div class="rt-list">
                     <div class="rt-row">
                         <div class="rt-n is-done">✓</div>
-                        <div class="rt-text"><b><span data-app-copy="ticketSaved">записали тебя</span></b><span id="rtCount">до встречи на тропе</span></div>
+                        <div class="rt-text"><b><span data-app-copy="ticketSaved">записали тебя</span></b><span id="rtCount"><span data-app-copy="copy_f28b66d2075b7b7f707c">до встречи на тропе</span></span></div>
                     </div>
                     ${needsWriteAccess() ? `<button type="button" class="rt-row rt-notify" id="rtNotify">
                         <div class="rt-n"><span data-app-copy="ticketBell">🔔</span></div>
@@ -4268,7 +4268,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                     </button>` : ''}
                     <button type="button" class="rt-row" id="rtChat">
                         <div class="rt-n">2</div>
-                        <div class="rt-text"><b>${isExperienced ? 'загляни в чат хайка' : 'вступи в чат хайка'}</b><span data-app-copy="copy_54d81d3236a9839706c3">такси, детали и обновления – только там</span></div>
+                        <div class="rt-text"><b>${isExperienced ? '<span data-app-copy="copy_7e3be613e59f5e36209b">загляни в чат хайка</span>' : '<span data-app-copy="copy_45749aeaf4fb29adbd0c">вступи в чат хайка</span>'}</b><span data-app-copy="copy_54d81d3236a9839706c3">такси, детали и обновления – только там</span></div>
                         <div class="rt-go">›</div>
                     </button>
                     <button type="button" class="rt-row" id="rtPack">
@@ -4286,7 +4286,7 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
                     <button type="button" class="rt-row" id="rtPhone">
                         <div class="rt-n">5</div>
                         <div class="rt-text"><b><span data-app-copy="ticketPhone">сохрани телефон организатора</span></b><span>${PHONE} · Максим</span></div>
-                        <div class="rt-chip" id="rtPhoneChip">скопировать</div>
+                        <div class="rt-chip" id="rtPhoneChip" data-app-copy="copy_0dae8170890cf83cf3fb">скопировать</div>
                     </button>
                 </div>
             </div>
@@ -4303,22 +4303,22 @@ export function openHikeTicket(hikeDate, { fresh = false, title = '', fromBoardi
     haptic();
     // чек-лист «что взять»: отметки – на телефоне, по дате хайка
     const winter = [10, 11, 0, 1, 2].includes(d.getMonth());
-    const packItems = [...PACK_BASE, ...(winter ? ['ветровка и тёплая кофта'] : []), 'фонарик'];
+    const packItems = [...PACK_BASE, ...(winter ? [['copy_8b924754849461674578', 'ветровка и тёплая кофта']] : []), ['copy_3c51b645313c58027878', 'фонарик']];
     let packOn = {}; try { packOn = JSON.parse(localStorage.getItem(packKey(hikeDate)) || '{}') || {}; } catch (e) {}
     const paintPack = () => {
         const n = packItems.filter((_, i) => packOn[i]).length;
         const sub = document.getElementById('rtPackSub');
-        if (sub) sub.textContent = n ? `собрано ${n} из ${packItems.length}` : `${packItems.length} пунктов · отметь собранное`;
+        if (sub) sub.innerHTML = n ? `<span data-app-copy="copy_13b3085ab6cd6d037276">собрано</span> ${n} из ${packItems.length}` : `${packItems.length} пунктов · <span data-app-copy="copy_8f4a201c269c04c08b98">отметь собранное</span>`;
     };
     const packList = document.getElementById('rtPackList');
-    packList.innerHTML = packItems.map((t, i) => `<button type="button" class="rt-pk${packOn[i] ? ' is-on' : ''}" data-pk="${i}"><i></i><span>${esc(t)}</span></button>`).join('')
-        + '<button type="button" class="rt-pk-ask" id="rtPackAsk">спросить помощника, что ещё взять ›</button>';
+    packList.innerHTML = packItems.map(([key, t], i) => `<button type="button" class="rt-pk${packOn[i] ? ' is-on' : ''}" data-pk="${i}"><i></i><span data-app-copy="${key}">${esc(t)}</span></button>`).join('')
+        + '<button type="button" class="rt-pk-ask" id="rtPackAsk" data-app-copy="copy_5250395adb1a6c513694">спросить помощника, что ещё взять ›</button>';
     paintPack();
 
     loadAllParticipants(hikeDate).then(pts => {
         const el = document.getElementById('rtCount');
         if (!el) return;
-        el.textContent = pts.length > 1 ? `ты ${pts.length}-й участник – до встречи на тропе` : 'ты первый – скоро подтянутся остальные';
+        el.innerHTML = pts.length > 1 ? `ты ${pts.length}-й участник – <span data-app-copy="copy_f28b66d2075b7b7f707c">до встречи на тропе</span>` : '<span data-app-copy="copy_582263d64c4655ab27db">ты первый – скоро подтянутся остальные</span>';
     }).catch(() => {});
 
     const closeSuccess = () => {
