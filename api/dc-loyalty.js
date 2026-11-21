@@ -182,7 +182,7 @@ function createHandler(deps) {
                     : `❌ <b>Заказ №${esc(order.number)} отменён</b> · хайк ${dayLabel(order.date)}`;
                 const text = [head, order.route ? `🏔 ${esc(order.route)}` : '', ...orderLines(order), '',
                     order.fulfillment === 'hike' ? `Итого на ${dayLabel(order.date)}: ${paid.length} ${paid.length === 1 ? 'заказ' : paid.length < 5 ? 'заказа' : 'заказов'} на ${rub(sum)}` : ''].filter(x => x !== '').join('\n');
-                await deps.notify(text);
+                await deps.notify(text, { paidBoxOrder: order.status === 'paid' });
                 return res.status(200).json({ ok: true });
             } catch { return res.status(503).json({ error: 'service_unavailable' }); }
         }
@@ -269,12 +269,14 @@ module.exports = createHandler({
             body: JSON.stringify({ chat_id: uid, text, parse_mode: 'HTML', disable_web_page_preview: true, ...(buttons ? { reply_markup: { inline_keyboard: buttons } } : {}) }),
             signal: AbortSignal.timeout(8000) }).catch(() => {});
     },
-    async notify(text) {
+    async notify(text, { paidBoxOrder = false } = {}) {
         const token = process.env.TELEGRAM_BOT_TOKEN; if (!token) return;
         let staff = []; try { staff = Object.keys(await this.staff.members()); } catch { staff = []; }
-        const ids = [...new Set(String(process.env.DC_ORDER_NOTIFY_IDS || '163665735').split(',').map(x => x.trim()).concat(staff))].filter(x => /^\d{1,16}$/.test(x));
-        await Promise.all(ids.map(id => fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ chat_id: id, text, parse_mode: 'HTML', disable_web_page_preview: true }), signal: AbortSignal.timeout(8000) }).catch(() => {})));
+        const originalRecipients = ids(process.env.DC_ORDER_NOTIFY_IDS || '163665735');
+        const paidOnlyRecipients = paidBoxOrder ? ids(process.env.DC_PAID_BOX_NOTIFY_IDS) : [];
+        const recipients = [...new Set(originalRecipients.concat(staff, paidOnlyRecipients))]
+            .filter(id => /^\d{1,16}$/.test(id));
+        await Promise.all(recipients.map(id => this.message(id, text)));
     },
     verifyInitData(initData) { const token = process.env.TELEGRAM_BOT_TOKEN; return token ? require('./tg-auth').verifyInitData(initData, token) : null; },
     store(mode) { const { getAccessToken } = require('./club-content'); return firebaseStore(getAccessToken, mode === 'pilot' ? 'dietcakesLoyaltyPilot' : 'dietcakesLoyalty'); },
