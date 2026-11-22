@@ -170,7 +170,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         info.innerHTML = `${rarityName(a.rarity) ? `<span class="ach-rar is-${esc(a.rarity)}">${rarityName(a.rarity)}${wait ? ' · ждёт активации' : ''}</span>` : '<span class="ach-rar is-empty">&nbsp;</span>'}
             <div class="ach-name">${esc(a.title)}</div>
             <div class="ach-desc">${esc(a.description || '') || '&nbsp;'}</div>
-            <div class="ach-meta">${a.grant?.date ? `<span>${esc((a.kind === 'route' && a.grant.dates?.length ? a.grant.dates : [a.grant.date]).map(dateRu).join(' · '))}</span>` : ''}${a.holders > 1 ? `<button type="button" data-with>вместе с ${a.holders - 1} ${a.holders - 1 === 1 ? 'интеллигентом' : 'интеллигентами'} ›</button>` : ''}<span>${esc(rarityShare(a.title))}</span></div>`;
+            <div class="ach-meta">${a.grant?.date ? `<span>${esc((a.grant.dates?.length ? a.grant.dates : [a.grant.date]).map(dateRu).join(' · '))}</span>` : ''}${a.holders > 1 ? `<button type="button" data-with>вместе с ${a.holders - 1} ${a.holders - 1 === 1 ? 'интеллигентом' : 'интеллигентами'} ›</button>` : ''}<span>${esc(rarityShare(a.title))}</span></div>`;
         withBox.hidden = true;
         // ждёт активации: вместо «поделиться» – активировать с картой
         overlay.querySelector('.ach-why').hidden = !wait;

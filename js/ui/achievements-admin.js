@@ -158,17 +158,17 @@ export async function renderAchievementsAdmin(body) {
         ui.achievements.forEach(a => { const r = a.recipients?.[userId]; if (r) map.set(normT(a.title), r.date || a.date); });
         return map;
     }
-    // добавить людей в значок: есть запись – дописываем к её получателям (уже выданным дату не трогаем), нет – создаём
+    // Выдать значок за выбранную дату. Повтор за ту же дату пропускаем.
     async function grant(title, recips) {
         const m = MEDAL_LIBRARY.find(x => x.title === title);
         const c = catalogByTitle(title);
         const existing = ui.achievements.find(a => normT(a.title) === normT(title));
-        let id, revision, draft, medalUrl = m?.imageUrl;
+        let id, revision, draft, medalUrl = m?.imageUrl, awards = {};
         const recipients = {};
         if (existing) {
             const d = await achievementRequest('get', { id: existing.id });
             const a = d.achievement;
-            id = existing.id; revision = d.revision; medalUrl = a.medal?.imageUrl || medalUrl;
+            id = existing.id; revision = d.revision; medalUrl = a.medal?.imageUrl || medalUrl; awards = a.grants || {};
             draft = { title: a.title, description: a.description || c?.description || '', rarity: a.rarity, kind: a.kind, hikeDate: a.hikeDate || '', date: a.date };
             Object.values(a.recipients || {}).forEach(p => { recipients[p.userId] = { userId: p.userId, name: p.name, date: p.date }; });
         } else {
@@ -177,12 +177,18 @@ export async function renderAchievementsAdmin(body) {
                 kind: categoryOf(title) === 'routes' ? 'route' : 'special', hikeDate: '', date: today() };
         }
         let added = 0;
-        recips.forEach(r => { if (!recipients[r.userId]) { recipients[r.userId] = r; added++; } });
+        for (const r of recips) {
+            const award = awards[r.userId];
+            const dates = award?.dates || [award?.hikeDate || award?.date];
+            if (dates.includes(r.date) || award?.manualRepeatDates?.includes(r.date)) continue;
+            recipients[r.userId] = r;
+            added++;
+        }
         if (!added) return 0;
         const list = Object.values(recipients);
         const dates = list.map(r => r.date).sort();
         const data = await achievementRequest('save', { id, revision, requestId: crypto.randomUUID(),
-            draft: { ...draft, date: dates[dates.length - 1], recipients: list }, medal: { imageUrl: medalUrl } });
+            draft: { ...draft, date: dates[dates.length - 1], recipients: list }, medal: { imageUrl: medalUrl }, repeatAwards: true });
         ui.achievements = [data.achievement, ...ui.achievements.filter(x => x.id !== data.achievement.id)];
         return added;
     }
@@ -199,8 +205,8 @@ export async function renderAchievementsAdmin(body) {
         } catch (error) { ui.error = `${error.message}${done ? ` (успел выдать ${done} из ${jobs.length})` : ''}`; }
         finally { ui.busy = false; ui.progress = ''; paint(); }
     }
-    const badgeTile = (m, { on = false, owned = '', attr = 'data-pick' } = {}) => `<button type="button" class="aw-badge${on ? ' is-on' : ''}${owned ? ' is-owned' : ''}" ${owned ? 'disabled' : `${attr}="${esc(m.title)}"`}>
-        <img ${medalSrc(m.imageUrl)} alt="" loading="lazy"><span>${esc(m.title)}</span><em>${owned ? `✓ есть · ${esc(dateLabel(owned))}` : on ? '✓ выбран' : ''}</em></button>`;
+    const badgeTile = (m, { on = false, owned = '', attr = 'data-pick' } = {}) => `<button type="button" class="aw-badge${on ? ' is-on' : ''}${owned && !on ? ' is-owned' : ''}" ${attr}="${esc(m.title)}">
+        <img ${medalSrc(m.imageUrl)} alt="" loading="lazy"><span>${esc(m.title)}</span><em>${on ? '✓ выбран' : owned ? `✓ есть · ${esc(dateLabel(owned))}` : ''}</em></button>`;
     function searchHtml(placeholder) {
         return `<label class="adm-field"><span>${placeholder}</span><input type="search" id="awWho" value="${esc(ui.search)}" placeholder="имя, фамилия или @телеграм" autocomplete="off"></label><div class="aw-found" id="awFound"></div>`;
     }
