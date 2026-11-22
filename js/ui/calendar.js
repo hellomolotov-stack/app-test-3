@@ -3092,8 +3092,8 @@ function updateFloatingSheetButtons() {
     const isPast = timing.isPast;
 
     // Фазы по времени в день хайка:
-    //   запись закрыта  — через час после старта и до 20:00
-    //   хайк завершён    — через пять часов после старта
+    //   запись на хайк закрывается через час после старта, не позднее 18:00 МСК
+    //   хайк завершён с 18:00 МСК
     const isCompletedToday = !isCancelled && !isPlaceholder && timing.isCompletedToday;
     const isClosedRegistration = !isPast && !isCancelled && !isPlaceholder && timing.isClosed && !isCompletedToday;
 

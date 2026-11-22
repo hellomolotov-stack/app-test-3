@@ -62,15 +62,16 @@ function photo(h) {
 }
 function cardHtml(h, i) {
     const t = today(), past = h.date < t, teaser = isTeaser(h), d = dt(h.date);
+    const completed = past || (!h.nextMonth && !teaser && !isCity(h) && !/🌧/.test(h.emoji || '') && hikeTiming(h).isCompletedToday);
     const wi = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
-    const booked = !past && !teaser && wi >= 0 && state.hikeBookingStatus?.[wi] === true;
+    const booked = !completed && !teaser && wi >= 0 && state.hikeBookingStatus?.[wi] === true;
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
-    const tag = past ? `<span class="cf-tag is-past">${isCity(h) ? 'завершено' : 'завершён'}</span>`
+    const tag = completed ? `<span class="cf-tag is-past">${isCity(h) ? 'завершено' : 'хайк завершён'}</span>`
         : teaser ? '<span data-app-copy="copy_2e3c54f9419b135864fe" class="cf-tag is-soon">готовим</span>'
         : booked ? '<span data-app-copy="copy_9b631d2cbe727405242a" class="cf-tag is-booked">✓ ты записан</span>'
         : isCity(h) ? '<span data-app-copy="copy_eab53e5231a45007606e" class="cf-tag is-city">в городе</span>' : '<span data-app-copy="copy_72d79e96e893be8b8aaf" class="cf-tag">запись открыта</span>';
     const on = teaser && isWaitlisted(h.date);
-    const cls = `cf-card${past ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
+    const cls = `cf-card${completed ? ' is-past' : ''}${teaser ? ' is-teaser' : ''}${on ? ' is-on' : ''}`;
     if (h.nextMonth) {
         // заглушка в конце ленты: размытая зима, снежинка, «сообщить об открытии» на весь месяц
         const m = d.getMonth(), winter = m === 11 || m <= 1;
@@ -91,14 +92,14 @@ function cardHtml(h, i) {
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
-    if (!past && bookingNotOpen(h.date)) {
+    if (!completed && bookingNotOpen(h.date)) {
         // анонс без записи: фото и название видны, сверху «с 17 ноября», внизу «напомнить»; детали не открываются
         const on2 = isWaitlisted(h.date);
         return `<button type="button" class="cf-card is-announce${on2 ? ' is-on' : ''}" data-i="${i}" data-date="${h.date}" aria-pressed="${on2}">${bg}
             <span data-app-copy="copy_7be49ec0932ca83d94b1" class="cf-tag">анонс</span><span class="cf-in cf-in-t"><small>${when}</small><b class="cf-title" lang="ru">${esc(h.title)}</b></span>
             <span class="cf-tbar"><span class="cf-tlab">${on2 ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
-    const sub = past ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
+    const sub = completed ? (h.preApp ? (h.n ? `были ${h.n}` : 'до приложения') : 'смотреть отчёт') : booked ? 'детали' : 'детали и запись';
     const title = esc(h.title)
         .replace(/(Массан)(дров)(ской)/gi, '$1&shy;$2&shy;$3')
         .replace(/(Черно)(реченск)/gi, '$1&shy;$2');
@@ -141,6 +142,11 @@ export function renderCalFlow(container) {
     const passDate = container.closest('#mainContent')?.querySelector('#rdHero .rd-pass-open[data-ticket]')?.dataset.ticket;
     const passIndex = passDate ? list.findIndex(h => !h.nextMonth && h.date === passDate) : -1;
     if (passIndex >= 0) start = passIndex;
+    else {
+        const finished = list.findIndex(h => h.date === t && !h.nextMonth && !isTeaser(h) && !isCity(h)
+            && !/🌧/.test(h.emoji || '') && hikeTiming(h).isCompletedToday);
+        if (finished >= 0) start = finished;
+    }
 
     const linkedDate = nextHikeLinkDate();
     const linked = list.findIndex(h => h.date === linkedDate);
