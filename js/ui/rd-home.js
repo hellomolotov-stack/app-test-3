@@ -311,9 +311,10 @@ const TEASER_PHOTOS = [
 ];
 const ROUTE_KEYS = [['ayudag', /аю.?даг/i], ['demerdzhi', /демерд/i], ['eklizi', /эклизи|чатыр/i], ['kant', /кант/i], ['krestovaya', /крестов/i], ['tsarskaya', /царск/i]];
 const heroPhotos = {};
-export function heroPhotoFor(title) {
-    if (heroPhotos[title]) return heroPhotos[title];
+export function heroPhotoFor(title, { matchedOnly = false } = {}) {
     const key = (ROUTE_KEYS.find(([, re]) => re.test(String(title || ''))) || [])[0];
+    if (matchedOnly && !key) return null;
+    if (heroPhotos[title]) return heroPhotos[title];
     const pool = TEASER_PHOTOS.map(([f]) => f).filter(f => !key || f.startsWith(key + '-'));
     return (heroPhotos[title] = pool[Math.floor(Math.random() * pool.length)]);
 }
@@ -347,7 +348,15 @@ function teaserHtml() {
 
 export function wireRdHomeTop() {
     const storyBanner = document.querySelector('.post-hike-story-banner');
-    storyBanner?.addEventListener('click', () => openPhotoStoryFor(state.hikesWithTitle.find(hike => hike.date === storyBanner.dataset.storyHike)));
+    if (storyBanner) {
+        const hike = state.hikesWithTitle.find(item => item.date === storyBanner.dataset.storyHike);
+        if (hike) {
+            storyBanner.addEventListener('click', () => openPhotoStoryFor(hike));
+            import('./post-hike-story.js').then(({ photoStoryExample }) => photoStoryExample(hike)).then(url => {
+                if (storyBanner.isConnected) storyBanner.querySelector('img').src = url;
+            }).catch(() => {});
+        }
+    }
     // сторис клуба (js/ui/club-stories.js) заменяют «свежее в клубе», когда есть опубликованные
     const csHost = document.getElementById('clubStoriesHost');
     if (csHost) import('./club-stories.js').then(m => m.mountClubStories(csHost)).catch(e => console.error(e));

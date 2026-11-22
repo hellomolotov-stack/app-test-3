@@ -8737,7 +8737,7 @@ button.rd-pass-meeting { cursor: pointer; }
 .post-hike-story-banner strong { display:block;font-size:27px;line-height:1.04;font-weight:800;letter-spacing:-.04em; }
 .post-hike-story-banner i { color:var(--yellow);font-size:19px;font-style:normal; }
 .post-hike-story-banner small { display:block;margin-top:9px;color:#c2c4c9;font-size:13px; }
-.post-hike-story-banner img { width:92px;height:auto;border-radius:11px;border:1px solid #ffffff30; }
+.post-hike-story-banner img { width:92px;height:auto;aspect-ratio:9/16;border-radius:11px;border:1px solid #ffffff30; }
 .post-photo-overlay [hidden] { display:none !important; }
 .post-photo-overlay .inv-sheet {
     background:radial-gradient(85% 39% at 50% 111%,#4fb0f047,transparent 94%),#12151b;
@@ -8747,7 +8747,7 @@ button.rd-pass-meeting { cursor: pointer; }
 .post-photo-overlay header button { width:44px;height:44px;border:0;border-radius:22px;background:#ffffff0e;color:#fff;font-size:24px; }
 .post-photo-overlay [data-intro] { margin:0 0 12px;color:#c2c4c9;font-size:14px; }
 .post-photo-overlay .story-preview { width:min(45vw,176px);margin:8px auto 12px; }
-.post-photo-overlay .story-preview img { display:block;width:100%;height:auto;border-radius:14px; }
+.post-photo-overlay .story-preview img { display:block;width:100%;height:auto;aspect-ratio:9/16;border-radius:14px; }
 .post-photo-actions { display:flex;gap:12px;justify-content:center; }
 .post-photo-actions button { width:auto;min-height:44px;margin:0; }
 /* Соло хайкинг */
@@ -8929,3 +8929,7 @@ button.rd-pass-meeting { cursor: pointer; }
 .copy-dialog button { min-height: 42px; border: 0; border-radius: 10px; padding: 8px 12px; background: #2a2d30; color: #fff; font: inherit; }
 .copy-dialog button[type=submit] { flex: 1; background: #d9fd19; color: #171a16; }
 .copy-dialog button:disabled { opacity: .55; }
+
+.post-hike-story-banner img:not([src]), .post-photo-overlay .story-preview img:not([src]) {
+    color:transparent;background:linear-gradient(180deg,#14243a,#0a0b0e);
+}
