@@ -176,21 +176,21 @@ export async function renderAchievementsAdmin(body) {
             draft = { title: m.title, description: c?.description || '', rarity: c?.rarity || EXTRA_RARITY[normT(title)] || 'common',
                 kind: categoryOf(title) === 'routes' ? 'route' : 'special', hikeDate: '', date: today() };
         }
-        let added = 0;
+        const repeatAwardIds = [];
         for (const r of recips) {
             const award = awards[r.userId];
             const dates = award?.dates || [award?.hikeDate || award?.date];
             if (dates.includes(r.date) || award?.manualRepeatDates?.includes(r.date)) continue;
             recipients[r.userId] = r;
-            added++;
+            repeatAwardIds.push(r.userId);
         }
-        if (!added) return 0;
+        if (!repeatAwardIds.length) return 0;
         const list = Object.values(recipients);
         const dates = list.map(r => r.date).sort();
         const data = await achievementRequest('save', { id, revision, requestId: crypto.randomUUID(),
-            draft: { ...draft, date: dates[dates.length - 1], recipients: list }, medal: { imageUrl: medalUrl }, repeatAwards: true });
+            draft: { ...draft, date: dates[dates.length - 1], recipients: list }, medal: { imageUrl: medalUrl }, repeatAwardIds });
         ui.achievements = [data.achievement, ...ui.achievements.filter(x => x.id !== data.achievement.id)];
-        return added;
+        return repeatAwardIds.length;
     }
     async function grantAll(jobs) {
         ui.busy = true; ui.error = ''; ui.success = ''; paint();

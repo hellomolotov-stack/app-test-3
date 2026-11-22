@@ -127,14 +127,16 @@ const save = (id = crypto.randomUUID(), value = draft, revision = 'null_etag') =
     assert.equal(records[request.id].grants['103'].issuedBy, '163665735');
     assert.equal(attached.body.achievement.recipients['103'].name, 'Макс');
     const rainDraft = { ...draft, title: 'промок, но дошёл', rarity: 'legendary',
-        recipients: [{ userId: '101', name: 'Анна', date: '2026-10-25' }] };
-    const rain = { ...save(undefined, rainDraft), repeatAwards: true, medal: { imageUrl: '/assets/achievements/badges/rain.png' } };
+        recipients: [{ userId: '101', name: 'Анна', date: '2026-10-25' }, { userId: '103', name: 'Макс', date: '2026-10-25' }] };
+    const rain = { ...save(undefined, rainDraft), repeatAwardIds: ['101', '103'], medal: { imageUrl: '/assets/achievements/badges/rain.png' } };
     assert.equal((await call(rain)).status, 200);
     const rainAgain = { ...rain, requestId: crypto.randomUUID(), revision: etag(rain.id),
-        draft: { ...rainDraft, date: '2026-11-22', recipients: [{ ...rainDraft.recipients[0], date: '2026-11-22' }] } };
+        repeatAwardIds: ['101'],
+        draft: { ...rainDraft, date: '2026-11-22', recipients: rainDraft.recipients.map(p => ({ ...p, date: '2026-11-22' })) } };
     assert.equal((await call(rainAgain)).status, 200);
     assert.deepEqual(records[rain.id].grants['101'].dates, ['2026-10-25', '2026-11-22']);
     assert.equal(records[rain.id].grants['101'].count, 2);
+    assert.equal(records[rain.id].grants['103'].date, '2026-10-25', 'An existing award outside the selected cohort is preserved');
     assert.equal((await call({ ...rainAgain, requestId: crypto.randomUUID(), revision: etag(rain.id) })).status, 200);
     assert.equal(records[rain.id].grants['101'].count, 2, 'The same event date never increments a special award twice');
     delete records[rain.id];
