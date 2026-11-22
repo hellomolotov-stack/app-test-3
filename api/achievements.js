@@ -444,7 +444,9 @@ function createHandler(deps = {}) {
                         const grant = record.grants?.[id];
                         if (!grant?.issuedAt) continue;
                         collections[id].push({ id: record.id, title: record.title, description: record.description || '', rarity: record.rarity, kind: record.kind,
-                            ...(own ? { seenAt: grantSeenAt(grant, seen.value?.[record.id]), holders: Object.values(record.grants || {}).filter(g => g?.issuedAt
+                            ...(own ? { seenAt: grantSeenAt(grant, seen.value?.[record.id]),
+                                ...(grant.entryPopupAt > 0 && grant.entryPopupAt === grant.notificationAt ? { entryPopupAt: grant.entryPopupAt } : {}),
+                                holders: Object.values(record.grants || {}).filter(g => g?.issuedAt
                                 && (titleKey(record.title) !== 'добро пожаловать' || !club || club.has(String(g.userId)))).length } : {}),
                             medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
                             grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt,

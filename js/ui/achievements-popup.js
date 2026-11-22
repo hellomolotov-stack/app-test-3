@@ -21,7 +21,7 @@ const isGuest = () => state.userCard?.status !== 'active';
 let shown = false;
 // уже показанные в этом запуске – чтобы один значок не всплыл дважды (например, после «открыто N значков»)
 const shownIds = new Set();
-const awardKey = a => `${a.id}:${a.grant?.issuedAt || 0}`;
+const awardKey = a => `${a.id}:${a.entryPopupAt || a.grant?.issuedAt || 0}`;
 let activeResizeObserver = null;
 
 // Ворота для переходов по ссылке («календарь» и т.п.): сначала окно новых значков, потом прокрутка.
@@ -32,23 +32,25 @@ const gate = new Promise(r => { gateOpen = r; });
 let autoPopupOpen = false;
 export const afterNewAchievements = (timeout = 9000) => Promise.race([gate, new Promise(r => setTimeout(() => { if (!autoPopupOpen) r(); }, timeout))]);
 
-// новые (ещё не показанные) ачивки – сами при заходе; по ссылке из бота – новые, а если их нет, последние
+// При обычном входе показываем только выдачи, помеченные для поп-апа.
+// По ссылке из бота показываем все новые значки, а если их нет — последние.
 export async function maybeShowNewAchievements({ fromLink = false } = {}) {
     const userId = String(state.user?.id || '');
     if (!userId || shown || !achievementsVisible()) return gateOpen();
     try {
         await Promise.race([claimAchievements(), new Promise(r => setTimeout(r, 4000))]);
-        // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
-        if (!fromLink) return gateOpen(); // значки выдаются, но окно само не всплывает
         const items = (await loadAchievementCollections([userId]))[userId] || [];
         if (String(state.user?.id || '') !== userId || shown) return gateOpen();
-        const fresh = items.filter(i => !i.seenAt);
+        const fresh = items.filter(i => !i.seenAt && (fromLink || i.entryPopupAt));
         const list = fresh.length ? fresh : fromLink ? items.slice(0, 6) : [];
         if (!list.length) return gateOpen();
         shown = true;
         // не поверх других шторок: подождём, пока закроются
         const open = () => {
-            if (document.querySelector('.bottom-sheet.visible, .cs-overlay, .hb-overlay, .modal-overlay, .ach-overlay')) return setTimeout(open, 1500);
+            if (String(state.user?.id || '') !== userId) return gateOpen();
+            const loader = document.getElementById('initial-loader');
+            const loading = loader && !loader.classList.contains('fade-out') && loader.style.display !== 'none';
+            if (loading || document.querySelector('.bottom-sheet.visible, .cs-overlay, .hb-overlay, .modal-overlay, .ach-overlay')) return setTimeout(open, 1500);
             const rest = list.filter(a => !shownIds.has(awardKey(a)));
             if (rest.length) autoPopupOpen = true;
             if (rest.length) openAchievementsPopup(rest, { fresh: fresh.length > 0, source: fromLink ? 'ссылка из бота' : 'заход в приложение', owned: items.length, onClose: gateOpen });
