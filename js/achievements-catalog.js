@@ -77,8 +77,8 @@ export const ACHIEVEMENT_CATEGORIES = [
 ];
 // значки вне каталога (шуточные, особые) идут в «моменты на хайке»; отдельный раздел остался на случай пустого id
 export const EXTRA_CATEGORY = { key: 'extra', title: 'особые', hint: '' };
-// маршруты вне 18 основных (Ат-Баш) – тоже в разделе «маршруты»
-const EXTRA_ROUTE_TITLES = ['хайк на ат баш']; // в виде после norm()
+// маршруты вне 18 основных – тоже в разделе «маршруты»
+const EXTRA_ROUTE_TITLES = ['хайк на ат баш', 'байдарская яйла']; // в виде после norm()
 export const categoryOf = title => {
     const c = catalogByTitle(title);
     if (!c) return EXTRA_ROUTE_TITLES.includes(norm(title)) ? 'routes' : 'moments';
@@ -93,6 +93,7 @@ const ROUTE_KEYS = { 'route-krestovaya': ['крестов'], 'route-kant': ['к�
     'route-tsarskaya': ['царск'], 'route-ai-yori': ['ай йори'], 'at-bash': ['ат баш'] };
 export function routeBadgeForHike(hikeTitle) {
     const t = norm(hikeTitle);
+    if (t.includes('байдарск') && t.includes('яйл')) return 'Байдарская яйла';
     const id = Object.keys(ROUTE_KEYS).find(k => ROUTE_KEYS[k].some(w => t.includes(w)));
     if (!id) return null;
     return id === 'at-bash' ? 'хайк на Ат-Баш' : ACHIEVEMENT_CATALOG.find(a => a.id === id)?.title || null;
