@@ -357,7 +357,14 @@ export function wireRdHomeTop() {
         storyBannerExpiryTimer = setTimeout(() => storyBanner.remove(), Math.max(0, expiresIn));
         const hike = state.hikesWithTitle.find(item => item.date === storyBanner.dataset.storyHike);
         if (hike) {
-            storyBanner.addEventListener('click', () => openPhotoStoryFor(hike));
+            const input = storyBanner.querySelector('input');
+            storyBanner.querySelector('.post-story-pick').addEventListener('click', () => input.click());
+            storyBanner.querySelector('.post-story-phone').addEventListener('click', () => openPhotoStoryFor(hike));
+            input.addEventListener('change', () => {
+                const file = input.files[0];
+                input.value = '';
+                if (file) openPhotoStoryFor(hike, file);
+            });
             import('./post-hike-story.js').then(({ photoStoryExample }) => photoStoryExample(hike)).then(url => {
                 if (storyBanner.isConnected) storyBanner.querySelector('img').src = url;
             }).catch(() => {});

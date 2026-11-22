@@ -8729,15 +8729,48 @@ button.rd-pass-meeting { cursor: pointer; }
 .rd-pass-card button:focus-visible { outline: 2px solid #2d654b; outline-offset: 3px; }
 
 .post-hike-story-banner {
-    display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:12px;align-items:center;width:100%;
-    margin:0 0 12px;padding:14px;border-radius:24px;border:1px solid #ffffff1c;color:#f5f5f7;
-    background:radial-gradient(85% 85% at 52% 114%,rgba(79,176,240,.64),transparent 91%),#090b0e;
-    text-align:left;font:inherit;cursor:pointer;
+    --device-width:126px;
+    position:relative; isolation:isolate; overflow:hidden; min-height:184px;
+    margin:0 0 12px; padding:18px 14px; border-radius:24px; border:1px solid #ffffff20;
+    background:radial-gradient(85% 85% at 63% 113%,#4fb0f052,transparent 90%),#0c1016;
+    color:#f5f5f7; box-shadow:inset 0 1px 0 #ffffff09;
 }
-.post-hike-story-banner strong { display:block;font-size:27px;line-height:1.04;font-weight:800;letter-spacing:-.04em; }
-.post-hike-story-banner i { color:var(--yellow);font-size:19px;font-style:normal; }
-.post-hike-story-banner small { display:block;margin-top:9px;color:#c2c4c9;font-size:13px; }
-.post-hike-story-banner img { width:92px;height:auto;aspect-ratio:9/16;border-radius:11px;border:1px solid #ffffff30; }
+.post-story-copy {
+    position:relative; z-index:1; display:grid; align-content:center; justify-items:start;
+    min-height:146px; width:calc(100% - var(--device-width) - 9px);
+}
+.post-story-copy h2 { margin:0; font-size:23px; line-height:1.04; font-weight:800; letter-spacing:-.04em; }
+.post-story-copy p { margin:8px 0 13px; color:#c3cbd3; font-size:13px; line-height:1.27; }
+.post-story-button-size { display:inline-grid; }
+.post-story-button-size::before, .post-story-button-size button { grid-area:1/1; }
+.post-story-button-size::before {
+    content:attr(data-reference-label); visibility:hidden; font-size:14px; font-weight:600; white-space:nowrap; padding:0 16px;
+}
+.post-hike-story-banner .post-story-pick { width:100%; background:linear-gradient(180deg,#e8ff4a,#c9ec00); color:#000; }
+.post-story-phone {
+    position:absolute; inset:auto 16px 0 auto; width:var(--device-width); height:145px;
+    border:0; padding:0; border-radius:23px 23px 0 0; background:none; cursor:pointer;
+}
+.post-story-device {
+    position:absolute; inset:0 0 auto; aspect-ratio:9/19.4; overflow:hidden;
+    border:1px solid #8e99a5; border-radius:24px;
+    background:linear-gradient(125deg,#aeb8c2,#525964 13%,#1b2028 42%,#6b7784 80%,#343b46);
+    box-shadow:inset 0 0 0 1px #ffffff42,0 6px 21px #0009;
+}
+.post-story-camera {
+    position:absolute; z-index:1; top:10px; left:50%; transform:translateX(-50%);
+    width:30px; height:8px; border-radius:8px; background:#090a0c; box-shadow:inset 0 0 0 1px #22262c;
+}
+.post-story-screen {
+    position:absolute; inset:4px; overflow:hidden; border:2px solid #090a0d; border-radius:20px;
+    background:linear-gradient(180deg,#121a23,#0a0b0e);
+}
+.post-story-screen img { display:block; width:100%; height:auto; margin-top:12px; }
+@media (max-width:355px) {
+    .post-hike-story-banner { --device-width:100px; padding-inline:12px; }
+    .post-story-phone { right:9px; height:132px; }
+    .post-story-copy h2 { font-size:20px; }
+}
 .post-photo-overlay [hidden] { display:none !important; }
 .post-photo-overlay .inv-sheet {
     background:radial-gradient(85% 39% at 50% 111%,#4fb0f047,transparent 94%),#12151b;
@@ -8930,6 +8963,7 @@ button.rd-pass-meeting { cursor: pointer; }
 .copy-dialog button[type=submit] { flex: 1; background: #d9fd19; color: #171a16; }
 .copy-dialog button:disabled { opacity: .55; }
 
-.post-hike-story-banner img:not([src]), .post-photo-overlay .story-preview img:not([src]) {
+.post-story-screen img:not([src]) { visibility:hidden; }
+.post-photo-overlay .story-preview img:not([src]) {
     color:transparent;background:linear-gradient(180deg,#14243a,#0a0b0e);
 }

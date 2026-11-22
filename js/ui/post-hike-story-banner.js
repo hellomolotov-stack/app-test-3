@@ -28,13 +28,24 @@ export function photoBannerHtml(hasTrack, now = new Date()) {
     const offer = eligible.find(({ hike }) => hasTrack(hike));
     if (!offer) return '';
     const { hike, expiresAt } = offer;
-    return `<button type="button" class="post-hike-story-banner" data-story-hike="${hike.date}" data-story-expires="${expiresAt}">
-        <span><strong>сделать<br>сторис <i aria-hidden="true">↗</i></strong><small data-app-copy="copy_c78c35da87a1c67b2c2d">фото с треком и высотой</small></span>
-        <img alt="" width="92" height="163">
-    </button>`;
+    return `<article class="post-hike-story-banner" data-story-hike="${hike.date}" data-story-expires="${expiresAt}">
+        <div class="post-story-copy">
+            <h2>сторис</h2>
+            <p data-app-copy="copy_c78c35da87a1c67b2c2d">добавим к твоему фото<br>трек и высоту</p>
+            <span class="post-story-button-size" data-reference-label="читать саммари">
+                <button type="button" class="mmc-read post-story-pick">выбрать фото</button>
+            </span>
+        </div>
+        <button type="button" class="post-story-phone" aria-label="открыть пример сторис с треком завершённого хайка">
+            <span class="post-story-device"><span class="post-story-camera" aria-hidden="true"></span>
+                <span class="post-story-screen"><img alt="" width="1080" height="1920"></span>
+            </span>
+        </button>
+        <input type="file" accept="image/*" hidden>
+    </article>`;
 }
 
-export function openPhotoStoryFor(hike) {
+export function openPhotoStoryFor(hike, file) {
     if (!hike || !completedPhotoHike(hike)) return;
-    import('./post-hike-story.js').then(module => module.openPhotoStory(hike));
+    import('./post-hike-story.js').then(module => module.openPhotoStory(hike, file));
 }

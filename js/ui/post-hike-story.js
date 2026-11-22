@@ -118,7 +118,7 @@ export function photoStoryExample(hike) {
     return example;
 }
 
-export function openPhotoStory(hike) {
+export function openPhotoStory(hike, initialFile) {
     haptic();
     document.querySelector('.story-overlay')?.remove();
     const overlay = document.createElement('div');
@@ -161,28 +161,29 @@ export function openPhotoStory(hike) {
         try { await callback(); }
         finally { buttons.forEach(button => { button.disabled = false; }); }
     }
+    const showPhoto = file => run(async () => {
+        setUiCopy(note, ["copy_40df80277fd8e1e9b5a5", 'готовим фото…']);
+        try {
+            photo = await renderPhoto(file, hike);
+            const image = get('.story-preview img');
+            image.src = photo;
+            image.alt = 'твоё фото с треком';
+            get('#post-photo-title').textContent = 'твоя сторис готова';
+            get('[data-intro]').hidden = true;
+            pick.hidden = true;
+            share.hidden = false;
+            get('.post-photo-actions').hidden = false;
+            note.textContent = '';
+        } catch {
+            setUiCopy(note, ["copy_2bc5d72bb97e10f41740", 'не получилось оформить фото, попробуй другой снимок']);
+        }
+    });
     input.addEventListener('change', () => {
         const file = input.files[0];
         input.value = '';
-        if (!file) return;
-        run(async () => {
-            setUiCopy(note, ["copy_40df80277fd8e1e9b5a5", 'готовим фото…']);
-            try {
-                photo = await renderPhoto(file, hike);
-                const image = get('.story-preview img');
-                image.src = photo;
-                image.alt = 'твоё фото с треком';
-                get('#post-photo-title').textContent = 'твоя сторис готова';
-                get('[data-intro]').hidden = true;
-                pick.hidden = true;
-                share.hidden = false;
-                get('.post-photo-actions').hidden = false;
-                note.textContent = '';
-            } catch {
-                setUiCopy(note, ["copy_2bc5d72bb97e10f41740", 'не получилось оформить фото, попробуй другой снимок']);
-            }
-        });
+        if (file) showPhoto(file);
     });
+    if (initialFile) showPhoto(initialFile);
     share.addEventListener('click', () => run(async () => {
         if (!tg?.shareToStory || !tg.isVersionAtLeast?.('7.8')) {
             setUiCopy(note, ["copy_0f99d24f72f52a10994a", 'сохрани фото и поделись им из галереи']);
