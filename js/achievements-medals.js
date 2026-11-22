@@ -48,6 +48,7 @@ export const MEDAL_LIBRARY = [
     { title: 'Царская тропа', imageUrl: '/assets/achievements/badges/route-tsarskaya-v1.png' },
     { title: 'хайк на Ай-Йори', imageUrl: '/assets/achievements/badges/route-ai-yori-v1.png' },
     { title: 'хайк на Ат-Баш', imageUrl: '/assets/achievements/badges/route-at-bash-v2.png' },
+    { title: 'Байдарская яйла', imageUrl: '/assets/achievements/badges/route-baydarskaya-yayla-11km-v1.png' },
     // количество хайков – серия 5/10/20/30/50 (27.10.2026, фон убран)
     { title: '5 хайков', imageUrl: '/assets/achievements/badges/hikes-5-v2.png' },
     { title: '10 хайков', imageUrl: '/assets/achievements/badges/hikes-10-v3.png' },
