@@ -141,6 +141,13 @@ function ensureCss() {
 
 let data = null;
 let dataRequest = null;
+let dataCompletionKey = '';
+function resetCompletedCircle() {
+    const key = new Date(Date.now() - 15 * 3600000).toISOString().slice(0, 10);
+    if (key === dataCompletionKey) return;
+    dataCompletionKey = key;
+    data = dataRequest = null;
+}
 const NEAR = 40; // первый слой – самые близкие
 async function load() {
     const initData = window.Telegram?.WebApp?.initData || '';
@@ -276,12 +283,18 @@ async function openCard(source) {
 
 export async function mountCircle(container) {
     if (!container || !circleEnabled()) return;
+    resetCompletedCircle();
+    const requestKey = dataCompletionKey;
     ensureCss();
     container.className = 'card-container cc-card' + (document.documentElement.classList.contains('v2') ? ' lv-card' : '');
     container.innerHTML = '<div class="cc-hdr"><h2 data-app-copy="copy_e6ec8d302b7dcc9d797a">твои связи</h2></div><div data-app-copy="copy_afb62030fcedb8f093f2" class="cc-load">собираю твои связи…</div>';
     try {
         // один запрос на запуск: главная перерисовывается 2–3 раза подряд, и каждый раз уходил новый запрос
-        data = data || await (dataRequest ||= load().catch(() => null).then(d => { if (!d) dataRequest = null; return d; }));
+        const request = dataRequest ||= load().catch(() => null);
+        const loaded = data || await request;
+        if (requestKey !== dataCompletionKey) return;
+        data = loaded;
+        if (!loaded && dataRequest === request) dataRequest = null;
     } catch (e) { data = null; }
     if (!data || !data.total) { container.remove(); return; }
     if (data.locked && !data.clubAdded) {

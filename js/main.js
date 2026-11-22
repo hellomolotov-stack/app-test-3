@@ -1066,7 +1066,7 @@ async function loadAppData() {
             const n = Number(me?.card?.hikes) || 0;
             if (!n || !state.userCard || n <= (Number(state.userCard.hikes) || 0)) return;
             state.userCard.hikes = n;
-            document.querySelectorAll('.hike-counter .counter-number').forEach(el => { el.textContent = n; });
+            document.querySelectorAll('.hike-counter .counter-number, #rdMiniCard:not(.is-guest) > span').forEach(el => { el.textContent = n; });
         }).catch(() => {});
         const pRegsPopup = loadRegistrationsPopup();
         const pPopupConfig = loadPopupConfig();
@@ -1187,6 +1187,35 @@ document.addEventListener('focusout', (e) => {
 
 // Стартуем, как только готов DOM, а не по 'load': тот ждёт фоновую картинку и библиотеку карт,
 // и на медленном интернете приложение стояло пустым лишние 10+ секунд.
+// Refresh a session that stays open across the completion boundary.
+function watchHikeCompletion() {
+    const keyAt = now => new Date(now - 15 * 3600000).toISOString().slice(0, 10);
+    let key = keyAt(Date.now());
+    let timer;
+    function tick() {
+        clearTimeout(timer);
+        const now = Date.now(), nextKey = keyAt(now);
+        if (key !== nextKey) {
+            key = nextKey;
+            if (homeOnScreen()) renderHome();
+            if (tg?.initData && state.user?.id) {
+                fetch('/api/me', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ initData: tg.initData }), signal: timeoutSignal(8000),
+                }).then(r => r.ok ? r.json() : null).then(me => {
+                    if (String(me?.uid) !== String(state.user?.id) || !state.userCard || typeof me?.card?.hikes !== 'number') return;
+                    state.userCard.hikes = me.card.hikes;
+                    document.querySelectorAll('.hike-counter .counter-number, #rdMiniCard:not(.is-guest) > span').forEach(el => { el.textContent = me.card.hikes; });
+                    saveCachedState();
+                }).catch(() => {});
+            }
+        }
+        timer = setTimeout(tick, Date.parse(nextKey + 'T15:00:00Z') + 86400000 - now + 30);
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+    tick();
+}
+
 function startApp() {
     state.user = tg?.initDataUnsafe?.user;
     initErrorReporting();
@@ -1210,6 +1239,7 @@ function startApp() {
     initTypograph(); // без висящих предлогов во всех текстах
     loadAppData();
     startClubMetricsRefresh();
+    watchHikeCompletion();
 }
 const startWhenTelegramReady = () => Promise.resolve(window.__telegramReady).then(startApp);
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startWhenTelegramReady, { once: true });
