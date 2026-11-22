@@ -33,7 +33,11 @@ global.fetch = async (url, opts = {}) => {
 };
 
 (async () => {
+    db.hikeBadges[date] = { done: { at: now, people: [{ userId: '101' }] } };
+    db.clubAchievements.rain = { title: 'промок, но дошёл', medal: { imageUrl: '/assets/achievements/badges/rain.png' },
+        grants: { '101': { date, issuedAt: now } } };
     assert.equal(await autoScan('test-token'), 1);
+    assert.equal(db.clubStories[`auto_badges_${date}`], undefined);
     assert.equal(db.clubStories[expected.id].status, 'published');
     db.clubStories[expected.id].views = { reader: now };
     assert.equal(await autoScan('test-token'), 0, 'Do not duplicate a letter or overwrite its views');
