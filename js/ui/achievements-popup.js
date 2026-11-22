@@ -119,7 +119,7 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         <div class="ach-with" hidden></div>
         <p class="ach-why" hidden>легендарные и эпические значки <b data-app-copy="copy_4fc153a0f478d76ebb01">активируются с картой интеллигента</b> – он уже твой и будет ждать</p>
         ${firstVisit ? '<button data-app-copy="copy_68660b0da105c0f2cbfe" type="button" class="btn btn-yellow ach-btn" data-first-hike>записаться на хайк</button>' : ''}
-        ${owner ? '' : `<button type="button" class="btn ${firstVisit ? 'ach-btn-all' : 'btn-yellow'} ach-btn" data-share-one>поделиться в сторис</button>`}
+        ${owner ? '' : `<button type="button" class="btn ${firstVisit ? 'ach-btn-all' : 'btn-yellow'} ach-btn" ${fresh ? 'style="display:none" ' : ''}data-share-one>поделиться в сторис</button>`}
         ${all && all.length > items.length ? `<button type="button" class="btn ach-btn ach-btn-all" data-all>смотреть все · ${all.length}</button>` : ''}
 
         <p class="ach-note" role="status"></p>
@@ -175,7 +175,10 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
         // ждёт активации: вместо «поделиться» – активировать с картой
         overlay.querySelector('.ach-why').hidden = !wait;
         const btn = overlay.querySelector('[data-share-one]');
-        if (btn && !btn.dataset.busy) setUiCopy(btn, wait ? ["copy_477b6a5742fbf87220ef", 'активировать с картой'] : ["copy_0aaea2ca360089ec97df", 'поделиться в сторис']);
+        if (btn) {
+            btn.style.display = fresh && !wait ? 'none' : '';
+            if (!btn.dataset.busy) setUiCopy(btn, wait ? ["copy_477b6a5742fbf87220ef", 'активировать с картой'] : ["copy_0aaea2ca360089ec97df", 'поделиться в сторис']);
+        }
         info.querySelector('[data-with]')?.addEventListener('click', () => openWith(a));
         overlay.querySelectorAll('.ach-slide').forEach((s, k) => s.classList.toggle('is-on', k === i));
         // точек максимум три: первая – начало, последняя – конец, средняя – всё между
@@ -288,7 +291,10 @@ export function openAchievementsPopup(items, { fresh = true, source = '', initia
     });
     const oneBtn = overlay.querySelector('[data-share-one]');
     if (oneBtn) oneBtn.onclick = () => {
-        if (!isWaiting(items[current])) return share([items[current]], oneBtn, items[current].title);
+        if (!waiting(items[current])) {
+            if (!fresh) return share([items[current]], oneBtn, items[current].title);
+            return;
+        }
         haptic(); log(`значки: нажал «активировать с картой» на «${items[current].title}»`, true, state.user); close();
         // кусок кода шторки грузится отдельно: на плохой сети или после обновления приложения мог не подгрузиться – пробуем ещё раз, потом перезагружаем
         const openSheet = () => import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значок ждёт активации' }));
