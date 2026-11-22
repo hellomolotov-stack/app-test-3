@@ -118,7 +118,7 @@ export function photoStoryExample(hike) {
     return example;
 }
 
-export function openPhotoStory(hike, onShare) {
+export function openPhotoStory(hike) {
     haptic();
     document.querySelector('.story-overlay')?.remove();
     const overlay = document.createElement('div');
@@ -194,7 +194,6 @@ export function openPhotoStory(hike, onShare) {
             if (!overlay.isConnected || !overlay.classList.contains('is-on')) return;
             tg.shareToStory(publicUrl);
             note.textContent = '';
-            onShare();
         } catch {
             setUiCopy(note, ["copy_ae80370c3ec6967aa7f1", 'не получилось открыть сторис, попробуй ещё раз']);
         }

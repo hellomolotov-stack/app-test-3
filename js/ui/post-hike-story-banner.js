@@ -9,31 +9,26 @@ export function completedPhotoHike(hike, now = new Date()) {
     return enabled(hike) && (timing.isPast || timing.isCompletedToday);
 }
 
-const dismissed = new Set();
-const keyFor = hike => `shared-hike-photo:${state.user?.id}:${hike.date}`;
+const bannerLifetimeMs = 48 * 60 * 60 * 1000;
 
-export function hidePhotoBanner(hike) {
-    const key = keyFor(hike);
-    dismissed.add(key);
-    try { localStorage.setItem(key, '1'); } catch {}
-    const banner = document.querySelector('.post-hike-story-banner');
-    if (banner?.dataset.storyHike === hike.date) banner.remove();
-}
-
-export function photoBannerHtml(hasTrack) {
+export function photoBannerHtml(hasTrack, now = new Date()) {
     if (!state.user?.id) return '';
     const hikes = state.hikesWithTitle || [];
-    const hike = hikes.filter(item => enabled(item) && /^\d{4}-\d{2}-\d{2}$/.test(item.date))
-        .sort((a, b) => b.date.localeCompare(a.date))[0];
-    if (!hike || !completedPhotoHike(hike) || !hasTrack(hike)) return '';
-    const registered = state._userRegs
-        ? state._userRegs[hike.date] === true
-        : state.hikeBookingStatus[hikes.indexOf(hike)] === true;
-    if (!registered) return '';
-    const key = keyFor(hike);
-    if (dismissed.has(key)) return '';
-    try { if (localStorage.getItem(key)) return ''; } catch {}
-    return `<button type="button" class="post-hike-story-banner" data-story-hike="${hike.date}">
+    const nowMs = now.getTime();
+    const eligible = hikes.flatMap((hike, index) => {
+        const registered = state._userRegs
+            ? state._userRegs[hike.date] === true
+            : state.hikeBookingStatus[index] === true;
+        if (!registered || !enabled(hike)) return [];
+        const { completedAt } = hikeTiming(hike, now);
+        const expiresAt = completedAt + bannerLifetimeMs;
+        if (!(nowMs >= completedAt && nowMs < expiresAt)) return [];
+        return [{ hike, completedAt, expiresAt }];
+    }).sort((a, b) => b.completedAt - a.completedAt);
+    const offer = eligible.find(({ hike }) => hasTrack(hike));
+    if (!offer) return '';
+    const { hike, expiresAt } = offer;
+    return `<button type="button" class="post-hike-story-banner" data-story-hike="${hike.date}" data-story-expires="${expiresAt}">
         <span><strong>сделать<br>сторис <i aria-hidden="true">↗</i></strong><small data-app-copy="copy_c78c35da87a1c67b2c2d">фото с треком и высотой</small></span>
         <img alt="" width="92" height="163">
     </button>`;
@@ -41,5 +36,5 @@ export function photoBannerHtml(hasTrack) {
 
 export function openPhotoStoryFor(hike) {
     if (!hike || !completedPhotoHike(hike)) return;
-    import('./post-hike-story.js').then(module => module.openPhotoStory(hike, () => hidePhotoBanner(hike)));
+    import('./post-hike-story.js').then(module => module.openPhotoStory(hike));
 }

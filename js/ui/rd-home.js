@@ -262,6 +262,7 @@ export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, her
     const cardImg = owner && state.userCard.cardUrl ? state.userCard.cardUrl : 'assets/card-front.jpg';
     const ev = nextEvent();
     setRdGlow(ev ? eventKind(ev.hike) : 'hike');
+    const storyBanner = hero ? photoBannerHtml(hike => hikeTrackPoints(hike).length >= 2) : '';
     return `
         <div class="rd-head">
             <div class="rd-head-text">
@@ -276,8 +277,9 @@ export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, her
         </div>
         ${stories ? `<div id="clubStoriesHost">${storiesHtml(buildStories())}</div>` : '<div id="clubStoriesHost"></div>'}
         ${between}
-        ${hero ? photoBannerHtml(hike => hikeTrackPoints(hike).length >= 2) : ''}
-        ${!hero ? '' : ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}`;
+        ${!ev ? storyBanner : ''}
+        ${!hero ? '' : ev ? heroHtml(ev) : (teaser ? teaserHtml() : '')}
+        ${ev ? storyBanner : ''}`;
 }
 
 // классический дизайн v2: только шапка с мини-картой и ближайший хайк (без «свежего» и свечения)
@@ -346,9 +348,13 @@ function teaserHtml() {
         </div>`;
 }
 
+let storyBannerExpiryTimer;
 export function wireRdHomeTop() {
+    clearTimeout(storyBannerExpiryTimer);
     const storyBanner = document.querySelector('.post-hike-story-banner');
     if (storyBanner) {
+        const expiresIn = Number(storyBanner.dataset.storyExpires) - Date.now();
+        storyBannerExpiryTimer = setTimeout(() => storyBanner.remove(), Math.max(0, expiresIn));
         const hike = state.hikesWithTitle.find(item => item.date === storyBanner.dataset.storyHike);
         if (hike) {
             storyBanner.addEventListener('click', () => openPhotoStoryFor(hike));
