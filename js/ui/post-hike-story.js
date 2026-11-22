@@ -38,54 +38,84 @@ function paintTrack(ctx, points) {
     ctx.stroke();
 }
 
-async function renderPhoto(file, hike) {
-    const url = URL.createObjectURL(file);
-    try {
-        const points = hikeTrackPoints(hike);
-        if (points.length < 2) throw new Error('missing route');
-        const [photo, logo, stats] = await Promise.all([
-            loadImage(url), loadImage('/assets/logo-hiking.png'), trackStats(hike)
-        ]);
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
+async function renderRoutePhoto(hike, photoPromise) {
+    const points = hikeTrackPoints(hike);
+    if (points.length < 2) throw new Error('missing route');
+    const [photo, logo, stats] = await Promise.all([
+        photoPromise, loadImage('/assets/logo-hiking.png'), trackStats(hike).catch(() => null)
+    ]);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (photo) {
         const scale = Math.max(width / photo.width, height / photo.height);
         const w = photo.width * scale, h = photo.height * scale;
         ctx.drawImage(photo, (width - w) / 2, (height - h) / 2, w, h);
-        const shade = ctx.createLinearGradient(0, 0, 0, height * .49);
-        shade.addColorStop(0, '#0d120f86');
-        shade.addColorStop(1, '#0d120f00');
-        ctx.fillStyle = shade;
-        ctx.fillRect(0, 0, width, height * .49);
-        paintTrack(ctx, points);
-        const mark = document.createElement('canvas');
-        mark.width = 244;
-        mark.height = Math.round(244 * logo.height / logo.width);
-        const ink = mark.getContext('2d');
-        ink.drawImage(logo, 0, 0, mark.width, mark.height);
-        ink.globalCompositeOperation = 'source-in';
-        ink.fillStyle = '#fff';
-        ink.fillRect(0, 0, mark.width, mark.height);
-        ctx.drawImage(mark, (width - mark.width) / 2, 426);
-        const metrics = [
-            ['длина', stats?.km, km => `${km.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} км`],
-            ['макс. высота', stats?.peak, metres => `${Math.round(metres)} м`],
-            ['набор', stats?.gain, metres => `+${Math.round(metres)} м`]
-        ].filter(([, value]) => Number.isFinite(value));
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        metrics.forEach(([label, value, format], index) => {
-            const x = width / 2 + (index - (metrics.length - 1) / 2) * 168;
-            ctx.font = '600 27px Arial, sans-serif';
-            ctx.fillText(label, x, 563);
-            ctx.font = '800 38px Arial, sans-serif';
-            ctx.fillText(format(value), x, 608);
-        });
-        return canvas.toDataURL('image/jpeg', .88);
+    } else {
+        const background = ctx.createLinearGradient(0, 0, 0, height);
+        background.addColorStop(0, '#14243a');
+        background.addColorStop(1, '#0a0b0e');
+        ctx.fillStyle = background;
+        ctx.fillRect(0, 0, width, height);
+    }
+    const shade = ctx.createLinearGradient(0, 0, 0, height * .49);
+    shade.addColorStop(0, '#0d120f86');
+    shade.addColorStop(1, '#0d120f00');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, width, height * .49);
+    paintTrack(ctx, points);
+    const mark = document.createElement('canvas');
+    mark.width = 244;
+    mark.height = Math.round(244 * logo.height / logo.width);
+    const ink = mark.getContext('2d');
+    ink.drawImage(logo, 0, 0, mark.width, mark.height);
+    ink.globalCompositeOperation = 'source-in';
+    ink.fillStyle = '#fff';
+    ink.fillRect(0, 0, mark.width, mark.height);
+    ctx.drawImage(mark, (width - mark.width) / 2, 426);
+    const metrics = [
+        ['длина', stats?.km, km => `${km.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} км`],
+        ['макс. высота', stats?.peak, metres => `${Math.round(metres)} м`],
+        ['набор', stats?.gain, metres => `+${Math.round(metres)} м`]
+    ].filter(([, value]) => Number.isFinite(value));
+    ctx.fillStyle = '#fff';
+    ctx.textAlign = 'center';
+    metrics.forEach(([label, value, format], index) => {
+        const x = width / 2 + (index - (metrics.length - 1) / 2) * 168;
+        ctx.font = '600 27px Arial, sans-serif';
+        ctx.fillText(label, x, 563);
+        ctx.font = '800 38px Arial, sans-serif';
+        ctx.fillText(format(value), x, 608);
+    });
+    return canvas.toDataURL('image/jpeg', .88);
+}
+
+async function renderPhoto(file, hike) {
+    const url = URL.createObjectURL(file);
+    try {
+        return await renderRoutePhoto(hike, loadImage(url));
     } finally {
         URL.revokeObjectURL(url);
     }
+}
+
+const examples = new WeakMap();
+
+export function photoStoryExample(hike) {
+    let example = examples.get(hike);
+    if (!example) {
+        const photo = import('./rd-home.js').then(({ heroPhotoFor }) => {
+            const cover = heroPhotoFor(hike.title, { matchedOnly: true });
+            return cover ? loadImage(`/assets/teaser/${cover}.webp`) : null;
+        }).catch(() => null);
+        example = renderRoutePhoto(hike, photo).catch(error => {
+            examples.delete(hike);
+            throw error;
+        });
+        examples.set(hike, example);
+    }
+    return example;
 }
 
 export function openPhotoStory(hike, onShare) {
@@ -98,7 +128,7 @@ export function openPhotoStory(hike, onShare) {
         <div class="inv-scroll">
             <header><h2 class="story-title" id="post-photo-title">хайк в сторис</h2><button type="button" data-close aria-label="закрыть">×</button></header>
             <p data-app-copy="copy_37c0ec73db672ae3c950" data-intro>выбери фото с хайка, добавим трек и данные маршрута</p>
-            <div class="story-preview"><img src="/assets/post-hike-story.webp" alt="пример готовой сторис"></div>
+            <div class="story-preview"><img alt="пример готовой сторис" width="1080" height="1920"></div>
             <button data-app-copy="copy_38a2e88596f1405c2e46" type="button" class="btn btn-yellow inv-wide" data-pick>выбрать фото</button>
             <button data-app-copy="copy_71d7c3833d977926812e" type="button" class="btn btn-yellow inv-wide" data-share hidden>поделиться сторис</button>
             <div class="post-photo-actions" hidden><button data-app-copy="copy_d0bf53b666399eadcb48" type="button" class="story-save" data-save>сохранить фото</button><button data-app-copy="copy_dbe1824ddb9255727d11" type="button" class="story-save" data-replace>заменить фото</button></div>
@@ -119,6 +149,9 @@ export function openPhotoStory(hike, onShare) {
     const pick = get('[data-pick]');
     const note = get('.story-note');
     let photo;
+    photoStoryExample(hike).then(url => {
+        if (overlay.isConnected && !photo) get('.story-preview img').src = url;
+    }).catch(() => {});
     const choose = () => input.click();
     pick.addEventListener('click', choose);
     replace.addEventListener('click', choose);
