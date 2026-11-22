@@ -89,11 +89,22 @@ function isPublished(record) {
     return !!record?.medal && record.publicationStatus !== 'draft';
 }
 
-function grantsFor(record, recipients, userId, now) {
+function grantsFor(record, recipients, userId, now, repeatAwardIds = null) {
     return Object.fromEntries(Object.entries(recipients).map(([id, p]) => {
         // Only previously published grants can retain an issue date. Legacy drafts cannot.
         const previous = isPublished(record) ? record.grants?.[id] || (record.schemaVersion !== 2 ? record.recipients?.[id] : null) : null;
-        if (record.kind === 'route' && previous) return [id, addRouteDate(previous, p, p.date, now, String(userId))];
+        if (previous?.issuedAt && repeatAwardIds && !repeatAwardIds.has(id)) return [id, previous];
+        const repeats = repeatAwardIds?.has(id);
+        if (previous?.issuedAt && (record.kind === 'route' || repeats)) {
+            const dates = routeDates(previous);
+            if (dates.includes(p.date) || previous.manualRepeatDates?.includes(p.date)) return [id, previous];
+            // Счётчик сессий и хайков ведётся отдельно от ручных награждений.
+            if (repeats && (previous.hikeN != null || previous.sessionN != null || Number(previous.count) > dates.length)) {
+                return [id, { ...previous, manualRepeatDates: [...(previous.manualRepeatDates || []), p.date].sort(),
+                    issuedAt: now, issuedBy: String(userId), notificationAt: now }];
+            }
+            return [id, addRouteDate(previous, p, p.date, now, String(userId))];
+        }
         return [id, { ...previous, ...p, issuedAt: previous?.issuedAt || now, issuedBy: previous?.issuedBy || String(userId) }];
     }));
 }
@@ -409,11 +420,19 @@ function createHandler(deps = {}) {
             }
             const hikeDate = body.action === 'roster' && body.hikeDate ? date(body.hikeDate) : '';
             if (['get', 'save', 'set_medal'].includes(body.action) && (typeof body.id !== 'string' || !UUID.test(body.id))) throw fail(400, 'неверный номер ачивки');
-            let draft, medal;
+            let draft, medal, repeatAwardIds;
             if (['save', 'set_medal'].includes(body.action)) {
                 if (!revision(body.revision) || typeof body.requestId !== 'string' || !UUID.test(body.requestId)) throw fail(400, 'обнови редактор перед сохранением');
                 if (body.action === 'save') {
                     draft = normalizeDraft(body.draft);
+                    if (body.repeatAwardIds != null) {
+                        const ids = body.repeatAwardIds;
+                        const recipients = new Set(draft.recipients.map(p => p.userId));
+                        if (!Array.isArray(ids) || !ids.length || ids.length > recipients.size || ids.some(id => !recipients.has(id))) {
+                            throw fail(400, 'проверь получателей повторной выдачи');
+                        }
+                        repeatAwardIds = new Set(ids.sort());
+                    }
                     // готовая медаль из библиотеки приложения: ачивка выдаётся сразу при сохранении
                     if (body.medal) medal = normalizeMedal(body.medal);
                 } else medal = normalizeMedal(body.medal);
@@ -443,12 +462,16 @@ function createHandler(deps = {}) {
                     for (const id of targetIds) {
                         const grant = record.grants?.[id];
                         if (!grant?.issuedAt) continue;
+                        const dates = routeDates(grant);
+                        const count = Math.max(Number(grant.count) || 0, dates.length) + (grant.manualRepeatDates?.length || 0);
                         collections[id].push({ id: record.id, title: record.title, description: record.description || '', rarity: record.rarity, kind: record.kind,
-                            ...(own ? { seenAt: grantSeenAt(grant, seen.value?.[record.id]), holders: Object.values(record.grants || {}).filter(g => g?.issuedAt
+                            ...(own ? { seenAt: grantSeenAt(grant, seen.value?.[record.id]),
+                                ...(grant.entryPopupAt > 0 && grant.entryPopupAt === grant.notificationAt ? { entryPopupAt: grant.entryPopupAt } : {}),
+                                holders: Object.values(record.grants || {}).filter(g => g?.issuedAt
                                 && (titleKey(record.title) !== 'добро пожаловать' || !club || club.has(String(g.userId)))).length } : {}),
                             medal: { imageUrl: record.medal.imageUrl, ...(record.medal.modelUrl ? { modelUrl: record.medal.modelUrl } : {}) },
                             grant: { userId: id, name: grant.name, date: grant.date, issuedAt: grant.issuedAt,
-                                ...(record.kind === 'route' ? { dates: routeDates(grant), count: routeDates(grant).length } : Number(grant.count) > 1 ? { count: Number(grant.count) } : {}) } });
+                                ...(record.kind === 'route' || dates.length > 1 ? { dates, count } : count > 1 ? { count } : {}) } });
                     }
                 }
                 Object.values(collections).forEach(items => items.sort((a, b) => b.grant.issuedAt - a.grant.issuedAt));
@@ -471,7 +494,8 @@ function createHandler(deps = {}) {
                 if (!old) throw fail(404, 'ачивка не найдена');
                 return res.status(200).json({ achievement: publicRecord(old), revision: current.revision });
             }
-            const hash = crypto.createHash('sha256').update(JSON.stringify({ action: body.action, draft, medal })).digest('hex');
+            const hash = crypto.createHash('sha256').update(JSON.stringify({ action: body.action, draft, medal,
+                ...(repeatAwardIds ? { repeatAwardIds: [...repeatAwardIds] } : {}) })).digest('hex');
             // A retry after a lost response returns the same durable batch, not another award.
             if (old?.lastWrite?.id === body.requestId) {
                 if (old.lastWrite.hash !== hash || old.lastWrite.by !== String(user.id)) throw fail(409, 'этот запрос уже использован');
@@ -499,14 +523,17 @@ function createHandler(deps = {}) {
                 const published = !!record.medal && isPublished(old);
                 record.publicationStatus = published ? 'published' : 'draft';
                 record.publishedAt = published ? old.publishedAt || old.medal.attachedAt : null;
-                record.grants = published ? grantsFor(old, recipients, user.id, now) : {};
+                record.grants = published && !medal ? grantsFor(old, recipients, user.id, now, repeatAwardIds) : {};
                 if (medal) {
                     const keep = record.medal && record.medal.imageUrl === medal.imageUrl;
                     record.medal = keep ? record.medal : { ...medal, attachedAt: now, attachedBy: String(user.id) };
                     record.publicationStatus = 'published';
                     record.publishedAt = isPublished(old) ? old.publishedAt || old.medal.attachedAt : now;
-                    record.grants = grantsFor(old, recipients, user.id, now);
+                    record.grants = grantsFor(old, recipients, user.id, now, repeatAwardIds);
                 }
+            }
+            for (const id of repeatAwardIds || []) {
+                if (record.grants[id]) record.recipients[id].date = record.grants[id].date;
             }
             record.schemaVersion = 2;
             record.updatedAt = now;
