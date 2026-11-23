@@ -613,7 +613,7 @@ function renderStoriesAdmin(body) {
             ${d.status === 'published' ? '' : `<button type="submit" class="btn btn-yellow adm-primary"${storiesBusy ? ' disabled' : ''}>опубликовать</button>`}
             <button type="button" class="adm-link" id="admStCancel">отменить</button>
         </form>` : `<button class="btn btn-yellow adm-primary" id="admStNew">＋ новая сторис</button>
-        <div class="adm-muted" style="margin:8px 2px 0">сторис видны всем на главной. автоматические публикуются сами, сразу для всех: новый владелец карты, саммари мастермайнда, значки за хайк</div>`}
+        <div class="adm-muted" style="margin:8px 2px 0">сторис видны всем на главной. сторис о новом владельце карты появится после присвоения изображения карты</div>`}
         ${drafts.length ? `<div class="adm-label">черновики · ${drafts.length}</div><div class="adm-content-updates">${drafts.map(item).join('')}</div>` : ''}
         <div class="adm-label">в ленте · ${live.length}</div>
         <div class="adm-content-updates">${live.length ? live.map(item).join('') : '<div class="adm-empty">пока ничего не опубликовано</div>'}</div>`;

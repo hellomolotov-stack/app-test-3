@@ -27,7 +27,16 @@ global.fetch = async (url, opts = {}) => {
     const leaf = parts.pop();
     let node = db;
     for (const p of parts) node = node[p] ||= {};
-    if (opts.method === 'PATCH') Object.assign(node[leaf] ||= {}, JSON.parse(opts.body));
+    if (opts.method === 'PATCH') {
+        for (const [path, value] of Object.entries(JSON.parse(opts.body))) {
+            const [first, ...rest] = path.split('/');
+            let target = node[leaf] ||= {};
+            let key = first;
+            for (const next of rest) { target = target[key] ||= {}; key = next; }
+            if (value === null) delete target[key];
+            else target[key] = value;
+        }
+    }
     else if (opts.method === 'PUT') node[leaf] = JSON.parse(opts.body);
     return Response.json(structuredClone(node[leaf] ?? null));
 };
@@ -44,10 +53,32 @@ global.fetch = async (url, opts = {}) => {
     assert.equal(db.clubStories[expected.id].views.reader, now);
     db.clubStories[expected.id].status = 'hidden';
     assert.equal(await autoScan('test-token'), 0, 'Do not republish a hidden letter');
-    db.clubStories.old_member = { id: 'old_member', type: 'member', status: 'published', title: 'Новый участник', button: { label: 'записаться на хайк', action: 'hike' } };
+    db.clubStories.old_member = { id: 'old_member', type: 'member', status: 'published', title: 'Новый участник', image: '/assets/card.png', button: { label: 'записаться на хайк', action: 'hike' } };
     assert.deepEqual((await storiesFor('test-token', 'reader'))[0].button, { label: 'узнать о карте', action: 'card' });
     await adminSave('test-token', { ...expected, id: 'manual_letter', op: 'publish', days: 7 }, 'admin');
     assert.equal(db.clubStories.manual_letter.type, 'letter');
     assert.equal(db.clubStories.manual_letter.button.action, expected.button.action);
+    db.members = { '101': { user_id: '101', user_name: 'Новый участник' },
+        '102': { user_id: '102', card_image_url: '/assets/assigned.png' } };
+    db.pending_payments = { new: { user_id: '101', ts: now / 1000, completed: true, card_type: 'permanent' } };
+    db.clubStories.auto_card_102 = { id: 'auto_card_102', type: 'member', source: 'auto', status: 'published',
+        title: 'Существующая сторис', text: 'Ручной текст', views: { reader: now } };
+    await autoScan('test-token');
+    assert.equal(db.clubStories.auto_card_101.status, 'draft');
+    assert.equal(db.clubStories.auto_card_101.awaiting_card_image, true);
+    assert.equal(db.clubStories.auto_card_102.image, '/assets/assigned.png');
+    assert.equal(db.clubStories.auto_card_102.text, 'Ручной текст');
+    assert.equal(db.clubStories.auto_card_102.views.reader, now);
+    assert(!(await storiesFor('test-token', 'reader')).some(story => story.id === 'auto_card_101'));
+    await assert.rejects(adminSave('test-token', { ...db.clubStories.auto_card_101, op: 'publish' }, 'admin'), /сначала присвой/);
+    db.pending_payments = {};
+    db.members['101'].card_image_url = '/assets/new-card.png';
+    await autoScan('test-token');
+    assert.equal(db.clubStories.auto_card_101.status, 'published');
+    assert.equal(db.clubStories.auto_card_101.image, '/assets/new-card.png');
+    assert.equal(db.clubStories.auto_card_101.awaiting_card_image, undefined);
+    db.clubStories.auto_card_101.status = 'hidden';
+    await autoScan('test-token');
+    assert.equal(db.clubStories.auto_card_101.status, 'hidden');
     console.log('Club stories: latest letter, safe actions, publication and idempotency: PASS');
 })().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => { global.fetch = originalFetch; });
