@@ -8000,7 +8000,7 @@ html.v2 #cardBlock.card-container { box-shadow: 0 12px 70px -16px rgba(180,190,2
     border: 1px solid rgba(217, 253, 25, .45) !important;
 }
 /* потяни вниз – обновить главную */
-.ptr { position: fixed; left: 50%; top: 8px; z-index: 2500; width: 140px; pointer-events: none;
+.ptr { position: fixed; left: 50%; top: 8px; z-index: 2500; width: 112px; pointer-events: none;
     transform: translate(-50%, -50px); opacity: 0; }
 .ptr img { display: block; width: 100%; height: auto; filter: brightness(0) invert(1); }
 .ptr.is-ready img { filter: none; }
