@@ -1,5 +1,5 @@
 // js/ui/pull-refresh.js – «потяни вниз, чтобы обновить» на главной.
-// Тянешь от самого верха – сверху выезжает кружок загрузки; отпустил дальше порога – главная
+// Тянешь от самого верха – сверху выезжает логотип; отпустил дальше порога – главная
 // перезапрашивает свои данные (/api/me: карта, записи) и перерисовывается. Работает только на главной
 // (#calendarContainer в #mainContent) и когда не открыта шторка/оверлей.
 import { state } from '../state.js';
@@ -17,7 +17,8 @@ function ensureEl() {
     if (el) return el;
     el = document.createElement('div');
     el.className = 'ptr';
-    el.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="42 100"/></svg>';
+    el.setAttribute('aria-hidden', 'true');
+    el.innerHTML = '<img src="/assets/logo-hiking.png" alt="" width="140" height="55" draggable="false">';
     document.body.appendChild(el);
     return el;
 }
@@ -31,14 +32,15 @@ function onHome(target) {
 function paint() {
     const e = ensureEl();
     const p = Math.min(pull, MAX);
+    e.style.transition = '';
     e.style.top = `${topInset() + 8}px`;
-    e.style.transform = `translate(-50%, ${p - 50}px) rotate(${p * 3}deg)`;
+    e.style.transform = `translate(-50%, ${p - 50}px)`;
     e.style.opacity = String(Math.min(1, p / TRIGGER));
     e.classList.toggle('is-ready', p >= TRIGGER);
 }
 function reset() {
     if (!el) return;
-    el.classList.remove('is-spin', 'is-ready');
+    el.classList.remove('is-ready');
     el.style.transition = 'transform .25s ease, opacity .25s ease';
     el.style.transform = 'translate(-50%, -50px)';
     el.style.opacity = '0';
@@ -70,6 +72,7 @@ export function initPullRefresh() {
     window.__ptrInit = true;
     window.addEventListener('touchstart', e => {
         if (busy || e.touches.length !== 1 || window.scrollY > 0 || !onHome(e.target)) { active = false; return; }
+        ensureEl();
         active = true; startY = e.touches[0].clientY; pull = 0;
     }, { passive: true });
     window.addEventListener('touchmove', e => {
@@ -81,6 +84,12 @@ export function initPullRefresh() {
         paint();
         if (!was && pull >= TRIGGER) haptic('light');
     }, { passive: true });
+    window.addEventListener('touchcancel', () => {
+        if (!active) return;
+        active = false;
+        pull = 0;
+        reset();
+    }, { passive: true });
     window.addEventListener('touchend', async () => {
         if (!active) return;
         active = false;
@@ -89,7 +98,6 @@ export function initPullRefresh() {
         const e = ensureEl();
         e.style.transition = 'transform .2s ease';
         e.style.transform = `translate(-50%, ${TRIGGER - 50}px)`;
-        e.classList.add('is-spin');
         haptic('medium');
         const t0 = Date.now();
         await refreshHome().catch(() => {});
