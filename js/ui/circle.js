@@ -190,7 +190,7 @@ function orgsSvg(d, cx, cy, uid, big) {
     });
     return `<g class="cs-orgs">${out}</g>`;
 }
-function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
+function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid, personIcon = false }) {
     const pts = layout(d.people, W, H, cx, cy, sx, sy);
     const at = new Map(pts.map(p => [p.id, p]));
     const maxN = Math.max(1, ...pts.map(p => p.n));
@@ -237,7 +237,11 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
     const mr = big ? 20 : 15;
     const myPhoto = state.user?.photo_url;
     out += `<circle cx="${cx}" cy="${cy}" r="${mr * 1.9}" fill="url(#${uid}gl)"/>`;
-    if (myPhoto) out += `<clipPath id="${uid}me"><circle cx="${cx}" cy="${cy}" r="${mr}"/></clipPath><image href="${esc(myPhoto)}" x="${cx - mr}" y="${cy - mr}" width="${mr * 2}" height="${mr * 2}" clip-path="url(#${uid}me)" preserveAspectRatio="xMidYMid slice"/>`;
+    if (personIcon) {
+        out += `<circle cx="${cx}" cy="${cy}" r="${mr}" fill="#161e28"/>
+            <circle cx="${cx}" cy="${cy - 4}" r="4" fill="#fff"/>
+            <path d="M${cx - 8} ${cy + 7}a8 7 0 0 1 16 0Z" fill="#fff"/>`;
+    } else if (myPhoto) out += `<clipPath id="${uid}me"><circle cx="${cx}" cy="${cy}" r="${mr}"/></clipPath><image href="${esc(myPhoto)}" x="${cx - mr}" y="${cy - mr}" width="${mr * 2}" height="${mr * 2}" clip-path="url(#${uid}me)" preserveAspectRatio="xMidYMid slice"/>`;
     else out += `<circle cx="${cx}" cy="${cy}" r="${mr}" fill="#fff"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="${big ? 12 : 10}" font-weight="800" fill="#121a23">ты</text>`;
     out += `<circle cx="${cx}" cy="${cy}" r="${mr}" fill="none" stroke="#D9FD19" stroke-width="2.5"/>`;
     return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>${out}</svg>`;
@@ -260,7 +264,28 @@ function liveNetHtml(d) {
     </div>${d.locked ? lockHtml(d) : ''}`;
 }
 
+const showFirstHike = d => d.hikes === 0 || String(state.user?.username || '').toLowerCase() === 'hellointelligent';
+
+function firstHikeGraph(d, big = false) {
+    const people = Array.from({ length: Math.min((Number(d.total) || 0) + (Number(d.clubCount) || 0), big ? 60 : 36) },
+        (_, i) => ({ id: 'preview-' + i, hidden: true, n: 0 }));
+    return netSvg({ people, links: [] }, {
+        W: 390, H: 250, cx: 195, cy: 125, sx: 1.4, sy: 1, big,
+        uid: big ? 'first-sheet' : 'first-home', personIcon: true,
+    });
+}
+
+function firstHikeCount(d) {
+    const n = (Number(d.total) || 0) + (Number(d.clubCount) || 0);
+    return `<b>${n}</b> ${plural(n, 'человек', 'человека', 'человек')} в клубе`;
+}
+
 function blockHtml(d) {
+    if (showFirstHike(d)) return `
+        <div class="cc-hdr"><h2>твои связи</h2></div>
+        <div class="cc-panel" data-cc-open>${firstHikeGraph(d)}</div>
+        <div class="cs2-sub">${firstHikeCount(d)}</div>
+        <div class="cs2-next" style="margin:0 16px 16px"><button type="button" class="cs2-go" data-cc-open>начни обретать связи</button></div>`;
     if (document.documentElement.classList.contains('v2')) return liveNetHtml(d);
     const n = d.total, nx = d.next;
     return `
@@ -296,7 +321,7 @@ export async function mountCircle(container) {
         data = loaded;
         if (!loaded && dataRequest === request) dataRequest = null;
     } catch (e) { data = null; }
-    if (!data || !data.total) { container.remove(); return; }
+    if (!data || (!data.total && !showFirstHike(data))) { container.remove(); return; }
     if (data.locked && !data.clubAdded) {
         // весь остальной клуб – серые «?» (только число, без людей)
         const n = Math.min(Number(data.clubCount) || 0, 200);
@@ -513,6 +538,7 @@ export function openCircleSheet() {
     ensureCss();
     log('твои связи: открыл', false, state.user);
     const d = data, nx = d.next;
+    if (showFirstHike(d)) { openFirstHikeSheet(d); return; }
     const isOwner = state.userCard?.status === 'active';
     overlay = document.createElement('div');
     overlay.className = 'cs2-overlay';
@@ -525,7 +551,7 @@ export function openCircleSheet() {
            { n: d.total + (d.clubCount || 0), l: 'человек в клубе', b: 'весь клуб', m: 'all', z: 1 }]
         : [{ n: near, l: 'близкий круг', b: 'близкие', m: 'near', z: 1.35 },
            { n: d.total, l: `${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках`, b: 'знакомые', m: 'all', z: 1 },
-           ...(club ? [{ n: d.total + d.clubCount + 1, l: 'человек в клубе', b: 'весь клуб', m: 'all', z: .82, club: true }] : [])];
+           ...(club ? [{ n: (Number(d.total) || 0) + (Number(d.clubCount) || 0) + 1, l: 'человек в клубе', b: 'весь клуб', m: 'all', z: .82, club: true }] : [])];
     const people = d.people.filter(p => !p.hidden);
     const rowHtml = (p, i, org = false) => `<div class="cs3-row" data-pid="${esc(p.id)}"><button type="button" class="cs3-rb">
         <span class="cs2-av" style="${org ? (p.photo ? `background-image:url('${esc(p.photo)}')` : 'background:linear-gradient(135deg,#C7B8E6,#6B5A9A)') : avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</span>
@@ -665,6 +691,35 @@ export function openCircleSheet() {
         if (e.target.closest('[data-cs2-hike]')) { haptic(); closeCircleSheet(); setTimeout(openNextHike, 320); return; }
         if (e.target === overlay || e.target.closest('.cs2-x')) { haptic(); stopAuto(); closeCircleSheet(); }
     });
+}
+
+function openFirstHikeSheet(d) {
+    overlay = document.createElement('div');
+    overlay.className = 'cs2-overlay';
+    overlay.innerHTML = `<div class="cs2-sheet cs3" role="dialog" aria-label="твои связи">
+        <div class="cs-grab cs2-grab"></div>
+        <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
+        <div class="cs3-hd"><div class="cs2-h">твои связи</div></div>
+        <div class="cs2-net">${firstHikeGraph(d, true)}</div>
+        <div class="cs2-sub">${firstHikeCount(d)}</div>
+        <div class="cs2-sec">начни обретать связи</div>
+        <div class="cs2-next">
+            <div class="row">после первого хайка здесь появятся знакомые лица, имена и общие маршруты</div>
+            <button type="button" class="cs2-go" data-first-hike>выбрать первый хайк</button>
+        </div>
+    </div>`;
+    const sheet = overlay;
+    sheet.addEventListener('click', e => {
+        if (e.target.closest('[data-first-hike]')) {
+            closeCircleSheet();
+            document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (e.target === sheet || e.target.closest('.cs2-x')) {
+            closeCircleSheet();
+        }
+    });
+    document.body.appendChild(sheet);
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => sheet.classList.add('is-on'));
 }
 
 export function closeCircleSheet() {
