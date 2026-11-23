@@ -239,7 +239,7 @@ export function renderCalFlow(container) {
         log('календарь-витрина: карточка', state.userCard?.status !== 'active', state.user, { date: h.date });
         if (isTeaser(h) || c.classList.contains('is-announce')) {
             c.disabled = true;
-            const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
+            const on = await toggleTeaserNotify(h.date, c).catch(() => isWaitlisted(h.date));
             paintNotify(c, on);
             c.disabled = false;
             return;

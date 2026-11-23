@@ -575,7 +575,7 @@ function renderEventsFeed(container) {
     }));
     container.querySelectorAll('[data-notify]').forEach(el => el.addEventListener('click', e => {
         e.stopPropagation();
-        feedToggleNotify(el.dataset.notify, container);
+        feedToggleNotify(el.dataset.notify, container, { trigger: el });
     }));
     container.querySelectorAll('[data-report]').forEach(el => el.addEventListener('click', e => {
         e.stopPropagation();
@@ -735,12 +735,13 @@ function feedToggleNotify(date, container, options = {}) {
     waitlistPending.set(date, request);
     return request;
 }
-async function changeFeedNotify(date, container, { silentOff = false } = {}) {
+async function changeFeedNotify(date, container, { silentOff = false, trigger } = {}) {
+    setWaitlistHint(trigger, false);
     haptic();
     const on = !feedWaitlist()[date];
     if (!on && !silentOff && !(await feedConfirm('Больше не сообщать об открытии записи?'))) return;
     if (on && !(await ensureCanMessage('waitlist'))) {
-        feedModal('🔔', 'нужно разрешение', 'без него бот не сможет написать вам, когда откроется запись. нажмите «сообщить» ещё раз и разрешите сообщения');
+        setWaitlistHint(trigger, true);
         return;
     }
     setFeedWaitlist(date, on);
@@ -831,20 +832,26 @@ function feedToast(text) {
     setTimeout(() => el.remove(), 3200);
 }
 
-function feedModal(icon, title, text) {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content" style="max-width:360px; text-align:center;">
-            <div style="font-size:52px; margin-bottom:12px;">${icon}</div>
-            <div class="modal-title" style="text-align:center; font-size:20px; color: var(--yellow);">${title}</div>
-            <div class="modal-text" style="text-align:center; margin-top:8px;">${text}</div>
-            <button data-app-copy="copy_f32f7a6f6e1b2914fb7e" class="btn btn-yellow" data-close style="margin-top:16px;">понятно</button>
-        </div>`;
-    document.body.appendChild(overlay);
-    const close = () => { haptic(); overlay.remove(); };
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-    overlay.querySelector('[data-close]').addEventListener('click', close);
+function setWaitlistHint(trigger, visible) {
+    if (!trigger?.isConnected) return;
+    if (trigger.nextElementSibling?.classList.contains('waitlist-permission-hint')) {
+        trigger.nextElementSibling.remove();
+    }
+    if (!visible) return;
+
+    const hint = document.createElement('span');
+    hint.className = 'waitlist-permission-hint';
+    hint.setAttribute('role', 'status');
+    trigger.after(hint);
+    const link = document.createElement('a');
+    link.href = 'https://t.me/yaltahiking_bot';
+    link.textContent = 'открой бота';
+    link.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        openLink(link.href, 'лист ожидания: открыть бота', state.userCard.status !== 'active', state.user);
+    });
+    hint.append('если окно не появилось, ', link, ', отправь /start и попробуй снова');
 }
 
 function feedOpenHike(date, logName) {
@@ -3103,9 +3110,9 @@ function updateFloatingSheetButtons() {
     if (bookingNotOpen(hike.date)) {
         const on = isWaitlisted(hike.date);
         container.innerHTML = `<button type="button" class="btn ${on ? 'btn-outline' : 'btn-yellow'}" id="annNotifyBtn">${on ? '✓ сообщим об открытии' : 'сообщить об открытии записи'}</button>`;
-        container.querySelector('#annNotifyBtn').addEventListener('click', async () => {
-            await toggleTeaserNotify(hike.date).catch(() => {});
-            updateFloatingSheetButtons();
+        container.querySelector('#annNotifyBtn').addEventListener('click', async event => {
+            const subscribed = await toggleTeaserNotify(hike.date, event.currentTarget).catch(() => on);
+            if (subscribed !== on) updateFloatingSheetButtons();
         });
         return;
     }
@@ -5013,7 +5020,7 @@ export function nextTeaser() {
     return n && !(n.title && n.title.trim()) && !/🏄/.test(n.emoji || '') ? n : null;
 }
 export const isWaitlisted = date => !!feedWaitlist()[date];
-export async function toggleTeaserNotify(date) {
-    await feedToggleNotify(date, feedClockContainer || document.createElement('div'), { silentOff: true });
+export async function toggleTeaserNotify(date, trigger) {
+    await feedToggleNotify(date, feedClockContainer || document.createElement('div'), { silentOff: true, trigger });
     return isWaitlisted(date);
 }

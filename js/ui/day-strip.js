@@ -113,17 +113,23 @@ export function renderDayStrip(container) {
         const bell = e.target.closest('[data-bell]');
         if (bell || (h.date >= t && isTeaser(h))) {
             haptic();
-            const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
+            const on = await toggleTeaserNotify(h.date, b).catch(() => isWaitlisted(h.date));
             const el = b.querySelector('[data-bell]'); if (el) { el.classList.toggle('is-on', !!on); el.textContent = on ? '✓' : '🔔'; }
             return;
         }
         openEvent(h);
     }));
-    container.querySelector('[data-evt]')?.addEventListener('click', async () => {
+    container.querySelector('[data-evt]')?.addEventListener('click', async event => {
+        const trigger = event.currentTarget;
         haptic();
         const want = !teasers.every(h => isWaitlisted(h.date));
-        for (const h of teasers) if (isWaitlisted(h.date) !== want) await toggleTeaserNotify(h.date).catch(() => {});
-        const el = container.querySelector('[data-tbell]'); if (el) { el.classList.toggle('is-on', want); el.textContent = want ? '✓' : '🔔'; }
+        for (const h of teasers) {
+            if (isWaitlisted(h.date) === want) continue;
+            const on = await toggleTeaserNotify(h.date, trigger).catch(() => isWaitlisted(h.date));
+            if (on !== want) break;
+        }
+        const allOn = teasers.every(h => isWaitlisted(h.date));
+        const el = container.querySelector('[data-tbell]'); if (el) { el.classList.toggle('is-on', allOn); el.textContent = allOn ? '✓' : '🔔'; }
     });
     if (hero) wireHero(container, hero);
     // кто идёт / сколько было
@@ -165,7 +171,7 @@ function wireHero(container, h) {
     const act = async () => {
         if (isTeaser(h)) {
             haptic();
-            const on = await toggleTeaserNotify(h.date).catch(() => isWaitlisted(h.date));
+            const on = await toggleTeaserNotify(h.date, go).catch(() => isWaitlisted(h.date));
             setUiCopy(go, on ? ["copy_22e2f521c31556dda7a2", '✓ сообщим об открытии'] : ["copy_f7bbd4ff143c8075cf14", '🔔 сообщить об открытии']);
             go.classList.toggle('is-on', !!on);
             return;

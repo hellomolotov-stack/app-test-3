@@ -4806,6 +4806,8 @@ body.adm-open { overflow: hidden; }
 .events-feed .ef-notify-on { display: block; width: 100%; margin-top: 14px; padding: 11px 16px; border-radius: 30px; border: 1px solid rgba(217,253,25,.45); background: rgba(217,253,25,.1); color: var(--yellow); font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
 .ef-bell { flex: none; min-width: 40px; height: 32px; padding: 0 10px; border-radius: 16px; border: 1px solid rgba(217,253,25,.4); background: rgba(217,253,25,.1); color: var(--yellow); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .ef-bell.is-on { background: var(--yellow); color: #000; border-color: var(--yellow); }
+.waitlist-permission-hint { display: block; grid-column: 1 / -1; flex: 0 0 100%; margin-top: 6px; color: var(--text-2, #c0c6ce); font-size: 13px; overflow-wrap: anywhere; }
+.waitlist-permission-hint a { color: inherit; text-decoration: underline; }
 .ef-toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); z-index: 3100; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px); padding: 11px 18px; border-radius: 30px; background: var(--yellow); color: #000; font-size: 14px; font-weight: 600; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.4); }
 
 /* приветствие слева, «⚙️ админка» справа – в одну строку */
