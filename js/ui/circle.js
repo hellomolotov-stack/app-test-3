@@ -190,7 +190,9 @@ function orgsSvg(d, cx, cy, uid, big) {
     });
     return `<g class="cs-orgs">${out}</g>`;
 }
-function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid, personIcon = false }) {
+const firstHikeIcon = (x, y) => `<circle cx="${x}" cy="${y - 4}" r="3.5" fill="#121a23"/><path d="M${x - 7} ${y + 7}a7 7 0 0 1 14 0Z" fill="#121a23"/>`;
+
+function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid }) {
     const pts = layout(d.people, W, H, cx, cy, sx, sy);
     const at = new Map(pts.map(p => [p.id, p]));
     const maxN = Math.max(1, ...pts.map(p => p.n));
@@ -235,14 +237,10 @@ function netSvg(d, { W, H, cx, cy, sx, sy, big, sel = null, uid, personIcon = fa
     });
     out += orgsSvg(d, cx, cy, uid, big);
     const mr = big ? 20 : 15;
-    const myPhoto = state.user?.photo_url;
+    const myPhoto = d.firstHike ? '' : state.user?.photo_url;
     out += `<circle cx="${cx}" cy="${cy}" r="${mr * 1.9}" fill="url(#${uid}gl)"/>`;
-    if (personIcon) {
-        out += `<circle cx="${cx}" cy="${cy}" r="${mr}" fill="#161e28"/>
-            <circle cx="${cx}" cy="${cy - 4}" r="4" fill="#fff"/>
-            <path d="M${cx - 8} ${cy + 7}a8 7 0 0 1 16 0Z" fill="#fff"/>`;
-    } else if (myPhoto) out += `<clipPath id="${uid}me"><circle cx="${cx}" cy="${cy}" r="${mr}"/></clipPath><image href="${esc(myPhoto)}" x="${cx - mr}" y="${cy - mr}" width="${mr * 2}" height="${mr * 2}" clip-path="url(#${uid}me)" preserveAspectRatio="xMidYMid slice"/>`;
-    else out += `<circle cx="${cx}" cy="${cy}" r="${mr}" fill="#fff"/><text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="${big ? 12 : 10}" font-weight="800" fill="#121a23">ты</text>`;
+    if (myPhoto) out += `<clipPath id="${uid}me"><circle cx="${cx}" cy="${cy}" r="${mr}"/></clipPath><image href="${esc(myPhoto)}" x="${cx - mr}" y="${cy - mr}" width="${mr * 2}" height="${mr * 2}" clip-path="url(#${uid}me)" preserveAspectRatio="xMidYMid slice"/>`;
+    else out += `<circle cx="${cx}" cy="${cy}" r="${mr}" fill="#fff"/>${d.firstHike ? firstHikeIcon(cx, cy) : `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="${big ? 12 : 10}" font-weight="800" fill="#121a23">ты</text>`}`;
     out += `<circle cx="${cx}" cy="${cy}" r="${mr}" fill="none" stroke="#D9FD19" stroke-width="2.5"/>`;
     return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs>${out}</svg>`;
 }
@@ -253,53 +251,46 @@ function avStyle(p, i) {
 
 // классика v2 (07.11): прежняя сеть связей (netSvg, как в обычном блоке) в новом оформлении:
 // заголовок «твои связи · открыть ›», внизу две цифры – близкие связи и знакомства в клубе
+const clubPeopleLabel = n => plural(n, 'человек', 'человека', 'человек') + ' в клубе';
+
+function firstHikeView(d) {
+    if (!d || d.firstHike) return d;
+    const preview = String(state.user?.username || '').toLowerCase() === 'hellointelligent';
+    if (!preview && (!d.locked || d.hikes !== 0)) return d;
+    return {
+        ...d, firstHike: true, locked: true, open: 0, known: 0, total: 0,
+        clubCount: (Number(d.clubCount) || 0) + (Number(d.total) || 0),
+        people: [], links: [], orgs: [], clubAdded: false,
+        next: d.next ? { ...d.next, known: [], freshCount: d.next.freshCount + d.next.known.length } : null,
+    };
+}
+
 function liveNetHtml(d) {
-    const total = d.locked ? d.open : d.total, strong = d.locked ? 0 : (d.strong || 0);
+    const total = d.firstHike ? d.clubCount : d.locked ? d.open : d.total, strong = d.locked ? 0 : (d.strong || 0);
     return `<div class="lv-wrap" data-cc-open>
         <div class="lv-hdr"><h2 data-app-copy="copy_e6ec8d302b7dcc9d797a">твои связи</h2><span data-app-copy="copy_8632477339bc207bd2f9">открыть ›</span></div>
         <div class="lv-net">${netSvg({ ...d, people: d.people.slice(0, d.locked ? 90 : NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccv' })}</div>
         <div class="lv-ft"></div><div class="lv-fb"></div>
         <div class="lv-stats">${strong ? `<div class="is-c"><b>${strong}</b><span>${plural(strong, 'близкая связь', 'близкие связи', 'близких связей')}</span></div>` : ''}
-            <div><b>${total}</b><span>${plural(total, 'знакомство', 'знакомства', 'знакомств')} в клубе</span></div></div>
+            <div><b>${total}</b><span>${d.firstHike ? clubPeopleLabel(total) : plural(total, 'знакомство', 'знакомства', 'знакомств') + ' в клубе'}</span></div></div>
     </div>${d.locked ? lockHtml(d) : ''}`;
 }
 
-const showFirstHike = d => d.hikes === 0 || String(state.user?.username || '').toLowerCase() === 'hellointelligent';
-
-function firstHikeGraph(d, big = false) {
-    const people = Array.from({ length: Math.min((Number(d.total) || 0) + (Number(d.clubCount) || 0), big ? 60 : 36) },
-        (_, i) => ({ id: 'preview-' + i, hidden: true, n: 0 }));
-    return netSvg({ people, links: [] }, {
-        W: 390, H: 250, cx: 195, cy: 125, sx: 1.4, sy: 1, big,
-        uid: big ? 'first-sheet' : 'first-home', personIcon: true,
-    });
-}
-
-function firstHikeCount(d) {
-    const n = (Number(d.total) || 0) + (Number(d.clubCount) || 0);
-    return `<b>${n}</b> ${plural(n, 'человек', 'человека', 'человек')} в клубе`;
-}
-
 function blockHtml(d) {
-    if (showFirstHike(d)) return `
-        <div class="cc-hdr"><h2>твои связи</h2></div>
-        <div class="cc-panel" data-cc-open>${firstHikeGraph(d)}</div>
-        <div class="cs2-sub">${firstHikeCount(d)}</div>
-        <div class="cs2-next" style="margin:0 16px 16px"><button type="button" class="cs2-go" data-cc-open>начни обретать связи</button></div>`;
     if (document.documentElement.classList.contains('v2')) return liveNetHtml(d);
     const n = d.total, nx = d.next;
     return `
-        <div class="cc-hdr"><h2 data-app-copy="copy_e6ec8d302b7dcc9d797a">твои связи</h2><button type="button" data-cc-open>${n} ›</button></div>
+        <div class="cc-hdr"><h2 data-app-copy="copy_e6ec8d302b7dcc9d797a">твои связи</h2><button type="button" data-cc-open>${d.firstHike ? d.clubCount : n} ›</button></div>
         <div class="cc-panel" data-cc-open>
             ${netSvg({ ...d, people: d.people.slice(0, d.locked ? 90 : NEAR) }, { W: 390, H: 250, cx: 236, cy: 122, sx: 1.9, sy: 1.08, big: false, uid: 'ccm' })}
             <div class="cc-fade"></div>
             <div class="cc-foot">
-                <div class="t"><b>${d.locked ? d.open : n}</b> ${plural(d.locked ? d.open : n, 'знакомство', 'знакомства', 'знакомств')}<br>${d.locked ? `с первого хайка · ещё <i>${d.known + (d.clubCount || 0)}</i> откроются с картой` : `<i>${d.strong}</i> – твой близкий круг`}</div>
+                <div class="t">${d.firstHike ? `<b>${d.clubCount}</b> ${clubPeopleLabel(d.clubCount)}` : `<b>${d.locked ? d.open : n}</b> ${plural(d.locked ? d.open : n, 'знакомство', 'знакомства', 'знакомств')}<br>${d.locked ? `с первого хайка · ещё <i>${d.known + (d.clubCount || 0)}</i> откроются с картой` : `<i>${d.strong}</i> – твой близкий круг`}`}</div>
                 ${nx && nx.freshCount && !d.locked ? `<button type="button" class="cc-pill" data-cc-next>${dayShort(nx.date)} +${nx.freshCount} ›</button>` : ''}
             </div>
         </div>${d.locked ? lockHtml(d) : ''}`;
 }
-const lockHtml = d => `<button type="button" class="cc-lock" data-cc-card><img src="assets/card-front.jpg" alt=""><span><b data-app-copy="copy_cc29fcec0d2dafacc375">обрети больше связей</b>с картой интеллигента откроются все твои ${d.total} ${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} и весь клуб</span><em>›</em></button>`;
+const lockHtml = d => `<button type="button" class="cc-lock" ${d.firstHike ? 'data-cc-open' : 'data-cc-card'}><img src="assets/card-front.jpg" alt=""><span>${d.firstHike ? '<b>начни обретать связи</b>знакомые появятся после первого хайка' : `<b data-app-copy="copy_cc29fcec0d2dafacc375">обрети больше связей</b>с картой интеллигента откроются все твои ${d.total} ${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} и весь клуб`}</span><em>›</em></button>`;
 async function openCard(source) {
     log(`твои связи: карта (${source})`, true, state.user);
     const { openCardSheet } = await import('./card-sheet.js');
@@ -318,10 +309,10 @@ export async function mountCircle(container) {
         const request = dataRequest ||= load().catch(() => null);
         const loaded = data || await request;
         if (requestKey !== dataCompletionKey) return;
-        data = loaded;
+        data = firstHikeView(loaded);
         if (!loaded && dataRequest === request) dataRequest = null;
     } catch (e) { data = null; }
-    if (!data || (!data.total && !showFirstHike(data))) { container.remove(); return; }
+    if (!data || (!data.total && !data.firstHike)) { container.remove(); return; }
     if (data.locked && !data.clubAdded) {
         // весь остальной клуб – серые «?» (только число, без людей)
         const n = Math.min(Number(data.clubCount) || 0, 200);
@@ -388,10 +379,10 @@ function sheetNet(d) {
         else nodes += `<circle r="${r}" fill="url(#csbg${i % 6})"/><text y="${(r * .33).toFixed(1)}" text-anchor="middle" font-size="${(r * .85).toFixed(1)}" font-weight="800" fill="#fff">${esc(initials(p.name))}</text>`;
         nodes += `<circle r="${r}" fill="none" stroke="${strong ? '#D9FD19' : 'rgba(255,255,255,.5)'}" stroke-width="${strong ? 1.8 : 1}"/></g>`;
     });
-    const me = state.user?.photo_url, mr = 20;
+    const me = d.firstHike ? '' : state.user?.photo_url, mr = 20;
     const meHtml = `<circle cx="${SCX}" cy="${SCY}" r="${mr * 1.9}" fill="url(#csbgl)"/>`
         + (me ? `<clipPath id="csbme"><circle cx="${SCX}" cy="${SCY}" r="${mr}"/></clipPath><image href="${esc(me)}" x="${SCX - mr}" y="${SCY - mr}" width="${mr * 2}" height="${mr * 2}" clip-path="url(#csbme)" preserveAspectRatio="xMidYMid slice"/>`
-            : `<circle cx="${SCX}" cy="${SCY}" r="${mr}" fill="#fff"/><text x="${SCX}" y="${SCY + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#121a23">ты</text>`)
+            : `<circle cx="${SCX}" cy="${SCY}" r="${mr}" fill="#fff"/>${d.firstHike ? firstHikeIcon(SCX, SCY) : `<text x="${SCX}" y="${SCY + 4}" text-anchor="middle" font-size="12" font-weight="800" fill="#121a23">ты</text>`}`)
         + `<circle cx="${SCX}" cy="${SCY}" r="${mr}" fill="none" stroke="#D9FD19" stroke-width="2.5"/>`;
     return { pts, maxN, svg: `<svg viewBox="0 0 ${SW} ${SH}" xmlns="http://www.w3.org/2000/svg"><defs>${defs}</defs><g class="cs2-lines"></g><g class="cs2-nodes">${nodes}</g>${orgsSvg(d, SCX, SCY, 'cso', true)}<g class="cs2-me">${meHtml}</g></svg>` };
 }
@@ -538,7 +529,6 @@ export function openCircleSheet() {
     ensureCss();
     log('твои связи: открыл', false, state.user);
     const d = data, nx = d.next;
-    if (showFirstHike(d)) { openFirstHikeSheet(d); return; }
     const isOwner = state.userCard?.status === 'active';
     overlay = document.createElement('div');
     overlay.className = 'cs2-overlay';
@@ -547,11 +537,11 @@ export function openCircleSheet() {
     const club = !d.locked && (Number(d.clubCount) || 0) > 0;
     // ступени масштаба: число, подпись, режим сети, масштаб камеры
     const stages = d.locked
-        ? [{ n: d.total, l: plural(d.total, 'знакомство', 'знакомства', 'знакомств'), b: 'знакомые', m: 'near', z: 1.25 },
+        ? [{ n: d.total, l: plural(d.total, 'знакомство', 'знакомства', 'знакомств'), b: d.firstHike ? 'твой круг' : 'знакомые', m: 'near', z: 1.25 },
            { n: d.total + (d.clubCount || 0), l: 'человек в клубе', b: 'весь клуб', m: 'all', z: 1 }]
         : [{ n: near, l: 'близкий круг', b: 'близкие', m: 'near', z: 1.35 },
            { n: d.total, l: `${plural(d.total, 'знакомство', 'знакомства', 'знакомств')} на хайках`, b: 'знакомые', m: 'all', z: 1 },
-           ...(club ? [{ n: (Number(d.total) || 0) + (Number(d.clubCount) || 0) + 1, l: 'человек в клубе', b: 'весь клуб', m: 'all', z: .82, club: true }] : [])];
+           ...(club ? [{ n: d.total + d.clubCount + 1, l: 'человек в клубе', b: 'весь клуб', m: 'all', z: .82, club: true }] : [])];
     const people = d.people.filter(p => !p.hidden);
     const rowHtml = (p, i, org = false) => `<div class="cs3-row" data-pid="${esc(p.id)}"><button type="button" class="cs3-rb">
         <span class="cs2-av" style="${org ? (p.photo ? `background-image:url('${esc(p.photo)}')` : 'background:linear-gradient(135deg,#C7B8E6,#6B5A9A)') : avStyle(p, i)}">${p.photo ? '' : esc(initials(p.name))}</span>
@@ -568,15 +558,15 @@ export function openCircleSheet() {
             <div class="cs3-hd"><div data-app-copy="copy_e6ec8d302b7dcc9d797a" class="cs2-h">твои связи</div></div>
             <div class="cs2-net cs3-net" id="cs2Net">${svgCam}<div class="cs3-cnt"><b id="cs3Num">${stages[0].n}</b><span id="cs3Lbl">${stages[0].l}</span></div></div>
             ${stages.length > 1 ? `<div class="cs3-stage" id="cs3Stage">${stages.map((st, i) => `<button type="button" data-st="${i}"${i ? '' : ' class="on"'}>${st.b}</button>`).join('')}</div>` : ''}
-            ${d.locked ? `<div class="cs2-sub">${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка открыты сейчас. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб</div>
+            ${d.firstHike ? `<div class="cs2-sub">после первого хайка здесь появятся знакомые</div>` : d.locked ? `<div class="cs2-sub">${d.open} ${plural(d.open, 'человек', 'человека', 'человек')} с твоего первого хайка открыты сейчас. жёлтые «?» – твои знакомые с других хайков, серые – весь клуб</div>
                 <button data-app-copy="copy_fbbb5461d32e4600cc2d" type="button" class="cs3-link" data-cs2-card>открыть все связи с картой ›</button>` : ''}
             <div data-app-copy="copy_c773b44f7d9cb1f92cc8" class="cs2-sec">твой круг на тропе</div>
-            <div data-app-copy="copy_3dc71993946f50656bd0" class="cs3-hint">у членов клуба есть профили – они со стрелкой ›</div>
+            <div data-app-copy="copy_3dc71993946f50656bd0" class="cs3-hint">${d.firstHike ? 'пока здесь только ты' : 'у членов клуба есть профили – они со стрелкой ›'}</div>
             <div class="cs3-list" id="cs3List">${people.map((p, i) => rowHtml(p, i)).join('')}${(d.orgs || []).map((p, i) => rowHtml(p, i, true)).join('')}</div>
             ${nx ? `<div data-app-copy="copy_4fda854687cb2078765c" class="cs2-sec">ближайший хайк</div>
             <div class="cs2-next"><div class="top"><b>${dayLabel(nx.date)}${nx.title ? ' · ' + esc(nx.title) : ''}</b></div>
                 <div class="row"><div class="cs2-stack">${stack}</div><span>${bookingNotOpen(nx.date) ? 'анонс · <em data-app-copy="copy_be540139be3a76c5ae74">новые лица и новые истории</em>' : `${nx.known.length ? `${nx.known.length} ${plural(nx.known.length, 'человек', 'человека', 'человек')} из твоих связей и ` : ''}<em>${nx.freshCount} ${plural(nx.freshCount, 'новый человек', 'новых человека', 'новых человек')}</em>`}</span></div>
-                <button data-app-copy="copy_76f0149273aed5f7288b" type="button" class="cs2-go" data-cs2-hike>открыть хайк</button></div>` : ''}
+                <button ${d.firstHike ? '' : 'data-app-copy="copy_76f0149273aed5f7288b"'} type="button" class="cs2-go" data-cs2-hike>${d.firstHike ? 'выбрать первый хайк' : 'открыть хайк'}</button></div>` : d.firstHike ? '<div class="cs2-next"><button type="button" class="cs2-go" data-cs2-hike>выбрать первый хайк</button></div>' : ''}
         </div>`;
     document.body.appendChild(overlay);
     document.body.style.overflow = 'hidden';
@@ -688,38 +678,9 @@ export function openCircleSheet() {
             overlay.querySelector(`.cs3-row[data-pid="${CSS.escape(node.dataset.id)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             return;
         }
-        if (e.target.closest('[data-cs2-hike]')) { haptic(); closeCircleSheet(); setTimeout(openNextHike, 320); return; }
+        if (e.target.closest('[data-cs2-hike]')) { haptic(); closeCircleSheet(); setTimeout(() => { if (d.firstHike) document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth' }); else openNextHike(); }, 320); return; }
         if (e.target === overlay || e.target.closest('.cs2-x')) { haptic(); stopAuto(); closeCircleSheet(); }
     });
-}
-
-function openFirstHikeSheet(d) {
-    overlay = document.createElement('div');
-    overlay.className = 'cs2-overlay';
-    overlay.innerHTML = `<div class="cs2-sheet cs3" role="dialog" aria-label="твои связи">
-        <div class="cs-grab cs2-grab"></div>
-        <button type="button" class="cs2-x" aria-label="закрыть">✕</button>
-        <div class="cs3-hd"><div class="cs2-h">твои связи</div></div>
-        <div class="cs2-net">${firstHikeGraph(d, true)}</div>
-        <div class="cs2-sub">${firstHikeCount(d)}</div>
-        <div class="cs2-sec">начни обретать связи</div>
-        <div class="cs2-next">
-            <div class="row">после первого хайка здесь появятся знакомые лица, имена и общие маршруты</div>
-            <button type="button" class="cs2-go" data-first-hike>выбрать первый хайк</button>
-        </div>
-    </div>`;
-    const sheet = overlay;
-    sheet.addEventListener('click', e => {
-        if (e.target.closest('[data-first-hike]')) {
-            closeCircleSheet();
-            document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        } else if (e.target === sheet || e.target.closest('.cs2-x')) {
-            closeCircleSheet();
-        }
-    });
-    document.body.appendChild(sheet);
-    document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => sheet.classList.add('is-on'));
 }
 
 export function closeCircleSheet() {
