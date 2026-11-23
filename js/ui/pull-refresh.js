@@ -18,7 +18,7 @@ function ensureEl() {
     el = document.createElement('div');
     el.className = 'ptr';
     el.setAttribute('aria-hidden', 'true');
-    el.innerHTML = '<img src="/assets/logo-hiking.png" alt="" width="140" height="55" draggable="false">';
+    el.innerHTML = '<img src="/assets/logo-hiking.png" alt="" width="112" height="44" draggable="false">';
     document.body.appendChild(el);
     return el;
 }
@@ -33,6 +33,7 @@ function paint() {
     const e = ensureEl();
     const p = Math.min(pull, MAX);
     e.style.transition = '';
+    e.style.visibility = '';
     e.style.top = `${topInset() + 8}px`;
     e.style.transform = `translate(-50%, ${p - 50}px)`;
     e.style.opacity = String(Math.min(1, p / TRIGGER));
@@ -93,15 +94,16 @@ export function initPullRefresh() {
     window.addEventListener('touchend', async () => {
         if (!active) return;
         active = false;
-        if (pull < TRIGGER) { pull = 0; reset(); return; }
+        const shouldRefresh = pull >= TRIGGER;
+        pull = 0;
+        // The WebView's native overscroll rebounds on release. Hide the fixed
+        // logo in that same frame, independently of the network request.
+        if (el) el.style.visibility = 'hidden';
+        reset();
+        if (!shouldRefresh) return;
         busy = true;
-        const e = ensureEl();
-        e.style.transition = 'transform .2s ease';
-        e.style.transform = `translate(-50%, ${TRIGGER - 50}px)`;
         haptic('medium');
-        const t0 = Date.now();
-        await refreshHome().catch(() => {});
-        await new Promise(r => setTimeout(r, Math.max(0, 700 - (Date.now() - t0))));
-        pull = 0; busy = false; reset();
+        try { await refreshHome(); } catch (e) { console.warn('pull refresh', e); }
+        finally { busy = false; }
     });
 }
