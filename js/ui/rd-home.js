@@ -415,7 +415,7 @@ export function wireRdHomeTop() {
             try { localStorage.setItem(ALERTS_KEY, want ? '1' : '0'); } catch (e) {}
             log(want ? 'главная: уведомления о хайках – вкл' : 'главная: уведомления о хайках – выкл', !owner, state.user, { date });
             if (isWaitlisted(date) !== want) {
-                const now = await toggleTeaserNotify(date).catch(() => isWaitlisted(date));
+                const now = await toggleTeaserNotify(date, tb).catch(() => isWaitlisted(date));
                 if (now !== want) {
                     tb.classList.toggle('is-on', now); tb.setAttribute('aria-checked', now);
                     setUiCopy(document.getElementById('v2TgSub'), now ? ['copy_15882e59b2a52e113075', 'сообщим, когда откроется запись'] : ['copy_39c0e81f1df68ef649cb', 'включи, чтобы узнать об открытии записи']);
@@ -438,7 +438,7 @@ export function wireRdHomeTop() {
             if (annRow.disabled) return;
             annRow.disabled = true;
             log('rd: анонс – напомнить', !owner, state.user, { date });
-            paint(await toggleTeaserNotify(date).catch(() => isWaitlisted(date)));
+            paint(await toggleTeaserNotify(date, annRow).catch(() => isWaitlisted(date)));
             annRow.disabled = false;
         });
         window.addEventListener('club:waitlist-updated', ({ detail }) => { if (detail.date === date && annRow.isConnected) paint(detail.on); });
