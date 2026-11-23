@@ -255,6 +255,16 @@ function mountCover(h) {
 }
 
 // ---------- сборка ----------
+function greetingNameSuffix() {
+    const name = String(window.Telegram?.WebApp?.initDataUnsafe?.user?.first_name ?? state.user?.first_name ?? '').trim();
+    return name ? `, ${name}` : '';
+}
+
+window.addEventListener('club:telegram-ready', () => {
+    const name = document.querySelector('#mainContent .rd-hello-name');
+    if (name) name.textContent = greetingNameSuffix();
+});
+
 export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, hero = true, between = '' } = {}) {
     const user = state.user;
     const now = new Date();
@@ -267,7 +277,7 @@ export function rdHomeTopHtml({ stories = true, teaser = false, mini = true, her
         <div class="rd-head">
             <div class="rd-head-text">
                 <span class="rd-date">${WEEKDAYS[now.getDay()]}, ${now.getDate()} ${MONTHS[now.getMonth()]}</span>
-                <span class="rd-hello"><span data-app-copy="copy_e58f1e8c55fa105bdd3f">привет</span>, ${esc(user?.first_name || 'друг')}</span>
+                <span class="rd-hello"><span data-app-copy="copy_e58f1e8c55fa105bdd3f">привет</span><span class="rd-hello-name">${esc(greetingNameSuffix())}</span></span>
             </div>
             ${mini ? '' : '<!--'}<button type="button" class="rd-mini-card${owner ? '' : ' is-guest'}" id="rdMiniCard" aria-label="${owner ? 'моя карта интеллигента' : 'карта интеллигента'}">
                 ${owner ? `<img src="${esc(cardImg)}" alt="">

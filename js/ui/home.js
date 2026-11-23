@@ -46,7 +46,7 @@ export function removeStickyHikeCta() {
 }
 
 function greeting(firstName) {
-    return `👋🏻 привет, ${firstName}!`;
+    return firstName ? `👋🏻 привет, ${firstName}!` : 'привет';
 }
 
 function mountStickyHikeCta() {
@@ -498,7 +498,7 @@ function renderGuestHome() {
     if (_hikePreviewUnsub) { _hikePreviewUnsub(); _hikePreviewUnsub = null; }
     clearTimeout(_ctaTimer);
     cleanupProfileOverlays();
-    const firstName = state.user?.first_name || 'друг';
+    const firstName = state.user?.first_name?.trim() || '';
     const v2 = isV2();
     subtitle().textContent = v2 ? '' : greeting(firstName);
     subtitle().classList.add('subtitle-guest');
@@ -746,7 +746,7 @@ function renderGuestHome() {
 function renderOwnerHome() {
     cleanupProfileOverlays();
     const user = state.user;
-    const firstName = user?.first_name || 'друг';
+    const firstName = user?.first_name?.trim() || '';
     const v2 = isV2();
     subtitle().textContent = v2 ? '' : greeting(firstName);
     subtitle().classList.remove('subtitle-guest');
