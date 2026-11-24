@@ -67,13 +67,14 @@ async function showCardSuccess(pending, me) {
     markPaymentSeen();
     await applyActiveCard(me);
     const hikeDate = pending?.hikeDate || '';
-    if (hikeDate && me.regs?.[hikeDate] === true) {
-        const { showRegistrationSuccess } = await import('./calendar.js');
-        showRegistrationSuccess(hikeDate, pending.hikeTitle || state.hikesWithTitle.find(h => h.date === hikeDate)?.title || '');
-        return;
-    }
+    const showRegistration = hikeDate && me.regs?.[hikeDate] === true
+        ? async () => {
+            const { showRegistrationSuccess } = await import('./calendar.js');
+            showRegistrationSuccess(hikeDate, pending.hikeTitle || state.hikesWithTitle.find(h => h.date === hikeDate)?.title || '');
+        }
+        : undefined;
     const { showCardWelcomeNow } = await import('./card-welcome.js');
-    showCardWelcomeNow(me);
+    await showCardWelcomeNow({ showRegistration });
 }
 
 let watch = null;

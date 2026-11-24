@@ -22,7 +22,7 @@ export function wireMedalStrip(host, items, all = null, owner = '') {
     }));
 }
 
-export async function mountMyAchievements() {
+export async function mountMyAchievements({ celebrateCardOwner = false } = {}) {
     // в новом дизайне большой карты на главной нет – значки встают под «твои связи»
     const card = document.getElementById('cardBlock') || document.getElementById('rdMedalsAnchor');
     const userId = String(state.user?.id || '');
@@ -68,7 +68,7 @@ export async function mountMyAchievements() {
         host.querySelectorAll('[data-mya-card]').forEach(b => b.addEventListener('click', () => {
             haptic(); import('./card-sheet.js').then(m => m.openCardSheet({ source: 'значки ждут активации' })).catch(() => {});
         }));
-        showActivated(userId, items);
+        showActivated(userId, items, celebrateCardOwner);
     } catch { /* Unavailable collections never block the homepage or expose drafts. */ }
 }
 
@@ -80,15 +80,23 @@ function rememberWaiting(userId, items) {
     if (isCardHolder()) return;
     try { localStorage.setItem(waitKey(userId), JSON.stringify(items.filter(isWaiting).map(a => a.id))); } catch { /* storage is optional */ }
 }
-function showActivated(userId, items) {
-    if (!isCardHolder()) return;
+function showActivated(userId, items, celebrateCardOwner) {
+    if (!isCardHolder() || document.querySelector('.cw-overlay, .cw-paid')) return;
     let ids = [];
     try { ids = JSON.parse(localStorage.getItem(waitKey(userId)) || '[]'); localStorage.removeItem(waitKey(userId)); } catch { return; }
     const opened = items.filter(a => ids.includes(a.id) || (a.seenAt === null && catalogByTitle(a.title)?.id === 'card-owner'));
-    if (!opened.length || !ids.length) return;
+    if (!opened.length || (!ids.length && !celebrateCardOwner)) return;
     const n = opened.length;
-    setTimeout(() => openAchievementsPopup(opened, { fresh: true, source: 'карта активировала значки',
-        title: `открыто <b>${n} ${plural(n, 'значок', 'значка', 'значков')}</b>` }), 900);
+    const open = () => {
+        if (String(state.user?.id || '') !== userId) return;
+        if (document.querySelector('.reg-ticket-overlay, .cw-overlay, .cw-paid, .ach-overlay')) {
+            setTimeout(open, 900);
+            return;
+        }
+        openAchievementsPopup(opened, { fresh: true, source: 'карта активировала значки',
+            title: `открыто <b>${n} ${plural(n, 'значок', 'значка', 'значков')}</b>` });
+    };
+    setTimeout(open, 900);
 }
 // первые шаги – серые плитки на полке, пока значков меньше трёх
 const FIRST_STEPS = [

@@ -1,3 +1,4 @@
+const { latestCardPurchase } = require('../lib/card-payment');
 const crypto = require('crypto');
 const { grantHikeBadges } = require('../lib/hike-badges');
 const { noShows } = require('../lib/no-shows');
@@ -248,6 +249,14 @@ function createHandler(deps = {}) {
         const owned = new Set(Object.values(snapshot).filter(r => r?.grants?.[userId]?.issuedAt && r.publicationStatus === 'published').map(r => titleKey(r.title)));
         const due = AUTO_ACHIEVEMENTS.filter(a => a.imageUrl && !owned.has(titleKey(a.title))
             && (a.profile ? !!profile.value : a.card ? progress.member : a.always || progress.hikes >= a.min) && (a.always || AUTO_GRANT_ENABLED));
+        if (due.some(a => a.key === 'card-owner')) {
+            const payments = (await read('pending_payments', token)).value;
+            const purchase = latestCardPurchase(payments, userId);
+            if (purchase) {
+                const receipt = await read(`cardPaymentReceipts/${userId}/${encodeURIComponent(purchase[0])}`, token);
+                if (!receipt.value?.claimedAt) due.splice(due.findIndex(a => a.key === 'card-owner'), 1);
+            }
+        }
         const granted = [];
         const name = String([user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || userId).slice(0, 100);
         for (const a of due) {

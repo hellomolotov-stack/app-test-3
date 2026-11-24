@@ -10,6 +10,7 @@ const { circleFor } = require('../lib/circle');
 const { notesFor } = require('../lib/mm-notes');
 const { storiesFor, markView } = require('../lib/club-stories');
 const survey = require('../lib/survey');
+const { latestCardPurchase } = require('../lib/card-payment');
 // «твои связи»: владельцам карты – все связи, без карты – 5 самых близких; этим – всё (тест)
 const CIRCLE_USERS = new Set(['maxmolotov']);
 // саммари мастермайндов целиком – и без карты (по нику Telegram, пока не знаем числовой id)
@@ -104,51 +105,33 @@ async function registration(action, user, date, res) {
     }
 }
 
-// значок «владелец карты интеллигента» – вместе с экраном «карта твоя» (когда у карты появилась картинка).
-// Записей с этим названием бывает несколько – берём ту, у которой больше всего получателей.
-async function grantCardOwnerBadge(uid, name, token) {
-    const TITLE = 'владелец карты интеллигента';
-    const all = (await read('clubAchievements', token)) || {};
-    const list = Object.entries(all).filter(([, r]) => r?.title === TITLE && r.publicationStatus !== 'draft');
-    if (list.some(([, r]) => r.grants?.[uid]?.issuedAt)) return;
-    const id = list.sort((a, b) => Object.keys(b[1].grants || {}).length - Object.keys(a[1].grants || {}).length)[0]?.[0];
-    if (!id) return;
-    const day = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
-    for (let attempt = 0; attempt < 3; attempt++) {
-        const r = await fetch(`${DB}/clubAchievements/${id}.json`, { headers: { Authorization: `Bearer ${token}`, 'X-Firebase-ETag': 'true' }, signal: AbortSignal.timeout(6000) });
-        const etag = r.headers.get('etag'); const rec = await r.json();
-        if (rec?.grants?.[uid]?.issuedAt) return;
-        const now = Date.now(), entry = { userId: uid, name: name.slice(0, 100), date: day };
-        rec.recipients = { ...(rec.recipients || {}), [uid]: entry };
-        rec.grants = { ...(rec.grants || {}), [uid]: { ...entry, issuedAt: now, issuedBy: 'auto-card' } };
-        rec.updatedAt = now; rec.updatedBy = 'auto-card';
-        rec.history = [...(rec.history || []), { action: 'auto_card', at: now, by: 'auto-card', added: [uid] }];
-        const w = await fetch(`${DB}/clubAchievements/${id}.json`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', 'If-Match': etag }, body: JSON.stringify(rec), signal: AbortSignal.timeout(6000) });
-        if (w.ok || w.status !== 412) return;
-    }
-}
-
-async function serveSoloGpx(req, res) {
-    const solo = require('../lib/solo-hiking');
-    const { soloGpx: id, expires, signature } = req.query || {};
-    const secret = process.env.TELEGRAM_BOT_TOKEN;
-    if (!secret || !solo.canDownload(id, expires, signature, secret)) {
-        return res.status(403).json({ error: 'download link expired or invalid' });
-    }
-    try {
-        const route = solo.readCatalog(await read('routes', await getAccessToken())).find(item => item.id === id);
-        if (!route?.segments.length) return res.status(404).json({ error: 'track unavailable' });
-        const { kind } = solo.describe(route);
-        res.setHeader('Content-Type', 'application/gpx+xml; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${id}-solo.gpx"`);
-        res.setHeader('Access-Control-Allow-Origin', 'https://web.telegram.org');
-        res.setHeader('Referrer-Policy', 'no-referrer');
-        if (req.method === 'HEAD') return res.status(200).end();
-        return res.status(200).send(solo.gpx(route, kind));
-    } catch (error) {
-        console.error('me solo gpx:', error.message);
-        return res.status(502).json({ error: 'track unavailable' });
-    }
+async function cardPaymentReceipt(user, res) {
+    const uid = String(user.id);
+    const token = await getAccessToken();
+    const member = await read(`members/${uid}`, token);
+    if (!member?.user_id) return res.status(200).json({ show: false });
+    const purchase = latestCardPurchase(await read('pending_payments', token), uid);
+    if (!purchase) return res.status(200).json({ show: false });
+    const [invoice, payment] = purchase;
+    const url = `${DB}/cardPaymentReceipts/${uid}/${encodeURIComponent(invoice)}.json`;
+    const headers = { Authorization: `Bearer ${token}` };
+    const receipt = await fetch(url, { headers: { ...headers, 'X-Firebase-ETag': 'true' }, signal: AbortSignal.timeout(6000) });
+    if (!receipt.ok) throw new Error(`card receipt read ${receipt.status}`);
+    if (await receipt.json()) return res.status(200).json({ show: false });
+    const etag = receipt.headers.get('etag');
+    if (!etag) throw new Error('card receipt missing ETag');
+    const write = await fetch(url, {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json', 'If-Match': etag },
+        signal: AbortSignal.timeout(6000),
+        body: JSON.stringify({ claimedAt: Date.now() })
+    });
+    if (write.status === 412) return res.status(200).json({ show: false });
+    if (!write.ok) throw new Error(`card receipt write ${write.status}`);
+    return res.status(200).json({
+        show: true, name: String(member.user_name || user.first_name || '').split(' ')[0],
+        cardUrl: member.card_image_url || '', plan: payment.card_type === 'season' ? 'season' : 'permanent'
+    });
 }
 
 module.exports = async (req, res) => {
@@ -188,6 +171,15 @@ module.exports = async (req, res) => {
         } catch (error) {
             console.error('me solo routes:', error.message);
             return res.status(502).json({ error: 'routes unavailable' });
+        }
+    }
+
+    if (body?.action === 'card_payment_receipt') {
+        try {
+            return await cardPaymentReceipt(user, res);
+        } catch (e) {
+            console.error('me card payment receipt:', e.message);
+            return res.status(502).json({ error: 'db unavailable' });
         }
     }
 
@@ -435,7 +427,6 @@ module.exports = async (req, res) => {
                 && ['permanent', 'season', 'offer'].includes(p.card_type)).sort((a, b) => b.ts - a.ts)[0];
             if (!paid) { await put({ skip: Date.now() }); return res.status(200).json({ show: false }); }
             const hikes = await hikeCount(id, token, { member }).catch(() => Number(member.hikes_count) || 0);
-            await grantCardOwnerBadge(id, String(member.user_name || user.first_name || id), token).catch(e => console.error('card badge:', e.message));
             return res.status(200).json({ show: true, name: String(member.user_name || '').split(' ')[0] || user.first_name || '',
                 cardUrl: member.card_image_url || '', plan: paid.card_type === 'season' ? 'season' : 'permanent', hikes });
         } catch (e) {
