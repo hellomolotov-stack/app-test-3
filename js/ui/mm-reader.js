@@ -244,7 +244,7 @@ function buildReader(list, id, drag) {
             log(`саммари: читает ${n.date} ${n.title}`, n.locked, state.user);
             scroll.innerHTML = `<div class="mmr-head"><img src="assets/plaud-v2.webp" alt=""><div><h2 class="mmr-title">${esc(n.title)}</h2></div></div><div class="mmr-people" data-mmp="${esc(n.date)}"></div>`
                 + render(n.body)
-                + (n.locked ? `<div class="mmr-lock"><p data-app-copy="copy_54ffa561f921c9ef832d">целиком саммари мастермайндов читают владельцы карты интеллигента</p><button data-app-copy="copy_379bd85f690168dab360" type="button" class="mmr-btn" data-card>открыть с картой</button></div>` : '');
+                + (n.locked ? `<div class="mmr-lock"><p data-app-copy="copy_54ffa561f921c9ef832d">полное саммари доступно владельцам карты интеллигента</p><button data-app-copy="copy_379bd85f690168dab360" type="button" class="mmr-btn" data-card>узнать о карте</button></div>` : '');
         }
         scroll.scrollTop = 0;
         // кто был на этой встрече – аватарки под заголовком
