@@ -36,6 +36,7 @@ let bubbleAction = null;   // что сделать по нажатию на п�
 let pending = null;        // отложенная реакция: { key, timer }
 
 // ==================== РЕАКЦИИ НА ПОВЕДЕНИЕ ====================
+const AUTO_REACTIONS_ENABLED = false;
 const K_REACT = 'botNudge_react';          // { key: ts последнего показа }
 const REACT_GAP_MS = 10 * 60 * 1000;       // не чаще одной реакции в 10 минут
 const DAY = 24 * 3600 * 1000;
@@ -113,8 +114,7 @@ function cancelPending(key) {
 }
 
 function onAct(e) {
-    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
-    return;
+    if (!AUTO_REACTIONS_ENABLED) return;
     const { type, ...d } = e.detail || {};
     switch (type) {
         case 'card_scratched': schedule('scratched_idle'); break;
@@ -184,7 +184,7 @@ export function mountBotTab() {
     });
     window.addEventListener('club:act', onAct);
     // данные о прошлых хайках приходят не сразу – проверяем чуть позже
-    setTimeout(() => schedule('returning_guest'), 8000);
+    if (AUTO_REACTIONS_ENABLED) setTimeout(() => schedule('returning_guest'), 8000);
 }
 
 // Подсказка язычка без открытия чата (для входа по старой ссылке startapp=bot).
