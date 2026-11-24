@@ -7779,7 +7779,10 @@ html.v2 .mmc { padding: 16px; cursor: pointer; box-shadow: 0 12px 70px -16px rgb
 .mmc-avs i { position: relative; overflow: hidden; width: 28px; height: 28px; border-radius: 14px; margin-left: -8px; border: 2px solid #14171C; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; font-weight: 700; color: #fff; }
 .mmc-avs i:first-child { margin-left: 0; }
 .mmc-avs img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.mmc-read { flex: none; height: 40px; padding: 0 16px; white-space: nowrap; border: 0; border-radius: 12px; background: linear-gradient(180deg, #cdbcff 0%, #ab92f5 100%); color: #1a1033; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.10), 0 3px 10px rgba(0,0,0,.22), 0 1px 2px rgba(0,0,0,.12); }
+:root { --button-bottom-shadow: inset 0 1px 0 rgba(255,255,255,.55), inset 0 -2px 0 rgba(0,0,0,.10), 0 3px 10px rgba(0,0,0,.22), 0 1px 2px rgba(0,0,0,.12); }
+:where(button, [role="button"], input[type="button"], input[type="submit"]) { box-shadow: var(--button-bottom-shadow); }
+.mmr-btn, .mmr-all, .cs2-go { box-shadow: var(--button-bottom-shadow); }
+.mmc-read { flex: none; height: 40px; padding: 0 16px; white-space: nowrap; border: 0; border-radius: 12px; background: linear-gradient(180deg, #cdbcff 0%, #ab92f5 100%); color: #1a1033; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: var(--button-bottom-shadow); }
 .mmc-read:active { box-shadow: inset 0 2px 5px rgba(0,0,0,.18), 0 1px 2px rgba(0,0,0,.1); transform: translateY(1px); }
 
 /* классика v2: «твои связи» – живая сеть */
