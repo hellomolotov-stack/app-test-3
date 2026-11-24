@@ -1,11 +1,11 @@
 // js/ui/card-welcome.js – экран «карта твоя»: карта человека и все привилегии, как в шторке покупки.
-// Показывается один раз новому владельцу карты (решает сервер: /api/me card_welcome, оплата за 30 дней).
+// Сервер резервирует один показ на подтверждённый счёт.
 import { state } from '../state.js';
 import { meCall } from '../net.js';
+import { claimAchievements, clearAchievementCache } from '../achievements.js';
 import { log } from '../api.js';
 import { haptic, showConfetti } from '../utils.js';
 
-const DONE_KEY = 'card_welcome_done';
 const esc = t => String(t || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const PERKS = [
     ['🥾', 'все хайки клуба', 'без билетов и оплат – просто записываешься'],
@@ -23,7 +23,7 @@ function hikesWord(n) {
     return a === 1 && b !== 11 ? 'хайк' : a >= 2 && a <= 4 && (b < 12 || b > 14) ? 'хайка' : 'хайков';
 }
 
-export function showCardWelcome({ name = '', cardUrl = '', plan = 'permanent', hikes = 0 } = {}) {
+export function showCardWelcome({ name = '', cardUrl = '', plan = 'permanent', hikes = 0, onClose = () => {} } = {}) {
     document.querySelector('.cw-overlay')?.remove();
     const el = document.createElement('div');
     el.className = 'cw-overlay';
@@ -46,41 +46,43 @@ export function showCardWelcome({ name = '', cardUrl = '', plan = 'permanent', h
         haptic();
         log('карта твоя: выбрать хайк', false, state.user);
         el.classList.add('is-out');
-        setTimeout(() => el.remove(), 250);
+        setTimeout(() => { el.remove(); onClose(); }, 250);
         setTimeout(() => document.getElementById('calendarContainer')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     });
 }
 
-function markSeen() {
-    try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {}
-    meCall('card_welcome_seen').catch(() => {});
-}
-
-// при запуске: владельцу карты, которому экран ещё не показывали, – спросить сервер
-export async function maybeShowCardWelcome() {
-    // 14.11: всплывашки выключены для всех (Макс) – вернуть: убрать эту строку
-    return;
-    try {
+let showing = null;
+export function showCardWelcomeNow({ showRegistration } = {}) {
+    if (showing) return showing;
+    showing = (async () => {
         if (state.userCard?.status !== 'active') return;
-        try { if (localStorage.getItem(DONE_KEY)) return; } catch (e) {}
-        if (document.querySelector('.card-payment-overlay, .cw-overlay')) return;
-        const r = await meCall('card_welcome', {}, 8000);
-        if (!r?.show) { if (r && !r.wait) try { localStorage.setItem(DONE_KEY, '1'); } catch (e) {} return; }
-        log('карта твоя: экран показан', false, state.user);
-        showCardWelcome(r);
-        markSeen();
-    } catch (e) { /* сеть – попробуем при следующем запуске */ }
+        const receipt = await meCall('card_payment_receipt', {}, 15000);
+        if (!receipt?.show) return;
+
+        let badgeClaim;
+        const afterClose = async () => {
+            await badgeClaim;
+            clearAchievementCache();
+            const { mountMyAchievements } = await import('./medals.js');
+            document.getElementById('myAchievements')?.remove();
+            await mountMyAchievements({ celebrateCardOwner: true });
+            await showRegistration?.();
+        };
+        const onClose = () => afterClose().catch(console.error);
+        if (receipt.cardUrl) showCardWelcome({ ...receipt, hikes: Number(state.userCard.hikes) || 0, onClose });
+        else showCardPaid(onClose);
+        badgeClaim = claimAchievements(true);
+        await badgeClaim;
+    })().catch(e => console.error('после оплаты карты:', e)).finally(() => { showing = null; });
+    return showing;
 }
 
-// сразу после оплаты (payment-return.js): карта уже с картинкой – экран «карта твоя»;
-// картинки ещё нет – короткая плашка, а экран и значок придут, когда Макс добавит карту
-export function showCardWelcomeNow() {
-    meCall('card_welcome', {}, 8000).then(r => {
-        if (r?.show) { showCardWelcome(r); markSeen(); } else showCardPaid();
-    }).catch(() => showCardPaid());
+export function maybeShowCardWelcome() {
+    if (document.querySelector('.card-payment-overlay, .cw-overlay, .cw-paid')) return;
+    return showCardWelcomeNow();
 }
 
-function showCardPaid() {
+function showCardPaid(onClose) {
     document.querySelector('.cw-paid')?.remove();
     const el = document.createElement('div');
     el.className = 'modal-overlay cw-paid';
@@ -92,5 +94,5 @@ function showCardPaid() {
     document.body.appendChild(el);
     try { showConfetti(); } catch (e) {}
     log('карта оплачена: ждём картинку', false, state.user);
-    el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-close]')) { haptic(); el.remove(); } });
+    el.addEventListener('click', e => { if (e.target === el || e.target.closest('[data-close]')) { haptic(); el.remove(); onClose(); } });
 }
