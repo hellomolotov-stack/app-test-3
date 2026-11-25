@@ -1,3 +1,4 @@
+import { meCall } from '../net.js';
 import { haptic } from '../utils.js';
 
 const PILOT_ID = '7845375334';
@@ -16,14 +17,8 @@ export function hasHikeIntentPilot(user) {
 }
 
 async function requestChoice(date, change = {}) {
-    const response = await fetch('/api/hike-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date, ...change, initData: window.Telegram.WebApp.initData }),
-        signal: AbortSignal.timeout(10000),
-    });
-    if (!response.ok) throw new Error(`hike intent ${response.status}`);
-    const { choice } = await response.json();
+    const result = await meCall('hike_intent', { date, ...change }, 10000);
+    const choice = result?.choice;
     return LABELS.has(choice) ? choice : null;
 }
 
