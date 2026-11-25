@@ -8970,3 +8970,72 @@ button.rd-pass-meeting { cursor: pointer; }
 .post-photo-overlay .story-preview img:not([src]) {
     color:transparent;background:linear-gradient(180deg,#14243a,#0a0b0e);
 }
+
+.hike-intent {
+    flex: 0 0 100%;
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+    background: #191e24;
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    color: var(--text-color);
+    pointer-events: auto;
+}
+.hike-intent-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    min-height: 40px;
+    box-sizing: border-box;
+    font-size: 14px;
+    font-weight: 700;
+    list-style: none;
+    cursor: pointer;
+}
+.hike-intent-question::-webkit-details-marker { display: none; }
+.hike-intent-question::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    margin-right: 3px;
+    flex-shrink: 0;
+    border: solid currentColor;
+    border-width: 0 1.5px 1.5px 0;
+    transform: translateY(-2px) rotate(45deg);
+    opacity: .7;
+}
+.hike-intent[open] .hike-intent-question::after { transform: translateY(2px) rotate(225deg); }
+.hike-intent[open] .hike-intent-question .hike-intent-answer { display: none; }
+.hike-intent-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0 10px 10px;
+}
+.hike-intent-tag {
+    border: 1px solid var(--glass-border);
+    font-family: inherit;
+    background: var(--glass-bg);
+    color: var(--text-color);
+    cursor: pointer;
+}
+.hike-intent-tag[aria-pressed="true"] { background: var(--yellow); color: #000; border-color: var(--yellow); }
+.hike-intent-tag:disabled { opacity: .6; cursor: default; }
+.hike-intent-question:focus-visible,
+.hike-intent-tag:focus-visible { outline: 2px solid var(--yellow); outline-offset: -2px; }
+.hike-intent-answer,
+.hike-intent-message {
+    display: block;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.35;
+    opacity: .78;
+}
+.hike-intent-answer { margin-top: 2px; }
+.hike-intent-message { margin: 0; padding: 0 12px 10px; }
+.hike-intent-answer[hidden],
+.hike-intent-message[hidden] { display: none; }
+.participant-dropdown.has-hike-intent { min-width: min(215px, calc(100vw - 48px)); }
