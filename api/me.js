@@ -10,6 +10,7 @@ const { circleFor } = require('../lib/circle');
 const { notesFor } = require('../lib/mm-notes');
 const { storiesFor, markView } = require('../lib/club-stories');
 const survey = require('../lib/survey');
+const hikeIntent = require('../lib/hike-intent');
 const { latestCardPurchase } = require('../lib/card-payment');
 // «твои связи»: владельцам карты – все связи, без карты – 5 самых близких; этим – всё (тест)
 const CIRCLE_USERS = new Set(['maxmolotov']);
@@ -145,6 +146,8 @@ module.exports = async (req, res) => {
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
     const user = verifyInitData(String((body && body.initData) || ''), botToken);
     if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
+
+    if (body.action === 'hike_intent') return hikeIntent(user, body, res);
 
     if (body?.action === 'soloRoutes' || body?.action === 'soloDownload') {
         const id = String(user.id);

@@ -1,3 +1,4 @@
+import { hasHikeIntentPilot, mountHikeIntent, addHikeIntentToParticipant } from './hike-intent.js';
 import { setUiCopy } from './copy-editor.js';
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { bookingNotOpen, opensPhrase } from '../booking-opens.js';
@@ -3104,6 +3105,7 @@ function updateFloatingSheetButtons() {
     const isCompletedToday = !isCancelled && !isPlaceholder && timing.isCompletedToday;
     const isClosedRegistration = !isPast && !isCancelled && !isPlaceholder && timing.isClosed && !isCompletedToday;
 
+    const hikeIntent = container.querySelector('.hike-intent');
     container.innerHTML = '';
     container.classList.remove('has-plates');
     // анонс без записи: вместо записи – «сообщить об открытии записи» (лист ожидания)
@@ -3432,6 +3434,9 @@ function updateFloatingSheetButtons() {
         container.insertBefore(chipRow, container.firstChild);
     }
 
+    if (!isBooked && !isCity && !isBookClub && hasHikeIntentPilot(state.user)) {
+        mountHikeIntent(container, hike.date, hikeIntent);
+    }
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
     if (swipeControl) {
         container.appendChild(swipeControl);
@@ -4000,7 +4005,14 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         : null;
 
     let participants = null;
-    try { participants = (await fetchGoingFromServer([hikeDate]))?.[0] || null; } catch (e) {}
+    try {
+        if (hasHikeIntentPilot(state.user)) {
+            const fresh = await fetchGoingFromServer([hikeDate], true);
+            participants = fresh?.[hikeDate] || null;
+        } else {
+            participants = (await fetchGoingFromServer([hikeDate]))?.[0] || null;
+        }
+    } catch (e) {}
     if (!participants) {
         try { participants = await withTimeout(loadAllParticipants(hikeDate), 4000); } catch (e) { console.error('Failed to load participants', e); }
     }
@@ -4028,15 +4040,25 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             item.classList.add('clickable-profile');
             item.style.cursor = 'pointer';
 
+            const avatarClass = 'participant-dropdown-avatar' + (hasProfile ? ' has-profile' : '');
+            const placeholder = document.createElement('div');
+            placeholder.className = avatarClass + ' placeholder';
+            placeholder.textContent = name.charAt(0).toUpperCase();
             if (p.photoUrl) {
-                item.innerHTML = `<img src="${p.photoUrl}" class="participant-dropdown-avatar${hasProfile ? ' has-profile' : ''}" alt="${name}" onerror="this.style.display='none'; this.parentNode.innerHTML='<div class=\'participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}\'>${name.charAt(0).toUpperCase()}</div>';">`;
+                const avatar = document.createElement('img');
+                avatar.className = avatarClass;
+                avatar.alt = '';
+                avatar.addEventListener('error', () => avatar.replaceWith(placeholder), { once: true });
+                avatar.src = p.photoUrl;
+                item.appendChild(avatar);
             } else {
-                item.innerHTML = `<div class="participant-dropdown-avatar placeholder${hasProfile ? ' has-profile' : ''}">${name.charAt(0).toUpperCase()}</div>`;
+                item.appendChild(placeholder);
             }
             const nameSpan = document.createElement('span');
             nameSpan.className = 'participant-dropdown-name';
             nameSpan.textContent = name;
             item.appendChild(nameSpan);
+            addHikeIntentToParticipant(nameSpan, state.user, p.userId, hikeDate);
 
             {
                 item.addEventListener('click', (e) => {
