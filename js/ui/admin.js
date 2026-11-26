@@ -9,6 +9,7 @@ import { REGISTRATION_API_URL } from '../config.js';
 import { renderAnalytics } from './admin-analytics.js';
 import { loadAllParticipants } from '../firebase.js';
 import { previewHikeTrack, findCatalogRoute, catalogRouteTrack, fetchGoingFromServer, capacityFor } from './calendar.js';
+import { setCatalogRouteTracks } from './intelligentsia-routes.js';
 import { isRedesign } from '../redesign.js';
 import { loadClubContent, applyClubContent, saveClubContent } from '../club-content.js';
 import { renderAdmissionAdmin } from './admission-admin.js';
@@ -1008,7 +1009,10 @@ function trackSectionHtml(d) {
         return `<div class="adm-track">
             <div class="adm-track-stats"><b>${esc(route?.title || 'маршрут')}</b>${km ? ` · ${km} км` : ''} · трек из каталога</div>
             <div class="adm-map" id="admMap"></div>
-            <div class="adm-hint">другой трек? выберите «свой маршрут (GPX)» в списке маршрутов</div>
+            <div class="adm-track-actions">
+                <label class="adm-ghost adm-file">заменить GPX<input type="file" accept=".gpx,application/gpx+xml,application/xml,text/xml" id="admCatalogGpx" hidden></label>
+            </div>
+            <div class="adm-hint">новый трек сохранится в каталоге и появится в хайках с этим маршрутом</div>
         </div>`;
     }
     const stats = d.trackStats;
@@ -1172,6 +1176,12 @@ function renderEditor(body) {
     body.querySelector('#admAchGrant')?.addEventListener('click', () => { haptic(); view = { tab: 'achievements', achHike: d.original }; render(); });
     body.querySelector('#admRoute').addEventListener('change', e => onRouteChange(e.target.value));
     body.querySelector('#admClone')?.addEventListener('change', e => e.target.value && cloneFromHike(e.target.value));
+    body.querySelector('#admCatalogGpx')?.addEventListener('change', e => {
+        const input = e.currentTarget;
+        const file = input.files?.[0];
+        input.value = '';
+        if (file) replaceCatalogGpx(d, input, file);
+    });
     body.querySelector('#admGpx')?.addEventListener('change', e => onGpxFile(e.target.files && e.target.files[0]));
     body.querySelector('#admTrackRemove')?.addEventListener('click', () => {
         haptic();
@@ -1186,8 +1196,21 @@ function renderEditor(body) {
     });
     body.querySelector('#admSave').addEventListener('click', saveHike);
     const mapEl = body.querySelector('#admMap');
-    const previewTrack = d.routeMode === 'catalog' ? catalogRouteTrack(routeById(d.route_id)) : d.track;
-    if (mapEl && previewTrack) previewHikeTrack(mapEl, previewTrack).catch(() => { mapEl.textContent = 'карта не загрузилась'; });
+    if (mapEl) {
+        const showMap = () => {
+            if (!mapEl.isConnected) return;
+            const track = d.routeMode === 'catalog' ? catalogRouteTrack(routeById(d.route_id)) : d.track;
+            if (track) previewHikeTrack(mapEl, track).catch(() => { mapEl.textContent = 'карта не загрузилась'; });
+        };
+        const loading = d.routeMode === 'catalog' && state.catalogRouteTracksLoading;
+        if (loading) {
+            loading.then(() => {
+                if (!mapEl.isConnected) return;
+                if (routeById(d.route_id)?.replacedTrack) render();
+                else showMap();
+            });
+        } else showMap();
+    }
     if (d.original) loadPeople(body.querySelector('#admPeople'), d.original);
 }
 
@@ -1215,6 +1238,35 @@ function showSaveError(text) {
     if (!el) return toast(text, true);
     el.textContent = text;
     el.hidden = false;
+}
+
+let catalogGpxSaving = false;
+
+async function replaceCatalogGpx(d, input, file) {
+    const route = routeById(d.route_id);
+    if (!route || catalogGpxSaving) return;
+    catalogGpxSaving = true;
+    input.disabled = true;
+    try {
+        if (file.size > 5 * 1024 * 1024) throw new Error('GPX больше 5 МБ');
+        const segments = parseCatalogGpx(await file.text());
+        if (!await confirmAsync(`Заменить GPX маршрута «${route.title}» в каталоге?`)) return;
+        const r = await fetchWithTimeout('/api/club-content', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'catalog_route_track', id: route.id, segments, initData: tg?.initData || '' }),
+        }, 15000);
+        const result = await r.json();
+        if (!r.ok || !result.ok) throw new Error(result.error || 'не удалось сохранить GPX маршрута');
+        setCatalogRouteTracks({ ...state.catalogRouteTracks, [route.id]: segments });
+        if (draft === d && draft.route_id === route.id) render();
+        toast('GPX маршрута обновлён');
+    } catch (error) {
+        toast(error.message || 'не удалось заменить GPX', true);
+    } finally {
+        catalogGpxSaving = false;
+        input.disabled = false;
+    }
 }
 
 async function onGpxFile(file) {
@@ -1446,6 +1498,29 @@ function simplify(points, eps) {
         }
     }
     return points.filter((_, i) => keep[i]);
+}
+
+// У каталожного трека сохраняем границы сегментов, чтобы не рисовать перемычки между ними.
+export function parseCatalogGpx(text) {
+    const doc = new DOMParser().parseFromString(text, 'application/xml');
+    if (doc.documentElement?.localName !== 'gpx' || doc.getElementsByTagName('parsererror').length) {
+        throw new Error('файл не похож на GPX');
+    }
+    const elements = (node, tag) => Array.from(node.getElementsByTagNameNS('*', tag));
+    const readSegments = (group, point) => elements(doc, group).map(node => elements(node, point).map(item => {
+        const lat = item.getAttribute('lat');
+        const lon = item.getAttribute('lon');
+        if (!lat?.trim() || !lon?.trim() || !Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon))
+            || Math.abs(Number(lat)) > 90 || Math.abs(Number(lon)) > 180) throw new Error('в GPX есть неверные координаты');
+        return [Number(lat), Number(lon)];
+    })).filter(segment => segment.length >= 2 && segment.some(([lat, lon]) => lat !== segment[0][0] || lon !== segment[0][1]));
+    let segments = readSegments('trkseg', 'trkpt');
+    if (!segments.length) segments = readSegments('rte', 'rtept');
+    if (!segments.length) throw new Error('в GPX нет точек трека');
+    if (segments.length > 100 || segments.reduce((total, segment) => total + segment.length, 0) > 10000) {
+        throw new Error('в GPX больше 100 сегментов или 10 000 точек');
+    }
+    return segments;
 }
 
 export function parseGpx(text) {

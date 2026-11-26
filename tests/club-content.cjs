@@ -34,6 +34,7 @@ const overrides = {};
 let writes = 0;
 const booking = {};
 let bookingWrites = [];
+const catalogRouteTracks = {};
 const revisionFor = section => overrides[section]
     ? crypto.createHash('sha1').update(`${section}-${overrides[section].version}`).digest('base64')
     : 'null_etag';
@@ -48,6 +49,16 @@ global.fetch = async (url, options = {}) => {
         return Response.json(update);
     }
     if (/^booking_/.test(bookingPath)) return Response.json(booking[bookingPath] ?? null);
+    if (bookingPath === 'catalogRouteTracks') {
+        assert.equal(options.headers.Authorization, 'Bearer test-token');
+        return Response.json(catalogRouteTracks);
+    }
+    if (bookingPath === 'catalogRouteTracks/pallasa') {
+        assert.equal(options.method, 'PUT');
+        assert.equal(options.headers.Authorization, 'Bearer test-token');
+        catalogRouteTracks.pallasa = JSON.parse(options.body);
+        return Response.json(catalogRouteTracks.pallasa);
+    }
     const attendanceSection = String(url).match(/\/([^/]+)\.json$/)?.[1];
     if (readingAttendance && Object.hasOwn(attendance, attendanceSection)) {
         assert.equal(options.headers.Authorization, 'Bearer test-token');
@@ -83,18 +94,27 @@ function signedUser(username, age = 0) {
     return params.toString();
 }
 
-async function call(method, body) {
+async function call(method, body, query) {
     const result = { headers: {} };
     const res = {
         setHeader(key, value) { result.headers[key] = value; },
         status(code) { result.status = code; return this; },
         json(value) { result.body = value; return this; },
     };
-    await handler({ method, body }, res);
+    await handler({ method, body, query }, res);
     return result;
 }
 
 (async () => {
+    const segments = [[[44.518643, 34.21544], [44.518299, 34.225547]]];
+    const payload = { action: 'catalog_route_track', id: 'pallasa', segments };
+    assert.equal((await call('POST', { ...payload, initData: signedUser('hiker') })).status, 403);
+    const authenticated = { ...payload, initData: signedUser('maxmolotov') };
+    assert.equal((await call('POST', { ...authenticated, segments: [[[91, 34], [44, 35]]] })).status, 400);
+    assert.deepEqual((await call('GET', undefined, { routeTracks: '1' })).body, { tracks: {} });
+    assert.equal((await call('POST', authenticated)).status, 200);
+    assert.deepEqual((await call('GET', undefined, { routeTracks: '1' })).body, { tracks: { pallasa: segments } });
+
     let response = await call('GET');
     assert.equal(response.status, 200);
     assert.deepEqual(response.body.metrics, base.metrics);

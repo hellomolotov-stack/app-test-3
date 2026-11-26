@@ -1233,6 +1233,7 @@ function nearestIndex(seg, point) {
 export function catalogRouteTrack(route) {
     if (!route || !Array.isArray(route.segments) || !route.segments.length) return null;
     const segments = route.segments.map(seg => seg.map(([lat, lon]) => [lat, lon]));
+    if (route.replacedTrack) return { loop: true, segments, replacedTrack: true };
     const fix = ROUTE_TRACK_FIXES[route.id];
     const seg = segments[0];
     if (fix && seg.length > 20) {
@@ -1285,6 +1286,7 @@ function withSpur(track, cfg) {
 
 function getHikeTrack(hike) {
     let track = getHikeTrackRaw(hike);
+    if (track?.replacedTrack) return track;
     // своя запись по дате/маршруту; иначе – любая, чья развилка и вершина лежат на треке
     // (админка у хайка со своим GPX стирает route_id, а перенос даты не должен терять пунктир)
     let spurCfg = track && (HIKE_TRACK_SPURS[hike.date] || HIKE_TRACK_SPURS[hike.route_id]);
