@@ -71,7 +71,8 @@ export function getIntelligentsiaRouteTrack(routeTitles) {
 
     return {
         loop: true,
-        segments: route.segments.map(segment => segment.map(([lat, lon]) => [lat, lon]))
+        segments: route.segments.map(segment => segment.map(([lat, lon]) => [lat, lon])),
+        finishSegment: route.finishSegment
     };
 }
 

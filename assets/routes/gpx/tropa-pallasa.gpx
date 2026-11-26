@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="Клуб интеллигенции" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata><name>Тропа Палласа</name><desc>официальный маршрут Ялтинского заповедника</desc></metadata>
-  <trk><name>Тропа Палласа — сегмент 1</name><trkseg>
+  <wpt lat="44.518299" lon="34.225547"><name>Финиш</name></wpt>
+  <trk><name>Тропа Палласа — основной маршрут</name><trkseg>
     <trkpt lat="44.518643" lon="34.21544"/>
     <trkpt lat="44.519093" lon="34.215719"/>
     <trkpt lat="44.519201" lon="34.215634"/>
