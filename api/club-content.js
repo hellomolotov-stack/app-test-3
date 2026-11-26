@@ -253,7 +253,11 @@ module.exports = async (req, res) => {
             const msg = require('../lib/booking-open-message');
             try {
                 const t = await getAccessToken();
-                const get = async path => (await fetch(`${DB}/${path}.json`, { headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) })).json();
+                const get = async path => {
+                    const r = await fetch(`${DB}/${path}.json`, { headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) });
+                    if (!r.ok) throw new Error('read failed');
+                    return r.json();
+                };
                 if (body.action === 'booking_open_get') return res.status(200).json({ text: (await get(`booking_open_text/${date}`)) || '', button: (await get(`booking_open_button/${date}`)) || '', default: msg.DEFAULT, defaultButton: msg.BUTTON });
                 const hike = (await get(`hikes/${date}`)) || {};
                 const html = msg.render(String(body.text || '').slice(0, 1500), { name: String(user.first_name || ''), title: String(body.title || hike.title || ''), date, startTime: String(body.start_time || hike.start_time || '') });
@@ -275,24 +279,27 @@ module.exports = async (req, res) => {
             if (at !== null && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+03:00$/.test(at)) return res.status(400).json({ error: 'плохое время открытия' });
             try {
                 const t = await getAccessToken();
-                const put = (path, val) => fetch(`${DB}/${path}.json`, { method: val === null ? 'DELETE' : 'PUT', headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' }, body: val === null ? undefined : JSON.stringify(val), signal: AbortSignal.timeout(15000) });
-                const prev = await (await fetch(`${DB}/booking_opens/${date}.json`, { headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) })).json().catch(() => null);
-                const rs = [await put(`booking_opens/${date}`, at)];
-                if (original && original !== date) rs.push(await put(`booking_opens/${original}`, null));
-                if (typeof body.text === 'string') {
-                    const text = body.text.trim().slice(0, 1500);
-                    const isDefault = !text || text === require('../lib/booking-open-message').DEFAULT;
-                    rs.push(await put(`booking_open_text/${date}`, isDefault ? null : text));
-                    if (original && original !== date) rs.push(await put(`booking_open_text/${original}`, null));
+                const headers = { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' };
+                const current = await fetch(`${DB}/booking_opens/${date}.json`, { headers, signal: AbortSignal.timeout(15000) });
+                if (!current.ok) throw new Error('read failed');
+                const prev = await current.json();
+                const updates = { [`booking_opens/${date}`]: at };
+                const moved = original && original !== date;
+                if (moved) updates[`booking_opens/${original}`] = null;
+                const msg = require('../lib/booking-open-message');
+                for (const [field, section, limit, fallback] of [
+                    ['text', 'booking_open_text', 1500, msg.DEFAULT],
+                    ['button', 'booking_open_button', 40, msg.BUTTON],
+                ]) {
+                    if (typeof body[field] !== 'string') continue;
+                    const value = body[field].trim().slice(0, limit);
+                    updates[`${section}/${date}`] = !value || value === fallback ? null : value;
+                    if (moved) updates[`${section}/${original}`] = null;
                 }
-                if (typeof body.button === 'string') {
-                    const bt = body.button.trim().slice(0, 40);
-                    rs.push(await put(`booking_open_button/${date}`, !bt || bt === require('../lib/booking-open-message').BUTTON ? null : bt));
-                    if (original && original !== date) rs.push(await put(`booking_open_button/${original}`, null));
-                }
-                // время поменяли – рассылку «открыли запись» можно отправить заново в новую минуту
-                if (prev !== at) rs.push(await put(`booking_open_sent/${date}`, null));
-                if (rs.some(r => !r.ok)) throw new Error('write failed');
+                // Текст, кнопка и время должны стать видны отправщику одновременно.
+                if (prev !== at) updates[`booking_open_sent/${date}`] = null;
+                const saved = await fetch(`${DB}/.json`, { method: 'PATCH', headers, body: JSON.stringify(updates), signal: AbortSignal.timeout(15000) });
+                if (!saved.ok) throw new Error('write failed');
                 return res.status(200).json({ ok: true, at });
             } catch (e) {
                 console.error('booking_opens:', e.message);

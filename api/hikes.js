@@ -32,6 +32,12 @@ async function openBooking(date, token) {
     if (!Number.isFinite(at)) return { date, skipped: 'нет времени открытия' };
     if (Date.now() < at) return { date, skipped: 'ещё рано' };
     if (Date.now() - at > 3 * 86400000) return { date, skipped: 'давно открыта' };
+    const [hikeData, waitlist, template, btnText] = await Promise.all([
+        get(`hikes/${date}`), get(`hike_waitlist/${date}`),
+        get(`booking_open_text/${date}`), get(`booking_open_button/${date}`),
+    ]);
+    const hike = hikeData || {};
+    const list = waitlist || {};
     // замок: создаём booking_open_sent/<дата>, только если его ещё нет
     const lockUrl = `${DB}/booking_open_sent/${date}.json`;
     const head = await fetch(lockUrl, { headers: { Authorization: `Bearer ${token}`, 'X-Firebase-ETag': 'true' }, signal: AbortSignal.timeout(8000) });
@@ -39,11 +45,7 @@ async function openBooking(date, token) {
     const lock = await fetch(lockUrl, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'if-match': head.headers.get('etag') || 'null_etag', 'Content-Type': 'application/json' }, body: JSON.stringify({ at: Date.now() }), signal: AbortSignal.timeout(8000) });
     if (!lock.ok) return { date, skipped: 'уже отправляется' };
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const hike = await get(`hikes/${date}`) || {};
-    const list = await get(`hike_waitlist/${date}`) || {};
     const msg = require('../lib/booking-open-message');
-    const template = await get(`booking_open_text/${date}`).catch(() => null);
-    const btnText = await get(`booking_open_button/${date}`).catch(() => null);
     const marks = {};
     let sent = 0;
     for (const [uid, p] of Object.entries(list)) {
