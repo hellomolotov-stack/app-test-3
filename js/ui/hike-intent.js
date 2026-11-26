@@ -1,7 +1,6 @@
 import { meCall } from '../net.js';
 import { haptic } from '../utils.js';
 
-const PILOT_ID = '7845375334';
 const LABELS = new Map([
     ['first-hike', 'сходить на первый хайк'],
     ['meet', 'познакомиться'],
@@ -12,8 +11,8 @@ const LABELS = new Map([
 ]);
 const choicesByDate = new Map();
 
-export function hasHikeIntentPilot(user) {
-    return String(user?.id) === PILOT_ID && !!window.Telegram?.WebApp?.initData;
+export function canAnswerHikeIntent(user) {
+    return !!user?.id && !!window.Telegram?.WebApp?.initData;
 }
 
 async function requestChoice(date, change = {}) {
@@ -100,14 +99,18 @@ export function mountHikeIntent(container, date, previous) {
     });
 }
 
-export function addHikeIntentToParticipant(name, user, participantId, date) {
-    if (!hasHikeIntentPilot(user) || String(participantId) !== PILOT_ID) return;
-    readChoice(date).then(choice => {
-        if (!choice || !name.isConnected) return;
-        const answer = document.createElement('small');
-        answer.className = 'hike-intent-answer';
-        answer.textContent = LABELS.get(choice);
-        name.appendChild(answer);
-        name.closest('.participant-dropdown')?.classList.add('has-hike-intent');
+export function fillParticipantHikeIntents(dropdown, date) {
+    meCall('hike_intent_participants', { date }).then(result => {
+        if (!dropdown.isConnected) return;
+        for (const row of dropdown.querySelectorAll('.participant-dropdown-item[data-user-id]')) {
+            const label = LABELS.get(result?.choices?.[row.dataset.userId]);
+            const name = row.querySelector('.participant-dropdown-name');
+            if (!label || !name) continue;
+            const answer = document.createElement('small');
+            answer.className = 'hike-intent-answer';
+            answer.textContent = label;
+            name.appendChild(answer);
+            dropdown.classList.add('has-hike-intent');
+        }
     }).catch(() => {});
 }

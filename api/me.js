@@ -147,7 +147,7 @@ module.exports = async (req, res) => {
     const user = verifyInitData(String((body && body.initData) || ''), botToken);
     if (!user || !user.id) return res.status(401).json({ error: 'bad initData' });
 
-    if (body.action === 'hike_intent') return hikeIntent(user, body, res);
+    if (body.action === 'hike_intent' || body.action === 'hike_intent_participants') return hikeIntent(user, body, res);
 
     if (body?.action === 'soloRoutes' || body?.action === 'soloDownload') {
         const id = String(user.id);

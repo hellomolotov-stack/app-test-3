@@ -1,4 +1,4 @@
-import { hasHikeIntentPilot, mountHikeIntent, addHikeIntentToParticipant } from './hike-intent.js';
+import { canAnswerHikeIntent, mountHikeIntent, fillParticipantHikeIntents } from './hike-intent.js';
 import { setUiCopy } from './copy-editor.js';
 // js/ui/calendar.js – финальная версия (городские события: запись для владельцев карт, баннеры для гостей)
 import { bookingNotOpen, opensPhrase } from '../booking-opens.js';
@@ -3436,7 +3436,7 @@ function updateFloatingSheetButtons() {
         container.insertBefore(chipRow, container.firstChild);
     }
 
-    if (!isBooked && !isCity && !isBookClub && hasHikeIntentPilot(state.user)) {
+    if (!isBooked && !isCity && !isBookClub && canAnswerHikeIntent(state.user)) {
         mountHikeIntent(container, hike.date, hikeIntent);
     }
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
@@ -4006,9 +4006,12 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
         ? loadAllProfiles().then(pr => { if (pr) state.profiles = pr; }).catch(e => console.error('Failed to load profiles', e))
         : null;
 
+    const showHikeIntents = canAnswerHikeIntent(state.user);
     let participants = null;
     try {
-        if (hasHikeIntentPilot(state.user)) {
+        if (showHikeIntents && feedGoingFromFb[hikeDate]) {
+            participants = feedGoingList[hikeDate];
+        } else if (showHikeIntents) {
             const fresh = await fetchGoingFromServer([hikeDate], true);
             participants = fresh?.[hikeDate] || null;
         } else {
@@ -4060,7 +4063,6 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
             nameSpan.className = 'participant-dropdown-name';
             nameSpan.textContent = name;
             item.appendChild(nameSpan);
-            addHikeIntentToParticipant(nameSpan, state.user, p.userId, hikeDate);
 
             {
                 item.addEventListener('click', (e) => {
@@ -4105,6 +4107,7 @@ export async function toggleParticipantDropdown(counterElement, hikeDate) {
     dropdown.style.width = counterElement.offsetWidth + 'px';
     dropdown.style.zIndex = '1001';
     container.appendChild(dropdown);
+    if (showHikeIntents && participants.length) fillParticipantHikeIntents(dropdown, hikeDate);
 
     setTimeout(() => dropdown.classList.add('show'), 10);
     currentDropdownHikeDate = hikeDate;
