@@ -1287,7 +1287,9 @@ function withSpur(track, cfg) {
 
 function getHikeTrack(hike) {
     let track = getHikeTrackRaw(hike);
-    if (track && hike.date === '2026-11-29') return { ...track, ...BAYDARSKAYA_TERRAIN };
+    if (track && hike.date === '2026-11-29') {
+        return { ...track, ...BAYDARSKAYA_TERRAIN, followTerrainOnArrival: true };
+    }
     if (track?.replacedTrack) return track;
     // своя запись по дате/маршруту; иначе – любая, чья развилка и вершина лежат на треке
     // (админка у хайка со своим GPX стирает route_id, а перенос даты не должен терять пунктир)
@@ -1929,15 +1931,29 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
             if (still) {
                 map.jumpTo(target);
                 map.fire('still-ready');
-            } else if (instant) {
+                return;
+            }
+
+            if (track.followTerrainOnArrival) {
+                // MapLibre 4.7.1 может сохранить высоту начала полёта при смене центра.
+                // queryTerrainElevation возвращает разницу с текущей высотой камеры.
+                map.transformCameraUpdate = ({ center }) => {
+                    const offset = map.queryTerrainElevation(center);
+                    return Number.isFinite(offset) ? { elevation: map.transform.elevation + offset } : {};
+                };
+            }
+            const startOrbit = () => {
+                if (track.followTerrainOnArrival) map.transformCameraUpdate = null;
+                startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0);
+            };
+            if (instant) {
                 // посадка сверху вниз с поворотом, затем оборот
                 map.easeTo({ ...target, duration: 3200, essential: true,
                     easing: t => 1 - Math.pow(1 - t, 3) });
-                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0));
             } else {
                 map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
-                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0));
             }
+            map.once('moveend', startOrbit);
         });
     });
 
