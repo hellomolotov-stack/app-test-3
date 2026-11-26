@@ -188,6 +188,19 @@ module.exports = async (req, res) => {
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'метод не поддерживается' });
     let body = req.body || {};
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return res.status(400).json({ error: 'неверный запрос' }); } }
+    if (req.method === 'GET' && req.query?.routeTracks === '1') {
+        try {
+            const token = await getAccessToken();
+            const r = await fetch(`${DB}/catalogRouteTracks.json`, {
+                headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(6000),
+            });
+            if (!r.ok) throw new Error('route tracks read failed');
+            return res.status(200).json({ tracks: (await r.json()) || {} });
+        } catch (error) {
+            console.error('catalog route tracks:', error.message);
+            return res.status(502).json({ error: 'не удалось загрузить треки каталога' });
+        }
+    }
     if (req.method === 'GET' && req.query?.copy === '1') return appCopy(req, res);
     if (req.method === 'POST' && body.action === 'app_copy') {
         if (!process.env.TELEGRAM_BOT_TOKEN) return res.status(503).json({ error: 'сервер не настроен' });
@@ -227,6 +240,34 @@ module.exports = async (req, res) => {
         user = verifyInitData(String(body.initData || ''), token);
         if (!user?.id) return res.status(401).json({ error: 'открой админку внутри Telegram' });
         if (!isAdminUser(user)) return res.status(403).json({ error: 'только для администраторов' });
+        if (body.action === 'catalog_route_track') {
+            const { id, segments } = body;
+            const validPoint = point => Array.isArray(point) && point.length === 2
+                && Number.isFinite(point[0]) && Math.abs(point[0]) <= 90
+                && Number.isFinite(point[1]) && Math.abs(point[1]) <= 180;
+            if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9_-]{0,79}$/.test(id)
+                || !Array.isArray(segments) || !segments.length || segments.length > 100
+                || !segments.every(segment => Array.isArray(segment) && segment.length >= 2 && segment.length <= 10000)
+                || segments.reduce((total, segment) => total + segment.length, 0) > 10000
+                || !segments.every(segment => segment.every(validPoint)
+                    && segment.some(([lat, lon]) => lat !== segment[0][0] || lon !== segment[0][1]))) {
+                return res.status(400).json({ error: 'неверный маршрут или координаты GPX' });
+            }
+            try {
+                const access = await getAccessToken();
+                const r = await fetch(`${DB}/catalogRouteTracks/${id}.json`, {
+                    method: 'PUT',
+                    headers: { Authorization: `Bearer ${access}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(segments),
+                    signal: AbortSignal.timeout(10000),
+                });
+                if (!r.ok) throw new Error('route track write failed');
+                return res.status(200).json({ ok: true });
+            } catch (error) {
+                console.error('catalog route track:', error.message);
+                return res.status(502).json({ error: 'не удалось сохранить GPX маршрута' });
+            }
+        }
         // обложка прошедшего хайка: JPEG (base64) из админки, до ~700 КБ; data: null – убрать
         if (body.action === 'hike_photo') {
             const date = String(body.date || '');

@@ -26,7 +26,7 @@ import { mountBotTab, showBotTabHint } from './ui/bot-nudge.js';
 import { mountLumen, setLumenContext, setLumenEligibility } from './ui/lumen.js';
 import { isLumenPilotUser } from './lumen/config.js';
 import { openOnboardingChat } from './ui/chat-entry.js';
-import { setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
+import { setCatalogRouteTracks, setIntelligentsiaRoutes, setIntelligentsiaRouteFavorites } from './ui/intelligentsia-routes.js';
 import { focusNextUnopenedHike } from './ui/next-hike-link.js';
 import { startClubMetricsRefresh } from './club-content.js';
 import { startHofLinkScroll, cancelHofLinkScroll, deferHofHomeRender, hofLinkActive, hofLinkGeneration } from './ui/hof-link-scroll.js';
@@ -962,6 +962,16 @@ async function loadAppData() {
                 import('./ui/offer-banner.js').then(m => m.mountOfferBanner(me.offer)).catch(e => console.error('offer banner', e));
             }
         });
+
+        state.catalogRouteTracksLoading = fetch('/api/club-content?routeTracks=1', { signal: timeoutSignal(10000) })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!Object.keys(data?.tracks || {}).length) return;
+                setCatalogRouteTracks({ ...data.tracks, ...state.catalogRouteTracks });
+                if (firstRenderDone && homeOnScreen()) renderHomeKeep();
+            })
+            .catch(error => console.error('route tracks:', error.message))
+            .finally(() => { state.catalogRouteTracksLoading = null; });
 
         // Общие данные главной с CDN (/api/boot, запрошен ещё в index.html) – быстрый старт для
         // новичков без кэша. Применяем, только если Firebase ещё не ответил: он свежее и всё равно

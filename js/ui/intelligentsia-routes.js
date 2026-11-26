@@ -38,7 +38,7 @@ const TEMPORARILY_CLOSED_ROUTE_TITLES = [
     'ущелье уч кош', 'уч кош', 'массандровская тропа', 'бирюзовое озеро', 'тропа палласа'
 ];
 const ROUTES_BY_ID = new Map([...ROUTE_DATA, ...EXTRA_INTELLIGENTSIA_ROUTES].map(route => [route.id, route]));
-let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(Boolean).map(route => {
+const DEFAULT_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(Boolean).map(route => {
     const routeWithExactTrack = route.id === 'chernaya-rechka'
         ? {
         ...route,
@@ -53,9 +53,26 @@ let INTELLIGENTSIA_ROUTES = ROUTE_ORDER.map(id => ROUTES_BY_ID.get(id)).filter(B
     };
 }).sort(sortRoutesWestToEast);
 
-// Актуальный список маршрутов доступен остальным модулям через state: этот файл подключается
-// с разными ?v=…, и у каждой копии модуля свой INTELLIGENTSIA_ROUTES. state — общий для всех.
-state.intelligentsiaRoutes = INTELLIGENTSIA_ROUTES;
+function applyRouteTracks(routes) {
+    return routes.map(route => {
+        const segments = state.catalogRouteTracks?.[route.id];
+        if (!segments?.length) return route;
+        return normaliseRoute({ ...route, segments, bounds: null, pointCount: 0, finishSegment: undefined, replacedTrack: true });
+    }).sort(sortRoutesWestToEast);
+}
+
+state.intelligentsiaRoutes ||= applyRouteTracks(state.catalogBaseRoutes || DEFAULT_ROUTES);
+
+export function setCatalogRouteTracks(tracks) {
+    state.catalogRouteTracks = tracks;
+    publishRoutes();
+}
+
+function publishRoutes() {
+    state.intelligentsiaRoutes = applyRouteTracks(state.catalogBaseRoutes || DEFAULT_ROUTES);
+    const container = document.getElementById('intelligentsiaRoutesContainer');
+    if (container) renderIntelligentsiaRoutes(container);
+}
 
 export function getIntelligentsiaRouteTrack(routeTitles) {
     const titles = (Array.isArray(routeTitles) ? routeTitles : [routeTitles])
@@ -63,7 +80,7 @@ export function getIntelligentsiaRouteTrack(routeTitles) {
         .filter(Boolean);
     if (!titles.length) return null;
 
-    const route = INTELLIGENTSIA_ROUTES.find(item => {
+    const route = state.intelligentsiaRoutes.find(item => {
         const title = normaliseRouteIdentity(item?.title);
         return titles.some(candidate => title === candidate || title.includes(candidate));
     });
@@ -72,7 +89,8 @@ export function getIntelligentsiaRouteTrack(routeTitles) {
     return {
         loop: true,
         segments: route.segments.map(segment => segment.map(([lat, lon]) => [lat, lon])),
-        finishSegment: route.finishSegment
+        finishSegment: route.finishSegment,
+        replacedTrack: route.replacedTrack
     };
 }
 
@@ -148,10 +166,8 @@ export function setIntelligentsiaRoutes(routes, { fromCache = false } = {}) {
         .filter(Boolean);
     // A failed or not-yet-configured sync must never make the card disappear.
     if (!syncedRoutes.length) return;
-    INTELLIGENTSIA_ROUTES = syncedRoutes.sort(sortRoutesWestToEast);
-    state.intelligentsiaRoutes = INTELLIGENTSIA_ROUTES;
-    const container = document.getElementById('intelligentsiaRoutesContainer');
-    if (container) renderIntelligentsiaRoutes(container);
+    state.catalogBaseRoutes = syncedRoutes;
+    publishRoutes();
 }
 
 let currentMap = null;
@@ -216,7 +232,7 @@ function routeToFeature(route, active) {
 function routesFeatureCollection(activeIndex) {
     return {
         type: 'FeatureCollection',
-        features: INTELLIGENTSIA_ROUTES.map((route, index) => routeToFeature(route, index === activeIndex))
+        features: state.intelligentsiaRoutes.map((route, index) => routeToFeature(route, index === activeIndex))
     };
 }
 
@@ -230,7 +246,7 @@ function updateRouteMeta(route, index) {
     if (title) title.textContent = route.title;
     if (preview) preview.textContent = route.description || '';
     if (caption) caption.setAttribute('aria-label', `${route.title}: открыть описание`);
-    if (counter) counter.textContent = `${index + 1} / ${INTELLIGENTSIA_ROUTES.length}`;
+    if (counter) counter.textContent = `${index + 1} / ${state.intelligentsiaRoutes.length}`;
     if (status) status.hidden = !isRouteTemporarilyClosed(route);
     if (statusReason) {
         statusReason.href = RESERVE_CLOSURE_SOURCE_URL;
@@ -306,17 +322,17 @@ function renderRouteFavorites(route) {
 export function setIntelligentsiaRouteFavorites(favorites) {
     routeFavorites = favorites && typeof favorites === 'object' ? favorites : {};
     state.routeFavorites = routeFavorites;
-    renderRouteFavorites(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
+    renderRouteFavorites(state.intelligentsiaRoutes[currentRouteIndex]);
 }
 
 export function refreshIntelligentsiaRouteFavorites() {
-    renderRouteFavorites(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
+    renderRouteFavorites(state.intelligentsiaRoutes[currentRouteIndex]);
 }
 
 export function getFavoriteRoutesForUser(userId) {
     const id = String(userId || '');
     if (!id) return [];
-    return INTELLIGENTSIA_ROUTES.filter(route => favoriteUserIds(route.id).includes(id));
+    return state.intelligentsiaRoutes.filter(route => favoriteUserIds(route.id).includes(id));
 }
 
 function cameraForRoute(map, route) {
@@ -347,9 +363,9 @@ function cameraForRoute(map, route) {
 
 function flyToRoute(index, instant = false) {
     if (!currentMap || !currentMap.isStyleLoaded()) return;
-    const safeIndex = (index + INTELLIGENTSIA_ROUTES.length) % INTELLIGENTSIA_ROUTES.length;
+    const safeIndex = (index + state.intelligentsiaRoutes.length) % state.intelligentsiaRoutes.length;
     currentRouteIndex = safeIndex;
-    const route = INTELLIGENTSIA_ROUTES[safeIndex];
+    const route = state.intelligentsiaRoutes[safeIndex];
     updateRouteMeta(route, safeIndex);
 
     const source = currentMap.getSource('intelligentsia-routes');
@@ -395,7 +411,7 @@ function startRouteRevealFlight() {
     currentMap.stop();
     currentMap.resize();
 
-    const route = INTELLIGENTSIA_ROUTES[0];
+    const route = state.intelligentsiaRoutes[0];
     currentMap.jumpTo({
         center: [
             (route.bounds[0][0] + route.bounds[1][0]) / 2,
@@ -463,8 +479,8 @@ function openRouteDescription(route) {
 }
 
 function trackRouteSwitch(direction, fromIndex, toIndex) {
-    const fromRoute = INTELLIGENTSIA_ROUTES[fromIndex];
-    const toRoute = INTELLIGENTSIA_ROUTES[toIndex];
+    const fromRoute = state.intelligentsiaRoutes[fromIndex];
+    const toRoute = state.intelligentsiaRoutes[toIndex];
     const trackingTag = direction === 'previous'
         ? 'hike_map_route_previous'
         : 'hike_map_route_next';
@@ -474,12 +490,12 @@ function trackRouteSwitch(direction, fromIndex, toIndex) {
         direction,
         from_route: fromRoute?.id || '',
         to_route: toRoute?.id || '',
-        route_position: `${toIndex + 1}/${INTELLIGENTSIA_ROUTES.length}`
+        route_position: `${toIndex + 1}/${state.intelligentsiaRoutes.length}`
     });
 }
 
 export function renderIntelligentsiaRoutes(container) {
-    if (!container || !INTELLIGENTSIA_ROUTES.length) return;
+    if (!container || !state.intelligentsiaRoutes.length) return;
     injectStyles();
     currentRouteIndex = 0;
     container.innerHTML = `
@@ -520,34 +536,34 @@ export function renderIntelligentsiaRoutes(container) {
     document.getElementById('prevIntelligentsiaRoute')?.addEventListener('click', () => {
         haptic();
         const fromIndex = currentRouteIndex;
-        const toIndex = (fromIndex - 1 + INTELLIGENTSIA_ROUTES.length) % INTELLIGENTSIA_ROUTES.length;
+        const toIndex = (fromIndex - 1 + state.intelligentsiaRoutes.length) % state.intelligentsiaRoutes.length;
         flyToRoute(toIndex);
         trackRouteSwitch('previous', fromIndex, toIndex);
     });
     document.getElementById('nextIntelligentsiaRoute')?.addEventListener('click', () => {
         haptic();
         const fromIndex = currentRouteIndex;
-        const toIndex = (fromIndex + 1) % INTELLIGENTSIA_ROUTES.length;
+        const toIndex = (fromIndex + 1) % state.intelligentsiaRoutes.length;
         flyToRoute(toIndex);
         trackRouteSwitch('next', fromIndex, toIndex);
     });
     const routeCaption = document.getElementById('intelligentsiaRouteCaption');
     routeCaption?.addEventListener('click', event => {
-        openRouteDescription(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
+        openRouteDescription(state.intelligentsiaRoutes[currentRouteIndex]);
     });
     routeCaption?.addEventListener('keydown', event => {
         if (event.key !== 'Enter' && event.key !== ' ') return;
         event.preventDefault();
-        openRouteDescription(INTELLIGENTSIA_ROUTES[currentRouteIndex]);
+        openRouteDescription(state.intelligentsiaRoutes[currentRouteIndex]);
     });
-    updateRouteMeta(INTELLIGENTSIA_ROUTES[0], 0);
+    updateRouteMeta(state.intelligentsiaRoutes[0], 0);
 
     ensureMapLibre().then(() => {
         const el = document.getElementById('intelligentsiaRoutesMap');
         if (!el) return;
         mapResizeObserver?.disconnect();
         try { if (currentMap) currentMap.remove(); } catch (e) {}
-        const first = INTELLIGENTSIA_ROUTES[0];
+        const first = state.intelligentsiaRoutes[0];
         const startCenter = [
             (first.bounds[0][0] + first.bounds[1][0]) / 2,
             (first.bounds[0][1] + first.bounds[1][1]) / 2
