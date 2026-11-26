@@ -693,7 +693,7 @@ export function snapshotHikeMap(hike, { width = 360, height = 640, ratio = 3, ti
     return snapshot;
 }
 
-const FEED_SNAP_KEY = 'feedMapSnap';
+const FEED_SNAP_KEY = 'feedMapSnap:v2';
 
 function hasFeedMapSnap(date) { return !!readFeedMapSnap(date); }
 
@@ -1242,7 +1242,7 @@ export function catalogRouteTrack(route) {
     }
     const ext = ROUTE_TRACK_EXTENSIONS[route.id];
     if (ext) segments[0] = segments[0].concat(ext);
-    return { loop: true, segments };
+    return { loop: true, segments, finishSegment: route.finishSegment };
 }
 
 // Маршруты, у которых рельеф с усилением 1.8 выглядит остриём (плато Ильяс-Кая в данных высот узкое)
@@ -1896,7 +1896,7 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         });
         if (track.loop) {
             addDot(line[0][0], line[0][1], 5);
-            const lastPt = line[line.length - 1];
+            const lastPt = track.segments?.[track.finishSegment]?.at(-1) || line.at(-1);
             if (_hvKm(lastPt[0], lastPt[1], line[0][0], line[0][1]) > 0.05) {
                 addDot(lastPt[0], lastPt[1], 5);
             }
