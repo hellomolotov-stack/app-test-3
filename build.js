@@ -232,3 +232,5 @@ async function localizeImages() {
     }
     return done;
 }
+
+// release pipeline smoke test 2026-11-26 (kimi)
