@@ -2,6 +2,28 @@
 <gpx version="1.1" creator="Клуб интеллигенции" xmlns="http://www.topografix.com/GPX/1/1">
   <metadata><name>Тропа Палласа</name><desc>официальный маршрут Ялтинского заповедника</desc></metadata>
   <wpt lat="44.518299" lon="34.225547"><name>Финиш</name></wpt>
+  <rte><name>Тропа Палласа — ответвление 1</name>
+    <rtept lat="44.522956" lon="34.214561"/>
+    <rtept lat="44.523106" lon="34.214711"/>
+    <rtept lat="44.523342" lon="34.21484"/>
+    <rtept lat="44.523835" lon="34.214711"/>
+    <rtept lat="44.524157" lon="34.214732"/>
+    <rtept lat="44.524307" lon="34.214668"/>
+    <rtept lat="44.524522" lon="34.214732"/>
+    <rtept lat="44.524651" lon="34.214883"/>
+    <rtept lat="44.524694" lon="34.215183"/>
+    <rtept lat="44.524694" lon="34.215548"/>
+    <rtept lat="44.52493" lon="34.216535"/>
+  </rte>
+  <rte><name>Тропа Палласа — ответвление 2</name>
+    <rtept lat="44.523535" lon="34.215011"/>
+    <rtept lat="44.523514" lon="34.214947"/>
+    <rtept lat="44.523578" lon="34.214797"/>
+  </rte>
+  <rte><name>Тропа Палласа — ответвление 3</name>
+    <rtept lat="44.525144" lon="34.217758"/>
+    <rtept lat="44.524694" lon="34.21765"/>
+  </rte>
   <trk><name>Тропа Палласа — основной маршрут</name><trkseg>
     <trkpt lat="44.518643" lon="34.21544"/>
     <trkpt lat="44.519093" lon="34.215719"/>
@@ -140,27 +162,5 @@
     <trkpt lat="44.518643" lon="34.226341"/>
     <trkpt lat="44.518621" lon="34.226169"/>
     <trkpt lat="44.518299" lon="34.225547"/>
-  </trkseg></trk>
-  <trk><name>Тропа Палласа — сегмент 2</name><trkseg>
-    <trkpt lat="44.522956" lon="34.214561"/>
-    <trkpt lat="44.523106" lon="34.214711"/>
-    <trkpt lat="44.523342" lon="34.21484"/>
-    <trkpt lat="44.523835" lon="34.214711"/>
-    <trkpt lat="44.524157" lon="34.214732"/>
-    <trkpt lat="44.524307" lon="34.214668"/>
-    <trkpt lat="44.524522" lon="34.214732"/>
-    <trkpt lat="44.524651" lon="34.214883"/>
-    <trkpt lat="44.524694" lon="34.215183"/>
-    <trkpt lat="44.524694" lon="34.215548"/>
-    <trkpt lat="44.52493" lon="34.216535"/>
-  </trkseg></trk>
-  <trk><name>Тропа Палласа — сегмент 3</name><trkseg>
-    <trkpt lat="44.523535" lon="34.215011"/>
-    <trkpt lat="44.523514" lon="34.214947"/>
-    <trkpt lat="44.523578" lon="34.214797"/>
-  </trkseg></trk>
-  <trk><name>Тропа Палласа — сегмент 4</name><trkseg>
-    <trkpt lat="44.525144" lon="34.217758"/>
-    <trkpt lat="44.524694" lon="34.21765"/>
   </trkseg></trk>
 </gpx>
