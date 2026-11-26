@@ -3488,7 +3488,7 @@ function updateFloatingSheetButtons() {
         container.insertBefore(chipRow, container.firstChild);
     }
 
-    if (!isBooked && !isCity && !isBookClub && canAnswerHikeIntent(state.user)) {
+    if (!isCity && !isBookClub && canAnswerHikeIntent(state.user)) {
         mountHikeIntent(container, hike.date, hikeIntent);
     }
     const swipeControl = renderSwipeControl({ isBooked, isGuest, hike, accentColor });
