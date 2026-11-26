@@ -32,12 +32,22 @@ const attendance = {
 let readingAttendance = false;
 const overrides = {};
 let writes = 0;
+const booking = {};
+let bookingWrites = [];
 const revisionFor = section => overrides[section]
     ? crypto.createHash('sha1').update(`${section}-${overrides[section].version}`).digest('base64')
     : 'null_etag';
 const realFetch = global.fetch;
 global.fetch = async (url, options = {}) => {
     if (url === 'https://oauth2.googleapis.com/token') return Response.json({ access_token: 'test-token', expires_in: 3600 });
+    const bookingPath = new URL(url).pathname.slice(1).replace(/\.json$/, '');
+    if (bookingPath === '' && options.method === 'PATCH') {
+        const update = JSON.parse(options.body);
+        bookingWrites.push(update);
+        Object.assign(booking, update);
+        return Response.json(update);
+    }
+    if (/^booking_/.test(bookingPath)) return Response.json(booking[bookingPath] ?? null);
     const attendanceSection = String(url).match(/\/([^/]+)\.json$/)?.[1];
     if (readingAttendance && Object.hasOwn(attendance, attendanceSection)) {
         assert.equal(options.headers.Authorization, 'Bearer test-token');
@@ -135,6 +145,30 @@ async function call(method, body) {
     delete overrides.updates.value;
     response = await call('GET');
     assert.deepEqual(response.body.updates, [], 'An empty manual list must not restore old table updates');
+    const date = '2026-12-06';
+    const original = '2026-12-05';
+    const at = '2026-12-01T19:00:00+03:00';
+    const settings = { action: 'booking_opens', date, original, at, text: 'Увидимся на тропе', button: 'иду в горы', initData };
+    assert.equal((await call('POST', settings)).status, 200);
+    assert.deepEqual(bookingWrites, [{
+        [`booking_opens/${date}`]: at, [`booking_opens/${original}`]: null,
+        [`booking_open_text/${date}`]: 'Увидимся на тропе', [`booking_open_text/${original}`]: null,
+        [`booking_open_button/${date}`]: 'иду в горы', [`booking_open_button/${original}`]: null,
+        [`booking_open_sent/${date}`]: null,
+    }]);
+    const readBooking = { action: 'booking_open_get', date, initData };
+    const custom = (await call('POST', readBooking)).body;
+    assert.equal(custom.text, 'Увидимся на тропе');
+    assert.equal(custom.button, 'иду в горы');
+    bookingWrites = [];
+    assert.equal((await call('POST', { ...settings, original: date, text: '', button: '' })).status, 200);
+    assert.ok(!Object.hasOwn(bookingWrites[0], `booking_open_sent/${date}`));
+    const reset = (await call('POST', readBooking)).body;
+    assert.equal(reset.text, '');
+    assert.equal(reset.button, '');
+    const msg = require('../lib/booking-open-message');
+    assert.equal(msg.button(date, custom.button).inline_keyboard[0][0].text, 'иду в горы');
+    assert.equal(msg.button(date, reset.button).inline_keyboard[0][0].url, `https://t.me/yaltahiking_bot?startapp=hike_${date}`);
     const attendanceRequest = { action: 'newcomer_attendance' };
     assert.equal((await call('POST', attendanceRequest)).status, 401);
     assert.equal((await call('POST', { ...attendanceRequest, initData: signedUser('visitor') })).status, 403);
