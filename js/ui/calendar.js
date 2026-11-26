@@ -1286,6 +1286,9 @@ function withSpur(track, cfg) {
 
 function getHikeTrack(hike) {
     let track = getHikeTrackRaw(hike);
+    if (track && hike.date === '2026-11-29' && hike.route_id === 'tropa-pallasa') {
+        return { ...track, steadyOrbit: true };
+    }
     if (track?.replacedTrack) return track;
     // своя запись по дате/маршруту; иначе – любая, чья развилка и вершина лежат на треке
     // (админка у хайка со своим GPX стирает route_id, а перенос даты не должен терять пунктир)
@@ -1668,7 +1671,37 @@ function reliefAt(profile, azimuthDeg) {
     return profile[i0] * (1 - f) + profile[i1] * f;
 }
 
-function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0) {
+function centerOrbitRoute(map, coordinates) {
+    const { clientWidth: width, clientHeight: height } = map.getCanvas();
+    if (!width || !height) return;
+    let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+    for (const coordinate of coordinates) {
+        const { x, y } = map.project(coordinate);
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+    }
+    const dx = (width - left - right) / 2;
+    const dy = (height - top - bottom) / 2;
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.max(Math.abs(dx), Math.abs(dy)) < 0.75) return;
+
+    // Сдвигаем кадр по проекции трека, сохраняя географическую ось оборота.
+    const padding = map.getPadding();
+    const x = Math.max(-width / 5, Math.min(width / 5, dx + (padding.left - padding.right) / 2));
+    const y = Math.max(-height / 5, Math.min(height / 5, dy + (padding.top - padding.bottom) / 2));
+    const next = {
+        left: Math.max(0, Math.round(2 * x)),
+        right: Math.max(0, Math.round(-2 * x)),
+        top: Math.max(0, Math.round(2 * y)),
+        bottom: Math.max(0, Math.round(-2 * y))
+    };
+    if (next.left !== padding.left || next.right !== padding.right || next.top !== padding.top || next.bottom !== padding.bottom) {
+        map.setPadding(next);
+    }
+}
+
+function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0, centeredRoute = null) {
     let rafId = null;
     let cancelled = false;
 
@@ -1690,7 +1723,9 @@ function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0) 
     const basePitch = Math.min(80, (Number.isFinite(camera.pitch) ? camera.pitch : 45) + ORBIT_PITCH_OFFSET);
     const baseZoom = map.getZoom();
     let profile = null;
-    try { profile = sampleOrbitRelief(map, camera.center, radiusDeg); } catch (e) {}
+    if (!centeredRoute) {
+        try { profile = sampleOrbitRelief(map, camera.center, radiusDeg); } catch (e) {}
+    }
 
     const startFlyToPitch = Number.isFinite(camera.pitch) ? camera.pitch : 45;
     const startedAt = performance.now();
@@ -1699,7 +1734,8 @@ function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0) 
         const progress = Math.min((now - startedAt) / HIKE_MAP_ORBIT_DURATION, 1);
         const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
         // arc – покачивание в секторе (туда-обратно) вместо полного круга
-        const bearing = arc ? startBearing + Math.sin(progress * Math.PI * 2) * arc / 2 : startBearing + eased * 360;
+        const bearing = centeredRoute ? startBearing + progress * 360
+            : arc ? startBearing + Math.sin(progress * Math.PI * 2) * arc / 2 : startBearing + eased * 360;
 
         // На первом кадре и наклон-ниже, и рельеф уже не нулевые на текущем азимуте,
         // поэтому обе поправки вводим плавно за RELIEF_FADE_MS – иначе в момент
@@ -1707,7 +1743,7 @@ function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0) 
         const fadeT = Math.min(1, (now - startedAt) / RELIEF_FADE_MS);
         const fade = fadeT * fadeT * (3 - 2 * fadeT);
 
-        const view = { bearing };
+        const view = centeredRoute ? { bearing, center: camera.center } : { bearing };
         // Плавно уходим от кадра прилёта к более низкому наклону оборота
         let pitch = startFlyToPitch + (basePitch - startFlyToPitch) * fade;
         if (profile) {
@@ -1717,10 +1753,11 @@ function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0) 
             pitch -= relief * 5;
             view.zoom = baseZoom - relief * 0.12;
         }
-        view.pitch = Math.max(30, Math.min(82, pitch));
+        view.pitch = centeredRoute ? startFlyToPitch : Math.max(30, Math.min(82, pitch));
 
         try {
             map.jumpTo(view);
+            if (centeredRoute) centerOrbitRoute(map, centeredRoute);
         } catch (e) {
             cancel();
             return;
@@ -1780,6 +1817,9 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
             ? { type: 'LineString', coordinates: segments[0].map(c => [c[1], c[0]]) }
             : { type: 'MultiLineString', coordinates: segments.map(segment => segment.map(c => [c[1], c[0]])) }
     };
+    const centeredRoute = !still && track.steadyOrbit
+        ? (segments.length === 1 ? geojson.geometry.coordinates : geojson.geometry.coordinates.flat())
+        : null;
     el.style.backgroundColor = '#0A0B09'; // только цвет: картинка-снимок под картой должна остаться
 
     let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
@@ -1811,6 +1851,7 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         };
     }
     const orbitRadiusDeg = Math.max(maxLat - minLat, maxLon - minLon, 0.004) * 0.6;
+    const startOrbit = () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0, centeredRoute);
 
     const CRIMEA = [[32.4, 44.2], [36.7, 46.3]];
 
@@ -1931,10 +1972,10 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
                 // посадка сверху вниз с поворотом, затем оборот
                 map.easeTo({ ...target, duration: 3200, essential: true,
                     easing: t => 1 - Math.pow(1 - t, 3) });
-                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0));
+                map.once('moveend', startOrbit);
             } else {
                 map.flyTo({ ...target, speed: 0.4, curve: 1.2, essential: true });
-                map.once('moveend', () => startHikeMapOrbit(map, target, orbitRadiusDeg, standalone, track.orbitArc || 0));
+                map.once('moveend', startOrbit);
             }
         });
     });
