@@ -1286,8 +1286,8 @@ function withSpur(track, cfg) {
 
 function getHikeTrack(hike) {
     let track = getHikeTrackRaw(hike);
-    if (track && hike.date === '2026-11-29' && hike.route_id === 'tropa-pallasa') {
-        return { ...track, steadyOrbit: true };
+    if (track && hike.date === '2026-11-29') {
+        return { ...track, pallasCamera: true };
     }
     if (track?.replacedTrack) return track;
     // своя запись по дате/маршруту; иначе – любая, чья развилка и вершина лежат на треке
@@ -1672,7 +1672,7 @@ function reliefAt(profile, azimuthDeg) {
 }
 
 function centerOrbitRoute(map, coordinates) {
-    const { clientWidth: width, clientHeight: height } = map.getCanvas();
+    const { clientWidth: width, clientHeight: height } = map.getContainer();
     if (!width || !height) return;
     let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
     for (const coordinate of coordinates) {
@@ -1683,13 +1683,14 @@ function centerOrbitRoute(map, coordinates) {
         bottom = Math.max(bottom, y);
     }
     const dx = (width - left - right) / 2;
-    const dy = (height - top - bottom) / 2;
+    // Оставляем место снизу для плашки поверх карты.
+    const dy = height * 0.44 - (top + bottom) / 2;
     if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.max(Math.abs(dx), Math.abs(dy)) < 0.75) return;
 
     // Сдвигаем кадр по проекции трека, сохраняя географическую ось оборота.
     const padding = map.getPadding();
     const x = Math.max(-width / 5, Math.min(width / 5, dx + (padding.left - padding.right) / 2));
-    const y = Math.max(-height / 5, Math.min(height / 5, dy + (padding.top - padding.bottom) / 2));
+    const y = Math.max(-height / 4, Math.min(height / 4, dy + (padding.top - padding.bottom) / 2));
     const next = {
         left: Math.max(0, Math.round(2 * x)),
         right: Math.max(0, Math.round(-2 * x)),
@@ -1731,10 +1732,11 @@ function startHikeMapOrbit(map, camera, radiusDeg, standalone = false, arc = 0, 
     const startedAt = performance.now();
     const step = (now) => {
         if (cancelled || (!standalone && map !== currentHikeMap) || map._removed) return;
-        const progress = Math.min((now - startedAt) / HIKE_MAP_ORBIT_DURATION, 1);
+        const duration = centeredRoute ? 10000 : HIKE_MAP_ORBIT_DURATION;
+        const progress = Math.max(0, Math.min((now - startedAt) / duration, 1));
         const eased = 0.5 - Math.cos(progress * Math.PI) / 2;
         // arc – покачивание в секторе (туда-обратно) вместо полного круга
-        const bearing = centeredRoute ? startBearing + progress * 360
+        const bearing = centeredRoute ? startBearing + eased * 54
             : arc ? startBearing + Math.sin(progress * Math.PI * 2) * arc / 2 : startBearing + eased * 360;
 
         // На первом кадре и наклон-ниже, и рельеф уже не нулевые на текущем азимуте,
@@ -1817,7 +1819,7 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
             ? { type: 'LineString', coordinates: segments[0].map(c => [c[1], c[0]]) }
             : { type: 'MultiLineString', coordinates: segments.map(segment => segment.map(c => [c[1], c[0]])) }
     };
-    const centeredRoute = !still && track.steadyOrbit
+    const centeredRoute = !still && track.pallasCamera
         ? (segments.length === 1 ? geojson.geometry.coordinates : geojson.geometry.coordinates.flat())
         : null;
     el.style.backgroundColor = '#0A0B09'; // только цвет: картинка-снимок под картой должна остаться
@@ -1839,6 +1841,9 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         const mpp = diameter / (side * 0.82);
         const z = Math.min(14.5, Math.log2(78271.5 * Math.cos(cLat * Math.PI / 180) / mpp));
         target = { center: [cLon, cLat], zoom: z, pitch: 45, bearing: 0 };
+    }
+    if (centeredRoute) {
+        target = { center: [cLon, cLat], zoom: target.zoom + 0.3, pitch: 36, bearing: -28 };
     }
     if (camera) {
         const latSpan = maxLat - minLat;
@@ -1879,10 +1884,10 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         // как камера облетает пустой ландшафт до появления трека, незачем.
         // Старт сверху: смотрим на маршрут почти вертикально и издалека, потом камера опускается.
         // Перелистывание стрелками – та же посадка, только с небольшой высоты. Снимок для сторис – сразу кадр.
-        center: still ? target.center : (instant ? target.center : [cLon, cLat + 0.06]),
-        zoom: still ? target.zoom : (instant ? Math.max(target.zoom - 1.6, 5) : 9.5),
-        pitch: still ? (target.pitch ?? 45) : 0,
-        bearing: still ? (target.bearing || 0) : (instant ? (target.bearing || 0) - 40 : 0),
+        center: still || centeredRoute || instant ? target.center : [cLon, cLat + 0.06],
+        zoom: still || centeredRoute ? target.zoom : (instant ? Math.max(target.zoom - 1.6, 5) : 9.5),
+        pitch: still || centeredRoute ? (target.pitch ?? 45) : 0,
+        bearing: still || centeredRoute ? (target.bearing || 0) : (instant ? (target.bearing || 0) - 40 : 0),
         maxPitch: 85,
         maxBounds: CRIMEA,
         attributionControl: false,
@@ -1964,6 +1969,12 @@ function initHikeMap(el, track, instant = false, standalone = false, { still = f
         });
 
         map.once('idle', () => {
+            if (centeredRoute) {
+                centerOrbitRoute(map, centeredRoute);
+                reveal();
+                startOrbit();
+                return;
+            }
             reveal();
             if (still) {
                 map.jumpTo(target);
