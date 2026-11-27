@@ -16,6 +16,7 @@ const arrow = icon('<path d="M7 17 17 7M7 7h10v10"/>');
 const ticket = icon('<path d="M4 6h16a1 1 0 0 1 1 1v2a3 3 0 0 0 0 6v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a3 3 0 0 0 0-6V7a1 1 0 0 1 1-1ZM13 6v2m0 3v2m0 3v2"/>');
 // На карте Форосского выезда старт справа. Порядок точек и высот сохраняем.
 const RIGHT_TO_LEFT_PROFILE_DATE = '2026-11-22';
+const MAIN_SEGMENT_PROFILE_DATE = '2026-11-29';
 const dateFormat = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/Moscow' });
 
 export function boardingPassHtml(hike, esc) {
@@ -44,7 +45,8 @@ export function boardingPassHtml(hike, esc) {
 let lastProfile;
 
 export async function mountBoardingPassProfile(hero, hike) {
-    const points = hikeTrackPoints(hike);
+    // У Палласа после основного маршрута в каталоге лежат отдельные ответвления.
+    const points = hikeTrackPoints(hike, { mainSegmentOnly: hike.date === MAIN_SEGMENT_PROFILE_DATE });
     if (points.length < 2) return;
     const count = Math.min(35, points.length);
     const samples = Array.from({ length: count }, (_, i) => points[Math.round(i * (points.length - 1) / (count - 1))]);
