@@ -1253,10 +1253,12 @@ const ROUTE_TERRAIN_EXAGGERATION = { 'ilyas-kaya': 0.8, 'foros-kant': 1.0 };
 // не облетает полный круг, а покачивается со стороны моря на столько градусов
 const ROUTE_ORBIT_ARC = { 'foros-kant': 100 };
 
-// точки трека [[lat, lon], …] – для подсчёта высот в сторис
-export function hikeTrackPoints(hike) {
+// точки трека [[lat, lon], …] для профиля высот и сторис
+export function hikeTrackPoints(hike, { mainSegmentOnly = false } = {}) {
     const t = hike ? getHikeTrackRaw(hike) : null;
-    return t ? (t.coords || t.segments?.flat() || []) : [];
+    if (t?.coords) return t.coords;
+    if (mainSegmentOnly) return t?.segments?.[t.finishSegment ?? 0] || [];
+    return t?.segments?.flat() || [];
 }
 
 // Хайки по дате или route_id: заход на вершину «туда и обратно» – показываем пунктиром отдельно от основного трека.
