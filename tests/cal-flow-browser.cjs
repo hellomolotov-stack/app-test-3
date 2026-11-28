@@ -10,6 +10,7 @@ const hikes = [
     { date: '2025-12-14', title: 'хайк по Массандровской тропе' },
     { date: '2026-06-04', title: 'встреча в городе', city: 'yes' },
     { date: '2026-11-08', title: 'хайк на Аю-Даг' },
+    { date: '2026-11-15', title: 'хайк по тропе Палласа', emoji: '🌧️' },
 ];
 
 (async () => {
@@ -49,9 +50,14 @@ const hikes = [
         await page.waitForTimeout(100);
         assert.equal(await page.locator('.cf-tag.is-past').count(), 3);
         assert.equal(await page.locator('.cf-tag.is-booked').textContent(), '✓ ты записан');
+        const postponed = page.locator('.cf-card[data-date="2026-11-15"]');
+        assert.ok(await postponed.evaluate(el => el.classList.contains('is-moved')));
+        assert.equal(await postponed.locator('.cf-q').textContent(), '→');
+        assert.equal(await postponed.locator('.cf-tlab').textContent(), 'хайк перенесён');
+        assert.equal(await postponed.locator('.cf-going, .cf-sw').count(), 0);
         for (const width of [320, 390, 600]) {
             await page.setViewportSize({ width, height: 650 });
-            for (let i = 0; i < hikes.length; i++) {
+            for (let i = 0; i < hikes.length - 1; i++) {
                 const card = page.locator('.cf-card').nth(i);
                 await card.evaluate(el => el.parentElement.scrollTo({ left: el.offsetLeft + el.offsetWidth / 2 - el.parentElement.clientWidth / 2, behavior: 'instant' }));
                 await page.waitForTimeout(80);

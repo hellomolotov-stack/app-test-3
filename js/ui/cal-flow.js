@@ -6,7 +6,7 @@
 import { state } from '../state.js';
 import { haptic } from '../utils.js';
 import { log } from '../api.js';
-import { showBottomSheet, isWaitlisted, toggleTeaserNotify, fetchGoingFromServer } from './calendar.js';
+import { showBottomSheet, isPostponed, isWaitlisted, toggleTeaserNotify, fetchGoingFromServer } from './calendar.js';
 import { heroPhotoFor } from './rd-home.js';
 import { isUpcomingHike, hikeTiming } from '../hike-timing.js';
 import { nextHikeLinkActive, nextHikeLinkDate } from './next-hike-link.js';
@@ -62,7 +62,7 @@ function photo(h) {
 }
 function cardHtml(h, i) {
     const t = today(), past = h.date < t, teaser = isTeaser(h), d = dt(h.date);
-    const completed = past || (!h.nextMonth && !teaser && !isCity(h) && !/🌧/.test(h.emoji || '') && hikeTiming(h).isCompletedToday);
+    const completed = past || (!h.nextMonth && !teaser && !isCity(h) && !isPostponed(h) && hikeTiming(h).isCompletedToday);
     const wi = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
     const booked = !completed && !teaser && wi >= 0 && state.hikeBookingStatus?.[wi] === true;
     const when = `${WD[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}${past && d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ''}${h.time ? ` · ${esc(h.time)}` : ''}`;
@@ -80,8 +80,8 @@ function cardHtml(h, i) {
             <span class="cf-tbar"><span class="cf-tlab">${on ? 'сообщим об открытии' : 'сообщить об открытии'}</span><i class="cf-sw"></i></span></button>`;
     }
     const bg = '<span class="cf-bg"></span>';
-    if (teaser && /🌧/.test(h.emoji || '')) {
-        // заглушка «хайк перенесён»: стрелка вместо «?», без колокольчика и подписки
+    if (isPostponed(h)) {
+        // Перенесённый хайк может сохранить название, но карточка ведёт к следующей дате.
         return `<button type="button" class="cf-card is-moved" data-i="${i}" data-date="${h.date}">${bg}<span class="cf-q">→</span><span data-app-copy="copy_170db65f62b035361626" class="cf-tag is-soon">перенесён</span>
             <span class="cf-in cf-in-t"><small>${when}</small></span>
             <span class="cf-tbar"><span data-app-copy="copy_6dc6d430215a201db5f5" class="cf-tlab">хайк перенесён</span></span></button>`;
@@ -126,13 +126,13 @@ export function renderCalFlow(container) {
     if (!list.length) { container.innerHTML = ''; return; }
     const t = today();
     // в центр – событие ПОСЛЕ того, что уже стоит наверху главной (ближайший хайк или плашка «готовим»)
-    const topDate = ((state.hikesList || []).filter(h => h && h.date >= t && !yes(h.cancelled) && !yes(h.book_club) && !(yes(h.city) && !isTeaser(h)) && !/🌧/.test(h.emoji || ''))
+    const topDate = ((state.hikesList || []).filter(h => h && h.date >= t && !yes(h.cancelled) && !yes(h.book_club) && !(yes(h.city) && !isTeaser(h)) && !isPostponed(h))
         .sort((a, b) => a.date.localeCompare(b.date))[0] || {}).date || '';
     let start = list.findIndex(h => !h.nextMonth && (topDate ? h.date > topDate : h.date >= t));
     if (start < 0) start = list.findIndex(h => !h.nextMonth && h.date >= t);
     if (start < 0) start = list.findLastIndex(h => !h.nextMonth);
     // запись на ближайший хайк открыта, а человек на него не записан – в центре календаря именно он, а не следующее событие
-    const ni = (state.hikesWithTitle || []).findIndex(h => h && !yes(h.cancelled) && !yes(h.book_club) && isUpcomingHike(h));
+    const ni = (state.hikesWithTitle || []).findIndex(h => h && !yes(h.cancelled) && !yes(h.book_club) && !isPostponed(h) && isUpcomingHike(h));
     const nh = ni >= 0 ? state.hikesWithTitle[ni] : null;
     if (nh && state.hikeBookingStatus?.[ni] !== true && !hikeTiming(nh).isClosed) {
         const at = list.findIndex(h => h.date === nh.date);
@@ -144,7 +144,7 @@ export function renderCalFlow(container) {
     if (passIndex >= 0) start = passIndex;
     else {
         const finished = list.findIndex(h => h.date === t && !h.nextMonth && !isTeaser(h) && !isCity(h)
-            && !/🌧/.test(h.emoji || '') && hikeTiming(h).isCompletedToday);
+            && !isPostponed(h) && hikeTiming(h).isCompletedToday);
         if (finished >= 0) start = finished;
     }
 
@@ -248,7 +248,7 @@ export function renderCalFlow(container) {
         const idx = (state.hikesWithTitle || []).findIndex(x => x.date === h.date);
         if (idx >= 0) showBottomSheet(idx);
     }));
-    const dates = list.filter(h => h.date >= t && !isTeaser(h) && !h.nextMonth && !bookingNotOpen(h.date)).map(h => h.date).slice(0, 8);
+    const dates = list.filter(h => h.date >= t && !isTeaser(h) && !isPostponed(h) && !h.nextMonth && !bookingNotOpen(h.date)).map(h => h.date).slice(0, 8);
     if (dates.length) fetchGoingFromServer(dates).then(lists => dates.forEach((d, k) => fillGoing(container, d, lists[k]))).catch(() => {});
 }
 
