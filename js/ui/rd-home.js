@@ -351,8 +351,8 @@ function teaserHtml() {
         <div class="card-container v2-tg" id="v2Teaser">
             <div class="v2-tg-photo" style="background-image:url('assets/teaser/${file}.webp')"><span>фото с хайка ${esc(where)}</span></div>
             <div class="v2-tg-row">
-                <div class="v2-tg-date"><b>${d.getDate()}</b><small>${MON3[d.getMonth()]}</small></div>
-                <div class="v2-tg-text"><b data-app-copy="copy_60179cfdda820f4c56a3">готовим хайк</b><span id="v2TgSub" data-app-copy="${on ? 'copy_15882e59b2a52e113075' : 'copy_39c0e81f1df68ef649cb'}">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
+                <div class="v2-tg-date">${t.nextMonth ? '<b>🔔</b>' : `<b>${d.getDate()}</b><small>${MON3[d.getMonth()]}</small>`}</div>
+                <div class="v2-tg-text">${t.nextMonth ? '<b>следующий хайк</b>' : '<b data-app-copy="copy_60179cfdda820f4c56a3">готовим хайк</b>'}<span id="v2TgSub" data-app-copy="${on ? 'copy_15882e59b2a52e113075' : 'copy_39c0e81f1df68ef649cb'}">${on ? 'сообщим, когда откроется запись' : 'включи, чтобы узнать об открытии записи'}</span></div>
                 <button type="button" class="v2-tg-sw${on ? ' is-on' : ''}" id="v2TeaserBtn" data-date="${t.date}" role="switch" aria-checked="${on}" aria-label="уведомлять об открытии записи"></button>
             </div>
         </div>`;

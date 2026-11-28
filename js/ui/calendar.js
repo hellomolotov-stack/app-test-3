@@ -4,7 +4,7 @@ import { setUiCopy } from './copy-editor.js';
 import { bookingNotOpen, opensPhrase } from '../booking-opens.js';
 import { ensureSmoothDem, smoothDemTiles } from './smooth-dem.js';
 import { requireAdmission } from './admission.js';
-import { hikeTiming, isUpcomingHike, moscowDateKey } from '../hike-timing.js';
+import { hikeTiming, isUpcomingHike, moscowDateKey, nextHikeMonthWaitlistDate } from '../hike-timing.js';
 import { trackFunnel } from '../analytics.js';
 import { passCodeFor } from '../pass-store.js';
 import { isAdmissionPilot, admission } from '../admission.js';
@@ -5063,8 +5063,15 @@ function rdFillSheetGoing(box, hike, list, isPast) {
 
 // классика v2 (главная): ближайшая дата-заглушка «готовим хайк» и подписка «сообщить» – тем же листом ожидания
 export function nextTeaser() {
-    const n = feedNearest(feedEvents());
-    return n && !(n.title && n.title.trim()) && !/🏄/.test(n.emoji || '') ? n : null;
+    const events = feedEvents();
+    const next = feedNearest(events.filter(h => h.title?.trim() || !/🏄/.test(h.emoji || '')));
+    if (next) return next.title?.trim() ? null : next;
+    const postponedDate = Object.entries(state.hikesData || {})
+        .filter(([date, h]) => /^\d{4}-\d{2}-\d{2}$/.test(date) && isPostponed(h))
+        .map(([date]) => date).sort().at(-1);
+    if (!postponedDate) return null;
+    const date = nextHikeMonthWaitlistDate(postponedDate);
+    return date.slice(0, 7) >= feedTodayStr().slice(0, 7) ? { date, nextMonth: true } : null;
 }
 export const isWaitlisted = date => !!feedWaitlist()[date];
 export async function toggleTeaserNotify(date, trigger) {

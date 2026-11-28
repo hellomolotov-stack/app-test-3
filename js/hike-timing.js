@@ -31,3 +31,9 @@ export function isUpcomingHike(hike, now = new Date()) {
     return !yes(hike.cancelled) && !yes(hike.city) && !yes(hike.book_club)
         && !/🌧/.test(hike.emoji || '') && !hikeTiming(hike, now).isClosed;
 }
+
+// Ключ подписки на первый хайк следующего месяца, пока его дата не объявлена.
+export function nextHikeMonthWaitlistDate(date) {
+    const [year, month] = date.split('-').map(Number);
+    return new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 10);
+}

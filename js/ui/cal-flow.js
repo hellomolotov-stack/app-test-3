@@ -8,7 +8,7 @@ import { haptic } from '../utils.js';
 import { log } from '../api.js';
 import { showBottomSheet, isPostponed, isWaitlisted, toggleTeaserNotify, fetchGoingFromServer } from './calendar.js';
 import { heroPhotoFor } from './rd-home.js';
-import { isUpcomingHike, hikeTiming } from '../hike-timing.js';
+import { isUpcomingHike, hikeTiming, nextHikeMonthWaitlistDate } from '../hike-timing.js';
 import { nextHikeLinkActive, nextHikeLinkDate } from './next-hike-link.js';
 import { bookingNotOpen } from '../booking-opens.js';
 
@@ -49,8 +49,7 @@ function events() {
     // в конце ленты – «следующий месяц в тумане»: подписка = лист ожидания на YYYY-MM-01 (Apps Script сообщит при первом хайке месяца)
     const last = all[all.length - 1];
     if (last && last.date >= t) {
-        const d = dt(last.date), n = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-        all.push({ date: `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-01`, nextMonth: true });
+        all.push({ date: nextHikeMonthWaitlistDate(last.date), nextMonth: true });
     }
     return all;
 }
